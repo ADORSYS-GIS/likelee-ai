@@ -2,7 +2,7 @@ use crate::config::AppState;
 use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -870,6 +870,28 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests/options",
             get(crate::licensing_requests::list_brand_campaign_license_options),
+        )
+        .route(
+            "/api/jobs",
+            post(crate::job_postings::create_job).get(crate::job_postings::list_jobs),
+        )
+        .route("/api/jobs/:job_id", put(crate::job_postings::update_job))
+        .route("/api/jobs/my", get(crate::job_postings::list_my_jobs))
+        .route(
+            "/api/jobs/:job_id/apply",
+            post(crate::job_postings::apply_job),
+        )
+        .route(
+            "/api/jobs/:job_id/decline",
+            post(crate::job_postings::decline_job_invite),
+        )
+        .route(
+            "/api/jobs/:job_id/accept",
+            post(crate::job_postings::accept_job_invite),
+        )
+        .route(
+            "/api/jobs/:job_id/applications",
+            get(crate::job_postings::list_job_applications),
         )
         .route(
             "/api/brand/voice-folders",

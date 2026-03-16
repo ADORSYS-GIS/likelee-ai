@@ -374,6 +374,13 @@ export default function SportsAgencyDashboard() {
                   Campaigns
                 </Button>
                 <Button
+                  variant="ghost"
+                  onClick={() => navigate(createPageUrl("Jobs"))}
+                  className="text-sm"
+                >
+                  Jobs
+                </Button>
+                <Button
                   variant={activeTab === "royalties" ? "default" : "ghost"}
                   onClick={() => setActiveTab("royalties")}
                   className="text-sm"

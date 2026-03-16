@@ -1,11 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
-import { useNavigate } from "react-router-dom";
 import {
   Link2Off,
   Eye,
@@ -16,16 +24,17 @@ import {
   User,
   Check,
   Search,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Send,
+  Wand2,
 } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import { createPageUrl } from "@/utils";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, RefreshCw, Trash2, Send, Wand2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -33,8 +42,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<
     | "connections"
     | "requests"
@@ -44,6 +54,11 @@ const BrandConnectionsView = () => {
     | "feedback"
   >("connections");
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
+  const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
+  const [jobInviteConfirmAction, setJobInviteConfirmAction] = useState<
+    "accept" | "decline" | ""
+  >("");
   const [selectedOfferId, setSelectedOfferId] = useState<string>("");
   const [packageDraftByOffer, setPackageDraftByOffer] = useState<
     Record<string, { title: string; message: string; packageId?: string }>
@@ -81,6 +96,21 @@ const BrandConnectionsView = () => {
     sending: false,
   });
 
+  const isConfidentialBrandPlaceholder = (value: unknown) =>
+    String(value || "")
+      .trim()
+      .toLowerCase() === "confidential brand";
+
+  const resolveJobCompanyName = (job: any) => {
+    const brandName = String(job?.brands?.company_name || "").trim();
+    const companyName = String(job?.company_name || "").trim();
+    if (brandName && !isConfidentialBrandPlaceholder(brandName))
+      return brandName;
+    if (companyName && !isConfidentialBrandPlaceholder(companyName))
+      return companyName;
+    return brandName || companyName || "Brand";
+  };
+
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
     if (document.getElementById("docuseal-builder-script")) return;
@@ -90,6 +120,11 @@ const BrandConnectionsView = () => {
     script.async = true;
     document.head.appendChild(script);
   };
+
+  const [seenCounts, setSeenCounts] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem("brand_connections_seen_counts");
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const requestsQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -123,6 +158,28 @@ const BrandConnectionsView = () => {
         },
       );
       return Array.isArray(resp?.offers) ? resp.offers : [];
+    },
+  });
+
+  const jobInvitesQuery = useQuery({
+    queryKey: ["agency", "job-invites"],
+    queryFn: async () => {
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { limit: 100 },
+      });
+      const jobs = Array.isArray(resp?.jobs) ? resp.jobs : [];
+      return jobs.filter((job) => {
+        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
+          ? job.invited_agency_ids
+          : [];
+        const acceptedAgencies = Array.isArray(job?.accepted_agency_ids)
+          ? job.accepted_agency_ids
+          : [];
+        const myId = user?.id;
+        return (
+          invitedAgencies.includes(myId) || acceptedAgencies.includes(myId)
+        );
+      });
     },
   });
 
@@ -234,6 +291,10 @@ const BrandConnectionsView = () => {
     if (!Array.isArray(offersQuery.data)) return [];
     return offersQuery.data;
   }, [offersQuery.data]);
+  const jobInvites = useMemo(() => {
+    if (!Array.isArray(jobInvitesQuery.data)) return [];
+    return jobInvitesQuery.data;
+  }, [jobInvitesQuery.data]);
   const roster = useMemo(() => {
     if (!Array.isArray(rosterQuery.data)) return [];
     return rosterQuery.data;
@@ -687,6 +748,98 @@ const BrandConnectionsView = () => {
     }
   };
 
+  const declineJobInvite = async (jobId: string) => {
+    try {
+      setBusyIds((prev) => new Set(prev).add(jobId));
+      await base44.post(`/api/jobs/${jobId}/decline`);
+      toast({ title: "Job invite declined" });
+      jobInvitesQuery.refetch();
+    } catch (err: any) {
+      toast({
+        title: "Error declining job invite",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const acceptJobInvite = async (jobId: string) => {
+    try {
+      setBusyIds((prev) => new Set(prev).add(jobId));
+      await base44.post(`/api/jobs/${jobId}/accept`);
+      toast({ title: "Job invite accepted" });
+      jobInvitesQuery.refetch();
+    } catch (err: any) {
+      toast({
+        title: "Error accepting job invite",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const confirmJobInviteAction = () => {
+    if (!jobInviteConfirmId || !jobInviteConfirmAction) return;
+    if (jobInviteConfirmAction === "accept") {
+      acceptJobInvite(jobInviteConfirmId);
+    } else {
+      declineJobInvite(jobInviteConfirmId);
+    }
+  };
+
+  const pendingRequests = requests.length;
+  const pendingOffers =
+    jobInvites.length +
+    offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
+  const pendingFeedback = feedbackItems.length;
+
+  React.useEffect(() => {
+    setSeenCounts((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      if (activeTab === "requests" && prev.requests !== pendingRequests) {
+        next.requests = pendingRequests;
+        changed = true;
+      }
+      if (activeTab === "offers" && prev.offers !== pendingOffers) {
+        next.offers = pendingOffers;
+        changed = true;
+      }
+      if (activeTab === "feedback" && prev.feedback !== pendingFeedback) {
+        next.feedback = pendingFeedback;
+        changed = true;
+      }
+
+      if (changed) {
+        localStorage.setItem(
+          "brand_connections_seen_counts",
+          JSON.stringify(next),
+        );
+        return next;
+      }
+      return prev;
+    });
+  }, [activeTab, pendingRequests, pendingOffers, pendingFeedback]);
+
+  const showRequestsBadge = pendingRequests > (seenCounts.requests || 0);
+  const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
+  const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -706,14 +859,26 @@ const BrandConnectionsView = () => {
         <Button
           variant={activeTab === "requests" ? "default" : "outline"}
           onClick={() => setActiveTab("requests")}
+          className="relative"
         >
           Requests
+          {showRequestsBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingRequests - (seenCounts.requests || 0)}
+            </Badge>
+          )}
         </Button>
         <Button
           variant={activeTab === "offers" ? "default" : "outline"}
           onClick={() => setActiveTab("offers")}
+          className="relative"
         >
           Brand Offers
+          {showOffersBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingOffers - (seenCounts.offers || 0)}
+            </Badge>
+          )}
         </Button>
         <Button
           variant={activeTab === "contract_hub" ? "default" : "outline"}
@@ -730,8 +895,14 @@ const BrandConnectionsView = () => {
         <Button
           variant={activeTab === "feedback" ? "default" : "outline"}
           onClick={() => setActiveTab("feedback")}
+          className="relative"
         >
           Package Feedback
+          {showFeedbackBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingFeedback - (seenCounts.feedback || 0)}
+            </Badge>
+          )}
         </Button>
       </div>
 
@@ -907,283 +1078,140 @@ const BrandConnectionsView = () => {
       )}
 
       {activeTab === "offers" && (
-        <Card className="p-6 border border-gray-200 rounded-xl">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">
-                {selectedOfferId ? (
-                  <button
-                    onClick={() => setSelectedOfferId("")}
-                    className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                    Brand Offers
-                  </button>
-                ) : (
-                  "Brand Offers"
-                )}
-              </h3>
-            </div>
-
-            {offersQuery.isLoading && (
-              <p className="text-sm text-gray-500">Loading offers...</p>
+        <>
+          <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">Job Invites</h3>
+            {jobInvitesQuery.isLoading && (
+              <p className="text-sm text-gray-500">Loading job invites...</p>
             )}
-
-            {!offersQuery.isLoading && offers.length === 0 && (
-              <p className="text-sm text-gray-500">No campaign offers yet.</p>
+            {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
+              <p className="text-sm text-gray-500">No job invites yet.</p>
             )}
-
-            {selectedOfferId ? (
-              (() => {
-                const offer = offers.find(
-                  (o: any) => String(o.id) === selectedOfferId,
-                );
-                if (!offer) {
-                  return (
-                    <div className="p-8 text-center">
-                      <p className="text-gray-500 mb-4">Offer not found</p>
-                      <Button onClick={() => setSelectedOfferId("")}>
-                        Back to list
-                      </Button>
+            {jobInvites.map((job: any) => {
+              const jobId = String(job?.id || "");
+              const companyName = resolveJobCompanyName(job);
+              const jobTitle = String(job?.job_title || "Job invite");
+              const isBusy = busyIds.has(jobId);
+              return (
+                <div
+                  key={jobId}
+                  className="border border-green-200 bg-green-50 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {companyName}
+                      </p>
+                      <p className="text-xs text-gray-600">{jobTitle}</p>
                     </div>
-                  );
-                }
-
-                const status = String(offer?.status || "sent");
-                const isPending = ["sent", "viewed"].includes(status);
-                const isAccepted = status === "accepted";
-                const isFullySigned = new Set([
-                  "contract_fully_signed",
-                  "signed",
-                  "fully_signed",
-                  "completed",
-                ]).has(status.toLowerCase());
-
-                return (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {/* Fixed Header Style */}
-                    <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-6 w-6 text-indigo-600" />
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                              {offer?.brand_campaigns?.name || "Campaign Offer"}
-                            </h2>
-                          </div>
-                          <p className="text-gray-500 font-medium ml-9">
-                            {offer?.offer_title || "Direct Request"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                              isAccepted
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                            }`}
-                          >
-                            {status.replace(/_/g, " ")}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-6 md:p-8 space-y-8">
-                      {/* Action Bar */}
-                      <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
-                        {isPending && (
-                          <>
-                            <Button
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6"
-                              disabled={busyIds.has(selectedOfferId)}
-                              onClick={() =>
-                                respondToOffer(selectedOfferId, "accept")
-                              }
-                            >
-                              Accept Offer
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                              disabled={busyIds.has(selectedOfferId)}
-                              onClick={() =>
-                                respondToOffer(selectedOfferId, "decline")
-                              }
-                            >
-                              Decline
-                            </Button>
-                          </>
-                        )}
-                        {isAccepted && (
-                          <>
-                            {(() => {
-                              const offerPkg = (
-                                offerPackagesQuery.data || []
-                              ).find(
-                                (p: any) =>
-                                  String(p.offer_id) === selectedOfferId,
-                              );
-                              if (offerPkg) {
-                                const token =
-                                  offerPkg.meta?.agency_package_token;
-                                return (
-                                  <div className="flex items-center gap-3">
-                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
-                                      <CheckCircle2 className="h-4 w-4" />
-                                      Package Successfully Sent
-                                    </Badge>
-                                    {token && (
-                                      <Button
-                                        variant="secondary"
-                                        className="font-bold"
-                                        onClick={() =>
-                                          window.open(
-                                            `/share/package/${token}`,
-                                            "_blank",
-                                          )
-                                        }
-                                      >
-                                        View Shared Package
-                                      </Button>
-                                    )}
-                                  </div>
-                                );
-                              }
-                              return (
-                                <Button
-                                  className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
-                                  onClick={() => {
-                                    navigate("/AgencyDashboard?tab=packages", {
-                                      state: {
-                                        fromOfferId: selectedOfferId,
-                                        fromOfferBrandId: String(
-                                          offer?.brand_id || "",
-                                        ).trim(),
-                                      },
-                                    });
-                                  }}
-                                >
-                                  Build & Send Talent Package
-                                </Button>
-                              );
-                            })()}
-                          </>
-                        )}
-                        {isFullySigned && (
-                          <Button
-                            variant="outline"
-                            className="border-indigo-200 text-indigo-700 font-bold"
-                            onClick={() =>
-                              setAssignDialog({
-                                open: true,
-                                offerId: selectedOfferId,
-                                talentId: "",
-                              })
-                            }
-                          >
-                            <User className="h-4 w-4 mr-2" />
-                            Assign Talent
-                          </Button>
-                        )}
-                      </div>
-
-                      {isFullySigned && (
-                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-bold text-gray-900">
-                              Assigned Talent
-                            </p>
-                          </div>
-                          {(offerAssignmentsQuery.data || []).length === 0 ? (
-                            <p className="text-xs text-gray-500">
-                              No talent assigned yet.
-                            </p>
-                          ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {(offerAssignmentsQuery.data || []).map(
-                                (a: any) => {
-                                  const talent = a?.agency_users || {};
-                                  const tid = String(a?.talent_id || "");
-                                  return (
-                                    <div
-                                      key={String(a?.id)}
-                                      className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                          <User className="h-4 w-4 text-gray-500" />
-                                        </div>
-                                        <div>
-                                          <p className="text-sm font-semibold text-gray-900">
-                                            {talent?.stage_name ||
-                                              talent?.full_legal_name ||
-                                              "Talent"}
-                                          </p>
-                                          <p className="text-xs text-gray-500">
-                                            Assigned
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          setMessageDialog({
-                                            open: true,
-                                            offerId: selectedOfferId,
-                                            talentId: tid,
-                                            title: "",
-                                            message: "",
-                                            file: null,
-                                            sending: false,
-                                          })
-                                        }
-                                      >
-                                        Send Message
-                                      </Button>
-                                    </div>
-                                  );
-                                },
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Full brief — shown directly, no duplicate summary */}
-                      {offer?.brief_snapshot &&
-                      typeof offer.brief_snapshot === "object" ? (
-                        <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                          <CampaignBriefView
-                            brief={offer.brief_snapshot}
-                            brandName={String(
-                              offer?.brand_campaigns?.brands?.name || "Brand",
-                            )}
-                            campaignName={String(
-                              offer?.brand_campaigns?.name || "Campaign",
-                            )}
-                          />
-                        </div>
-                      ) : offer?.message ? (
-                        <div className="bg-slate-50 p-6 rounded-2xl border-l-4 border-indigo-400 italic text-gray-700 text-lg leading-relaxed">
-                          "{String(offer.message)}"
-                        </div>
-                      ) : (
-                        <div className="p-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                          <p className="text-gray-400 font-medium">
-                            No detailed brief attached to this offer.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">
+                      Job Invite
+                    </Badge>
                   </div>
-                );
-              })()
-            ) : (
-              <div className="space-y-5">
-                {offers.map((offer: any) => {
-                  const offerId = String(offer?.id || "");
+                  <div className="flex flex-wrap gap-2">
+                    {!(job?.accepted_agency_ids || []).includes(
+                      profile?.id || user?.id,
+                    ) ? (
+                      <>
+                        <Button
+                          size="sm"
+                          className="bg-white text-black border border-gray-200 hover:bg-gray-100"
+                          onClick={() => {
+                            navigate(
+                              `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}`,
+                            );
+                          }}
+                        >
+                          View job details
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                          disabled={isBusy}
+                          onClick={() => {
+                            setJobInviteConfirmId(jobId);
+                            setJobInviteConfirmAction("accept");
+                            setJobInviteConfirmOpen(true);
+                          }}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-300 text-red-600 bg-white hover:bg-red-50"
+                          disabled={isBusy}
+                          onClick={() => {
+                            setJobInviteConfirmId(jobId);
+                            setJobInviteConfirmAction("decline");
+                            setJobInviteConfirmOpen(true);
+                          }}
+                        >
+                          Decline
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-black text-white hover:bg-gray-800"
+                        onClick={() =>
+                          navigate(
+                            `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                              jobId,
+                            )}&apply=true`,
+                          )
+                        }
+                      >
+                        Apply
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+          <Card className="p-6 border border-gray-200 rounded-xl">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">
+                  {selectedOfferId ? (
+                    <button
+                      onClick={() => setSelectedOfferId("")}
+                      className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                      Brand Offers
+                    </button>
+                  ) : (
+                    "Brand Offers"
+                  )}
+                </h3>
+              </div>
+
+              {offersQuery.isLoading && (
+                <p className="text-sm text-gray-500">Loading offers...</p>
+              )}
+
+              {!offersQuery.isLoading && offers.length === 0 && (
+                <p className="text-sm text-gray-500">No campaign offers yet.</p>
+              )}
+
+              {selectedOfferId ? (
+                (() => {
+                  const offer = offers.find(
+                    (o: any) => String(o.id) === selectedOfferId,
+                  );
+                  if (!offer) {
+                    return (
+                      <div className="p-8 text-center">
+                        <p className="text-gray-500 mb-4">Offer not found</p>
+                        <Button onClick={() => setSelectedOfferId("")}>
+                          Back to list
+                        </Button>
+                      </div>
+                    );
+                  }
+
                   const status = String(offer?.status || "sent");
                   const isPending = ["sent", "viewed"].includes(status);
                   const isAccepted = status === "accepted";
@@ -1194,251 +1222,494 @@ const BrandConnectionsView = () => {
                     "completed",
                   ]).has(status.toLowerCase());
 
-                  const bs =
-                    offer?.brief_snapshot &&
-                    typeof offer.brief_snapshot === "object"
-                      ? offer.brief_snapshot
-                      : null;
-                  const briefVal = (key: string, fallback = "") => {
-                    if (!bs) return fallback;
-                    const v = bs[key];
-                    const t =
-                      v !== null && v !== undefined ? String(v).trim() : "";
-                    return t || fallback;
-                  };
-                  const reels = briefVal("deliverables_reels");
-                  const heroImg = briefVal("deliverables_hero_image");
-                  const deliverablesSummary =
-                    [reels, heroImg].filter(Boolean).join(", ") || "—";
-                  const launchDate = briefVal("overview_launch_date");
-                  const deadlineDate = briefVal("budget_submission_deadline");
-                  const budgetTotal = briefVal("budget_total");
-                  const budgetCreator = briefVal("budget_creator_payment");
-
                   return (
-                    <div
-                      key={offerId}
-                      className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
-                      onClick={() => setSelectedOfferId(offerId)}
-                    >
-                      {/* Row header */}
-                      <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="min-w-0">
-                            <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
-                              {offer?.brand_campaigns?.name ||
-                                offer?.offer_title ||
-                                "Campaign Offer"}
-                            </h4>
-                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      {/* Fixed Header Style */}
+                      <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-6 w-6 text-indigo-600" />
+                              <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                                {offer?.brand_campaigns?.name ||
+                                  "Campaign Offer"}
+                              </h2>
+                            </div>
+                            <p className="text-gray-500 font-medium ml-9">
                               {offer?.offer_title || "Direct Request"}
                             </p>
                           </div>
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                                isAccepted
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              }`}
+                            >
+                              {status.replace(/_/g, " ")}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <Badge
-                            className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                              isAccepted
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                : "bg-indigo-100 text-indigo-700 border-indigo-200"
-                            }`}
-                          >
-                            {status.replace(/_/g, " ")}
-                          </Badge>
+                      </div>
+
+                      <div className="p-6 md:p-8 space-y-8">
+                        {/* Action Bar */}
+                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
                               <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                                disabled={busyIds.has(offerId)}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  respondToOffer(offerId, "accept");
-                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6"
+                                disabled={busyIds.has(selectedOfferId)}
+                                onClick={() =>
+                                  respondToOffer(selectedOfferId, "accept")
+                                }
                               >
-                                Accept
+                                Accept Offer
                               </Button>
                               <Button
-                                size="sm"
                                 variant="outline"
                                 className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                                disabled={busyIds.has(offerId)}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  respondToOffer(offerId, "decline");
-                                }}
+                                disabled={busyIds.has(selectedOfferId)}
+                                onClick={() =>
+                                  respondToOffer(selectedOfferId, "decline")
+                                }
                               >
                                 Decline
                               </Button>
                             </>
                           )}
-                          {isAccepted &&
-                            (() => {
-                              const offerPkg = (
-                                offerPackagesQuery.data || []
-                              ).find(
-                                (p: any) => String(p.offer_id) === offerId,
-                              );
-                              if (offerPkg) {
-                                const token =
-                                  offerPkg.meta?.agency_package_token;
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1">
-                                      <CheckCircle2 className="h-3 w-3" />
-                                      Package Sent
-                                    </Badge>
-                                    {token && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="font-bold text-xs"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.open(
-                                            `/share/package/${token}`,
-                                            "_blank",
-                                          );
-                                        }}
-                                      >
-                                        View Package
-                                      </Button>
-                                    )}
-                                  </div>
+                          {isAccepted && (
+                            <>
+                              {(() => {
+                                const offerPkg = (
+                                  offerPackagesQuery.data || []
+                                ).find(
+                                  (p: any) =>
+                                    String(p.offer_id) === selectedOfferId,
                                 );
-                              }
-                              return (
-                                <Button
-                                  size="sm"
-                                  className="bg-black hover:bg-gray-800 text-white font-bold"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate("/AgencyDashboard?tab=packages", {
-                                      state: {
-                                        fromOfferId: offerId,
-                                        fromOfferBrandId: String(
-                                          offer?.brand_id || "",
-                                        ).trim(),
-                                      },
-                                    });
-                                  }}
-                                >
-                                  Build Package
-                                </Button>
-                              );
-                            })()}
+                                if (offerPkg) {
+                                  const token =
+                                    offerPkg.meta?.agency_package_token;
+                                  return (
+                                    <div className="flex items-center gap-3">
+                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Package Successfully Sent
+                                      </Badge>
+                                      {token && (
+                                        <Button
+                                          variant="secondary"
+                                          className="font-bold"
+                                          onClick={() =>
+                                            window.open(
+                                              `/share/package/${token}`,
+                                              "_blank",
+                                            )
+                                          }
+                                        >
+                                          View Shared Package
+                                        </Button>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                    onClick={() => {
+                                      navigate(
+                                        "/AgencyDashboard?tab=packages",
+                                        {
+                                          state: {
+                                            fromOfferId: selectedOfferId,
+                                            fromOfferBrandId: String(
+                                              offer?.brand_id || "",
+                                            ).trim(),
+                                          },
+                                        },
+                                      );
+                                    }}
+                                  >
+                                    Build & Send Talent Package
+                                  </Button>
+                                );
+                              })()}
+                            </>
+                          )}
                           {isFullySigned && (
                             <Button
-                              size="sm"
                               variant="outline"
                               className="border-indigo-200 text-indigo-700 font-bold"
-                              onClick={(e) => {
-                                e.stopPropagation();
+                              onClick={() =>
                                 setAssignDialog({
                                   open: true,
-                                  offerId,
+                                  offerId: selectedOfferId,
                                   talentId: "",
-                                });
-                              }}
+                                })
+                              }
                             >
                               <User className="h-4 w-4 mr-2" />
                               Assign Talent
                             </Button>
                           )}
                         </div>
-                      </div>
 
-                      {/* Brief & Scope body */}
-                      <div className="px-6 py-5 space-y-5">
-                        <div className="flex items-center justify-between gap-4">
-                          <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
-                            Brief &amp; Scope
-                          </h3>
-                          <button
-                            onClick={() => setSelectedOfferId(offerId)}
-                            className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
-                          >
-                            View Full Details →
-                          </button>
-                        </div>
-
-                        {/* Deliverables */}
-                        <div>
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                            Deliverables
-                          </p>
-                          <p className="text-sm text-gray-800">
-                            {deliverablesSummary}
-                          </p>
-                        </div>
-
-                        {/* Timeline + Budget */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                              Timeline
-                            </p>
-                            {launchDate && (
-                              <p className="text-sm text-gray-800">
-                                Start: {launchDate}
-                              </p>
-                            )}
-                            {deadlineDate && (
-                              <p className="text-sm text-gray-800">
-                                Due: {deadlineDate}
-                              </p>
-                            )}
-                            {!launchDate && !deadlineDate && (
-                              <p className="text-sm text-gray-400">
-                                Not specified
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                              Budget
-                            </p>
-                            {budgetTotal && (
+                        {isFullySigned && (
+                          <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                            <div className="flex items-center justify-between">
                               <p className="text-sm font-bold text-gray-900">
-                                Total: {budgetTotal}
+                                Assigned Talent
                               </p>
-                            )}
-                            {budgetCreator && (
-                              <p className="text-sm text-gray-700">
-                                Creator: {budgetCreator}
+                            </div>
+                            {(offerAssignmentsQuery.data || []).length === 0 ? (
+                              <p className="text-xs text-gray-500">
+                                No talent assigned yet.
                               </p>
-                            )}
-                            {!budgetTotal && !budgetCreator && (
-                              <p className="text-sm text-gray-400">
-                                Not specified
-                              </p>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {(offerAssignmentsQuery.data || []).map(
+                                  (a: any) => {
+                                    const talent = a?.agency_users || {};
+                                    const tid = String(a?.talent_id || "");
+                                    return (
+                                      <div
+                                        key={String(a?.id)}
+                                        className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <User className="h-4 w-4 text-gray-500" />
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-semibold text-gray-900">
+                                              {talent?.stage_name ||
+                                                talent?.full_legal_name ||
+                                                "Talent"}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                              Assigned
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            setMessageDialog({
+                                              open: true,
+                                              offerId: selectedOfferId,
+                                              talentId: tid,
+                                              title: "",
+                                              message: "",
+                                              file: null,
+                                              sending: false,
+                                            })
+                                          }
+                                        >
+                                          Send Message
+                                        </Button>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
                             )}
                           </div>
-                        </div>
+                        )}
 
-                        {/* Teaser — navigates to full-page detail */}
-                        {(bs || offer?.message) && (
-                          <div
-                            className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
-                            onClick={() => setSelectedOfferId(offerId)}
-                          >
-                            <span className="text-blue-500 mt-0.5 shrink-0">
-                              ⓘ
-                            </span>
-                            <p className="text-sm font-medium text-blue-700">
-                              Click to view complete brief with dialogue,
-                              visuals, and contract details
+                        {/* Full brief — shown directly, no duplicate summary */}
+                        {offer?.brief_snapshot &&
+                        typeof offer.brief_snapshot === "object" ? (
+                          <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                            <CampaignBriefView
+                              brief={offer.brief_snapshot}
+                              brandName={String(
+                                offer?.brand_campaigns?.brands?.name || "Brand",
+                              )}
+                              campaignName={String(
+                                offer?.brand_campaigns?.name || "Campaign",
+                              )}
+                            />
+                          </div>
+                        ) : offer?.message ? (
+                          <div className="bg-slate-50 p-6 rounded-2xl border-l-4 border-indigo-400 italic text-gray-700 text-lg leading-relaxed">
+                            "{String(offer.message)}"
+                          </div>
+                        ) : (
+                          <div className="p-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                            <p className="text-gray-400 font-medium">
+                              No detailed brief attached to this offer.
                             </p>
                           </div>
                         )}
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            )}
-          </div>
-        </Card>
+                })()
+              ) : (
+                <div className="space-y-5">
+                  {offers.map((offer: any) => {
+                    const offerId = String(offer?.id || "");
+                    const status = String(offer?.status || "sent");
+                    const isPending = ["sent", "viewed"].includes(status);
+                    const isAccepted = status === "accepted";
+                    const isFullySigned = new Set([
+                      "contract_fully_signed",
+                      "signed",
+                      "fully_signed",
+                      "completed",
+                    ]).has(status.toLowerCase());
+
+                    const bs =
+                      offer?.brief_snapshot &&
+                      typeof offer.brief_snapshot === "object"
+                        ? offer.brief_snapshot
+                        : null;
+                    const briefVal = (key: string, fallback = "") => {
+                      if (!bs) return fallback;
+                      const v = bs[key];
+                      const t =
+                        v !== null && v !== undefined ? String(v).trim() : "";
+                      return t || fallback;
+                    };
+                    const reels = briefVal("deliverables_reels");
+                    const heroImg = briefVal("deliverables_hero_image");
+                    const deliverablesSummary =
+                      [reels, heroImg].filter(Boolean).join(", ") || "—";
+                    const launchDate = briefVal("overview_launch_date");
+                    const deadlineDate = briefVal("budget_submission_deadline");
+                    const budgetTotal = briefVal("budget_total");
+                    const budgetCreator = briefVal("budget_creator_payment");
+
+                    return (
+                      <div
+                        key={offerId}
+                        className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
+                        onClick={() => setSelectedOfferId(offerId)}
+                      >
+                        {/* Row header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="min-w-0">
+                              <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
+                                {offer?.brand_campaigns?.name ||
+                                  offer?.offer_title ||
+                                  "Campaign Offer"}
+                              </h4>
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                                {offer?.offer_title || "Direct Request"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Badge
+                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                isAccepted
+                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                  : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                              }`}
+                            >
+                              {status.replace(/_/g, " ")}
+                            </Badge>
+                            {isPending && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                  disabled={busyIds.has(offerId)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    respondToOffer(offerId, "accept");
+                                  }}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
+                                  disabled={busyIds.has(offerId)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    respondToOffer(offerId, "decline");
+                                  }}
+                                >
+                                  Decline
+                                </Button>
+                              </>
+                            )}
+                            {isAccepted &&
+                              (() => {
+                                const offerPkg = (
+                                  offerPackagesQuery.data || []
+                                ).find(
+                                  (p: any) => String(p.offer_id) === offerId,
+                                );
+                                if (offerPkg) {
+                                  const token =
+                                    offerPkg.meta?.agency_package_token;
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Package Sent
+                                      </Badge>
+                                      {token && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="font-bold text-xs"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open(
+                                              `/share/package/${token}`,
+                                              "_blank",
+                                            );
+                                          }}
+                                        >
+                                          View Package
+                                        </Button>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    size="sm"
+                                    className="bg-black hover:bg-gray-800 text-white font-bold"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(
+                                        "/AgencyDashboard?tab=packages",
+                                        {
+                                          state: {
+                                            fromOfferId: offerId,
+                                            fromOfferBrandId: String(
+                                              offer?.brand_id || "",
+                                            ).trim(),
+                                          },
+                                        },
+                                      );
+                                    }}
+                                  >
+                                    Build Package
+                                  </Button>
+                                );
+                              })()}
+                            {isFullySigned && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-indigo-200 text-indigo-700 font-bold"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAssignDialog({
+                                    open: true,
+                                    offerId,
+                                    talentId: "",
+                                  });
+                                }}
+                              >
+                                <User className="h-4 w-4 mr-2" />
+                                Assign Talent
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Brief & Scope body */}
+                        <div className="px-6 py-5 space-y-5">
+                          <div className="flex items-center justify-between gap-4">
+                            <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
+                              Brief &amp; Scope
+                            </h3>
+                            <button
+                              onClick={() => setSelectedOfferId(offerId)}
+                              className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                            >
+                              View Full Details →
+                            </button>
+                          </div>
+
+                          {/* Deliverables */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                              Deliverables
+                            </p>
+                            <p className="text-sm text-gray-800">
+                              {deliverablesSummary}
+                            </p>
+                          </div>
+
+                          {/* Timeline + Budget */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                Timeline
+                              </p>
+                              {launchDate && (
+                                <p className="text-sm text-gray-800">
+                                  Start: {launchDate}
+                                </p>
+                              )}
+                              {deadlineDate && (
+                                <p className="text-sm text-gray-800">
+                                  Due: {deadlineDate}
+                                </p>
+                              )}
+                              {!launchDate && !deadlineDate && (
+                                <p className="text-sm text-gray-400">
+                                  Not specified
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                Budget
+                              </p>
+                              {budgetTotal && (
+                                <p className="text-sm font-bold text-gray-900">
+                                  Total: {budgetTotal}
+                                </p>
+                              )}
+                              {budgetCreator && (
+                                <p className="text-sm text-gray-700">
+                                  Creator: {budgetCreator}
+                                </p>
+                              )}
+                              {!budgetTotal && !budgetCreator && (
+                                <p className="text-sm text-gray-400">
+                                  Not specified
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Teaser — navigates to full-page detail */}
+                          {(bs || offer?.message) && (
+                            <div
+                              className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
+                              onClick={() => setSelectedOfferId(offerId)}
+                            >
+                              <span className="text-blue-500 mt-0.5 shrink-0">
+                                ⓘ
+                              </span>
+                              <p className="text-sm font-medium text-blue-700">
+                                Click to view complete brief with dialogue,
+                                visuals, and contract details
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </Card>
+        </>
       )}
 
       {activeTab === "feedback" && (
@@ -2150,6 +2421,47 @@ const BrandConnectionsView = () => {
           })}
         </Card>
       )}
+
+      <Dialog
+        open={jobInviteConfirmOpen}
+        onOpenChange={setJobInviteConfirmOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Confirm{" "}
+              {jobInviteConfirmAction === "accept" ? "Acceptance" : "Decline"}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {jobInviteConfirmAction} this job invite?
+              This action cannot be undone. Please ensure you have viewed the
+              job details first.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setJobInviteConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className={
+                jobInviteConfirmAction === "accept"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }
+              onClick={confirmJobInviteAction}
+              disabled={busyIds.has(jobInviteConfirmId)}
+            >
+              {busyIds.has(jobInviteConfirmId)
+                ? "Processing..."
+                : `Yes, ${jobInviteConfirmAction}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={assignDialog.open}
         onOpenChange={(open) => {
@@ -2324,6 +2636,7 @@ const BrandConnectionsView = () => {
               Cancel
             </Button>
             <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-md shadow-indigo-100"
               onClick={handleSendTalentMessage}
               disabled={messageDialog.sending}
             >

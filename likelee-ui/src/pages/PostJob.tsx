@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
+import { getBrandProfile } from "@/api/functions";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,30 +85,34 @@ const skills = [
   "Campaign Management",
 ];
 
-const licensingMetrics = [
-  "Follower Count Requirements",
-  "Engagement Rate Requirements",
-  "Platform Verification Status",
-];
-
 export default function PostJob() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [showCustomWorkType, setShowCustomWorkType] = useState(false);
   const [customWorkType, setCustomWorkType] = useState("");
-  const [formData, setFormData] = useState({
+  const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [loadingAgencies, setLoadingAgencies] = useState(false);
+  const [loadingCreators, setLoadingCreators] = useState(false);
+  const [agencySearch, setAgencySearch] = useState("");
+  const [creatorSearch, setCreatorSearch] = useState("");
+  const [connectedAgencies, setConnectedAgencies] = useState<any[]>([]);
+  const [connectedCreators, setConnectedCreators] = useState<any[]>([]);
+  const initialFormState = {
     // Basic Info
     job_title: "",
-    company_name: "Urban Apparel Co.",
+    company_name: "",
     contact_email: "",
     category: "",
+    call_type: "",
     work_types: [],
     custom_work_types: [],
     status: "open",
 
     // Project Overview
-    location: "Remote",
+    location: "remote",
     job_type: "",
     description: "",
     goals: [],
@@ -115,12 +122,9 @@ export default function PostJob() {
 
     // Talent Requirements
     talent_types: ["AI Talent (Virtual)"], // Default selection
-    gender: "",
-    age_range: "",
     region: "",
     language: "",
     required_skills: [],
-    licensing_metrics: [],
     needs_licensing: false,
 
     // Licensing (if needs_licensing = true)
@@ -138,14 +142,298 @@ export default function PostJob() {
     // Collaboration
     work_with_agency: false,
     invite_creator: false,
+    invited_agency_ids: [],
+    invited_creator_ids: [],
     brand_assets: [],
     confidential: false,
-  });
+  };
+
+  const [formData, setFormData] = useState(() => ({ ...initialFormState }));
 
   const totalSteps = 7;
   const progress = (currentStep / totalSteps) * 100;
 
+  useEffect(() => {
+    let mounted = true;
+    const loadBrandProfile = async () => {
+      try {
+        const profile = await getBrandProfile();
+        if (!mounted || !profile) return;
+        setFormData((prev) => ({
+          ...prev,
+          company_name:
+            prev.company_name || profile?.company_name || profile?.name || "",
+          contact_email:
+            prev.contact_email || profile?.email || prev.contact_email,
+        }));
+      } catch {
+        // Ignore profile load failures; form remains editable.
+      }
+    };
+    loadBrandProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!formData.work_with_agency) return;
+    let mounted = true;
+    const loadAgencies = async () => {
+      try {
+        setLoadingAgencies(true);
+        const res = await base44.get<{ agencies?: any[] }>(
+          "/api/brand/connected-agencies",
+        );
+        if (!mounted) return;
+        setConnectedAgencies(Array.isArray(res?.agencies) ? res.agencies : []);
+      } catch {
+        if (!mounted) return;
+        setConnectedAgencies([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingAgencies(false);
+      }
+    };
+    loadAgencies();
+    return () => {
+      mounted = false;
+    };
+  }, [formData.work_with_agency]);
+
+  useEffect(() => {
+    if (!formData.invite_creator) return;
+    let mounted = true;
+    const loadCreators = async () => {
+      try {
+        setLoadingCreators(true);
+        const res = await base44.get<any>("/api/marketplace/search", {
+          params: {
+            entity_type: "creator",
+            profile_type: "connected",
+            limit: 200,
+          },
+        });
+        if (!mounted) return;
+        const rows = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.items)
+            ? res.items
+            : [];
+        setConnectedCreators(rows);
+      } catch {
+        if (!mounted) return;
+        setConnectedCreators([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingCreators(false);
+      }
+    };
+    loadCreators();
+    return () => {
+      mounted = false;
+    };
+  }, [formData.invite_creator]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadDraft = async () => {
+      try {
+        const editMode =
+          typeof window !== "undefined" &&
+          window.localStorage.getItem("jobEditMode") === "1";
+        if (!editMode) {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("jobDraftId");
+          }
+          setEditingJobId(null);
+          setCurrentStep(1);
+          setFormData((prev) => ({
+            ...initialFormState,
+            company_name: prev.company_name,
+            contact_email: prev.contact_email,
+          }));
+          return;
+        }
+        if (formData.job_title.trim()) return;
+        const draftId =
+          typeof window !== "undefined"
+            ? window.localStorage.getItem("jobDraftId")
+            : null;
+        const res = await base44.get<{ jobs?: any[] }>("/api/jobs/my");
+        if (!mounted) return;
+        const jobs = Array.isArray(res?.jobs) ? res.jobs : [];
+        const draft = draftId
+          ? jobs.find((job) => String(job?.id) === draftId)
+          : null;
+        if (!draft) {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("jobDraftId");
+            window.localStorage.removeItem("jobEditMode");
+          }
+          return;
+        }
+        setEditingJobId(String(draft?.id || ""));
+        setFormData((prev) => ({
+          ...prev,
+          job_title: draft?.job_title || prev.job_title,
+          company_name: draft?.company_name || prev.company_name,
+          contact_email: draft?.contact_email || prev.contact_email,
+          category: draft?.category || prev.category,
+          call_type: draft?.call_type || prev.call_type,
+          work_types: Array.isArray(draft?.work_types)
+            ? draft.work_types
+            : prev.work_types,
+          status: draft?.status || prev.status,
+          location: draft?.location || prev.location,
+          job_type: draft?.job_type || prev.job_type,
+          description: draft?.about_role || prev.description,
+          goals: Array.isArray(draft?.goals) ? draft.goals : prev.goals,
+          deliverables: draft?.deliverables || prev.deliverables,
+          start_date: draft?.start_date || prev.start_date,
+          end_date: draft?.end_date || prev.end_date,
+          talent_types: Array.isArray(draft?.talent_types)
+            ? draft.talent_types
+            : prev.talent_types,
+          region: draft?.region || prev.region,
+          language: draft?.language || prev.language,
+          required_skills: Array.isArray(draft?.required_skills)
+            ? draft.required_skills
+            : prev.required_skills,
+          needs_licensing: Boolean(draft?.needs_licensing),
+          usage_type: draft?.usage_type || prev.usage_type,
+          license_duration: draft?.license_duration || prev.license_duration,
+          territories: draft?.territories || prev.territories,
+          exclusivity: Boolean(draft?.exclusivity),
+          royalty_option: Boolean(draft?.royalty_option),
+          budget: draft?.budget ? String(draft.budget) : prev.budget,
+          payment_type: draft?.payment_type || prev.payment_type,
+          currency: draft?.currency || prev.currency,
+          work_with_agency: Boolean(draft?.work_with_agency),
+          invite_creator: Boolean(draft?.invite_creator),
+          invited_agency_ids: Array.isArray(draft?.invited_agency_ids)
+            ? draft.invited_agency_ids
+            : prev.invited_agency_ids,
+          invited_creator_ids: Array.isArray(draft?.invited_creator_ids)
+            ? draft.invited_creator_ids
+            : prev.invited_creator_ids,
+          brand_assets: Array.isArray(draft?.brand_assets)
+            ? draft.brand_assets
+            : prev.brand_assets,
+          confidential: Boolean(draft?.confidential),
+        }));
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("jobEditMode");
+        }
+      } catch {
+        // ignore draft load errors
+      }
+    };
+    loadDraft();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleNext = () => {
+    if (currentStep === 1) {
+      if (!formData.job_title.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Job Title is required.",
+        });
+        return;
+      }
+      if (!formData.contact_email.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Contact Email is required.",
+        });
+        return;
+      }
+      if (!formData.category) {
+        toast({
+          title: "Required Field",
+          description: "Category is required.",
+        });
+        return;
+      }
+      if (!formData.call_type) {
+        toast({
+          title: "Required Field",
+          description: "Call Type is required.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 2) {
+      if (!formData.job_type) {
+        toast({
+          title: "Required Field",
+          description: "Job Type is required.",
+        });
+        return;
+      }
+      if (!formData.description.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Description (About the role) is required.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      if (!formData.talent_types || formData.talent_types.length === 0) {
+        toast({
+          title: "Required Field",
+          description: "Please select at least one Talent Type.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 4 && formData.needs_licensing) {
+      if (!formData.usage_type) {
+        toast({
+          title: "Required Field",
+          description: "Usage Type is required for licensing.",
+        });
+        return;
+      }
+      if (!formData.license_duration) {
+        toast({
+          title: "Required Field",
+          description: "License Duration is required.",
+        });
+        return;
+      }
+      if (!formData.territories) {
+        toast({
+          title: "Required Field",
+          description: "Territories are required.",
+        });
+        return;
+      }
+    }
+
+    // Step 4 (Budget) if NO licensing, or Step 5 if HAS licensing
+    const budgetStep = formData.needs_licensing ? 5 : 4;
+    if (currentStep === budgetStep) {
+      if (!formData.budget) {
+        toast({ title: "Required Field", description: "Budget is required." });
+        return;
+      }
+      if (!formData.payment_type) {
+        toast({
+          title: "Required Field",
+          description: "Payment Type is required.",
+        });
+        return;
+      }
+    }
+
     if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
@@ -153,11 +441,234 @@ export default function PostJob() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    console.log("Job posting:", formData);
-    toast({ title: "Success", description: "Job posted successfully!" });
-    navigate(createPageUrl("BrandCampaignDashboard"));
+  const handleSubmit = async () => {
+    if (!formData.job_title.trim()) {
+      toast({ title: "Missing title", description: "Job title is required." });
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast({
+        title: "Missing description",
+        description: "About the role is required.",
+      });
+      return;
+    }
+    if (!formData.call_type) {
+      toast({
+        title: "Missing call type",
+        description: "Please select the call type for this job.",
+      });
+      return;
+    }
+    try {
+      setSubmitting(true);
+      if (editingJobId) {
+        await base44.put(`/api/jobs/${editingJobId}`, buildJobPayload());
+        toast({ title: "Success", description: "Job updated successfully!" });
+      } else {
+        await base44.post("/api/jobs", buildJobPayload());
+        toast({ title: "Success", description: "Job posted successfully!" });
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("jobDraftId");
+        window.localStorage.removeItem("jobEditMode");
+      }
+      navigate(createPageUrl("BrandDashboard"));
+    } catch (e: any) {
+      toast({
+        title: "Failed to post job",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const buildJobPayload = (statusOverride?: string) => {
+    const normalizedJobType = formData.job_type
+      ? formData.job_type.toLowerCase().replace(/\s+/g, "_")
+      : undefined;
+    const normalizedLocation = formData.location
+      ? formData.location.toLowerCase().replace(/\s+/g, "_")
+      : undefined;
+    const sanitizedAssets = Array.isArray(formData.brand_assets)
+      ? formData.brand_assets
+          .map((asset: any) => ({
+            name: asset?.name,
+            url: asset?.url,
+            path: asset?.path,
+            mime_type: asset?.mime_type,
+            size: asset?.size,
+          }))
+          .filter((asset) =>
+            Boolean(
+              String(asset?.url || asset?.path || asset?.name || "").trim(),
+            ),
+          )
+      : [];
+    return {
+      company_name: formData.company_name || undefined,
+      contact_email: formData.contact_email || undefined,
+      job_title: formData.job_title || undefined,
+      about_role: formData.description || undefined,
+      call_type: formData.call_type || undefined,
+      category: formData.category || undefined,
+      job_type: normalizedJobType,
+      location: normalizedLocation || undefined,
+      budget: formData.budget ? Number(formData.budget) : undefined,
+      payment_type: formData.payment_type || undefined,
+      currency: formData.currency || "USD",
+      deliverables: formData.deliverables || undefined,
+      start_date: formData.start_date || undefined,
+      end_date: formData.end_date || undefined,
+      status: statusOverride || formData.status || "open",
+      work_types: formData.work_types,
+      talent_types: formData.talent_types,
+      goals: formData.goals,
+      region: formData.region || undefined,
+      language: formData.language || undefined,
+      required_skills: formData.required_skills,
+      needs_licensing: formData.needs_licensing,
+      usage_type: formData.usage_type || undefined,
+      license_duration: formData.license_duration || undefined,
+      territories: formData.territories || undefined,
+      exclusivity: formData.exclusivity,
+      royalty_option: formData.royalty_option,
+      work_with_agency: formData.work_with_agency,
+      invite_creator: formData.invite_creator,
+      invited_agency_ids: formData.invited_agency_ids,
+      invited_creator_ids: formData.invited_creator_ids,
+      brand_assets: sanitizedAssets,
+      confidential: formData.confidential,
+    };
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      setSavingDraft(true);
+      const payload = buildJobPayload("draft");
+      const res = editingJobId
+        ? await base44.put<{ job?: any }>(`/api/jobs/${editingJobId}`, payload)
+        : await base44.post<{ job?: any }>("/api/jobs", payload);
+      const jobId = res?.job?.id || editingJobId;
+      if (jobId && typeof window !== "undefined") {
+        window.localStorage.setItem("jobDraftId", String(jobId));
+      }
+      toast({
+        title: editingJobId ? "Draft updated" : "Draft saved",
+        description: "You can come back and continue later.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to save draft",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const handleBrandAssetsUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    if (!supabase) {
+      toast({
+        title: "Upload unavailable",
+        description: "Storage is not configured for this environment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const session = await supabase.auth.getSession();
+      const userId = String(session.data.session?.user?.id || "brand");
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const previewUrl = URL.createObjectURL(file);
+          const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+          const path = `job-assets/${userId}/${Date.now()}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}_${safeName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file);
+          if (uploadError) throw uploadError;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          return {
+            name: file.name,
+            size: file.size,
+            url: String(data?.publicUrl || ""),
+            path,
+            preview_url: previewUrl,
+            mime_type: file.type,
+          };
+        }),
+      );
+      const valid = uploaded.filter(
+        (x) => String(x.url || "").trim().length > 0,
+      );
+      setFormData((prev) => ({
+        ...prev,
+        brand_assets: [...prev.brand_assets, ...valid],
+      }));
+    } catch (e: any) {
+      toast({
+        title: "Brand asset upload failed",
+        description: e?.message || "We could not upload one or more files.",
+        variant: "destructive",
+      });
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const toggleSelectedAgency = (agencyId: string) => {
+    setFormData((prev) => {
+      const next = new Set(prev.invited_agency_ids);
+      if (next.has(agencyId)) {
+        next.delete(agencyId);
+      } else {
+        next.add(agencyId);
+      }
+      return { ...prev, invited_agency_ids: Array.from(next) };
+    });
+  };
+
+  const toggleSelectedCreator = (creatorId: string) => {
+    setFormData((prev) => {
+      const next = new Set(prev.invited_creator_ids);
+      if (next.has(creatorId)) {
+        next.delete(creatorId);
+      } else {
+        next.add(creatorId);
+      }
+      return { ...prev, invited_creator_ids: Array.from(next) };
+    });
+  };
+
+  const filteredAgencies = connectedAgencies.filter((agency) => {
+    const name = String(
+      agency?.display_name || agency?.agency_name || "",
+    ).toLowerCase();
+    return agencySearch.trim() === ""
+      ? true
+      : name.includes(agencySearch.trim().toLowerCase());
+  });
+
+  const filteredCreators = connectedCreators.filter((creator) => {
+    const name = String(
+      creator?.full_name || creator?.display_name || "",
+    ).toLowerCase();
+    return creatorSearch.trim() === ""
+      ? true
+      : name.includes(creatorSearch.trim().toLowerCase());
+  });
 
   const toggleArrayItem = (field, value) => {
     setFormData((prev) => ({
@@ -186,10 +697,6 @@ export default function PostJob() {
     }));
   };
 
-  const showDemographicFilters =
-    formData.talent_types.includes("Creator (Licensing Call)") ||
-    formData.talent_types.includes("Model (Licensing Call)");
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-6">
       <div className="max-w-4xl mx-auto">
@@ -197,7 +704,13 @@ export default function PostJob() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate(createPageUrl("BrandDashboard"));
+              }
+            }}
             className="mb-4 rounded-none"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -319,6 +832,28 @@ export default function PostJob() {
               </div>
 
               <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Call Type *
+                </Label>
+                <Select
+                  value={formData.call_type}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, call_type: v })
+                  }
+                >
+                  <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                    <SelectValue placeholder="Select call type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="creator">Creator call</SelectItem>
+                    <SelectItem value="agency">Agency call</SelectItem>
+                    <SelectItem value="athlete">Athlete call</SelectItem>
+                    <SelectItem value="ai_artist">AI artist call</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Type of Work (Select all that apply)
                 </Label>
@@ -424,7 +959,7 @@ export default function PostJob() {
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -432,7 +967,6 @@ export default function PostJob() {
               <div className="flex justify-end pt-6">
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.job_title || !formData.contact_email}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Project Overview
@@ -456,14 +990,21 @@ export default function PostJob() {
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   Location
                 </Label>
-                <Input
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
+                <Select
+                  value={formData.location || "remote"}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, location: v })
                   }
-                  placeholder="Remote (default)"
-                  className="border-2 border-gray-300 rounded-none"
-                />
+                >
+                  <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="remote">Remote</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="on_site">On-site</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-gray-500 mt-1">
                   Most jobs are automatically labeled as remote
                 </p>
@@ -509,33 +1050,20 @@ export default function PostJob() {
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Goals & KPIs
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    "Awareness",
-                    "Sales",
-                    "Social Reach",
-                    "AI R&D",
-                    "Film Production",
-                    "Brand Building",
-                  ].map((goal) => (
-                    <div
-                      key={goal}
-                      className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                    >
-                      <Checkbox
-                        id={goal}
-                        checked={formData.goals.includes(goal)}
-                        onCheckedChange={() => toggleArrayItem("goals", goal)}
-                        className="border-2 border-gray-400"
-                      />
-                      <label
-                        htmlFor={goal}
-                        className="text-sm text-gray-700 cursor-pointer flex-1"
-                      >
-                        {goal}
-                      </label>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 gap-3">
+                  <Textarea
+                    value={formData.goals.join("\\n")}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        goals: e.target.value
+                          ? e.target.value.split("\\n")
+                          : [],
+                      })
+                    }
+                    placeholder="Enter your goals & KPIs (one per line)..."
+                    className="border-2 border-gray-300 rounded-none w-full min-h-[100px]"
+                  />
                 </div>
               </div>
 
@@ -593,7 +1121,6 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.description || !formData.job_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Talent Requirements
@@ -678,60 +1205,6 @@ export default function PostJob() {
                 </div>
               </div>
 
-              {/* Demographic Filters - Only show if licensing options selected */}
-              {showDemographicFilters && (
-                <div className="p-4 border-2 border-purple-200 bg-purple-50 rounded-none">
-                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Demographic Filters (For Licensing)
-                  </Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Gender
-                      </Label>
-                      <Select
-                        value={formData.gender}
-                        onValueChange={(v) =>
-                          setFormData({ ...formData, gender: v })
-                        }
-                      >
-                        <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                          <SelectValue placeholder="Any" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="non_binary">Non-Binary</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Age Range
-                      </Label>
-                      <Select
-                        value={formData.age_range}
-                        onValueChange={(v) =>
-                          setFormData({ ...formData, age_range: v })
-                        }
-                      >
-                        <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                          <SelectValue placeholder="Any" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="18-25">18-25</SelectItem>
-                          <SelectItem value="26-35">26-35</SelectItem>
-                          <SelectItem value="36-45">36-45</SelectItem>
-                          <SelectItem value="46+">46+</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -789,38 +1262,6 @@ export default function PostJob() {
                   ))}
                 </div>
               </div>
-
-              {/* For Licensing Section */}
-              {showDemographicFilters && (
-                <div className="p-4 border-2 border-amber-200 bg-amber-50 rounded-none">
-                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    For Licensing (Optional Metrics)
-                  </Label>
-                  <div className="grid grid-cols-1 gap-3">
-                    {licensingMetrics.map((metric) => (
-                      <div
-                        key={metric}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 bg-white rounded-none hover:bg-gray-50"
-                      >
-                        <Checkbox
-                          id={metric}
-                          checked={formData.licensing_metrics.includes(metric)}
-                          onCheckedChange={() =>
-                            toggleArrayItem("licensing_metrics", metric)
-                          }
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor={metric}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          {metric}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex items-center space-x-3 p-4 border-2 border-blue-200 bg-blue-50 rounded-none">
                 <Checkbox
@@ -1105,7 +1546,6 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.budget || !formData.payment_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Collaboration
@@ -1142,26 +1582,66 @@ export default function PostJob() {
                     id="work_with_agency"
                     checked={formData.work_with_agency}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, work_with_agency: checked })
+                      setFormData({
+                        ...formData,
+                        work_with_agency: checked,
+                        invited_agency_ids: checked
+                          ? formData.invited_agency_ids
+                          : [],
+                      })
                     }
                     className="border-2 border-gray-400"
                   />
                 </div>
 
                 {formData.work_with_agency && (
-                  <Card className="p-4 bg-blue-50 border-2 border-blue-200 rounded-none">
-                    <p className="text-sm text-gray-700 mb-3">
-                      Search and invite agencies:
+                  <Card className="p-4 bg-blue-50 border-2 border-blue-200 rounded-none space-y-3">
+                    <p className="text-sm text-gray-700">
+                      Search and invite connected agencies:
                     </p>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Search agencies..."
-                        className="flex-1 border-2 border-gray-300 rounded-none"
-                      />
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-none">
-                        Search
-                      </Button>
-                    </div>
+                    <Input
+                      value={agencySearch}
+                      onChange={(e) => setAgencySearch(e.target.value)}
+                      placeholder="Search agencies..."
+                      className="border-2 border-gray-300 rounded-none"
+                    />
+                    {loadingAgencies ? (
+                      <p className="text-xs text-gray-600">
+                        Loading connected agencies...
+                      </p>
+                    ) : filteredAgencies.length === 0 ? (
+                      <p className="text-xs text-gray-600">
+                        No connected agencies found.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredAgencies.map((agency) => {
+                          const agencyId = String(
+                            agency?.id || agency?.agency_id || "",
+                          );
+                          const label =
+                            agency?.display_name ||
+                            agency?.agency_name ||
+                            "Agency";
+                          return (
+                            <label
+                              key={agencyId}
+                              className="flex items-center justify-between gap-3 bg-white border border-blue-100 rounded-md px-3 py-2 text-sm text-gray-800"
+                            >
+                              <span className="flex-1">{label}</span>
+                              <Checkbox
+                                checked={formData.invited_agency_ids.includes(
+                                  agencyId,
+                                )}
+                                onCheckedChange={() =>
+                                  toggleSelectedAgency(agencyId)
+                                }
+                              />
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </Card>
                 )}
 
@@ -1181,34 +1661,64 @@ export default function PostJob() {
                     id="invite_creator"
                     checked={formData.invite_creator}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, invite_creator: checked })
+                      setFormData({
+                        ...formData,
+                        invite_creator: checked,
+                        invited_creator_ids: checked
+                          ? formData.invited_creator_ids
+                          : [],
+                      })
                     }
                     className="border-2 border-gray-400"
                   />
                 </div>
 
                 {formData.invite_creator && (
-                  <Card className="p-4 bg-purple-50 border-2 border-purple-200 rounded-none">
-                    <p className="text-sm text-gray-700 mb-3">
-                      Filter creators by:
+                  <Card className="p-4 bg-purple-50 border-2 border-purple-200 rounded-none space-y-3">
+                    <p className="text-sm text-gray-700">
+                      Search and invite connected creators:
                     </p>
-                    <div className="flex gap-2 flex-wrap">
-                      <Badge className="bg-purple-200 text-purple-800">
-                        Top Rated
-                      </Badge>
-                      <Badge className="bg-purple-200 text-purple-800">
-                        Recent Projects
-                      </Badge>
-                      <Badge className="bg-purple-200 text-purple-800">
-                        Sora
-                      </Badge>
-                      <Badge className="bg-purple-200 text-purple-800">
-                        Runway
-                      </Badge>
-                      <Badge className="bg-purple-200 text-purple-800">
-                        Pika
-                      </Badge>
-                    </div>
+                    <Input
+                      value={creatorSearch}
+                      onChange={(e) => setCreatorSearch(e.target.value)}
+                      placeholder="Search creators..."
+                      className="border-2 border-gray-300 rounded-none"
+                    />
+                    {loadingCreators ? (
+                      <p className="text-xs text-gray-600">
+                        Loading connected creators...
+                      </p>
+                    ) : filteredCreators.length === 0 ? (
+                      <p className="text-xs text-gray-600">
+                        No connected creators found.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredCreators.map((creator) => {
+                          const creatorId = String(creator?.id || "");
+                          const label =
+                            creator?.full_name ||
+                            creator?.display_name ||
+                            "Creator";
+                          return (
+                            <label
+                              key={creatorId}
+                              className="flex items-center justify-between gap-3 bg-white border border-purple-100 rounded-md px-3 py-2 text-sm text-gray-800"
+                            >
+                              <span className="flex-1">{label}</span>
+                              <Checkbox
+                                checked={formData.invited_creator_ids.includes(
+                                  creatorId,
+                                )}
+                                onCheckedChange={() =>
+                                  toggleSelectedCreator(creatorId)
+                                }
+                              />
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </Card>
                 )}
               </div>
@@ -1217,7 +1727,10 @@ export default function PostJob() {
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   Attach Brand Assets
                 </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-none p-8 text-center hover:border-blue-600 transition-colors cursor-pointer">
+                <label
+                  htmlFor="job-brand-assets-upload"
+                  className="border-2 border-dashed border-gray-300 rounded-none p-8 text-center hover:border-blue-600 transition-colors cursor-pointer block"
+                >
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-700 mb-1">
                     Upload logos, media kits, or reference content
@@ -1225,7 +1738,60 @@ export default function PostJob() {
                   <p className="text-xs text-gray-500">
                     PDF, JPG, PNG, MP4 up to 100MB
                   </p>
-                </div>
+                </label>
+                <input
+                  id="job-brand-assets-upload"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleBrandAssetsUpload}
+                />
+                {formData.brand_assets.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {formData.brand_assets.map((asset, idx) => {
+                      const url = String(
+                        asset?.url || asset?.preview_url || "",
+                      );
+                      const mimeType = String(asset?.mime_type || "");
+                      const isImage =
+                        mimeType.startsWith("image/") ||
+                        /\\.(png|jpe?g|gif|webp)$/i.test(url);
+                      return (
+                        <div
+                          key={`${url || asset?.name || idx}`}
+                          className="relative border border-gray-200 rounded-md overflow-hidden bg-white"
+                        >
+                          {isImage ? (
+                            <img
+                              src={url}
+                              alt={asset?.name || "Brand asset"}
+                              className="h-24 w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-24 flex items-center justify-center text-xs text-gray-600 bg-gray-50">
+                              {asset?.name || "File uploaded"}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                brand_assets: prev.brand_assets.filter(
+                                  (_, i) => i !== idx,
+                                ),
+                              }))
+                            }
+                            className="absolute top-1 right-1 bg-white/90 border border-gray-200 rounded-full p-1 hover:bg-white"
+                            aria-label="Remove asset"
+                          >
+                            <X className="w-3 h-3 text-gray-700" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -1373,19 +1939,19 @@ export default function PostJob() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    toast({ title: "Success", description: "Saved as draft!" })
-                  }
+                  onClick={handleSaveDraft}
                   className="flex-1 border-2 border-gray-300 rounded-none"
+                  disabled={savingDraft}
                 >
-                  Save as Draft
+                  {savingDraft ? "Saving..." : "Save as Draft"}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-none"
+                  disabled={submitting}
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Publish to Marketplace
+                  {submitting ? "Publishing..." : "Publish to Marketplace"}
                 </Button>
               </div>
             </div>

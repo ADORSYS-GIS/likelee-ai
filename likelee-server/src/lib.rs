@@ -32,6 +32,7 @@ pub mod expenses;
 pub mod face_profiles;
 pub mod health;
 pub mod invoices;
+pub mod job_postings;
 pub mod jobs;
 pub mod kyc;
 pub mod license_submissions;

@@ -1,4 +1,4 @@
-use crate::auth::AuthUser;
+use crate::auth::{AuthUser, RoleGuard};
 use crate::config::AppState;
 use axum::{
     extract::{Query, State},
@@ -94,6 +94,7 @@ pub async fn get_analytics_dashboard(
     Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<AnalyticsDashboard>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let mode = parse_mode(q.mode.as_deref());
     let now = Utc::now();
@@ -698,6 +699,7 @@ pub async fn get_clients_campaigns_analytics(
     Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
     let mode = parse_mode(q.mode.as_deref());
@@ -1236,6 +1238,7 @@ pub async fn get_roster_insights(
     Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<RosterInsightsResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let mode = parse_mode(q.mode.as_deref());
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
@@ -1951,6 +1954,7 @@ pub async fn get_royalties_payouts(
     Query(_q): Query<AnalyticsModeQuery>, // Accepted for consistency
     auth_user: AuthUser,
 ) -> Result<Json<RoyaltiesPayoutsResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let now = Utc::now();
 
@@ -2081,6 +2085,7 @@ pub async fn get_expired_licenses(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let today = Utc::now().format("%Y-%m-%d").to_string();
 
     // Fetch expired approved requests

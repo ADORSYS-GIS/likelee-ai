@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { getBrandProfile } from "@/api/functions";
+import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,6 +61,7 @@ import {
   Loader2,
   MessageSquare,
   RefreshCw,
+  Maximize2,
   Trash2,
 } from "lucide-react";
 import { reviewOfferDeliverable, listOfferDeliverables } from "@/api/functions";
@@ -67,6 +70,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -76,7 +80,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -107,6 +110,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const ensureProtocol = (url: string | null | undefined) => {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
 
 // Mock data
 const mockBrand = {
@@ -633,8 +646,123 @@ export default function BrandDashboard() {
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
   const [campaignHubTab, setCampaignHubTab] = useState<
-    "active" | "pending_approval" | "completed" | "inbox"
+    "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
+  const [brandJobs, setBrandJobs] = useState<any[]>([]);
+  const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobStatusFilter, setJobStatusFilter] = useState("all");
+  const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
+
+  const resolveJobAssetUrl = (asset: any) => {
+    if (!asset) return "";
+    if (typeof asset === "string") {
+      if (asset.startsWith("http")) return asset;
+      if (asset.includes("/")) {
+        return supabase.storage.from("likelee-public").getPublicUrl(asset).data
+          ?.publicUrl;
+      }
+      return "";
+    }
+    if (asset.url) return String(asset.url);
+    if (asset.public_url) return String(asset.public_url);
+    if (asset.asset_url) return String(asset.asset_url);
+    if (asset.file_url) return String(asset.file_url);
+    if (asset.preview_url) return String(asset.preview_url);
+    if (asset.path) {
+      return supabase.storage.from("likelee-public").getPublicUrl(asset.path)
+        .data?.publicUrl;
+    }
+    if (asset.name && String(asset.name).includes("/")) {
+      return supabase.storage.from("likelee-public").getPublicUrl(asset.name)
+        .data?.publicUrl;
+    }
+    return "";
+  };
+
+  const resolveResumeUrl = (app: any) => {
+    if (!app) return "";
+    if (app.resume_url) return String(app.resume_url);
+    if (app.resume_path) {
+      return supabase.storage
+        .from("likelee-public")
+        .getPublicUrl(app.resume_path).data?.publicUrl;
+    }
+    return "";
+  };
+
+  const [selectedJobForApplications, setSelectedJobForApplications] = useState<
+    any | null
+  >(null);
+  const [selectedJobApplications, setSelectedJobApplications] = useState<any[]>(
+    [],
+  );
+  const [loadingJobApplications, setLoadingJobApplications] = useState(false);
+  const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
+    null,
+  );
+
+  const resolveMissingJobAssetUrls = async (job: any) => {
+    if (!supabase || !job?.brand_id) return;
+    if (!Array.isArray(job.brand_assets) || job.brand_assets.length === 0)
+      return;
+    const missing = job.brand_assets.filter((asset: any) => {
+      const url = resolveJobAssetUrl(asset);
+      if (url) return false;
+      if (typeof asset === "string") return asset.trim().length > 0;
+      return Boolean(asset?.name);
+    });
+    if (missing.length === 0) return;
+    try {
+      const { data } = await supabase.storage
+        .from("likelee-public")
+        .list(`job-assets/${job.brand_id}`, { limit: 200 });
+      if (!data || data.length === 0) return;
+      const updated = job.brand_assets.map((asset: any) => {
+        const url = resolveJobAssetUrl(asset);
+        const rawName =
+          typeof asset === "string" ? asset : String(asset?.name || "");
+        if (url || !rawName) return asset;
+        const safeName = rawName.replace(/[^\w.\-]+/g, "_");
+        const match = data.find((item) => item.name.endsWith(safeName));
+        if (!match) return asset;
+        const path = `job-assets/${job.brand_id}/${match.name}`;
+        const publicUrl = supabase.storage
+          .from("likelee-public")
+          .getPublicUrl(path).data?.publicUrl;
+        if (typeof asset === "string") {
+          return { name: rawName, url: publicUrl, path };
+        }
+        return { ...asset, name: rawName, url: publicUrl, path };
+      });
+      setSelectedJobForApplications((prev) =>
+        prev && prev.id === job.id ? { ...prev, brand_assets: updated } : prev,
+      );
+      setBrandJobs((prev) =>
+        prev.map((item) =>
+          item.id === job.id ? { ...item, brand_assets: updated } : item,
+        ),
+      );
+    } catch {
+      // ignore resolve failures
+    }
+  };
+
+  const formatJobLabel = (value: string) =>
+    value
+      ? value
+          .split("_")
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(" ")
+      : "";
+  useEffect(() => {
+    if (
+      !selectedJobForApplications ||
+      !selectedJobForApplications?._showDetailsOnly
+    )
+      return;
+    resolveMissingJobAssetUrls(selectedJobForApplications);
+  }, [selectedJobForApplications]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
@@ -659,11 +787,12 @@ export default function BrandDashboard() {
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
+  const { toast } = useToast();
+
   const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
-  const { toast } = useToast();
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
@@ -732,21 +861,21 @@ export default function BrandDashboard() {
   useEffect(() => {
     const sectionFromQuery = String(searchParams.get("section") || "").trim();
     if (sectionFromQuery) {
-      if (sectionFromQuery === "campaigns") {
-        setActiveSection("campaigns-hub");
-      } else {
-        setActiveSection(sectionFromQuery);
+      const targetSection =
+        sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
+      if (activeSection !== targetSection) {
+        setActiveSection(targetSection);
       }
       return;
     }
 
     const sectionFromState = (location.state as any)?.activeSection;
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
-      if (sectionFromState === "campaigns") {
-        setActiveSection("campaigns-hub");
-        return;
+      const targetSection =
+        sectionFromState === "campaigns" ? "campaigns-hub" : sectionFromState;
+      if (activeSection !== targetSection) {
+        setActiveSection(targetSection);
       }
-      setActiveSection(sectionFromState);
     }
   }, [location.state, searchParams]);
 
@@ -766,6 +895,30 @@ export default function BrandDashboard() {
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);
   }, [searchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadBrandProfile = async () => {
+      try {
+        const profile = await getBrandProfile();
+        if (!mounted || !profile) return;
+        setBrand((prev) => ({
+          ...prev,
+          name: profile?.company_name || profile?.name || prev.name || "Brand",
+          industry: profile?.industry || prev.industry,
+          website: profile?.website || prev.website,
+          contact_email: profile?.email || prev.contact_email,
+          logo: profile?.logo_url || prev.logo,
+        }));
+      } catch {
+        // Keep mock fallback on failure.
+      }
+    };
+    loadBrandProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (activeSection !== "campaigns-inbox") return;
@@ -798,6 +951,61 @@ export default function BrandDashboard() {
       clearInterval(timer);
     };
   }, [activeSection]);
+
+  useEffect(() => {
+    if (campaignHubTab !== "jobs") return;
+    let mounted = true;
+    (async () => {
+      try {
+        if (!mounted) return;
+        setLoadingBrandJobs(true);
+        const res = await base44.get<{ jobs?: any[] }>("/api/jobs/my");
+        if (!mounted) return;
+        setBrandJobs(Array.isArray(res?.jobs) ? res.jobs : []);
+      } catch (e) {
+        if (!mounted) return;
+        setBrandJobs([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingBrandJobs(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [campaignHubTab]);
+
+  const updateJobStatus = async (jobId: string, status: string) => {
+    try {
+      const res = await base44.put<{ job?: any }>(`/api/jobs/${jobId}`, {
+        status,
+      });
+      const updated = res?.job;
+      if (updated?.id) {
+        setBrandJobs((prev) =>
+          prev.map((job) => (job.id === updated.id ? updated : job)),
+        );
+        toast({
+          title: "Job updated",
+          description: `Status set to ${status}.`,
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Failed to update job",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startJobEdit = (jobId: string) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("jobDraftId", String(jobId));
+      window.localStorage.setItem("jobEditMode", "1");
+    }
+    navigate(createPageUrl("PostJob"));
+  };
 
   useEffect(() => {
     if (!authToken) return;
@@ -4906,7 +5114,16 @@ export default function BrandDashboard() {
           </Card>
           <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none">
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.localStorage.removeItem("jobDraftId");
+                  window.localStorage.removeItem("jobEditMode");
+                }
+                navigate(createPageUrl("PostJob"));
+              }}
+            >
               Post Job
             </Button>
           </Card>
@@ -4944,10 +5161,309 @@ export default function BrandDashboard() {
               >
                 Inbox
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("jobs")}
+                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Jobs
+              </Button>
             </div>
           </div>
           {campaignHubTab === "inbox" ? (
             renderInboxSubtab()
+          ) : campaignHubTab === "jobs" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Job Postings
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Manage published jobs, drafts, and applications.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.localStorage.removeItem("jobDraftId");
+                      window.localStorage.removeItem("jobEditMode");
+                    }
+                    navigate(createPageUrl("PostJob"));
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                >
+                  Post Job
+                </Button>
+              </div>
+              <Card className="p-4 bg-white border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="md:col-span-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                      <Input
+                        value={jobSearch}
+                        onChange={(e) => setJobSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setJobSearch("");
+                        }}
+                        placeholder="Search job title, call type, or role"
+                        className="pl-9 pr-9"
+                      />
+                      {jobSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setJobSearch("")}
+                          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                          aria-label="Clear search"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <Select
+                    value={jobStatusFilter}
+                    onValueChange={setJobStatusFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={jobCallTypeFilter}
+                    onValueChange={setJobCallTypeFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Call type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All call types</SelectItem>
+                      <SelectItem value="creator">Creator call</SelectItem>
+                      <SelectItem value="agency">Agency call</SelectItem>
+                      <SelectItem value="athlete">Athlete call</SelectItem>
+                      <SelectItem value="ai_artist">AI artist call</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </Card>
+              {loadingBrandJobs && (
+                <Card className="p-6 text-sm text-gray-600">
+                  Loading job postings...
+                </Card>
+              )}
+              {!loadingBrandJobs && brandJobs.length === 0 && (
+                <Card className="p-8 text-center">
+                  <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="font-semibold text-gray-800">
+                    No job postings yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Post your first job to start receiving applications.
+                  </p>
+                </Card>
+              )}
+              {!loadingBrandJobs &&
+                brandJobs
+                  .filter((job) => {
+                    const status = String(job?.status || "").toLowerCase();
+                    const callType = String(job?.call_type || "").toLowerCase();
+                    const haystack =
+                      `${job?.job_title || ""} ${job?.about_role || ""} ${callType}`.toLowerCase();
+                    if (
+                      jobSearch.trim() &&
+                      !haystack.includes(jobSearch.trim().toLowerCase())
+                    ) {
+                      return false;
+                    }
+                    if (
+                      jobStatusFilter !== "all" &&
+                      status !== jobStatusFilter
+                    ) {
+                      return false;
+                    }
+                    if (
+                      jobCallTypeFilter !== "all" &&
+                      callType !== jobCallTypeFilter
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((job) => (
+                    <Card
+                      key={job.id}
+                      className="p-6 bg-white border border-slate-200 border-l-4 border-l-blue-500 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                                {String(job.job_title || job.title || "J")
+                                  .trim()
+                                  .slice(0, 1)
+                                  .toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                  {job.job_title || job.title}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                  {formatJobLabel(job.location || "Remote")} •{" "}
+                                  {formatJobLabel(job.job_type || "Project")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge
+                                variant="outline"
+                                className={`border ${
+                                  job.status === "open"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                    : job.status === "draft"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50"
+                                      : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
+                                }`}
+                              >
+                                {job.status || "open"}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
+                              >
+                                {(job.call_type || "call").replace("_", " ")}
+                              </Badge>
+                              {job.category ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-50"
+                                >
+                                  {String(job.category).replace("_", " ")}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {job.about_role ||
+                                "No role description added yet."}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-start lg:items-end gap-3">
+                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                              {job.budget ? (
+                                <span>
+                                  Budget {job.budget} {job.currency || "USD"}
+                                </span>
+                              ) : null}
+                              {job.start_date ? (
+                                <span>Start {job.start_date}</span>
+                              ) : null}
+                              {job.end_date ? (
+                                <span>End {job.end_date}</span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                          {job.status === "open" && (
+                            <Button
+                              variant="outline"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() =>
+                                updateJobStatus(String(job.id), "closed")
+                              }
+                            >
+                              Close Job
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            className="border-2 rounded-md"
+                            onClick={() =>
+                              setSelectedJobForApplications({
+                                ...job,
+                                _showDetailsOnly: true,
+                              })
+                            }
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-2 rounded-md"
+                            onClick={async () => {
+                              setSelectedJobForApplications(job);
+                              setLoadingJobApplications(true);
+                              try {
+                                const res = await base44.get<{
+                                  applications?: any[];
+                                }>(`/api/jobs/${job.id}/applications`);
+                                setSelectedJobApplications(
+                                  Array.isArray(res?.applications)
+                                    ? res.applications
+                                    : [],
+                                );
+                              } catch {
+                                setSelectedJobApplications([]);
+                              } finally {
+                                setLoadingJobApplications(false);
+                              }
+                            }}
+                          >
+                            View Applications
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+              {!loadingBrandJobs &&
+                brandJobs.length > 0 &&
+                brandJobs.filter((job) => {
+                  const status = String(job?.status || "").toLowerCase();
+                  const callType = String(job?.call_type || "").toLowerCase();
+                  const haystack =
+                    `${job?.job_title || ""} ${job?.about_role || ""} ${callType}`.toLowerCase();
+                  if (
+                    jobSearch.trim() &&
+                    !haystack.includes(jobSearch.trim().toLowerCase())
+                  )
+                    return false;
+                  if (jobStatusFilter !== "all" && status !== jobStatusFilter)
+                    return false;
+                  if (
+                    jobCallTypeFilter !== "all" &&
+                    callType !== jobCallTypeFilter
+                  )
+                    return false;
+                  return true;
+                }).length === 0 && (
+                  <Card className="p-8 text-center">
+                    <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="font-semibold text-gray-800">
+                      No results found
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Try different keywords or adjust your filters.
+                    </p>
+                    {jobSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setJobSearch("")}
+                        className="mt-3 text-sm text-blue-600 hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </Card>
+                )}
+            </div>
           ) : (
             <div className="space-y-4">
               {campaignsForHub.map((campaign) => (
@@ -4964,7 +5480,7 @@ export default function BrandDashboard() {
                         {campaign.creators.join(", ")}
                       </p>
                     </div>
-                    <Button variant="outline" className="border-2 rounded-none">
+                    <Button variant="outline" className="border-2 rounded-md">
                       View Details
                     </Button>
                   </div>
@@ -7237,11 +7753,14 @@ export default function BrandDashboard() {
     <div className="flex h-screen bg-gray-50">
       {/* Hire Modal - 3 Options */}
       <Dialog open={showHireModal} onOpenChange={setShowHireModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Hire {selectedCreator?.name}
             </DialogTitle>
+            <DialogDescription>
+              Define contract terms before hiring this creator.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
@@ -7322,6 +7841,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Campaign Contract
             </DialogTitle>
+            <DialogDescription>
+              View the campaign contract details.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-6">
@@ -7403,6 +7925,788 @@ export default function BrandDashboard() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={!!selectedJobForApplications}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedJobForApplications(null);
+            setSelectedJobApplications([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b border-gray-100 pb-3">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {selectedJobForApplications?._showDetailsOnly
+                ? "Job Details"
+                : "Applications"}
+            </DialogTitle>
+            <DialogDescription>
+              View details for this job posting or review submitted
+              applications.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedJobForApplications?._showDetailsOnly ? (
+            <div className="space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="mt-3 text-2xl font-bold text-gray-900">
+                    {selectedJobForApplications.job_title ||
+                      selectedJobForApplications.title}
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-800 mt-1">
+                    {selectedJobForApplications.company_name || "Brand"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
+                  >
+                    {(selectedJobForApplications.call_type || "call").replace(
+                      "_",
+                      " ",
+                    )}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
+                  >
+                    {selectedJobForApplications.status || "open"}
+                  </Badge>
+                  {selectedJobForApplications.category && (
+                    <Badge
+                      variant="outline"
+                      className="bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    >
+                      {String(selectedJobForApplications.category).replace(
+                        "_",
+                        " ",
+                      )}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap gap-2">
+                  {(selectedJobForApplications.work_types || []).map(
+                    (type: string) => (
+                      <Badge
+                        key={type}
+                        variant="outline"
+                        className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-50"
+                      >
+                        {type}
+                      </Badge>
+                    ),
+                  )}
+                </div>
+                <div className="text-sm font-semibold text-gray-900">
+                  About the role
+                </div>
+                <div className="text-sm text-gray-700 whitespace-pre-line">
+                  {selectedJobForApplications.about_role ||
+                    "No role description provided."}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium text-gray-900">Location:</span>{" "}
+                    {formatJobLabel(
+                      selectedJobForApplications.location || "Remote",
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900">Job type:</span>{" "}
+                    {formatJobLabel(
+                      selectedJobForApplications.job_type || "Project",
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900">Timeline:</span>{" "}
+                    {selectedJobForApplications.start_date || "—"}
+                    {selectedJobForApplications.end_date
+                      ? ` → ${selectedJobForApplications.end_date}`
+                      : ""}
+                  </div>
+                  {selectedJobForApplications.goals &&
+                    selectedJobForApplications.goals.length > 0 && (
+                      <div className="md:col-span-2">
+                        <span className="font-medium text-gray-900">
+                          Goals:
+                        </span>{" "}
+                        {selectedJobForApplications.goals.join(", ")}
+                      </div>
+                    )}
+                  {selectedJobForApplications.deliverables && (
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        Deliverables:
+                      </span>{" "}
+                      {selectedJobForApplications.deliverables}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Talent Requirements
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedJobForApplications.talent_types || []).map(
+                    (type: string) => (
+                      <Badge
+                        key={type}
+                        variant="outline"
+                        className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-50"
+                      >
+                        {type}
+                      </Badge>
+                    ),
+                  )}
+                  {(selectedJobForApplications.required_skills || []).map(
+                    (skill: string) => (
+                      <Badge
+                        key={skill}
+                        variant="outline"
+                        className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-50"
+                      >
+                        {skill}
+                      </Badge>
+                    ),
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {selectedJobForApplications.region && (
+                    <span className="mr-3">
+                      <span className="font-medium text-gray-900">Region:</span>{" "}
+                      {selectedJobForApplications.region}
+                    </span>
+                  )}
+                  {selectedJobForApplications.language && (
+                    <span>
+                      <span className="font-medium text-gray-900">
+                        Language:
+                      </span>{" "}
+                      {selectedJobForApplications.language}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium text-gray-900">
+                    Licensing required:
+                  </span>{" "}
+                  {selectedJobForApplications.needs_licensing ? "Yes" : "No"}
+                </div>
+              </section>
+
+              {selectedJobForApplications.needs_licensing && (
+                <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Licensing Details
+                  </h4>
+                  <div className="text-sm text-gray-600">
+                    {selectedJobForApplications.usage_type && (
+                      <span className="mr-3">
+                        <span className="font-medium text-gray-900">
+                          Usage:
+                        </span>{" "}
+                        {selectedJobForApplications.usage_type}
+                      </span>
+                    )}
+                    {selectedJobForApplications.license_duration && (
+                      <span className="mr-3">
+                        <span className="font-medium text-gray-900">
+                          Duration:
+                        </span>{" "}
+                        {String(
+                          selectedJobForApplications.license_duration,
+                        ).replace(/_/g, " ")}
+                      </span>
+                    )}
+                    {selectedJobForApplications.territories && (
+                      <span>
+                        <span className="font-medium text-gray-900">
+                          Territories:
+                        </span>{" "}
+                        {selectedJobForApplications.territories}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <span className="mr-3">
+                      <span className="font-medium text-gray-900">
+                        Exclusivity:
+                      </span>{" "}
+                      {selectedJobForApplications.exclusivity ? "Yes" : "No"}
+                    </span>
+                    <span>
+                      <span className="font-medium text-gray-900">
+                        Royalty option:
+                      </span>{" "}
+                      {selectedJobForApplications.royalty_option ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Budget & Compensation
+                </h4>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium text-gray-900">Budget:</span>{" "}
+                  {selectedJobForApplications.budget
+                    ? `${selectedJobForApplications.budget} ${selectedJobForApplications.currency || "USD"}`
+                    : "Not specified"}
+                </div>
+                {selectedJobForApplications.payment_type && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-900">
+                      Payment type:
+                    </span>{" "}
+                    {selectedJobForApplications.payment_type}
+                  </div>
+                )}
+              </section>
+
+              {(!selectedJobForApplications.confidential ||
+                selectedJobForApplications.is_invited_viewer) &&
+                (selectedJobForApplications.work_with_agency ||
+                  selectedJobForApplications.invite_creator ||
+                  (selectedJobForApplications.invited_agency_ids || []).length >
+                    0 ||
+                  (selectedJobForApplications.invited_creator_ids || [])
+                    .length > 0 ||
+                  (selectedJobForApplications.invited_agencies || []).length >
+                    0 ||
+                  (selectedJobForApplications.invited_creators || []).length >
+                    0) && (
+                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Collaboration Preferences
+                    </h4>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">
+                        Work with agency:
+                      </span>{" "}
+                      {selectedJobForApplications.work_with_agency
+                        ? "Yes"
+                        : "No"}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">
+                        Invite creator:
+                      </span>{" "}
+                      {selectedJobForApplications.invite_creator ? "Yes" : "No"}
+                    </div>
+                    {/* Agencies */}
+                    {(Array.isArray(
+                      selectedJobForApplications.invited_agencies,
+                    ) &&
+                      selectedJobForApplications.invited_agencies.length > 0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.declined_agencies,
+                    ) &&
+                      selectedJobForApplications.declined_agencies.length >
+                        0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_agencies,
+                    ) &&
+                      selectedJobForApplications.accepted_agencies.length >
+                        0) ? (
+                      <div className="pt-1">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                          Agencies
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {/* Show Accepted/Pending first, then Declined */}
+                          {[
+                            ...(selectedJobForApplications.invited_agencies ||
+                              []),
+                            ...(selectedJobForApplications.accepted_agencies ||
+                              []),
+                            ...(selectedJobForApplications.declined_agencies ||
+                              []),
+                          ].map((agency: any, idx: number) => {
+                            const agencyId =
+                              agency?.id || agency?.agency_id || idx;
+                            const isDeclined = (
+                              selectedJobForApplications.declined_agencies || []
+                            ).some(
+                              (d: any) =>
+                                (d?.id || d?.agency_id) ===
+                                (agency?.id || agency?.agency_id),
+                            );
+                            const isAccepted =
+                              (Array.isArray(selectedJobApplications) &&
+                                selectedJobApplications.some(
+                                  (a: any) =>
+                                    a.agency_id ===
+                                    (agency?.id || agency?.agency_id),
+                                )) ||
+                              (
+                                selectedJobForApplications.accepted_agencies ||
+                                []
+                              ).some(
+                                (a: any) =>
+                                  (a?.id || a?.agency_id) ===
+                                  (agency?.id || agency?.agency_id),
+                              );
+
+                            let statusLabel = "Pending";
+                            let statusColor =
+                              "bg-slate-100 text-slate-600 border-slate-200";
+                            if (isAccepted) {
+                              statusLabel = "Accepted";
+                              statusColor =
+                                "bg-emerald-100 text-emerald-700 border-emerald-200";
+                            } else if (isDeclined) {
+                              statusLabel = "Declined";
+                              statusColor =
+                                "bg-amber-100 text-amber-700 border-amber-200";
+                            }
+
+                            return (
+                              <div
+                                key={`${agencyId}`}
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                              >
+                                {agency?.logo_url ? (
+                                  <img
+                                    src={agency.logo_url}
+                                    alt={agency?.agency_name || "Agency"}
+                                    className="h-5 w-5 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                    {String(
+                                      agency?.agency_name ||
+                                        agency?.display_name ||
+                                        "A",
+                                    )
+                                      .trim()
+                                      .slice(0, 1)
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+                                <span>
+                                  {agency?.display_name ||
+                                    agency?.agency_name ||
+                                    agency?.contact_name ||
+                                    "Agency"}
+                                </span>
+                                <Badge
+                                  className={`${statusColor} ml-1 border px-1.5 py-0 text-[10px] font-medium uppercase shadow-none`}
+                                >
+                                  {statusLabel}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                    {/* Creators */}
+                    {(Array.isArray(
+                      selectedJobForApplications.invited_creators,
+                    ) &&
+                      selectedJobForApplications.invited_creators.length > 0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.declined_creators,
+                    ) &&
+                      selectedJobForApplications.declined_creators.length >
+                        0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_creators,
+                    ) &&
+                      selectedJobForApplications.accepted_creators.length >
+                        0) ? (
+                      <div className="pt-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                          Creators
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            ...(selectedJobForApplications.invited_creators ||
+                              []),
+                            ...(selectedJobForApplications.accepted_creators ||
+                              []),
+                            ...(selectedJobForApplications.declined_creators ||
+                              []),
+                          ].map((creator: any, idx: number) => {
+                            const creatorId = creator?.id || idx;
+                            const isDeclined = (
+                              selectedJobForApplications.declined_creators || []
+                            ).some((d: any) => d?.id === creator?.id);
+                            const isAccepted =
+                              (Array.isArray(selectedJobApplications) &&
+                                selectedJobApplications.some(
+                                  (a: any) =>
+                                    a.applicant_id === creator?.id &&
+                                    (a.applicant_role === "creator" ||
+                                      a.applicant_role === "talent"),
+                                )) ||
+                              (
+                                selectedJobForApplications.accepted_creators ||
+                                []
+                              ).some((c: any) => c?.id === creator?.id);
+
+                            let statusLabel = "Pending";
+                            let statusColor =
+                              "bg-slate-100 text-slate-600 border-slate-200";
+                            if (isAccepted) {
+                              statusLabel = "Accepted";
+                              statusColor =
+                                "bg-emerald-100 text-emerald-700 border-emerald-200";
+                            } else if (isDeclined) {
+                              statusLabel = "Declined";
+                              statusColor =
+                                "bg-amber-100 text-amber-700 border-amber-200";
+                            }
+
+                            return (
+                              <div
+                                key={`${creatorId}`}
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                              >
+                                {creator?.profile_photo_url ? (
+                                  <img
+                                    src={creator.profile_photo_url}
+                                    alt={creator?.full_name || "Creator"}
+                                    className="h-5 w-5 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                    {String(
+                                      creator?.full_name ||
+                                        creator?.display_name ||
+                                        "C",
+                                    )
+                                      .trim()
+                                      .slice(0, 1)
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+                                <span>
+                                  {creator?.full_name ||
+                                    creator?.display_name ||
+                                    "Creator"}
+                                </span>
+                                <Badge
+                                  className={`${statusColor} ml-1 border px-1.5 py-0 text-[10px] font-medium uppercase shadow-none`}
+                                >
+                                  {statusLabel}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
+                )}
+
+              {Array.isArray(selectedJobForApplications.brand_assets) &&
+                selectedJobForApplications.brand_assets.length > 0 && (
+                  <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        Brand Assets
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                        {selectedJobForApplications.brand_assets.length} Assets
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {selectedJobForApplications.brand_assets.map(
+                        (asset: any, idx: number) => {
+                          let url = String(resolveJobAssetUrl(asset) || "");
+                          const assetName = String(asset?.name || "");
+                          const isImage = /\.(png|jpe?g|gif|webp)$/i.test(
+                            url || assetName,
+                          );
+                          if (isImage && !url && assetName) {
+                            const safeName = assetName.replace(
+                              /[^\w.\-]+/g,
+                              "_",
+                            );
+                            url =
+                              supabase.storage
+                                .from("likelee-public")
+                                .getPublicUrl(
+                                  `job-assets/${selectedJobForApplications.brand_id}/${safeName}`,
+                                ).data?.publicUrl || "";
+                          }
+                          return (
+                            <div
+                              key={`${url || asset?.name || idx}`}
+                              className="group relative cursor-pointer border border-slate-200 rounded-lg overflow-hidden bg-slate-50 transition-all hover:ring-2 hover:ring-blue-500 hover:ring-offset-2"
+                              onClick={() => {
+                                if (isImage && url) setSelectedAssetIndex(idx);
+                              }}
+                            >
+                              {isImage && url ? (
+                                <>
+                                  <img
+                                    src={url}
+                                    alt={asset?.name || "Brand asset"}
+                                    className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                                    <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="h-28 flex flex-col items-center justify-center text-xs text-slate-500 bg-slate-50 text-center px-2 gap-1.5">
+                                  <FileText className="w-5 h-5 text-slate-300" />
+                                  <span className="truncate w-full font-medium">
+                                    {asset?.name || "File"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  </section>
+                )}
+
+              <Dialog
+                open={selectedAssetIndex !== null}
+                onOpenChange={(open) => !open && setSelectedAssetIndex(null)}
+              >
+                <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-2xl flex flex-col">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>
+                      Brand Asset{" "}
+                      {selectedAssetIndex !== null
+                        ? selectedAssetIndex + 1
+                        : ""}
+                    </DialogTitle>
+                    <DialogDescription>
+                      View brand asset reference image in detail.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {selectedAssetIndex !== null &&
+                    Array.isArray(selectedJobForApplications?.brand_assets) &&
+                    selectedJobForApplications.brand_assets[
+                      selectedAssetIndex
+                    ] && (
+                      <div className="relative w-full h-full flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+                          <h3 className="text-base font-bold text-gray-900">
+                            Brand Asset {selectedAssetIndex + 1} of{" "}
+                            {selectedJobForApplications.brand_assets.length}
+                          </h3>
+                        </div>
+
+                        {/* Image Container */}
+                        <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4 min-h-[400px]">
+                          {(() => {
+                            const assets =
+                              selectedJobForApplications?.brand_assets;
+                            const asset = Array.isArray(assets)
+                              ? assets[selectedAssetIndex]
+                              : null;
+                            if (!asset) return null;
+                            let url = String(resolveJobAssetUrl(asset) || "");
+                            const assetName = String(asset?.name || "");
+                            if (!url && assetName) {
+                              const safeName = assetName.replace(
+                                /[^\w.\-]+/g,
+                                "_",
+                              );
+                              url =
+                                supabase.storage
+                                  .from("likelee-public")
+                                  .getPublicUrl(
+                                    `job-assets/${selectedJobForApplications.brand_id}/${safeName}`,
+                                  ).data?.publicUrl || "";
+                            }
+
+                            return (
+                              <img
+                                src={url}
+                                alt={assetName}
+                                className="max-w-full max-h-[60vh] object-contain shadow-lg rounded-lg"
+                              />
+                            );
+                          })()}
+                        </div>
+
+                        {/* Footer Navigation */}
+                        <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets =
+                                  selectedJobForApplications?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev > 0
+                                  ? prev - 1
+                                  : assets.length - 1;
+                              });
+                            }}
+                          >
+                            Previous
+                          </Button>
+
+                          <div className="text-slate-400 text-sm font-medium">
+                            {selectedAssetIndex + 1} /{" "}
+                            {selectedJobForApplications.brand_assets.length}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets =
+                                  selectedJobForApplications?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev < assets.length - 1
+                                  ? prev + 1
+                                  : 0;
+                              });
+                            }}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                </DialogContent>
+              </Dialog>
+            </div>
+          ) : loadingJobApplications ? (
+            <div className="text-sm text-gray-600">Loading applications...</div>
+          ) : selectedJobApplications.length === 0 ? (
+            <div className="text-sm text-gray-600">No applications yet.</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {selectedJobApplications.map((app) => (
+                    <Card
+                      key={app.id}
+                      className="p-4 border border-gray-200 rounded-md"
+                    >
+                      <div className="flex items-center gap-3">
+                        {app.applicant_photo_url ? (
+                          <img
+                            src={app.applicant_photo_url}
+                            alt={app.applicant_name || "Applicant"}
+                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                            {String(
+                              app.applicant_name || app.applicant_role || "A",
+                            )
+                              .trim()
+                              .slice(0, 1)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {app.applicant_name ||
+                              app.applicant_display_name ||
+                              String(app.applicant_role || "applicant").replace(
+                                "_",
+                                " ",
+                              )}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {String(app.applicant_role || "").replace("_", " ")}
+                          </p>
+                        </div>
+                      </div>
+                      {app.message && (
+                        <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
+                          {app.message}
+                        </p>
+                      )}
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {resolveResumeUrl(app) && (
+                          <a
+                            href={resolveResumeUrl(app)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={app.resume_name || "resume"}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                          >
+                            📄 View resume
+                          </a>
+                        )}
+                        {app.comp_card_url && (
+                          <a
+                            href={app.comp_card_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={app.comp_card_name || "comp_card"}
+                            className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                          >
+                            🖼️ Comp card
+                          </a>
+                        )}
+                        {app.portfolio_link && (
+                          <a
+                            href={ensureProtocol(app.portfolio_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                          >
+                            🌐 Portfolio
+                          </a>
+                        )}
+                        {app.github_link && (
+                          <a
+                            href={ensureProtocol(app.github_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          >
+                            💻 GitHub
+                          </a>
+                        )}
+                        {app.linkedin_link && (
+                          <a
+                            href={ensureProtocol(app.linkedin_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-blue-700 hover:text-blue-800"
+                          >
+                            🔗 LinkedIn
+                          </a>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Contract Update Request Modal */}
       <Dialog
         open={showUpdateRequestModal}
@@ -7413,6 +8717,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Request Contract Update
             </DialogTitle>
+            <DialogDescription>
+              Select how to proceed with the contract update request.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
@@ -7481,6 +8788,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Contract Builder - {selectedCreator?.name}
             </DialogTitle>
+            <DialogDescription>
+              Create a new contract for this project.
+            </DialogDescription>
             <p className="text-gray-600">Step {contractStep} of 5</p>
           </DialogHeader>
 
@@ -8237,6 +9547,7 @@ export default function BrandDashboard() {
                       onClick={() => {
                         if (item.id === "campaigns") {
                           setActiveSection("campaigns-hub");
+                          setCampaignHubTab("active");
                           setSelectedCampaign(null);
                           return;
                         }
@@ -8366,6 +9677,21 @@ export default function BrandDashboard() {
                         <span className="flex-1 text-left">Deliverables</span>
                       </button>
                       <button
+                        onClick={() => {
+                          setActiveSection("campaigns-hub");
+                          setCampaignHubTab("jobs");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-hub" &&
+                          campaignHubTab === "jobs"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Briefcase className="w-4 h-4" />
+                        <span className="flex-1 text-left">Jobs</span>
+                      </button>
+                      <button
                         onClick={() => setActiveSection("studio")}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "studio"
@@ -8409,13 +9735,248 @@ export default function BrandDashboard() {
           )}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
-          {activeSection === "campaigns-hub" && (
-            <BrandCampaignDashboard
-              embedded
-              openNewCampaignSignal={openCampaignModalSignal}
-              prefillCampaignContext={campaignBuilderContext}
-            />
-          )}
+          {activeSection === "campaigns-hub" &&
+            (campaignHubTab === "jobs" ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Job Postings
+                  </h3>
+                  <Button
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.localStorage.removeItem("jobDraftId");
+                        window.localStorage.removeItem("jobEditMode");
+                      }
+                      navigate(createPageUrl("PostJob"));
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  >
+                    Post Job
+                  </Button>
+                </div>
+                <Card className="p-4 bg-white border border-gray-200">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <Input
+                      value={jobSearch}
+                      onChange={(e) => setJobSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setJobSearch("");
+                      }}
+                      placeholder="Search job title or campaign name"
+                      className="pl-9 pr-9"
+                    />
+                    {jobSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setJobSearch("")}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </Card>
+                {loadingBrandJobs && (
+                  <Card className="p-6 text-sm text-gray-600">
+                    Loading job postings...
+                  </Card>
+                )}
+                {!loadingBrandJobs && brandJobs.length === 0 && (
+                  <Card className="p-8 text-center text-sm text-gray-600">
+                    <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="font-semibold text-gray-800">
+                      No job postings yet.
+                    </p>
+                    <p className="text-gray-500 mt-1">
+                      Post your first job to start receiving applications.
+                    </p>
+                  </Card>
+                )}
+                {brandJobs
+                  .filter((job) => {
+                    const haystack =
+                      `${job?.job_title || ""} ${job?.about_role || ""}`.toLowerCase();
+                    if (
+                      jobSearch.trim() &&
+                      !haystack.includes(jobSearch.trim().toLowerCase())
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((job) => (
+                    <Card
+                      key={job.id}
+                      className="p-6 bg-white border border-slate-200 border-l-4 border-l-blue-500 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                                {String(job.job_title || job.title || "J")
+                                  .trim()
+                                  .slice(0, 1)
+                                  .toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                  {job.job_title || job.title}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                  {formatJobLabel(job.location || "Remote")} •{" "}
+                                  {formatJobLabel(job.job_type || "Project")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge
+                                variant="outline"
+                                className={`border ${
+                                  job.status === "open"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                    : job.status === "draft"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50"
+                                      : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
+                                }`}
+                              >
+                                {job.status || "open"}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
+                              >
+                                {String(job.call_type || "call").replace(
+                                  "_",
+                                  " ",
+                                )}
+                              </Badge>
+                              {job.category ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-50"
+                                >
+                                  {String(job.category).replace("_", " ")}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {job.about_role ||
+                                "No role description added yet."}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-start gap-3 lg:items-end lg:ml-auto">
+                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                              {job.budget ? (
+                                <span>
+                                  Budget {job.budget} {job.currency || "USD"}
+                                </span>
+                              ) : null}
+                              {job.start_date ? (
+                                <span>Start {job.start_date}</span>
+                              ) : null}
+                              {job.end_date ? (
+                                <span>End {job.end_date}</span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                          {job.status === "open" && (
+                            <Button
+                              variant="outline"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() =>
+                                updateJobStatus(String(job.id), "closed")
+                              }
+                            >
+                              Close Job
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            className="border-2 rounded-md"
+                            onClick={() =>
+                              setSelectedJobForApplications({
+                                ...job,
+                                _showDetailsOnly: true,
+                              })
+                            }
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-2 rounded-md"
+                            onClick={async () => {
+                              setSelectedJobForApplications(job);
+                              setLoadingJobApplications(true);
+                              try {
+                                const res = await base44.get<{
+                                  applications?: any[];
+                                }>(`/api/jobs/${job.id}/applications`);
+                                setSelectedJobApplications(
+                                  Array.isArray(res?.applications)
+                                    ? res.applications
+                                    : [],
+                                );
+                              } catch {
+                                setSelectedJobApplications([]);
+                              } finally {
+                                setLoadingJobApplications(false);
+                              }
+                            }}
+                          >
+                            View Applications
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                {!loadingBrandJobs &&
+                  brandJobs.length > 0 &&
+                  brandJobs.filter((job) => {
+                    const haystack =
+                      `${job?.job_title || ""} ${job?.about_role || ""}`.toLowerCase();
+                    if (
+                      jobSearch.trim() &&
+                      !haystack.includes(jobSearch.trim().toLowerCase())
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  }).length === 0 && (
+                    <Card className="p-8 text-center">
+                      <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <p className="font-semibold text-gray-800">
+                        No results found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try different keywords or adjust your filters.
+                      </p>
+                      {jobSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setJobSearch("")}
+                          className="mt-3 text-sm text-blue-600 hover:underline"
+                        >
+                          Clear search
+                        </button>
+                      )}
+                    </Card>
+                  )}
+              </div>
+            ) : (
+              <BrandCampaignDashboard
+                embedded
+                openNewCampaignSignal={openCampaignModalSignal}
+                prefillCampaignContext={campaignBuilderContext}
+              />
+            ))}
           {activeSection === "campaigns-inbox" && renderInboxSubtab()}
           {activeSection === "campaign-offers" && renderCampaigns()}
           {activeSection === "campaigns-contract-hub" &&

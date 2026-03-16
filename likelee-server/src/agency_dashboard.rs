@@ -1,4 +1,4 @@
-use crate::auth::AuthUser;
+use crate::auth::{AuthUser, RoleGuard};
 use crate::config::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use chrono::Datelike;
@@ -85,6 +85,7 @@ pub async fn get_payment_history_top_earners(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<Vec<PaymentHistoryTopEarner>>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let now = chrono::Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
@@ -304,6 +305,7 @@ pub async fn get_dashboard_overview(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<DashboardOverview>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
 
     // Roster Health
@@ -356,6 +358,7 @@ pub async fn get_talent_performance(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<TalentPerformanceSummary>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
 
     let top_revenue_generators = get_top_revenue_generators(&state, agency_id).await?;
@@ -374,6 +377,7 @@ pub async fn get_revenue_breakdown(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<RevenueBreakdown>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
 
     let by_campaign_type = get_breakdown_by_campaign_type(&state, agency_id).await?;
@@ -392,6 +396,7 @@ pub async fn get_licensing_pipeline(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<LicensingPipeline>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
 
     // 1. Pending Approval
@@ -474,6 +479,7 @@ pub async fn get_recent_activity(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<ActivityFeed>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let mut all_activities = Vec::new();
 

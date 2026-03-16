@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -178,6 +184,7 @@ export default function BrandCampaignDashboard({
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
   const previousCollaboratorTypeRef = useRef<string>("");
+  const isFetchingCampaignCardsRef = useRef(false);
 
   const [campaignForm, setCampaignForm] = useState({
     name: "",
@@ -562,6 +569,8 @@ export default function BrandCampaignDashboard({
     };
   };
   const loadCampaignCards = async () => {
+    if (isFetchingCampaignCardsRef.current) return;
+    isFetchingCampaignCardsRef.current = true;
     setLoadingCampaignCards(true);
     try {
       const response = await base44.get<{ campaigns?: any[] }>(
@@ -636,6 +645,7 @@ export default function BrandCampaignDashboard({
       setCampaignCards([]);
     } finally {
       setLoadingCampaignCards(false);
+      isFetchingCampaignCardsRef.current = false;
     }
   };
 
@@ -2913,7 +2923,7 @@ export default function BrandCampaignDashboard({
 
       <DocuSealBuilderModal
         open={showCampaignDocuSealBuilder}
-        onClose={() => setShowCampaignDocuSealBuilder(false)}
+        onClose={useCallback(() => setShowCampaignDocuSealBuilder(false), [])}
         templateName={
           contractDraft.title || campaignForm.name || "Campaign Contract"
         }
@@ -2922,16 +2932,16 @@ export default function BrandCampaignDashboard({
             ? Number(contractDraft.docuseal_template_id)
             : undefined
         }
-        builderRoles={["First Party", "Second Party"]}
-        onSave={() => {}}
-        onSend={async () => {
+        builderRoles={useMemo(() => ["First Party", "Second Party"], [])}
+        onSave={useCallback(() => {}, [])}
+        onSend={useCallback(async () => {
           setIsSendingFromBuilder(true);
           try {
             await handleSendOffer();
           } finally {
             setIsSendingFromBuilder(false);
           }
-        }}
+        }, [handleSendOffer])}
         isSending={isSendingFromBuilder}
       />
       <Dialog

@@ -849,6 +849,13 @@ export default function CreatorDashboard() {
   const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
+  const [loadingJobInvites, setLoadingJobInvites] = useState(false);
+  const [jobInvites, setJobInvites] = useState<any[]>([]);
+  const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
+  const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
+  const [jobInviteConfirmAction, setJobInviteConfirmAction] = useState<
+    "accept" | "decline" | ""
+  >("");
   const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
   const [loadingAssetRequests, setLoadingAssetRequests] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
@@ -886,6 +893,630 @@ export default function CreatorDashboard() {
     agency_name?: string;
   } | null>(null);
   const IMAGE_SECTIONS = getImageSections(t);
+
+  const fullySignedOfferStatuses = useMemo(
+    () =>
+      new Set([
+        "contract_fully_signed",
+        "fully_signed",
+        "contract_signed",
+        "signed",
+        "accepted",
+        "active",
+        "in_progress",
+        "in_execution",
+        "deliverables_submitted",
+        "in_review",
+        "changes_requested",
+        "approved",
+        "completed",
+      ]),
+    [],
+  );
+
+  const isDirectCreatorOffer = React.useCallback(
+    (offer: any) => {
+      const targetType = String(offer?.target_type || "creator").toLowerCase();
+      if (targetType === "agency") return false;
+      const targetId = String(offer?.target_id || "").trim();
+      if (targetId && user?.id) return targetId === user.id;
+      return true;
+    },
+    [user?.id],
+  );
+
+  const directBrandOffers = useMemo(
+    () => brandOffers.filter(isDirectCreatorOffer),
+    [brandOffers, isDirectCreatorOffer],
+  );
+
+  const deliverableEligibleOffers = useMemo(
+    () =>
+      directBrandOffers.filter((offer: any) =>
+        fullySignedOfferStatuses.has(String(offer?.status || "").toLowerCase()),
+      ),
+    [directBrandOffers, fullySignedOfferStatuses],
+  );
+
+  const campaignOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          deliverableEligibleOffers
+            .filter((offer: any) => {
+              if (!sendDeliverableBrandId) return true;
+              return String(offer?.brand_id || "") === sendDeliverableBrandId;
+            })
+            .map((offer: any) => [String(offer?.id || ""), offer]),
+        ).values(),
+      ),
+    [deliverableEligibleOffers, sendDeliverableBrandId],
+  );
+
+  const pending = useMemo(
+    () => brandConnectionRequests.filter((i) => i.status === "pending"),
+    [brandConnectionRequests],
+  );
+  const directOfferIds = new Set(
+    directBrandOffers.map((offer: any) => String(offer?.id || "")),
+  );
+  const unseenRequestCount = pending.filter(
+    (req: any) => !seenBrandRequestIds.has(String(req?.id || "")),
+  ).length;
+  const unseenOfferCount = directBrandOffers.filter(
+    (offer: any) =>
+      [
+        "changes_requested",
+        "contract_sent",
+        "contract_partially_signed",
+      ].includes(String(offer?.status || "").toLowerCase()) &&
+      !seenOfferNotificationIds.has(String(offer?.id || "")),
+  ).length;
+  const unseenDeliverableFeedbackCount = deliverableEligibleOffers.reduce(
+    (count: number, offer: any) => {
+      const hasFeedbackNotification =
+        String(offer?.status || "").toLowerCase() === "changes_requested";
+      if (
+        hasFeedbackNotification &&
+        !seenDeliverableNotificationOfferIds.has(String(offer?.id || ""))
+      ) {
+        return count + 1;
+      }
+      return count;
+    },
+    0,
+  );
+  const totalBrandConnectionNotifications =
+    unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
+
+  const formatStatus = (status: unknown) =>
+    String(status || "sent")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase());
+
+  const offerStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (status === "contract_fully_signed" || status === "signed") {
+      return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+    }
+    if (status === "contract_partially_signed" || status === "contract_sent") {
+      return "bg-blue-100 text-blue-700 border border-blue-300";
+    }
+    if (status === "changes_requested") {
+      return "bg-amber-100 text-amber-700 border border-amber-300";
+    }
+    if (status === "declined") {
+      return "bg-red-100 text-red-700 border border-red-300";
+    }
+    return "bg-gray-100 text-gray-700 border border-gray-300";
+  };
+
+  const normalizeDisplayName = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const lowered = raw.toLowerCase();
+    if (["brand", "agency", "creator", "user"].includes(lowered)) return "";
+    return raw;
+  };
+
+  const fallbackNameFromEmail = (email: unknown) => {
+    const raw = String(email || "").trim();
+    if (!raw.includes("@")) return "";
+    const local = raw
+      .split("@")[0]
+      .replace(/[._-]+/g, " ")
+      .trim();
+    return local
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const resolveConnectedBrandName = (connection: any) => {
+    if (!connection) return "";
+    const company = normalizeDisplayName(connection?.brands?.company_name);
+    if (company) return company;
+    const emailName = fallbackNameFromEmail(connection?.brands?.email);
+    if (emailName) return emailName;
+    return String(connection?.brand_id || "Connected brand");
+  };
+
+  const resolveOfferBrandName = (offer: any) => {
+    const company = normalizeDisplayName(offer?.brands?.company_name);
+    if (company) return company;
+    const brandId = String(offer?.brand_id || "").trim();
+    if (brandId) {
+      const fromConnection = brandConnections.find(
+        (conn: any) => String(conn?.brand_id || "") === brandId,
+      );
+      const connectedName = resolveConnectedBrandName(fromConnection);
+      if (connectedName) return connectedName;
+    }
+    const emailName = fallbackNameFromEmail(offer?.brands?.email);
+    if (emailName) return emailName;
+    return "Brand Manager";
+  };
+
+  const resolveJobBrandName = (job: any) => {
+    const company = normalizeDisplayName(job?.brands?.company_name);
+    if (company) return company;
+    const brandId = String(job?.brand_id || "").trim();
+    if (brandId) {
+      const fromConnection = brandConnections.find(
+        (conn: any) => String(conn?.brand_id || "") === brandId,
+      );
+      const connectedName = resolveConnectedBrandName(fromConnection);
+      if (connectedName) return connectedName;
+    }
+    const emailName = fallbackNameFromEmail(job?.brands?.email);
+    if (emailName) return emailName;
+    return "Brand Manager";
+  };
+
+  const formatHubDate = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "N/A";
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) return raw;
+    return dt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const contractStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (status === "signed") {
+      return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
+    }
+    if (status === "sent") {
+      return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
+    }
+    if (status === "opened") {
+      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
+    }
+    if (status === "declined" || status === "rejected") {
+      return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
+    }
+    return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
+  };
+
+  const deliverableStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (["approved", "accepted"].includes(status)) {
+      return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+    }
+    if (
+      ["changes_requested", "needs_changes", "request_review"].includes(status)
+    ) {
+      return "bg-amber-100 text-amber-700 border border-amber-300";
+    }
+    if (
+      [
+        "submitted",
+        "deliverables_submitted",
+        "in_review",
+        "pending_review",
+        "brand_approved",
+      ].includes(status)
+    ) {
+      return "bg-blue-100 text-blue-700 border border-blue-300";
+    }
+    if (["declined", "rejected"].includes(status)) {
+      return "bg-red-100 text-red-700 border border-red-300";
+    }
+    return "bg-gray-100 text-gray-700 border border-gray-300";
+  };
+
+  const deliverableIsImage = (deliverable: any) => {
+    const type = String(deliverable?.asset_type || "").toLowerCase();
+    if (type === "image" || type.startsWith("image/")) return true;
+    const contentType = String(
+      deliverable?.meta?.content_type || "",
+    ).toLowerCase();
+    if (contentType.startsWith("image/")) return true;
+    const url = String(deliverable?.asset_url || "").toLowerCase();
+    return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
+  };
+
+  const deliverableIsVideo = (deliverable: any) => {
+    const type = String(deliverable?.asset_type || "").toLowerCase();
+    if (type === "video" || type.startsWith("video/")) return true;
+    const contentType = String(
+      deliverable?.meta?.content_type || "",
+    ).toLowerCase();
+    if (contentType.startsWith("video/")) return true;
+    const url = String(deliverable?.asset_url || "").toLowerCase();
+    return /\.(mp4|mov|webm|m4v)(\?.*)?$/.test(url);
+  };
+
+  const inferAssetType = (contentType: string) => {
+    const normalized = String(contentType || "").toLowerCase();
+    if (normalized.startsWith("image/")) return "image";
+    if (normalized.startsWith("video/")) return "video";
+    if (normalized.startsWith("audio/")) return "audio";
+    return "file";
+  };
+
+  const selectedBriefOffer = directBrandOffers.find(
+    (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
+  );
+  const selectedBriefCampaign = selectedBriefOffer?.brand_campaigns || {};
+  const selectedBrief = selectedBriefOffer?.brief_snapshot || {};
+
+  const briefValue = (key: string, fallback = "Not specified") => {
+    const value = selectedBrief?.[key];
+    if (value === null || value === undefined) return fallback;
+    const text = String(value).trim();
+    return text.length > 0 ? text : fallback;
+  };
+
+  const briefLines = (key: string): string[] => {
+    const raw = briefValue(key, "");
+    if (!raw) return [];
+    return raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  };
+
+  const briefReferenceImages = Array.isArray(selectedBrief?.reference_images)
+    ? selectedBrief.reference_images
+    : [];
+  const brandAssets = Array.isArray(selectedBrief?.brand_assets)
+    ? selectedBrief.brand_assets
+    : [];
+
+  const requiredDeliverablesText = (() => {
+    const direct = String(selectedBrief?.required_deliverables || "").trim();
+    if (direct) return direct;
+    const legacy = [
+      selectedBrief?.deliverables_reels,
+      selectedBrief?.deliverables_hero_image,
+    ]
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean);
+    return legacy.length > 0 ? legacy.join("\n") : "Not specified";
+  })();
+
+  const selectedBriefContract = selectedOfferContracts[0] || null;
+  const creatorAlreadySigned = selectedOfferContracts.some((contract: any) => {
+    const creatorStatus = String(
+      contract?.meta?.creator_submitter_status || "",
+    ).toLowerCase();
+    const submitterStatuses = Array.isArray(contract?.meta?.submitter_statuses)
+      ? contract.meta.submitter_statuses
+      : [];
+    const secondPartyStatus = String(
+      submitterStatuses.find(
+        (s: any) =>
+          String(s?.role || "")
+            .toLowerCase()
+            .replace(/\s+/g, "") === "secondparty",
+      )?.status || "",
+    ).toLowerCase();
+    const contractStatus = String(
+      contract?.docuseal_status || "",
+    ).toLowerCase();
+    return (
+      creatorStatus === "completed" ||
+      creatorStatus === "signed" ||
+      secondPartyStatus === "completed" ||
+      secondPartyStatus === "signed" ||
+      contractStatus === "signed"
+    );
+  });
+
+  const resolveStoredUrl = (value: unknown): string => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (
+      raw.startsWith("http://") ||
+      raw.startsWith("https://") ||
+      raw.startsWith("blob:")
+    ) {
+      return raw;
+    }
+    const cleaned = raw.replace(/^\/+/, "");
+    const fromBucket = supabase?.storage
+      .from("likelee-public")
+      .getPublicUrl(cleaned)?.data?.publicUrl;
+    return String(fromBucket || "");
+  };
+
+  const briefItemUrl = (item: any): string =>
+    resolveStoredUrl(
+      item?.url ||
+        item?.public_url ||
+        item?.file_url ||
+        item?.asset_url ||
+        item?.path ||
+        item,
+    );
+
+  const downloadBriefFile = async (url: string, fileName: string) => {
+    const safeUrl = String(url || "").trim();
+    if (!safeUrl) return;
+    try {
+      const res = await fetch(safeUrl);
+      if (!res.ok) throw new Error("Failed to fetch file.");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName || "file";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      window.open(safeUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const refreshBrandConnections = async () => {
+    const [{ requests, connections }, offers, jobInvitesRes] =
+      await Promise.all([
+        loadBrandConnectionData(),
+        loadBrandOffers().catch(() => []),
+        loadJobInvites().catch(() => []),
+      ]);
+    setBrandConnectionRequests(requests);
+    setBrandConnections(connections);
+    setBrandOffers(Array.isArray(offers) ? offers : []);
+    setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+  };
+
+  const onRespond = async (id: string, action: "accept" | "decline") => {
+    try {
+      setAgencyConnectionLoading(true);
+      await base44.post(
+        `/api/creator/brand-connection-requests/${id}/${action}`,
+        {},
+      );
+      await refreshBrandConnections();
+      toast({
+        title:
+          action === "accept" ? "Connection accepted" : "Connection declined",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update request",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setAgencyConnectionLoading(false);
+    }
+  };
+
+  const onDisconnect = async (brandId: string) => {
+    try {
+      setAgencyConnectionLoading(true);
+      await base44.post(
+        `/api/creator/brand-connections/${brandId}/disconnect`,
+        {},
+      );
+      await refreshBrandConnections();
+      toast({ title: "Disconnected from brand" });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to disconnect",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setAgencyConnectionLoading(false);
+    }
+  };
+
+  const openOfferBrief = async (offerId: string) => {
+    const next = selectedBrandOfferId === offerId ? "" : offerId;
+    setSelectedBrandOfferId(next);
+    if (next) {
+      setSeenOfferNotificationIds((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.add(next);
+        return nextSet;
+      });
+    }
+    if (!next) {
+      setSelectedOfferContracts([]);
+      setSelectedOfferDeliverables([]);
+      return;
+    }
+    try {
+      await loadOfferDetails(next);
+    } catch {
+      setSelectedOfferContracts([]);
+      setSelectedOfferDeliverables([]);
+    }
+  };
+
+  const openOfferBriefPage = async (offerId: string) => {
+    setSelectedOfferBriefId(offerId);
+    setSelectedBrandOfferId(offerId);
+    setSeenOfferNotificationIds((prev) => {
+      const nextSet = new Set(prev);
+      nextSet.add(offerId);
+      return nextSet;
+    });
+    try {
+      await loadOfferDetails(offerId);
+    } catch {
+      setSelectedOfferContracts([]);
+    }
+  };
+
+  const closeOfferBriefPage = () => {
+    setSelectedOfferBriefId("");
+  };
+
+  const signContract = () => {
+    const contract = selectedOfferContracts[0];
+    const creatorSigningUrl = String(
+      contract?.meta?.creator_signing_url ||
+        contract?.meta?.docuseal_signing_url ||
+        "",
+    ).trim();
+    const fileUrl = String(contract?.file_url || "").trim();
+    const rawSlug = String(contract?.docuseal_slug || "").trim();
+    const slugUrl = rawSlug
+      ? rawSlug.startsWith("http")
+        ? rawSlug
+        : `https://docuseal.co/s/${rawSlug}`
+      : "";
+    const signUrl = creatorSigningUrl || slugUrl || fileUrl;
+    if (!signUrl) {
+      toast({
+        title: "Contract unavailable",
+        description:
+          "Signing link is not ready yet. DocuSeal flow will be connected next.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCreatorSignUrl(signUrl);
+    setCreatorSignOpen(true);
+  };
+
+  const sendDeliverable = async () => {
+    if (sendDeliverableFiles.length === 0) {
+      toast({
+        title: "Upload required",
+        description: "Please choose at least one deliverable file.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!sendDeliverableOfferId) {
+      toast({
+        title: "Campaign required",
+        description: "Please select the campaign offer.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const selectedOffer = brandOffers.find(
+      (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
+    );
+    const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
+    if (!selectedOffer) {
+      toast({
+        title: "Campaign unavailable",
+        description: "The selected campaign offer could not be found.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      sendDeliverableBrandId &&
+      selectedOfferBrandId &&
+      selectedOfferBrandId !== sendDeliverableBrandId
+    ) {
+      toast({
+        title: "Brand and campaign mismatch",
+        description:
+          "Please select a campaign that belongs to the selected connected brand.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      setOfferActionLoading(true);
+      const session = supabase
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
+      const token = session.data.session?.access_token;
+      for (const file of sendDeliverableFiles) {
+        const uploadRes = await fetch(
+          api(
+            `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables/upload`,
+          ),
+          {
+            method: "POST",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              "Content-Type": file.type || "application/octet-stream",
+            },
+            body: await file.arrayBuffer(),
+          },
+        );
+        const uploadText = await uploadRes.text();
+        if (!uploadRes.ok) {
+          throw new Error(uploadText || "Failed to upload deliverable file");
+        }
+        const uploadJson = uploadText ? JSON.parse(uploadText) : {};
+        const assetUrl = String(uploadJson?.public_url || "").trim();
+        if (!assetUrl) {
+          throw new Error("Deliverable upload URL missing");
+        }
+
+        await base44.post(
+          `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables`,
+          {
+            asset_url: assetUrl,
+            asset_type: inferAssetType(file.type),
+            caption: file.name,
+            brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
+            brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
+            asset_request_id: sendDeliverableRequestId || undefined,
+            meta: {
+              original_name: file.name,
+              content_type: file.type,
+            },
+          },
+        );
+      }
+      await refreshBrandConnections();
+      if (selectedBrandOfferId === sendDeliverableOfferId) {
+        await loadOfferDetails(sendDeliverableOfferId);
+      }
+      setSendDeliverableOpen(false);
+      setSendDeliverableBrandId("");
+      setSendDeliverableOfferId("");
+      setSendDeliverableRequestId("");
+      setSendDeliverableFiles([]);
+      sendDeliverablePreviewUrls.forEach((url) => {
+        if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+      setSendDeliverablePreviewUrls([]);
+      toast({
+        title: "Deliverable sent",
+        description: `${sendDeliverableFiles.length} deliverable${sendDeliverableFiles.length > 1 ? "s were" : " was"} uploaded and sent to the brand.`,
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Send failed",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setOfferActionLoading(false);
+    }
+  };
 
   const talentPortalEnabled =
     (profile as any)?.role === "talent" || agencyConnections.length > 0;
@@ -931,8 +1562,8 @@ export default function CreatorDashboard() {
     };
   };
 
-  const loadBrandOffers = async () => {
-    setLoadingBrandOffers(true);
+  const loadBrandOffers = async (silent = false) => {
+    if (!silent) setLoadingBrandOffers(true);
     try {
       const offersResp = await base44.get<{ offers?: any[] }>(
         "/api/campaign-offers/my",
@@ -942,7 +1573,86 @@ export default function CreatorDashboard() {
       );
       return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
     } finally {
-      setLoadingBrandOffers(false);
+      if (!silent) setLoadingBrandOffers(false);
+    }
+  };
+
+  const loadJobInvites = async (silent = false) => {
+    if (!silent) setLoadingJobInvites(true);
+    try {
+      const res = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { status: "open", limit: 200 },
+      });
+      const jobs = Array.isArray(res?.jobs) ? res.jobs : [];
+      const invites = jobs.filter((job) => {
+        const invitedCreators = Array.isArray(job?.invited_creator_ids)
+          ? job.invited_creator_ids
+          : [];
+        const acceptedCreators = Array.isArray(job?.accepted_creator_ids)
+          ? job.accepted_creator_ids
+          : [];
+        // Show if explicitly invited OR already accepted
+        return (
+          invitedCreators.includes(user?.id) ||
+          acceptedCreators.includes(user?.id)
+        );
+      });
+      return invites;
+    } finally {
+      if (!silent) setLoadingJobInvites(false);
+    }
+  };
+
+  const declineJobInvite = async (jobId: string) => {
+    try {
+      setOfferActionLoading(true);
+      await base44.post(`/api/jobs/${encodeURIComponent(jobId)}/decline`, {});
+      toast({
+        title: "Invite declined",
+        description: "The brand will see your response in job details.",
+      });
+      const jobInvitesRes = await loadJobInvites().catch(() => []);
+      setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Decline failed",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setOfferActionLoading(false);
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const acceptJobInvite = async (jobId: string) => {
+    try {
+      setOfferActionLoading(true);
+      await base44.post(`/api/jobs/${encodeURIComponent(jobId)}/accept`, {});
+      toast({
+        title: "Invite accepted",
+        description: "The job is now accepted.",
+      });
+      const jobInvitesRes = await loadJobInvites().catch(() => []);
+      setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Accept failed",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setOfferActionLoading(false);
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const confirmJobInviteAction = () => {
+    if (!jobInviteConfirmId || !jobInviteConfirmAction) return;
+    if (jobInviteConfirmAction === "accept") {
+      acceptJobInvite(jobInviteConfirmId);
+    } else {
+      declineJobInvite(jobInviteConfirmId);
     }
   };
 
@@ -1075,12 +1785,14 @@ export default function CreatorDashboard() {
           { connections, invites },
           { requests, connections: brandConnected },
           offers,
+          jobInvitesRes,
           assetRequestsResp,
           bookingsData,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
           loadAssetRequests().catch(() => []),
           loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
         ]);
@@ -1090,6 +1802,7 @@ export default function CreatorDashboard() {
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
         const assets = Array.isArray(assetRequestsResp)
           ? assetRequestsResp
           : [];
@@ -1179,12 +1892,16 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
-        const offers = await loadBrandOffers().catch(() => []);
+        const [offers, jobInvitesRes] = await Promise.all([
+          loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
+        ]);
         const assets = await loadAssetRequests().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
         setAssetRequests(Array.isArray(assets) ? assets : []);
       } catch (e) {
         if (!active) return;
@@ -1202,12 +1919,16 @@ export default function CreatorDashboard() {
     const refresh = async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
-        const offers = await loadBrandOffers().catch(() => []);
+        const [offers, jobInvitesRes] = await Promise.all([
+          loadBrandOffers(true).catch(() => []),
+          loadJobInvites(true).catch(() => []),
+        ]);
         const assets = await loadAssetRequests().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
         setAssetRequests(Array.isArray(assets) ? assets : []);
       } catch (e) {
         if (!active) return;
@@ -2155,20 +2876,51 @@ export default function CreatorDashboard() {
     (i) =>
       i.status === "pending" && !seenBrandRequestIds.has(String(i?.id || "")),
   ).length;
-  const brandOfferNotificationsUnseen = brandOffers.filter((offer: any) => {
-    const status = String(offer?.status || "").toLowerCase();
-    return (
-      [
-        "changes_requested",
-        "contract_sent",
-        "contract_partially_signed",
-        "deliverables_submitted",
-      ].includes(status) &&
-      !seenOfferNotificationIds.has(String(offer?.id || ""))
-    );
-  }).length;
+  const brandOfferNotificationsUnseen = directBrandOffers.filter(
+    (offer: any) => {
+      const status = String(offer?.status || "").toLowerCase();
+      return (
+        [
+          "changes_requested",
+          "contract_sent",
+          "contract_partially_signed",
+          "deliverables_submitted",
+        ].includes(status) &&
+        !seenOfferNotificationIds.has(String(offer?.id || ""))
+      );
+    },
+  ).length;
   const totalBrandConnectionUnseen =
     brandPendingRequestsUnseen + brandOfferNotificationsUnseen;
+
+  useEffect(() => {
+    if (activeSection === "brand-connection") {
+      setSeenBrandRequestIds((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+        brandConnectionRequests.forEach((r: any) => {
+          const rid = String(r?.id || "");
+          if (rid && !next.has(rid)) {
+            next.add(rid);
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+      setSeenOfferNotificationIds((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+        directBrandOffers.forEach((o: any) => {
+          const oid = String(o?.id || "");
+          if (oid && !next.has(oid)) {
+            next.add(oid);
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [activeSection, brandConnectionRequests, directBrandOffers]);
 
   const navigationItems: Array<{
     id: string;
@@ -2200,6 +2952,14 @@ export default function CreatorDashboard() {
       label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
       badge: activeCampaigns.length,
+    },
+    {
+      id: "jobs",
+      label: "Jobs",
+      icon: Briefcase,
+      onClick: () => {
+        navigate(createPageUrl("Jobs"));
+      },
     },
     {
       id: "approvals",
@@ -5048,7 +5808,6 @@ export default function CreatorDashboard() {
           </div>
         </Card>
       )}
-
       {/* Voice Training Tips */}
       <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
@@ -5059,65 +5818,6 @@ export default function CreatorDashboard() {
       </div>
     </div>
   );
-
-  const deliverableStatusBadgeClass = (statusRaw: unknown) => {
-    const status = String(statusRaw || "").toLowerCase();
-    if (["approved", "accepted"].includes(status)) {
-      return "bg-emerald-100 text-emerald-700 border border-emerald-300";
-    }
-    if (
-      ["changes_requested", "needs_changes", "request_review"].includes(status)
-    ) {
-      return "bg-amber-100 text-amber-700 border border-amber-300";
-    }
-    if (
-      [
-        "submitted",
-        "deliverables_submitted",
-        "in_review",
-        "pending_review",
-        "brand_approved",
-      ].includes(status)
-    ) {
-      return "bg-blue-100 text-blue-700 border border-blue-300";
-    }
-    if (["declined", "rejected"].includes(status)) {
-      return "bg-red-100 text-red-700 border border-red-300";
-    }
-    return "bg-gray-100 text-gray-700 border border-gray-300";
-  };
-
-  const deliverableIsImage = (deliverable: any) => {
-    const type = String(deliverable?.asset_type || "").toLowerCase();
-    if (type === "image" || type.startsWith("image/")) return true;
-    const contentType = String(
-      deliverable?.meta?.content_type || "",
-    ).toLowerCase();
-    if (contentType.startsWith("image/")) return true;
-    const url = String(deliverable?.asset_url || "").toLowerCase();
-    return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
-  };
-
-  const deliverableIsVideo = (deliverable: any) => {
-    const type = String(deliverable?.asset_type || "").toLowerCase();
-    if (type === "video" || type.startsWith("video/")) return true;
-    const contentType = String(
-      deliverable?.meta?.content_type || "",
-    ).toLowerCase();
-    if (contentType.startsWith("video/")) return true;
-    const url = String(deliverable?.asset_url || "").toLowerCase();
-    return /\.(mp4|mov|webm|m4v)(\?.*)?$/.test(url);
-  };
-
-  const refreshBrandConnections = async () => {
-    const [{ requests, connections }, offers] = await Promise.all([
-      loadBrandConnectionData(),
-      loadBrandOffers().catch(() => []),
-    ]);
-    setBrandConnectionRequests(requests);
-    setBrandConnections(connections);
-    setBrandOffers(Array.isArray(offers) ? offers : []);
-  };
 
   const renderAgencyConnection = () => {
     const pending = agencyInvites.filter((i) => i.status === "pending");
@@ -5347,7 +6047,6 @@ export default function CreatorDashboard() {
                   </Badge>
                 )}
               </div>
-
               {pending.length > 0 && (
                 <div className="mt-6 space-y-3">
                   {pending.map((inv) => (
@@ -5471,7 +6170,6 @@ export default function CreatorDashboard() {
             </Card>
           </>
         )}
-
         {agencyConnectionSubTab === "asset_requests" && (
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
@@ -5737,536 +6435,7 @@ export default function CreatorDashboard() {
     );
   };
 
-  const fullySignedOfferStatuses = useMemo(
-    () =>
-      new Set([
-        "contract_fully_signed",
-        "fully_signed",
-        "contract_signed",
-        "signed",
-        "accepted",
-        "active",
-        "in_progress",
-        "in_execution",
-        "deliverables_submitted",
-        "in_review",
-        "changes_requested",
-        "approved",
-        "completed",
-      ]),
-    [],
-  );
-
-  const isDirectCreatorOffer = (offer: any) => {
-    const targetType = String(offer?.target_type || "creator").toLowerCase();
-    if (targetType === "agency") return false;
-    const targetId = String(offer?.target_id || "").trim();
-    if (targetId && user?.id) return targetId === user.id;
-    return true;
-  };
-
-  const deliverableEligibleOffers = useMemo(
-    () =>
-      brandOffers
-        .filter(isDirectCreatorOffer)
-        .filter((offer: any) =>
-          fullySignedOfferStatuses.has(
-            String(offer?.status || "").toLowerCase(),
-          ),
-        ),
-    [brandOffers, user?.id, fullySignedOfferStatuses],
-  );
-
-  const campaignOptions = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          deliverableEligibleOffers
-            .filter((offer: any) => {
-              if (!sendDeliverableBrandId) return true;
-              return String(offer?.brand_id || "") === sendDeliverableBrandId;
-            })
-            .map((offer: any) => [String(offer?.id || ""), offer]),
-        ).values(),
-      ),
-    [deliverableEligibleOffers, sendDeliverableBrandId],
-  );
-
-  const pending = brandConnectionRequests.filter((i) => i.status === "pending");
-  const directBrandOffers = brandOffers.filter(isDirectCreatorOffer);
-  const directOfferIds = new Set(
-    directBrandOffers.map((offer: any) => String(offer?.id || "")),
-  );
-  const unseenRequestCount = pending.filter(
-    (req: any) => !seenBrandRequestIds.has(String(req?.id || "")),
-  ).length;
-  const unseenOfferCount = directBrandOffers.filter(
-    (offer: any) =>
-      [
-        "changes_requested",
-        "contract_sent",
-        "contract_partially_signed",
-      ].includes(String(offer?.status || "").toLowerCase()) &&
-      !seenOfferNotificationIds.has(String(offer?.id || "")),
-  ).length;
-  const unseenDeliverableFeedbackCount = deliverableEligibleOffers.reduce(
-    (count: number, offer: any) => {
-      const hasFeedbackNotification =
-        String(offer?.status || "").toLowerCase() === "changes_requested";
-      if (
-        hasFeedbackNotification &&
-        !seenDeliverableNotificationOfferIds.has(String(offer?.id || ""))
-      ) {
-        return count + 1;
-      }
-      return count;
-    },
-    0,
-  );
-  const totalBrandConnectionNotifications =
-    unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
-  const formatStatus = (status: unknown) =>
-    String(status || "sent")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (m) => m.toUpperCase());
-  const offerStatusBadgeClass = (statusRaw: unknown) => {
-    const status = String(statusRaw || "").toLowerCase();
-    if (status === "contract_fully_signed" || status === "signed") {
-      return "bg-emerald-100 text-emerald-700 border border-emerald-300";
-    }
-    if (status === "contract_partially_signed" || status === "contract_sent") {
-      return "bg-blue-100 text-blue-700 border border-blue-300";
-    }
-    if (status === "changes_requested") {
-      return "bg-amber-100 text-amber-700 border border-amber-300";
-    }
-    if (status === "declined") {
-      return "bg-red-100 text-red-700 border border-red-300";
-    }
-    return "bg-gray-100 text-gray-700 border border-gray-300";
-  };
-  const normalizeDisplayName = (value: unknown) => {
-    const raw = String(value || "").trim();
-    if (!raw) return "";
-    const lowered = raw.toLowerCase();
-    if (["brand", "agency", "creator", "user"].includes(lowered)) return "";
-    return raw;
-  };
-  const fallbackNameFromEmail = (email: unknown) => {
-    const raw = String(email || "").trim();
-    if (!raw.includes("@")) return "";
-    const local = raw
-      .split("@")[0]
-      .replace(/[._-]+/g, " ")
-      .trim();
-    return local
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-  };
-  const resolveConnectedBrandName = (connection: any) => {
-    if (!connection) return "";
-    const company = normalizeDisplayName(connection?.brands?.company_name);
-    if (company) return company;
-    const emailName = fallbackNameFromEmail(connection?.brands?.email);
-    if (emailName) return emailName;
-    return String(connection?.brand_id || "Connected brand");
-  };
-  const resolveOfferBrandName = (offer: any) => {
-    const company = normalizeDisplayName(offer?.brands?.company_name);
-    if (company) return company;
-    const brandId = String(offer?.brand_id || "").trim();
-    if (brandId) {
-      const fromConnection = brandConnections.find(
-        (conn: any) => String(conn?.brand_id || "") === brandId,
-      );
-      const connectedName = resolveConnectedBrandName(fromConnection);
-      if (connectedName) return connectedName;
-    }
-    const emailName = fallbackNameFromEmail(offer?.brands?.email);
-    if (emailName) return emailName;
-    return "Brand Manager";
-  };
-  const formatHubDate = (value: unknown) => {
-    const raw = String(value || "").trim();
-    if (!raw) return "N/A";
-    const dt = new Date(raw);
-    if (Number.isNaN(dt.getTime())) return raw;
-    return dt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-  const contractStatusBadgeClass = (statusRaw: unknown) => {
-    const status = String(statusRaw || "").toLowerCase();
-    if (status === "signed") {
-      return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
-    }
-    if (status === "sent") {
-      return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
-    }
-    if (status === "opened") {
-      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
-    }
-    if (status === "declined" || status === "rejected") {
-      return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
-    }
-    return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
-  };
-  const inferAssetType = (contentType: string) => {
-    const normalized = String(contentType || "").toLowerCase();
-    if (normalized.startsWith("image/")) return "image";
-    if (normalized.startsWith("video/")) return "video";
-    if (normalized.startsWith("audio/")) return "audio";
-    return "file";
-  };
-  const selectedBriefOffer = directBrandOffers.find(
-    (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
-  );
-  const selectedBriefCampaign = selectedBriefOffer?.brand_campaigns || {};
-  const selectedBrief = selectedBriefOffer?.brief_snapshot || {};
-  const briefValue = (key: string, fallback = "Not specified") => {
-    const value = selectedBrief?.[key];
-    if (value === null || value === undefined) return fallback;
-    const text = String(value).trim();
-    return text.length > 0 ? text : fallback;
-  };
-  const briefLines = (key: string): string[] => {
-    const raw = briefValue(key, "");
-    if (!raw) return [];
-    return raw
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-  };
-  const briefReferenceImages = Array.isArray(selectedBrief?.reference_images)
-    ? selectedBrief.reference_images
-    : [];
-  const brandAssets = Array.isArray(selectedBrief?.brand_assets)
-    ? selectedBrief.brand_assets
-    : [];
-  const requiredDeliverablesText = (() => {
-    const direct = String(selectedBrief?.required_deliverables || "").trim();
-    if (direct) return direct;
-    const legacy = [
-      selectedBrief?.deliverables_reels,
-      selectedBrief?.deliverables_hero_image,
-    ]
-      .map((entry) => String(entry || "").trim())
-      .filter(Boolean);
-    return legacy.length > 0 ? legacy.join("\n") : "Not specified";
-  })();
-  const selectedBriefContract = selectedOfferContracts[0] || null;
-  const creatorAlreadySigned = selectedOfferContracts.some((contract: any) => {
-    const creatorStatus = String(
-      contract?.meta?.creator_submitter_status || "",
-    ).toLowerCase();
-    const submitterStatuses = Array.isArray(contract?.meta?.submitter_statuses)
-      ? contract.meta.submitter_statuses
-      : [];
-    const secondPartyStatus = String(
-      submitterStatuses.find(
-        (s: any) =>
-          String(s?.role || "")
-            .toLowerCase()
-            .replace(/\s+/g, "") === "secondparty",
-      )?.status || "",
-    ).toLowerCase();
-    const contractStatus = String(
-      contract?.docuseal_status || "",
-    ).toLowerCase();
-    return (
-      creatorStatus === "completed" ||
-      creatorStatus === "signed" ||
-      secondPartyStatus === "completed" ||
-      secondPartyStatus === "signed" ||
-      contractStatus === "signed"
-    );
-  });
-  const resolveStoredUrl = (value: unknown): string => {
-    const raw = String(value || "").trim();
-    if (!raw) return "";
-    if (
-      raw.startsWith("http://") ||
-      raw.startsWith("https://") ||
-      raw.startsWith("blob:")
-    ) {
-      return raw;
-    }
-    const cleaned = raw.replace(/^\/+/, "");
-    const fromBucket = supabase?.storage
-      .from("likelee-public")
-      .getPublicUrl(cleaned)?.data?.publicUrl;
-    return String(fromBucket || "");
-  };
-  const briefItemUrl = (item: any): string =>
-    resolveStoredUrl(
-      item?.url ||
-        item?.public_url ||
-        item?.file_url ||
-        item?.asset_url ||
-        item?.path ||
-        item,
-    );
-  const downloadBriefFile = async (url: string, fileName: string) => {
-    const safeUrl = String(url || "").trim();
-    if (!safeUrl) return;
-    try {
-      const res = await fetch(safeUrl);
-      if (!res.ok) throw new Error("Failed to fetch file.");
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = fileName || "file";
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(objectUrl);
-    } catch {
-      window.open(safeUrl, "_blank", "noopener,noreferrer");
-    }
-  };
-
-  const onRespond = async (id: string, action: "accept" | "decline") => {
-    try {
-      setAgencyConnectionLoading(true);
-      await base44.post(
-        `/api/creator/brand-connection-requests/${id}/${action}`,
-        {},
-      );
-      await refreshBrandConnections();
-      toast({
-        title:
-          action === "accept" ? "Connection accepted" : "Connection declined",
-      });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update request",
-        description: e?.message || String(e),
-      });
-    } finally {
-      setAgencyConnectionLoading(false);
-    }
-  };
-
-  const onDisconnect = async (brandId: string) => {
-    try {
-      setAgencyConnectionLoading(true);
-      await base44.post(
-        `/api/creator/brand-connections/${brandId}/disconnect`,
-        {},
-      );
-      await refreshBrandConnections();
-      toast({ title: "Disconnected from brand" });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to disconnect",
-        description: e?.message || String(e),
-      });
-    } finally {
-      setAgencyConnectionLoading(false);
-    }
-  };
-
-  const openOfferBrief = async (offerId: string) => {
-    const next = selectedBrandOfferId === offerId ? "" : offerId;
-    setSelectedBrandOfferId(next);
-    if (next) {
-      setSeenOfferNotificationIds((prev) => {
-        const nextSet = new Set(prev);
-        nextSet.add(next);
-        return nextSet;
-      });
-    }
-    if (!next) {
-      setSelectedOfferContracts([]);
-      setSelectedOfferDeliverables([]);
-      return;
-    }
-    try {
-      await loadOfferDetails(next);
-    } catch {
-      setSelectedOfferContracts([]);
-      setSelectedOfferDeliverables([]);
-    }
-  };
-
-  const openOfferBriefPage = async (offerId: string) => {
-    setSelectedOfferBriefId(offerId);
-    setSelectedBrandOfferId(offerId);
-    setSeenOfferNotificationIds((prev) => {
-      const nextSet = new Set(prev);
-      nextSet.add(offerId);
-      return nextSet;
-    });
-    try {
-      await loadOfferDetails(offerId);
-    } catch {
-      setSelectedOfferContracts([]);
-    }
-  };
-
-  const closeOfferBriefPage = () => {
-    setSelectedOfferBriefId("");
-  };
-
-  const signContract = () => {
-    const contract = selectedOfferContracts[0];
-    const creatorSigningUrl = String(
-      contract?.meta?.creator_signing_url ||
-        contract?.meta?.docuseal_signing_url ||
-        "",
-    ).trim();
-    const fileUrl = String(contract?.file_url || "").trim();
-    const rawSlug = String(contract?.docuseal_slug || "").trim();
-    const slugUrl = rawSlug
-      ? rawSlug.startsWith("http")
-        ? rawSlug
-        : `https://docuseal.co/s/${rawSlug}`
-      : "";
-    const signUrl = creatorSigningUrl || slugUrl || fileUrl;
-    if (!signUrl) {
-      toast({
-        title: "Contract unavailable",
-        description:
-          "Signing link is not ready yet. DocuSeal flow will be connected next.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setCreatorSignUrl(signUrl);
-    setCreatorSignOpen(true);
-  };
-
-  const sendDeliverable = async () => {
-    if (sendDeliverableFiles.length === 0) {
-      toast({
-        title: "Upload required",
-        description: "Please choose at least one deliverable file.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!sendDeliverableOfferId) {
-      toast({
-        title: "Campaign required",
-        description: "Please select the campaign offer.",
-        variant: "destructive",
-      });
-      return;
-    }
-    const selectedOffer = brandOffers.find(
-      (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
-    );
-    const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
-    if (!selectedOffer) {
-      toast({
-        title: "Campaign unavailable",
-        description: "The selected campaign offer could not be found.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (
-      sendDeliverableBrandId &&
-      selectedOfferBrandId &&
-      selectedOfferBrandId !== sendDeliverableBrandId
-    ) {
-      toast({
-        title: "Brand and campaign mismatch",
-        description:
-          "Please select a campaign that belongs to the selected connected brand.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      setOfferActionLoading(true);
-      const session = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
-      const token = session.data.session?.access_token;
-      for (const file of sendDeliverableFiles) {
-        const uploadRes = await fetch(
-          api(
-            `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables/upload`,
-          ),
-          {
-            method: "POST",
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              "Content-Type": file.type || "application/octet-stream",
-            },
-            body: await file.arrayBuffer(),
-          },
-        );
-        const uploadText = await uploadRes.text();
-        if (!uploadRes.ok) {
-          throw new Error(uploadText || "Failed to upload deliverable file");
-        }
-        const uploadJson = uploadText ? JSON.parse(uploadText) : {};
-        const assetUrl = String(uploadJson?.public_url || "").trim();
-        if (!assetUrl) {
-          throw new Error("Deliverable upload URL missing");
-        }
-
-        await base44.post(
-          `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables`,
-          {
-            asset_url: assetUrl,
-            asset_type: inferAssetType(file.type),
-            caption: file.name,
-            brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
-            brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
-            asset_request_id: sendDeliverableRequestId || undefined,
-            meta: {
-              original_name: file.name,
-              content_type: file.type,
-            },
-          },
-        );
-      }
-      await refreshBrandConnections();
-      if (selectedBrandOfferId === sendDeliverableOfferId) {
-        await loadOfferDetails(sendDeliverableOfferId);
-      }
-      setSendDeliverableOpen(false);
-      setSendDeliverableBrandId("");
-      setSendDeliverableOfferId("");
-      setSendDeliverableRequestId("");
-      setSendDeliverableFiles([]);
-      sendDeliverablePreviewUrls.forEach((url) => {
-        if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
-      });
-      setSendDeliverablePreviewUrls([]);
-      toast({
-        title: "Deliverable sent",
-        description: `${sendDeliverableFiles.length} deliverable${sendDeliverableFiles.length > 1 ? "s were" : " was"} uploaded and sent to the brand.`,
-      });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Send failed",
-        description: e?.message || String(e),
-      });
-    } finally {
-      setOfferActionLoading(false);
-    }
-  };
-
   const renderBrandConnection = () => {
-    const pending = brandConnectionRequests.filter(
-      (i) => i.status === "pending",
-    );
-    const directBrandOffers = brandOffers.filter(isDirectCreatorOffer);
-    const directOfferIds = new Set(
-      directBrandOffers.map((offer: any) => String(offer?.id || "")),
-    );
     return (
       <div className="space-y-8">
         <div>
@@ -6335,7 +6504,9 @@ export default function CreatorDashboard() {
               setBrandConnectionSubTab("offers");
               setSeenOfferNotificationIds(
                 new Set(
-                  brandOffers.map((offer: any) => String(offer?.id || "")),
+                  directBrandOffers.map((offer: any) =>
+                    String(offer?.id || ""),
+                  ),
                 ),
               );
             }}
@@ -6501,6 +6672,116 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
                 Brand Offers
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-base font-semibold text-gray-800">
+                    Job Invites
+                  </div>
+                  <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+                    {jobInvites.length}
+                  </Badge>
+                </div>
+                {loadingJobInvites && (
+                  <p className="text-sm text-gray-600">
+                    Loading job invites...
+                  </p>
+                )}
+                {!loadingJobInvites && jobInvites.length === 0 && (
+                  <p className="text-sm text-gray-600">No job invites yet.</p>
+                )}
+                {!loadingJobInvites && jobInvites.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {jobInvites.map((job: any) => (
+                      <div
+                        key={String(job?.id || "")}
+                        className="p-4 border border-slate-200 rounded-lg bg-white space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">
+                              {job?.job_title || "Job invite"}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {resolveJobBrandName(job)}
+                            </div>
+                          </div>
+                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                            {(job?.call_type || "call").replace("_", " ")}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-600 flex flex-wrap gap-2">
+                          {job?.location && (
+                            <span>
+                              {String(job.location).replace("_", " ")}
+                            </span>
+                          )}
+                          {job?.job_type && (
+                            <span>
+                              {String(job.job_type).replace("_", " ")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!(job?.accepted_creator_ids || []).includes(
+                            user?.id,
+                          ) ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                className="border-gray-300"
+                                onClick={() =>
+                                  navigate(
+                                    `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                      String(job?.id || ""),
+                                    )}`,
+                                  )
+                                }
+                              >
+                                View job details
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
+                                onClick={() => {
+                                  setJobInviteConfirmId(String(job?.id || ""));
+                                  setJobInviteConfirmAction("accept");
+                                  setJobInviteConfirmOpen(true);
+                                }}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                onClick={() => {
+                                  setJobInviteConfirmId(String(job?.id || ""));
+                                  setJobInviteConfirmAction("decline");
+                                  setJobInviteConfirmOpen(true);
+                                }}
+                              >
+                                Decline
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              className="bg-black text-white"
+                              onClick={() =>
+                                navigate(
+                                  `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                    String(job?.id || ""),
+                                  )}&apply=true`,
+                                )
+                              }
+                            >
+                              Apply
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
@@ -7759,7 +8040,7 @@ export default function CreatorDashboard() {
               <div className="flex gap-2 mt-6">
                 <Button variant="outline" className="flex-1">
                   <Eye className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.campaigns.actions.viewDetails")}
+                  View job details and apply
                 </Button>
                 <Button
                   variant="outline"
@@ -12344,6 +12625,46 @@ export default function CreatorDashboard() {
             )}
             <div id="veriff-kyc-embedded-creator" className="w-full h-full" />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={jobInviteConfirmOpen}
+        onOpenChange={setJobInviteConfirmOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Confirm{" "}
+              {jobInviteConfirmAction === "accept" ? "Acceptance" : "Decline"}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {jobInviteConfirmAction} this job invite?
+              This action cannot be undone. Please ensure you have viewed the
+              job details first.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setJobInviteConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className={
+                jobInviteConfirmAction === "accept"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }
+              onClick={confirmJobInviteAction}
+              disabled={offerActionLoading}
+            >
+              {offerActionLoading
+                ? "Processing..."
+                : `Yes, ${jobInviteConfirmAction}`}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -908,7 +908,7 @@ pub async fn search_marketplace_profiles(
     Ok(Json(serde_json::Value::Array(results)))
 }
 
-async fn resolve_effective_agency_id(
+pub(crate) async fn resolve_effective_agency_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -964,10 +964,36 @@ async fn resolve_effective_agency_id(
         }
     }
 
+    if let Ok(by_member_resp) = state
+        .pg
+        .from("agency_users")
+        .select("agency_id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        if by_member_resp.status().is_success() {
+            if let Ok(by_member_text) = by_member_resp.text().await {
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&by_member_text).unwrap_or_default();
+                if let Some(org_id) = rows
+                    .first()
+                    .and_then(|r| r.get("agency_id"))
+                    .and_then(|v| v.as_str())
+                {
+                    if !org_id.is_empty() {
+                        return Ok(org_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
     Ok(user.id.clone())
 }
 
-async fn resolve_effective_brand_id(
+pub(crate) async fn resolve_effective_brand_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -1026,7 +1052,7 @@ async fn resolve_effective_brand_id(
     Ok(user.id.clone())
 }
 
-async fn resolve_effective_creator_id(
+pub(crate) async fn resolve_effective_creator_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -1874,13 +1900,13 @@ pub async fn create_marketplace_connection_request(
         ));
     }
 
+    let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
     let agency_id = target_id.to_string();
     let agency_exists_resp = state
         .pg
         .from("agencies")
         .select("id")
         .eq("id", &agency_id)
-        .eq("kyc_status", "approved")
         .limit(1)
         .execute()
         .await
@@ -1906,7 +1932,7 @@ pub async fn create_marketplace_connection_request(
         .pg
         .from("brand_agency_connections")
         .select("id")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &effective_brand_id)
         .eq("agency_id", &agency_id)
         .eq("status", "active")
         .limit(1)
@@ -1939,7 +1965,7 @@ pub async fn create_marketplace_connection_request(
         .pg
         .from("brand_agency_connection_requests")
         .select("id,status")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &effective_brand_id)
         .eq("agency_id", &agency_id)
         .order("created_at.desc")
         .limit(1)
@@ -1997,7 +2023,7 @@ pub async fn create_marketplace_connection_request(
                 .pg
                 .from("brand_agency_connection_requests")
                 .eq("id", &invite_id)
-                .eq("brand_id", &user.id)
+                .eq("brand_id", &effective_brand_id)
                 .eq("agency_id", &agency_id)
                 .update(reactivate_payload.to_string())
                 .execute()
@@ -2019,7 +2045,7 @@ pub async fn create_marketplace_connection_request(
     }
 
     let insert_payload = serde_json::json!({
-        "brand_id": user.id,
+        "brand_id": effective_brand_id,
         "agency_id": agency_id,
         "status": "pending",
         "message": payload
@@ -2073,12 +2099,13 @@ pub async fn list_brand_connected_agencies(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["brand"]).check(&user.role)?;
+    let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
 
     let resp = state
         .pg
         .from("brand_agency_connections")
         .select("agency_id,connected_at,updated_at,agencies!inner(id,agency_name,contact_name,email,website,agency_type,city,state,country,logo_url,kyc_status)")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &effective_brand_id)
         .eq("status", "active")
         .order("updated_at.desc")
         .execute()
@@ -2096,7 +2123,7 @@ pub async fn list_brand_connected_agencies(
             .pg
             .from("brand_agency_connection_requests")
             .select("agency_id,updated_at,agencies!inner(id,agency_name,contact_name,email,website,agency_type,city,state,country,logo_url,kyc_status)")
-            .eq("brand_id", &user.id)
+            .eq("brand_id", &effective_brand_id)
             .eq("status", "accepted")
             .order("updated_at.desc")
             .execute()
@@ -2126,14 +2153,6 @@ pub async fn list_brand_connected_agencies(
         let Some(agency) = row.get("agencies") else {
             continue;
         };
-        let kyc_status = agency
-            .get("kyc_status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_lowercase();
-        if kyc_status != "approved" {
-            continue;
-        }
 
         let city = agency.get("city").and_then(|v| v.as_str()).unwrap_or("");
         let state = agency.get("state").and_then(|v| v.as_str()).unwrap_or("");

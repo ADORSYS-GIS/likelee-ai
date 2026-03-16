@@ -293,6 +293,13 @@ export default function MarketingAgencyDashboard() {
                   Marketplace
                 </Button>
                 <Button
+                  variant="ghost"
+                  onClick={() => navigate(createPageUrl("Jobs"))}
+                  className="text-sm rounded-none"
+                >
+                  Jobs
+                </Button>
+                <Button
                   variant={activeTab === "clients" ? "default" : "ghost"}
                   onClick={() => setActiveTab("clients")}
                   className="text-sm rounded-none"
