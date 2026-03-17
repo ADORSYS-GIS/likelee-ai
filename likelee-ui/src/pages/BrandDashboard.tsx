@@ -657,6 +657,7 @@ export default function BrandDashboard() {
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
   const hasLoadedOffersRef = useRef(false);
+  const hasLoadedBrandAnalyticsRef = useRef(false);
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
 
@@ -679,6 +680,16 @@ export default function BrandDashboard() {
     pending_approvals_count: 0,
     action_needed: false,
     avg_turnaround_hours: 0,
+    loading: true,
+  });
+
+  const [brandAnalytics, setBrandAnalytics] = useState<{
+    total_projects_ytd: number;
+    talent_performance: any[];
+    loading: boolean;
+  }>({
+    total_projects_ytd: 0,
+    talent_performance: [],
     loading: true,
   });
 
@@ -1022,6 +1033,45 @@ export default function BrandDashboard() {
       if (typeof window !== "undefined") {
         window.removeEventListener("focus", onFocus);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (hasLoadedBrandAnalyticsRef.current) {
+      return () => {
+        mounted = false;
+      };
+    }
+    const loadAnalytics = async () => {
+      try {
+        setBrandAnalytics((prev) => ({ ...prev, loading: true }));
+        const res = await base44.get<{
+          total_projects_ytd?: number;
+          talent_performance?: any[];
+        }>("/api/brand/analytics", {});
+        if (!mounted) return;
+        setBrandAnalytics({
+          total_projects_ytd: Number(res?.total_projects_ytd || 0),
+          talent_performance: Array.isArray(res?.talent_performance)
+            ? res.talent_performance
+            : [],
+          loading: false,
+        });
+        hasLoadedBrandAnalyticsRef.current = true;
+      } catch {
+        if (!mounted) return;
+        setBrandAnalytics({
+          total_projects_ytd: 0,
+          talent_performance: [],
+          loading: false,
+        });
+        hasLoadedBrandAnalyticsRef.current = true;
+      }
+    };
+    loadAnalytics();
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -6139,10 +6189,12 @@ export default function BrandDashboard() {
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
-          <p className="text-3xl font-bold text-gray-900">12</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {brandAnalytics.loading ? "—" : brandAnalytics.total_projects_ytd}
+          </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
@@ -6154,21 +6206,12 @@ export default function BrandDashboard() {
           <p className="text-xs text-gray-500 mt-1">Industry: 48h</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Approval Rate</p>
-          <p className="text-3xl font-bold text-gray-900">96%</p>
-          <p className="text-xs text-green-600 mt-1">First submission</p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
           <p className="text-3xl font-bold text-gray-900">$45.2K</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
           <p className="text-3xl font-bold text-gray-900">$3.8K</p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Revision Rate</p>
-          <p className="text-3xl font-bold text-gray-900">4%</p>
         </Card>
       </div>
 
@@ -6208,45 +6251,81 @@ export default function BrandDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              <tr className="hover:bg-gray-50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png"
-                      className="w-10 h-10 rounded-full object-cover"
-                      alt="Emma"
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900">Emma</p>
-                      <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs">
-                        Top Performer
-                      </Badge>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-gray-900">5</td>
-                <td className="px-4 py-4 text-gray-900">★★★★★ 4.9</td>
-                <td className="px-4 py-4 text-gray-900">12h</td>
-                <td className="px-4 py-4 text-green-600 font-semibold">100%</td>
-                <td className="px-4 py-4 font-bold text-gray-900">$8,200</td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png"
-                      className="w-10 h-10 rounded-full object-cover"
-                      alt="Marcus"
-                    />
-                    <p className="font-semibold text-gray-900">Marcus Davis</p>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-gray-900">3</td>
-                <td className="px-4 py-4 text-gray-900">★★★★☆ 4.7</td>
-                <td className="px-4 py-4 text-gray-900">16h</td>
-                <td className="px-4 py-4 text-green-600 font-semibold">95%</td>
-                <td className="px-4 py-4 font-bold text-gray-900">$6,000</td>
-              </tr>
+              {brandAnalytics.loading && (
+                <tr>
+                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={6}>
+                    Loading talent performance...
+                  </td>
+                </tr>
+              )}
+              {!brandAnalytics.loading &&
+                brandAnalytics.talent_performance.length === 0 && (
+                  <tr>
+                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={6}>
+                      No talent performance data yet.
+                    </td>
+                  </tr>
+                )}
+              {!brandAnalytics.loading &&
+                brandAnalytics.talent_performance.map(
+                  (talent: any, idx: number) => {
+                    const name = String(talent?.name || "Talent");
+                    const imageUrl = String(talent?.image_url || "").trim();
+                    const typeLabel =
+                      String(talent?.target_type || "").toLowerCase() ===
+                      "agency"
+                        ? "Agency"
+                        : "Creator";
+                    const projectsCount = Number(talent?.projects_count || 0);
+                    const avgTurnaround = Number(
+                      talent?.avg_turnaround_hours || 0,
+                    );
+                    const successRate = Number(talent?.success_rate_pct || 0);
+                    return (
+                      <tr
+                        key={`${talent?.target_type || "talent"}-${talent?.target_id || name}`}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                                {name.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {name}
+                              </p>
+                              {idx === 0 && (
+                                <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs mt-1">
+                                  Top Performer
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {projectsCount}
+                        </td>
+                        <td className="px-4 py-4 text-gray-900">—</td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {avgTurnaround > 0 ? `${avgTurnaround}h` : "—"}
+                        </td>
+                        <td className="px-4 py-4 text-green-600 font-semibold">
+                          {projectsCount > 0 ? `${successRate}%` : "—"}
+                        </td>
+                        <td className="px-4 py-4 font-bold text-gray-900">—</td>
+                      </tr>
+                    );
+                  },
+                )}
             </tbody>
           </table>
         </div>
