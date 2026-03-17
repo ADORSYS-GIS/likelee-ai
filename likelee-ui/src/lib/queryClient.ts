@@ -13,7 +13,7 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import { persistQueryClient } from './queryPersister';
+import { persistQueryClient } from './indexedDbPersister';
 
 // Default stale times (data is considered fresh)
 export const STALE_TIME = {
