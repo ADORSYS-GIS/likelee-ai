@@ -515,7 +515,7 @@ async fn ensure_offer_access(
     Ok(offer)
 }
 
-async fn resolve_brand_name(state: &AppState, brand_id: &str) -> Option<String> {
+pub(crate) async fn resolve_brand_name(state: &AppState, brand_id: &str) -> Option<String> {
     let resp = state
         .pg
         .from("brands")
@@ -544,7 +544,7 @@ async fn resolve_brand_name(state: &AppState, brand_id: &str) -> Option<String> 
         .map(|s| s.to_string())
 }
 
-async fn resolve_agency_name(state: &AppState, agency_id: &str) -> Option<String> {
+pub(crate) async fn resolve_agency_name(state: &AppState, agency_id: &str) -> Option<String> {
     let resp = state
         .pg
         .from("agencies")
@@ -573,7 +573,7 @@ async fn resolve_agency_name(state: &AppState, agency_id: &str) -> Option<String
         .map(|s| s.to_string())
 }
 
-async fn resolve_creator_name(state: &AppState, creator_id: &str) -> Option<String> {
+pub(crate) async fn resolve_creator_name(state: &AppState, creator_id: &str) -> Option<String> {
     let resp = state
         .pg
         .from("creators")
@@ -5968,7 +5968,8 @@ pub async fn comment_offer_deliverable(
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
-async fn log_activity_event(
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn log_activity_event_with_subject(
     state: &AppState,
     brand_id: &str,
     campaign_id: Option<&str>,
@@ -5976,6 +5977,8 @@ async fn log_activity_event(
     actor_name: &str,
     event_type: &str,
     description: String,
+    subject_table: &str,
+    subject_id: Option<&str>,
 ) {
     if brand_id.trim().is_empty() {
         return;
@@ -5992,8 +5995,9 @@ async fn log_activity_event(
     payload.insert("event_type".to_string(), json!(event_type));
     payload.insert("description".to_string(), json!(description));
     payload.insert("type".to_string(), json!(event_type));
-    payload.insert("subject_table".to_string(), json!("brand_campaigns"));
-    payload.insert("subject_id".to_string(), json!(campaign_id.unwrap_or("")));
+    payload.insert("subject_table".to_string(), json!(subject_table));
+    let subject_value = subject_id.or(campaign_id).unwrap_or("");
+    payload.insert("subject_id".to_string(), json!(subject_value));
     payload.insert("title".to_string(), json!(description));
     payload.insert("subtitle".to_string(), json!(actor_name));
     let _ = state
@@ -6002,4 +6006,27 @@ async fn log_activity_event(
         .insert(serde_json::Value::Object(payload).to_string())
         .execute()
         .await;
+}
+
+async fn log_activity_event(
+    state: &AppState,
+    brand_id: &str,
+    campaign_id: Option<&str>,
+    actor_type: &str,
+    actor_name: &str,
+    event_type: &str,
+    description: String,
+) {
+    log_activity_event_with_subject(
+        state,
+        brand_id,
+        campaign_id,
+        actor_type,
+        actor_name,
+        event_type,
+        description,
+        "brand_campaigns",
+        campaign_id,
+    )
+    .await;
 }

@@ -2297,6 +2297,16 @@ export default function BrandDashboard() {
                       "requested edits on a deliverable",
                     "deliverable.approved": "approved a deliverable",
                     "deliverable.comment": "left feedback on a deliverable",
+                    "job.created": "created a job",
+                    "job.invite.sent": "sent a job invite",
+                    "job.invite.accepted": "accepted a job invite",
+                    "job.invite.declined": "declined a job invite",
+                    "job.application.submitted": "applied for a job",
+                    "connection.request.sent": "sent a connection request",
+                    "connection.request.accepted":
+                      "accepted a connection request",
+                    "connection.request.declined":
+                      "declined a connection request",
                   };
                   const fallbackAction =
                     fallbackActionMap[eventType] ||
