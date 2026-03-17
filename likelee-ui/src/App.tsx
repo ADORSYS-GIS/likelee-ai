@@ -3,9 +3,9 @@ import Pages from "@/pages";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createQueryClient } from "@/lib/queryClient";
+import { createPersistedQueryClient } from "@/lib/queryClient";
 
-const queryClient = createQueryClient();
+const queryClient = createPersistedQueryClient();
 
 export default // Trigger CI
 function App() {

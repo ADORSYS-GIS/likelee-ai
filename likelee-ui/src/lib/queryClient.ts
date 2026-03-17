@@ -13,6 +13,7 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
+import { persistQueryClient } from './queryPersister';
 
 // Default stale times (data is considered fresh)
 export const STALE_TIME = {
@@ -89,6 +90,18 @@ export function createQueryClient(): QueryClient {
     queryCache: undefined,
     mutationCache: undefined,
   });
+}
+
+/**
+ * Create a configured QueryClient with localStorage persistence
+ */
+export function createPersistedQueryClient(): QueryClient {
+  const queryClient = createQueryClient();
+  
+  // Enable localStorage persistence
+  persistQueryClient(queryClient);
+  
+  return queryClient;
 }
 
 /**
