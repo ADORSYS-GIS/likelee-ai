@@ -723,6 +723,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::get_campaign_metrics),
         )
         .route(
+            "/api/brand/activity-events",
+            get(crate::brand_campaigns::list_activity_events),
+        )
+        .route(
             "/api/brand/campaigns/:campaign_id",
             get(crate::brand_campaigns::get_campaign).post(crate::brand_campaigns::update_campaign),
         )

@@ -59,6 +59,11 @@ pub struct ListCampaignQuery {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ListActivityEventsQuery {
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct CampaignMetricsQuery {
     pub month: Option<String>,
 }
@@ -594,6 +599,27 @@ pub async fn create_campaign(
 
     let row: serde_json::Value =
         serde_json::from_str(&text).unwrap_or_else(|_| json!({"status":"ok"}));
+    let campaign_id = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let campaign_name = row
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("campaign");
+    if !campaign_id.is_empty() {
+        log_activity_event(
+            &state,
+            &user.id,
+            Some(&campaign_id),
+            "brand",
+            "Brand",
+            "campaign.created",
+            format!("Brand created {}.", campaign_name),
+        )
+        .await;
+    }
     Ok(Json(row))
 }
 
@@ -798,21 +824,16 @@ pub async fn mark_campaign_done(
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
-    let _ = state
-        .pg
-        .from("brand_activity_events")
-        .insert(
-            json!({
-                "brand_id": user.id,
-                "type": "campaign.completed",
-                "subject_table": "brand_campaigns",
-                "subject_id": campaign_id,
-                "title": format!("Brand marked {} as done.", campaign_name),
-            })
-            .to_string(),
-        )
-        .execute()
-        .await;
+    log_activity_event(
+        &state,
+        &user.id,
+        Some(&campaign_id),
+        "brand",
+        "Brand",
+        "campaign.completed",
+        format!("Brand marked {} as done.", campaign_name),
+    )
+    .await;
 
     Ok(Json(updated_row))
 }
@@ -859,6 +880,44 @@ pub async fn list_campaigns(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(Json(json!({ "campaigns": rows })))
+}
+
+pub async fn list_activity_events(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<ListActivityEventsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let mut limit = q.limit.unwrap_or(10) as usize;
+    if limit == 0 {
+        limit = 1;
+    }
+    if limit > 50 {
+        limit = 50;
+    }
+
+    let resp = state
+        .pg
+        .from("brand_activity_events")
+        .select("id,brand_id,campaign_id,actor_type,actor_name,event_type,description,created_at")
+        .eq("brand_id", &user.id)
+        .order("created_at.desc")
+        .limit(limit)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(Json(json!({ "events": rows })))
 }
 
 pub async fn get_campaign_metrics(
@@ -1438,6 +1497,25 @@ pub async fn create_campaign_offers(
             return Err(sanitize_db_error(status.as_u16(), text));
         }
         let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+        let target_label = if target_type == "agency" {
+            "agency"
+        } else {
+            "creator"
+        };
+        let campaign_name = campaign
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("campaign");
+        log_activity_event(
+            &state,
+            &user.id,
+            Some(&campaign_id),
+            "brand",
+            "Brand",
+            "offer.sent",
+            format!("Brand sent {} offer for {}.", target_label, campaign_name),
+        )
+        .await;
         created.push(row);
     }
     Ok(Json(json!({"status":"ok","offers":created})))
@@ -4207,6 +4285,33 @@ pub async fn submit_offer_deliverable(
         )
         .execute()
         .await;
+    let actor_type = if user.role == "agency" {
+        "agency"
+    } else {
+        "creator"
+    };
+    let campaign_name = _offer
+        .get("brand_campaigns")
+        .and_then(|v| v.get("name"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("campaign");
+    log_activity_event(
+        &state,
+        &offer_brand_id,
+        Some(&offer_brand_campaign_id),
+        actor_type,
+        if actor_type == "agency" {
+            "Agency"
+        } else {
+            "Creator"
+        },
+        "deliverable.submitted",
+        format!(
+            "{} submitted a deliverable for {}.",
+            actor_type, campaign_name
+        ),
+    )
+    .await;
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -5242,6 +5347,42 @@ pub async fn review_offer_deliverable(
         .execute()
         .await;
 
+    let actor_label = if user.role == "brand" {
+        "Brand"
+    } else {
+        "Agency"
+    };
+    let event_type = if status_value == "changes_requested" {
+        "deliverable.changes_requested"
+    } else {
+        "deliverable.approved"
+    };
+    log_activity_event(
+        &state,
+        _offer
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+        _offer.get("brand_campaign_id").and_then(|v| v.as_str()),
+        if user.role == "brand" {
+            "brand"
+        } else {
+            "agency"
+        },
+        actor_label,
+        event_type,
+        format!(
+            "{} {} a deliverable.",
+            actor_label,
+            if status_value == "changes_requested" {
+                "requested edits on"
+            } else {
+                "approved"
+            }
+        ),
+    )
+    .await;
+
     // Sync back to booking_deliverables if this was linked
     if let Some(source_id) = row
         .get("meta")
@@ -5502,6 +5643,32 @@ pub async fn mark_offer_deliverable_downloaded(
         return Err(sanitize_db_error(update_status.as_u16(), update_text));
     }
     let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
+    let actor_label = if user.role == "brand" {
+        "Brand"
+    } else if user.role == "agency" {
+        "Agency"
+    } else {
+        "Creator"
+    };
+    log_activity_event(
+        &state,
+        _offer
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+        _offer.get("brand_campaign_id").and_then(|v| v.as_str()),
+        if user.role == "brand" {
+            "brand"
+        } else if user.role == "agency" {
+            "agency"
+        } else {
+            "creator"
+        },
+        actor_label,
+        "deliverable.comment",
+        format!("{} left feedback on a deliverable.", actor_label),
+    )
+    .await;
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -5592,4 +5759,32 @@ pub async fn comment_offer_deliverable(
     }
     let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
     Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+async fn log_activity_event(
+    state: &AppState,
+    brand_id: &str,
+    campaign_id: Option<&str>,
+    actor_type: &str,
+    actor_name: &str,
+    event_type: &str,
+    description: String,
+) {
+    let mut payload = serde_json::Map::new();
+    payload.insert("brand_id".to_string(), json!(brand_id));
+    if let Some(campaign_id) = campaign_id {
+        if !campaign_id.trim().is_empty() {
+            payload.insert("campaign_id".to_string(), json!(campaign_id));
+        }
+    }
+    payload.insert("actor_type".to_string(), json!(actor_type));
+    payload.insert("actor_name".to_string(), json!(actor_name));
+    payload.insert("event_type".to_string(), json!(event_type));
+    payload.insert("description".to_string(), json!(description));
+    let _ = state
+        .pg
+        .from("brand_activity_events")
+        .insert(serde_json::Value::Object(payload).to_string())
+        .execute()
+        .await;
 }

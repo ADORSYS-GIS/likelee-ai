@@ -656,6 +656,8 @@ export default function BrandDashboard() {
   const [jobSearch, setJobSearch] = useState("");
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
+  const [activityEvents, setActivityEvents] = useState<any[]>([]);
+  const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -708,6 +710,24 @@ export default function BrandDashboard() {
       campaignHubTab: "active",
       replace: false,
     });
+  };
+
+  const formatRelativeTime = (value?: string | null) => {
+    if (!value) return "Just now";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Just now";
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
   };
 
   const resolveJobAssetUrl = (asset: any) => {
@@ -1009,6 +1029,30 @@ export default function BrandDashboard() {
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);
   }, [searchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadActivityEvents = async () => {
+      try {
+        setLoadingActivityEvents(true);
+        const res = await base44.get<{ events?: any[] }>(
+          "/api/brand/activity-events",
+          { params: { limit: 10 } },
+        );
+        if (!mounted) return;
+        setActivityEvents(Array.isArray(res?.events) ? res.events : []);
+      } catch {
+        if (!mounted) return;
+        setActivityEvents([]);
+      } finally {
+        if (mounted) setLoadingActivityEvents(false);
+      }
+    };
+    loadActivityEvents();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -2118,68 +2162,76 @@ export default function BrandDashboard() {
               Recent Projects
             </h3>
             <div className="space-y-3">
-              {recentProjects.map((campaign: any) => (
-                <Card
-                  key={campaign.id}
-                  className="p-4 bg-gray-50 border border-gray-200 hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900 mb-1">
-                        {campaign.name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {campaign.creator_name}
-                      </p>
-                    </div>
-                    <Badge
-                      className={
-                        campaign.status === "in_progress"
-                          ? "bg-blue-100 text-blue-700 border border-blue-300"
-                          : campaign.status === "pending_approval"
-                            ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                            : campaign.status === "completed"
-                              ? campaign.completed_at
-                                ? "bg-green-100 text-green-700 border border-green-300"
-                                : "bg-gray-100 text-gray-700 border border-gray-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }
-                    >
-                      {campaign.status === "completed"
-                        ? campaign.completed_at
-                          ? "completed"
-                          : "incomplete"
-                        : String(campaign.status).replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">
-                      Due: {campaign.due_date.toLocaleDateString()}
-                    </span>
-                    <Button
-                      variant="link"
-                      className="text-[#F7B750] p-0 h-auto"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (campaign.offer_id) {
-                          setSelectedCampaign(campaign.offer_id);
-                        }
-                        navigateToSection("campaign-offers", {
-                          campaignView:
-                            campaign.status === "pending_approval"
-                              ? "pending"
-                              : campaign.status === "completed"
-                                ? "completed"
-                                : "active",
-                        });
-                      }}
-                    >
-                      View Project →
-                    </Button>
-                  </div>
+              {loadingBrandOfferItems && (
+                <Card className="p-4 bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Loading recent projects...
+                  </p>
                 </Card>
-              ))}
-              {recentProjects.length === 0 && (
+              )}
+              {!loadingBrandOfferItems &&
+                recentProjects.map((campaign: any) => (
+                  <Card
+                    key={campaign.id}
+                    className="p-4 bg-gray-50 border border-gray-200 hover:shadow-md transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 mb-1">
+                          {campaign.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {campaign.creator_name}
+                        </p>
+                      </div>
+                      <Badge
+                        className={
+                          campaign.status === "in_progress"
+                            ? "bg-blue-100 text-blue-700 border border-blue-300"
+                            : campaign.status === "pending_approval"
+                              ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                              : campaign.status === "completed"
+                                ? campaign.completed_at
+                                  ? "bg-green-100 text-green-700 border border-green-300"
+                                  : "bg-gray-100 text-gray-700 border border-gray-300"
+                                : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }
+                      >
+                        {campaign.status === "completed"
+                          ? campaign.completed_at
+                            ? "completed"
+                            : "incomplete"
+                          : String(campaign.status).replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        Due: {campaign.due_date.toLocaleDateString()}
+                      </span>
+                      <Button
+                        variant="link"
+                        className="text-[#F7B750] p-0 h-auto"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (campaign.offer_id) {
+                            setSelectedCampaign(campaign.offer_id);
+                          }
+                          navigateToSection("campaign-offers", {
+                            campaignView:
+                              campaign.status === "pending_approval"
+                                ? "pending"
+                                : campaign.status === "completed"
+                                  ? "completed"
+                                  : "active",
+                          });
+                        }}
+                      >
+                        View Project →
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {!loadingBrandOfferItems && recentProjects.length === 0 && (
                 <Card className="p-4 bg-gray-50 border border-gray-200">
                   <p className="text-sm text-gray-600">
                     No recent projects yet.
@@ -2194,32 +2246,89 @@ export default function BrandDashboard() {
               Activity Feed
             </h3>
             <div className="space-y-3">
-              {mockActivities.map((activity, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg border ${
-                    activity.urgent
-                      ? "bg-yellow-50 border-yellow-300"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.urgent ? "bg-yellow-500" : "bg-gray-400"
-                      }`}
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-medium">
-                        {activity.message}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </div>
+              {loadingActivityEvents && (
+                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Loading activity feed...
+                  </p>
                 </div>
-              ))}
+              )}
+              {!loadingActivityEvents && activityEvents.length === 0 && (
+                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No recent activity yet.
+                  </p>
+                </div>
+              )}
+              {!loadingActivityEvents &&
+                activityEvents.map((event: any) => {
+                  const eventType = String(
+                    event?.event_type || "",
+                  ).toLowerCase();
+                  const isAttention = [
+                    "deliverable.submitted",
+                    "deliverable.changes_requested",
+                    "deliverable.comment",
+                  ].includes(eventType);
+                  const actor = String(event?.actor_name || "").trim();
+                  const actorTypeRaw = String(
+                    event?.actor_type || "",
+                  ).toLowerCase();
+                  const actorLabel =
+                    actor ||
+                    (actorTypeRaw === "agency"
+                      ? "Agency"
+                      : actorTypeRaw === "creator"
+                        ? "Creator"
+                        : actorTypeRaw === "brand"
+                          ? "Brand"
+                          : "Someone");
+                  const description = String(event?.description || "");
+                  const createdAt = formatRelativeTime(event?.created_at);
+                  const fallbackActionMap: Record<string, string> = {
+                    "campaign.created": "created a campaign",
+                    "campaign.completed": "marked a campaign as done",
+                    "offer.sent": "sent an offer",
+                    "deliverable.submitted": "submitted a deliverable",
+                    "deliverable.changes_requested":
+                      "requested edits on a deliverable",
+                    "deliverable.approved": "approved a deliverable",
+                    "deliverable.comment": "left feedback on a deliverable",
+                  };
+                  const fallbackAction =
+                    fallbackActionMap[eventType] ||
+                    (eventType
+                      ? eventType.replace(/_/g, " ").replace(/\./g, " ")
+                      : "performed an action");
+                  const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
+                  const message = description || fallbackDescription;
+                  return (
+                    <div
+                      key={String(event?.id || Math.random())}
+                      className={`p-3 rounded-lg border ${
+                        isAttention
+                          ? "bg-yellow-50 border-yellow-300"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            isAttention ? "bg-yellow-500" : "bg-gray-400"
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900 font-medium">
+                            {message}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {createdAt}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </Card>
         </div>
