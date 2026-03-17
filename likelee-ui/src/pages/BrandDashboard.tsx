@@ -5583,7 +5583,7 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-8">
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
@@ -5598,11 +5598,6 @@ export default function BrandDashboard() {
             <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">12</p>
-          </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
-            <p className="text-3xl font-bold text-gray-900">3.2x</p>
           </Card>
         </div>
 
@@ -6237,9 +6232,6 @@ export default function BrandDashboard() {
                   Projects
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Avg Rating
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                   Avg Turnaround
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
@@ -6253,7 +6245,7 @@ export default function BrandDashboard() {
             <tbody className="divide-y divide-gray-200">
               {brandAnalytics.loading && (
                 <tr>
-                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={6}>
+                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
                     Loading talent performance...
                   </td>
                 </tr>
@@ -6261,7 +6253,7 @@ export default function BrandDashboard() {
               {!brandAnalytics.loading &&
                 brandAnalytics.talent_performance.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={6}>
+                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
                       No talent performance data yet.
                     </td>
                   </tr>
@@ -6271,11 +6263,6 @@ export default function BrandDashboard() {
                   (talent: any, idx: number) => {
                     const name = String(talent?.name || "Talent");
                     const imageUrl = String(talent?.image_url || "").trim();
-                    const typeLabel =
-                      String(talent?.target_type || "").toLowerCase() ===
-                      "agency"
-                        ? "Agency"
-                        : "Creator";
                     const projectsCount = Number(talent?.projects_count || 0);
                     const avgTurnaround = Number(
                       talent?.avg_turnaround_hours || 0,
@@ -6314,7 +6301,6 @@ export default function BrandDashboard() {
                         <td className="px-4 py-4 text-gray-900">
                           {projectsCount}
                         </td>
-                        <td className="px-4 py-4 text-gray-900">—</td>
                         <td className="px-4 py-4 text-gray-900">
                           {avgTurnaround > 0 ? `${avgTurnaround}h` : "—"}
                         </td>
@@ -6332,7 +6318,7 @@ export default function BrandDashboard() {
       </Card>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-1 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             Spend by Month
@@ -6351,59 +6337,6 @@ export default function BrandDashboard() {
               />
             </LineChart>
           </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Project Completion Time
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">0-12 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: "40%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">40%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">12-24 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500"
-                    style={{ width: "35%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">35%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">24-48 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-500"
-                    style={{ width: "20%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">20%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">48+ hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-500" style={{ width: "5%" }} />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">5%</span>
-              </div>
-            </div>
-          </div>
         </Card>
       </div>
 
