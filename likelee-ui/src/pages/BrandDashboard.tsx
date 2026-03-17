@@ -6303,7 +6303,7 @@ export default function BrandDashboard() {
                               <p className="font-semibold text-gray-900">
                                 {name}
                               </p>
-                              {idx === 0 && (
+                              {idx < 3 && (
                                 <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs mt-1">
                                   Top Performer
                                 </Badge>
