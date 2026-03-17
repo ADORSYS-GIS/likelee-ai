@@ -656,6 +656,7 @@ export default function BrandDashboard() {
   const [jobSearch, setJobSearch] = useState("");
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
+  const hasLoadedOffersRef = useRef(false);
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
 
@@ -1267,6 +1268,7 @@ export default function BrandDashboard() {
     }
     let mounted = true;
     const loadMyOffers = async () => {
+      if (hasLoadedOffersRef.current) return;
       try {
         setLoadingBrandOfferItems(true);
         const response = await base44.get<{ offers?: any[] }>(
@@ -1306,6 +1308,7 @@ export default function BrandDashboard() {
         );
         if (!mounted) return;
         setBrandOfferItems(withDeliverables);
+        hasLoadedOffersRef.current = true;
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
@@ -2281,7 +2284,7 @@ export default function BrandDashboard() {
                       : actorTypeRaw === "creator"
                         ? "Creator"
                         : actorTypeRaw === "brand"
-                          ? "Brand"
+                          ? "You"
                           : "Someone");
                   const description = String(event?.description || "");
                   const createdAt = formatRelativeTime(event?.created_at);
@@ -2301,7 +2304,14 @@ export default function BrandDashboard() {
                       ? eventType.replace(/_/g, " ").replace(/\./g, " ")
                       : "performed an action");
                   const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
-                  const message = description || fallbackDescription;
+                  let message = description || fallbackDescription;
+                  if (actorTypeRaw === "brand" && message) {
+                    if (actor && message.startsWith(actor)) {
+                      message = `You${message.slice(actor.length)}`;
+                    } else if (message.startsWith("Brand")) {
+                      message = `You${message.slice("Brand".length)}`;
+                    }
+                  }
                   return (
                     <div
                       key={String(event?.id || Math.random())}

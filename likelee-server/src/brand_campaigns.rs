@@ -515,6 +515,113 @@ async fn ensure_offer_access(
     Ok(offer)
 }
 
+async fn resolve_brand_name(state: &AppState, brand_id: &str) -> Option<String> {
+    let resp = state
+        .pg
+        .from("brands")
+        .select("company_name,email")
+        .eq("id", brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let text = resp.text().await.ok()?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
+    let row = rows.first()?;
+    let name = row
+        .get("company_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if !name.is_empty() {
+        return Some(name.to_string());
+    }
+    row.get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+async fn resolve_agency_name(state: &AppState, agency_id: &str) -> Option<String> {
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("agency_name,email")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let text = resp.text().await.ok()?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
+    let row = rows.first()?;
+    let name = row
+        .get("agency_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if !name.is_empty() {
+        return Some(name.to_string());
+    }
+    row.get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+async fn resolve_creator_name(state: &AppState, creator_id: &str) -> Option<String> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("full_name,email")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let text = resp.text().await.ok()?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
+    let row = rows.first()?;
+    let name = row
+        .get("full_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if !name.is_empty() {
+        return Some(name.to_string());
+    }
+    row.get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+async fn resolve_offer_target_name(state: &AppState, offer: &serde_json::Value) -> Option<String> {
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let target_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if target_id.is_empty() {
+        return None;
+    }
+    if target_type == "agency" {
+        resolve_agency_name(state, target_id).await
+    } else {
+        resolve_creator_name(state, target_id).await
+    }
+}
+
 async fn ensure_brand_campaign_ownership(
     state: &AppState,
     brand_id: &str,
@@ -608,15 +715,18 @@ pub async fn create_campaign(
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
+    let brand_name = resolve_brand_name(&state, &user.id)
+        .await
+        .unwrap_or_else(|| "Brand".to_string());
     if !campaign_id.is_empty() {
         log_activity_event(
             &state,
             &user.id,
             Some(&campaign_id),
             "brand",
-            "Brand",
+            &brand_name,
             "campaign.created",
-            format!("Brand created {}.", campaign_name),
+            format!("{} created {}.", brand_name, campaign_name),
         )
         .await;
     }
@@ -824,14 +934,17 @@ pub async fn mark_campaign_done(
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
+    let brand_name = resolve_brand_name(&state, &user.id)
+        .await
+        .unwrap_or_else(|| "Brand".to_string());
     log_activity_event(
         &state,
         &user.id,
         Some(&campaign_id),
         "brand",
-        "Brand",
+        &brand_name,
         "campaign.completed",
-        format!("Brand marked {} as done.", campaign_name),
+        format!("{} marked {} as done.", brand_name, campaign_name),
     )
     .await;
 
@@ -1116,6 +1229,24 @@ pub async fn get_campaign_metrics(
         }
     }
 
+    let parse_rpc_int = |text: &str, key: &str| -> i64 {
+        serde_json::from_str::<serde_json::Value>(text)
+            .ok()
+            .and_then(|value| {
+                value
+                    .as_array()
+                    .and_then(|arr| arr.first().cloned())
+                    .or(Some(value))
+            })
+            .and_then(|value| {
+                value
+                    .get(key)
+                    .and_then(|v| v.as_i64())
+                    .or_else(|| value.as_i64())
+            })
+            .unwrap_or(0)
+    };
+
     let avg_turnaround_hours = match state
         .pg
         .rpc(
@@ -1131,10 +1262,26 @@ pub async fn get_campaign_metrics(
     {
         Ok(resp) => {
             let text = resp.text().await.unwrap_or_default();
-            serde_json::from_str::<serde_json::Value>(&text)
-                .ok()
-                .and_then(|value| value.get(0).and_then(|v| v.as_i64()))
-                .unwrap_or(0)
+            parse_rpc_int(&text, "brand_avg_turnaround_hours")
+        }
+        Err(_) => 0,
+    };
+
+    let industry_avg_turnaround_hours = match state
+        .pg
+        .rpc(
+            "industry_avg_turnaround_hours",
+            json!({
+                "p_month": month_start.to_string()
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+    {
+        Ok(resp) => {
+            let text = resp.text().await.unwrap_or_default();
+            parse_rpc_int(&text, "industry_avg_turnaround_hours")
         }
         Err(_) => 0,
     };
@@ -1143,7 +1290,8 @@ pub async fn get_campaign_metrics(
         "active_projects_count": active_projects_count,
         "pending_approvals_count": pending_approvals_count,
         "action_needed": pending_approvals_count > 0,
-        "avg_turnaround_hours": avg_turnaround_hours
+        "avg_turnaround_hours": avg_turnaround_hours,
+        "industry_avg_turnaround_hours": industry_avg_turnaround_hours
     })))
 }
 
@@ -1506,14 +1654,23 @@ pub async fn create_campaign_offers(
             .get("name")
             .and_then(|v| v.as_str())
             .unwrap_or("campaign");
+        let brand_name = resolve_brand_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Brand".to_string());
+        let target_name = resolve_offer_target_name(&state, &row)
+            .await
+            .unwrap_or_else(|| target_label.to_string());
         log_activity_event(
             &state,
             &user.id,
             Some(&campaign_id),
             "brand",
-            "Brand",
+            &brand_name,
             "offer.sent",
-            format!("Brand sent {} offer for {}.", target_label, campaign_name),
+            format!(
+                "{} sent an offer to {} for {}.",
+                brand_name, target_name, campaign_name
+            ),
         )
         .await;
         created.push(row);
@@ -4295,20 +4452,26 @@ pub async fn submit_offer_deliverable(
         .and_then(|v| v.get("name"))
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
+    let actor_name = if actor_type == "agency" {
+        resolve_agency_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string())
+    } else {
+        let creator_id = resolve_effective_creator_id(&state, &user).await;
+        resolve_creator_name(&state, &creator_id)
+            .await
+            .unwrap_or_else(|| "Creator".to_string())
+    };
     log_activity_event(
         &state,
         &offer_brand_id,
         Some(&offer_brand_campaign_id),
         actor_type,
-        if actor_type == "agency" {
-            "Agency"
-        } else {
-            "Creator"
-        },
+        &actor_name,
         "deliverable.submitted",
         format!(
             "{} submitted a deliverable for {}.",
-            actor_type, campaign_name
+            actor_name, campaign_name
         ),
     )
     .await;
@@ -5347,39 +5510,71 @@ pub async fn review_offer_deliverable(
         .execute()
         .await;
 
-    let actor_label = if user.role == "brand" {
-        "Brand"
+    let brand_id_value = if user.role == "brand" {
+        user.id.as_str()
     } else {
-        "Agency"
+        _offer
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+    };
+    let brand_name = resolve_brand_name(&state, brand_id_value)
+        .await
+        .unwrap_or_else(|| "Brand".to_string());
+    let actor_label = if user.role == "brand" {
+        brand_name.clone()
+    } else {
+        resolve_agency_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string())
     };
     let event_type = if status_value == "changes_requested" {
         "deliverable.changes_requested"
     } else {
         "deliverable.approved"
     };
+    let target_name = resolve_offer_target_name(&state, &_offer)
+        .await
+        .unwrap_or_else(|| {
+            if _offer
+                .get("target_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .eq_ignore_ascii_case("agency")
+            {
+                "Agency".to_string()
+            } else {
+                "Creator".to_string()
+            }
+        });
+    let action_text = if status_value == "changes_requested" {
+        "requested edits on"
+    } else {
+        "approved"
+    };
+    let description = if user.role == "brand" {
+        format!(
+            "{} {} a deliverable from {}.",
+            actor_label, action_text, target_name
+        )
+    } else {
+        format!(
+            "{} {} a deliverable for {}.",
+            actor_label, action_text, brand_name
+        )
+    };
     log_activity_event(
         &state,
-        _offer
-            .get("brand_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or(""),
+        brand_id_value,
         _offer.get("brand_campaign_id").and_then(|v| v.as_str()),
         if user.role == "brand" {
             "brand"
         } else {
             "agency"
         },
-        actor_label,
+        &actor_label,
         event_type,
-        format!(
-            "{} {} a deliverable.",
-            actor_label,
-            if status_value == "changes_requested" {
-                "requested edits on"
-            } else {
-                "approved"
-            }
-        ),
+        description,
     )
     .await;
 
@@ -5644,12 +5839,24 @@ pub async fn mark_offer_deliverable_downloaded(
     }
     let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
     let actor_label = if user.role == "brand" {
-        "Brand"
+        resolve_brand_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Brand".to_string())
     } else if user.role == "agency" {
-        "Agency"
+        resolve_agency_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string())
     } else {
-        "Creator"
+        let creator_id = resolve_effective_creator_id(&state, &user).await;
+        resolve_creator_name(&state, &creator_id)
+            .await
+            .unwrap_or_else(|| "Creator".to_string())
     };
+    let campaign_name = _offer
+        .get("brand_campaigns")
+        .and_then(|v| v.get("name"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("campaign");
     log_activity_event(
         &state,
         _offer
@@ -5664,9 +5871,9 @@ pub async fn mark_offer_deliverable_downloaded(
         } else {
             "creator"
         },
-        actor_label,
+        &actor_label,
         "deliverable.comment",
-        format!("{} left feedback on a deliverable.", actor_label),
+        format!("{} left feedback on {}.", actor_label, campaign_name),
     )
     .await;
     Ok(Json(json!({"status":"ok","deliverable": row})))
@@ -5770,6 +5977,9 @@ async fn log_activity_event(
     event_type: &str,
     description: String,
 ) {
+    if brand_id.trim().is_empty() {
+        return;
+    }
     let mut payload = serde_json::Map::new();
     payload.insert("brand_id".to_string(), json!(brand_id));
     if let Some(campaign_id) = campaign_id {
@@ -5781,6 +5991,11 @@ async fn log_activity_event(
     payload.insert("actor_name".to_string(), json!(actor_name));
     payload.insert("event_type".to_string(), json!(event_type));
     payload.insert("description".to_string(), json!(description));
+    payload.insert("type".to_string(), json!(event_type));
+    payload.insert("subject_table".to_string(), json!("brand_campaigns"));
+    payload.insert("subject_id".to_string(), json!(campaign_id.unwrap_or("")));
+    payload.insert("title".to_string(), json!(description));
+    payload.insert("subtitle".to_string(), json!(actor_name));
     let _ = state
         .pg
         .from("brand_activity_events")
