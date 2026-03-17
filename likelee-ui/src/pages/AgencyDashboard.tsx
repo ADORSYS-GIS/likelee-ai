@@ -17238,6 +17238,8 @@ export default function AgencyDashboard() {
       return resp as any;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes - profile rarely changes
+    refetchOnWindowFocus: false,
   });
 
   const licensingRequestsCountQuery = useQuery({
@@ -17285,6 +17287,7 @@ export default function AgencyDashboard() {
     },
     enabled: !!user?.id,
     staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const brandConnectionJobInvitesQuery = useQuery({
@@ -17306,6 +17309,7 @@ export default function AgencyDashboard() {
     },
     enabled: !!user?.id,
     staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const brandConnectionFeedbackQuery = useQuery({
@@ -17318,6 +17322,7 @@ export default function AgencyDashboard() {
     },
     enabled: !!user?.id,
     staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const pendingBrandConnectionCount = useMemo(() => {
