@@ -18,6 +18,7 @@ pub mod brands;
 pub mod calendly;
 pub mod campaigns;
 pub mod catalogs;
+pub mod cache;
 pub mod config;
 pub mod creator_agency_connection;
 pub mod creator_rates;

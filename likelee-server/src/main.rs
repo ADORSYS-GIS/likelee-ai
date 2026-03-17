@@ -4,6 +4,8 @@ use dotenvy::dotenv;
 use envconfig::Envconfig;
 use postgrest::Postgrest;
 use serde_json::json;
+use std::sync::Arc;
+use std::time::Duration;
 use tracing::{info, warn};
 
 #[tokio::main]
@@ -99,6 +101,29 @@ async fn main() {
 
         None
     };
+
+    // Initialize cache layers
+    let cache_l2 = Arc::new(likelee_server::cache::SessionCache::new(
+        Duration::from_secs(cfg.cache_l2_ttl_secs),
+        cfg.cache_l2_max_entries,
+    ));
+    let cache_l3 = Arc::new(likelee_server::cache::ApplicationCache::new(
+        Duration::from_secs(cfg.cache_l3_ttl_secs),
+        cfg.cache_l3_max_entries,
+    ));
+    let cache_idempotency = Arc::new(likelee_server::cache::IdempotencyStore::new(
+        Duration::from_secs(cfg.cache_idempotency_ttl_secs),
+    ));
+    let cache_metrics = Arc::new(likelee_server::cache::CacheMetrics::new(Duration::from_secs(60)));
+
+    info!(
+        l2_ttl_secs = cfg.cache_l2_ttl_secs,
+        l3_ttl_secs = cfg.cache_l3_ttl_secs,
+        l2_max_entries = cfg.cache_l2_max_entries,
+        l3_max_entries = cfg.cache_l3_max_entries,
+        idempotency_ttl_secs = cfg.cache_idempotency_ttl_secs,
+        "Cache layers initialized"
+    );
 
     let state = likelee_server::config::AppState {
         pg,
@@ -241,6 +266,12 @@ async fn main() {
         calendly_booking_url: cfg.calendly_booking_url.clone(),
         calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
         calendly_api_token: cfg.calendly_api_token.clone(),
+
+        // Cache Layers
+        cache_l2,
+        cache_l3,
+        cache_idempotency,
+        cache_metrics,
     };
 
     // Start background jobs

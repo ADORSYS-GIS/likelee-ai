@@ -242,6 +242,29 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 - `LIVENESS_MIN_SCORE`
   - Minimum confidence score for liveness check (default `0.90`).
 
+### Multi-Level Cache
+
+The server implements a three-level hierarchical caching strategy to reduce database load:
+
+- **L1 (Request)**: Per-request scope, auto-cleanup on request completion
+- **L2 (Session)**: User-scoped cache keyed by session ID with TTL
+- **L3 (Application)**: Global shared data with background refresh
+
+Configuration variables:
+
+- `CACHE_L2_TTL_SECS`
+  - TTL for L2 session cache entries (default `1800` = 30 minutes).
+- `CACHE_L3_TTL_SECS`
+  - TTL for L3 application cache entries (default `3600` = 1 hour).
+- `CACHE_L3_REFRESH_SECS`
+  - Interval for L3 background refresh (default `300` = 5 minutes).
+- `CACHE_L2_MAX_ENTRIES`
+  - Maximum entries in L2 session cache (default `10000`).
+- `CACHE_L3_MAX_ENTRIES`
+  - Maximum entries in L3 application cache (default `1000`).
+- `CACHE_IDEMPOTENCY_TTL_SECS`
+  - TTL for idempotency key records (default `86400` = 24 hours).
+
 ### Voice & Audio
 
 - `ELEVENLABS_API_KEY`
