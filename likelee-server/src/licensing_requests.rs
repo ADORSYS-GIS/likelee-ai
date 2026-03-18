@@ -1721,7 +1721,7 @@ pub async fn send_payment_link(
         let au_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name")
+            .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
             .eq("agency_id", &user.id)
             .in_("creator_id", au_refs)
             .execute()
@@ -1746,8 +1746,16 @@ pub async fn send_payment_link(
                         .and_then(|v| v.as_str())
                         .unwrap_or("Unknown")
                         .to_string();
+                    let tier_name = r
+                        .get("performance_tier_name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
                     talent_creator_map.entry(cid.clone()).or_insert(cid.clone());
-                    talent_name_map.entry(cid).or_insert(name);
+                    talent_name_map.entry(cid.clone()).or_insert(name);
+                    if !tier_name.is_empty() {
+                        talent_tier_name_map.entry(cid.clone()).or_insert(tier_name);
+                    }
                 }
             }
         }
@@ -1946,16 +1954,28 @@ pub async fn send_payment_link(
     let tier_names: Vec<String> = talent_tier_name_map.values().cloned().collect();
     let mut tier_payout_percent_map: std::collections::HashMap<String, f64> =
         std::collections::HashMap::new();
-    if !tier_names.is_empty() {
+    let pt_query = if !tier_names.is_empty() {
         let tn_refs: Vec<&str> = tier_names.iter().map(|s| s.as_str()).collect();
-        let pt_resp = state
-            .pg
-            .from("performance_tiers")
-            .select("tier_name,payout_percent")
-            .eq("agency_id", &user.id)
-            .in_("tier_name", tn_refs)
-            .execute()
-            .await;
+        Some(
+            state
+                .pg
+                .from("performance_tiers")
+                .select("tier_name,payout_percent")
+                .eq("agency_id", &user.id)
+                .in_("tier_name", tn_refs),
+        )
+    } else {
+        Some(
+            state
+                .pg
+                .from("performance_tiers")
+                .select("tier_name,payout_percent")
+                .eq("agency_id", &user.id),
+        )
+    };
+
+    if let Some(pt_query) = pt_query {
+        let pt_resp = pt_query.execute().await;
         if let Ok(pt_resp) = pt_resp {
             if pt_resp.status().is_success() {
                 let pt_text = pt_resp.text().await.unwrap_or_else(|_| "[]".into());
@@ -1987,11 +2007,11 @@ pub async fn send_payment_link(
             .get(tid)
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
-            .unwrap_or("Inactive");
+            .unwrap_or("Default");
         let payout_pct = tier_payout_percent_map
             .get(tier_name)
             .copied()
-            .unwrap_or(0.0)
+            .unwrap_or(40.0)
             .max(0.0);
 
         let cents = ((net_amount_cents as f64) * (payout_pct / 100.0)).round() as i64;
@@ -2009,7 +2029,7 @@ pub async fn send_payment_link(
     let mut talent_splits_json: Vec<serde_json::Value> = Vec::new();
     let mut distributed_cents: i64 = 0;
 
-    for (i, (tid, cents, tier_name, payout_pct)) in raw_amounts.iter().enumerate() {
+    for (tid, cents, tier_name, payout_pct) in raw_amounts.iter() {
         let name = talent_name_map
             .get(tid)
             .cloned()
@@ -2018,9 +2038,10 @@ pub async fn send_payment_link(
         let stripe_acct = stripe_account_map.get(&cid).cloned().unwrap_or_default();
 
         let mut amount = ((*cents as f64) * scale).round() as i64;
-        if i == raw_amounts.len() - 1 {
-            // Last talent: clamp so we never exceed net_amount_cents due to rounding.
-            amount = (net_amount_cents - distributed_cents).max(0);
+        let remaining = (net_amount_cents - distributed_cents).max(0);
+        if amount > remaining {
+            // Clamp only if rounding would exceed the net amount.
+            amount = remaining;
         }
         distributed_cents += amount;
 
