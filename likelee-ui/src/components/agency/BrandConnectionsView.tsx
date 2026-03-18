@@ -1249,6 +1249,19 @@ const BrandConnectionsView = () => {
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
+                            {isFullySigned && (
+                              <Badge
+                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                                  offer?.payment_status === "paid"
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                    : "bg-amber-100 text-amber-800 border-amber-200"
+                                }`}
+                              >
+                                {offer?.payment_status === "paid"
+                                  ? "Paid"
+                                  : "Awaiting Payment"}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1336,6 +1349,13 @@ const BrandConnectionsView = () => {
                                 );
                               })()}
                             </>
+                          )}
+                          {isFullySigned && offer?.payment_status !== "paid" && (
+                            <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                              <span className="text-amber-700 text-sm font-semibold">
+                                ⏳ Brand has not yet completed payment. Deliverable uploads and submissions are disabled until paid.
+                              </span>
+                            </div>
                           )}
                           {isFullySigned && (
                             <Button
@@ -1512,6 +1532,19 @@ const BrandConnectionsView = () => {
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
+                            {isFullySigned && (
+                              <Badge
+                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                  offer?.payment_status === "paid"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
+                              >
+                                {offer?.payment_status === "paid"
+                                  ? "Paid"
+                                  : "Unpaid"}
+                              </Badge>
+                            )}
                             {isPending && (
                               <>
                                 <Button
