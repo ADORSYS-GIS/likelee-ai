@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
@@ -154,7 +155,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
     Record<string, { min_earnings: number; min_bookings: number }>
   >({});
 
-  const { data, isLoading, error } = useQuery<PerformanceTiersResponse>({
+  const { data, isLoading, error } = useIndexedDbQuery<PerformanceTiersResponse>({
     queryKey: ["performance-tiers"],
     queryFn: async () => {
       try {
@@ -174,6 +175,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
         throw new Error(errorMessage || "Failed to load performance tiers");
       }
     },
+    maxAge: 60 * 1000, // 1 minute
+    syncInterval: 60 * 1000, // Sync every minute
+    staleWhileRevalidate: true,
   });
 
   useEffect(() => {
