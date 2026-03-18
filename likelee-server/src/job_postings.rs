@@ -1,4 +1,12 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    brand_campaigns::{
+        log_activity_event_with_subject, resolve_agency_name, resolve_brand_name,
+        resolve_creator_name,
+    },
+    config::AppState,
+    errors::sanitize_db_error,
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -373,8 +381,8 @@ pub async fn update_job(
     }
 
     if !new_agency_ids.is_empty() || !new_creator_ids.is_empty() {
-        let brand_name = row
-            .get("company_name")
+        let brand_id = row
+            .get("brand_id")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
@@ -383,6 +391,19 @@ pub async fn update_job(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let job_id = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let brand_name = resolve_brand_name(&state, &brand_id)
+            .await
+            .or_else(|| {
+                row.get("company_name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or_else(|| "Brand".to_string());
         tokio::spawn({
             let state = state.clone();
             async move {
@@ -390,6 +411,8 @@ pub async fn update_job(
                     &state,
                     &job_title_str,
                     &brand_name,
+                    &brand_id,
+                    &job_id,
                     &new_agency_ids,
                     &new_creator_ids,
                 )
@@ -512,26 +535,51 @@ pub async fn create_job(
     }
     let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
 
+    let job_id = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let job_title_str = row
+        .get("job_title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("job")
+        .to_string();
+    let brand_name = resolve_brand_name(&state, &effective_brand_id)
+        .await
+        .or_else(|| {
+            row.get("company_name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "Brand".to_string());
+    log_activity_event_with_subject(
+        &state,
+        &effective_brand_id,
+        None,
+        "brand",
+        &brand_name,
+        "job.created",
+        format!("{} created a job: {}.", brand_name, job_title_str),
+        "job_postings",
+        Some(&job_id),
+    )
+    .await;
+
     let agency_ids = payload.invited_agency_ids.unwrap_or_default();
     let creator_ids = payload.invited_creator_ids.unwrap_or_default();
     if !agency_ids.is_empty() || !creator_ids.is_empty() {
-        let brand_name = row
-            .get("company_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let job_title_str = row
-            .get("job_title")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
         tokio::spawn({
             let state = state.clone();
+            let effective_brand_id = effective_brand_id.clone();
+            let job_id = job_id.clone();
             async move {
                 send_job_invitation_notifications(
                     &state,
                     &job_title_str,
                     &brand_name,
+                    &effective_brand_id,
+                    &job_id,
                     &agency_ids,
                     &creator_ids,
                 )
@@ -1361,6 +1409,31 @@ pub async fn apply_job(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    let job_resp = state
+        .pg
+        .from("job_postings")
+        .select("id,brand_id,job_title")
+        .eq("id", &job_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let job_text = job_resp.text().await.unwrap_or_default();
+    let job_rows: Vec<serde_json::Value> = serde_json::from_str(&job_text).unwrap_or_default();
+    let job = job_rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "job not found".to_string()))?;
+    let job_brand_id = job
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let job_title = job
+        .get("job_title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("job")
+        .to_string();
+
     let applicant_role = if user.role == "agency" {
         "agency"
     } else if user.role == "talent" {
@@ -1457,6 +1530,34 @@ pub async fn apply_job(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+    if !job_brand_id.is_empty() {
+        let actor_type = if applicant_role == "agency" {
+            "agency"
+        } else {
+            "creator"
+        };
+        let actor_name = if actor_type == "agency" {
+            resolve_agency_name(&state, &applicant_id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string())
+        } else {
+            resolve_creator_name(&state, &applicant_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string())
+        };
+        log_activity_event_with_subject(
+            &state,
+            &job_brand_id,
+            None,
+            actor_type,
+            &actor_name,
+            "job.application.submitted",
+            format!("{} applied for job {}.", actor_name, job_title),
+            "job_postings",
+            Some(&job_id),
+        )
+        .await;
+    }
     Ok(Json(json!({ "status": "ok", "application": row })))
 }
 
@@ -1813,7 +1914,7 @@ pub async fn decline_job_invite(
         .pg
         .from("job_postings")
         .select(
-            "id,invited_creator_ids,invited_agency_ids,declined_creator_ids,declined_agency_ids",
+            "id,brand_id,job_title,invited_creator_ids,invited_agency_ids,declined_creator_ids,declined_agency_ids",
         )
         .eq("id", &job_id)
         .limit(1)
@@ -1863,7 +1964,7 @@ pub async fn decline_job_invite(
         })
         .unwrap_or_default();
 
-    if user.role == "agency" {
+    let (actor_id, actor_type) = if user.role == "agency" {
         let mut agency_id = user.id.clone();
         if let Ok(resp) = state
             .pg
@@ -1889,8 +1990,9 @@ pub async fn decline_job_invite(
         }
         invited_agency_ids.retain(|id| id != &agency_id);
         if !declined_agency_ids.contains(&agency_id) {
-            declined_agency_ids.push(agency_id);
+            declined_agency_ids.push(agency_id.clone());
         }
+        (agency_id, "agency")
     } else {
         let mut creator_id = user.id.clone();
         if let Some(email) = user
@@ -1922,9 +2024,10 @@ pub async fn decline_job_invite(
         }
         invited_creator_ids.retain(|id| id != &creator_id);
         if !declined_creator_ids.contains(&creator_id) {
-            declined_creator_ids.push(creator_id);
+            declined_creator_ids.push(creator_id.clone());
         }
-    }
+        (creator_id, "creator")
+    };
 
     let resp = state
         .pg
@@ -1948,6 +2051,39 @@ pub async fn decline_job_invite(
         let text = resp.text().await.unwrap_or_default();
         return Err(sanitize_db_error(status.as_u16(), text));
     }
+    let brand_id = job
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let job_title = job
+        .get("job_title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("job")
+        .to_string();
+    if !brand_id.is_empty() && !actor_id.is_empty() {
+        let actor_name = if actor_type == "agency" {
+            resolve_agency_name(&state, &actor_id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string())
+        } else {
+            resolve_creator_name(&state, &actor_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string())
+        };
+        log_activity_event_with_subject(
+            &state,
+            &brand_id,
+            None,
+            actor_type,
+            &actor_name,
+            "job.invite.declined",
+            format!("{} declined the job invite for {}.", actor_name, job_title),
+            "job_postings",
+            Some(&job_id),
+        )
+        .await;
+    }
     Ok(Json(json!({ "status": "ok" })))
 }
 
@@ -1964,7 +2100,7 @@ pub async fn accept_job_invite(
         .pg
         .from("job_postings")
         .select(
-            "id,invited_creator_ids,invited_agency_ids,accepted_creator_ids,accepted_agency_ids",
+            "id,brand_id,job_title,invited_creator_ids,invited_agency_ids,accepted_creator_ids,accepted_agency_ids",
         )
         .eq("id", &job_id)
         .limit(1)
@@ -2014,7 +2150,7 @@ pub async fn accept_job_invite(
         })
         .unwrap_or_default();
 
-    if user.role == "agency" {
+    let (actor_id, actor_type) = if user.role == "agency" {
         let mut agency_id = user.id.clone();
         if let Ok(resp) = state
             .pg
@@ -2040,8 +2176,9 @@ pub async fn accept_job_invite(
         }
         invited_agency_ids.retain(|id| id != &agency_id);
         if !accepted_agency_ids.contains(&agency_id) {
-            accepted_agency_ids.push(agency_id);
+            accepted_agency_ids.push(agency_id.clone());
         }
+        (agency_id, "agency")
     } else {
         let mut creator_id = user.id.clone();
         if let Some(email) = user
@@ -2073,9 +2210,10 @@ pub async fn accept_job_invite(
         }
         invited_creator_ids.retain(|id| id != &creator_id);
         if !accepted_creator_ids.contains(&creator_id) {
-            accepted_creator_ids.push(creator_id);
+            accepted_creator_ids.push(creator_id.clone());
         }
-    }
+        (creator_id, "creator")
+    };
 
     let resp = state
         .pg
@@ -2099,6 +2237,39 @@ pub async fn accept_job_invite(
         let text = resp.text().await.unwrap_or_default();
         return Err(sanitize_db_error(status.as_u16(), text));
     }
+    let brand_id = job
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let job_title = job
+        .get("job_title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("job")
+        .to_string();
+    if !brand_id.is_empty() && !actor_id.is_empty() {
+        let actor_name = if actor_type == "agency" {
+            resolve_agency_name(&state, &actor_id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string())
+        } else {
+            resolve_creator_name(&state, &actor_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string())
+        };
+        log_activity_event_with_subject(
+            &state,
+            &brand_id,
+            None,
+            actor_type,
+            &actor_name,
+            "job.invite.accepted",
+            format!("{} accepted the job invite for {}.", actor_name, job_title),
+            "job_postings",
+            Some(&job_id),
+        )
+        .await;
+    }
     Ok(Json(json!({ "status": "ok" })))
 }
 
@@ -2106,6 +2277,8 @@ async fn send_job_invitation_notifications(
     state: &AppState,
     job_title: &str,
     brand_name: &str,
+    brand_id: &str,
+    job_id: &str,
     agency_ids: &[String],
     creator_ids: &[String],
 ) {
@@ -2139,6 +2312,27 @@ async fn send_job_invitation_notifications(
                 }
             }
         }
+
+        for agency_id in agency_ids {
+            let agency_name = resolve_agency_name(state, agency_id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string());
+            log_activity_event_with_subject(
+                state,
+                brand_id,
+                None,
+                "brand",
+                brand_name,
+                "job.invite.sent",
+                format!(
+                    "{} invited {} to apply for job {}.",
+                    brand_name, agency_name, job_title
+                ),
+                "job_postings",
+                Some(job_id),
+            )
+            .await;
+        }
     }
 
     if !creator_ids.is_empty() {
@@ -2158,6 +2352,27 @@ async fn send_job_invitation_notifications(
                     }
                 }
             }
+        }
+
+        for creator_id in creator_ids {
+            let creator_name = resolve_creator_name(state, creator_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string());
+            log_activity_event_with_subject(
+                state,
+                brand_id,
+                None,
+                "brand",
+                brand_name,
+                "job.invite.sent",
+                format!(
+                    "{} invited {} to apply for job {}.",
+                    brand_name, creator_name, job_title
+                ),
+                "job_postings",
+                Some(job_id),
+            )
+            .await;
         }
     }
 

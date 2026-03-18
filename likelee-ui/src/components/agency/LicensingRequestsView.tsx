@@ -324,17 +324,6 @@ const LicensingRequestsView = ({
                 </div>
               </div>
 
-              <div className="mb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedGroup(group)}
-                  className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View details
-                </Button>
-              </div>
-
               {group.status === "approved" ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">

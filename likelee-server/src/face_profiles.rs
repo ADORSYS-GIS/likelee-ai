@@ -1,3 +1,6 @@
+use crate::brand_campaigns::{
+    log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
+};
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
 use crate::{auth::AuthUser, auth::RoleGuard};
@@ -1702,6 +1705,27 @@ pub async fn create_marketplace_connection_request(
                             reactivate_text,
                         ));
                     }
+                    let brand_name = resolve_brand_name(&state, &effective_brand_id)
+                        .await
+                        .unwrap_or_else(|| "Brand".to_string());
+                    let creator_name = resolve_creator_name(&state, &creator_id)
+                        .await
+                        .unwrap_or_else(|| "Creator".to_string());
+                    log_activity_event_with_subject(
+                        &state,
+                        &effective_brand_id,
+                        None,
+                        "brand",
+                        &brand_name,
+                        "connection.request.sent",
+                        format!(
+                            "{} sent a connection request to {}.",
+                            brand_name, creator_name
+                        ),
+                        "brand_creator_connection_requests",
+                        Some(&request_id),
+                    )
+                    .await;
                     return Ok(Json(serde_json::json!({"status":"waiting"})));
                 }
             }
@@ -1744,6 +1768,28 @@ pub async fn create_marketplace_connection_request(
                 }
                 return Err(sanitize_db_error(create_status.as_u16(), create_text));
             }
+
+            let brand_name = resolve_brand_name(&state, &effective_brand_id)
+                .await
+                .unwrap_or_else(|| "Brand".to_string());
+            let creator_name = resolve_creator_name(&state, &creator_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string());
+            log_activity_event_with_subject(
+                &state,
+                &effective_brand_id,
+                None,
+                "brand",
+                &brand_name,
+                "connection.request.sent",
+                format!(
+                    "{} sent a connection request to {}.",
+                    brand_name, creator_name
+                ),
+                "brand_creator_connection_requests",
+                None,
+            )
+            .await;
 
             return Ok(Json(serde_json::json!({"status":"waiting"})));
         }
@@ -2040,6 +2086,27 @@ pub async fn create_marketplace_connection_request(
                     reactivate_text,
                 ));
             }
+            let brand_name = resolve_brand_name(&state, &effective_brand_id)
+                .await
+                .unwrap_or_else(|| "Brand".to_string());
+            let agency_name = resolve_agency_name(&state, &agency_id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string());
+            log_activity_event_with_subject(
+                &state,
+                &effective_brand_id,
+                None,
+                "brand",
+                &brand_name,
+                "connection.request.sent",
+                format!(
+                    "{} sent a connection request to {}.",
+                    brand_name, agency_name
+                ),
+                "brand_agency_connection_requests",
+                Some(&invite_id),
+            )
+            .await;
             return Ok(Json(serde_json::json!({"status":"waiting"})));
         }
     }
@@ -2090,6 +2157,28 @@ pub async fn create_marketplace_connection_request(
         }
         return Err(sanitize_db_error(create_status.as_u16(), create_text));
     }
+
+    let brand_name = resolve_brand_name(&state, &effective_brand_id)
+        .await
+        .unwrap_or_else(|| "Brand".to_string());
+    let agency_name = resolve_agency_name(&state, &agency_id)
+        .await
+        .unwrap_or_else(|| "Agency".to_string());
+    log_activity_event_with_subject(
+        &state,
+        &effective_brand_id,
+        None,
+        "brand",
+        &brand_name,
+        "connection.request.sent",
+        format!(
+            "{} sent a connection request to {}.",
+            brand_name, agency_name
+        ),
+        "brand_agency_connection_requests",
+        None,
+    )
+    .await;
 
     Ok(Json(serde_json::json!({"status":"waiting"})))
 }
@@ -2372,6 +2461,22 @@ pub async fn accept_agency_brand_connection_request(
         return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
     }
 
+    let agency_name = resolve_agency_name(&state, &effective_agency_id)
+        .await
+        .unwrap_or_else(|| "Agency".to_string());
+    log_activity_event_with_subject(
+        &state,
+        &brand_id,
+        None,
+        "agency",
+        &agency_name,
+        "connection.request.accepted",
+        format!("{} accepted your connection request.", agency_name),
+        "brand_agency_connection_requests",
+        Some(&id),
+    )
+    .await;
+
     Ok(Json(serde_json::json!({"status":"ok"})))
 }
 
@@ -2382,6 +2487,39 @@ pub async fn decline_agency_brand_connection_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+
+    let pending_resp = state
+        .pg
+        .from("brand_agency_connection_requests")
+        .select("id,brand_id,agency_id")
+        .eq("id", &id)
+        .eq("agency_id", &effective_agency_id)
+        .eq("status", "pending")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let pending_status = pending_resp.status();
+    let pending_text = pending_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !pending_status.is_success() {
+        return Err(sanitize_db_error(pending_status.as_u16(), pending_text));
+    }
+    let pending_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&pending_text).unwrap_or_default();
+    let Some(row) = pending_rows.first() else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "connection request not found".to_string(),
+        ));
+    };
+    let brand_id = row
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let resp = state
         .pg
@@ -2407,6 +2545,24 @@ pub async fn decline_agency_brand_connection_request(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    if !brand_id.is_empty() {
+        let agency_name = resolve_agency_name(&state, &effective_agency_id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string());
+        log_activity_event_with_subject(
+            &state,
+            &brand_id,
+            None,
+            "agency",
+            &agency_name,
+            "connection.request.declined",
+            format!("{} declined your connection request.", agency_name),
+            "brand_agency_connection_requests",
+            Some(&id),
+        )
+        .await;
     }
 
     Ok(Json(serde_json::json!({"status":"ok"})))
@@ -2691,6 +2847,22 @@ pub async fn accept_creator_brand_connection_request(
         return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
     }
 
+    let creator_name = resolve_creator_name(&state, &row_creator_id)
+        .await
+        .unwrap_or_else(|| "Creator".to_string());
+    log_activity_event_with_subject(
+        &state,
+        &brand_id,
+        None,
+        "creator",
+        &creator_name,
+        "connection.request.accepted",
+        format!("{} accepted your connection request.", creator_name),
+        "brand_creator_connection_requests",
+        Some(&id),
+    )
+    .await;
+
     Ok(Json(serde_json::json!({"status":"ok"})))
 }
 
@@ -2707,6 +2879,44 @@ pub async fn decline_creator_brand_connection_request(
         vec![creator_id.clone(), user.id.clone()]
     };
     let creator_id_refs: Vec<&str> = creator_id_candidates.iter().map(|s| s.as_str()).collect();
+
+    let pending_resp = state
+        .pg
+        .from("brand_creator_connection_requests")
+        .select("id,brand_id,creator_id")
+        .eq("id", &id)
+        .in_("creator_id", creator_id_refs.clone())
+        .eq("status", "pending")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let pending_status = pending_resp.status();
+    let pending_text = pending_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !pending_status.is_success() {
+        return Err(sanitize_db_error(pending_status.as_u16(), pending_text));
+    }
+    let pending_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&pending_text).unwrap_or_default();
+    let Some(row) = pending_rows.first() else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "connection request not found".to_string(),
+        ));
+    };
+    let brand_id = row
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let row_creator_id = row
+        .get("creator_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let resp = state
         .pg
@@ -2732,6 +2942,24 @@ pub async fn decline_creator_brand_connection_request(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    if !brand_id.is_empty() && !row_creator_id.is_empty() {
+        let creator_name = resolve_creator_name(&state, &row_creator_id)
+            .await
+            .unwrap_or_else(|| "Creator".to_string());
+        log_activity_event_with_subject(
+            &state,
+            &brand_id,
+            None,
+            "creator",
+            &creator_name,
+            "connection.request.declined",
+            format!("{} declined your connection request.", creator_name),
+            "brand_creator_connection_requests",
+            Some(&id),
+        )
+        .await;
     }
 
     Ok(Json(serde_json::json!({"status":"ok"})))
