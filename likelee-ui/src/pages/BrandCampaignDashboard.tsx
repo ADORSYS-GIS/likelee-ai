@@ -1462,6 +1462,13 @@ export default function BrandCampaignDashboard({
             target_type: "creator",
             target_ids: creatorIds,
             brief_snapshot: campaignBrief,
+            budget_snapshot: {
+              budget_total: campaignBrief.budget_total || "0",
+              budget_creator_payment:
+                campaignBrief.budget_creator_payment || "0",
+              budget_submission_deadline:
+                campaignBrief.budget_submission_deadline || null,
+            },
             message: campaignForm.custom_terms || null,
           },
         );
@@ -1566,6 +1573,12 @@ export default function BrandCampaignDashboard({
         target_type: "agency",
         target_ids: [agencyId],
         brief_snapshot: campaignBrief,
+        budget_snapshot: {
+          budget_total: campaignBrief.budget_total || "0",
+          budget_creator_payment: campaignBrief.budget_creator_payment || "0",
+          budget_submission_deadline:
+            campaignBrief.budget_submission_deadline || null,
+        },
         message: campaignForm.custom_terms || null,
       });
       toast({
@@ -2744,6 +2757,24 @@ export default function BrandCampaignDashboard({
                             : "N/A"}
                         </span>
                       </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex flex-col gap-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Financial Summary
+                      </p>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Collaborator Payout (Net)</span>
+                        <span className="font-semibold text-gray-900">${campaignBrief.budget_creator_payment || "0"}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Likelee Platform Fee (2%)</span>
+                        <span className="text-blue-600 font-medium">+${(Number(campaignBrief.budget_total || 0) - Number(campaignBrief.budget_creator_payment || 0)).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-base pt-1 border-t border-dashed border-gray-200">
+                        <span className="font-bold text-gray-900">Total Brand Spend (Gross)</span>
+                        <span className="font-bold text-black">${campaignBrief.budget_total || "0"}</span>
+                      </div>
                     </div>
                   </div>
 
