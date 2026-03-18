@@ -485,6 +485,12 @@ To protect private assets stored in Supabase, all deliverable media is accessed 
 - **Proxy Endpoint**: `/api/campaign-offers/:offer_id/deliverables/:id/file`
 - **Authentication**: Since browser `<img />` and `<video />` tags do not natively support custom headers (like `Authorization: Bearer <token>`), the backend supports a fallback authentication mechanism.
 - **Token Fallback**: If the `Authorization` header is missing, the server extracts the JWT from the `token` query parameter. This allows secure, authenticated access to private media files directly within HTML media elements.
+
+### Payment Gating
+To ensure financial security:
+- **Deliverable Gating**: Deliverable uploads and submissions (both creator and agency) are disabled until the campaign offer's `payment_status` is `paid`.
+- **Escrow Flow**: When a brand "Pays" an offer, funds are collected via Stripe Checkout and held in escrow (or added to creator balance pending approval). The `payment_status` switches from `unpaid` -> `processing` -> `paid`.
+- **UI Gating**: Frontend components (`AgencyDeliverablesView`, `CreatorDashboard`) conditionally disable upload/review buttons and show "Awaiting Brand Payment" indicators based on the offer's payment status.
 ### Calendly Integration (IRL Booking)
 
 #### System Configuration
