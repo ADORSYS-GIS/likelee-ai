@@ -32,6 +32,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 export type MarketplaceProfile = {
   id: string;
@@ -203,7 +204,7 @@ export function MarketplaceSection({
     }
   };
 
-  const marketplaceQuery = useQuery({
+  const marketplaceQuery = useIndexedDbQuery<MarketplaceProfile[]>({
     queryKey: [
       queryScope,
       entityType,
@@ -222,10 +223,12 @@ export function MarketplaceSection({
           limit: resultLimit,
         },
       }),
-    staleTime: 60_000,
+    maxAge: 60 * 1000, // 1 minute
+    syncInterval: 60 * 1000, // Sync every minute
+    staleWhileRevalidate: true,
   });
 
-  const detailsQuery = useQuery({
+  const detailsQuery = useIndexedDbQuery<MarketplaceProfileDetails>({
     queryKey: [
       `${queryScope}-details`,
       selectedProfile?.profile_type,
@@ -238,8 +241,10 @@ export function MarketplaceSection({
           selectedProfile?.id || "",
         ),
       ),
+    maxAge: 30 * 1000, // 30 seconds
+    syncInterval: 30 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!selectedProfile,
-    staleTime: 30_000,
   });
 
   useEffect(() => {
