@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, {
+  startTransition,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -702,13 +708,15 @@ export default function BrandDashboard() {
     },
   ) => {
     pendingSectionOverrideRef.current = nextSection;
-    setActiveSection(nextSection);
-    if (options?.campaignHubTab) {
-      setCampaignHubTab(options.campaignHubTab);
-    }
-    if (options?.campaignView) {
-      setCampaignView(options.campaignView);
-    }
+    startTransition(() => {
+      setActiveSection(nextSection);
+      if (options?.campaignHubTab) {
+        setCampaignHubTab(options.campaignHubTab);
+      }
+      if (options?.campaignView) {
+        setCampaignView(options.campaignView);
+      }
+    });
     const params = new URLSearchParams(location.search);
     params.set(
       "section",
