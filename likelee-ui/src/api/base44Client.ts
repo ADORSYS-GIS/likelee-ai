@@ -127,6 +127,24 @@ const API_BASE = (() => {
 import { supabase } from "@/lib/supabase";
 
 export const base44 = {
+  async getRaw(url: string, config?: RequestConfig): Promise<Response> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    // Get token from Supabase
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session?.access_token;
+
+    const headers = {
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    return await fetch(full, { headers });
+  },
   async get<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
 

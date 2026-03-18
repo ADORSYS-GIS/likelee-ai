@@ -141,6 +141,8 @@ export default function BrandCampaignDashboard({
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
+  const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
+  const [escrowReleaseInfo, setEscrowReleaseInfo] = useState<any>(null);
   const [campaignListTab, setCampaignListTab] = useState<
     "active" | "pending_approval" | "completed"
   >("active");
@@ -743,10 +745,25 @@ export default function BrandCampaignDashboard({
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return;
     try {
-      await base44.post(
+      const resp = await base44.post<any>(
         `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/review`,
         { action },
       );
+
+      const escrow = resp?.escrow;
+      if (action === "approve" && escrow) {
+        if (escrow?.released_now) {
+          setEscrowReleaseInfo(escrow);
+          setShowEscrowReleaseModal(true);
+        } else if (String(escrow?.payment_status || "") !== "paid") {
+          toast({
+            title: "Approved, but payment not received",
+            description:
+              "Deliverable was approved. Escrow payout cannot be released until the offer is paid.",
+            variant: "destructive" as any,
+          });
+        }
+      }
       toast({
         title:
           action === "approve" ? "Deliverable approved" : "Edit request sent",
@@ -807,17 +824,18 @@ export default function BrandCampaignDashboard({
   ) => {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
-    const assetUrl = String(deliverable?.asset_url || "").trim();
-    if (!assetUrl || !offerId || !deliverableId) {
+    if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
-        description: "Deliverable file URL is missing.",
+        description: "Deliverable reference is missing.",
         variant: "destructive" as any,
       });
       return;
     }
     try {
-      const response = await fetch(assetUrl);
+      const response = await base44.getRaw(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch deliverable file.");
       }
@@ -1676,6 +1694,13 @@ export default function BrandCampaignDashboard({
     selectedCampaignExpectedDeliverables > 0
       ? selectedCampaignExpectedDeliverables
       : selectedCampaignSubmittedCount;
+  const selectedCampaignAllApproved = selectedCampaignDeliverables.every(
+    (deliverable: any) =>
+      String(deliverable?.status || "").toLowerCase() === "brand_approved",
+  );
+  const canDownloadSelectedCampaignDeliverables =
+    selectedCampaignSubmittedCount >= selectedCampaignTotalExpected &&
+    selectedCampaignAllApproved;
 
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
@@ -2952,6 +2977,41 @@ export default function BrandCampaignDashboard({
         </div>
       )}
 
+      <Dialog
+        open={showEscrowReleaseModal}
+        onOpenChange={(open) => {
+          setShowEscrowReleaseModal(open);
+          if (!open) setEscrowReleaseInfo(null);
+        }}
+      >
+        <DialogContent className="rounded-none">
+          <DialogHeader>
+            <DialogTitle>All deliverables approved</DialogTitle>
+            <DialogDescription>
+              The campaign is complete. Escrow payout has been released and Stripe transfers were triggered.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="text-sm text-gray-700 space-y-2">
+            <p>
+              <strong>Payment status:</strong> {String(escrowReleaseInfo?.payment_status || "unknown")}
+            </p>
+            <p>
+              <strong>Escrow status:</strong> {String(escrowReleaseInfo?.escrow_status || "unknown")}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              className="rounded-none"
+              onClick={() => setShowEscrowReleaseModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DocuSealBuilderModal
         open={showCampaignDocuSealBuilder}
         onClose={useCallback(() => setShowCampaignDocuSealBuilder(false), [])}
@@ -3422,6 +3482,18 @@ export default function BrandCampaignDashboard({
                 <h3 className="text-xl font-bold text-gray-900">
                   Deliverables & Feedback
                 </h3>
+                {!canDownloadSelectedCampaignDeliverables &&
+                  selectedCampaignTotalExpected > 0 && (
+                    <Alert className="border-2 border-gray-200 rounded-none">
+                      <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
+                        <Lock className="w-4 h-4" />
+                        Downloads unlock after {selectedCampaignTotalExpected}/
+                        {selectedCampaignTotalExpected} deliverables are submitted
+                        and approved. Currently {selectedCampaignApprovedCount}/
+                        {selectedCampaignTotalExpected} approved.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 {loadingSelectedCampaignDetails && (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
                     <p className="text-sm text-gray-600">
@@ -3528,20 +3600,22 @@ export default function BrandCampaignDashboard({
                                   >
                                     Request Edit
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-2 border-gray-300 rounded-none"
-                                    onClick={() =>
-                                      void downloadSelectedCampaignDeliverable(
-                                        deliverable,
-                                        idx,
-                                      )
-                                    }
-                                  >
-                                    <Download className="w-3 h-3 mr-1" />
-                                    Download
-                                  </Button>
+                                  {canDownloadSelectedCampaignDeliverables && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-2 border-gray-300 rounded-none"
+                                      onClick={() =>
+                                        void downloadSelectedCampaignDeliverable(
+                                          deliverable,
+                                          idx,
+                                        )
+                                      }
+                                    >
+                                      <Download className="w-3 h-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                               <div className="border-t-2 border-gray-200 pt-4">

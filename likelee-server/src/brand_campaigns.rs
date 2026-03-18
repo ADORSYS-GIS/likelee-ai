@@ -15,8 +15,17 @@ use postgrest::Postgrest;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::str::FromStr;
+use stripe_sdk;
 use tracing::{error, info};
 use uuid::Uuid;
+
+#[derive(Debug, Serialize)]
+struct EscrowReleaseOutcome {
+    payment_status: String,
+    escrow_status: String,
+    released_now: bool,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBrandCampaignRequest {
@@ -4785,7 +4794,49 @@ pub async fn serve_offer_deliverable(
         deliverable_id,
     }): Path<OfferDeliverablePath>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    if user.role == "brand" {
+        let all_resp = state
+            .pg
+            .from("campaign_offer_deliverables")
+            .select("status")
+            .eq("offer_id", &offer_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let all_status = all_resp.status();
+        let all_text = all_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !all_status.is_success() {
+            return Err(sanitize_db_error(all_status.as_u16(), all_text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&all_text).unwrap_or_default();
+
+        if let Some(expected) = expected_deliverables_from_offer(&offer) {
+            if rows.len() < expected {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "deliverables_not_complete".to_string(),
+                ));
+            }
+        }
+
+        let all_approved = rows.iter().all(|r| {
+            r.get("status")
+                .and_then(|v| v.as_str())
+                .map(|s| s.eq_ignore_ascii_case("brand_approved"))
+                .unwrap_or(false)
+        });
+        if !all_approved {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "all_deliverables_must_be_approved_before_download".to_string(),
+            ));
+        }
+    }
 
     // Get the deliverable record
     let del_resp = state
@@ -4898,6 +4949,16 @@ pub async fn review_offer_deliverable(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_lowercase();
+
+    if user.role == "brand"
+        && (current_status == "brand_approved" || current_status == "approved")
+        && (action == "changes_requested" || action == "reject")
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot_disapprove_after_approval".to_string(),
+        ));
+    }
 
     let (status_value, offer_status) = if user.role == "agency" {
         match action.as_str() {
@@ -5019,7 +5080,411 @@ pub async fn review_offer_deliverable(
         }
     }
 
+    if user.role == "brand" && action == "approve" {
+        let outcome = try_release_campaign_offer_escrow(&state, &offer_id)
+            .await
+            .unwrap_or(EscrowReleaseOutcome {
+                payment_status: "unknown".to_string(),
+                escrow_status: "unknown".to_string(),
+                released_now: false,
+            });
+
+        return Ok(Json(json!({"status":"ok","deliverable": row, "escrow": outcome})));
+    }
+
     Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+async fn try_release_campaign_offer_escrow(
+    state: &AppState,
+    offer_id: &str,
+) -> Result<EscrowReleaseOutcome, String> {
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id,payment_status,billing_request_id,escrow_status")
+        .eq("id", offer_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !offer_resp.status().is_success() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: "unknown".to_string(),
+            escrow_status: "unknown".to_string(),
+            released_now: false,
+        });
+    }
+    let offer_text = offer_resp.text().await.map_err(|e| e.to_string())?;
+    let offer: serde_json::Value = serde_json::from_str(&offer_text).unwrap_or_default();
+
+    let escrow_status = offer
+        .get("escrow_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("holding");
+
+    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
+
+    if target_type != "agency" {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    if payment_status != "paid" {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    if escrow_status == "released" {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    let all_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .select("status")
+        .eq("offer_id", offer_id)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !all_resp.status().is_success() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+    let all_text = all_resp.text().await.map_err(|e| e.to_string())?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&all_text).unwrap_or_default();
+
+    if let Some(expected) = expected_deliverables_from_offer(&offer) {
+        if rows.len() < expected {
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+    }
+
+    let all_approved = rows.iter().all(|r| {
+        r.get("status")
+            .and_then(|v| v.as_str())
+            .map(|s| s.eq_ignore_ascii_case("brand_approved"))
+            .unwrap_or(false)
+    });
+    if !all_approved {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+    let billing_request_id = offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if agency_id.is_empty() || billing_request_id.is_empty() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    release_campaign_offer_transfers(state, offer_id, agency_id, billing_request_id).await?;
+
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", offer_id)
+        .update(
+            json!({
+                "escrow_status": "released",
+                "escrow_released_at": chrono::Utc::now().to_rfc3339(),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    Ok(EscrowReleaseOutcome {
+        payment_status: payment_status.to_string(),
+        escrow_status: "released".to_string(),
+        released_now: true,
+    })
+}
+
+fn expected_deliverables_from_offer(offer: &serde_json::Value) -> Option<usize> {
+    let brief = offer.get("brief_snapshot")?;
+    let raw = brief
+        .get("total_expected_deliverables")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .or_else(|| {
+            brief.get("total_expected_deliverables")
+                .and_then(|v| v.as_i64())
+                .map(|n| n.to_string())
+        })?;
+
+    let parsed: i64 = raw.parse().ok()?;
+    if parsed > 0 {
+        Some(parsed as usize)
+    } else {
+        None
+    }
+}
+
+async fn release_campaign_offer_transfers(
+    state: &AppState,
+    offer_id: &str,
+    agency_id: &str,
+    billing_request_id: &str,
+) -> Result<(), String> {
+    let payments_resp = state
+        .pg
+        .from("payments")
+        .select("talent_id,agency_earnings_cents,talent_earnings_cents,currency_code")
+        .eq("licensing_request_id", billing_request_id)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !payments_resp.status().is_success() {
+        return Ok(());
+    }
+    let payments_text = payments_resp.text().await.map_err(|e| e.to_string())?;
+    let payments: Vec<serde_json::Value> = serde_json::from_str(&payments_text).unwrap_or_default();
+    if payments.is_empty() {
+        return Ok(());
+    }
+
+    let currency = payments
+        .first()
+        .and_then(|p| p.get("currency_code"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("USD")
+        .to_string();
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
+        .map_err(|_| "invalid_currency".to_string())?;
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    let agency_amount_cents: i64 = payments
+        .iter()
+        .map(|p| p.get("agency_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0))
+        .sum();
+
+    if agency_amount_cents > 0 {
+        match get_agency_stripe_account(state, agency_id).await {
+            Ok(agency_account_id) => {
+                let mut params =
+                    stripe_sdk::CreateTransfer::new(currency_enum, agency_account_id.clone());
+                params.amount = Some(agency_amount_cents);
+                params.metadata = Some(std::collections::HashMap::from([
+                    ("offer_id".to_string(), offer_id.to_string()),
+                    ("agency_id".to_string(), agency_id.to_string()),
+                    ("type".to_string(), "agency_commission".to_string()),
+                ]));
+                match stripe_sdk::Transfer::create(&client, params).await {
+                    Ok(transfer) => {
+                        let _ = state
+                            .pg
+                            .rpc(
+                                "record_campaign_offer_transfer",
+                                json!({
+                                    "p_offer_id": offer_id,
+                                    "p_recipient_type": "agency",
+                                    "p_recipient_id": agency_id,
+                                    "p_stripe_connect_account_id": agency_account_id,
+                                    "p_amount_cents": agency_amount_cents,
+                                    "p_currency": currency,
+                                    "p_stripe_transfer_id": transfer.id,
+                                    "p_status": "created"
+                                })
+                                .to_string(),
+                            )
+                            .execute()
+                            .await;
+                    }
+                    Err(e) => {
+                        let _ = state
+                            .pg
+                            .rpc(
+                                "record_campaign_offer_transfer",
+                                json!({
+                                    "p_offer_id": offer_id,
+                                    "p_recipient_type": "agency",
+                                    "p_recipient_id": agency_id,
+                                    "p_stripe_connect_account_id": agency_account_id,
+                                    "p_amount_cents": agency_amount_cents,
+                                    "p_currency": currency,
+                                    "p_status": "failed",
+                                    "p_failure_reason": format!("{:?}", e)
+                                })
+                                .to_string(),
+                            )
+                            .execute()
+                            .await;
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
+    for p in &payments {
+        let talent_id = p.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+        let amount_cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        if talent_id.is_empty() || amount_cents <= 0 {
+            continue;
+        }
+
+        let creator_id = get_creator_id_from_talent_id(state, talent_id).await.ok();
+        let creator_id = creator_id.unwrap_or_default();
+        let talent_account_id_result = if !creator_id.is_empty() {
+            get_creator_stripe_account(state, &creator_id).await
+        } else {
+            Err("missing_creator_id".to_string())
+        };
+
+        if let Ok(talent_account_id) = talent_account_id_result {
+            let mut params = stripe_sdk::CreateTransfer::new(currency_enum, talent_account_id.clone());
+            params.amount = Some(amount_cents);
+            params.metadata = Some(std::collections::HashMap::from([
+                ("offer_id".to_string(), offer_id.to_string()),
+                ("talent_id".to_string(), talent_id.to_string()),
+                ("creator_id".to_string(), creator_id.to_string()),
+                ("type".to_string(), "talent_earnings".to_string()),
+            ]));
+
+            match stripe_sdk::Transfer::create(&client, params).await {
+                Ok(transfer) => {
+                    let _ = state
+                        .pg
+                        .rpc(
+                            "record_campaign_offer_transfer",
+                            json!({
+                                "p_offer_id": offer_id,
+                                "p_recipient_type": "creator",
+                                "p_recipient_id": creator_id,
+                                "p_stripe_connect_account_id": talent_account_id,
+                                "p_amount_cents": amount_cents,
+                                "p_currency": currency,
+                                "p_stripe_transfer_id": transfer.id,
+                                "p_status": "created"
+                            })
+                            .to_string(),
+                        )
+                        .execute()
+                        .await;
+                }
+                Err(e) => {
+                    let _ = state
+                        .pg
+                        .rpc(
+                            "record_campaign_offer_transfer",
+                            json!({
+                                "p_offer_id": offer_id,
+                                "p_recipient_type": "creator",
+                                "p_recipient_id": creator_id,
+                                "p_stripe_connect_account_id": talent_account_id,
+                                "p_amount_cents": amount_cents,
+                                "p_currency": currency,
+                                "p_status": "failed",
+                                "p_failure_reason": format!("{:?}", e)
+                            })
+                            .to_string(),
+                        )
+                        .execute()
+                        .await;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn get_agency_stripe_account(state: &AppState, agency_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Agency has no connected Stripe account".to_string())
+}
+
+async fn get_creator_id_from_talent_id(state: &AppState, talent_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .eq("id", talent_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("creator_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| format!("Talent {} has no creator profile", talent_id))
+}
+
+async fn get_creator_stripe_account(state: &AppState, creator_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", creator_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Creator has no connected Stripe account".to_string())
 }
 
 /// POST /webhooks/brand-contracts
@@ -5341,7 +5806,7 @@ pub async fn comment_offer_deliverable(
 
 /// Automatically generates a licensing_request billing stub for a fully signed campaign offer (Agency only).
 /// This hooks into the existing `payouts.rs` system seamlessly.
-async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Result<(), String> {
+pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Result<String, String> {
     let offer_resp = state
         .pg
         .from("campaign_offers")
@@ -5356,17 +5821,77 @@ async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Resul
     let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
     let offer = match offer_rows.first() {
         Some(o) => o,
-        None => return Ok(()),
+        None => return Err("offer_not_found".to_string()),
     };
 
     let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
     if target_type != "agency" {
         // Independent creators bypass licensing_requests entirely.
-        return Ok(());
+        return Ok("".to_string());
     }
 
-    if offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").len() > 0 {
-        return Ok(());
+    if let Some(existing_id) = offer.get("billing_request_id").and_then(|v| v.as_str()) {
+        if !existing_id.is_empty() {
+            // Stub already exists. Check if payments rows were created; if not, create them.
+            let existing_payments_resp = state
+                .pg
+                .from("payments")
+                .select("id")
+                .eq("licensing_request_id", existing_id)
+                .execute()
+                .await;
+            if let Ok(r) = existing_payments_resp {
+                if let Ok(txt) = r.text().await {
+                    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+                    if !rows.is_empty() {
+                        // Payments already exist, nothing to do.
+                        return Ok(existing_id.to_string());
+                    }
+                    // Fall through to create missing payments rows.
+                    tracing::warn!(offer_id, "billing stub exists but no payments rows; creating them now");
+                }
+            }
+            // Rebuild enough state to create payments rows below.
+            let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+            let brand_id = offer.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
+            let brand_campaign_id = offer.get("brand_campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+            let budget_snapshot = offer.get("budget_snapshot").and_then(|v| v.as_object()).cloned().unwrap_or_default();
+            let budget_str = budget_snapshot.get("budget_total").and_then(|v| v.as_str()).unwrap_or("0").replace(",", "");
+            let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
+            let assignments_resp = state.pg.from("offer_talent_assignments").select("talent_id").eq("offer_id", offer_id).eq("status", "assigned").execute().await.map_err(|e| e.to_string())?;
+            let assignments_text = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let assignments: Vec<serde_json::Value> = serde_json::from_str(&assignments_text).unwrap_or_default();
+            if assignments.is_empty() {
+                return Ok(existing_id.to_string());
+            }
+            let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
+            for assigned in &assignments {
+                let tid = assigned.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+                if tid.is_empty() { continue; }
+                let payment_body = json!({
+                    "agency_id": agency_id,
+                    "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_id.to_string()) },
+                    "talent_id": tid,
+                    "campaign_id": if brand_campaign_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_campaign_id.to_string()) },
+                    "status": "pending",
+                    "currency_code": "USD",
+                    "gross_cents": split_cents,
+                    "licensing_request_id": existing_id,
+                });
+                let pay_res = state.pg.from("payments").insert(payment_body.to_string()).execute().await;
+                match pay_res {
+                    Ok(resp) => {
+                        if !resp.status().is_success() {
+                            tracing::error!("Failed to insert missing payment for talent {}: {}", tid, resp.text().await.unwrap_or_default());
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Network error inserting missing payment for talent {}: {}", tid, e);
+                    }
+                }
+            }
+            return Ok(existing_id.to_string());
+        }
     }
 
     let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
@@ -5403,7 +5928,7 @@ async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Resul
 
     if assignments.is_empty() {
         tracing::warn!("No talents assigned to offer {}, cannot create billing stub.", offer_id);
-        return Ok(());
+        return Err("no_talents_assigned".to_string());
     }
 
     let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
@@ -5434,7 +5959,7 @@ async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Resul
     let lr_status = lr_resp.status();
     if !lr_status.is_success() {
         tracing::error!("Failed to create billing stub for offer {}: {}", offer_id, lr_resp.text().await.unwrap_or_default());
-        return Ok(());
+        return Err("failed_to_create_stub".to_string());
     }
     
     let lr_row: serde_json::Value = serde_json::from_str(&lr_resp.text().await.unwrap_or_default()).unwrap_or_default();
@@ -5462,9 +5987,19 @@ async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Resul
             "licensing_request_id": lr_id,
         });
 
-        let _ = state.pg.from("payments").insert(payment_body.to_string()).execute().await;
+        let pay_res = state.pg.from("payments").insert(payment_body.to_string()).execute().await;
+        match pay_res {
+            Ok(resp) => {
+                if !resp.status().is_success() {
+                    tracing::error!("Failed to insert payment for talent {}: {}", tid, resp.text().await.unwrap_or_default());
+                }
+            }
+            Err(e) => {
+                tracing::error!("Network error inserting payment for talent {}: {}", tid, e);
+            }
+        }
     }
 
     info!(offer_id, "Generated billing stub {} with {} per-talent payments.", lr_id, split_cents);
-    Ok(())
+    Ok(lr_id.to_string())
 }

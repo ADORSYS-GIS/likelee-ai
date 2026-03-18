@@ -2457,7 +2457,7 @@ async fn handle_payment_link_checkout_completed(
         .await;
     // Update payments table status
     let payment_update = json!({
-        "status": "paid",
+        "status": "succeeded",
         "paid_at": chrono::Utc::now().to_rfc3339(),
         "stripe_payment_intent_id": payment_intent_id,
     });
@@ -3971,56 +3971,41 @@ async fn handle_campaign_offer_agency_distribution(
         .unwrap_or(gross_total_cents);
     let platform_fee_cents = (gross_total_cents - net_amount_cents).max(0);
 
-    // Fetch per-talent payment rows created by `ensure_campaign_billing_stub`.
-    let pay_resp = state
+    // Load talent assignments directly from offer_talent_assignments.
+    // This avoids relying on the `payments` stub rows which may not have been created.
+    let assignments_resp = state
         .pg
-        .from("payments")
-        .select("id,talent_id,gross_cents")
-        .eq("agency_id", agency_id)
-        .eq("licensing_request_id", &licensing_request_id)
+        .from("offer_talent_assignments")
+        .select("talent_id")
+        .eq("offer_id", offer_id)
+        .eq("status", "assigned")
         .execute()
         .await
         .map_err(|e| e.to_string())?;
-    if !pay_resp.status().is_success() {
-        let err = pay_resp.text().await.unwrap_or_default();
-        return Err(err);
-    }
-    let pay_txt = pay_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let payment_rows: Vec<serde_json::Value> = serde_json::from_str(&pay_txt).unwrap_or_default();
-    if payment_rows.is_empty() {
+    let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let assignments: Vec<serde_json::Value> = serde_json::from_str(&assignments_txt).unwrap_or_default();
+    tracing::info!(offer_id = %offer_id, assignments_raw = %assignments_txt, "talent assignments loaded for distribution");
+
+    if assignments.is_empty() {
         tracing::warn!(
             offer_id = %offer_id,
-            licensing_request_id = %licensing_request_id,
-            "no payments rows found for campaign offer billing stub; skipping distribution"
+            agency_id = %agency_id,
+            "no talent assignments found for campaign offer; skipping distribution"
         );
         return Ok(());
     }
 
-    // Build weights per payment row, grouped by talent.
+    let split_cents = (net_amount_cents as f64 / assignments.len() as f64).round() as i64;
+
+    // Build rows: (fake_payment_id, talent_id, weight)
+    // We reuse the same downstream logic which expects (payment_id, talent_id, gross_cents).
+    // Use talent_id as placeholder for payment_id since we don't have `payments` rows here.
     let mut talent_ids: Vec<String> = vec![];
-    let mut rows: Vec<(String, String, i64)> = vec![]; // (payment_id, talent_id, weight)
-    for r in &payment_rows {
-        let pid = r
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        let tid = r
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if pid.is_empty() || tid.is_empty() {
-            continue;
-        }
-        let w = r
-            .get("gross_cents")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0)
-            .max(0);
-        rows.push((pid, tid.clone(), w));
+    let mut rows: Vec<(String, String, i64)> = vec![];
+    for a in &assignments {
+        let tid = a.get("talent_id").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+        if tid.is_empty() { continue; }
+        rows.push((tid.clone(), tid.clone(), split_cents));
         talent_ids.push(tid);
     }
     if rows.is_empty() {
@@ -4028,6 +4013,7 @@ async fn handle_campaign_offer_agency_distribution(
     }
     talent_ids.sort();
     talent_ids.dedup();
+
 
     // Commission overrides + tier defaults (same model as licensing flow).
     let talent_id_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();

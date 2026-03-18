@@ -529,55 +529,12 @@ pub async fn create_campaign_offer_checkout(
     let mut billing_request_id = offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
     if target_type == "agency" && billing_request_id.is_empty() {
-        // JIT creation of billing stub for older offers
-        let mut brand_name = "Brand".to_string();
-        let b_resp = state.pg.from("brands").select("company_name").eq("id", &user.id).single().execute().await;
-        if let Ok(br) = b_resp {
-            if let Ok(bt) = br.text().await {
-                if let Ok(bj) = serde_json::from_str::<serde_json::Value>(&bt) {
-                    if let Some(n) = bj.get("company_name").and_then(|v| v.as_str()) {
-                        brand_name = n.to_string();
-                    }
-                }
+        match crate::brand_campaigns::ensure_campaign_billing_stub(&state, &offer_id).await {
+            Ok(stub_id) => {
+                billing_request_id = stub_id;
             }
-        }
-
-        let stub_payload = json!({
-            "agency_id": target_id,
-            "brand_id": user.id,
-            "status": "approved",
-            "campaign_title": "Campaign Offer (Legacy Stub)",
-            "client_name": brand_name,
-            "context_type": "campaign",
-            "campaign_offer_id": offer_id,
-        });
-
-        let stub_resp = state
-            .pg
-            .from("licensing_requests")
-            .insert(stub_payload.to_string())
-            .select("id")
-            .single()
-            .execute()
-            .await;
-
-        if let Ok(sr) = stub_resp {
-            if sr.status().is_success() {
-                if let Ok(st) = sr.text().await {
-                    if let Ok(sj) = serde_json::from_str::<serde_json::Value>(&st) {
-                        if let Some(stub_id) = sj.get("id").and_then(|v| v.as_str()) {
-                            billing_request_id = stub_id.to_string();
-                            // Link back to the offer
-                            let _ = state
-                                .pg
-                                .from("campaign_offers")
-                                .eq("id", &offer_id)
-                                .update(json!({ "billing_request_id": stub_id }).to_string())
-                                .execute()
-                                .await;
-                        }
-                    }
-                }
+            Err(e) => {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("failed_to_create_stub: {}", e)));
             }
         }
     }
