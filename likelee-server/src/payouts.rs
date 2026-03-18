@@ -3756,9 +3756,22 @@ async fn handle_campaign_offer_checkout_session_completed(
     obj: &serde_json::Value,
 ) -> Result<(), String> {
     let md = obj.get("metadata").cloned().unwrap_or(json!({}));
-    let offer_id = md.get("offer_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let target_type = md.get("target_type").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    // let session_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let offer_id = md
+        .get("offer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let target_type = md
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
 
     tracing::info!(offer_id = %offer_id, "Processing campaign offer checkout completion");
 
@@ -3771,7 +3784,10 @@ async fn handle_campaign_offer_checkout_session_completed(
         .pg
         .from("campaign_offers")
         .eq("id", &offer_id)
-        .update(json!({"payment_status": "paid", "updated_at": chrono::Utc::now().to_rfc3339()}).to_string())
+        .update(
+            json!({"payment_status": "paid", "updated_at": chrono::Utc::now().to_rfc3339()})
+                .to_string(),
+        )
         .execute()
         .await
         .map_err(|e| e.to_string())?;
@@ -3781,34 +3797,554 @@ async fn handle_campaign_offer_checkout_session_completed(
     }
 
     if target_type == "agency" {
-        // If it's an agency, the request behaves exactly like a licensing checkout
-        // Re-use `handle_licensing_requests_checkout_session_completed`'s core logic
-        let billing_request_ids = md.get("licensing_request_ids").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        if !billing_request_ids.is_empty() {
-             tracing::info!(offer_id = %offer_id, "Delegating escrow payout routing to licensing request handler");
-             let _ = handle_licensing_requests_checkout_session_completed(state, obj).await;
+        let billing_request_ids = md
+            .get("licensing_request_ids")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let agency_id = md
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        if billing_request_ids.is_empty() || agency_id.is_empty() || session_id.is_empty() {
+            tracing::warn!(
+                offer_id = %offer_id,
+                agency_id = %agency_id,
+                billing_request_ids = %billing_request_ids,
+                session_id = %session_id,
+                "campaign offer paid but missing billing identifiers; skipping distribution"
+            );
+            return Ok(());
         }
+
+        // Distribute funds to agency + assigned talents by writing a single licensing_payouts row
+        // with talent_splits; DB triggers will credit agency_balances + creator_balances.
+        let _ = handle_campaign_offer_agency_distribution(
+            state,
+            &offer_id,
+            &agency_id,
+            &billing_request_ids,
+            &session_id,
+            obj,
+        )
+        .await;
     } else {
         // Handle independent creator checkout
-        let creator_id = md.get("target_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let amount_total = obj.get("amount_total").and_then(|v| v.as_i64()).unwrap_or(0);
-        let currency = obj.get("currency").and_then(|v| v.as_str()).unwrap_or("usd").to_string();
+        let creator_id = md
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let amount_total = obj
+            .get("amount_total")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let currency = obj
+            .get("currency")
+            .and_then(|v| v.as_str())
+            .unwrap_or("usd")
+            .to_string();
 
         if !creator_id.is_empty() && amount_total > 0 {
-             tracing::info!(creator_id = %creator_id, amount_cents = amount_total, "Adding funds to creator balance");
-     
-             // We can simulate it or insert directly. Given existing table triggers, we insert into `creator_balances` directly.
-             // (assuming an `increment_creator_balance` function exists or we construct a query)
-             let _ = state.pg.rpc(
-                 "increment_creator_balance",
-                 json!({
-                     "p_creator_id": creator_id,
-                     "p_amount_cents": amount_total,
-                     "p_currency_code": currency
-                 }).to_string()
-             ).execute().await;
+            tracing::info!(creator_id = %creator_id, amount_cents = amount_total, "Adding funds to creator balance");
+
+            // We can simulate it or insert directly. Given existing table triggers, we insert into `creator_balances` directly.
+            // (assuming an `increment_creator_balance` function exists or we construct a query)
+            let _ = state
+                .pg
+                .rpc(
+                    "increment_creator_balance",
+                    json!({
+                        "p_creator_id": creator_id,
+                        "p_amount_cents": amount_total,
+                        "p_currency_code": currency
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
         }
     }
+
+    Ok(())
+}
+
+async fn handle_campaign_offer_agency_distribution(
+    state: &AppState,
+    offer_id: &str,
+    agency_id: &str,
+    billing_request_ids: &str,
+    stripe_checkout_session_id: &str,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    // For campaign offers, billing_request_ids is expected to be a single licensing_request_id (shadow stub).
+    let licensing_request_id = billing_request_ids
+        .split(',')
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if licensing_request_id.is_empty() {
+        return Ok(());
+    }
+
+    // Idempotency: if we've already inserted the payout for this (session, licensing_request_id), skip.
+    let existing_resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("id")
+        .eq("stripe_checkout_session_id", stripe_checkout_session_id)
+        .eq("licensing_request_id", &licensing_request_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if existing_resp.status().is_success() {
+        let txt = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+        if !rows.is_empty() {
+            tracing::info!(
+                offer_id = %offer_id,
+                licensing_request_id = %licensing_request_id,
+                stripe_checkout_session_id = %stripe_checkout_session_id,
+                "campaign offer distribution already processed (idempotent)"
+            );
+            return Ok(());
+        }
+    }
+
+    // Load offer budget snapshot for net vs gross.
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,budget_snapshot")
+        .eq("id", offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    let offer_txt = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_txt).unwrap_or_default();
+    let offer = offer_rows.first().cloned().unwrap_or(json!({}));
+    let budget_snapshot = offer
+        .get("budget_snapshot")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let gross_total_cents = obj
+        .get("amount_total")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0)
+        .max(0);
+    let currency_code = obj
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "USD".to_string());
+    let payment_intent_id = obj
+        .get("payment_intent")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let parse_dollars_to_cents = |s: &str| -> i64 {
+        let s = s.trim().replace(",", "");
+        if s.is_empty() {
+            return 0;
+        }
+        let v: f64 = s.parse().unwrap_or(0.0);
+        (v * 100.0).round() as i64
+    };
+
+    let net_amount_cents = budget_snapshot
+        .get("budget_creator_payment")
+        .and_then(|v| v.as_str())
+        .map(parse_dollars_to_cents)
+        .filter(|v| *v > 0)
+        .unwrap_or(gross_total_cents);
+    let platform_fee_cents = (gross_total_cents - net_amount_cents).max(0);
+
+    // Fetch per-talent payment rows created by `ensure_campaign_billing_stub`.
+    let pay_resp = state
+        .pg
+        .from("payments")
+        .select("id,talent_id,gross_cents")
+        .eq("agency_id", agency_id)
+        .eq("licensing_request_id", &licensing_request_id)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !pay_resp.status().is_success() {
+        let err = pay_resp.text().await.unwrap_or_default();
+        return Err(err);
+    }
+    let pay_txt = pay_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let payment_rows: Vec<serde_json::Value> = serde_json::from_str(&pay_txt).unwrap_or_default();
+    if payment_rows.is_empty() {
+        tracing::warn!(
+            offer_id = %offer_id,
+            licensing_request_id = %licensing_request_id,
+            "no payments rows found for campaign offer billing stub; skipping distribution"
+        );
+        return Ok(());
+    }
+
+    // Build weights per payment row, grouped by talent.
+    let mut talent_ids: Vec<String> = vec![];
+    let mut rows: Vec<(String, String, i64)> = vec![]; // (payment_id, talent_id, weight)
+    for r in &payment_rows {
+        let pid = r
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let tid = r
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if pid.is_empty() || tid.is_empty() {
+            continue;
+        }
+        let w = r
+            .get("gross_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0)
+            .max(0);
+        rows.push((pid, tid.clone(), w));
+        talent_ids.push(tid);
+    }
+    if rows.is_empty() {
+        return Ok(());
+    }
+    talent_ids.sort();
+    talent_ids.dedup();
+
+    // Commission overrides + tier defaults (same model as licensing flow).
+    let talent_id_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
+
+    let comm_resp = state
+        .pg
+        .from("talent_commissions")
+        .select("talent_id,commission_rate")
+        .eq("agency_id", agency_id)
+        .in_("talent_id", talent_id_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut custom_by_talent: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    if comm_resp.status().is_success() {
+        let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let comm_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&comm_text).unwrap_or_default();
+        for r in comm_rows {
+            let tid = r
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            if tid.is_empty() {
+                continue;
+            }
+            if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                custom_by_talent.insert(tid.to_string(), rate.clamp(0.0, 100.0));
+            }
+        }
+    }
+
+    let (resp_agency, resp_talent_tiers) = tokio::try_join!(
+        async {
+            state
+                .pg
+                .from("agencies")
+                .select("performance_commission_config")
+                .eq("id", agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        },
+        async {
+            state
+                .pg
+                .from("agency_users")
+                .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
+                .eq("agency_id", agency_id)
+                .in_("id", talent_id_refs.clone())
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        }
+    )?;
+
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_agency.text().await.unwrap_or_default()).unwrap_or_default();
+    let commission_cfg = agency_rows
+        .first()
+        .and_then(|r| r.get("performance_commission_config"))
+        .and_then(|v| v.as_object());
+
+    let tier_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_talent_tiers.text().await.unwrap_or_default())
+            .unwrap_or_default();
+    let mut tier_name_by_talent: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut creator_id_by_talent: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut talent_name_by_talent: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for row in tier_rows {
+        let tid = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if tid.is_empty() {
+            continue;
+        }
+        let tier_name = row
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        tier_name_by_talent.insert(tid.clone(), tier_name);
+        if let Some(cid) = row.get("creator_id").and_then(|v| v.as_str()) {
+            if !cid.trim().is_empty() {
+                creator_id_by_talent.insert(tid.clone(), cid.trim().to_string());
+            }
+        }
+        let name = row
+            .get("full_legal_name")
+            .or_else(|| row.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Talent")
+            .trim()
+            .to_string();
+        talent_name_by_talent.insert(tid, name);
+    }
+
+    let mut default_rate_by_talent: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    for tid in &talent_ids {
+        let tier_name = tier_name_by_talent
+            .get(tid)
+            .map(String::as_str)
+            .unwrap_or("Inactive");
+        let rate = commission_cfg
+            .and_then(|cfg| cfg.get(tier_name))
+            .and_then(|tier_cfg| tier_cfg.get("commission_rate"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        default_rate_by_talent.insert(tid.clone(), rate.clamp(0.0, 100.0));
+    }
+
+    // Allocate net_amount_cents across payment rows using their existing gross_cents as weights.
+    let mut weights: Vec<(String, i64)> = rows
+        .iter()
+        .map(|(_pid, _tid, w)| *w)
+        .enumerate()
+        .map(|(i, w)| (i.to_string(), w.max(0)))
+        .collect();
+    let mut sum_w: i64 = rows.iter().map(|(_, _, w)| *w).sum();
+    if sum_w <= 0 {
+        // equal weights if missing
+        sum_w = rows.len() as i64;
+        for (_, w) in &mut weights {
+            *w = 1;
+        }
+    }
+
+    let mut alloc_floor_by_idx: std::collections::HashMap<usize, i64> =
+        std::collections::HashMap::new();
+    let mut remainders: Vec<(usize, i128)> = vec![];
+    let mut floor_sum: i64 = 0;
+
+    for (idx, (_pid, _tid, w)) in rows.iter().enumerate() {
+        let w = (*w).max(0);
+        let numer: i128 = (net_amount_cents as i128) * (w as i128);
+        let denom: i128 = (sum_w as i128).max(1);
+        let floor_alloc: i64 = (numer / denom) as i64;
+        let rem: i128 = numer - denom * (floor_alloc as i128);
+        let floor_alloc = floor_alloc.max(0);
+        alloc_floor_by_idx.insert(idx, floor_alloc);
+        remainders.push((idx, rem));
+        floor_sum += floor_alloc;
+    }
+
+    let mut leftover: i64 = (net_amount_cents - floor_sum).max(0);
+    remainders.sort_by(|(a_i, a_r), (b_i, b_r)| b_r.cmp(a_r).then_with(|| a_i.cmp(b_i)));
+    for (idx, _) in remainders {
+        if leftover <= 0 {
+            break;
+        }
+        if let Some(v) = alloc_floor_by_idx.get_mut(&idx) {
+            *v += 1;
+            leftover -= 1;
+        }
+    }
+
+    let alloc_sum: i64 = alloc_floor_by_idx.values().sum();
+    if alloc_sum != net_amount_cents {
+        return Err("campaign_offer_allocation_invariant_violated".to_string());
+    }
+
+    let paid_at = chrono::Utc::now().to_rfc3339();
+
+    // Resolve creator Stripe Connect account IDs (best-effort; not required for balance crediting).
+    let creator_ids: Vec<&str> = creator_id_by_talent.values().map(|s| s.as_str()).collect();
+    let mut stripe_acct_by_creator: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let cr_resp = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .in_("id", creator_ids)
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        if cr_resp.status().is_success() {
+            let cr_txt = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let cr_rows: Vec<serde_json::Value> = serde_json::from_str(&cr_txt).unwrap_or_default();
+            for r in cr_rows {
+                let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+                let acct = r
+                    .get("stripe_connect_account_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if !cid.is_empty() && !acct.is_empty() {
+                    stripe_acct_by_creator.insert(cid.to_string(), acct.to_string());
+                }
+            }
+        }
+    }
+
+    let mut agency_total_cents: i64 = 0;
+    let mut talent_total_cents: i64 = 0;
+    let mut talent_splits_json: Vec<serde_json::Value> = vec![];
+
+    // Update each payments row to reflect the computed per-talent distribution.
+    for (idx, (payment_id, talent_id, _w)) in rows.iter().enumerate() {
+        let gross_share_cents = alloc_floor_by_idx.get(&idx).copied().unwrap_or(0).max(0);
+
+        let effective_rate = custom_by_talent
+            .get(talent_id)
+            .copied()
+            .unwrap_or_else(|| {
+                default_rate_by_talent
+                    .get(talent_id)
+                    .copied()
+                    .unwrap_or(0.0)
+            })
+            .clamp(0.0, 100.0);
+
+        let agency_commission_cents =
+            ((gross_share_cents as f64) * (effective_rate / 100.0)).round() as i64;
+        let agency_commission_cents = agency_commission_cents.max(0).min(gross_share_cents);
+        let creator_take_cents = (gross_share_cents - agency_commission_cents).max(0);
+
+        agency_total_cents += agency_commission_cents;
+        talent_total_cents += creator_take_cents;
+
+        let update_body = json!({
+            "gross_cents": gross_share_cents,
+            "agency_earnings_cents": agency_commission_cents,
+            "talent_earnings_cents": creator_take_cents,
+            "commission_rate": effective_rate,
+            "currency_code": currency_code,
+            "paid_at": paid_at,
+            "status": "succeeded"
+        });
+        let _ = state
+            .pg
+            .from("payments")
+            .eq("id", payment_id)
+            .update(update_body.to_string())
+            .execute()
+            .await;
+
+        let creator_id = creator_id_by_talent
+            .get(talent_id)
+            .cloned()
+            .unwrap_or_default();
+        let stripe_acct = stripe_acct_by_creator
+            .get(&creator_id)
+            .cloned()
+            .unwrap_or_default();
+        let talent_name = talent_name_by_talent
+            .get(talent_id)
+            .cloned()
+            .unwrap_or_default();
+
+        talent_splits_json.push(json!({
+            "talent_id": talent_id,
+            "talent_name": talent_name,
+            "creator_id": creator_id,
+            "amount_cents": creator_take_cents,
+            "stripe_connect_account_id": stripe_acct,
+            "commission_rate": effective_rate,
+            "gross_share_cents": gross_share_cents,
+            "agency_commission_cents": agency_commission_cents,
+        }));
+    }
+
+    // Credit internal balances (agency + creators) via a single licensing_payouts insert.
+    // Triggers (0044_fix_payout_triggers_available_cents.sql) will increment earned + available balances.
+    let payout_record = json!({
+        "licensing_request_id": licensing_request_id,
+        "agency_id": agency_id,
+        "amount_cents": agency_total_cents.max(0).min(net_amount_cents),
+        "talent_earnings_cents": talent_total_cents.max(0).min(net_amount_cents),
+        "talent_splits": talent_splits_json,
+        "platform_fee_cents": platform_fee_cents,
+        "net_amount_cents": net_amount_cents,
+        "currency": currency_code,
+        "paid_at": paid_at,
+        "stripe_checkout_session_id": stripe_checkout_session_id,
+        "stripe_payment_intent_id": payment_intent_id,
+    });
+
+    let ins_resp = state
+        .pg
+        .from("licensing_payouts")
+        .insert(payout_record.to_string())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !ins_resp.status().is_success() {
+        // Unique index may reject duplicates if a race occurs; treat as ok.
+        let err = ins_resp.text().await.unwrap_or_default();
+        tracing::warn!(
+            offer_id = %offer_id,
+            licensing_request_id = %licensing_request_id,
+            error = %err,
+            "failed to insert campaign offer licensing_payouts row"
+        );
+    }
+
+    tracing::info!(
+        offer_id = %offer_id,
+        licensing_request_id = %licensing_request_id,
+        agency_total_cents,
+        talent_total_cents,
+        platform_fee_cents,
+        net_amount_cents,
+        currency = %currency_code,
+        "campaign offer distribution credited to internal balances"
+    );
 
     Ok(())
 }
