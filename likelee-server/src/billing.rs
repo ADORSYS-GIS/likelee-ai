@@ -472,3 +472,202 @@ pub async fn create_agency_subscription_checkout(
     info!(agency_id = %user.id, plan = %payload.plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
 }
+
+#[derive(Debug, Serialize)]
+pub struct CampaignCheckoutResponse {
+    pub url: String,
+}
+
+pub async fn create_campaign_offer_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    axum::extract::Path(offer_id): axum::extract::Path<String>,
+) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    // 1. Fetch the campaign offer
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,status,payment_status,target_type,target_id,billing_request_id,budget_snapshot")
+        .eq("id", &offer_id)
+        .eq("brand_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        let err = offer_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows.first().ok_or((StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if offer_status != "contract_fully_signed" {
+        return Err((StatusCode::BAD_REQUEST, "contract_must_be_fully_signed".to_string()));
+    }
+
+    let payment_status = offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("unpaid");
+    if payment_status != "unpaid" {
+        return Err((StatusCode::BAD_REQUEST, "offer_already_paid_or_processing".to_string()));
+    }
+
+    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
+    let target_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+    let mut billing_request_id = offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    if target_type == "agency" && billing_request_id.is_empty() {
+        // JIT creation of billing stub for older offers
+        let mut brand_name = "Brand".to_string();
+        let b_resp = state.pg.from("brands").select("company_name").eq("id", &user.id).single().execute().await;
+        if let Ok(br) = b_resp {
+            if let Ok(bt) = br.text().await {
+                if let Ok(bj) = serde_json::from_str::<serde_json::Value>(&bt) {
+                    if let Some(n) = bj.get("company_name").and_then(|v| v.as_str()) {
+                        brand_name = n.to_string();
+                    }
+                }
+            }
+        }
+
+        let stub_payload = json!({
+            "agency_id": target_id,
+            "brand_id": user.id,
+            "status": "approved",
+            "campaign_title": "Campaign Offer (Legacy Stub)",
+            "client_name": brand_name,
+            "context_type": "campaign",
+            "campaign_offer_id": offer_id,
+        });
+
+        let stub_resp = state
+            .pg
+            .from("licensing_requests")
+            .insert(stub_payload.to_string())
+            .select("id")
+            .single()
+            .execute()
+            .await;
+
+        if let Ok(sr) = stub_resp {
+            if sr.status().is_success() {
+                if let Ok(st) = sr.text().await {
+                    if let Ok(sj) = serde_json::from_str::<serde_json::Value>(&st) {
+                        if let Some(stub_id) = sj.get("id").and_then(|v| v.as_str()) {
+                            billing_request_id = stub_id.to_string();
+                            // Link back to the offer
+                            let _ = state
+                                .pg
+                                .from("campaign_offers")
+                                .eq("id", &offer_id)
+                                .update(json!({ "billing_request_id": stub_id }).to_string())
+                                .execute()
+                                .await;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if target_type == "agency" && billing_request_id.is_empty() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "missing_billing_stub_for_agency".to_string()));
+    }
+
+    let budget_snapshot = offer
+        .get("budget_snapshot")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let budget_str = budget_snapshot
+        .get("budget_total")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "0".to_string());
+    
+    let budget_str = budget_str.replace(",", "");
+    let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
+    let amount_cents = (budget_total * 100.0).round() as i64;
+
+    if amount_cents <= 0 {
+        return Err((StatusCode::BAD_REQUEST, "invalid_budget".to_string()));
+    }
+
+    let success_url = format!("{}/brand/campaigns/{}", state.frontend_url, offer_id);
+    let cancel_url = format!("{}/brand/campaigns/{}", state.frontend_url, offer_id);
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.client_reference_id = Some(user.id.as_str());
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("billing_domain".to_string(), "campaign_offer".to_string());
+    md.insert("offer_id".to_string(), offer_id.clone());
+    md.insert("target_type".to_string(), target_type.to_string());
+    md.insert("target_id".to_string(), target_id.to_string());
+    md.insert("brand_id".to_string(), user.id.clone());
+
+    if target_type == "agency" {
+        md.insert("agency_id".to_string(), target_id.to_string());
+        md.insert("licensing_request_ids".to_string(), billing_request_id.to_string());
+    }
+
+    cs_params.metadata = Some(md);
+
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price_data: Some(stripe_sdk::CreateCheckoutSessionLineItemsPriceData {
+            currency: stripe_sdk::Currency::from_str("usd").unwrap(),
+            product_data: Some(stripe_sdk::CreateCheckoutSessionLineItemsPriceDataProductData {
+                name: "Campaign Offer Escrow Deposit".to_string(),
+                description: Some("Funds will be held in escrow until deliverables are approved.".to_string()),
+                ..Default::default()
+            }),
+            unit_amount: Some(amount_cents),
+            ..Default::default()
+        }),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err((StatusCode::BAD_GATEWAY, "stripe_checkout_missing_url".to_string()));
+    }
+
+    // Mark as processing
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(json!({"payment_status": "processing", "stripe_checkout_session_id": session.id.to_string()}).to_string())
+        .execute()
+        .await;
+
+    info!(offer_id, "created campaign offer checkout session");
+    Ok(Json(CampaignCheckoutResponse { url }))
+}
