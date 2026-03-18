@@ -17,6 +17,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import {
   Search,
   Filter,
@@ -52,12 +54,9 @@ const sortOptions = [
 
 export default function JobBoardContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("us");
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [totalCount, setTotalCount] = useState(0);
   const [selectedJob, setSelectedJob] = useState(null);
   const [savedJobs, setSavedJobs] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
@@ -72,10 +71,92 @@ export default function JobBoardContent() {
   const jobDetailsRef = useRef(null);
   const { toast } = useToast();
 
+  // IndexedDB-backed query for jobs
+  const jobsQuery = useIndexedDbQuery<any[]>({
+    queryKey: ["job-board", searchQuery, locationFilter],
+    queryFn: async () => {
+      const [joobleResponse, adzunaResponse] = await Promise.all([
+        base44.functions
+          .invoke("fetchJoobleJobs", {
+            search: searchQuery || null,
+            location: getJoobleLocation(locationFilter),
+            page: 1,
+          })
+          .catch((err) => {
+            console.error("Jooble error:", err);
+            return { data: { jobs: [] } };
+          }),
+        base44.functions
+          .invoke("fetchAdzunaJobs", {
+            search: searchQuery || null,
+            location: locationFilter,
+            page: 1,
+            results_per_page: 100,
+          })
+          .catch((err) => {
+            console.error("Adzuna error:", err);
+            return { data: { jobs: [] } };
+          }),
+      ]);
+
+      const joobleJobs = (joobleResponse.data.jobs || []).map(categorizeJob);
+      const adzunaJobs = (adzunaResponse.data.jobs || []).map(categorizeJob);
+
+      // Filter out jobs older than 1 month AND jobs with "engineer" in title/description
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      const allJobs = [...joobleJobs, ...adzunaJobs].filter((job) => {
+        // Filter out old jobs
+        if (job.created) {
+          const jobDate = new Date(job.created);
+          if (jobDate < oneMonthAgo) return false;
+        }
+
+        // Filter out jobs with "engineer" or "engineering" in title or description
+        const title = job.title?.toLowerCase() || "";
+        const description = job.description?.toLowerCase() || "";
+
+        if (
+          title.includes("engineer") ||
+          title.includes("engineering") ||
+          description.includes("engineer") ||
+          description.includes("engineering")
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
+      return allJobs;
+    },
+    maxAge: 5 * 60 * 1000, // 5 minutes - jobs don't change frequently
+    syncInterval: 5 * 60 * 1000,
+    staleWhileRevalidate: true,
+  });
+
+  const jobs = jobsQuery.data ?? [];
+  const loading = jobsQuery.isLoading && !jobsQuery.data;
+  const error = jobsQuery.error?.message ?? null;
+  const totalCount = jobs.length;
+
   useEffect(() => {
     checkUser();
-    fetchJobs();
   }, []);
+
+  // Select first job when jobs data loads
+  useEffect(() => {
+    if (jobs.length > 0 && !selectedJob) {
+      if (window.innerWidth >= 1024) {
+        handleJobClick(jobs[0]);
+        setShowMobileDetails(false);
+      } else {
+        setSelectedJob(jobs[0]);
+        setShowMobileDetails(false);
+      }
+    }
+  }, [jobs]);
 
   const checkUser = async () => {
     try {
@@ -215,9 +296,11 @@ export default function JobBoardContent() {
         description: result.data.expanded_description,
       };
 
-      setJobs((prevJobs) =>
-        prevJobs.map((j) => (j.id === job.id ? updatedJob : j)),
-      );
+      // Update the query cache with the enhanced job
+      queryClient.setQueryData(["job-board", searchQuery, locationFilter], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map((j) => (j.id === job.id ? updatedJob : j));
+      });
       setEnhancedJobs((prev) => new Set([...prev, job.id]));
 
       return updatedJob;
@@ -256,92 +339,6 @@ export default function JobBoardContent() {
       } finally {
         setExpandingJobId(null);
       }
-    }
-  };
-
-  const fetchJobs = async () => {
-    setLoading(true);
-    setError(null);
-    setSelectedJob(null);
-    setShowMobileDetails(false);
-    setEnhancedJobs(new Set());
-
-    try {
-      const [joobleResponse, adzunaResponse] = await Promise.all([
-        base44.functions
-          .invoke("fetchJoobleJobs", {
-            search: searchQuery || null,
-            location: getJoobleLocation(locationFilter),
-            page: 1,
-          })
-          .catch((err) => {
-            console.error("Jooble error:", err);
-            return { data: { jobs: [] } };
-          }),
-        base44.functions
-          .invoke("fetchAdzunaJobs", {
-            search: searchQuery || null,
-            location: locationFilter,
-            page: 1,
-            results_per_page: 100,
-          })
-          .catch((err) => {
-            console.error("Adzuna error:", err);
-            return { data: { jobs: [] } };
-          }),
-      ]);
-
-      const joobleJobs = (joobleResponse.data.jobs || []).map(categorizeJob);
-      const adzunaJobs = (adzunaResponse.data.jobs || []).map(categorizeJob);
-
-      // Filter out jobs older than 1 month AND jobs with "engineer" in title/description
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-      const allJobs = [...joobleJobs, ...adzunaJobs].filter((job) => {
-        // Filter out old jobs
-        if (job.created) {
-          const jobDate = new Date(job.created);
-          if (jobDate < oneMonthAgo) return false;
-        }
-
-        // Filter out jobs with "engineer" or "engineering" in title or description
-        const title = job.title?.toLowerCase() || "";
-        const description = job.description?.toLowerCase() || "";
-
-        if (
-          title.includes("engineer") ||
-          title.includes("engineering") ||
-          description.includes("engineer") ||
-          description.includes("engineering")
-        ) {
-          return false;
-        }
-
-        return true;
-      });
-
-      if (allJobs.length === 0) {
-        setError("No jobs found. Try different search terms or filters.");
-      }
-
-      setJobs(allJobs);
-      setTotalCount(allJobs.length);
-
-      if (allJobs.length > 0) {
-        if (window.innerWidth >= 1024) {
-          handleJobClick(allJobs[0]);
-          setShowMobileDetails(false);
-        } else {
-          setSelectedJob(allJobs[0]);
-          setShowMobileDetails(false);
-        }
-      }
-    } catch (err) {
-      setError("Error loading jobs: " + err.message);
-      console.error("Error fetching jobs:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
