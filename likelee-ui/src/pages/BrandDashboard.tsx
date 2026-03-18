@@ -799,6 +799,7 @@ export default function BrandDashboard() {
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
+  const [payingOfferId, setPayingOfferId] = useState<string | null>(null);
   const [expandedCampaignHubId, setExpandedCampaignHubId] =
     useState<string>("");
   const [expandedMyOffersCampaignId, setExpandedMyOffersCampaignId] =
@@ -3187,6 +3188,54 @@ export default function BrandDashboard() {
               key={offerId}
               className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
             >
+              {/* Payment Pending Banner */}
+              {offer?.status === "contract_fully_signed" && offer?.payment_status !== "paid" && (
+                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                  <span className="text-amber-700 text-xs font-semibold">
+                    ⏳ Contract signed. Payment required before deliverables can start.
+                  </span>
+                  <Button
+                    size="sm"
+                    className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                    disabled={payingOfferId === offerId}
+                    onClick={async () => {
+                      setPayingOfferId(offerId);
+                      try {
+                        const data: any = await base44.post(
+                          `/api/brand/campaign-offers/${offerId}/checkout`,
+                          {},
+                        );
+                        if (data?.url) {
+                          window.location.href = data.url;
+                        } else {
+                          toast({
+                            title: "Payment Error",
+                            description:
+                              data?.message || "Could not start checkout.",
+                            variant: "destructive",
+                          });
+                        }
+                      } catch (e: any) {
+                        toast({
+                          title: "Network Error",
+                          description:
+                            e?.message || "Could not reach payment service.",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setPayingOfferId(null);
+                      }
+                    }}
+                  >
+                    {payingOfferId === offerId ? "Redirecting…" : "💳 Pay Offer"}
+                  </Button>
+                </div>
+              )}
+              {offer?.status === "contract_fully_signed" && offer?.payment_status === "paid" && (
+                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+                  <span className="text-emerald-700 text-xs font-semibold">✅ Payment confirmed — deliverables can be submitted.</span>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="font-semibold text-gray-900">
