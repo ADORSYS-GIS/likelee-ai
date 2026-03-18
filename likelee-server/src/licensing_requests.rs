@@ -1668,6 +1668,133 @@ pub async fn send_payment_link(
         }
     }
 
+    // If we have missing creator links, fall back to agency_talent_relationships
+    let missing_creator_links: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|tid| !talent_creator_map.contains_key(*tid))
+        .cloned()
+        .collect();
+    if !missing_creator_links.is_empty() {
+        let rel_refs: Vec<&str> = missing_creator_links.iter().map(|s| s.as_str()).collect();
+        let rel_resp = state
+            .pg
+            .from("agency_talent_relationships")
+            .select("talent_id,creator_id")
+            .in_("talent_id", rel_refs)
+            .execute()
+            .await;
+        if let Ok(rel_resp) = rel_resp {
+            if rel_resp.status().is_success() {
+                let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let rel_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&rel_text).unwrap_or_default();
+                for r in &rel_rows {
+                    let tid = r
+                        .get("talent_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let cid = r
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    if !tid.is_empty() && !cid.is_empty() {
+                        talent_creator_map.entry(tid).or_insert(cid);
+                    }
+                }
+            }
+        }
+    }
+
+    // If talent_ids are actually creator IDs, resolve via agency_users (creator_id) then creators
+    let still_missing_creator_links: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|tid| !talent_creator_map.contains_key(*tid))
+        .cloned()
+        .collect();
+    if !still_missing_creator_links.is_empty() {
+        let au_refs: Vec<&str> = still_missing_creator_links
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        let au_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id,full_legal_name,stage_name")
+            .eq("agency_id", &user.id)
+            .in_("creator_id", au_refs)
+            .execute()
+            .await;
+        if let Ok(au_resp) = au_resp {
+            if au_resp.status().is_success() {
+                let au_text = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let au_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&au_text).unwrap_or_default();
+                for r in &au_rows {
+                    let cid = r
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    let name = r
+                        .get("stage_name")
+                        .or_else(|| r.get("full_legal_name"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    talent_creator_map.entry(cid.clone()).or_insert(cid.clone());
+                    talent_name_map.entry(cid).or_insert(name);
+                }
+            }
+        }
+    }
+
+    let still_missing_creator_links: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|tid| !talent_creator_map.contains_key(*tid))
+        .cloned()
+        .collect();
+    if !still_missing_creator_links.is_empty() {
+        let cr_refs: Vec<&str> = still_missing_creator_links
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        let cr_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,stage_name")
+            .in_("id", cr_refs)
+            .execute()
+            .await;
+        if let Ok(cr_resp) = cr_resp {
+            if cr_resp.status().is_success() {
+                let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cr_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cr_text).unwrap_or_default();
+                for r in &cr_rows {
+                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    let name = r
+                        .get("stage_name")
+                        .or_else(|| r.get("full_name"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    talent_creator_map
+                        .entry(cid.to_string())
+                        .or_insert(cid.to_string());
+                    talent_name_map.entry(cid.to_string()).or_insert(name);
+                }
+            }
+        }
+    }
+
     // If map is still empty (e.g. talent_ids populated but AU lookup failed), fall back to embedded agency_users join
     if talent_name_map.is_empty() && all_talent_ids.len() == 1 {
         let tid = all_talent_ids[0].clone();
@@ -1696,6 +1823,59 @@ pub async fn send_payment_link(
         }
         if !tn.is_empty() {
             talent_tier_name_map.insert(tid, tn);
+        }
+    }
+
+    // If any names are still missing, try creators table (using creator_id)
+    let missing_names: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|tid| !talent_name_map.contains_key(*tid))
+        .cloned()
+        .collect();
+    if !missing_names.is_empty() {
+        let creator_ids: Vec<String> = missing_names
+            .iter()
+            .filter_map(|tid| talent_creator_map.get(tid).cloned())
+            .filter(|cid| !cid.is_empty())
+            .collect();
+        if !creator_ids.is_empty() {
+            let cr_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+            let cr_resp = state
+                .pg
+                .from("creators")
+                .select("id,full_name,stage_name")
+                .in_("id", cr_refs)
+                .execute()
+                .await;
+            if let Ok(cr_resp) = cr_resp {
+                if cr_resp.status().is_success() {
+                    let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let cr_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_text).unwrap_or_default();
+                    let mut creator_name_map: std::collections::HashMap<String, String> =
+                        std::collections::HashMap::new();
+                    for r in &cr_rows {
+                        let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        if cid.is_empty() {
+                            continue;
+                        }
+                        let name = r
+                            .get("stage_name")
+                            .or_else(|| r.get("full_name"))
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Unknown")
+                            .to_string();
+                        creator_name_map.insert(cid.to_string(), name);
+                    }
+                    for tid in &missing_names {
+                        if let Some(cid) = talent_creator_map.get(tid) {
+                            if let Some(name) = creator_name_map.get(cid) {
+                                talent_name_map.insert(tid.clone(), name.clone());
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

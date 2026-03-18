@@ -18113,15 +18113,10 @@ export default function AgencyDashboard() {
             icon: FileText,
             subItems: [
               "Licensing Requests",
-              "Brand Connections",
               "License Submissions",
               "Active Licenses",
               "License Templates",
             ],
-            badges:
-              pendingBrandConnectionCount > 0
-                ? { "Brand Connections": pendingBrandConnectionCount }
-                : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
