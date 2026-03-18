@@ -744,6 +744,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_my_campaign_offers),
         )
         .route(
+            "/api/brand/campaign-offers/:id/checkout",
+            post(crate::billing::create_campaign_offer_checkout),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/contracts",
             post(crate::brand_campaigns::create_offer_contract)
                 .get(crate::brand_campaigns::list_offer_contracts),
