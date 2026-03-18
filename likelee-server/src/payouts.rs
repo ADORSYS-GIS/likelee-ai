@@ -1287,6 +1287,7 @@ pub async fn stripe_webhook(
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    tracing::info!("Received Stripe webhook request");
     let sig = match headers
         .get("Stripe-Signature")
         .and_then(|v| v.to_str().ok())
@@ -1374,6 +1375,11 @@ pub async fn stripe_webhook(
                 } else {
                     let _ = handle_licensing_checkout_session_completed(&state, &obj).await;
                 }
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
+            if billing_domain == "campaign_offer" {
+                let _ = handle_campaign_offer_checkout_session_completed(&state, &obj).await;
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
@@ -3743,4 +3749,66 @@ pub async fn get_agency_payout_history(
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     (StatusCode::OK, Json(json!({"items": rows})))
+}
+
+async fn handle_campaign_offer_checkout_session_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let offer_id = md.get("offer_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let target_type = md.get("target_type").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    // let session_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    tracing::info!(offer_id = %offer_id, "Processing campaign offer checkout completion");
+
+    if offer_id.is_empty() {
+        return Err("missing_offer_id".into());
+    }
+
+    // Mark the offer as paid
+    let update_resp = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(json!({"payment_status": "paid", "updated_at": chrono::Utc::now().to_rfc3339()}).to_string())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !update_resp.status().is_success() {
+        tracing::error!("Failed to update campaign offer {} to paid", offer_id);
+    }
+
+    if target_type == "agency" {
+        // If it's an agency, the request behaves exactly like a licensing checkout
+        // Re-use `handle_licensing_requests_checkout_session_completed`'s core logic
+        let billing_request_ids = md.get("licensing_request_ids").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        if !billing_request_ids.is_empty() {
+             tracing::info!(offer_id = %offer_id, "Delegating escrow payout routing to licensing request handler");
+             let _ = handle_licensing_requests_checkout_session_completed(state, obj).await;
+        }
+    } else {
+        // Handle independent creator checkout
+        let creator_id = md.get("target_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let amount_total = obj.get("amount_total").and_then(|v| v.as_i64()).unwrap_or(0);
+        let currency = obj.get("currency").and_then(|v| v.as_str()).unwrap_or("usd").to_string();
+
+        if !creator_id.is_empty() && amount_total > 0 {
+             tracing::info!(creator_id = %creator_id, amount_cents = amount_total, "Adding funds to creator balance");
+     
+             // We can simulate it or insert directly. Given existing table triggers, we insert into `creator_balances` directly.
+             // (assuming an `increment_creator_balance` function exists or we construct a query)
+             let _ = state.pg.rpc(
+                 "increment_creator_balance",
+                 json!({
+                     "p_creator_id": creator_id,
+                     "p_amount_cents": amount_total,
+                     "p_currency_code": currency
+                 }).to_string()
+             ).execute().await;
+        }
+    }
+
+    Ok(())
 }
