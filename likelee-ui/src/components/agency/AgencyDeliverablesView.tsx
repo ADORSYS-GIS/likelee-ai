@@ -546,13 +546,19 @@ export function AgencyDeliverablesView() {
                     });
                   }
                 }}
-                disabled={isSentToBrand || isFinalized}
+                disabled={isSentToBrand || isFinalized || (options.offerId && (() => {
+                  const offer = offers.find(o => String(o.id) === options.offerId);
+                  return String(offer?.payment_status || "").toLowerCase() !== "paid";
+                })())}
               >
                 {isSentToBrand
                   ? "Sent to Brand"
                   : isBrandApproved
                     ? "Approve"
-                    : "Send to Brand"}
+                    : (options.offerId && (() => {
+                        const offer = offers.find(o => String(o.id) === options.offerId);
+                        return String(offer?.payment_status || "").toLowerCase() !== "paid";
+                      })()) ? "Awaiting Payment" : "Send to Brand"}
               </Button>
               <Button
                 variant="outline"
@@ -930,6 +936,7 @@ export function AgencyDeliverablesView() {
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
           );
+          const isOfferPaid = String(offer?.payment_status || "").toLowerCase() === "paid";
           return (
             <motion.div
               key={offerId}
@@ -967,6 +974,13 @@ export function AgencyDeliverablesView() {
                           {offerStatusLabel(offer?.status) ||
                             String(offer?.status || "")}
                         </Badge>
+                        {offer?.status === "contract_fully_signed" && (
+                          <Badge
+                            className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+                          >
+                            {isOfferPaid ? "Paid" : "Awaiting Payment"}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -997,6 +1011,15 @@ export function AgencyDeliverablesView() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Payment gate banner for signed but unpaid offers */}
+                {offer?.status === "contract_fully_signed" && !isOfferPaid && (
+                  <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    <span className="text-amber-700 text-xs font-semibold">
+                      ⏳ Awaiting brand payment before deliverables can be uploaded or submitted.
+                    </span>
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {expanded && (
@@ -1113,7 +1136,8 @@ export function AgencyDeliverablesView() {
                                   className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
-                                    submittingDrafts[offerId]
+                                    submittingDrafts[offerId] ||
+                                    (offer?.status === "contract_fully_signed" && !isOfferPaid)
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
@@ -1124,6 +1148,7 @@ export function AgencyDeliverablesView() {
                                 </Button>
                                 <Button
                                   size="sm"
+                                  disabled={offer?.status === "contract_fully_signed" && !isOfferPaid}
                                   onClick={() =>
                                     setUploadDialog({
                                       open: true,
