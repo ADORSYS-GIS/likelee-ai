@@ -1423,6 +1423,16 @@ export default function CreatorDashboard() {
       (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
     );
     const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
+    const isPaid = String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
+
+    if (selectedOffer && !isPaid && !sendDeliverableRequestId) {
+      toast({
+        title: "Payment required",
+        description: "The brand must complete the payment for this offer before deliverables can be uploaded.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!selectedOffer) {
       toast({
         title: "Campaign unavailable",
@@ -6288,6 +6298,9 @@ export default function CreatorDashboard() {
                         <div className="flex flex-wrap gap-2 pt-2">
                           <Button
                             size="sm"
+                            // If it's an asset request from an agency, we bypass the brand payment gate
+                            // because the agency's request implies they are managing the workflow.
+                            disabled={false}
                             onClick={async () => {
                               if (!offerId) {
                                 toast({
@@ -7407,7 +7420,7 @@ export default function CreatorDashboard() {
                 <div className="text-lg font-semibold text-gray-900">
                   Deliverables
                 </div>
-                <Button
+                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   onClick={() => {
                     setSendDeliverableRequestId("");
@@ -10784,6 +10797,20 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
+              {(() => {
+                const selectedOffer = brandOffers.find(o => String(o.id) === sendDeliverableOfferId);
+                const isPaid = String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
+                if (sendDeliverableOfferId && !isPaid) {
+                  return (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <span className="text-amber-700 text-sm font-semibold">
+                        ⏳ Awaiting brand payment before deliverables can be uploaded.
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               <div className="space-y-2">
                 <Label htmlFor="deliverable-upload">Upload deliverables</Label>
                 <Input
@@ -10956,10 +10983,16 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-              <Button
+               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 onClick={sendDeliverable}
-                disabled={offerActionLoading}
+                disabled={
+                  offerActionLoading ||
+                  (sendDeliverableOfferId && (() => {
+                    const selectedOffer = brandOffers.find(o => String(o.id) === sendDeliverableOfferId);
+                    return String(selectedOffer?.payment_status || "").toLowerCase() !== "paid";
+                  })())
+                }
               >
                 {offerActionLoading ? "Sending..." : "Send"}
               </Button>
