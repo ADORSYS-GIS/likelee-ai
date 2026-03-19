@@ -5,9 +5,10 @@ use crate::{
     services::docuseal::{DocuSealClient, Submitter},
 };
 use axum::{
+    body::Body,
     extract::{Multipart, Path, Query, State},
-    http::{HeaderMap, StatusCode},
-    response::IntoResponse,
+    http::{header, HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
     Json,
 };
 use base64::{engine::general_purpose, Engine as _};
@@ -20,6 +21,111 @@ use std::str::FromStr;
 use stripe_sdk;
 use tracing::{error, info};
 use uuid::Uuid;
+
+fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
+    let st = value
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    st == "completed" || st == "signed"
+}
+
+async fn attach_is_fully_signed_to_offers(
+    state: &AppState,
+    offers: &mut [serde_json::Value],
+) -> Result<(), String> {
+    let offer_ids: Vec<String> = offers
+        .iter()
+        .filter_map(|o| o.get("id").and_then(|v| v.as_str()).map(|s| s.trim().to_string()))
+        .filter(|id| !id.is_empty())
+        .collect();
+    if offer_ids.is_empty() {
+        return Ok(());
+    }
+    let offer_refs: Vec<&str> = offer_ids.iter().map(|s| s.as_str()).collect();
+
+    // 1) Signed via offer workflow status (fallback).
+    // NOTE: offer.status advances during deliverables/review; treat any post-signature status as signed.
+    let mut signed_offer_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for o in offers.iter() {
+        let offer_id = o.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+        if offer_id.is_empty() {
+            continue;
+        }
+        let st = o
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        if matches!(
+            st.as_str(),
+            "contract_fully_signed"
+                | "signed"
+                | "in_execution"
+                | "deliverables_submitted"
+                | "in_review"
+                | "changes_requested"
+                | "approved"
+                | "completed"
+        ) {
+            signed_offer_ids.insert(offer_id.to_string());
+        }
+    }
+
+    // 2) Signed via DocuSeal contract state.
+    let contracts_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("offer_id,docuseal_status,status")
+        .in_("offer_id", offer_refs)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if contracts_resp.status().is_success() {
+        let contracts_text = contracts_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let contracts: Vec<serde_json::Value> =
+            serde_json::from_str(&contracts_text).unwrap_or_default();
+        for row in &contracts {
+            let offer_id = row
+                .get("offer_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            if offer_id.is_empty() {
+                continue;
+            }
+            let signed = row
+                .get("docuseal_status")
+                .map(offer_contract_status_is_signed)
+                .unwrap_or(false)
+                || row
+                    .get("status")
+                    .map(offer_contract_status_is_signed)
+                    .unwrap_or(false);
+            if signed {
+                signed_offer_ids.insert(offer_id.to_string());
+            }
+        }
+    }
+
+    for o in offers.iter_mut() {
+        if let Some(obj) = o.as_object_mut() {
+            let offer_id = obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            let signed = !offer_id.is_empty() && signed_offer_ids.contains(offer_id);
+            obj.insert("is_fully_signed".to_string(), json!(signed));
+        }
+    }
+
+    Ok(())
+}
 
 #[derive(Debug, Serialize)]
 struct EscrowReleaseOutcome {
@@ -230,6 +336,13 @@ pub struct OfferContractPath {
 pub struct OfferDeliverablePath {
     pub offer_id: String,
     pub deliverable_id: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct OfferDeliverableFileQuery {
+    /// When true, this request is considered an explicit user-initiated download.
+    /// Previews (e.g. <img>/<video>) should omit it so they don't get blocked.
+    pub download: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -2184,6 +2297,9 @@ pub async fn list_campaign_offers(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
+    // Attach is_fully_signed (computed from contract completion) so clients don't rely on offer workflow states.
+    let _ = attach_is_fully_signed_to_offers(&state, &mut rows).await;
+
     let creator_ids: Vec<String> = rows
         .iter()
         .filter(|row| {
@@ -2393,6 +2509,9 @@ pub async fn list_my_campaign_offers(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // Attach is_fully_signed (computed from contract completion) so clients don't rely on offer workflow states.
+    let _ = attach_is_fully_signed_to_offers(&state, &mut rows).await;
 
     if user.role == "brand" {
         let creator_ids: Vec<String> = rows
@@ -4733,6 +4852,16 @@ pub async fn submit_offer_deliverable(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    // Payment gate: do not allow campaign deliverables to be submitted until the offer is paid.
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
+    if payment_status != "paid" {
+        return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+    }
+
     let offer_brand_id = _offer
         .get("brand_id")
         .and_then(|v| v.as_str())
@@ -5802,50 +5931,13 @@ pub async fn serve_offer_deliverable(
         offer_id,
         deliverable_id,
     }): Path<OfferDeliverablePath>,
+    Query(query): Query<OfferDeliverableFileQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    if user.role == "brand" {
-        let all_resp = state
-            .pg
-            .from("campaign_offer_deliverables")
-            .select("status")
-            .eq("offer_id", &offer_id)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let all_status = all_resp.status();
-        let all_text = all_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !all_status.is_success() {
-            return Err(sanitize_db_error(all_status.as_u16(), all_text));
-        }
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&all_text).unwrap_or_default();
-
-        if let Some(expected) = expected_deliverables_from_offer(&offer) {
-            if rows.len() < expected {
-                return Err((
-                    StatusCode::FORBIDDEN,
-                    "deliverables_not_complete".to_string(),
-                ));
-            }
-        }
-
-        let all_approved = rows.iter().all(|r| {
-            r.get("status")
-                .and_then(|v| v.as_str())
-                .map(|s| s.eq_ignore_ascii_case("brand_approved"))
-                .unwrap_or(false)
-        });
-        if !all_approved {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "all_deliverables_must_be_approved_before_download".to_string(),
-            ));
-        }
-    }
+    // NOTE: This endpoint is used for in-app previews via <img>/<video>.
+    // Do NOT gate media previews on "all deliverables submitted/approved" or the UI can't show thumbnails.
+    // Download-gating (if desired) should be implemented via a dedicated download endpoint or explicit flag.
 
     // Get the deliverable record
     let del_resp = state
@@ -5870,9 +5962,33 @@ pub async fn serve_offer_deliverable(
         .get("asset_type")
         .and_then(|v| v.as_str())
         .unwrap_or("image");
+    let deliverable_status = del
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
 
     if path.is_empty() {
         return Err((StatusCode::NOT_FOUND, "Asset path is empty".to_string()));
+    }
+
+    let is_download = query
+        .download
+        .as_deref()
+        .map(|v| v.trim().to_lowercase())
+        .map(|v| matches!(v.as_str(), "1" | "true" | "t" | "yes" | "y" | "on"))
+        .unwrap_or(false);
+    if is_download && user.role == "brand" {
+        let approved = deliverable_status == "brand_approved"
+            || deliverable_status == "approved"
+            || deliverable_status == "accepted";
+        if !approved {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "deliverable_not_approved_for_download".to_string(),
+            ));
+        }
     }
 
     let bucket = state.supabase_bucket_private.clone();
@@ -5916,7 +6032,31 @@ pub async fn serve_offer_deliverable(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(([(axum::http::header::CONTENT_TYPE, content_type)], bytes))
+    let mut resp = Response::new(Body::from(bytes));
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(&content_type)
+            .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
+    );
+
+    if is_download {
+        let filename = del
+            .get("meta")
+            .and_then(|m| m.get("original_name"))
+            .and_then(|v| v.as_str())
+            .or_else(|| del.get("caption").and_then(|v| v.as_str()))
+            .unwrap_or("deliverable");
+        let filename = filename
+            .trim()
+            .replace(['\r', '\n'], " ")
+            .replace('"', "'");
+        let content_disposition = format!("attachment; filename=\"{filename}\"");
+        if let Ok(v) = HeaderValue::from_str(&content_disposition) {
+            resp.headers_mut().insert(header::CONTENT_DISPOSITION, v);
+        }
+    }
+
+    Ok(resp)
 }
 
 pub async fn review_offer_deliverable(
@@ -5927,7 +6067,7 @@ pub async fn review_offer_deliverable(
         deliverable_id,
     }): Path<OfferDeliverablePath>,
     Json(payload): Json<ReviewDeliverableRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
     if user.role != "brand" && user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
@@ -6231,51 +6371,33 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Fetch all deliverables for this offer
-    let all_resp = state
+    // NEW RULE (testing): release escrow once the brand approves at least 1 deliverable.
+    // This decouples escrow release from the expected deliverables count, which may change over time.
+    let any_approved_resp = state
         .pg
         .from("campaign_offer_deliverables")
-        .select("status")
+        .select("id")
         .eq("offer_id", offer_id)
+        .eq("status", "brand_approved")
+        .limit(1)
         .execute()
         .await
         .map_err(|e| e.to_string())?;
-    if !all_resp.status().is_success() {
+    if !any_approved_resp.status().is_success() {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
             released_now: false,
         });
     }
-    let all_text = all_resp.text().await.map_err(|e| e.to_string())?;
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&all_text).unwrap_or_default();
-
-    // Count only the brand-approved deliverables (not just total submitted)
-    let approved_count = rows.iter().filter(|r| {
-        r.get("status")
-            .and_then(|v| v.as_str())
-            .map(|s| s.eq_ignore_ascii_case("brand_approved"))
-            .unwrap_or(false)
-    }).count();
-
-    // Check approved count against expected deliverable count from the brief
-    if let Some(expected) = expected_deliverables_from_offer(&offer) {
-        if approved_count < expected {
-            return Ok(EscrowReleaseOutcome {
-                payment_status: payment_status.to_string(),
-                escrow_status: escrow_status.to_string(),
-                released_now: false,
-            });
-        }
-    } else {
-        // If no expected deliverable count set, require ALL submitted deliverables to be approved
-        if rows.is_empty() || approved_count < rows.len() {
-            return Ok(EscrowReleaseOutcome {
-                payment_status: payment_status.to_string(),
-                escrow_status: escrow_status.to_string(),
-                released_now: false,
-            });
-        }
+    let any_text = any_approved_resp.text().await.map_err(|e| e.to_string())?;
+    let any_rows: Vec<serde_json::Value> = serde_json::from_str(&any_text).unwrap_or_default();
+    if any_rows.is_empty() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
     }
 
     let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
@@ -6291,7 +6413,10 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Atomically claim the escrow release to prevent race conditions from concurrent deliverable approvals
+    // Atomically claim the escrow release to prevent race conditions from concurrent deliverable approvals.
+    // Preferred: move holding -> releasing.
+    // Fallback (for DBs that don't allow "releasing" yet): claim directly with holding -> released
+    // and still execute transfers + set escrow_released_at immediately after.
     let claim_resp = state
         .pg
         .from("campaign_offers")
@@ -6300,19 +6425,49 @@ async fn try_release_campaign_offer_escrow(
         .eq("escrow_status", "holding")
         .select("id")
         .execute()
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
 
-    if !claim_resp.status().is_success() {
-        return Ok(EscrowReleaseOutcome {
-            payment_status: payment_status.to_string(),
-            escrow_status: escrow_status.to_string(),
-            released_now: false,
-        });
-    }
+    let claim_text = match claim_resp {
+        Ok(resp) if resp.status().is_success() => resp.text().await.unwrap_or_else(|_| "[]".into()),
+        Ok(resp) => {
+            let status = resp.status();
+            let err_text = resp.text().await.unwrap_or_default();
+            tracing::warn!(
+                offer_id = %offer_id,
+                status = %status,
+                err = %err_text,
+                "escrow claim via releasing failed; attempting fallback claim via released"
+            );
+            let fallback_resp = state
+                .pg
+                .from("campaign_offers")
+                .update(json!({"escrow_status": "released"}).to_string())
+                .eq("id", offer_id)
+                .eq("escrow_status", "holding")
+                .select("id")
+                .execute()
+                .await
+                .map_err(|e| e.to_string())?;
+            if !fallback_resp.status().is_success() {
+                return Ok(EscrowReleaseOutcome {
+                    payment_status: payment_status.to_string(),
+                    escrow_status: escrow_status.to_string(),
+                    released_now: false,
+                });
+            }
+            fallback_resp.text().await.unwrap_or_else(|_| "[]".into())
+        }
+        Err(e) => {
+            tracing::warn!(offer_id = %offer_id, error = %e, "escrow claim request failed");
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+    };
 
-    let txt = claim_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&claim_text).unwrap_or_default();
     if rows.is_empty() {
         // Another concurrent request already claimed the release or it is already released
         return Ok(EscrowReleaseOutcome {
@@ -6344,26 +6499,6 @@ async fn try_release_campaign_offer_escrow(
         escrow_status: "released".to_string(),
         released_now: true,
     })
-}
-
-fn expected_deliverables_from_offer(offer: &serde_json::Value) -> Option<usize> {
-    let brief = offer.get("brief_snapshot").or_else(|| offer.get("budget_snapshot"))?;
-    let raw = brief
-        .get("total_expected_deliverables")
-        .and_then(|v| v.as_str())
-        .map(|s| s.trim().to_string())
-        .or_else(|| {
-            brief.get("total_expected_deliverables")
-                .and_then(|v| v.as_i64())
-                .map(|n| n.to_string())
-        })?;
-
-    let parsed: i64 = raw.parse().ok()?;
-    if parsed > 0 {
-        Some(parsed as usize)
-    } else {
-        None
-    }
 }
 
 async fn release_campaign_offer_transfers(

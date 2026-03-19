@@ -1531,11 +1531,6 @@ export default function BrandDashboard() {
         if (!latest || current.getTime() > latest.getTime()) return current;
         return latest;
       }, null);
-    const fullySignedStatuses = new Set([
-      "contract_fully_signed",
-      "signed",
-      "completed",
-    ]);
 
     const grouped = new Map<string, any>();
 
@@ -1569,7 +1564,6 @@ export default function BrandDashboard() {
       const isAfterEnd = Boolean(
         endDate && today.getTime() > endDate.getTime(),
       );
-      const statusRaw = String(offer?.status || "").toLowerCase();
       const contractStatuses = Array.isArray(offer?.offer_contracts)
         ? offer.offer_contracts
         : [];
@@ -1579,8 +1573,7 @@ export default function BrandDashboard() {
         ).toLowerCase();
         return st === "completed" || st === "signed";
       });
-      const isFullySigned =
-        fullySignedStatuses.has(statusRaw) || hasCompletedContract;
+      const isFullySigned = Boolean(offer?.is_fully_signed) || hasCompletedContract;
       const completedAt =
         campaignMeta?.completed_at || offer?.completed_at || null;
       const campaignStatus = String(campaignMeta?.status || "").toLowerCase();
@@ -3537,22 +3530,31 @@ export default function BrandDashboard() {
     if (fromOriginal) return fromOriginal;
     return "deliverable";
   };
-  const downloadOfferHubDeliverable = async (
-    offerId: string,
-    deliverable: any,
-  ) => {
+  const downloadOfferHubDeliverable = async (deliverable: any) => {
+    const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
-    const assetUrl = String(deliverable?.asset_url || "").trim();
-    if (!offerId || !deliverableId || !assetUrl) {
+    const status = String(deliverable?.status || "").toLowerCase();
+    const approvedForDownload = ["approved", "accepted", "brand_approved"].includes(status);
+    if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
-        description: "Missing deliverable file URL.",
+        description: "Missing deliverable reference.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!approvedForDownload) {
+      toast({
+        title: "Download unavailable",
+        description: "Approve this deliverable to unlock downloads.",
         variant: "destructive" as any,
       });
       return;
     }
     try {
-      const response = await fetch(assetUrl);
+      const response = await base44.getRaw(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file?download=true`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch deliverable file.");
       }
@@ -3623,14 +3625,36 @@ export default function BrandDashboard() {
         action,
         note,
       });
-      if (action === "approve" && result?.escrow?.released_now) {
-        const off = brandOfferItems.find((b) => String(b.id) === String(offerId));
-        setEscrowReleasedModal({
-          open: true,
-          offerId,
-          amount: off?.budget,
-          currency: off?.currency_code || "USD",
-        });
+      const escrow = result?.escrow;
+      if (action === "approve" && escrow) {
+        if (escrow?.released_now) {
+          const off = brandOfferItems.find(
+            (b) => String(b.id) === String(offerId),
+          );
+          setEscrowReleasedModal({
+            open: true,
+            offerId,
+            amount: off?.budget,
+            currency: off?.currency_code || "USD",
+          });
+        } else if (String(escrow?.payment_status || "") !== "paid") {
+          toast({
+            title: "Approved, but payment not received",
+            description:
+              "Deliverable was approved. Escrow payout cannot be released until the offer is paid.",
+            variant: "destructive" as any,
+          });
+        } else if (String(escrow?.escrow_status || "") === "released") {
+          toast({
+            title: "Escrow already released",
+            description: "Stripe transfers were already triggered for this offer.",
+          });
+        } else {
+          toast({
+            title: "Deliverable approved",
+            description: "Escrow release is not available yet for this offer.",
+          });
+        }
       } else {
         toast({
           title: "Success",
@@ -4402,6 +4426,17 @@ export default function BrandDashboard() {
                                     deliverables approved
                                   </p>
                                 </div>
+                                <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+                                  <p className="text-sm font-semibold text-amber-900">
+                                    Approving any 1 deliverable triggers escrow
+                                    payout (once).
+                                  </p>
+                                  <p className="text-xs text-amber-800 mt-1">
+                                    After you approve a deliverable, the Download
+                                    button appears. Approvals are final and can’t
+                                    be undone.
+                                  </p>
+                                </div>
                                 {loadingOfferHubDetails &&
                                 selectedOfferHubId === offerId ? (
                                   <div className="py-12 text-center">
@@ -4421,115 +4456,133 @@ export default function BrandDashboard() {
                                 ) : (
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {selectedOfferHubDeliverables.map(
-                                      (del: any, idx: number) => (
-                                        <Card
-                                          key={String(del.id)}
-                                          className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
-                                          onClick={() => {
-                                            setPreviewItems(
-                                              selectedOfferHubDeliverables,
-                                            );
-                                            setPreviewIndex(idx);
-                                            setPreviewImage(del);
-                                          }}
-                                        >
-                                          <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                                            {del.asset_type === "image" ? (
-                                              <img
-                                                src={getPublicUrl(del)}
-                                                alt={
-                                                  del.caption || "Deliverable"
-                                                }
-                                                className="w-full h-full object-cover"
-                                              />
-                                            ) : (
-                                              <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                                <Video className="w-12 h-12 text-white/20" />
-                                              </div>
-                                            )}
-                                            <div className="absolute top-3 right-3">
-                                              <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
-                                                onClick={(event) => {
-                                                  event.stopPropagation();
-                                                  window.open(
-                                                    getPublicUrl(del),
-                                                    "_blank",
-                                                  );
-                                                }}
-                                                title="Download"
-                                              >
-                                                <Download className="w-4 h-4" />
-                                              </Button>
-                                            </div>
-                                            <div className="absolute top-2 left-2">
-                                              <Badge
-                                                className={`rounded-none border-0 ${
-                                                  del.status === "approved" ||
-                                                  del.status ===
-                                                    "brand_approved"
-                                                    ? "bg-emerald-600 text-white"
-                                                    : del.status ===
-                                                        "changes_requested"
-                                                      ? "bg-rose-600 text-white"
-                                                      : "bg-blue-600 text-white"
-                                                }`}
-                                              >
-                                                {del.status === "submitted"
-                                                  ? "New"
-                                                  : del.status ===
-                                                      "brand_approved"
-                                                    ? "approved"
-                                                    : del.status.replace(
-                                                        /_/g,
-                                                        " ",
-                                                      )}
-                                              </Badge>
-                                            </div>
-                                          </div>
-                                          <div className="p-4 space-y-4">
-                                            <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
-                                              {del.caption || (
-                                                <span className="text-gray-300 italic">
-                                                  No caption
-                                                </span>
+                                      (del: any, idx: number) => {
+                                        const status = String(
+                                          del?.status || "",
+                                        ).toLowerCase();
+                                        const isApproved = [
+                                          "approved",
+                                          "accepted",
+                                          "brand_approved",
+                                        ].includes(status);
+                                        const isBusy =
+                                          String(reviewing || "") ===
+                                          String(del?.id || "");
+                                        return (
+                                          <Card
+                                            key={String(del.id)}
+                                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                                            onClick={() => {
+                                              setPreviewItems(
+                                                selectedOfferHubDeliverables,
+                                              );
+                                              setPreviewIndex(idx);
+                                              setPreviewImage(del);
+                                            }}
+                                          >
+                                            <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                                              {String(del?.asset_type || "").startsWith(
+                                                "image",
+                                              ) ? (
+                                                <img
+                                                  src={getPublicUrl(del)}
+                                                  alt={
+                                                    del.caption || "Deliverable"
+                                                  }
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                                                  <Video className="w-12 h-12 text-white/20" />
+                                                </div>
                                               )}
-                                            </p>
-
-                                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                                              <Button
-                                                size="sm"
-                                                className="flex-1 h-8 rounded-none font-bold bg-gray-900"
-                                                onClick={() =>
-                                                  handleDeliverableReview(
-                                                    offerId,
-                                                    del.id,
-                                                    "approve",
-                                                  )
-                                                }
-                                              >
-                                                Approve
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="flex-1 h-8 rounded-none font-bold"
-                                                onClick={() =>
-                                                  handleDeliverableReview(
-                                                    offerId,
-                                                    del.id,
-                                                    "changes_requested",
-                                                  )
-                                                }
-                                              >
-                                                Request changes
-                                              </Button>
+                                              {isApproved && (
+                                                <div className="absolute top-3 right-3">
+                                                  <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
+                                                    onClick={(event) => {
+                                                      event.stopPropagation();
+                                                      void downloadOfferHubDeliverable(
+                                                        del,
+                                                      );
+                                                    }}
+                                                    title="Download"
+                                                  >
+                                                    <Download className="w-4 h-4" />
+                                                  </Button>
+                                                </div>
+                                              )}
+                                              <div className="absolute top-2 left-2">
+                                                <Badge
+                                                  className={`rounded-none border-0 ${
+                                                    del.status === "approved" ||
+                                                    del.status ===
+                                                      "brand_approved"
+                                                      ? "bg-emerald-600 text-white"
+                                                      : del.status ===
+                                                          "changes_requested"
+                                                        ? "bg-rose-600 text-white"
+                                                        : "bg-blue-600 text-white"
+                                                  }`}
+                                                >
+                                                  {del.status === "submitted"
+                                                    ? "New"
+                                                    : del.status ===
+                                                        "brand_approved"
+                                                      ? "approved"
+                                                      : del.status.replace(
+                                                          /_/g,
+                                                          " ",
+                                                        )}
+                                                </Badge>
+                                              </div>
                                             </div>
-                                          </div>
-                                        </Card>
-                                      ),
+                                            <div className="p-4 space-y-4">
+                                              <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
+                                                {del.caption || (
+                                                  <span className="text-gray-300 italic">
+                                                    No caption
+                                                  </span>
+                                                )}
+                                              </p>
+
+                                              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                                                <Button
+                                                  size="sm"
+                                                  className="flex-1 h-8 rounded-none font-bold bg-gray-900"
+                                                  disabled={isApproved || isBusy}
+                                                  onClick={() =>
+                                                    handleDeliverableReview(
+                                                      offerId,
+                                                      del.id,
+                                                      "approve",
+                                                    )
+                                                  }
+                                                >
+                                                  {isApproved ? "Approved" : "Approve"}
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="flex-1 h-8 rounded-none font-bold"
+                                                  disabled={isApproved || isBusy}
+                                                  onClick={() =>
+                                                    handleDeliverableReview(
+                                                      offerId,
+                                                      del.id,
+                                                      "changes_requested",
+                                                    )
+                                                  }
+                                                >
+                                                  Request changes
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          </Card>
+                                        );
+                                      },
                                     )}
                                   </div>
                                 )}
@@ -4580,11 +4633,6 @@ export default function BrandDashboard() {
 
     const campaignsForOffers = brandOfferItems.map((offer: any) => {
       const statusRaw = String(offer?.status || "sent").toLowerCase();
-      const fullySignedStatuses = new Set([
-        "contract_fully_signed",
-        "signed",
-        "completed",
-      ]);
       const contractStatuses = Array.isArray(offer?.offer_contracts)
         ? offer.offer_contracts
         : [];
@@ -4594,8 +4642,9 @@ export default function BrandDashboard() {
         ).toLowerCase();
         return st === "completed" || st === "signed";
       });
-      const isFullySigned =
-        fullySignedStatuses.has(statusRaw) || hasCompletedContract;
+      // Campaign "Active vs Pending Approval" must not be affected by deliverable workflow statuses.
+      // Prefer backend-derived `is_fully_signed`, with contract parsing as a backward-compatible fallback.
+      const isFullySigned = Boolean(offer?.is_fully_signed) || hasCompletedContract;
       const startDateRaw = String(
         offer?.brand_campaigns?.start_date || "",
       ).trim();
@@ -4623,9 +4672,14 @@ export default function BrandDashboard() {
         endDate && today.getTime() > endDate.getTime(),
       );
 
-      let mappedStatus: "pending_approval" | "in_progress" | "completed" =
-        "pending_approval";
-      if (isAfterEnd || statusRaw === "completed") {
+      const terminalOfferStatuses = new Set([
+        "completed",
+        "expired",
+        "cancelled",
+        "declined",
+      ]);
+      let mappedStatus: "pending_approval" | "in_progress" | "completed" = "pending_approval";
+      if (isAfterEnd || terminalOfferStatuses.has(statusRaw)) {
         mappedStatus = "completed";
       } else if (isFullySigned) {
         mappedStatus = "in_progress";

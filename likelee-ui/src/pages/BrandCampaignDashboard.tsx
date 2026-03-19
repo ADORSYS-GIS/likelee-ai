@@ -441,7 +441,6 @@ export default function BrandCampaignDashboard({
     }
     return { ok: true };
   };
-  const SIGNED_OFFER_STATUSES = new Set(["contract_fully_signed", "signed"]);
   const isStartDateReached = (startDateRaw: unknown) => {
     const startDate = String(startDateRaw || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return false;
@@ -529,9 +528,9 @@ export default function BrandCampaignDashboard({
     const completedAt = campaign?.completed_at || null;
     const isMarkedDone = Boolean(completedAt);
     const safeOffers = Array.isArray(offers) ? offers : [];
-    const hasSignedOffer = safeOffers.some((offer: any) =>
-      SIGNED_OFFER_STATUSES.has(String(offer?.status || "").toLowerCase()),
-    );
+    // Campaign "Active vs Pending Approval" must not be affected by deliverable workflow statuses.
+    // Prefer backend-derived `is_fully_signed`.
+    const hasSignedOffer = safeOffers.some((offer: any) => Boolean(offer?.is_fully_signed));
     const collaboratorLabels = Array.from(
       new Set(
         safeOffers
@@ -896,6 +895,8 @@ export default function BrandCampaignDashboard({
   ) => {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
+    const status = String(deliverable?.status || "").toLowerCase();
+    const approvedForDownload = ["approved", "accepted", "brand_approved"].includes(status);
     if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
@@ -904,9 +905,17 @@ export default function BrandCampaignDashboard({
       });
       return;
     }
+    if (!approvedForDownload) {
+      toast({
+        title: "Download unavailable",
+        description: "Approve this deliverable to unlock downloads.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
     try {
       const response = await base44.getRaw(
-        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`,
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file?download=true`,
       );
       if (!response.ok) {
         throw new Error("Failed to fetch deliverable file.");
@@ -1515,6 +1524,37 @@ export default function BrandCampaignDashboard({
     }
   };
 
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setAuthToken(session?.access_token || null);
+      } catch {
+        if (!mounted) return;
+        setAuthToken(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const deliverablePreviewSrc = (deliverable: any) => {
+    const raw = String(deliverable?.asset_url || "").trim();
+    if (!raw) return "";
+    if (raw.startsWith("http")) return raw;
+    const offerId = String(deliverable?.offer_id || "").trim();
+    const deliverableId = String(deliverable?.id || "").trim();
+    if (!offerId || !deliverableId) return raw;
+    const proxyUrl = `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`;
+    return authToken ? `${proxyUrl}?token=${encodeURIComponent(authToken)}` : proxyUrl;
+  };
+
   const handleSendOffer = async () => {
     if (!brandCampaignId) {
       toast({
@@ -1766,13 +1806,6 @@ export default function BrandCampaignDashboard({
     selectedCampaignExpectedDeliverables > 0
       ? selectedCampaignExpectedDeliverables
       : selectedCampaignSubmittedCount;
-  const selectedCampaignAllApproved = selectedCampaignDeliverables.every(
-    (deliverable: any) =>
-      String(deliverable?.status || "").toLowerCase() === "brand_approved",
-  );
-  const canDownloadSelectedCampaignDeliverables =
-    selectedCampaignSubmittedCount >= selectedCampaignTotalExpected &&
-    selectedCampaignAllApproved;
 
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
@@ -3039,9 +3072,9 @@ export default function BrandCampaignDashboard({
       >
         <DialogContent className="rounded-none">
           <DialogHeader>
-            <DialogTitle>All deliverables approved</DialogTitle>
+            <DialogTitle>Escrow payout released</DialogTitle>
             <DialogDescription>
-              The campaign is complete. Escrow payout has been released and Stripe transfers were triggered.
+              Escrow has been released and Stripe transfers were triggered based on your approval.
             </DialogDescription>
           </DialogHeader>
 
@@ -3565,18 +3598,14 @@ export default function BrandCampaignDashboard({
                 <h3 className="text-xl font-bold text-gray-900">
                   Deliverables & Feedback
                 </h3>
-                {!canDownloadSelectedCampaignDeliverables &&
-                  selectedCampaignTotalExpected > 0 && (
-                    <Alert className="border-2 border-gray-200 rounded-none">
-                      <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
-                        <Lock className="w-4 h-4" />
-                        Downloads unlock after {selectedCampaignTotalExpected}/
-                        {selectedCampaignTotalExpected} deliverables are submitted
-                        and approved. Currently {selectedCampaignApprovedCount}/
-                        {selectedCampaignTotalExpected} approved.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                <Alert className="border-2 border-gray-200 rounded-none">
+                  <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
+                    <Lock className="w-4 h-4" />
+                    Approving any 1 deliverable triggers escrow payout (once) and
+                    unlocks downloads for that deliverable. Approvals are final
+                    and can’t be undone.
+                  </AlertDescription>
+                </Alert>
                 {loadingSelectedCampaignDetails && (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
                     <p className="text-sm text-gray-600">
@@ -3598,6 +3627,9 @@ export default function BrandCampaignDashboard({
                       const status = String(
                         deliverable?.status || "pending_review",
                       ).toLowerCase();
+                      const isApproved = ["approved", "accepted", "brand_approved"].includes(
+                        status,
+                      );
                       const displayStatus =
                         status === "brand_approved" ? "approved" : status;
                       const statusClass =
@@ -3629,7 +3661,7 @@ export default function BrandCampaignDashboard({
                                 "image",
                               ) && deliverable?.asset_url ? (
                                 <img
-                                  src={String(deliverable.asset_url)}
+                                  src={deliverablePreviewSrc(deliverable)}
                                   alt={String(
                                     deliverable?.caption ||
                                       `Deliverable #${idx + 1}`,
@@ -3661,6 +3693,7 @@ export default function BrandCampaignDashboard({
                                   <Button
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700 text-white rounded-none"
+                                    disabled={isApproved}
                                     onClick={() =>
                                       void reviewSelectedCampaignDeliverable(
                                         deliverable,
@@ -3668,12 +3701,13 @@ export default function BrandCampaignDashboard({
                                       )
                                     }
                                   >
-                                    Approve
+                                    {isApproved ? "Approved" : "Approve"}
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="border-2 border-gray-300 rounded-none"
+                                    disabled={isApproved}
                                     onClick={() =>
                                       void reviewSelectedCampaignDeliverable(
                                         deliverable,
@@ -3683,7 +3717,7 @@ export default function BrandCampaignDashboard({
                                   >
                                     Request Edit
                                   </Button>
-                                  {canDownloadSelectedCampaignDeliverables && (
+                                  {isApproved && (
                                     <Button
                                       size="sm"
                                       variant="outline"
