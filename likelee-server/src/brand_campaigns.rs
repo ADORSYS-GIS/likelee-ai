@@ -7181,4 +7181,3 @@ async fn log_activity_event(
     )
     .await;
 }
-}
