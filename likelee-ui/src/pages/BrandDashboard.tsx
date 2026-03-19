@@ -666,6 +666,12 @@ export default function BrandDashboard() {
   const hasLoadedBrandAnalyticsRef = useRef(false);
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
+  const [escrowReleasedModal, setEscrowReleasedModal] = useState<{
+    open: boolean;
+    offerId?: string;
+    amount?: number;
+    currency?: string;
+  }>({ open: false });
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -3613,14 +3619,24 @@ export default function BrandDashboard() {
   ) => {
     try {
       setReviewing(deliverableId);
-      await reviewOfferDeliverable(offerId, deliverableId, {
+      const result = await reviewOfferDeliverable(offerId, deliverableId, {
         action,
         note,
       });
-      toast({
-        title: "Success",
-        description: `Deliverable ${action.replace(/_/g, " ")}.`,
-      });
+      if (action === "approve" && result?.escrow?.released_now) {
+        const off = brandOfferItems.find((b) => String(b.id) === String(offerId));
+        setEscrowReleasedModal({
+          open: true,
+          offerId,
+          amount: off?.budget,
+          currency: off?.currency_code || "USD",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Deliverable ${action.replace(/_/g, " ")}.`,
+        });
+      }
       setReviewDialog((prev) => ({ ...prev, open: false }));
       await loadOfferHubDetails(offerId);
     } catch (error: any) {
@@ -10811,6 +10827,71 @@ export default function BrandDashboard() {
                 )}
               </Button>
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={escrowReleasedModal.open}
+        onOpenChange={(open) =>
+          setEscrowReleasedModal((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-none">
+          <div className="relative p-8 text-center flex flex-col items-center">
+            {/* Celebratory Background Elements */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
+
+            <div className="mb-6 relative">
+              <div className="w-20 h-20 bg-emerald-100 rounded-none flex items-center justify-center relative z-10 animate-bounce-short">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-100 flex items-center justify-center animate-ping-slow">
+                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+              </div>
+            </div>
+
+            <DialogHeader className="space-y-2 mb-6 text-center">
+              <DialogTitle className="text-3xl font-black tracking-tight text-gray-900 uppercase italic text-center w-full">
+                Campaign Complete!
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 text-base font-medium text-center">
+                All deliverables have been approved. The collaboration was a
+                success!
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="w-full bg-gray-50 border border-gray-100 p-6 mb-8 text-left">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                  Escrow Release
+                </span>
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-none font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
+                  Released via Stripe
+                </Badge>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-gray-900 leading-none">
+                  {escrowReleasedModal.amount
+                    ? `$${(escrowReleasedModal.amount / 100).toLocaleString()}`
+                    : "$ --"}
+                </span>
+                <span className="text-xs font-bold text-gray-500 uppercase">
+                  {escrowReleasedModal.currency}
+                </span>
+              </div>
+              <p className="mt-4 text-[13px] text-gray-600 leading-relaxed font-medium">
+                Funds have been successfully distributed to the agency and
+                assigned talent's connected accounts.
+              </p>
+            </div>
+
+            <Button
+              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-none shadow-xl transition-all active:scale-[0.98]"
+              onClick={() => setEscrowReleasedModal({ open: false })}
+            >
+              Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
