@@ -700,6 +700,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings/:id/files/upload",
             post(crate::bookings::upload_booking_file),
         )
+        .route(
+            "/api/bookings/:id/files/:file_id",
+            get(crate::bookings::serve_booking_file),
+        )
         .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
         .route(
             "/api/book-outs",

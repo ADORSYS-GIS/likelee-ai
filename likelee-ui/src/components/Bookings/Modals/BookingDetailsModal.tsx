@@ -21,7 +21,7 @@ import {
   User,
   File,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { base44 } from "@/api/base44Client";
 import {
   Sheet,
   SheetContent,
@@ -160,22 +160,18 @@ export const BookingDetailsModal = ({
   };
 
   const handleDownloadFile = async (file: any) => {
-    if (!supabase) {
-      toast({
-        title: "Download failed",
-        description: "Supabase client not initialized",
-        variant: "destructive",
-      });
-      return;
-    }
+    const bookingId = String(booking?.id || "").trim();
+    const fileId = String(file?.id || "").trim();
+    if (!bookingId || !fileId) return;
     try {
-      const { data, error } = await supabase.storage
-        .from(file.storage_bucket)
-        .download(file.storage_path);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
+      const response = await base44.getRaw(
+        `/api/bookings/${encodeURIComponent(bookingId)}/files/${encodeURIComponent(fileId)}`,
+      );
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = file.file_name;

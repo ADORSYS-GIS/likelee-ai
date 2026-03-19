@@ -1,8 +1,10 @@
 use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::extract::Multipart;
 use axum::{
+    body::Body,
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{header, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
     Json,
 };
 use serde::{Deserialize, Serialize};
@@ -643,4 +645,195 @@ pub async fn cancel(
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BookingFilePath {
+    pub id: String,
+    pub file_id: String,
+}
+
+pub async fn serve_booking_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(BookingFilePath { id, file_id }): Path<BookingFilePath>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    // Load booking file record
+    let file_resp = state
+        .pg
+        .from("booking_files")
+        .select("id,booking_id,file_name,storage_bucket,storage_path")
+        .eq("id", &file_id)
+        .eq("booking_id", &id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !file_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "file_not_found".to_string()));
+    }
+
+    let file_row: serde_json::Value =
+        serde_json::from_str(&file_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let booking_id = file_row
+        .get("booking_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let storage_bucket = file_row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let storage_path = file_row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let file_name = file_row
+        .get("file_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("attachment")
+        .trim()
+        .to_string();
+
+    if booking_id.is_empty() || storage_path.is_empty() || storage_bucket.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "invalid_file_record".to_string()));
+    }
+
+    // Strict: only serve private bucket files via this endpoint.
+    if storage_bucket != state.supabase_bucket_private {
+        return Err((StatusCode::BAD_REQUEST, "invalid_bucket".to_string()));
+    }
+
+    // Authorization
+    let role = user.role.as_str();
+    let is_agency = role == "agency";
+    let is_creator_like = role == "creator" || role == "talent";
+
+    if !(is_agency || is_creator_like) {
+        return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+    }
+
+    if is_agency {
+        // Agencies can only access their own bookings.
+        let b_resp = state
+            .pg
+            .from("bookings")
+            .select("id")
+            .eq("id", &booking_id)
+            .eq("agency_user_id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !b_resp.status().is_success() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+        let txt = b_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+        if rows.is_empty() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+    } else {
+        // Creators can access files for bookings where they are the booked talent.
+        // bookings.talent_id -> agency_users.id, where agency_users.creator_id = auth.uid().
+        let b_resp = state
+            .pg
+            .from("bookings")
+            .select("id,talent_id")
+            .eq("id", &booking_id)
+            .single()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !b_resp.status().is_success() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+        let b_row: serde_json::Value =
+            serde_json::from_str(&b_resp.text().await.unwrap_or_default()).unwrap_or_default();
+        let talent_id = b_row
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if talent_id.is_empty() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+
+        let au_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("id", &talent_id)
+            .eq("creator_id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !au_resp.status().is_success() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+        let txt = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+        if rows.is_empty() {
+            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+        }
+    }
+
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, storage_bucket, storage_path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .get(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !up.status().is_success() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "failed_to_fetch_from_storage".to_string(),
+        ));
+    }
+
+    let content_type = up
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream")
+        .to_string();
+    let bytes = up
+        .bytes()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut resp = Response::new(Body::from(bytes));
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(&content_type)
+            .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
+    );
+
+    let safe_name = file_name
+        .replace(['\r', '\n'], " ")
+        .replace('"', "'");
+    let cd = format!("attachment; filename=\"{safe_name}\"");
+    if let Ok(v) = HeaderValue::from_str(&cd) {
+        resp.headers_mut().insert(header::CONTENT_DISPOSITION, v);
+    }
+
+    Ok(resp)
 }

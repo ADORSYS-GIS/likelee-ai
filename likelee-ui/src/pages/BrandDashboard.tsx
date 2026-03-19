@@ -3685,7 +3685,8 @@ export default function BrandDashboard() {
       return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
     }
 
-    return `${baseUrl}/storage/v1/object/public/likelee-private/${path}`;
+    // Never expose private-bucket URLs directly; access must go through API proxies.
+    return "";
   };
 
   const renderCampaignContractHub = () => (
