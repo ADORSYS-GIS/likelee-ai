@@ -2414,6 +2414,7 @@ export default function CreatorDashboard() {
   const [showShoutOut, setShowShoutOut] = useState(true);
   const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
   const [balances, setBalances] = useState<any[]>([]);
+  const [stripeBalances, setStripeBalances] = useState<any[]>([]);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
   const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
@@ -2430,6 +2431,7 @@ export default function CreatorDashboard() {
       ]);
       setPayoutAccountStatus(statusRes.data);
       setBalances(balanceRes.data.balances || []);
+      setStripeBalances(balanceRes.data.stripe_balances || []);
       setPayoutHistory(historyRes.data.items || historyRes.items || []);
     } catch (e) {
       console.error("Failed to fetch payout status", e);
@@ -12497,21 +12499,51 @@ export default function CreatorDashboard() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <WalletIcon className="h-5 w-5 text-emerald-600" />
-                <span className="text-emerald-900 font-medium">
-                  Available Balance
-                </span>
-              </div>
-              <span className="text-emerald-900 font-bold text-lg">
-                $
-                {(
-                  (balances.find((b) => b.currency === "USD")
-                    ?.available_cents || 0) / 100
-                ).toFixed(2)}
-              </span>
-            </div>
+            {(() => {
+              const internalHeldCents =
+                balances.find((b) => b.currency === "USD")?.available_cents ||
+                0;
+              const stripeCashoutableCents =
+                stripeBalances.find((b) => b.currency === "USD")
+                  ?.available_cents || 0;
+              return (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <WalletIcon className="h-5 w-5 text-amber-700" />
+                      <div className="leading-tight">
+                        <div className="text-amber-900 font-medium">
+                          Held (pending transfer)
+                        </div>
+                        <div className="text-xs text-amber-800/70">
+                          Tracked in Likelee. Not necessarily cashoutable yet.
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-amber-900 font-bold text-lg">
+                      ${(internalHeldCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <WalletIcon className="h-5 w-5 text-emerald-600" />
+                      <div className="leading-tight">
+                        <div className="text-emerald-900 font-medium">
+                          Cashoutable (Stripe)
+                        </div>
+                        <div className="text-xs text-emerald-800/70">
+                          Available in your connected Stripe account.
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-emerald-900 font-bold text-lg">
+                      ${(stripeCashoutableCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <Label htmlFor="payout-amount">Amount to Withdraw</Label>
@@ -12536,7 +12568,7 @@ export default function CreatorDashboard() {
                   onClick={() =>
                     setRequestPayoutAmount(
                       (
-                        (balances.find((b) => b.currency === "USD")
+                        (stripeBalances.find((b) => b.currency === "USD")
                           ?.available_cents || 0) / 100
                       ).toString(),
                     )
@@ -12573,7 +12605,7 @@ export default function CreatorDashboard() {
                 !requestPayoutAmount ||
                 parseFloat(requestPayoutAmount) <= 0 ||
                 parseFloat(requestPayoutAmount) >
-                  (balances.find((b) => b.currency === "USD")
+                  (stripeBalances.find((b) => b.currency === "USD")
                     ?.available_cents || 0) /
                     100 ||
                 isLoadingPayout

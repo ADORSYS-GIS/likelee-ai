@@ -294,6 +294,52 @@ pub struct BalanceRow {
     pub earned_cents: i64,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StripeBalanceRow {
+    pub currency: String,
+    pub available_cents: i64,
+    pub pending_cents: i64,
+}
+
+async fn fetch_connected_balance_rows(
+    client: &stripe_sdk::Client,
+    connected_account_id: &str,
+    allowed_currencies: &[String],
+) -> Vec<StripeBalanceRow> {
+    let acct = match connected_account_id.parse::<stripe_sdk::AccountId>() {
+        Ok(a) => a,
+        Err(_) => return vec![],
+    };
+    let connected_client = client.clone().with_stripe_account(acct);
+    let bal = match stripe_sdk::Balance::retrieve(&connected_client, None).await {
+        Ok(b) => b,
+        Err(_) => return vec![],
+    };
+
+    let mut rows: Vec<StripeBalanceRow> = vec![];
+    for cur in allowed_currencies {
+        let cur_lc = cur.to_lowercase();
+        let available_cents = bal
+            .available
+            .iter()
+            .find(|a| a.currency.to_string() == cur_lc)
+            .map(|a| a.amount)
+            .unwrap_or(0);
+        let pending_cents = bal
+            .pending
+            .iter()
+            .find(|a| a.currency.to_string() == cur_lc)
+            .map(|a| a.amount)
+            .unwrap_or(0);
+        rows.push(StripeBalanceRow {
+            currency: cur.to_uppercase(),
+            available_cents,
+            pending_cents,
+        });
+    }
+    rows
+}
+
 pub async fn get_account_status(
     State(state): State<AppState>,
     Query(q): Query<ProfileQuery>,
@@ -800,6 +846,7 @@ pub async fn get_balance(
             return sanitized_error_response(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), msg);
         }
     };
+    let status = resp.status();
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
@@ -809,6 +856,88 @@ pub async fn get_balance(
             );
         }
     };
+    if !status.is_success() {
+        // Backward compatible fallback: some DBs may not have `earned_cents` yet.
+        if text.contains("earned_cents") && (text.contains("does not exist") || text.contains("column")) {
+            let resp2 = match state
+                .pg
+                .from("creator_balances")
+                .select("creator_id,currency,available_cents")
+                .eq("creator_id", &q.profile_id)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    return sanitized_error_response(
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                        e.to_string(),
+                    );
+                }
+            };
+            let status2 = resp2.status();
+            let text2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+            if !status2.is_success() {
+                return sanitized_error_response(status2.as_u16(), text2);
+            }
+            let mut v: Vec<serde_json::Value> = serde_json::from_str(&text2).unwrap_or_default();
+            for row in &mut v {
+                if let Some(obj) = row.as_object_mut() {
+                    obj.insert("earned_cents".to_string(), json!(0));
+                }
+            }
+            let mut rows: Vec<BalanceRow> = serde_json::from_value(json!(v)).unwrap_or_default();
+            rows.retain(|r| {
+                state
+                    .payout_allowed_currencies
+                    .iter()
+                    .any(|c| c == &r.currency.to_uppercase())
+            });
+
+            // Stripe connected balances best-effort (same as below).
+            let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+            let stripe_account_id = match state
+                .pg
+                .from("creators")
+                .select("stripe_connect_account_id")
+                .eq("id", &q.profile_id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => {
+                    let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+                    let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+                    v.first()
+                        .and_then(|row| row.get("stripe_connect_account_id"))
+                        .and_then(|x| x.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string()
+                }
+                Err(_) => "".to_string(),
+            };
+            if !stripe_account_id.is_empty() {
+                let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                stripe_balances = fetch_connected_balance_rows(
+                    &client,
+                    &stripe_account_id,
+                    &state.payout_allowed_currencies,
+                )
+                .await;
+            }
+
+            return (
+                StatusCode::OK,
+                Json(json!({
+                    "balances": rows,
+                    "stripe_balances": stripe_balances,
+                    "allowed_currencies": state.payout_allowed_currencies
+                })),
+            );
+        }
+        return sanitized_error_response(status.as_u16(), text);
+    }
     let mut rows: Vec<BalanceRow> = serde_json::from_str(&text).unwrap_or_default();
     // filter to allowed currencies
     rows.retain(|r| {
@@ -817,9 +946,43 @@ pub async fn get_balance(
             .iter()
             .any(|c| c == &r.currency.to_uppercase())
     });
+
+    // Stripe-connected cashoutable balance snapshot (best-effort).
+    let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+    let stripe_account_id = match state
+        .pg
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", &q.profile_id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => {
+            let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+            let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            v.first()
+                .and_then(|row| row.get("stripe_connect_account_id"))
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        }
+        Err(_) => "".to_string(),
+    };
+    if !stripe_account_id.is_empty() {
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        stripe_balances =
+            fetch_connected_balance_rows(&client, &stripe_account_id, &state.payout_allowed_currencies)
+                .await;
+    }
     (
         StatusCode::OK,
-        Json(json!({"balances": rows, "allowed_currencies": state.payout_allowed_currencies})),
+        Json(json!({
+            "balances": rows,
+            "stripe_balances": stripe_balances,
+            "allowed_currencies": state.payout_allowed_currencies
+        })),
     )
 }
 
@@ -922,13 +1085,13 @@ pub async fn request_payout(
     }
     let method = "instant".to_string();
 
-    // Read available balance
-    let bal_resp = match state
+    // Payouts are executed on the CONNECTED account balance.
+    // Therefore, the cashout ceiling must be based on Stripe (not internal ledger balances).
+    let resp = match state
         .pg
-        .from("creator_balances")
-        .select("available_cents")
-        .eq("creator_id", &payload.profile_id)
-        .eq("currency", &currency)
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", &payload.profile_id)
         .limit(1)
         .execute()
         .await
@@ -941,33 +1104,36 @@ pub async fn request_payout(
             );
         }
     };
-    let text = bal_resp.text().await.unwrap_or("[]".to_string());
-    let v: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    let available = v
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let account_id = rows
         .first()
-        .and_then(|r| r.get("available_cents").and_then(|x| x.as_i64()))
-        .unwrap_or(0);
-
-    info!(
-        profile_id = %payload.profile_id,
-        requested_cents = payload.amount_cents,
-        internal_available_cents = available,
-        currency = %currency,
-        "creator_payout_internal_balance_preflight"
-    );
-    if available < payload.amount_cents {
-        warn!(
-            profile_id = %payload.profile_id,
-            requested_cents = payload.amount_cents,
-            internal_available_cents = available,
-            currency = %currency,
-            "creator_payout_rejected_insufficient_internal_balance"
-        );
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if account_id.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
-            Json(
-                json!({"status":"error","error":"insufficient_funds","available_cents": available}),
-            ),
+            Json(json!({
+                "status":"error",
+                "error":"stripe_account_not_connected",
+                "message":"Please complete Stripe onboarding first."
+            })),
+        );
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let stripe_available_cents =
+        fetch_connected_available_cents(&client, &account_id, &currency).await.unwrap_or(0);
+    if stripe_available_cents < payload.amount_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"stripe_insufficient_available_balance",
+                "stripe_available_cents": stripe_available_cents
+            })),
         );
     }
 
@@ -1151,6 +1317,22 @@ async fn execute_payout(
 
     // Creator payouts should be executed directly on the connected account balance.
     // Creating a Transfer here would require platform balance (and fails in test mode).
+    if stripe_available_cents.unwrap_or(0) < net_cents {
+        let _ = state
+            .pg
+            .from("creator_payout_requests")
+            .eq("id", payout_request_id)
+            .update(
+                json!({
+                    "status":"failed",
+                    "failure_reason":"stripe_insufficient_available_balance"
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+        return Err(());
+    }
     let payout_currency = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
         Ok(c) => c,
         Err(_) => {
@@ -3458,7 +3640,7 @@ pub async fn get_agency_balance(
     let balance_resp = match state
         .pg
         .from("agency_balances")
-        .select("available_cents,currency,updated_at")
+        .select("available_cents,earned_cents,currency,updated_at")
         .eq("agency_id", &user.id)
         .limit(1)
         .execute()
@@ -3470,25 +3652,93 @@ pub async fn get_agency_balance(
         }
     };
 
+    let balance_status = balance_resp.status();
     let balance_text = match balance_resp.text().await {
         Ok(t) => t,
         Err(e) => {
             return internal_error_response("get_agency_balance.read_body", e);
         }
     };
+    let balance_text = if !balance_status.is_success() {
+        // Backward compatible fallback: some DBs may not have `earned_cents` yet.
+        if balance_text.contains("earned_cents")
+            && (balance_text.contains("does not exist") || balance_text.contains("column"))
+        {
+            let resp2 = match state
+                .pg
+                .from("agency_balances")
+                .select("available_cents,currency,updated_at")
+                .eq("agency_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    return internal_error_response("get_agency_balance.fetch_fallback", e);
+                }
+            };
+            let st2 = resp2.status();
+            let txt2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+            if !st2.is_success() {
+                return sanitized_error_response(st2.as_u16(), txt2);
+            }
+            txt2
+        } else {
+            return sanitized_error_response(balance_status.as_u16(), balance_text);
+        }
+    } else {
+        balance_text
+    };
 
     let balance_rows: Vec<serde_json::Value> =
         serde_json::from_str(&balance_text).unwrap_or_default();
-    let balance_row = balance_rows.first().cloned().unwrap_or(json!({
+    let mut balance_row = balance_rows.first().cloned().unwrap_or(json!({
         "available_cents": 0,
         "currency": "USD"
     }));
+    // If fallback query ran (no earned_cents), ensure it exists for response shape.
+    if balance_row.get("earned_cents").is_none() {
+        if let Some(obj) = balance_row.as_object_mut() {
+            obj.insert("earned_cents".to_string(), json!(0));
+        }
+    }
 
     let currency = balance_row
         .get("currency")
         .and_then(|v| v.as_str())
         .unwrap_or("USD")
         .to_string();
+
+    // Stripe-connected cashoutable balance snapshot (best-effort).
+    let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+    let stripe_account_id = match state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => {
+            let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+            let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            v.first()
+                .and_then(|row| row.get("stripe_connect_account_id"))
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        }
+        Err(_) => "".to_string(),
+    };
+    if !stripe_account_id.is_empty() {
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        stripe_balances =
+            fetch_connected_balance_rows(&client, &stripe_account_id, &state.payout_allowed_currencies)
+                .await;
+    }
 
     (
         StatusCode::OK,
@@ -3497,7 +3747,8 @@ pub async fn get_agency_balance(
                 "amount_cents": balance_row.get("available_cents").and_then(|v| v.as_i64()).unwrap_or(0),
                 "earned_cents": balance_row.get("earned_cents").and_then(|v| v.as_i64()).unwrap_or(0),
                 "currency": currency.clone()
-            }
+            },
+            "stripe_balances": stripe_balances
         })),
     )
 }
@@ -3582,56 +3833,6 @@ pub async fn request_agency_payout(
     }
     let method = "instant".to_string();
 
-    // Get agency's available balance
-    let balance_resp = match state
-        .pg
-        .from("agency_balances")
-        .select("available_cents")
-        .eq("agency_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            return internal_error_response("request_agency_payout.fetch_balance", e);
-        }
-    };
-
-    let balance_text = balance_resp.text().await.unwrap_or("[]".to_string());
-    let balance_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&balance_text).unwrap_or_default();
-    let available = balance_rows
-        .first()
-        .and_then(|r| r.get("available_cents").and_then(|x| x.as_i64()))
-        .unwrap_or(0);
-
-    info!(
-        agency_id = %user.id,
-        requested_cents = payload.amount_cents,
-        internal_available_cents = available,
-        currency = %currency,
-        "agency_payout_internal_balance_preflight"
-    );
-
-    if available < payload.amount_cents {
-        warn!(
-            agency_id = %user.id,
-            requested_cents = payload.amount_cents,
-            internal_available_cents = available,
-            currency = %currency,
-            "agency_payout_rejected_insufficient_internal_balance"
-        );
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "status":"error",
-                "error":"insufficient_funds",
-                "available_cents": available
-            })),
-        );
-    }
-
     // Get agency's Stripe Connect account
     let agency_resp = match state
         .pg
@@ -3670,7 +3871,25 @@ pub async fn request_agency_payout(
 
     // Compute fee
     let fee_cents = (payload.amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
+    let net_cents = payload.amount_cents - fee_cents;
 
+    // Payouts are executed on the CONNECTED account balance.
+    // Therefore, the cashout ceiling must be based on Stripe (not internal ledger balances).
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let stripe_available_cents =
+        fetch_connected_available_cents(&client, &stripe_account_id, &currency).await.unwrap_or(0);
+    if stripe_available_cents < net_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"stripe_insufficient_available_balance",
+                "stripe_available_cents": stripe_available_cents
+            })),
+        );
+    }
+
+    // Compute fee
     // Auto-approve based on threshold
     let status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
         "approved"
@@ -3857,6 +4076,23 @@ pub async fn execute_agency_payout(
             return Err(());
         }
     };
+
+    if stripe_available_cents.unwrap_or(0) < net_cents {
+        let _ = state
+            .pg
+            .from("agency_payout_requests")
+            .eq("id", payout_request_id)
+            .update(
+                json!({
+                    "status":"failed",
+                    "failure_reason":"stripe_insufficient_available_balance"
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+        return Err(());
+    }
 
     let connected_client = match stripe_account_id.parse::<stripe_sdk::AccountId>() {
         Ok(id) => client.clone().with_stripe_account(id),

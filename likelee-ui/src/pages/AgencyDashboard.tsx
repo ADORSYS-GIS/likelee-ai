@@ -250,6 +250,7 @@ const ConnectBankView = ({
     last_error: string;
     bank_last4?: string;
     available_balance?: { amount_cents: number; currency: string };
+    stripe_balances?: { currency: string; available_cents: number; pending_cents: number }[];
   } | null>(null);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
@@ -281,6 +282,7 @@ const ConnectBankView = ({
           bank_last4:
             String((statusData as any)?.bank_last4 || "") || undefined,
           available_balance: (balanceData as any)?.available_balance,
+          stripe_balances: (balanceData as any)?.stripe_balances || [],
         });
 
         setPayoutHistory((historyData as any)?.items || []);
@@ -330,11 +332,13 @@ const ConnectBankView = ({
       return;
     }
     const amountCents = Math.round(amountDollars * 100);
-    const availableCents = status?.available_balance?.amount_cents || 0;
-    if (amountCents > availableCents) {
+    const stripeCashoutableCents =
+      status?.stripe_balances?.find((b) => b.currency === "USD")
+        ?.available_cents || 0;
+    if (amountCents > stripeCashoutableCents) {
       toast({
         title: "Insufficient funds",
-        description: `Available balance: $${(availableCents / 100).toFixed(2)}`,
+        description: `Cashoutable in Stripe: $${(stripeCashoutableCents / 100).toFixed(2)}`,
         variant: "destructive" as any,
       });
       return;
@@ -355,14 +359,15 @@ const ConnectBankView = ({
       const balanceData = (balanceResp as any)?.data ?? balanceResp;
       const historyData = (historyResp as any)?.data ?? historyResp;
 
-      setStatus((prev) =>
-        prev
-          ? {
-              ...prev,
-              available_balance: (balanceData as any)?.available_balance,
-            }
-          : prev,
-      );
+        setStatus((prev) =>
+          prev
+            ? {
+                ...prev,
+                available_balance: (balanceData as any)?.available_balance,
+                stripe_balances: (balanceData as any)?.stripe_balances || [],
+              }
+            : prev,
+        );
       setPayoutHistory((historyData as any)?.items || []);
       setShowPayoutDialog(false);
       setPayoutAmount("");
@@ -437,28 +442,52 @@ const ConnectBankView = ({
 
           {connected && (
             <div className="mb-6">
-              <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <DollarSign className="w-4 h-4 text-indigo-600" />
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                    Available Balance
+              <div className="space-y-3">
+                <Card className="p-4 bg-amber-50 border-amber-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <DollarSign className="w-4 h-4 text-amber-700" />
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                      Held (Pending Transfer)
+                    </p>
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">
+                    {status?.available_balance
+                      ? new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency:
+                            status.available_balance.currency.toUpperCase(),
+                        }).format(
+                          (status.available_balance.amount_cents || 0) / 100,
+                        )
+                      : "$0.00"}
                   </p>
-                </div>
-                <p className="text-2xl font-black text-gray-900">
-                  {status?.available_balance
-                    ? new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency:
-                          status.available_balance.currency.toUpperCase(),
-                      }).format(
-                        (status.available_balance.amount_cents || 0) / 100,
-                      )
-                    : "$0.00"}
-                </p>
-                <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Ready for payout to your bank
-                </p>
-              </Card>
+                  <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    Tracked in Likelee. Not necessarily cashoutable yet.
+                  </p>
+                </Card>
+
+                <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <DollarSign className="w-4 h-4 text-indigo-600" />
+                    <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                      Cashoutable (Stripe)
+                    </p>
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(
+                      (status?.stripe_balances?.find(
+                        (b) => b.currency === "USD",
+                      )?.available_cents || 0) / 100,
+                    )}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    Available in your connected Stripe account.
+                  </p>
+                </Card>
+              </div>
             </div>
           )}
 
