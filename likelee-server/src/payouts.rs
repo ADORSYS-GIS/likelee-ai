@@ -2988,6 +2988,68 @@ pub async fn execute_and_record_stripe_transfer(
     rpc_source_id_key: &str,
     rpc_source_id_val: &str,
 ) -> Result<String, String> {
+    let extract_code_from_text = |text: &str| -> Option<&'static str> {
+        let t = text.to_lowercase();
+        // Stripe error codes we care about most in Connect transfers.
+        if t.contains("insufficient_capabilities_for_transfer") {
+            return Some("insufficient_capabilities_for_transfer");
+        }
+        if t.contains("transfers_not_allowed") {
+            return Some("transfers_not_allowed");
+        }
+        if t.contains("payouts_not_allowed") {
+            return Some("payouts_not_allowed");
+        }
+        if t.contains("balance_insufficient") {
+            return Some("balance_insufficient");
+        }
+        None
+    };
+
+    // Preflight: ensure the connected account can receive transfers.
+    // This avoids confusing failures and keeps our DB `failure_reason` clean/actionable.
+    if let Ok(acct_id) = stripe_account_id.parse::<stripe_sdk::AccountId>() {
+        if let Ok(acct) = stripe_sdk::Account::retrieve(client, &acct_id, &[]).await {
+            let transfers_active = acct
+                .capabilities
+                .as_ref()
+                .and_then(|c| c.transfers.as_ref())
+                .map(|s| s == &stripe_sdk::CapabilityStatus::Active)
+                .unwrap_or(false);
+            if !transfers_active {
+                let mut payload = serde_json::Map::new();
+                payload.insert(
+                    rpc_source_id_key.to_string(),
+                    serde_json::json!(rpc_source_id_val),
+                );
+                payload.insert(
+                    "p_recipient_type".to_string(),
+                    serde_json::json!(recipient_type),
+                );
+                payload.insert("p_recipient_id".to_string(), serde_json::json!(recipient_id));
+                payload.insert(
+                    "p_stripe_connect_account_id".to_string(),
+                    serde_json::json!(stripe_account_id),
+                );
+                payload.insert("p_amount_cents".to_string(), serde_json::json!(amount_cents));
+                payload.insert("p_currency".to_string(), serde_json::json!(currency));
+                payload.insert("p_status".to_string(), serde_json::json!("failed"));
+                payload.insert(
+                    "p_failure_reason".to_string(),
+                    serde_json::json!(
+                        "insufficient_capabilities_for_transfer: connected account transfers capability is not active"
+                    ),
+                );
+                let _ = state
+                    .pg
+                    .rpc(rpc_name, serde_json::Value::Object(payload).to_string())
+                    .execute()
+                    .await;
+                return Err("insufficient_capabilities_for_transfer".to_string());
+            }
+        }
+    }
+
     let mut params = stripe_sdk::CreateTransfer::new(currency_enum, stripe_account_id.to_string());
     params.amount = Some(amount_cents);
     params.metadata = Some(metadata);
@@ -3007,6 +3069,16 @@ pub async fn execute_and_record_stripe_transfer(
             Ok(transfer.id.to_string())
         }
         Err(e) => {
+            // Avoid `{:?}` because the Stripe SDK may fail to deserialize new/unknown error codes
+            // (e.g. `insufficient_capabilities_for_transfer`) and produce a huge JSONSerialize(...) blob.
+            // Use Display + a best-effort extraction of the code so we persist stable failure reasons.
+            let display_msg = e.to_string();
+            let code = extract_code_from_text(&display_msg);
+            let failure_reason = if let Some(c) = code {
+                format!("{c}: {display_msg}")
+            } else {
+                display_msg.clone()
+            };
             let mut payload = serde_json::Map::new();
             payload.insert(rpc_source_id_key.to_string(), serde_json::json!(rpc_source_id_val));
             payload.insert("p_recipient_type".to_string(), serde_json::json!(recipient_type));
@@ -3015,9 +3087,9 @@ pub async fn execute_and_record_stripe_transfer(
             payload.insert("p_amount_cents".to_string(), serde_json::json!(amount_cents));
             payload.insert("p_currency".to_string(), serde_json::json!(currency));
             payload.insert("p_status".to_string(), serde_json::json!("failed"));
-            payload.insert("p_failure_reason".to_string(), serde_json::json!(format!("{:?}", e)));
+            payload.insert("p_failure_reason".to_string(), serde_json::json!(failure_reason));
             let _ = state.pg.rpc(rpc_name, serde_json::Value::Object(payload).to_string()).execute().await;
-            Err(format!("{:?}", e))
+            Err(display_msg)
         }
     }
 }
