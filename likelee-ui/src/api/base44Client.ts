@@ -51,13 +51,63 @@ function extractErrorMessage(errorData: any): string {
   );
 }
 
+function normalizeErrorData(errorData: any): any {
+  if (!errorData) return null;
+  let body = errorData;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return errorData;
+    }
+  }
+  if (body?.status === "error" && typeof body?.error === "string") {
+    try {
+      const parsed = JSON.parse(body.error);
+      return parsed;
+    } catch {
+      return body;
+    }
+  }
+  return body;
+}
+
+function userFriendlyMessage(status: number, errorData: any): string {
+  const normalized = normalizeErrorData(errorData);
+  const code = String(
+    normalized?.code ||
+      normalized?.error_code ||
+      normalized?.error?.code ||
+      "",
+  ).trim();
+  const msg = extractErrorMessage(normalized);
+  const lower = String(msg || "").toLowerCase();
+
+  if (status === 401 || status === 403 || lower.includes("not authorized")) {
+    return "You’re not authorized to perform this action.";
+  }
+  if (code === "23505" || lower.includes("already exists")) {
+    return "This record already exists.";
+  }
+  if (status === 409) {
+    return "This action conflicts with an existing record. Please refresh and try again.";
+  }
+  if (!msg || !String(msg).trim()) {
+    return "Something went wrong. Please try again.";
+  }
+  return msg;
+}
+
 function throwBackendError(
   method: string,
   url: string,
   status: number,
   errorData: any,
 ): never {
-  const msg = extractErrorMessage(errorData);
+  // Log the raw error for developers, but throw only a user-friendly message.
+  // eslint-disable-next-line no-console
+  console.error(`[api] ${method} ${url} failed`, { status, errorData });
+  const msg = userFriendlyMessage(status, errorData);
   const err: any = new Error(msg);
   err.status = status;
   err.method = method;
@@ -164,14 +214,13 @@ export const base44 = {
     const res = await fetch(full, { headers });
     if (!res.ok) {
       const txt = await res.text();
-      // Try to parse as JSON for structured errors
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("GET", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        // If not JSON, throw with status and text
-        throw new Error(`GET ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("GET", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -205,12 +254,13 @@ export const base44 = {
     const res = await fetch(full, { method: "POST", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("POST", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`POST ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("POST", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -244,12 +294,13 @@ export const base44 = {
     const res = await fetch(full, { method: "PUT", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("PUT", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`PUT ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("PUT", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -279,12 +330,13 @@ export const base44 = {
     const res = await fetch(full, { method: "DELETE", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("DELETE", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`DELETE ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("DELETE", url, res.status, errorData);
     }
 
     if (res.status === 204) {
