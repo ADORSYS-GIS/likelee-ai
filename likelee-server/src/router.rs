@@ -1,5 +1,5 @@
 use crate::config::AppState;
-use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use axum::http::header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
@@ -11,7 +11,12 @@ pub fn build_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
+        .allow_headers([
+            AUTHORIZATION,
+            CONTENT_TYPE,
+            ACCEPT,
+            HeaderName::from_static("x-package-password"),
+        ]);
 
     Router::new()
         .route("/api/health", get(crate::health::health))

@@ -104,11 +104,20 @@ export function PublicPackageView() {
   const isPasswordError = useMemo(() => {
     const status = Number((error as any)?.status || 0);
     const message = String((error as any)?.message || "").toLowerCase();
-    return (
-      (status === 401 || status === 403) &&
-      (message.includes("password") || message.includes("unlock"))
-    );
+    // Also inspect the raw backend payload since base44Client may transform the message
+    const rawData = (error as any)?.data;
+    const rawStr = (typeof rawData === "string"
+      ? rawData
+      : JSON.stringify(rawData ?? "")
+    ).toLowerCase();
+    const mentionsPassword =
+      message.includes("password") ||
+      message.includes("unlock") ||
+      rawStr.includes("password") ||
+      rawStr.includes("unlock");
+    return (status === 401 || status === 403) && mentionsPassword;
   }, [error]);
+
 
   const interactionMutation = useMutation({
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
