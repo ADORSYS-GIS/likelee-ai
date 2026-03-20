@@ -528,13 +528,44 @@ pub async fn create_campaign_offer_checkout(
     let target_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
     let mut billing_request_id = offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
+    // Hard requirement: for agency-targeted campaign offers, at least one talent must be assigned
+    // BEFORE the brand can pay. This ensures we can create correct payout splits/distribution.
+    if target_type == "agency" {
+        let assignments_resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("id")
+            .eq("offer_id", &offer_id)
+            .eq("agency_id", target_id)
+            .eq("status", "assigned")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !assignments_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                assignments_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&assignments_txt).unwrap_or_default();
+        if assignments_rows.is_empty() {
+            return Err((StatusCode::BAD_REQUEST, "no_talents_assigned".to_string()));
+        }
+    }
+
     if target_type == "agency" && billing_request_id.is_empty() {
         match crate::brand_campaigns::ensure_campaign_billing_stub(&state, &offer_id).await {
             Ok(stub_id) => {
                 billing_request_id = stub_id;
             }
             Err(e) => {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("failed_to_create_stub: {}", e)));
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed_to_create_stub: {}", e),
+                ));
             }
         }
     }
@@ -563,8 +594,14 @@ pub async fn create_campaign_offer_checkout(
         return Err((StatusCode::BAD_REQUEST, "invalid_budget".to_string()));
     }
 
-    let success_url = format!("{}/brand/campaigns/{}", state.frontend_url, offer_id);
-    let cancel_url = format!("{}/brand/campaigns/{}", state.frontend_url, offer_id);
+    let success_url = format!(
+        "{}/BrandDashboard?section=campaigns&paid=1&offer_id={}",
+        state.frontend_url, offer_id
+    );
+    let cancel_url = format!(
+        "{}/BrandDashboard?section=campaigns&canceled=1&offer_id={}",
+        state.frontend_url, offer_id
+    );
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
 
