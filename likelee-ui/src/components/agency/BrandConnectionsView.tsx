@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,13 @@ const BrandConnectionsView = () => {
     | "deliverables"
     | "feedback"
   >("connections");
+
+  // Deliverables is handled in the main Agency sidebar; keep this tab as a redirect only.
+  useEffect(() => {
+    if (activeTab !== "deliverables") return;
+    navigate("/AgencyDashboard?tab=deliverables");
+    setActiveTab("connections");
+  }, [activeTab, navigate]);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
   const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
@@ -277,6 +284,10 @@ const BrandConnectionsView = () => {
       return Array.isArray(resp?.assignments) ? resp.assignments : [];
     },
   });
+  const hasAssignedTalent = useMemo(
+    () => (offerAssignmentsQuery.data || []).length > 0,
+    [offerAssignmentsQuery.data],
+  );
 
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
@@ -546,10 +557,12 @@ const BrandConnectionsView = () => {
       // Automatically open builder for the new contract
       handlePrepareContract(offerId, resp.id);
     } catch (err: any) {
+      console.error("upload_offer_contract failed", err);
       toast({
         title: "Upload failed",
-        description: err.message || "Failed to upload contract.",
-        variant: "destructive",
+        description:
+          "Failed to upload contract. Please try again with a valid PDF.",
+        variant: "destructive" as any,
       });
     } finally {
       setIsUploading(false);
@@ -566,10 +579,12 @@ const BrandConnectionsView = () => {
       setCurrentContractId(contractId);
       setBuilderOpen(true);
     } catch (err: any) {
+      console.error("get_builder_token failed", err);
       toast({
         title: "Failed to load builder",
-        description: err.message || "Failed to get builder token.",
-        variant: "destructive",
+        description:
+          "Could not load the contract builder. Please refresh and try again.",
+        variant: "destructive" as any,
       });
     }
   };
@@ -608,9 +623,16 @@ const BrandConnectionsView = () => {
         queryKey: ["agency", "campaign-offers-my"],
       });
     } catch (err: any) {
+      // Avoid showing raw backend/API errors to users. Log details for debugging.
+      console.error("send_offer_contract failed", err);
+      const msg = String(err?.message || "");
       toast({
         title: "Send failed",
-        description: err.message || "Failed to send contract.",
+        description: msg.includes("no_talents_assigned")
+          ? "Assign at least 1 talent to this offer before sending the contract."
+          : msg.toLowerCase().includes("template does not contain fields")
+            ? "This PDF template has no signature fields. Open Prepare, place fields, save, then try again."
+            : "Failed to send contract. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -888,7 +910,10 @@ const BrandConnectionsView = () => {
         </Button>
         <Button
           variant={activeTab === "deliverables" ? "default" : "outline"}
-          onClick={() => setActiveTab("deliverables")}
+          onClick={() => {
+            navigate("/AgencyDashboard?tab=deliverables");
+            setActiveTab("connections");
+          }}
         >
           Deliverables
         </Button>
@@ -1357,86 +1382,92 @@ const BrandConnectionsView = () => {
                               </span>
                             </div>
                           )}
-                          {isFullySigned && (
-                            <Button
-                              variant="outline"
-                              className="border-indigo-200 text-indigo-700 font-bold"
-                              onClick={() =>
-                                setAssignDialog({
-                                  open: true,
-                                  offerId: selectedOfferId,
-                                  talentId: "",
-                                })
-                              }
-                            >
-                              <User className="h-4 w-4 mr-2" />
-                              Assign Talent
-                            </Button>
-                          )}
+                          {(() => {
+                            const pay = String(
+                              offer?.payment_status || "unpaid",
+                            ).toLowerCase();
+                            const canEdit = pay !== "processing" && pay !== "paid";
+                            return (
+                              <Button
+                                variant="outline"
+                                className="border-indigo-200 text-indigo-700 font-bold"
+                                disabled={!canEdit}
+                                onClick={() =>
+                                  setAssignDialog({
+                                    open: true,
+                                    offerId: selectedOfferId,
+                                    talentId: "",
+                                  })
+                                }
+                              >
+                                <User className="h-4 w-4 mr-2" />
+                                Assign Talent
+                              </Button>
+                            );
+                          })()}
                         </div>
 
-                        {isFullySigned && (
-                          <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-bold text-gray-900">
-                                Assigned Talent
-                              </p>
-                            </div>
-                            {(offerAssignmentsQuery.data || []).length === 0 ? (
-                              <p className="text-xs text-gray-500">
-                                No talent assigned yet.
-                              </p>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {(offerAssignmentsQuery.data || []).map(
-                                  (a: any) => {
-                                    const talent = a?.agency_users || {};
-                                    const tid = String(a?.talent_id || "");
-                                    return (
-                                      <div
-                                        key={String(a?.id)}
-                                        className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                            <User className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                          <div>
-                                            <p className="text-sm font-semibold text-gray-900">
-                                              {talent?.stage_name ||
-                                                talent?.full_legal_name ||
-                                                "Talent"}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                              Assigned
-                                            </p>
-                                          </div>
-                                        </div>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() =>
-                                            setMessageDialog({
-                                              open: true,
-                                              offerId: selectedOfferId,
-                                              talentId: tid,
-                                              title: "",
-                                              message: "",
-                                              file: null,
-                                              sending: false,
-                                            })
-                                          }
-                                        >
-                                          Send Message
-                                        </Button>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            )}
+                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-gray-900">
+                              Assigned Talent
+                            </p>
                           </div>
-                        )}
+                          {(offerAssignmentsQuery.data || []).length === 0 ? (
+                            <p className="text-xs text-gray-500">
+                              Assign at least 1 talent before preparing/sending
+                              the contract and before the brand can pay.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {(offerAssignmentsQuery.data || []).map(
+                                (a: any) => {
+                                  const talent = a?.agency_users || {};
+                                  const tid = String(a?.talent_id || "");
+                                  return (
+                                    <div
+                                      key={String(a?.id)}
+                                      className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <User className="h-4 w-4 text-gray-500" />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {talent?.stage_name ||
+                                              talent?.full_legal_name ||
+                                              "Talent"}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Assigned
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          setMessageDialog({
+                                            open: true,
+                                            offerId: selectedOfferId,
+                                            talentId: tid,
+                                            title: "",
+                                            message: "",
+                                            file: null,
+                                            sending: false,
+                                          })
+                                        }
+                                      >
+                                        Send Message
+                                      </Button>
+                                    </div>
+                                  );
+                                },
+                              )}
+                            </div>
+                          )}
+                        </div>
 
                         {/* Full brief — shown directly, no duplicate summary */}
                         {offer?.brief_snapshot &&
@@ -1902,6 +1933,15 @@ const BrandConnectionsView = () => {
                           </TabsTrigger>
                         </TabsList>
                       </div>
+                      {!hasAssignedTalent && (
+                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                          <span className="text-amber-700 text-sm font-semibold">
+                            Assign at least 1 talent before preparing/sending a
+                            contract. This is required for correct payouts when
+                            the brand pays.
+                          </span>
+                        </div>
+                      )}
 
                       <TabsContent
                         value="submissions"
@@ -1923,6 +1963,7 @@ const BrandConnectionsView = () => {
                               variant="outline"
                               className="border-blue-200 text-blue-600 hover:bg-blue-50"
                               onClick={() => setContractTab("upload")}
+                              disabled={!hasAssignedTalent}
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Create First Contract
@@ -2013,7 +2054,7 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy}
+                                                    disabled={isBusy || !hasAssignedTalent}
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
                                                     Prepare
@@ -2028,7 +2069,7 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy}
+                                                    disabled={isBusy || !hasAssignedTalent}
                                                   >
                                                     {isBusy ? (
                                                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -2343,12 +2384,18 @@ const BrandConnectionsView = () => {
                                 request. You can place fields in the builder
                                 afterwards.
                               </p>
+                              {!hasAssignedTalent && (
+                                <p className="text-sm text-amber-700 font-semibold mb-6">
+                                  Assign at least 1 talent to this offer first.
+                                </p>
+                              )}
                               <div className="flex items-center justify-center gap-4">
                                 <input
                                   type="file"
                                   id="contract-pdf-upload"
                                   className="hidden"
                                   accept=".pdf"
+                                  disabled={!hasAssignedTalent}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file)
@@ -2361,7 +2408,11 @@ const BrandConnectionsView = () => {
                                 />
                                 <label
                                   htmlFor="contract-pdf-upload"
-                                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 flex items-center"
+                                  className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center ${
+                                    hasAssignedTalent
+                                      ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  }`}
                                 >
                                   <FileText className="w-5 h-5 mr-3" />
                                   Choose PDF File
@@ -2694,52 +2745,53 @@ const BrandConnectionsView = () => {
                     Place signature fields and save to finish
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  className="border-gray-200 hover:bg-gray-50"
+                  className="border-gray-200 hover:bg-gray-50 ml-3"
                   onClick={() => {
                     if (!selectedOfferId || !currentContractId) {
                       toast({
                         title: "Missing contract",
                         description: "Select a contract before sending.",
-                        variant: "destructive",
+                        variant: "destructive" as any,
                       });
                       return;
                     }
                     handleSendContract(selectedOfferId, currentContractId);
                   }}
-                  disabled={!selectedOfferId || !currentContractId}
+                  disabled={
+                    !selectedOfferId ||
+                    !currentContractId ||
+                    !hasAssignedTalent
+                  }
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Send
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setBuilderOpen(false);
-                    setBuilderToken(null);
-                    if (selectedOfferId) {
-                      queryClient.invalidateQueries({
-                        queryKey: [
-                          "agency",
-                          "offer-contracts",
-                          selectedOfferId,
-                        ],
-                      });
-                    }
-                  }}
-                  className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
-                >
-                  ✕
-                </Button>
               </div>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setBuilderOpen(false);
+                  setBuilderToken(null);
+                  if (selectedOfferId) {
+                    queryClient.invalidateQueries({
+                      queryKey: ["agency", "offer-contracts", selectedOfferId],
+                    });
+                  }
+                }}
+                className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+              >
+                ✕
+              </Button>
             </div>
             <div className="flex-1 bg-gray-50 relative">
               <docuseal-builder
                 data-token={builderToken}
                 data-autosave={true}
+                data-save-button-text="Save Contract"
+                data-with-send-button={false}
+                data-with-sign-yourself-button={false}
                 className="w-full h-full block"
                 ref={(el: any) => {
                   if (el && !el._hasSaveListener) {
@@ -2749,9 +2801,14 @@ const BrandConnectionsView = () => {
                       );
                       buttons.forEach((btn) => {
                         const label = (btn.textContent || "")
+                          .replace(/\s+/g, " ")
                           .trim()
                           .toLowerCase();
-                        if (label === "sign yourself" || label === "send") {
+                        if (
+                          label === "sign yourself" ||
+                          label === "send" ||
+                          label.includes("sign yourself")
+                        ) {
                           (btn as HTMLElement).style.display = "none";
                         }
                       });
