@@ -1672,6 +1672,14 @@ export default function BrandDashboard() {
       .slice(0, 6);
   }, [brandOfferItems]);
 
+  const contractHubPendingCount = useMemo(() => {
+    const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
+    return offers.filter((offer: any) => {
+      const st = String(offer?.status || "").toLowerCase();
+      return st === "contract_sent" || st === "contract_partially_signed";
+    }).length;
+  }, [brandOfferItems]);
+
   const pendingApprovalCount = mockCampaigns.filter(
     (c) => c.status === "pending_approval",
   ).length;
@@ -3759,11 +3767,16 @@ export default function BrandDashboard() {
                           });
                         }
                       } catch (e: any) {
+                        const msg = String(e?.message || "");
                         toast({
-                          title: "Network Error",
+                          title: msg.includes("no_talents_assigned")
+                            ? "Talent assignment required"
+                            : "Payment Error",
                           description:
-                            e?.message || "Could not reach payment service.",
-                          variant: "destructive",
+                            msg.includes("no_talents_assigned")
+                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                              : msg || "Could not start checkout.",
+                          variant: "destructive" as any,
                         });
                       } finally {
                         setPayingOfferId(null);
@@ -10287,6 +10300,11 @@ export default function BrandDashboard() {
                       >
                         <FileText className="w-4 h-4" />
                         <span className="flex-1 text-left">Contract Hub</span>
+                        {contractHubPendingCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {contractHubPendingCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => {
