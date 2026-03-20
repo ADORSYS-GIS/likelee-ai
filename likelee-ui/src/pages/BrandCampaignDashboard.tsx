@@ -1718,11 +1718,18 @@ export default function BrandCampaignDashboard({
       await loadCampaignCards();
       resetCampaignBuilder();
     } catch (e: any) {
+      const msg = String(e?.message || "");
       toast({
-        title: "Failed to send offer",
-        description: e?.message || "Please try again.",
-        variant: "destructive" as any,
+        title: msg === "This record already exists." ? "Offer already sent" : "Failed to send offer",
+        description:
+          msg === "This record already exists."
+            ? "An offer to this agency already exists for this campaign."
+            : msg || "Please try again.",
+        variant: msg === "This record already exists." ? ("default" as any) : ("destructive" as any),
       });
+      if (msg === "This record already exists.") {
+        await loadCampaignCards();
+      }
     }
   };
 
