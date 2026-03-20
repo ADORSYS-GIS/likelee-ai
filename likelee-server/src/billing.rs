@@ -528,17 +528,53 @@ pub async fn create_campaign_offer_checkout(
     let target_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
     let mut billing_request_id = offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    // Hard requirement: for agency-targeted campaign offers, at least one talent must be assigned
-    // BEFORE the brand can pay. This ensures we can create correct payout splits/distribution.
+    // Hard requirements for campaign offers:
+    // - Agency offers: at least one talent must be assigned BEFORE the brand can pay.
+    // - Agency offers: agency + all assigned talents must have Stripe Connect accounts (like licensing flow),
+    //   otherwise escrow will get stuck on the platform with no ability to transfer out.
+    // - Creator offers: the creator must have a Stripe Connect account.
     if target_type == "agency" {
+        // 1) Agency must be connected to Stripe
+        let agency_acct_resp = state
+            .pg
+            .from("agencies")
+            .select("stripe_connect_account_id")
+            .eq("id", target_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !agency_acct_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                agency_acct_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let agency_acct_text = agency_acct_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let agency_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&agency_acct_text).unwrap_or_default();
+        let agency_stripe_account_id = agency_rows
+            .first()
+            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if agency_stripe_account_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Agency must connect a Stripe account before the brand can pay for this offer"
+                    .to_string(),
+            ));
+        }
+
+        // 2) At least one talent must be assigned
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
-            .select("id")
+            .select("talent_id")
             .eq("offer_id", &offer_id)
             .eq("agency_id", target_id)
             .eq("status", "assigned")
-            .limit(1)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -551,8 +587,183 @@ pub async fn create_campaign_offer_checkout(
         let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
         let assignments_rows: Vec<serde_json::Value> =
             serde_json::from_str(&assignments_txt).unwrap_or_default();
-        if assignments_rows.is_empty() {
-            return Err((StatusCode::BAD_REQUEST, "no_talents_assigned".to_string()));
+        let mut talent_ids: Vec<String> = assignments_rows
+            .iter()
+            .filter_map(|r| r.get("talent_id").and_then(|v| v.as_str()))
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        talent_ids.sort();
+        talent_ids.dedup();
+        if talent_ids.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "At least one talent must be assigned before the brand can pay for this offer"
+                    .to_string(),
+            ));
+        }
+
+        // 3) Every assigned talent must map to a creator with a connected Stripe account
+        let talent_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
+        let talent_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,stage_name,full_legal_name,creator_id")
+            .eq("agency_id", target_id)
+            .in_("id", talent_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !talent_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                talent_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let talent_text = talent_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let talent_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&talent_text).unwrap_or_default();
+
+        let mut creator_ids: Vec<String> = vec![];
+        let mut name_by_talent: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        let mut creator_by_talent: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+
+        for r in &talent_rows {
+            let tid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+            if tid.is_empty() {
+                continue;
+            }
+            let name = r
+                .get("stage_name")
+                .or_else(|| r.get("full_legal_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Talent")
+                .trim()
+                .to_string();
+            name_by_talent.insert(tid.to_string(), name);
+            let cid = r
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !cid.is_empty() {
+                creator_by_talent.insert(tid.to_string(), cid.clone());
+                creator_ids.push(cid);
+            }
+        }
+        creator_ids.sort();
+        creator_ids.dedup();
+
+        let mut missing_creator: Vec<String> = vec![];
+        for tid in &talent_ids {
+            if !creator_by_talent.contains_key(tid) {
+                let name = name_by_talent
+                    .get(tid)
+                    .cloned()
+                    .unwrap_or_else(|| tid.clone());
+                missing_creator.push(name);
+            }
+        }
+        if !missing_creator.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The following talents must be linked to a Creator profile before the brand can pay: {}",
+                    missing_creator.join(", ")
+                ),
+            ));
+        }
+
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        let creators_resp = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creators_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                creators_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let creators_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creators_text).unwrap_or_default();
+        let mut stripe_by_creator: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        for r in &creators_rows {
+            let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+            if cid.is_empty() {
+                continue;
+            }
+            let acct = r
+                .get("stripe_connect_account_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !acct.is_empty() {
+                stripe_by_creator.insert(cid.to_string(), acct);
+            }
+        }
+
+        let mut missing_stripe: Vec<String> = vec![];
+        for tid in &talent_ids {
+            let cid = creator_by_talent.get(tid).cloned().unwrap_or_default();
+            if cid.is_empty() || !stripe_by_creator.contains_key(&cid) {
+                let name = name_by_talent
+                    .get(tid)
+                    .cloned()
+                    .unwrap_or_else(|| tid.clone());
+                missing_stripe.push(name);
+            }
+        }
+        if !missing_stripe.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The following talents must connect their Stripe account before the brand can pay: {}",
+                    missing_stripe.join(", ")
+                ),
+            ));
+        }
+    } else if target_type == "creator" {
+        let creator_resp = state
+            .pg
+            .from("creators")
+            .select("stripe_connect_account_id")
+            .eq("id", target_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creator_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                creator_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let creator_text = creator_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let creator_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creator_text).unwrap_or_default();
+        let stripe_id = creator_rows
+            .first()
+            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if stripe_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Creator must connect a Stripe account before the brand can pay for this offer"
+                    .to_string(),
+            ));
         }
     }
 

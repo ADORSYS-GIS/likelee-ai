@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -30,6 +31,7 @@ import {
   Trash2,
   Send,
   Wand2,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
@@ -288,6 +290,37 @@ const BrandConnectionsView = () => {
     () => (offerAssignmentsQuery.data || []).length > 0,
     [offerAssignmentsQuery.data],
   );
+
+  const agencyPayoutAccountStatusQuery = useQuery({
+    queryKey: ["agency", "payouts", "account_status"],
+    queryFn: async () => {
+      try {
+        return await base44.get<{
+          connected?: boolean;
+          payouts_enabled?: boolean;
+          transfers_enabled?: boolean;
+          last_error?: string;
+          bank_last4?: string | null;
+        }>("/api/agency/payouts/account_status");
+      } catch {
+        return {
+          connected: false,
+          payouts_enabled: false,
+          transfers_enabled: false,
+          last_error: "",
+          bank_last4: null,
+        };
+      }
+    },
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+
+  const agencyStripeConnected = !!agencyPayoutAccountStatusQuery.data?.connected;
+  const agencyStripeTransfersEnabled =
+    !!agencyPayoutAccountStatusQuery.data?.transfers_enabled;
+  const agencyStripeReadyForPayouts =
+    agencyStripeConnected && agencyStripeTransfersEnabled;
 
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
@@ -591,6 +624,24 @@ const BrandConnectionsView = () => {
 
   const handleSendContract = async (offerId: string, contractId: string) => {
     if (busyIds.has(contractId)) return;
+    if (!agencyStripeConnected) {
+      toast({
+        title: "Connect Stripe first",
+        description:
+          "Connect your agency Stripe account before sending contracts. Brands can’t pay until payout setup is complete.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!agencyStripeTransfersEnabled) {
+      toast({
+        title: "Finish Stripe onboarding",
+        description:
+          "Your Stripe account isn’t enabled for transfers yet. Complete onboarding in Payouts so commissions can be transferred when brands pay.",
+        variant: "destructive",
+      });
+      return;
+    }
     setBusyIds((prev) => new Set(prev).add(contractId));
     try {
       const resp = await base44.post<{ contract?: any }>(
@@ -1933,15 +1984,39 @@ const BrandConnectionsView = () => {
                           </TabsTrigger>
                         </TabsList>
                       </div>
-                      {!hasAssignedTalent && (
-                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                          <span className="text-amber-700 text-sm font-semibold">
-                            Assign at least 1 talent before preparing/sending a
-                            contract. This is required for correct payouts when
-                            the brand pays.
-                          </span>
-                        </div>
-                      )}
+	                      {!hasAssignedTalent && (
+	                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+	                          <span className="text-amber-700 text-sm font-semibold">
+	                            Assign at least 1 talent before preparing/sending a
+	                            contract. This is required for correct payouts when
+	                            the brand pays.
+	                          </span>
+	                        </div>
+	                      )}
+	                      {!agencyStripeReadyForPayouts && (
+	                        <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
+	                          <AlertCircle className="h-4 w-4 text-blue-600" />
+	                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
+	                            <span>
+	                              Before sending contracts, connect your agency Stripe
+	                              account and complete onboarding. Brands can’t pay
+	                              until payouts are set up, and commissions/talent
+	                              earnings can’t be transferred unless transfers are
+	                              enabled.
+	                            </span>
+	                            <Button
+	                              size="sm"
+	                              variant="outline"
+	                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
+	                              onClick={() =>
+	                                navigate("/AgencyDashboard?tab=payouts")
+	                              }
+	                            >
+	                              Go to Payouts
+	                            </Button>
+	                          </AlertDescription>
+	                        </Alert>
+	                      )}
 
                       <TabsContent
                         value="submissions"
@@ -2069,7 +2144,11 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy || !hasAssignedTalent}
+                                                    disabled={
+                                                      isBusy ||
+                                                      !hasAssignedTalent ||
+                                                      !agencyStripeReadyForPayouts
+                                                    }
                                                   >
                                                     {isBusy ? (
                                                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -2763,6 +2842,7 @@ const BrandConnectionsView = () => {
                     !selectedOfferId ||
                     !currentContractId ||
                     !hasAssignedTalent ||
+                    !agencyStripeReadyForPayouts ||
                     busyIds.has(currentContractId)
                   }
                 >
