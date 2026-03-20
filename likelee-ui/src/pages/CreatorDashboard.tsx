@@ -9183,17 +9183,25 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              Available Balance
+              Cashoutable Balance (Stripe)
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
               {(
-                (balances.find((b) => b.currency === "USD")?.available_cents ||
+                (stripeBalances.find((b) => b.currency === "USD")
+                  ?.available_cents ||
                   0) / 100
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              {t("creatorDashboard.earnings.metrics.willUpdate")}
+              Available in your connected Stripe account.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 relative z-10">
+              Held (pending transfer): $
+              {(
+                (balances.find((b) => b.currency === "USD")?.available_cents ||
+                  0) / 100
+              ).toFixed(2)}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">

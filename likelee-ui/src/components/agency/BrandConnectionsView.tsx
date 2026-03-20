@@ -2762,11 +2762,12 @@ const BrandConnectionsView = () => {
                   disabled={
                     !selectedOfferId ||
                     !currentContractId ||
-                    !hasAssignedTalent
+                    !hasAssignedTalent ||
+                    busyIds.has(currentContractId)
                   }
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  Send
+                  {busyIds.has(currentContractId) ? "Sending..." : "Send"}
                 </Button>
               </div>
               <Button

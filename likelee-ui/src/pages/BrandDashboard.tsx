@@ -664,6 +664,7 @@ export default function BrandDashboard() {
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
   const hasLoadedOffersRef = useRef(false);
   const hasLoadedBrandAnalyticsRef = useRef(false);
+  const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
   const [escrowReleasedModal, setEscrowReleasedModal] = useState<{
@@ -3627,6 +3628,8 @@ export default function BrandDashboard() {
     action: string,
     note?: string,
   ) => {
+    if (deliverableReviewBusyRef.current.has(deliverableId)) return;
+    deliverableReviewBusyRef.current.add(deliverableId);
     try {
       setReviewing(deliverableId);
       const result = await reviewOfferDeliverable(offerId, deliverableId, {
@@ -3678,6 +3681,7 @@ export default function BrandDashboard() {
         variant: "destructive",
       });
     } finally {
+      deliverableReviewBusyRef.current.delete(deliverableId);
       setReviewing(null);
     }
   };
@@ -3721,6 +3725,17 @@ export default function BrandDashboard() {
         {brandOfferItems.map((offer: any) => {
           const offerId = String(offer?.id || "");
           const expanded = selectedOfferHubId === offerId;
+          const contractsForStatus = expanded
+            ? selectedOfferHubContracts
+            : offer?.offer_contracts;
+          const hasCompletedContract = Array.isArray(contractsForStatus)
+            ? contractsForStatus.some((c: any) => {
+                const st = String(c?.docuseal_status || c?.status || "").toLowerCase();
+                return st === "completed" || st === "signed";
+              })
+            : false;
+          const isFullySigned =
+            Boolean(offer?.is_fully_signed) || hasCompletedContract;
           const downloadedDeliverables = selectedOfferHubDeliverables.filter(
             (d: any) =>
               Boolean(d?.meta?.brand_downloaded_at) &&
@@ -3740,7 +3755,7 @@ export default function BrandDashboard() {
               className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
             >
               {/* Payment Pending Banner */}
-              {offer?.status === "contract_fully_signed" && offer?.payment_status !== "paid" && (
+              {isFullySigned && offer?.payment_status !== "paid" && (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                   <span className="text-amber-700 text-xs font-semibold">
                     ⏳ Contract signed. Payment required before deliverables can start.
@@ -3787,7 +3802,7 @@ export default function BrandDashboard() {
                   </Button>
                 </div>
               )}
-              {offer?.status === "contract_fully_signed" && offer?.payment_status === "paid" && (
+              {isFullySigned && offer?.payment_status === "paid" && (
                 <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
                   <span className="text-emerald-700 text-xs font-semibold">✅ Payment confirmed — deliverables can be submitted.</span>
                 </div>

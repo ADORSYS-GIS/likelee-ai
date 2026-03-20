@@ -101,6 +101,15 @@ export function PublicPackageView() {
     retry: false, // We will handle retries manually for password prompt
   });
 
+  const isPasswordError = useMemo(() => {
+    const status = Number((error as any)?.status || 0);
+    const message = String((error as any)?.message || "").toLowerCase();
+    return (
+      (status === 401 || status === 403) &&
+      (message.includes("password") || message.includes("unlock"))
+    );
+  }, [error]);
+
   const interactionMutation = useMutation({
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
   });
@@ -250,23 +259,6 @@ export function PublicPackageView() {
       type: "favorite" | "callback" | "selected";
     }) => packageApi.deleteInteraction(token!, data),
   });
-
-  const isPasswordError = (() => {
-    const status = Number((error as any)?.status || 0);
-    const message = String((error as any)?.message || "").toLowerCase();
-    return (
-      (status === 401 || status === 403) &&
-      (message.includes("password") || message.includes("unlock"))
-    );
-  })();
-
-  useEffect(() => {
-    if (isPasswordError) {
-      setShowPasswordPrompt(true);
-    } else {
-      setShowPasswordPrompt(false);
-    }
-  }, [isPasswordError]);
 
   useEffect(() => {
     if (packageData) {

@@ -143,6 +143,8 @@ export default function BrandCampaignDashboard({
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [selectedCampaignDeliverables, setSelectedCampaignDeliverables] =
     useState<any[]>([]);
+  const [reviewingDeliverableId, setReviewingDeliverableId] = useState<string | null>(null);
+  const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
     useState<string[]>([]);
   const [markDoneOpen, setMarkDoneOpen] = useState(false);
@@ -815,6 +817,9 @@ export default function BrandCampaignDashboard({
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return;
+    if (deliverableReviewBusyRef.current.has(deliverableId)) return;
+    deliverableReviewBusyRef.current.add(deliverableId);
+    setReviewingDeliverableId(deliverableId);
     try {
       const resp = await base44.post<any>(
         `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/review`,
@@ -850,6 +855,9 @@ export default function BrandCampaignDashboard({
         description: e?.message || "Please try again.",
         variant: "destructive" as any,
       });
+    } finally {
+      deliverableReviewBusyRef.current.delete(deliverableId);
+      setReviewingDeliverableId(null);
     }
   };
   const commentSelectedCampaignDeliverable = async (deliverable: any) => {
@@ -3634,6 +3642,8 @@ export default function BrandCampaignDashboard({
                       const status = String(
                         deliverable?.status || "pending_review",
                       ).toLowerCase();
+                      const deliverableId = String(deliverable?.id || "");
+                      const isBusy = reviewingDeliverableId === deliverableId;
                       const isApproved = ["approved", "accepted", "brand_approved"].includes(
                         status,
                       );
@@ -3700,7 +3710,7 @@ export default function BrandCampaignDashboard({
                                   <Button
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700 text-white rounded-none"
-                                    disabled={isApproved}
+                                    disabled={isApproved || isBusy}
                                     onClick={() =>
                                       void reviewSelectedCampaignDeliverable(
                                         deliverable,
@@ -3708,13 +3718,13 @@ export default function BrandCampaignDashboard({
                                       )
                                     }
                                   >
-                                    {isApproved ? "Approved" : "Approve"}
+                                    {isApproved ? "Approved" : isBusy ? "Approving..." : "Approve"}
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="border-2 border-gray-300 rounded-none"
-                                    disabled={isApproved}
+                                    disabled={isApproved || isBusy}
                                     onClick={() =>
                                       void reviewSelectedCampaignDeliverable(
                                         deliverable,
