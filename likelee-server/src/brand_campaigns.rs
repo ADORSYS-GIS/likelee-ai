@@ -2769,6 +2769,34 @@ pub async fn create_offer_contract(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    // Agencies must assign at least one talent BEFORE preparing contracts for brand campaign offers.
+    // This avoids the "brand pays before assignments exist" payout/distribution failure mode.
+    if user.role == "agency" {
+        let assignments_resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("id")
+            .eq("offer_id", &offer_id)
+            .eq("agency_id", &user.id)
+            .eq("status", "assigned")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !assignments_resp.status().is_success() {
+            return Err(sanitize_db_error(
+                assignments_resp.status().as_u16(),
+                assignments_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&assignments_txt).unwrap_or_default();
+        if assignments_rows.is_empty() {
+            return Err((StatusCode::BAD_REQUEST, "no_talents_assigned".to_string()));
+        }
+    }
+
     let insert_payload = json!({
         "offer_id": offer_id,
         "brand_campaign_id": offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
@@ -2816,6 +2844,32 @@ pub async fn send_offer_contract(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    if user.role == "agency" {
+        let assignments_resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("id")
+            .eq("offer_id", &offer_id)
+            .eq("agency_id", &user.id)
+            .eq("status", "assigned")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !assignments_resp.status().is_success() {
+            return Err(sanitize_db_error(
+                assignments_resp.status().as_u16(),
+                assignments_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&assignments_txt).unwrap_or_default();
+        if assignments_rows.is_empty() {
+            return Err((StatusCode::BAD_REQUEST, "no_talents_assigned".to_string()));
+        }
+    }
 
     let contract_id = if let Some(id) = payload.contract_id.as_deref() {
         trim_non_empty(id, "contract_id")?
@@ -4523,14 +4577,16 @@ pub async fn create_offer_talent_assignment(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
-    let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
-    if offer_status != "contract_fully_signed"
-        && offer_status != "signed"
-        && offer_status != "completed"
-    {
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
+    if payment_status != "unpaid" && payment_status != "" {
         return Err((
             StatusCode::BAD_REQUEST,
-            "offer must be fully signed before assigning talent".to_string(),
+            "cannot_change_assignments_after_payment_started".to_string(),
         ));
     }
     let talent_id = trim_non_empty(&payload.talent_id, "talent_id")?;
@@ -4580,7 +4636,19 @@ pub async fn delete_offer_talent_assignment(
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
+    if payment_status != "unpaid" && payment_status != "" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot_change_assignments_after_payment_started".to_string(),
+        ));
+    }
     let resp = state
         .pg
         .from("offer_talent_assignments")
