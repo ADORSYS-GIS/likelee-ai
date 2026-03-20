@@ -115,28 +115,15 @@ export function AgencyDeliverablesView() {
     open: boolean;
     offerId: string;
     deliverableId: string;
-    action: "approve" | "changes_requested" | "reject" | "final_approve";
+    action: "changes_requested" | "reject" | "final_approve";
     note: string;
     submitting: boolean;
   }>({
     open: false,
     offerId: "",
     deliverableId: "",
-    action: "approve",
+    action: "changes_requested",
     note: "",
-    submitting: false,
-  });
-  const [confirmSendDialog, setConfirmSendDialog] = useState<{
-    open: boolean;
-    offerId: string;
-    deliverableId?: string;
-    mode: "creator" | "agency";
-    submitting: boolean;
-  }>({
-    open: false,
-    offerId: "",
-    deliverableId: "",
-    mode: "creator",
     submitting: false,
   });
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -522,12 +509,12 @@ export function AgencyDeliverablesView() {
 
           {options?.showActions && options?.offerId && (
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button
-                size="sm"
-                className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (isBrandApproved) {
+              {isBrandApproved && (
+                <Button
+                  size="sm"
+                  className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white col-span-2"
+                  onClick={(event) => {
+                    event.stopPropagation();
                     setReviewDialog({
                       open: true,
                       offerId: options.offerId || "",
@@ -536,34 +523,16 @@ export function AgencyDeliverablesView() {
                       note: "",
                       submitting: false,
                     });
-                  } else {
-                    setConfirmSendDialog({
-                      open: true,
-                      offerId: options.offerId || "",
-                      deliverableId: String(deliverable?.id || ""),
-                      mode: "creator",
-                      submitting: false,
-                    });
-                  }
-                }}
-                disabled={isSentToBrand || isFinalized || (options.offerId && (() => {
-                  const offer = offers.find(o => String(o.id) === options.offerId);
-                  return String(offer?.payment_status || "").toLowerCase() !== "paid";
-                })())}
-              >
-                {isSentToBrand
-                  ? "Sent to Brand"
-                  : isBrandApproved
-                    ? "Approve"
-                    : (options.offerId && (() => {
-                        const offer = offers.find(o => String(o.id) === options.offerId);
-                        return String(offer?.payment_status || "").toLowerCase() !== "paid";
-                      })()) ? "Awaiting Payment" : "Send to Brand"}
-              </Button>
+                  }}
+                  disabled={isFinalized}
+                >
+                  Approve
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50"
+                className={`h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50 ${isBrandApproved ? "col-span-1" : "col-span-2"}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   setReviewDialog({
@@ -601,25 +570,7 @@ export function AgencyDeliverablesView() {
             </div>
           )}
 
-          {options?.layout === "agency" && options?.offerId && isDraft && (
-            <div className="pt-1">
-              <Button
-                size="sm"
-                className="w-full h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setConfirmSendDialog({
-                    open: true,
-                    offerId: options.offerId || "",
-                    mode: "agency",
-                    submitting: false,
-                  });
-                }}
-              >
-                Send to Brand
-              </Button>
-            </div>
-          )}
+          {options?.layout === "agency" && options?.offerId && isDraft && null}
         </div>
       </Card>
     );
@@ -792,7 +743,7 @@ export function AgencyDeliverablesView() {
         open: false,
         offerId: "",
         deliverableId: "",
-        action: "approve",
+        action: "changes_requested",
         note: "",
         submitting: false,
       });
@@ -804,42 +755,6 @@ export function AgencyDeliverablesView() {
         variant: "destructive",
       });
       setReviewDialog((prev) => ({ ...prev, submitting: false }));
-    }
-  };
-
-  const handleSendToBrand = async () => {
-    if (!confirmSendDialog.offerId) return;
-    if (confirmSendDialog.submitting) return;
-    setConfirmSendDialog((prev) => ({ ...prev, submitting: true }));
-    try {
-      if (confirmSendDialog.mode === "creator") {
-        if (!confirmSendDialog.deliverableId) {
-          throw new Error("Missing deliverable");
-        }
-        await reviewOfferDeliverable(
-          confirmSendDialog.offerId,
-          confirmSendDialog.deliverableId,
-          { action: "approve" },
-        );
-      } else {
-        await submitAllDraftDeliverables(confirmSendDialog.offerId);
-      }
-      await loadDeliverables(confirmSendDialog.offerId);
-      setConfirmSendDialog({
-        open: false,
-        offerId: "",
-        deliverableId: "",
-        mode: "creator",
-        submitting: false,
-      });
-      toast({ title: "Sent to brand" });
-    } catch (e: any) {
-      toast({
-        title: "Send failed",
-        description: e?.message || "Please try again.",
-        variant: "destructive",
-      });
-      setConfirmSendDialog((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -1564,22 +1479,18 @@ export function AgencyDeliverablesView() {
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <DialogTitle className="text-2xl font-bold text-white">
-                {reviewDialog.action === "approve"
-                  ? "Send to Brand"
-                  : reviewDialog.action === "final_approve"
-                    ? "Approve Deliverable"
-                    : reviewDialog.action === "reject"
-                      ? "Reject Deliverable"
-                      : "Request Changes"}
+                {reviewDialog.action === "final_approve"
+                  ? "Approve Deliverable"
+                  : reviewDialog.action === "reject"
+                    ? "Reject Deliverable"
+                    : "Request Changes"}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                {reviewDialog.action === "approve"
-                  ? "Forward this deliverable to the brand for approval."
-                  : reviewDialog.action === "final_approve"
-                    ? "Mark this deliverable as approved after brand sign-off."
-                    : reviewDialog.action === "reject"
-                      ? "Reject this deliverable and notify the creator."
-                      : "Request revisions from the creator before sending to brand."}
+                {reviewDialog.action === "final_approve"
+                  ? "Mark this deliverable as approved after brand sign-off."
+                  : reviewDialog.action === "reject"
+                    ? "Reject this deliverable and notify the creator."
+                    : "Request revisions from the creator."}
               </p>
             </DialogHeader>
           </div>
@@ -1623,66 +1534,18 @@ export function AgencyDeliverablesView() {
                 onClick={handleReviewDeliverable}
                 disabled={
                   reviewDialog.submitting ||
-                  (reviewDialog.action !== "approve" &&
-                    reviewDialog.action !== "final_approve" &&
+                  (reviewDialog.action !== "final_approve" &&
                     !reviewDialog.note.trim())
                 }
               >
                 {reviewDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : reviewDialog.action === "approve" ? (
-                  "Send to Brand"
                 ) : reviewDialog.action === "final_approve" ? (
                   "Approve"
                 ) : reviewDialog.action === "reject" ? (
                   "Reject"
                 ) : (
                   "Send Feedback"
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={confirmSendDialog.open}
-        onOpenChange={(open) =>
-          setConfirmSendDialog((prev) => ({ ...prev, open }))
-        }
-      >
-        <DialogContent className="sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
-          <div className="bg-gray-900 p-6 text-white">
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-xl font-bold text-white">
-                Send to Brand
-              </DialogTitle>
-              <p className="text-gray-400 text-sm">
-                Are you sure you want to send this deliverable to the brand for
-                review?
-              </p>
-            </DialogHeader>
-          </div>
-          <div className="p-6 bg-white">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 h-11 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50"
-                onClick={() =>
-                  setConfirmSendDialog((prev) => ({ ...prev, open: false }))
-                }
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 h-11 rounded-none bg-black hover:bg-gray-800 text-white font-bold"
-                onClick={handleSendToBrand}
-                disabled={confirmSendDialog.submitting}
-              >
-                {confirmSendDialog.submitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Send"
                 )}
               </Button>
             </div>
