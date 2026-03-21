@@ -116,6 +116,13 @@ const BrandConnectionsView = () => {
     sending: false,
   });
 
+  const [sendPrecheckOpen, setSendPrecheckOpen] = useState(false);
+  const [sendPrecheckTitle, setSendPrecheckTitle] = useState("");
+  const [sendPrecheckBody, setSendPrecheckBody] = useState<React.ReactNode>(null);
+  const [sendPrecheckActions, setSendPrecheckActions] = useState<
+    { label: string; onClick: () => void; variant?: "default" | "outline" }[]
+  >([]);
+
   const isConfidentialBrandPlaceholder = (value: unknown) =>
     String(value || "")
       .trim()
@@ -333,25 +340,130 @@ const BrandConnectionsView = () => {
   const agencyStripeReadyForPayouts =
     agencyStripeConnected && agencyStripeTransfersEnabled;
 
+  const openSendPrecheckModal = (opts: {
+    title: string;
+    body: React.ReactNode;
+    actions: {
+      label: string;
+      onClick: () => void;
+      variant?: "default" | "outline";
+    }[];
+  }) => {
+    setSendPrecheckTitle(opts.title);
+    setSendPrecheckBody(opts.body);
+    setSendPrecheckActions(opts.actions);
+    setSendPrecheckOpen(true);
+  };
+
+  const attemptSendContract = (offerId: string, contractId: string) => {
+    if (busyIds.has(contractId)) return;
+
+    if (!hasAssignedTalent) {
+      openSendPrecheckModal({
+        title: "Assign talents before sending",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              This offer has no assigned talents. Assign at least 1 talent
+              before sending the contract.
+            </p>
+            <p className="text-xs text-gray-500">
+              Assignments are locked after the contract is sent.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Close",
+            variant: "outline",
+            onClick: () => setSendPrecheckOpen(false),
+          },
+        ],
+      });
+      return;
+    }
+
+    if (!agencyStripeConnected) {
+      openSendPrecheckModal({
+        title: "Connect Stripe before sending",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              Connect your agency Stripe account before sending contracts. This
+              ensures payouts and commissions can be transferred correctly when
+              the brand pays.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Go to Payouts",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              navigate("/AgencyDashboard?tab=payouts");
+            },
+          },
+          {
+            label: "Close",
+            variant: "outline",
+            onClick: () => setSendPrecheckOpen(false),
+          },
+        ],
+      });
+      return;
+    }
+
+    if (agencyStripeConnected && !agencyStripeTransfersEnabled) {
+      openSendPrecheckModal({
+        title: "Stripe transfers not enabled",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              Your Stripe account is connected, but Stripe reports that{" "}
+              <span className="font-semibold">transfers are not enabled</span>{" "}
+              for this account yet.
+            </p>
+            <p>
+              If you send this contract now, the brand may be able to pay, but
+              transfers to your agency and creators can fail until Stripe
+              enables transfers.
+            </p>
+            <p className="text-xs text-gray-500">
+              Recommendation: finish Stripe onboarding in Payouts. If transfers
+              stay disabled, contact system support for help.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Send anyway",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              handleSendContract(offerId, contractId);
+            },
+          },
+          {
+            label: "Go to Payouts",
+            variant: "outline",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              navigate("/AgencyDashboard?tab=payouts");
+            },
+          },
+        ],
+      });
+      return;
+    }
+
+    handleSendContract(offerId, contractId);
+  };
+
   const builderSendDisabledReason = useMemo(() => {
     if (!selectedOfferId) return "Select an offer before sending.";
     if (!currentContractId) return "Select a contract before sending.";
-    if (!hasAssignedTalent)
-      return "Assign at least 1 talent to this offer before sending.";
-    if (!agencyStripeConnected)
-      return "Connect your agency Stripe account before sending.";
-    if (!agencyStripeTransfersEnabled)
-      return "Finish Stripe onboarding (transfers not enabled yet).";
     if (busyIds.has(currentContractId)) return "Sending…";
     return "";
-  }, [
-    agencyStripeConnected,
-    agencyStripeTransfersEnabled,
-    busyIds,
-    currentContractId,
-    hasAssignedTalent,
-    selectedOfferId,
-  ]);
+  }, [busyIds, currentContractId, selectedOfferId]);
 
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
@@ -680,15 +792,6 @@ const BrandConnectionsView = () => {
         title: "Connect Stripe first",
         description:
           "Connect your agency Stripe account before sending contracts. Brands can’t pay until payout setup is complete.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!agencyStripeTransfersEnabled) {
-      toast({
-        title: "Finish Stripe onboarding",
-        description:
-          "Your Stripe account isn’t enabled for transfers yet. Complete onboarding in Payouts so commissions can be transferred when brands pay.",
         variant: "destructive",
       });
       return;
@@ -2190,15 +2293,13 @@ const BrandConnectionsView = () => {
                                                     variant="default"
                                                     className="bg-blue-600 hover:bg-blue-700 h-9"
                                                     onClick={() =>
-                                                      handleSendContract(
+                                                      attemptSendContract(
                                                         selectedOfferId,
                                                         cId,
                                                       )
                                                     }
                                                     disabled={
-                                                      isBusy ||
-                                                      !hasAssignedTalent ||
-                                                      !agencyStripeReadyForPayouts
+                                                      isBusy
                                                     }
                                                   >
                                                     {isBusy ? (
@@ -2915,6 +3016,29 @@ const BrandConnectionsView = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={sendPrecheckOpen} onOpenChange={setSendPrecheckOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>{sendPrecheckTitle || "Before you send"}</DialogTitle>
+            <DialogDescription>
+              Please review the information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-1">{sendPrecheckBody}</div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            {sendPrecheckActions.map((a, idx) => (
+              <Button
+                key={`${a.label}-${idx}`}
+                variant={a.variant === "outline" ? "outline" : "default"}
+                onClick={a.onClick}
+              >
+                {a.label}
+              </Button>
+            ))}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* DocuSeal Builder Modal */}
       {builderOpen && builderToken && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
@@ -2942,13 +3066,11 @@ const BrandConnectionsView = () => {
                       });
                       return;
                     }
-                    handleSendContract(selectedOfferId, currentContractId);
+                    attemptSendContract(selectedOfferId, currentContractId);
                   }}
                   disabled={
                     !selectedOfferId ||
                     !currentContractId ||
-                    !hasAssignedTalent ||
-                    !agencyStripeReadyForPayouts ||
                     busyIds.has(currentContractId)
                   }
                   title={builderSendDisabledReason || undefined}
