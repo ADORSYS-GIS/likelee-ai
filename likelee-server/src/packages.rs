@@ -647,8 +647,9 @@ pub async fn update_package(
     // Helper to treat empty strings as None
     let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
-    let desired_password_protected =
-        payload.password_protected.unwrap_or(existing_password_protected);
+    let desired_password_protected = payload
+        .password_protected
+        .unwrap_or(existing_password_protected);
 
     // If enabling protection and we don't already have a stored hash, require a password.
     if desired_password_protected && !existing_password_hash_present {
@@ -667,7 +668,10 @@ pub async fn update_package(
 
     // 2. Update Metadata (build dynamically so we don't accidentally null-out password_hash)
     let mut package_update = serde_json::Map::new();
-    package_update.insert("title".to_string(), serde_json::Value::String(payload.title));
+    package_update.insert(
+        "title".to_string(),
+        serde_json::Value::String(payload.title),
+    );
     package_update.insert(
         "description".to_string(),
         sanitize(&payload.description)
@@ -750,7 +754,12 @@ pub async fn update_package(
     if !desired_password_protected {
         // When turning off protection, clear the stored hash.
         package_update.insert("password_hash".to_string(), serde_json::Value::Null);
-    } else if let Some(p) = payload.password.as_ref().map(|s| s.trim()).filter(|p| !p.is_empty()) {
+    } else if let Some(p) = payload
+        .password
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|p| !p.is_empty())
+    {
         // Only update the hash when a new password is explicitly provided.
         if let Some(hash) = bcrypt::hash(p, 10).ok() {
             package_update.insert("password_hash".to_string(), serde_json::Value::String(hash));

@@ -512,21 +512,42 @@ pub async fn create_campaign_offer_checkout(
     }
     let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
     let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
-    let offer = offer_rows.first().ok_or((StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+    let offer = offer_rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
 
     let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
     if offer_status != "contract_fully_signed" {
-        return Err((StatusCode::BAD_REQUEST, "contract_must_be_fully_signed".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "contract_must_be_fully_signed".to_string(),
+        ));
     }
 
-    let payment_status = offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("unpaid");
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
     if payment_status != "unpaid" {
-        return Err((StatusCode::BAD_REQUEST, "offer_already_paid_or_processing".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "offer_already_paid_or_processing".to_string(),
+        ));
     }
 
-    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
-    let target_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
-    let mut billing_request_id = offer.get("billing_request_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let target_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let mut billing_request_id = offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     // Hard requirements for campaign offers:
     // - Agency offers: at least one talent must be assigned BEFORE the brand can pay.
@@ -550,7 +571,10 @@ pub async fn create_campaign_offer_checkout(
                 agency_acct_resp.text().await.unwrap_or_default(),
             ));
         }
-        let agency_acct_text = agency_acct_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let agency_acct_text = agency_acct_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
         let agency_rows: Vec<serde_json::Value> =
             serde_json::from_str(&agency_acct_text).unwrap_or_default();
         let agency_stripe_account_id = agency_rows
@@ -584,7 +608,10 @@ pub async fn create_campaign_offer_checkout(
                 assignments_resp.text().await.unwrap_or_default(),
             ));
         }
-        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_txt = assignments_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
         let assignments_rows: Vec<serde_json::Value> =
             serde_json::from_str(&assignments_txt).unwrap_or_default();
         let mut talent_ids: Vec<String> = assignments_rows
@@ -782,7 +809,10 @@ pub async fn create_campaign_offer_checkout(
     }
 
     if target_type == "agency" && billing_request_id.is_empty() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, "missing_billing_stub_for_agency".to_string()));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing_billing_stub_for_agency".to_string(),
+        ));
     }
 
     let budget_snapshot = offer
@@ -796,7 +826,7 @@ pub async fn create_campaign_offer_checkout(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .unwrap_or_else(|| "0".to_string());
-    
+
     let budget_str = budget_str.replace(",", "");
     let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
     let amount_cents = (budget_total * 100.0).round() as i64;
@@ -831,7 +861,10 @@ pub async fn create_campaign_offer_checkout(
 
     if target_type == "agency" {
         md.insert("agency_id".to_string(), target_id.to_string());
-        md.insert("licensing_request_ids".to_string(), billing_request_id.to_string());
+        md.insert(
+            "licensing_request_ids".to_string(),
+            billing_request_id.to_string(),
+        );
     }
 
     cs_params.metadata = Some(md);
@@ -839,11 +872,15 @@ pub async fn create_campaign_offer_checkout(
     cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
         price_data: Some(stripe_sdk::CreateCheckoutSessionLineItemsPriceData {
             currency: stripe_sdk::Currency::from_str("usd").unwrap(),
-            product_data: Some(stripe_sdk::CreateCheckoutSessionLineItemsPriceDataProductData {
-                name: "Campaign Offer Escrow Deposit".to_string(),
-                description: Some("Funds will be held in escrow until deliverables are approved.".to_string()),
-                ..Default::default()
-            }),
+            product_data: Some(
+                stripe_sdk::CreateCheckoutSessionLineItemsPriceDataProductData {
+                    name: "Campaign Offer Escrow Deposit".to_string(),
+                    description: Some(
+                        "Funds will be held in escrow until deliverables are approved.".to_string(),
+                    ),
+                    ..Default::default()
+                },
+            ),
             unit_amount: Some(amount_cents),
             ..Default::default()
         }),
@@ -861,7 +898,10 @@ pub async fn create_campaign_offer_checkout(
         .map(|u| u.to_string())
         .unwrap_or_default();
     if url.is_empty() {
-        return Err((StatusCode::BAD_GATEWAY, "stripe_checkout_missing_url".to_string()));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
     }
 
     // Mark as processing

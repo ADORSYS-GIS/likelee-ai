@@ -23,11 +23,7 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
-    let st = value
-        .as_str()
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
+    let st = value.as_str().unwrap_or("").trim().to_lowercase();
     st == "completed" || st == "signed"
 }
 
@@ -37,7 +33,11 @@ async fn attach_is_fully_signed_to_offers(
 ) -> Result<(), String> {
     let offer_ids: Vec<String> = offers
         .iter()
-        .filter_map(|o| o.get("id").and_then(|v| v.as_str()).map(|s| s.trim().to_string()))
+        .filter_map(|o| {
+            o.get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+        })
         .filter(|id| !id.is_empty())
         .collect();
     if offer_ids.is_empty() {
@@ -114,11 +114,7 @@ async fn attach_is_fully_signed_to_offers(
 
     for o in offers.iter_mut() {
         if let Some(obj) = o.as_object_mut() {
-            let offer_id = obj
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim();
+            let offer_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
             let signed = !offer_id.is_empty() && signed_offer_ids.contains(offer_id);
             obj.insert("is_fully_signed".to_string(), json!(signed));
         }
@@ -406,7 +402,10 @@ async fn resolve_agency_talent(
         .from("agency_users")
         .select("*")
         .eq("agency_id", agency_id)
-        .or(format!("creator_id.eq.{},user_id.eq.{}", talent_id, talent_id))
+        .or(format!(
+            "creator_id.eq.{},user_id.eq.{}",
+            talent_id, talent_id
+        ))
         .limit(1)
         .execute()
         .await
@@ -455,7 +454,10 @@ async fn resolve_agency_talent(
             .from("agency_users")
             .select("*")
             .eq("agency_id", agency_id)
-            .or(format!("creator_id.eq.{},user_id.eq.{}", creator_id, creator_id))
+            .or(format!(
+                "creator_id.eq.{},user_id.eq.{}",
+                creator_id, creator_id
+            ))
             .limit(1)
             .execute()
             .await
@@ -2253,7 +2255,14 @@ pub async fn create_campaign_offers(
             let amount_cents = (budget_float * 100.0).round() as i64;
 
             let mut brand_name = "Brand".to_string();
-            let b_resp = state.pg.from("brands").select("company_name").eq("id", &user.id).single().execute().await;
+            let b_resp = state
+                .pg
+                .from("brands")
+                .select("company_name")
+                .eq("id", &user.id)
+                .single()
+                .execute()
+                .await;
             if let Ok(br) = b_resp {
                 if let Ok(bt) = br.text().await {
                     if let Ok(bj) = serde_json::from_str::<serde_json::Value>(&bt) {
@@ -2296,7 +2305,7 @@ pub async fn create_campaign_offers(
                                     .update(json!({ "billing_request_id": stub_id }).to_string())
                                     .execute()
                                     .await;
-                                
+
                                 // Create the campaign entry for accounting (similar to licensing flow)
                                 let _ = state
                                     .pg
@@ -2872,7 +2881,10 @@ pub async fn create_offer_contract(
                 assignments_resp.text().await.unwrap_or_default(),
             ));
         }
-        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_txt = assignments_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
         let assignments_rows: Vec<serde_json::Value> =
             serde_json::from_str(&assignments_txt).unwrap_or_default();
         if assignments_rows.is_empty() {
@@ -2946,7 +2958,10 @@ pub async fn send_offer_contract(
                 assignments_resp.text().await.unwrap_or_default(),
             ));
         }
-        let assignments_txt = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let assignments_txt = assignments_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
         let assignments_rows: Vec<serde_json::Value> =
             serde_json::from_str(&assignments_txt).unwrap_or_default();
         if assignments_rows.is_empty() {
@@ -4673,7 +4688,10 @@ pub async fn list_offer_talent_assignments(
             .from("agency_users")
             .select("id, full_legal_name, stage_name, profile_photo_url, creator_id")
             .eq("agency_id", &user.id)
-            .or(format!("creator_id.eq.{},user_id.eq.{}", creator_id, creator_id))
+            .or(format!(
+                "creator_id.eq.{},user_id.eq.{}",
+                creator_id, creator_id
+            ))
             .limit(1)
             .execute()
             .await;
@@ -5327,7 +5345,10 @@ pub async fn upload_offer_deliverable(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    let payment_status = _offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("unpaid");
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
     if payment_status != "paid" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
@@ -5769,7 +5790,10 @@ pub async fn upload_offer_deliverable_form(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    let payment_status = _offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("unpaid");
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
     if payment_status != "paid" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
@@ -6056,7 +6080,10 @@ pub async fn submit_draft_deliverables(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    let payment_status = _offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("unpaid");
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
     if payment_status != "paid" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
@@ -6277,10 +6304,7 @@ pub async fn serve_offer_deliverable(
             .and_then(|v| v.as_str())
             .or_else(|| del.get("caption").and_then(|v| v.as_str()))
             .unwrap_or("deliverable");
-        let filename = filename
-            .trim()
-            .replace(['\r', '\n'], " ")
-            .replace('"', "'");
+        let filename = filename.trim().replace(['\r', '\n'], " ").replace('"', "'");
         let content_disposition = format!("attachment; filename=\"{filename}\"");
         if let Ok(v) = HeaderValue::from_str(&content_disposition) {
             resp.headers_mut().insert(header::CONTENT_DISPOSITION, v);
@@ -6537,7 +6561,9 @@ pub async fn review_offer_deliverable(
                 released_now: false,
             });
 
-        return Ok(Json(json!({"status":"ok","deliverable": row, "escrow": outcome})));
+        return Ok(Json(
+            json!({"status":"ok","deliverable": row, "escrow": outcome}),
+        ));
     }
 
     Ok(Json(json!({"status":"ok","deliverable": row})))
@@ -6571,7 +6597,10 @@ async fn try_release_campaign_offer_escrow(
         .and_then(|v| v.as_str())
         .unwrap_or("holding");
 
-    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let payment_status = offer
         .get("payment_status")
         .and_then(|v| v.as_str())
@@ -6631,7 +6660,10 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+    let agency_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let billing_request_id = offer
         .get("billing_request_id")
         .and_then(|v| v.as_str())
@@ -6751,7 +6783,8 @@ async fn release_campaign_offer_transfers(
         return Ok(());
     }
     let payouts_text = payouts_resp.text().await.map_err(|e| e.to_string())?;
-    let payouts_rows: Vec<serde_json::Value> = serde_json::from_str(&payouts_text).unwrap_or_default();
+    let payouts_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&payouts_text).unwrap_or_default();
     let payout = match payouts_rows.first() {
         Some(p) => p,
         None => return Ok(()),
@@ -6793,7 +6826,8 @@ async fn release_campaign_offer_transfers(
                     "record_campaign_offer_transfer",
                     "p_offer_id",
                     offer_id,
-                ).await;
+                )
+                .await;
             }
             Err(_) => {}
         }
@@ -6806,7 +6840,10 @@ async fn release_campaign_offer_transfers(
         .unwrap_or_default();
 
     for split in &talent_splits {
-        let talent_id = split.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+        let talent_id = split
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let amount_cents = split
             .get("amount_cents")
             .and_then(|v| v.as_i64())
@@ -6820,7 +6857,7 @@ async fn release_campaign_offer_transfers(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .trim();
-            
+
         let creator_id = if creator_id.is_empty() {
             get_creator_id_from_talent_id(state, talent_id)
                 .await
@@ -6855,7 +6892,8 @@ async fn release_campaign_offer_transfers(
                 "record_campaign_offer_transfer",
                 "p_offer_id",
                 offer_id,
-            ).await;
+            )
+            .await;
         }
     }
 
@@ -6883,7 +6921,10 @@ async fn get_agency_stripe_account(state: &AppState, agency_id: &str) -> Result<
         .ok_or_else(|| "Agency has no connected Stripe account".to_string())
 }
 
-async fn get_creator_id_from_talent_id(state: &AppState, talent_id: &str) -> Result<String, String> {
+async fn get_creator_id_from_talent_id(
+    state: &AppState,
+    talent_id: &str,
+) -> Result<String, String> {
     let resp = state
         .pg
         .from("agency_users")
@@ -7282,7 +7323,10 @@ pub async fn comment_offer_deliverable(
 
 /// Automatically generates a licensing_request billing stub for a fully signed campaign offer (Agency only).
 /// This hooks into the existing `payouts.rs` system seamlessly.
-pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> Result<String, String> {
+pub async fn ensure_campaign_billing_stub(
+    state: &AppState,
+    offer_id: &str,
+) -> Result<String, String> {
     let offer_resp = state
         .pg
         .from("campaign_offers")
@@ -7300,7 +7344,10 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
         None => return Err("offer_not_found".to_string()),
     };
 
-    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if target_type != "agency" {
         // Independent creators bypass licensing_requests entirely.
         return Ok("".to_string());
@@ -7318,32 +7365,67 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
                 .await;
             if let Ok(r) = existing_payments_resp {
                 if let Ok(txt) = r.text().await {
-                    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&txt).unwrap_or_default();
                     if !rows.is_empty() {
                         // Payments already exist, nothing to do.
                         return Ok(existing_id.to_string());
                     }
                     // Fall through to create missing payments rows.
-                    tracing::warn!(offer_id, "billing stub exists but no payments rows; creating them now");
+                    tracing::warn!(
+                        offer_id,
+                        "billing stub exists but no payments rows; creating them now"
+                    );
                 }
             }
             // Rebuild enough state to create payments rows below.
-            let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+            let agency_id = offer
+                .get("target_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let brand_id = offer.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-            let brand_campaign_id = offer.get("brand_campaign_id").and_then(|v| v.as_str()).unwrap_or("");
-            let budget_snapshot = offer.get("budget_snapshot").and_then(|v| v.as_object()).cloned().unwrap_or_default();
-            let budget_str = budget_snapshot.get("budget_total").and_then(|v| v.as_str()).unwrap_or("0").replace(",", "");
+            let brand_campaign_id = offer
+                .get("brand_campaign_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let budget_snapshot = offer
+                .get("budget_snapshot")
+                .and_then(|v| v.as_object())
+                .cloned()
+                .unwrap_or_default();
+            let budget_str = budget_snapshot
+                .get("budget_total")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .replace(",", "");
             let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
-            let assignments_resp = state.pg.from("offer_talent_assignments").select("talent_id").eq("offer_id", offer_id).eq("status", "assigned").execute().await.map_err(|e| e.to_string())?;
-            let assignments_text = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let assignments: Vec<serde_json::Value> = serde_json::from_str(&assignments_text).unwrap_or_default();
+            let assignments_resp = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("talent_id")
+                .eq("offer_id", offer_id)
+                .eq("status", "assigned")
+                .execute()
+                .await
+                .map_err(|e| e.to_string())?;
+            let assignments_text = assignments_resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "[]".into());
+            let assignments: Vec<serde_json::Value> =
+                serde_json::from_str(&assignments_text).unwrap_or_default();
             if assignments.is_empty() {
                 return Ok(existing_id.to_string());
             }
             let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
             for assigned in &assignments {
-                let tid = assigned.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-                if tid.is_empty() { continue; }
+                let tid = assigned
+                    .get("talent_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if tid.is_empty() {
+                    continue;
+                }
                 let payment_body = json!({
                     "agency_id": agency_id,
                     "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_id.to_string()) },
@@ -7354,15 +7436,28 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
                     "gross_cents": split_cents,
                     "licensing_request_id": existing_id,
                 });
-                let pay_res = state.pg.from("payments").insert(payment_body.to_string()).execute().await;
+                let pay_res = state
+                    .pg
+                    .from("payments")
+                    .insert(payment_body.to_string())
+                    .execute()
+                    .await;
                 match pay_res {
                     Ok(resp) => {
                         if !resp.status().is_success() {
-                            tracing::error!("Failed to insert missing payment for talent {}: {}", tid, resp.text().await.unwrap_or_default());
+                            tracing::error!(
+                                "Failed to insert missing payment for talent {}: {}",
+                                tid,
+                                resp.text().await.unwrap_or_default()
+                            );
                         }
                     }
                     Err(e) => {
-                        tracing::error!("Network error inserting missing payment for talent {}: {}", tid, e);
+                        tracing::error!(
+                            "Network error inserting missing payment for talent {}: {}",
+                            tid,
+                            e
+                        );
                     }
                 }
             }
@@ -7370,9 +7465,15 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
         }
     }
 
-    let agency_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+    let agency_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let brand_id = offer.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-    let brand_campaign_id = offer.get("brand_campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+    let brand_campaign_id = offer
+        .get("brand_campaign_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let budget_snapshot = offer
         .get("budget_snapshot")
         .and_then(|v| v.as_object())
@@ -7384,7 +7485,7 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .unwrap_or_else(|| "0".to_string());
-    
+
     // remove commas just in case
     let budget_str = budget_str.replace(",", "");
     let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
@@ -7399,16 +7500,24 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
         .execute()
         .await
         .map_err(|e| e.to_string())?;
-    let assignments_text = assignments_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let assignments: Vec<serde_json::Value> = serde_json::from_str(&assignments_text).unwrap_or_default();
+    let assignments_text = assignments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".into());
+    let assignments: Vec<serde_json::Value> =
+        serde_json::from_str(&assignments_text).unwrap_or_default();
 
     if assignments.is_empty() {
-        tracing::warn!("No talents assigned to offer {}, cannot create billing stub.", offer_id);
+        tracing::warn!(
+            "No talents assigned to offer {}, cannot create billing stub.",
+            offer_id
+        );
         return Err("no_talents_assigned".to_string());
     }
 
     let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
-    let primary_talent_id = assignments.first()
+    let primary_talent_id = assignments
+        .first()
         .and_then(|a| a.get("talent_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
@@ -7434,23 +7543,36 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
 
     let lr_status = lr_resp.status();
     if !lr_status.is_success() {
-        tracing::error!("Failed to create billing stub for offer {}: {}", offer_id, lr_resp.text().await.unwrap_or_default());
+        tracing::error!(
+            "Failed to create billing stub for offer {}: {}",
+            offer_id,
+            lr_resp.text().await.unwrap_or_default()
+        );
         return Err("failed_to_create_stub".to_string());
     }
-    
-    let lr_row: serde_json::Value = serde_json::from_str(&lr_resp.text().await.unwrap_or_default()).unwrap_or_default();
+
+    let lr_row: serde_json::Value =
+        serde_json::from_str(&lr_resp.text().await.unwrap_or_default()).unwrap_or_default();
     let lr_id = lr_row.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
     // Link back to offer
-    let _ = state.pg.from("campaign_offers")
+    let _ = state
+        .pg
+        .from("campaign_offers")
         .update(json!({"billing_request_id": lr_id}).to_string())
         .eq("id", offer_id)
-        .execute().await;
+        .execute()
+        .await;
 
     // Create tracking rows in `payments`
     for assigned in assignments {
-        let tid = assigned.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-        if tid.is_empty() { continue; }
+        let tid = assigned
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if tid.is_empty() {
+            continue;
+        }
 
         let payment_body = json!({
             "agency_id": agency_id,
@@ -7463,11 +7585,20 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
             "licensing_request_id": lr_id,
         });
 
-        let pay_res = state.pg.from("payments").insert(payment_body.to_string()).execute().await;
+        let pay_res = state
+            .pg
+            .from("payments")
+            .insert(payment_body.to_string())
+            .execute()
+            .await;
         match pay_res {
             Ok(resp) => {
                 if !resp.status().is_success() {
-                    tracing::error!("Failed to insert payment for talent {}: {}", tid, resp.text().await.unwrap_or_default());
+                    tracing::error!(
+                        "Failed to insert payment for talent {}: {}",
+                        tid,
+                        resp.text().await.unwrap_or_default()
+                    );
                 }
             }
             Err(e) => {
@@ -7476,7 +7607,10 @@ pub async fn ensure_campaign_billing_stub(state: &AppState, offer_id: &str) -> R
         }
     }
 
-    info!(offer_id, "Generated billing stub {} with {} per-talent payments.", lr_id, split_cents);
+    info!(
+        offer_id,
+        "Generated billing stub {} with {} per-talent payments.", lr_id, split_cents
+    );
     Ok(lr_id.to_string())
 }
 

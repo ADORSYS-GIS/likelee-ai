@@ -827,9 +827,7 @@ pub async fn serve_booking_file(
             .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
     );
 
-    let safe_name = file_name
-        .replace(['\r', '\n'], " ")
-        .replace('"', "'");
+    let safe_name = file_name.replace(['\r', '\n'], " ").replace('"', "'");
     let cd = format!("attachment; filename=\"{safe_name}\"");
     if let Ok(v) = HeaderValue::from_str(&cd) {
         resp.headers_mut().insert(header::CONTENT_DISPOSITION, v);
