@@ -4740,7 +4740,7 @@ pub async fn create_offer_talent_assignment(
         .unwrap_or("unpaid")
         .trim()
         .to_lowercase();
-    if payment_status != "unpaid" && payment_status != "" {
+    if payment_status != "unpaid" && !payment_status.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
             "cannot_change_assignments_after_payment_started".to_string(),
@@ -4824,7 +4824,7 @@ pub async fn delete_offer_talent_assignment(
         .unwrap_or("unpaid")
         .trim()
         .to_lowercase();
-    if payment_status != "unpaid" && payment_status != "" {
+    if payment_status != "unpaid" && !payment_status.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
             "cannot_change_assignments_after_payment_started".to_string(),
@@ -6805,31 +6805,28 @@ async fn release_campaign_offer_transfers(
         .unwrap_or(0);
 
     if agency_amount_cents > 0 {
-        match get_agency_stripe_account(state, agency_id).await {
-            Ok(agency_account_id) => {
-                let metadata = std::collections::HashMap::from([
-                    ("offer_id".to_string(), offer_id.to_string()),
-                    ("agency_id".to_string(), agency_id.to_string()),
-                    ("type".to_string(), "agency_commission".to_string()),
-                ]);
+        if let Ok(agency_account_id) = get_agency_stripe_account(state, agency_id).await {
+            let metadata = std::collections::HashMap::from([
+                ("offer_id".to_string(), offer_id.to_string()),
+                ("agency_id".to_string(), agency_id.to_string()),
+                ("type".to_string(), "agency_commission".to_string()),
+            ]);
 
-                let _ = crate::payouts::execute_and_record_stripe_transfer(
-                    state,
-                    &client,
-                    &currency,
-                    currency_enum.clone(),
-                    "agency",
-                    agency_id,
-                    &agency_account_id,
-                    agency_amount_cents,
-                    metadata,
-                    "record_campaign_offer_transfer",
-                    "p_offer_id",
-                    offer_id,
-                )
-                .await;
-            }
-            Err(_) => {}
+            let _ = crate::payouts::execute_and_record_stripe_transfer(
+                state,
+                &client,
+                &currency,
+                currency_enum,
+                "agency",
+                agency_id,
+                &agency_account_id,
+                agency_amount_cents,
+                metadata,
+                "record_campaign_offer_transfer",
+                "p_offer_id",
+                offer_id,
+            )
+            .await;
         }
     }
 
@@ -6883,7 +6880,7 @@ async fn release_campaign_offer_transfers(
                 state,
                 &client,
                 &currency,
-                currency_enum.clone(),
+                currency_enum,
                 "creator",
                 &creator_id,
                 &talent_account_id,
@@ -7092,12 +7089,12 @@ pub async fn handle_webhook(
                     })
                     .to_string(),
                 )
-                .eq("id", &offer_id)
+                .eq("id", offer_id)
                 .execute()
                 .await;
 
             // NEW: Generate the billing stub (licensing_request) for the campaign offer
-            let _ = ensure_campaign_billing_stub(&state, &offer_id).await;
+            let _ = ensure_campaign_billing_stub(&state, offer_id).await;
         } else if new_status == "opened" {
             let _ = state
                 .pg

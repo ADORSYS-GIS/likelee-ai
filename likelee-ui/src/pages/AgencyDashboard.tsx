@@ -250,7 +250,11 @@ const ConnectBankView = ({
     last_error: string;
     bank_last4?: string;
     available_balance?: { amount_cents: number; currency: string };
-    stripe_balances?: { currency: string; available_cents: number; pending_cents: number }[];
+    stripe_balances?: {
+      currency: string;
+      available_cents: number;
+      pending_cents: number;
+    }[];
   } | null>(null);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
@@ -359,15 +363,15 @@ const ConnectBankView = ({
       const balanceData = (balanceResp as any)?.data ?? balanceResp;
       const historyData = (historyResp as any)?.data ?? historyResp;
 
-        setStatus((prev) =>
-          prev
-            ? {
-                ...prev,
-                available_balance: (balanceData as any)?.available_balance,
-                stripe_balances: (balanceData as any)?.stripe_balances || [],
-              }
-            : prev,
-        );
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              available_balance: (balanceData as any)?.available_balance,
+              stripe_balances: (balanceData as any)?.stripe_balances || [],
+            }
+          : prev,
+      );
       setPayoutHistory((historyData as any)?.items || []);
       setShowPayoutDialog(false);
       setPayoutAmount("");

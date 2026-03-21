@@ -118,7 +118,8 @@ const BrandConnectionsView = () => {
 
   const [sendPrecheckOpen, setSendPrecheckOpen] = useState(false);
   const [sendPrecheckTitle, setSendPrecheckTitle] = useState("");
-  const [sendPrecheckBody, setSendPrecheckBody] = useState<React.ReactNode>(null);
+  const [sendPrecheckBody, setSendPrecheckBody] =
+    useState<React.ReactNode>(null);
   const [sendPrecheckActions, setSendPrecheckActions] = useState<
     { label: string; onClick: () => void; variant?: "default" | "outline" }[]
   >([]);
@@ -334,7 +335,8 @@ const BrandConnectionsView = () => {
     refetchInterval: 60_000,
   });
 
-  const agencyStripeConnected = !!agencyPayoutAccountStatusQuery.data?.connected;
+  const agencyStripeConnected =
+    !!agencyPayoutAccountStatusQuery.data?.connected;
   const agencyStripeTransfersEnabled =
     !!agencyPayoutAccountStatusQuery.data?.transfers_enabled;
   const agencyStripeReadyForPayouts =
@@ -508,9 +510,15 @@ const BrandConnectionsView = () => {
   const assignmentLockedForOffer = useMemo(() => {
     const offerId = assignDialog.offerId;
     if (!offerId) return false;
-    const offer = (offers || []).find((o: any) => String(o?.id || "") === offerId);
-    const status = String(offer?.status || "").trim().toLowerCase();
-    const pay = String(offer?.payment_status || "unpaid").trim().toLowerCase();
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid")
+      .trim()
+      .toLowerCase();
     if (pay !== "unpaid" && pay !== "") return true;
     return status === "contract_sent" || status === "contract_fully_signed";
   }, [assignDialog.offerId, offers]);
@@ -646,7 +654,9 @@ const BrandConnectionsView = () => {
       const msg = String(e?.message || "");
       toast({
         title: "Assignment failed",
-        description: msg.includes("cannot_change_assignments_after_contract_sent")
+        description: msg.includes(
+          "cannot_change_assignments_after_contract_sent",
+        )
           ? "You can’t change assigned talents after the contract is sent."
           : msg || "Please try again.",
         variant: "destructive",
@@ -1624,13 +1634,16 @@ const BrandConnectionsView = () => {
                               })()}
                             </>
                           )}
-                          {isFullySigned && offer?.payment_status !== "paid" && (
-                            <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                              <span className="text-amber-700 text-sm font-semibold">
-                                ⏳ Brand has not yet completed payment. Deliverable uploads and submissions are disabled until paid.
-                              </span>
-                            </div>
-                          )}
+                          {isFullySigned &&
+                            offer?.payment_status !== "paid" && (
+                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                <span className="text-amber-700 text-sm font-semibold">
+                                  ⏳ Brand has not yet completed payment.
+                                  Deliverable uploads and submissions are
+                                  disabled until paid.
+                                </span>
+                              </div>
+                            )}
                           {(() => {
                             const pay = String(
                               offer?.payment_status || "unpaid",
@@ -2196,39 +2209,39 @@ const BrandConnectionsView = () => {
                           </TabsTrigger>
                         </TabsList>
                       </div>
-	                      {!hasAssignedTalent && (
-	                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-	                          <span className="text-amber-700 text-sm font-semibold">
-	                            Assign at least 1 talent before preparing/sending a
-	                            contract. This is required for correct payouts when
-	                            the brand pays.
-	                          </span>
-	                        </div>
-	                      )}
-	                      {!agencyStripeReadyForPayouts && (
-	                        <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
-	                          <AlertCircle className="h-4 w-4 text-blue-600" />
-	                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
-	                            <span>
-	                              Before sending contracts, connect your agency Stripe
-	                              account and complete onboarding. Brands can’t pay
-	                              until payouts are set up, and commissions/talent
-	                              earnings can’t be transferred unless transfers are
-	                              enabled.
-	                            </span>
-	                            <Button
-	                              size="sm"
-	                              variant="outline"
-	                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
-	                              onClick={() =>
-	                                navigate("/AgencyDashboard?tab=payouts")
-	                              }
-	                            >
-	                              Go to Payouts
-	                            </Button>
-	                          </AlertDescription>
-	                        </Alert>
-	                      )}
+                      {!hasAssignedTalent && (
+                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                          <span className="text-amber-700 text-sm font-semibold">
+                            Assign at least 1 talent before preparing/sending a
+                            contract. This is required for correct payouts when
+                            the brand pays.
+                          </span>
+                        </div>
+                      )}
+                      {!agencyStripeReadyForPayouts && (
+                        <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <AlertCircle className="h-4 w-4 text-blue-600" />
+                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
+                            <span>
+                              Before sending contracts, connect your agency
+                              Stripe account and complete onboarding. Brands
+                              can’t pay until payouts are set up, and
+                              commissions/talent earnings can’t be transferred
+                              unless transfers are enabled.
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
+                              onClick={() =>
+                                navigate("/AgencyDashboard?tab=payouts")
+                              }
+                            >
+                              Go to Payouts
+                            </Button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
 
                       <TabsContent
                         value="submissions"
@@ -2341,7 +2354,10 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy || !hasAssignedTalent}
+                                                    disabled={
+                                                      isBusy ||
+                                                      !hasAssignedTalent
+                                                    }
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
                                                     Prepare
@@ -2356,9 +2372,7 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={
-                                                      isBusy
-                                                    }
+                                                    disabled={isBusy}
                                                   >
                                                     {isBusy ? (
                                                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -2862,16 +2876,16 @@ const BrandConnectionsView = () => {
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              You can change assigned talents any time before the contract is sent.
-              Once you send the contract, assignments are locked.
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                This offer’s contract has already been sent. Talent assignments are
-                locked.
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -2992,15 +3006,15 @@ const BrandConnectionsView = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              You can update assigned talents before the contract is sent. After you
-              send the contract, assignments are locked.
+              You can update assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={assignSubmitting}>
               Cancel
             </AlertDialogCancel>
-              <AlertDialogAction
+            <AlertDialogAction
               disabled={assignSubmitting || assignmentLockedForOffer}
               onClick={async () => {
                 await handleAssignTalents();

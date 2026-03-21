@@ -143,7 +143,9 @@ export default function BrandCampaignDashboard({
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [selectedCampaignDeliverables, setSelectedCampaignDeliverables] =
     useState<any[]>([]);
-  const [reviewingDeliverableId, setReviewingDeliverableId] = useState<string | null>(null);
+  const [reviewingDeliverableId, setReviewingDeliverableId] = useState<
+    string | null
+  >(null);
   const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
     useState<string[]>([]);
@@ -532,7 +534,9 @@ export default function BrandCampaignDashboard({
     const safeOffers = Array.isArray(offers) ? offers : [];
     // Campaign "Active vs Pending Approval" must not be affected by deliverable workflow statuses.
     // Prefer backend-derived `is_fully_signed`.
-    const hasSignedOffer = safeOffers.some((offer: any) => Boolean(offer?.is_fully_signed));
+    const hasSignedOffer = safeOffers.some((offer: any) =>
+      Boolean(offer?.is_fully_signed),
+    );
     const collaboratorLabels = Array.from(
       new Set(
         safeOffers
@@ -904,7 +908,11 @@ export default function BrandCampaignDashboard({
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     const status = String(deliverable?.status || "").toLowerCase();
-    const approvedForDownload = ["approved", "accepted", "brand_approved"].includes(status);
+    const approvedForDownload = [
+      "approved",
+      "accepted",
+      "brand_approved",
+    ].includes(status);
     if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
@@ -1560,7 +1568,9 @@ export default function BrandCampaignDashboard({
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return raw;
     const proxyUrl = `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`;
-    return authToken ? `${proxyUrl}?token=${encodeURIComponent(authToken)}` : proxyUrl;
+    return authToken
+      ? `${proxyUrl}?token=${encodeURIComponent(authToken)}`
+      : proxyUrl;
   };
 
   const handleSendOffer = async () => {
@@ -1728,12 +1738,18 @@ export default function BrandCampaignDashboard({
     } catch (e: any) {
       const msg = String(e?.message || "");
       toast({
-        title: msg === "This record already exists." ? "Offer already sent" : "Failed to send offer",
+        title:
+          msg === "This record already exists."
+            ? "Offer already sent"
+            : "Failed to send offer",
         description:
           msg === "This record already exists."
             ? "An offer to this agency already exists for this campaign."
             : msg || "Please try again.",
-        variant: msg === "This record already exists." ? ("default" as any) : ("destructive" as any),
+        variant:
+          msg === "This record already exists."
+            ? ("default" as any)
+            : ("destructive" as any),
       });
       if (msg === "This record already exists.") {
         await loadCampaignCards();
@@ -2890,16 +2906,32 @@ export default function BrandCampaignDashboard({
                         Financial Summary
                       </p>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">Collaborator Payout (Net)</span>
-                        <span className="font-semibold text-gray-900">${campaignBrief.budget_creator_payment || "0"}</span>
+                        <span className="text-gray-600">
+                          Collaborator Payout (Net)
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          ${campaignBrief.budget_creator_payment || "0"}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">Likelee Platform Fee (2%)</span>
-                        <span className="text-blue-600 font-medium">+${(Number(campaignBrief.budget_total || 0) - Number(campaignBrief.budget_creator_payment || 0)).toFixed(2)}</span>
+                        <span className="text-gray-600">
+                          Likelee Platform Fee (2%)
+                        </span>
+                        <span className="text-blue-600 font-medium">
+                          +$
+                          {(
+                            Number(campaignBrief.budget_total || 0) -
+                            Number(campaignBrief.budget_creator_payment || 0)
+                          ).toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center text-base pt-1 border-t border-dashed border-gray-200">
-                        <span className="font-bold text-gray-900">Total Brand Spend (Gross)</span>
-                        <span className="font-bold text-black">${campaignBrief.budget_total || "0"}</span>
+                        <span className="font-bold text-gray-900">
+                          Total Brand Spend (Gross)
+                        </span>
+                        <span className="font-bold text-black">
+                          ${campaignBrief.budget_total || "0"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -3089,16 +3121,19 @@ export default function BrandCampaignDashboard({
           <DialogHeader>
             <DialogTitle>Escrow payout released</DialogTitle>
             <DialogDescription>
-              Escrow has been released and Stripe transfers were triggered based on your approval.
+              Escrow has been released and Stripe transfers were triggered based
+              on your approval.
             </DialogDescription>
           </DialogHeader>
 
           <div className="text-sm text-gray-700 space-y-2">
             <p>
-              <strong>Payment status:</strong> {String(escrowReleaseInfo?.payment_status || "unknown")}
+              <strong>Payment status:</strong>{" "}
+              {String(escrowReleaseInfo?.payment_status || "unknown")}
             </p>
             <p>
-              <strong>Escrow status:</strong> {String(escrowReleaseInfo?.escrow_status || "unknown")}
+              <strong>Escrow status:</strong>{" "}
+              {String(escrowReleaseInfo?.escrow_status || "unknown")}
             </p>
           </div>
 
@@ -3616,9 +3651,9 @@ export default function BrandCampaignDashboard({
                 <Alert className="border-2 border-gray-200 rounded-none">
                   <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
                     <Lock className="w-4 h-4" />
-                    Approving any 1 deliverable triggers escrow payout (once) and
-                    unlocks downloads for that deliverable. Approvals are final
-                    and can’t be undone.
+                    Approving any 1 deliverable triggers escrow payout (once)
+                    and unlocks downloads for that deliverable. Approvals are
+                    final and can’t be undone.
                   </AlertDescription>
                 </Alert>
                 {loadingSelectedCampaignDetails && (
@@ -3644,9 +3679,11 @@ export default function BrandCampaignDashboard({
                       ).toLowerCase();
                       const deliverableId = String(deliverable?.id || "");
                       const isBusy = reviewingDeliverableId === deliverableId;
-                      const isApproved = ["approved", "accepted", "brand_approved"].includes(
-                        status,
-                      );
+                      const isApproved = [
+                        "approved",
+                        "accepted",
+                        "brand_approved",
+                      ].includes(status);
                       const displayStatus =
                         status === "brand_approved" ? "approved" : status;
                       const statusClass =
@@ -3718,7 +3755,11 @@ export default function BrandCampaignDashboard({
                                       )
                                     }
                                   >
-                                    {isApproved ? "Approved" : isBusy ? "Approving..." : "Approve"}
+                                    {isApproved
+                                      ? "Approved"
+                                      : isBusy
+                                        ? "Approving..."
+                                        : "Approve"}
                                   </Button>
                                   <Button
                                     size="sm"

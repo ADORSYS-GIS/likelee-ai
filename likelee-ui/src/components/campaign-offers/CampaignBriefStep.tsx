@@ -482,7 +482,9 @@ export default function CampaignBriefStep({
           </div>
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Payment & Timeline</p>
+        <p className="text-sm font-semibold text-gray-700">
+          Payment & Timeline
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
@@ -521,7 +523,12 @@ export default function CampaignBriefStep({
               className="border-2 border-gray-300 rounded-none bg-gray-50 font-bold"
             />
             <p className="text-[10px] text-blue-600 font-medium">
-              Includes 2% Likelee platform fee (${(Number(campaignBrief.budget_total || 0) - Number(campaignBrief.budget_creator_payment || 0)).toFixed(2)}).
+              Includes 2% Likelee platform fee ($
+              {(
+                Number(campaignBrief.budget_total || 0) -
+                Number(campaignBrief.budget_creator_payment || 0)
+              ).toFixed(2)}
+              ).
             </p>
           </div>
           <div className="space-y-2">

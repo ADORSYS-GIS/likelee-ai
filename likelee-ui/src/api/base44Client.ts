@@ -72,13 +72,14 @@ function normalizeErrorData(errorData: any): any {
   return body;
 }
 
-function userFriendlyMessage(status: number, errorData: any, url?: string): string {
+function userFriendlyMessage(
+  status: number,
+  errorData: any,
+  url?: string,
+): string {
   const normalized = normalizeErrorData(errorData);
   const code = String(
-    normalized?.code ||
-      normalized?.error_code ||
-      normalized?.error?.code ||
-      "",
+    normalized?.code || normalized?.error_code || normalized?.error?.code || "",
   ).trim();
   const msg = extractErrorMessage(normalized);
   const lower = String(msg || "").toLowerCase();

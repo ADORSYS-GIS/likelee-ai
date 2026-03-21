@@ -1574,7 +1574,8 @@ export default function BrandDashboard() {
         ).toLowerCase();
         return st === "completed" || st === "signed";
       });
-      const isFullySigned = Boolean(offer?.is_fully_signed) || hasCompletedContract;
+      const isFullySigned =
+        Boolean(offer?.is_fully_signed) || hasCompletedContract;
       const completedAt =
         campaignMeta?.completed_at || offer?.completed_at || null;
       const campaignStatus = String(campaignMeta?.status || "").toLowerCase();
@@ -3543,7 +3544,11 @@ export default function BrandDashboard() {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     const status = String(deliverable?.status || "").toLowerCase();
-    const approvedForDownload = ["approved", "accepted", "brand_approved"].includes(status);
+    const approvedForDownload = [
+      "approved",
+      "accepted",
+      "brand_approved",
+    ].includes(status);
     if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
@@ -3658,7 +3663,8 @@ export default function BrandDashboard() {
         } else if (String(escrow?.escrow_status || "") === "released") {
           toast({
             title: "Escrow already released",
-            description: "Stripe transfers were already triggered for this offer.",
+            description:
+              "Stripe transfers were already triggered for this offer.",
           });
         } else {
           toast({
@@ -3730,7 +3736,9 @@ export default function BrandDashboard() {
             : offer?.offer_contracts;
           const hasCompletedContract = Array.isArray(contractsForStatus)
             ? contractsForStatus.some((c: any) => {
-                const st = String(c?.docuseal_status || c?.status || "").toLowerCase();
+                const st = String(
+                  c?.docuseal_status || c?.status || "",
+                ).toLowerCase();
                 return st === "completed" || st === "signed";
               })
             : false;
@@ -3758,7 +3766,8 @@ export default function BrandDashboard() {
               {isFullySigned && offer?.payment_status !== "paid" && (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                   <span className="text-amber-700 text-xs font-semibold">
-                    ⏳ Contract signed. Payment required before deliverables can start.
+                    ⏳ Contract signed. Payment required before deliverables can
+                    start.
                   </span>
                   <Button
                     size="sm"
@@ -3787,10 +3796,9 @@ export default function BrandDashboard() {
                           title: msg.includes("no_talents_assigned")
                             ? "Talent assignment required"
                             : "Payment Error",
-                          description:
-                            msg.includes("no_talents_assigned")
-                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                              : msg || "Could not start checkout.",
+                          description: msg.includes("no_talents_assigned")
+                            ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                            : msg || "Could not start checkout.",
                           variant: "destructive" as any,
                         });
                       } finally {
@@ -3798,13 +3806,17 @@ export default function BrandDashboard() {
                       }
                     }}
                   >
-                    {payingOfferId === offerId ? "Redirecting…" : "💳 Pay Offer"}
+                    {payingOfferId === offerId
+                      ? "Redirecting…"
+                      : "💳 Pay Offer"}
                   </Button>
                 </div>
               )}
               {isFullySigned && offer?.payment_status === "paid" && (
                 <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-                  <span className="text-emerald-700 text-xs font-semibold">✅ Payment confirmed — deliverables can be submitted.</span>
+                  <span className="text-emerald-700 text-xs font-semibold">
+                    ✅ Payment confirmed — deliverables can be submitted.
+                  </span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-2">
@@ -4461,9 +4473,9 @@ export default function BrandDashboard() {
                                     payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
-                                    After you approve a deliverable, the Download
-                                    button appears. Approvals are final and can’t
-                                    be undone.
+                                    After you approve a deliverable, the
+                                    Download button appears. Approvals are final
+                                    and can’t be undone.
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&
@@ -4510,9 +4522,9 @@ export default function BrandDashboard() {
                                             }}
                                           >
                                             <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                                              {String(del?.asset_type || "").startsWith(
-                                                "image",
-                                              ) ? (
+                                              {String(
+                                                del?.asset_type || "",
+                                              ).startsWith("image") ? (
                                                 <img
                                                   src={getPublicUrl(del)}
                                                   alt={
@@ -4581,7 +4593,9 @@ export default function BrandDashboard() {
                                                 <Button
                                                   size="sm"
                                                   className="flex-1 h-8 rounded-none font-bold bg-gray-900"
-                                                  disabled={isApproved || isBusy}
+                                                  disabled={
+                                                    isApproved || isBusy
+                                                  }
                                                   onClick={() =>
                                                     handleDeliverableReview(
                                                       offerId,
@@ -4590,13 +4604,17 @@ export default function BrandDashboard() {
                                                     )
                                                   }
                                                 >
-                                                  {isApproved ? "Approved" : "Approve"}
+                                                  {isApproved
+                                                    ? "Approved"
+                                                    : "Approve"}
                                                 </Button>
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
                                                   className="flex-1 h-8 rounded-none font-bold"
-                                                  disabled={isApproved || isBusy}
+                                                  disabled={
+                                                    isApproved || isBusy
+                                                  }
                                                   onClick={() =>
                                                     handleDeliverableReview(
                                                       offerId,
@@ -4673,7 +4691,8 @@ export default function BrandDashboard() {
       });
       // Campaign "Active vs Pending Approval" must not be affected by deliverable workflow statuses.
       // Prefer backend-derived `is_fully_signed`, with contract parsing as a backward-compatible fallback.
-      const isFullySigned = Boolean(offer?.is_fully_signed) || hasCompletedContract;
+      const isFullySigned =
+        Boolean(offer?.is_fully_signed) || hasCompletedContract;
       const startDateRaw = String(
         offer?.brand_campaigns?.start_date || "",
       ).trim();
@@ -4707,7 +4726,8 @@ export default function BrandDashboard() {
         "cancelled",
         "declined",
       ]);
-      let mappedStatus: "pending_approval" | "in_progress" | "completed" = "pending_approval";
+      let mappedStatus: "pending_approval" | "in_progress" | "completed" =
+        "pending_approval";
       if (isAfterEnd || terminalOfferStatuses.has(statusRaw)) {
         mappedStatus = "completed";
       } else if (isFullySigned) {

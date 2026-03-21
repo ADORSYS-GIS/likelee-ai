@@ -1423,12 +1423,14 @@ export default function CreatorDashboard() {
       (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
     );
     const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
-    const isPaid = String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
+    const isPaid =
+      String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
 
     if (selectedOffer && !isPaid && !sendDeliverableRequestId) {
       toast({
         title: "Payment required",
-        description: "The brand must complete the payment for this offer before deliverables can be uploaded.",
+        description:
+          "The brand must complete the payment for this offer before deliverables can be uploaded.",
         variant: "destructive",
       });
       return;
@@ -7422,7 +7424,7 @@ export default function CreatorDashboard() {
                 <div className="text-lg font-semibold text-gray-900">
                   Deliverables
                 </div>
-                 <Button
+                <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   onClick={() => {
                     setSendDeliverableRequestId("");
@@ -9189,8 +9191,7 @@ export default function CreatorDashboard() {
               $
               {(
                 (stripeBalances.find((b) => b.currency === "USD")
-                  ?.available_cents ||
-                  0) / 100
+                  ?.available_cents || 0) / 100
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
@@ -10808,13 +10809,18 @@ export default function CreatorDashboard() {
                 </div>
               )}
               {(() => {
-                const selectedOffer = brandOffers.find(o => String(o.id) === sendDeliverableOfferId);
-                const isPaid = String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
+                const selectedOffer = brandOffers.find(
+                  (o) => String(o.id) === sendDeliverableOfferId,
+                );
+                const isPaid =
+                  String(selectedOffer?.payment_status || "").toLowerCase() ===
+                  "paid";
                 if (sendDeliverableOfferId && !isPaid) {
                   return (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <span className="text-amber-700 text-sm font-semibold">
-                        ⏳ Awaiting brand payment before deliverables can be uploaded.
+                        ⏳ Awaiting brand payment before deliverables can be
+                        uploaded.
                       </span>
                     </div>
                   );
@@ -10993,15 +10999,22 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-               <Button
+              <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 onClick={sendDeliverable}
                 disabled={
                   offerActionLoading ||
-                  (sendDeliverableOfferId && (() => {
-                    const selectedOffer = brandOffers.find(o => String(o.id) === sendDeliverableOfferId);
-                    return String(selectedOffer?.payment_status || "").toLowerCase() !== "paid";
-                  })())
+                  (sendDeliverableOfferId &&
+                    (() => {
+                      const selectedOffer = brandOffers.find(
+                        (o) => String(o.id) === sendDeliverableOfferId,
+                      );
+                      return (
+                        String(
+                          selectedOffer?.payment_status || "",
+                        ).toLowerCase() !== "paid"
+                      );
+                    })())
                 }
               >
                 {offerActionLoading ? "Sending..." : "Send"}

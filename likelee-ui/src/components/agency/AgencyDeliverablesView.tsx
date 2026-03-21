@@ -218,8 +218,12 @@ export function AgencyDeliverablesView() {
   const assignmentLockedForOffer = useMemo(() => {
     const offerId = assignDialog.offerId;
     if (!offerId) return false;
-    const offer = (offers || []).find((o: any) => String(o?.id || "") === offerId);
-    const status = String(offer?.status || "").trim().toLowerCase();
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
     return status === "contract_sent" || status === "contract_fully_signed";
   }, [assignDialog.offerId, offers]);
 
@@ -648,7 +652,9 @@ export function AgencyDeliverablesView() {
       const msg = String(e?.message || "");
       toast({
         title: "Assignment failed",
-        description: msg.includes("cannot_change_assignments_after_contract_sent")
+        description: msg.includes(
+          "cannot_change_assignments_after_contract_sent",
+        )
           ? "You can’t change assigned talents after the contract is sent."
           : msg || "Please try again.",
         variant: "destructive",
@@ -883,7 +889,8 @@ export function AgencyDeliverablesView() {
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
           );
-          const isOfferPaid = String(offer?.payment_status || "").toLowerCase() === "paid";
+          const isOfferPaid =
+            String(offer?.payment_status || "").toLowerCase() === "paid";
           return (
             <motion.div
               key={offerId}
@@ -963,7 +970,8 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      ⏳ Awaiting brand payment before deliverables can be uploaded or submitted.
+                      ⏳ Awaiting brand payment before deliverables can be
+                      uploaded or submitted.
                     </span>
                   </div>
                 )}
@@ -1084,7 +1092,9 @@ export function AgencyDeliverablesView() {
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
                                     submittingDrafts[offerId] ||
-                                    (offer?.status === "contract_fully_signed" && !isOfferPaid)
+                                    (offer?.status ===
+                                      "contract_fully_signed" &&
+                                      !isOfferPaid)
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
@@ -1095,7 +1105,10 @@ export function AgencyDeliverablesView() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  disabled={offer?.status === "contract_fully_signed" && !isOfferPaid}
+                                  disabled={
+                                    offer?.status === "contract_fully_signed" &&
+                                    !isOfferPaid
+                                  }
                                   onClick={() =>
                                     setUploadDialog({
                                       open: true,
@@ -1206,16 +1219,16 @@ export function AgencyDeliverablesView() {
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              You can change assigned talents any time before the contract is sent.
-              Once you send the contract, assignments are locked.
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                This offer’s contract has already been sent. Talent assignments are
-                locked.
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -1333,8 +1346,8 @@ export function AgencyDeliverablesView() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              You can update assigned talents before the contract is sent. After you
-              send the contract, assignments are locked.
+              You can update assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

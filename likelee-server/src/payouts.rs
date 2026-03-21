@@ -2983,8 +2983,8 @@ async fn create_payment_link_transfers(
                 let res = execute_and_record_stripe_transfer(
                     state,
                     &client,
-                    &currency,
-                    currency_enum.clone(),
+                    currency,
+                    currency_enum,
                     "agency",
                     agency_id,
                     &agency_account_id,
@@ -3064,8 +3064,8 @@ async fn create_payment_link_transfers(
                     let res = execute_and_record_stripe_transfer(
                         state,
                         &client,
-                        &currency,
-                        currency_enum.clone(),
+                        currency,
+                        currency_enum,
                         "creator",
                         talent_id,
                         &talent_account_id,

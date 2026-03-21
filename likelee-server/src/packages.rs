@@ -761,7 +761,7 @@ pub async fn update_package(
         .filter(|p| !p.is_empty())
     {
         // Only update the hash when a new password is explicitly provided.
-        if let Some(hash) = bcrypt::hash(p, 10).ok() {
+        if let Ok(hash) = bcrypt::hash(p, 10) {
             package_update.insert("password_hash".to_string(), serde_json::Value::String(hash));
         } else {
             return Err((
