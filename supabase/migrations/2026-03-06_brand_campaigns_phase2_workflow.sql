@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS public.campaign_offer_deliverables (
   asset_url text NOT NULL,
   asset_type text NOT NULL DEFAULT 'file',
   caption text,
-  status text NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'agency_review', 'brand_review', 'brand_approved', 'changes_requested', 'approved', 'rejected')),
+  status text NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'agency_review', 'brand_review', 'changes_requested', 'approved', 'rejected')),
   agency_review_note text,
   brand_review_note text,
   reviewed_by_agency_at timestamptz,

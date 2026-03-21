@@ -489,8 +489,16 @@ To protect private assets stored in Supabase, all deliverable media is accessed 
 ### Payment Gating
 To ensure financial security:
 - **Deliverable Gating**: Deliverable uploads and submissions (both creator and agency) are disabled until the campaign offer's `payment_status` is `paid`.
-- **Escrow Flow**: When a brand "Pays" an offer, funds are collected via Stripe Checkout and held in escrow (or added to creator balance pending approval). The `payment_status` switches from `unpaid` -> `processing` -> `paid`.
+- **Escrow Flow**: When a brand "Pays" an offer, funds are collected via Stripe Checkout. The `payment_status` switches from `unpaid` -> `processing` -> `paid`. For agency offers, funds are released via Stripe **Transfers** to the connected accounts after brand approval triggers escrow release.
 - **UI Gating**: Frontend components (`AgencyDeliverablesView`, `CreatorDashboard`) conditionally disable upload/review buttons and show "Awaiting Brand Payment" indicators based on the offer's payment status.
+
+### Escrow Status & Transfers
+Agency campaign offers track escrow release separately from deliverable workflow:
+- `campaign_offers.escrow_status`: `holding` → `releasing` → `released`
+- Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
+- Dashboard balances distinguish:
+  - **Held (pending transfer)**: internal Likelee tracking
+  - **Cashoutable (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
 ### Calendly Integration (IRL Booking)
 
 #### System Configuration

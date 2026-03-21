@@ -1,6 +1,6 @@
 # Repository Architecture & Database Relationships
 
-This document outlines the core relationships and interaction flows between Brands, Agencies, and Creators, specifically focusing on the **Campaign Deliverables & Payment Gating** system.
+This document outlines the core relationships and interaction flows between Brands, Agencies, and Creators, specifically focusing on the **Campaign Offer Payment Gate, Deliverables, and Escrow Release** system.
 
 ## Database ER Diagram
 
@@ -15,6 +15,7 @@ erDiagram
     CAMPAIGN_OFFERS ||--o{ CAMPAIGN_OFFER_DELIVERABLES : "contains"
     CAMPAIGN_OFFERS ||--o{ OFFER_TALENT_ASSIGNMENTS : "linked to"
     CAMPAIGN_OFFERS ||--o| LICENSING_REQUESTS : "billing_request_id (Shadow Stub)"
+    CAMPAIGN_OFFERS ||--o{ CAMPAIGN_OFFER_TRANSFERS : "escrow transfers"
     
     AGENCIES ||--o{ CAMPAIGN_OFFERS : "targeted as agency"
     CREATORS ||--o{ CAMPAIGN_OFFERS : "targeted as creator"
@@ -29,6 +30,7 @@ erDiagram
         uuid brand_campaign_id FK
         text status "contract_fully_signed, in_execution, etc."
         text payment_status "unpaid, processing, paid"
+        text escrow_status "holding, releasing, released"
         uuid billing_request_id FK
     }
 
@@ -41,14 +43,23 @@ erDiagram
     CAMPAIGN_OFFER_DELIVERABLES {
         uuid id PK
         uuid offer_id FK
-        text status "submitted, agency_review, brand_review, approved"
+        text status "submitted, agency_review, brand_review, brand_approved, approved"
         text asset_url
+    }
+
+    CAMPAIGN_OFFER_TRANSFERS {
+        uuid id PK
+        uuid offer_id FK
+        text recipient_type "agency, creator"
+        uuid recipient_id
+        bigint amount_cents
+        text status "created, failed, reversed"
     }
 ```
 
 ## Interaction Flow (Payment & Deliverables)
 
-This sequence diagram illustrates the lifecycle of a campaign offer from signing to final deliverable approval, highlighting the **Payment Gate**.
+This sequence diagram illustrates the lifecycle of a campaign offer from signing to final deliverable approval, highlighting the **Payment Gate** and **Escrow Release**.
 
 ```mermaid
 sequenceDiagram
@@ -63,7 +74,7 @@ sequenceDiagram
     B->>B: Sign Contract
     Note over B: Status: contract_fully_signed
 
-    Note over B,S: 2. Escrow Payment Phase
+    Note over B,S: 2. Escrow Payment Phase (Checkout)
     B->>S: Click "Pay Offer" (Stripe Checkout)
     S-->>B: Payment Successful
     S->>Server: Webhook: Update payment_status = 'paid'
@@ -77,9 +88,10 @@ sequenceDiagram
     Note over A,B: 4. Review Phase
     A->>Server: Approve Deliverable
     Server->>Server: Status: brand_review
-    B->>Server: Final Approval
-    Server->>Server: Status: approved
-    Note over Server: Release funds to Balance
+    B->>Server: Approve deliverable (first approval triggers escrow)
+    Server->>Server: escrow_status: holding -> releasing -> released
+    Server->>S: Stripe Transfers (agency + talent splits)
+    Note over Server: Internal "held" balances remain until transfer succeeds; "cashoutable" is Stripe available on connected accounts
 ```
 
 ## Key Interactions
@@ -88,6 +100,11 @@ sequenceDiagram
 The system enforces a financial boundary at the start of the `in_execution` phase. 
 - **Back-end Check**: API endpoints for uploading and submitting deliverables verify that the parent `campaign_offer.payment_status` is `'paid'`.
 - **Front-end Gating**: UI components (Agency & Creator dashboards) disable action buttons and show warning indicators if the offer is unpaid.
+
+### 1b. Stable Campaign Status (Active vs Pending)
+Campaign tab placement must not depend on deliverable/workflow status strings.
+- **Backend-derived flag**: offers include `is_fully_signed` computed from DocuSeal contract completion.
+- **Rule**: a campaign is **Active** if it has **any fully signed offer**, and remains Active until completed/expired/cancelled by campaign/timing rules.
 
 ### 2. The Billing Shadow Stub
 To leverage existing financial infrastructure without duplicating logic, campaign payments utilize a "Shadow Stub" in the `licensing_requests` table:
@@ -99,4 +116,5 @@ Deliverables follow a strictly enforced pipeline:
 1. **Creator Draft**: Private to the creator.
 2. **Submitted to Agency**: Visible to Agency for review.
 3. **Submitted to Brand**: Agency-approved work is sent to the Brand.
-4. **Approved**: Brand-approved work marks the deliverable as finalized.
+4. **Brand Approved**: First brand approval can trigger escrow release (once per offer).
+5. **Approved**: Final state for the deliverable.
