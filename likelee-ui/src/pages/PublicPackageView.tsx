@@ -92,6 +92,7 @@ export function PublicPackageView() {
   const {
     data: packageData,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery<any>({
@@ -131,6 +132,13 @@ export function PublicPackageView() {
     setShowPasswordPrompt(true);
     if (password) setPasswordError("Invalid password. Please try again.");
   }, [isPasswordError, password]);
+
+  useEffect(() => {
+    // Close the password prompt once the package loads successfully.
+    if (!packageData) return;
+    setShowPasswordPrompt(false);
+    setPasswordError(null);
+  }, [packageData]);
 
   const fullAssetsRequestMutation = useMutation({
     mutationFn: (data: {
@@ -580,8 +588,12 @@ export function PublicPackageView() {
             )}
           </div>
           <DialogFooter>
-            <Button type="submit" onClick={handlePasswordSubmit}>
-              Unlock Package
+            <Button
+              type="submit"
+              onClick={handlePasswordSubmit}
+              disabled={isFetching || !password.trim()}
+            >
+              {isFetching ? "Unlocking..." : "Unlock Package"}
             </Button>
           </DialogFooter>
         </DialogContent>

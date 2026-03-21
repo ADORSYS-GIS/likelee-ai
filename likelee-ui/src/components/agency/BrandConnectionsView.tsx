@@ -7,6 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -87,6 +97,7 @@ const BrandConnectionsView = () => {
   const [assignSearch, setAssignSearch] = useState("");
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
   const [messageDialog, setMessageDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -361,6 +372,14 @@ const BrandConnectionsView = () => {
       ),
     );
   }, [offerAssignmentsQuery.data]);
+
+  const assignmentLockedForOffer = useMemo(() => {
+    const offerId = assignDialog.offerId;
+    if (!offerId) return false;
+    const offer = (offers || []).find((o: any) => String(o?.id || "") === offerId);
+    const status = String(offer?.status || "").trim().toLowerCase();
+    return status === "contract_sent" || status === "contract_fully_signed";
+  }, [assignDialog.offerId, offers]);
   const getTalentAvatar = (t: any) => {
     if (!t) return "";
     if (t.img) return t.img;
@@ -425,6 +444,15 @@ const BrandConnectionsView = () => {
   const handleAssignTalents = async () => {
     if (!assignDialog.offerId || assignSelectedIds.length === 0) return;
     if (assignSubmitting) return;
+    if (assignmentLockedForOffer) {
+      toast({
+        title: "Assignments locked",
+        description:
+          "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+        variant: "destructive",
+      });
+      return;
+    }
     setAssignSubmitting(true);
     try {
       await Promise.all(
@@ -443,9 +471,12 @@ const BrandConnectionsView = () => {
       setAssignSearch("");
       toast({ title: "Talent assigned" });
     } catch (e: any) {
+      const msg = String(e?.message || "");
       toast({
         title: "Assignment failed",
-        description: e?.message || "Please try again.",
+        description: msg.includes("cannot_change_assignments_after_contract_sent")
+          ? "You can’t change assigned talents after the contract is sent."
+          : msg || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -2646,6 +2677,22 @@ const BrandConnectionsView = () => {
             </p>
           </DialogHeader>
 
+          <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
+            <AlertDescription className="text-sm text-blue-900 font-medium">
+              You can change assigned talents any time before the contract is sent.
+              Once you send the contract, assignments are locked.
+            </AlertDescription>
+          </Alert>
+
+          {assignmentLockedForOffer ? (
+            <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
+              <AlertDescription className="text-sm text-amber-900 font-semibold">
+                This offer’s contract has already been sent. Talent assignments are
+                locked.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -2666,6 +2713,7 @@ const BrandConnectionsView = () => {
                   <Card
                     key={id}
                     onClick={() => {
+                      if (assignmentLockedForOffer) return;
                       if (alreadyAssigned) return;
                       setAssignSelectedIds((prev) =>
                         prev.includes(id)
@@ -2676,7 +2724,9 @@ const BrandConnectionsView = () => {
                     className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
                       alreadyAssigned
                         ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
+                        : assignmentLockedForOffer
+                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                          : "cursor-pointer"
                     } ${
                       isSelected
                         ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
@@ -2729,8 +2779,12 @@ const BrandConnectionsView = () => {
           </ScrollArea>
 
           <Button
-            onClick={handleAssignTalents}
-            disabled={assignSelectedIds.length === 0 || assignSubmitting}
+            onClick={() => setAssignConfirmOpen(true)}
+            disabled={
+              assignmentLockedForOffer ||
+              assignSelectedIds.length === 0 ||
+              assignSubmitting
+            }
             className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
           >
             {assignSubmitting ? (
@@ -2740,6 +2794,38 @@ const BrandConnectionsView = () => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={assignConfirmOpen}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setAssignConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can update assigned talents before the contract is sent. After you
+              send the contract, assignments are locked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting}
+              onClick={async () => {
+                await handleAssignTalents();
+                setAssignConfirmOpen(false);
+              }}
+            >
+              Confirm assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={messageDialog.open}

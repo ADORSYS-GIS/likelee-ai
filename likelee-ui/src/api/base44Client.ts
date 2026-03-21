@@ -72,7 +72,7 @@ function normalizeErrorData(errorData: any): any {
   return body;
 }
 
-function userFriendlyMessage(status: number, errorData: any): string {
+function userFriendlyMessage(status: number, errorData: any, url?: string): string {
   const normalized = normalizeErrorData(errorData);
   const code = String(
     normalized?.code ||
@@ -82,6 +82,18 @@ function userFriendlyMessage(status: number, errorData: any): string {
   ).trim();
   const msg = extractErrorMessage(normalized);
   const lower = String(msg || "").toLowerCase();
+
+  // Public package password protection uses 401 with a plaintext message
+  // ("Password required" / "Invalid password"). Preserve that message to
+  // support the password-unlock UX instead of collapsing into a generic 401.
+  if (
+    (status === 401 || status === 403) &&
+    typeof url === "string" &&
+    url.includes("/public/packages/") &&
+    (lower.includes("password") || lower.includes("unlock"))
+  ) {
+    return msg || "Password required.";
+  }
 
   if (status === 401 || status === 403 || lower.includes("not authorized")) {
     return "You’re not authorized to perform this action.";
@@ -104,10 +116,19 @@ function throwBackendError(
   status: number,
   errorData: any,
 ): never {
-  // Log the raw error for developers, but throw only a user-friendly message.
-  // eslint-disable-next-line no-console
-  console.error(`[api] ${method} ${url} failed`, { status, errorData });
-  const msg = userFriendlyMessage(status, errorData);
+  const msg = userFriendlyMessage(status, errorData, url);
+
+  // Log the raw error for developers, but avoid noisy logs for expected public
+  // password prompts (these are handled in the UI).
+  const lower = String(msg || "").toLowerCase();
+  const isExpectedPublicPassword401 =
+    (status === 401 || status === 403) &&
+    url.includes("/public/packages/") &&
+    (lower.includes("password") || lower.includes("unlock"));
+  if (!isExpectedPublicPassword401) {
+    // eslint-disable-next-line no-console
+    console.error(`[api] ${method} ${url} failed`, { status, errorData });
+  }
   const err: any = new Error(msg);
   err.status = status;
   err.method = method;

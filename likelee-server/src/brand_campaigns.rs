@@ -4577,6 +4577,18 @@ pub async fn create_offer_talent_assignment(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer_status = offer
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if offer_status == "contract_sent" || offer_status == "contract_fully_signed" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot_change_assignments_after_contract_sent".to_string(),
+        ));
+    }
     let payment_status = offer
         .get("payment_status")
         .and_then(|v| v.as_str())
@@ -4637,6 +4649,18 @@ pub async fn delete_offer_talent_assignment(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer_status = offer
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if offer_status == "contract_sent" || offer_status == "contract_fully_signed" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot_change_assignments_after_contract_sent".to_string(),
+        ));
+    }
     let payment_status = offer
         .get("payment_status")
         .and_then(|v| v.as_str())
