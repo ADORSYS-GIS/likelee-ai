@@ -370,6 +370,14 @@ async fn resolve_agency_talent(
     agency_id: &str,
     talent_id: &str,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
+    // We accept multiple id shapes from the UI:
+    // - agency_users.id (canonical)
+    // - agency_users.creator_id / agency_users.user_id
+    // - agency_talent_relationships.id (legacy roster ids)
+    //
+    // Always resolve to the canonical agency_users row.
+
+    // 1) canonical: agency_users.id
     let resp = state
         .pg
         .from("agency_users")
@@ -388,9 +396,84 @@ async fn resolve_agency_talent(
     }
     let text = resp.text().await.unwrap_or_default();
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    rows.first()
-        .cloned()
-        .ok_or((StatusCode::NOT_FOUND, "talent not found".to_string()))
+    if let Some(row) = rows.first().cloned() {
+        return Ok(row);
+    }
+
+    // 2) creator/user id: agency_users.creator_id or agency_users.user_id
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("*")
+        .eq("agency_id", agency_id)
+        .or(format!("creator_id.eq.{},user_id.eq.{}", talent_id, talent_id))
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        return Err(sanitize_db_error(
+            resp.status().as_u16(),
+            resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let text = resp.text().await.unwrap_or_default();
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if let Some(row) = rows.first().cloned() {
+        return Ok(row);
+    }
+
+    // 3) legacy relationship id: agency_talent_relationships.id -> creator_id -> agency_users
+    let rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("creator_id")
+        .eq("id", talent_id)
+        .eq("agency_id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !rel_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            rel_resp.status().as_u16(),
+            rel_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let rel_text = rel_resp.text().await.unwrap_or_default();
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    let creator_id = rel_rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if !creator_id.is_empty() {
+        let resp = state
+            .pg
+            .from("agency_users")
+            .select("*")
+            .eq("agency_id", agency_id)
+            .or(format!("creator_id.eq.{},user_id.eq.{}", creator_id, creator_id))
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !resp.status().is_success() {
+            return Err(sanitize_db_error(
+                resp.status().as_u16(),
+                resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let text = resp.text().await.unwrap_or_default();
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if let Some(row) = rows.first().cloned() {
+            return Ok(row);
+        }
+    }
+
+    Err((StatusCode::NOT_FOUND, "talent not found".to_string()))
 }
 
 async fn resolve_offer_assignment_for_creator(
@@ -4563,7 +4646,51 @@ pub async fn list_offer_talent_assignments(
         ));
     }
     let text = resp.text().await.unwrap_or_default();
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // Backward-compat: older rows may have stored a non-canonical talent_id
+    // (e.g. creator_id), which breaks the foreign-table join. Best-effort
+    // attach the agency_users row using creator_id.
+    for row in rows.iter_mut() {
+        let needs_user = row
+            .get("agency_users")
+            .and_then(|v| v.as_object())
+            .is_none();
+        if !needs_user {
+            continue;
+        }
+        let creator_id = row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+        let au_resp = state
+            .pg
+            .from("agency_users")
+            .select("id, full_legal_name, stage_name, profile_photo_url, creator_id")
+            .eq("agency_id", &user.id)
+            .or(format!("creator_id.eq.{},user_id.eq.{}", creator_id, creator_id))
+            .limit(1)
+            .execute()
+            .await;
+        if let Ok(au_resp) = au_resp {
+            if au_resp.status().is_success() {
+                let au_text = au_resp.text().await.unwrap_or_default();
+                let au_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&au_text).unwrap_or_default();
+                if let Some(au) = au_rows.first().cloned() {
+                    if let Some(obj) = row.as_object_mut() {
+                        obj.insert("agency_users".to_string(), au);
+                    }
+                }
+            }
+        }
+    }
+
     Ok(Json(json!({ "assignments": rows })))
 }
 
@@ -4603,6 +4730,18 @@ pub async fn create_offer_talent_assignment(
     }
     let talent_id = trim_non_empty(&payload.talent_id, "talent_id")?;
     let talent = resolve_agency_talent(&state, &user.id, &talent_id).await?;
+    let canonical_talent_id = talent
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if canonical_talent_id.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to resolve talent id".to_string(),
+        ));
+    }
     let creator_id = talent
         .get("creator_id")
         .and_then(|v| v.as_str())
@@ -4610,7 +4749,7 @@ pub async fn create_offer_talent_assignment(
     let insert_payload = json!({
         "offer_id": offer_id,
         "agency_id": user.id,
-        "talent_id": talent_id,
+        "talent_id": canonical_talent_id,
         "creator_id": if creator_id.is_empty() { serde_json::Value::Null } else { json!(creator_id) },
         "status": "assigned",
         "assigned_by": user.id,

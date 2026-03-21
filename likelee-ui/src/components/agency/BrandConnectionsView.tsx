@@ -333,6 +333,26 @@ const BrandConnectionsView = () => {
   const agencyStripeReadyForPayouts =
     agencyStripeConnected && agencyStripeTransfersEnabled;
 
+  const builderSendDisabledReason = useMemo(() => {
+    if (!selectedOfferId) return "Select an offer before sending.";
+    if (!currentContractId) return "Select a contract before sending.";
+    if (!hasAssignedTalent)
+      return "Assign at least 1 talent to this offer before sending.";
+    if (!agencyStripeConnected)
+      return "Connect your agency Stripe account before sending.";
+    if (!agencyStripeTransfersEnabled)
+      return "Finish Stripe onboarding (transfers not enabled yet).";
+    if (busyIds.has(currentContractId)) return "Sending…";
+    return "";
+  }, [
+    agencyStripeConnected,
+    agencyStripeTransfersEnabled,
+    busyIds,
+    currentContractId,
+    hasAssignedTalent,
+    selectedOfferId,
+  ]);
+
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
     return requestsQuery.data;
@@ -2931,6 +2951,7 @@ const BrandConnectionsView = () => {
                     !agencyStripeReadyForPayouts ||
                     busyIds.has(currentContractId)
                   }
+                  title={builderSendDisabledReason || undefined}
                 >
                   <Send className="w-4 h-4 mr-2" />
                   {busyIds.has(currentContractId) ? "Sending..." : "Send"}
