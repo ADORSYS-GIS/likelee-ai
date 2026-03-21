@@ -510,6 +510,8 @@ const BrandConnectionsView = () => {
     if (!offerId) return false;
     const offer = (offers || []).find((o: any) => String(o?.id || "") === offerId);
     const status = String(offer?.status || "").trim().toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid").trim().toLowerCase();
+    if (pay !== "unpaid" && pay !== "") return true;
     return status === "contract_sent" || status === "contract_fully_signed";
   }, [assignDialog.offerId, offers]);
   const getTalentAvatar = (t: any) => {
@@ -574,7 +576,7 @@ const BrandConnectionsView = () => {
   };
 
   const handleAssignTalents = async () => {
-    if (!assignDialog.offerId || assignSelectedIds.length === 0) return;
+    if (!assignDialog.offerId) return;
     if (assignSubmitting) return;
     if (assignmentLockedForOffer) {
       toast({
@@ -587,21 +589,59 @@ const BrandConnectionsView = () => {
     }
     setAssignSubmitting(true);
     try {
-      await Promise.all(
-        assignSelectedIds.map((talentId) =>
-          base44.post(
-            `/api/campaign-offers/${assignDialog.offerId}/assignments`,
-            { talent_id: talentId },
-          ),
-        ),
+      const offerId = assignDialog.offerId;
+      const current = Array.isArray(offerAssignmentsQuery.data)
+        ? offerAssignmentsQuery.data
+        : [];
+      const currentByTalentId = new Map<string, string>();
+      current.forEach((a: any) => {
+        const tid = String(a?.talent_id || "").trim();
+        const aid = String(a?.id || "").trim();
+        if (tid && aid) currentByTalentId.set(tid, aid);
+      });
+
+      const desiredIds = new Set(
+        assignSelectedIds.map((id) => String(id || "").trim()).filter(Boolean),
       );
+      const currentIds = new Set([...currentByTalentId.keys()]);
+      const toAdd = [...desiredIds].filter((id) => !currentIds.has(id));
+      const toRemove = [...currentIds].filter((id) => !desiredIds.has(id));
+
+      if (toAdd.length === 0 && toRemove.length === 0) {
+        toast({
+          title: "No changes",
+          description: "Talent assignments are already up to date.",
+        });
+        setAssignDialog({ open: false, offerId: "", talentId: "" });
+        setAssignSelectedIds([]);
+        setAssignSearch("");
+        return;
+      }
+
+      await Promise.all([
+        ...toAdd.map((talentId) =>
+          base44.post(`/api/campaign-offers/${offerId}/assignments`, {
+            talent_id: talentId,
+          }),
+        ),
+        ...toRemove.map((talentId) => {
+          const assignmentId = currentByTalentId.get(talentId);
+          if (!assignmentId) return Promise.resolve(null);
+          return base44.delete(
+            `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
+          );
+        }),
+      ]);
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-assignments", assignDialog.offerId],
       });
       setAssignDialog({ open: false, offerId: "", talentId: "" });
       setAssignSelectedIds([]);
       setAssignSearch("");
-      toast({ title: "Talent assigned" });
+      toast({
+        title: "Assignments updated",
+        description: "Talent assignments saved successfully.",
+      });
     } catch (e: any) {
       const msg = String(e?.message || "");
       toast({
@@ -1451,6 +1491,10 @@ const BrandConnectionsView = () => {
                     "fully_signed",
                     "completed",
                   ]).has(status.toLowerCase());
+                  const assignmentLockedForSelectedOffer = new Set([
+                    "contract_sent",
+                    "contract_fully_signed",
+                  ]).has(status.toLowerCase());
 
                   return (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1591,7 +1635,10 @@ const BrandConnectionsView = () => {
                             const pay = String(
                               offer?.payment_status || "unpaid",
                             ).toLowerCase();
-                            const canEdit = pay !== "processing" && pay !== "paid";
+                            const canEdit =
+                              pay !== "processing" &&
+                              pay !== "paid" &&
+                              !assignmentLockedForSelectedOffer;
                             return (
                               <Button
                                 variant="outline"
@@ -1604,12 +1651,23 @@ const BrandConnectionsView = () => {
                                     talentId: "",
                                   })
                                 }
+                                title={
+                                  assignmentLockedForSelectedOffer
+                                    ? "Assignments are locked after the contract is sent."
+                                    : undefined
+                                }
                               >
                                 <User className="h-4 w-4 mr-2" />
                                 Assign Talent
                               </Button>
                             );
                           })()}
+                          {assignmentLockedForSelectedOffer && (
+                            <p className="text-xs text-gray-500">
+                              Talent assignments are locked because the contract
+                              was already sent.
+                            </p>
+                          )}
                         </div>
 
                         <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
@@ -2781,7 +2839,11 @@ const BrandConnectionsView = () => {
         open={assignDialog.open}
         onOpenChange={(open) => {
           setAssignDialog((prev) => ({ ...prev, open }));
-          if (!open) {
+          if (open) {
+            // Preselect currently assigned talents so the agency can also unassign
+            // by deselecting before saving (until the contract is sent).
+            setAssignSelectedIds(Array.from(assignedTalentIds));
+          } else {
             setAssignSearch("");
             setAssignSelectedIds([]);
           }
@@ -2830,12 +2892,12 @@ const BrandConnectionsView = () => {
                 const id = String(talent?.id || "");
                 const alreadyAssigned = assignedTalentIds.has(id);
                 const isSelected = assignSelectedIds.includes(id);
+                const willUnassign = alreadyAssigned && !isSelected;
                 return (
                   <Card
                     key={id}
                     onClick={() => {
                       if (assignmentLockedForOffer) return;
-                      if (alreadyAssigned) return;
                       setAssignSelectedIds((prev) =>
                         prev.includes(id)
                           ? prev.filter((x) => x !== id)
@@ -2843,11 +2905,9 @@ const BrandConnectionsView = () => {
                       );
                     }}
                     className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                      alreadyAssigned
+                      assignmentLockedForOffer
                         ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                        : assignmentLockedForOffer
-                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                          : "cursor-pointer"
+                        : "cursor-pointer"
                     } ${
                       isSelected
                         ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
@@ -2873,6 +2933,11 @@ const BrandConnectionsView = () => {
                         {alreadyAssigned && (
                           <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
                             Assigned
+                          </Badge>
+                        )}
+                        {willUnassign && (
+                          <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                            Will unassign
                           </Badge>
                         )}
                         <Badge
@@ -2935,8 +3000,8 @@ const BrandConnectionsView = () => {
             <AlertDialogCancel disabled={assignSubmitting}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={assignSubmitting}
+              <AlertDialogAction
+              disabled={assignSubmitting || assignmentLockedForOffer}
               onClick={async () => {
                 await handleAssignTalents();
                 setAssignConfirmOpen(false);
