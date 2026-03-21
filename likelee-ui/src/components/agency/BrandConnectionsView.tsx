@@ -2854,10 +2854,10 @@ const BrandConnectionsView = () => {
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               Assign Talent
             </DialogTitle>
-            <p className="text-sm text-gray-500 font-medium mt-1">
+            <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
               Select one or more talents from your roster to assign to this
               offer.
-            </p>
+            </DialogDescription>
           </DialogHeader>
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
@@ -3020,6 +3020,10 @@ const BrandConnectionsView = () => {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Message Talent</DialogTitle>
+            <DialogDescription>
+              Send a short instruction or request to this talent. Attach a file
+              if needed.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Input
