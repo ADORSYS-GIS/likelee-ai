@@ -15854,7 +15854,8 @@ const RoyaltiesPayoutsView = ({
     const all = tiersData?.tiers?.flatMap((t: any) => t.talents) || [];
     const next: Record<string, string> = {};
     for (const t of all) {
-      next[t.id] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
+      const key = (t.creator_id as string | undefined) || t.id;
+      next[key] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
     }
     setTalentCustomRateDrafts(next);
     setLastSavedTalentDraft(next);
@@ -15889,14 +15890,14 @@ const RoyaltiesPayoutsView = ({
 
   const talentCommissionMutation = useMutation({
     mutationFn: async ({
-      talentId,
+      creatorId,
       rate,
     }: {
-      talentId: string;
+      creatorId: string;
       rate: number | null;
     }) => {
       await base44.post("/agency/dashboard/talent-commissions/update", {
-        talent_id: talentId,
+        creator_id: creatorId,
         custom_rate: rate,
       });
       return true;
@@ -16040,17 +16041,20 @@ const RoyaltiesPayoutsView = ({
     return false;
   })();
 
-  const commitTalentCustomRate = (talentId: string) => {
-    const draft = (talentCustomRateDrafts?.[talentId] ?? "").trim();
-    const lastSaved = lastSavedTalentDraft?.[talentId];
+  const commitTalentCustomRate = (creatorId: string) => {
+    const draft = (talentCustomRateDrafts?.[creatorId] ?? "").trim();
+    const lastSaved = lastSavedTalentDraft?.[creatorId];
     if (lastSaved === draft) return;
 
     const rate = draft === "" ? null : Number(draft);
     if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100))
       return;
 
-    setLastSavedTalentDraft((prev) => ({ ...(prev || {}), [talentId]: draft }));
-    talentCommissionMutation.mutate({ talentId, rate });
+    setLastSavedTalentDraft((prev) => ({
+      ...(prev || {}),
+      [creatorId]: draft,
+    }));
+    talentCommissionMutation.mutate({ creatorId, rate });
   };
 
   return (
@@ -16540,20 +16544,30 @@ const RoyaltiesPayoutsView = ({
                                 max="100"
                                 step="1"
                                 value={
-                                  talentCustomRateDrafts?.[talent.id] ?? ""
+                                  talentCustomRateDrafts?.[
+                                    (talent.creator_id as string) || ""
+                                  ] ?? ""
                                 }
                                 onChange={(e) =>
                                   setTalentCustomRateDrafts((prev) => ({
                                     ...(prev || {}),
-                                    [talent.id]: e.target.value,
+                                    [(talent.creator_id as string) || ""]:
+                                      e.target.value,
                                   }))
                                 }
-                                onBlur={() => commitTalentCustomRate(talent.id)}
+                                onBlur={() =>
+                                  talent.creator_id
+                                    ? commitTalentCustomRate(
+                                        talent.creator_id as string,
+                                      )
+                                    : undefined
+                                }
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
                                     (e.target as HTMLInputElement).blur();
                                   }
                                 }}
+                                disabled={!talent.creator_id}
                                 placeholder={
                                   talent.is_custom_rate ? "" : "Default"
                                 }
