@@ -19,6 +19,7 @@ import {
   Download,
   Video,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   createOfferAssetRequest,
@@ -61,8 +62,9 @@ import { base44 } from "@/api/base44Client";
 export function AgencyDeliverablesView() {
   const [offers, setOffers] = useState<any[]>([]);
   const [roster, setRoster] = useState<any[]>([]);
+  const [loadingRoster, setLoadingRoster] = useState(false);
   const [expandedOfferId, setExpandedOfferId] = useState<string>("");
-  const [selectedTalentId, setSelectedTalentId] = useState<string>("");
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [assignmentsByOffer, setAssignmentsByOffer] = useState<
     Record<string, any[]>
   >({});
@@ -83,16 +85,32 @@ export function AgencyDeliverablesView() {
   const [assignDialog, setAssignDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
-  }>({ open: false, offerId: "", talentId: "" });
+  }>({ open: false, offerId: "" });
   const [assignSearch, setAssignSearch] = useState("");
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [unassignDialog, setUnassignDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    assignmentId: string;
+    creatorId: string;
+    talentName: string;
+    submitting: boolean;
+    offerStatus: string;
+  }>({
+    open: false,
+    offerId: "",
+    assignmentId: "",
+    creatorId: "",
+    talentName: "",
+    submitting: false,
+    offerStatus: "",
+  });
   const [requestDialog, setRequestDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
+    creatorId: string;
     title: string;
     message: string;
     file?: File | null;
@@ -100,7 +118,7 @@ export function AgencyDeliverablesView() {
   }>({
     open: false,
     offerId: "",
-    talentId: "",
+    creatorId: "",
     title: "",
     message: "",
     file: null,
@@ -109,7 +127,7 @@ export function AgencyDeliverablesView() {
   const [uploadDialog, setUploadDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
+    creatorId: string;
     caption: string;
     files?: File[];
     assetRequestId?: string;
@@ -117,7 +135,7 @@ export function AgencyDeliverablesView() {
   }>({
     open: false,
     offerId: "",
-    talentId: "",
+    creatorId: "",
     caption: "",
     files: [],
     assetRequestId: undefined,
@@ -155,6 +173,56 @@ export function AgencyDeliverablesView() {
   >([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const { toast } = useToast();
+  const confirmUnassign = async () => {
+    if (unassignDialog.submitting) return;
+    const offerId = String(unassignDialog.offerId || "").trim();
+    const assignmentId = String(unassignDialog.assignmentId || "").trim();
+    if (!offerId || !assignmentId) return;
+    const status = String(unassignDialog.offerStatus || "").trim().toLowerCase();
+    const locked = status === "contract_sent" || status === "contract_fully_signed";
+    if (locked) {
+      toast({
+        title: "Assignments locked",
+        description:
+          status === "contract_fully_signed"
+            ? "Contract is already signed and you can’t change assigned talents."
+            : "You can’t change assigned talents after the contract is sent.",
+        variant: "destructive",
+      });
+      setUnassignDialog((prev) => ({ ...prev, open: false }));
+      return;
+    }
+    setUnassignDialog((prev) => ({ ...prev, submitting: true }));
+    try {
+      await base44.delete(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/assignments/${encodeURIComponent(assignmentId)}`,
+      );
+      if (selectedCreatorId && selectedCreatorId === unassignDialog.creatorId) {
+        setSelectedCreatorId("");
+      }
+      await loadAssignments(offerId);
+      toast({
+        title: "Talent unassigned",
+        description: "Talent was removed from this offer.",
+      });
+      setUnassignDialog({
+        open: false,
+        offerId: "",
+        assignmentId: "",
+        creatorId: "",
+        talentName: "",
+        submitting: false,
+        offerStatus: "",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Unassign failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+      setUnassignDialog((prev) => ({ ...prev, submitting: false }));
+    }
+  };
 
   const rosterOptions = useMemo(
     () => (Array.isArray(roster) ? roster : []),
@@ -171,6 +239,8 @@ export function AgencyDeliverablesView() {
       return name.includes(q) || email.includes(q);
     });
   }, [assignSearch, rosterOptions]);
+  const getRosterCreatorId = (t: any) =>
+    String(t?.creator_id || t?.creatorId || t?.creator?.id || "").trim();
   const getTalentAvatar = (t: any) => {
     if (!t) return "";
     if (t.img) return t.img;
@@ -212,7 +282,11 @@ export function AgencyDeliverablesView() {
   const assignedTalentIds = useMemo(() => {
     const offerId = assignDialog.offerId;
     const rows = offerId ? assignmentsByOffer[offerId] || [] : [];
-    return new Set(rows.map((a: any) => String(a?.talent_id || "")));
+    return new Set(
+      rows
+        .map((a: any) => String(a?.creator_id || a?.talent_id || ""))
+        .filter(Boolean),
+    );
   }, [assignDialog.offerId, assignmentsByOffer]);
 
   const assignmentLockedForOffer = useMemo(() => {
@@ -242,6 +316,7 @@ export function AgencyDeliverablesView() {
   useEffect(() => {
     const load = async () => {
       setLoadingOffers(true);
+      setLoadingRoster(true);
       try {
         const [offersResp, rosterResp] = await Promise.all([
           listMyCampaignOffers(),
@@ -265,6 +340,7 @@ export function AgencyDeliverablesView() {
         });
       } finally {
         setLoadingOffers(false);
+        setLoadingRoster(false);
       }
     };
     load();
@@ -618,7 +694,7 @@ export function AgencyDeliverablesView() {
   const openOffer = async (offerId: string) => {
     const next = offerId === expandedOfferId ? "" : offerId;
     setExpandedOfferId(next);
-    setSelectedTalentId("");
+    setSelectedCreatorId("");
     if (next) {
       await Promise.all([loadAssignments(next), loadDeliverables(next)]);
     }
@@ -639,12 +715,14 @@ export function AgencyDeliverablesView() {
     setAssignSubmitting(true);
     try {
       await Promise.all(
-        assignSelectedIds.map((talentId) =>
-          createOfferTalentAssignment(assignDialog.offerId, talentId),
+        assignSelectedIds.map((creatorId) =>
+          createOfferTalentAssignment(assignDialog.offerId, {
+            creator_id: creatorId,
+          }),
         ),
       );
       await loadAssignments(assignDialog.offerId);
-      setAssignDialog({ open: false, offerId: "", talentId: "" });
+      setAssignDialog({ open: false, offerId: "" });
       setAssignSelectedIds([]);
       setAssignSearch("");
       toast({ title: "Talent assigned" });
@@ -665,7 +743,7 @@ export function AgencyDeliverablesView() {
   };
 
   const handleRequestAsset = async () => {
-    if (!requestDialog.offerId || !requestDialog.talentId) return;
+    if (!requestDialog.offerId || !requestDialog.creatorId) return;
     setRequestDialog((prev) => ({ ...prev, sending: true }));
     try {
       let fileUrl: string | undefined;
@@ -677,7 +755,7 @@ export function AgencyDeliverablesView() {
         fileUrl = (uploadResp as any)?.file_url;
       }
       await createOfferAssetRequest(requestDialog.offerId, {
-        talent_id: requestDialog.talentId,
+        creator_id: requestDialog.creatorId,
         title: requestDialog.title || undefined,
         message: requestDialog.message || undefined,
         file_url: fileUrl,
@@ -685,7 +763,7 @@ export function AgencyDeliverablesView() {
       setRequestDialog({
         open: false,
         offerId: "",
-        talentId: "",
+        creatorId: "",
         title: "",
         message: "",
         file: null,
@@ -706,7 +784,7 @@ export function AgencyDeliverablesView() {
   const handleUploadDeliverable = async () => {
     if (
       !uploadDialog.offerId ||
-      !uploadDialog.talentId ||
+      !uploadDialog.creatorId ||
       !uploadDialog.files ||
       uploadDialog.files.length === 0
     )
@@ -718,7 +796,7 @@ export function AgencyDeliverablesView() {
           uploadOfferDeliverable(uploadDialog.offerId, {
             file,
             caption: uploadDialog.caption || undefined,
-            talent_id: uploadDialog.talentId,
+            creator_id: uploadDialog.creatorId,
             asset_request_id: uploadDialog.assetRequestId,
             status: "draft",
           }),
@@ -728,7 +806,7 @@ export function AgencyDeliverablesView() {
       setUploadDialog({
         open: false,
         offerId: "",
-        talentId: "",
+        creatorId: "",
         caption: "",
         files: [],
         assetRequestId: undefined,
@@ -853,7 +931,7 @@ export function AgencyDeliverablesView() {
             className="border-purple-300/50 text-white bg-white/10 hover:bg-white/20"
             onClick={() => {
               setExpandedOfferId("");
-              setSelectedTalentId("");
+              setSelectedCreatorId("");
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -873,17 +951,37 @@ export function AgencyDeliverablesView() {
           const expanded = expandedOfferId === offerId;
           const assignments = assignmentsByOffer[offerId] || [];
           const deliverables = deliverablesByOffer[offerId] || [];
-          const selectedTalent = assignments.find(
-            (a: any) => String(a?.talent_id) === selectedTalentId,
-          );
+          const selectedAssignment = selectedCreatorId
+            ? assignments.find(
+                (a: any) => String(a?.creator_id || "") === selectedCreatorId,
+              ) ||
+              assignments.find(
+                (a: any) => String(a?.talent_id || "") === selectedCreatorId,
+              )
+            : null;
+          const selectedLegacyTalentId = String(
+            selectedAssignment?.talent_id || "",
+          ).trim();
+          const deliverableMatchesSelection = (d: any) => {
+            if (!selectedCreatorId) return false;
+            const deliverableCreatorId = String(d?.creator_id || "").trim();
+            const deliverableTalentId = String(d?.talent_id || "").trim();
+            if (deliverableCreatorId) {
+              return deliverableCreatorId === selectedCreatorId;
+            }
+            if (selectedLegacyTalentId) {
+              return deliverableTalentId === selectedLegacyTalentId;
+            }
+            return false;
+          };
           const creatorDeliverables = deliverables.filter(
             (d: any) =>
-              String(d?.talent_id || "") === selectedTalentId &&
+              deliverableMatchesSelection(d) &&
               String(d?.submitted_by_role || "") !== "agency",
           );
           const agencyDeliverables = deliverables.filter(
             (d: any) =>
-              String(d?.talent_id || "") === selectedTalentId &&
+              deliverableMatchesSelection(d) &&
               String(d?.submitted_by_role || "") === "agency",
           );
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
@@ -891,6 +989,14 @@ export function AgencyDeliverablesView() {
           );
           const isOfferPaid =
             String(offer?.payment_status || "").toLowerCase() === "paid";
+          const offerAssignmentsLocked = (() => {
+            const status = String(offer?.status || "")
+              .trim()
+              .toLowerCase();
+            return (
+              status === "contract_sent" || status === "contract_fully_signed"
+            );
+          })();
           return (
             <motion.div
               key={offerId}
@@ -955,8 +1061,18 @@ export function AgencyDeliverablesView() {
                       className="border-0 bg-gradient-to-r from-gray-900 to-slate-800 text-white hover:from-gray-800 hover:to-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setAssignDialog({ open: true, offerId, talentId: "" });
+                        if (offerAssignmentsLocked) {
+                          toast({
+                            title: "Assignments locked",
+                            description:
+                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        setAssignDialog({ open: true, offerId });
                       }}
+                      disabled={offerAssignmentsLocked}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {assignments.length === 0
@@ -997,13 +1113,20 @@ export function AgencyDeliverablesView() {
                         ) : (
                           <div className="space-y-2">
                             {assignments.map((assignment: any) => {
-                              const talent = assignment?.agency_users || {};
-                              const tid = String(assignment?.talent_id || "");
+                              const talent =
+                                assignment?.creators ||
+                                assignment?.agency_users ||
+                                {};
+                              const creatorId = String(
+                                assignment?.creator_id ||
+                                  assignment?.talent_id ||
+                                  "",
+                              ).trim();
                               return (
                                 <div
                                   key={assignment.id}
                                   className={`border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between ${
-                                    selectedTalentId === tid
+                                    selectedCreatorId === creatorId
                                       ? "bg-white"
                                       : "bg-white"
                                   }`}
@@ -1020,6 +1143,7 @@ export function AgencyDeliverablesView() {
                                     <div>
                                       <p className="text-sm font-semibold text-gray-900">
                                         {talent?.stage_name ||
+                                          talent?.full_name ||
                                           talent?.full_legal_name ||
                                           "Talent"}
                                       </p>
@@ -1029,17 +1153,51 @@ export function AgencyDeliverablesView() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    {!offerAssignmentsLocked ? (
+                                      <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
+                                        title="Unassign talent"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          if (!assignment?.id) return;
+                                          const name = String(
+                                            talent?.stage_name ||
+                                              talent?.full_name ||
+                                              talent?.full_legal_name ||
+                                              "Talent",
+                                          );
+                                          setUnassignDialog({
+                                            open: true,
+                                            offerId,
+                                            assignmentId: String(assignment.id),
+                                            creatorId,
+                                            talentName: name,
+                                            submitting: false,
+                                            offerStatus: String(
+                                              offer?.status || "",
+                                            ),
+                                          });
+                                        }}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    ) : null}
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                       onClick={() => {
-                                        setSelectedTalentId(
-                                          selectedTalentId === tid ? "" : tid,
+                                        if (!creatorId) return;
+                                        setSelectedCreatorId(
+                                          selectedCreatorId === creatorId
+                                            ? ""
+                                            : creatorId,
                                         );
                                       }}
                                     >
-                                      {selectedTalentId === tid ? (
+                                      {selectedCreatorId === creatorId ? (
                                         <ChevronDown className="w-4 h-4" />
                                       ) : (
                                         <ChevronRight className="w-4 h-4" />
@@ -1053,7 +1211,9 @@ export function AgencyDeliverablesView() {
                                         setRequestDialog({
                                           open: true,
                                           offerId,
-                                          talentId: tid,
+                                          creatorId: String(
+                                            assignment?.creator_id || "",
+                                          ).trim(),
                                           title: "",
                                           message: "",
                                           file: null,
@@ -1070,7 +1230,7 @@ export function AgencyDeliverablesView() {
                           </div>
                         )}
 
-                        {selectedTalentId && (
+                        {selectedCreatorId && selectedAssignment && (
                           <div className="border border-gray-200 rounded-lg p-4 space-y-3 bg-white">
                             <div className="flex items-center justify-between">
                               <div>
@@ -1078,8 +1238,10 @@ export function AgencyDeliverablesView() {
                                   Deliverables
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {selectedTalent?.agency_users?.stage_name ||
-                                    selectedTalent?.agency_users
+                                  {selectedAssignment?.creators?.full_name ||
+                                    selectedAssignment?.agency_users
+                                      ?.stage_name ||
+                                    selectedAssignment?.agency_users
                                       ?.full_legal_name ||
                                     "Talent"}
                                 </p>
@@ -1113,7 +1275,7 @@ export function AgencyDeliverablesView() {
                                     setUploadDialog({
                                       open: true,
                                       offerId,
-                                      talentId: selectedTalentId,
+                                      creatorId: selectedCreatorId,
                                       caption: "",
                                       files: [],
                                       assetRequestId: undefined,
@@ -1244,36 +1406,66 @@ export function AgencyDeliverablesView() {
           </div>
 
           <ScrollArea className="h-[450px] pr-2 sm:pr-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredRoster.map((talent: any) => {
-                const id = String(talent?.id || "");
-                const alreadyAssigned = assignedTalentIds.has(id);
-                const isSelected = assignSelectedIds.includes(id);
-                return (
-                  <Card
-                    key={id}
-                    onClick={() => {
-                      if (assignmentLockedForOffer) return;
-                      if (alreadyAssigned) return;
-                      setAssignSelectedIds((prev) =>
-                        prev.includes(id)
-                          ? prev.filter((x) => x !== id)
-                          : [...prev, id],
-                      );
-                    }}
-                    className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                      alreadyAssigned
-                        ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                        : assignmentLockedForOffer
+            {loadingRoster ? (
+              <div className="h-[420px] flex flex-col items-center justify-center text-center">
+                <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
+                <p className="text-sm font-bold text-gray-500">
+                  Loading talents…
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Fetching your agency roster.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredRoster.map((talent: any) => {
+                  const creatorId = getRosterCreatorId(talent);
+                  const canAssign = Boolean(creatorId);
+                  const alreadyAssigned = creatorId
+                    ? assignedTalentIds.has(creatorId)
+                    : false;
+                  const isSelected = creatorId
+                    ? assignSelectedIds.includes(creatorId)
+                    : false;
+                  return (
+                    <Card
+                      key={
+                        creatorId ||
+                        String(
+                          talent?.id || talent?.talent_id || talent?.email || "",
+                        )
+                      }
+                      onClick={() => {
+                        if (assignmentLockedForOffer) return;
+                        if (!canAssign) {
+                          toast({
+                            title: "Talent not ready",
+                            description:
+                              "This talent needs a creator account before they can be assigned to a contract. Ask them to accept the invite and finish onboarding.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        if (alreadyAssigned) return;
+                        setAssignSelectedIds((prev) =>
+                          prev.includes(creatorId)
+                            ? prev.filter((x) => x !== creatorId)
+                            : [...prev, creatorId],
+                        );
+                      }}
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                        alreadyAssigned
                           ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                          : "cursor-pointer"
-                    } ${
-                      isSelected
-                        ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
-                        : "border-gray-50 hover:border-gray-100 bg-white"
-                    }`}
-                  >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                          : assignmentLockedForOffer
+                            ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                            : "cursor-pointer"
+                      } ${
+                        isSelected
+                          ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                          : "border-gray-50 hover:border-gray-100 bg-white"
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
                       <Avatar className="w-16 h-16 rounded-2xl">
                         <AvatarImage src={getTalentAvatar(talent)} />
                         <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
@@ -1285,6 +1477,7 @@ export function AgencyDeliverablesView() {
                       <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
                         {talent?.stage_name ||
                           talent?.name ||
+                          talent?.full_name ||
                           talent?.full_legal_name ||
                           "Talent"}
                       </h6>
@@ -1312,10 +1505,11 @@ export function AgencyDeliverablesView() {
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     )}
-                  </Card>
-                );
-              })}
-            </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </ScrollArea>
 
           <Button
@@ -1367,6 +1561,36 @@ export function AgencyDeliverablesView() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={unassignDialog.open}
+        onOpenChange={(open) => {
+          if (unassignDialog.submitting) return;
+          setUnassignDialog((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove <strong>{unassignDialog.talentName}</strong> from this offer.
+              You can change assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unassignDialog.submitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={unassignDialog.submitting}
+              onClick={confirmUnassign}
+            >
+              {unassignDialog.submitting ? "Unassigning..." : "Unassign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={requestDialog.open}
         onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
@@ -1374,15 +1598,18 @@ export function AgencyDeliverablesView() {
         <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           {(() => {
             const assigned = assignmentsByOffer[requestDialog.offerId] || [];
+            const assignment = assigned.find(
+              (a: any) =>
+                String(a?.creator_id || "").trim() ===
+                String(requestDialog.creatorId || "").trim(),
+            );
             const requestTalent =
-              assigned.find(
-                (a: any) =>
-                  String(a?.talent_id || "") ===
-                  String(requestDialog.talentId || ""),
-              )?.agency_users ||
+              assignment?.creators ||
+              assignment?.agency_users ||
               rosterOptions.find(
                 (t: any) =>
-                  String(t?.id || "") === String(requestDialog.talentId || ""),
+                  getRosterCreatorId(t) ===
+                  String(requestDialog.creatorId || "").trim(),
               ) ||
               null;
             return (
@@ -1412,6 +1639,7 @@ export function AgencyDeliverablesView() {
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-gray-900 truncate">
                           {requestTalent?.stage_name ||
+                            requestTalent?.full_name ||
                             requestTalent?.name ||
                             requestTalent?.full_legal_name ||
                             "Talent"}
