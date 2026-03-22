@@ -39,6 +39,7 @@ pub struct TierRuleDb {
 #[derive(Serialize)]
 pub struct TalentPerformance {
     pub id: String,
+    pub creator_id: Option<String>,
     pub name: String,
     pub photo_url: Option<String>,
     pub earnings_30d: f64,
@@ -82,7 +83,7 @@ pub struct CommissionHistoryLog {
 
 #[derive(Deserialize)]
 pub struct UpdateTalentCommissionRequest {
-    pub talent_id: String,
+    pub creator_id: String,
     pub custom_rate: Option<f64>,
 }
 
@@ -221,7 +222,7 @@ pub async fn get_performance_tiers(
     let agency_id = &auth_user.id;
 
     // Parallelize calls
-    let (resp_tiers_db, resp_talents, resp_stats, resp_agency) = tokio::try_join!(
+    let (resp_tiers_db, resp_talents, resp_connected, resp_stats, resp_agency) = tokio::try_join!(
         state
             .pg
             .from("performance_tiers")
@@ -234,9 +235,16 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .limit(500)
-            .select(
-                "id, full_legal_name, profile_photo_url, talent_commissions!left(commission_rate)"
-            )
+            .select("id, creator_id, full_legal_name, profile_photo_url, performance_tier_name")
+            .execute(),
+        state
+            .pg
+            .from("agency_talent_relationships")
+            .eq("agency_id", agency_id)
+            .is("talent_id", "null")
+            .in_("status", vec!["active", "pending"])
+            .select("creator_id, performance_tier_name, creators(full_name, profile_photo_url)")
+            .limit(500)
             .execute(),
         async {
             let now = chrono::Utc::now();
@@ -388,6 +396,70 @@ pub async fn get_performance_tiers(
     let talents_json: Vec<serde_json::Value> =
         serde_json::from_str(&text_talents).unwrap_or_default();
 
+    // Connected creators without an agency_users row (creator-only memberships)
+    let text_connected = resp_connected
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let connected_json: Vec<serde_json::Value> =
+        serde_json::from_str(&text_connected).unwrap_or_default();
+
+    // Load per-creator custom commission overrides for this agency.
+    let mut creator_ids: Vec<String> = vec![];
+    for t in &talents_json {
+        if let Some(cid) = t.get("creator_id").and_then(|v| v.as_str()) {
+            let cid = cid.trim();
+            if !cid.is_empty() {
+                creator_ids.push(cid.to_string());
+            }
+        }
+    }
+    for r in &connected_json {
+        if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
+            let cid = cid.trim();
+            if !cid.is_empty() {
+                creator_ids.push(cid.to_string());
+            }
+        }
+    }
+    creator_ids.sort();
+    creator_ids.dedup();
+
+    let mut custom_by_creator: HashMap<String, f64> = HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_id_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        let comm_resp = state
+            .pg
+            .from("agency_creator_commissions")
+            .select("creator_id,commission_rate")
+            .eq("agency_id", agency_id)
+            .in_("creator_id", creator_id_refs)
+            .execute()
+            .await
+            .ok();
+
+        if let Some(comm_resp) = comm_resp {
+            if comm_resp.status().is_success() {
+                let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let comm_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&comm_text).unwrap_or_default();
+                for r in comm_rows {
+                    let cid = r
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                        custom_by_creator.insert(cid.to_string(), rate.clamp(0.0, 100.0));
+                    }
+                }
+            }
+        }
+    }
+
     let mut groups: HashMap<i32, TierGroup> = HashMap::new();
     for rule in &tiers_json {
         groups.insert(
@@ -405,12 +477,22 @@ pub async fn get_performance_tiers(
         );
     }
 
+    let mut tier_by_name: HashMap<String, TierRule> = HashMap::new();
+    for t in &tiers_json {
+        tier_by_name.insert(t.tier_name.clone(), t.clone());
+    }
+
     for t in talents_json {
         let id = t
             .get("id")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let creator_id = t
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
         let name = t
             .get("full_legal_name")
             .and_then(|v| v.as_str())
@@ -434,17 +516,14 @@ pub async fn get_performance_tiers(
         }
 
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
-            let custom_rate = t.get("talent_commissions").and_then(|v| {
-                if v.is_array() {
-                    v.as_array()?.first()?.get("commission_rate")?.as_f64()
-                } else {
-                    v.get("commission_rate")?.as_f64()
-                }
-            });
+            let custom_rate = creator_id
+                .as_ref()
+                .and_then(|cid| custom_by_creator.get(cid).copied());
             let final_rate = custom_rate.unwrap_or(assigned_tier.commission_rate);
 
             group.talents.push(TalentPerformance {
                 id: id.clone(),
+                creator_id: creator_id.clone(),
                 name,
                 photo_url: photo,
                 earnings_30d: earnings,
@@ -464,6 +543,57 @@ pub async fn get_performance_tiers(
             .update(tier_body.to_string())
             .execute()
             .await;
+    }
+
+    let empty_creator = json!({});
+    for r in connected_json {
+        let creator_id = r
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+        let tier_name = r
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        let assigned_tier = tier_by_name
+            .get(&tier_name)
+            .or_else(|| tier_by_name.get("Inactive"))
+            .expect("tier rule exists");
+
+        let creator_obj = r.get("creators").unwrap_or(&empty_creator);
+        let name = creator_obj
+            .get("full_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo = creator_obj
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let custom_rate = custom_by_creator.get(&creator_id).copied();
+        let final_rate = custom_rate.unwrap_or(assigned_tier.commission_rate);
+
+        if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
+            group.talents.push(TalentPerformance {
+                id: creator_id.clone(),
+                creator_id: Some(creator_id),
+                name,
+                photo_url: photo,
+                earnings_30d: 0.0,
+                bookings_this_month: 0,
+                tier: assigned_tier.clone(),
+                commission_rate: final_rate,
+                is_custom_rate: custom_rate.is_some(),
+            });
+        }
     }
 
     let mut result_tiers: Vec<TierGroup> = groups.into_values().collect();
@@ -495,16 +625,49 @@ pub async fn update_talent_commission(
 ) -> Result<StatusCode, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
+    let creator_id = payload.creator_id.trim().to_string();
+    if creator_id.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "creator_id is required".to_string()));
+    }
 
-    let (resp_user, resp_tiers_db, resp_agency, resp_stats) = tokio::try_join!(
-        state.pg.from("talent_commissions").select("commission_rate").eq("talent_id", &payload.talent_id).eq("agency_id", agency_id).limit(1).execute(),
+    // Validate creator is actually linked to this agency (created talent or connected creator).
+    let (roster_resp, rel_resp) = tokio::try_join!(
+        state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .eq("creator_id", &creator_id)
+            .limit(1)
+            .execute(),
+        state
+            .pg
+            .from("agency_talent_relationships")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .eq("creator_id", &creator_id)
+            .limit(1)
+            .execute()
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let roster_text = roster_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let roster_rows: Vec<serde_json::Value> = serde_json::from_str(&roster_text).unwrap_or_default();
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    let roster_ok = !roster_rows.is_empty();
+    let rel_ok = !rel_rows.is_empty();
+    if !roster_ok && !rel_ok {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "creator is not linked to this agency".to_string(),
+        ));
+    }
+
+    let (resp_user, resp_tiers_db, resp_agency) = tokio::try_join!(
+        state.pg.from("agency_creator_commissions").select("commission_rate").eq("creator_id", &creator_id).eq("agency_id", agency_id).limit(1).execute(),
         state.pg.from("performance_tiers").eq("agency_id", agency_id).select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent").execute(),
-        state.pg.from("agencies").select("performance_commission_config").eq("id", agency_id).execute(),
-        async {
-            let now = chrono::Utc::now();
-            let month_start = now.format("%Y-%m-01").to_string();
-            state.pg.rpc("get_agency_performance_stats", json!({ "p_agency_id": agency_id, "p_earnings_start_date": month_start, "p_bookings_start_date": month_start }).to_string()).execute().await
-        }
+        state.pg.from("agencies").select("performance_commission_config").eq("id", agency_id).execute()
     ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let text_user = resp_user.text().await.unwrap_or_else(|_| "[]".to_string());
@@ -582,13 +745,10 @@ pub async fn update_talent_commission(
         }
     }
 
-    let stats_all: Vec<PerformanceStats> =
-        serde_json::from_str(&resp_stats.text().await.unwrap_or_default()).unwrap_or_default();
-    let talent_stats = stats_all.iter().find(|s| s.talent_id == payload.talent_id);
-    let earnings = talent_stats
-        .map(|s| s.earnings_cents as f64 / 100.0)
-        .unwrap_or(0.0);
-    let bookings = talent_stats.map(|s| s.booking_count).unwrap_or(0);
+    // We don't require a roster `agency_users` row to set creator-level commission overrides,
+    // so we default the tier evaluation to "Inactive" behavior (0 earnings, 0 bookings).
+    let earnings = 0.0;
+    let bookings = 0_i64;
 
     let mut assigned_tier = &tiers[tiers.len() - 1];
     for rule in &tiers {
@@ -600,8 +760,34 @@ pub async fn update_talent_commission(
     let default_tier_rate = assigned_tier.commission_rate;
     let new_rate_to_log = payload.custom_rate.unwrap_or(default_tier_rate);
 
-    let _ = state.pg.from("talent_commissions").upsert(json!({"talent_id": payload.talent_id, "agency_id": agency_id, "commission_rate": new_rate_to_log, "updated_at": chrono::Utc::now().to_rfc3339()}).to_string()).on_conflict("talent_id, agency_id").execute().await;
-    let _ = state.pg.from("talent_commission_history").insert(json!({"talent_id": payload.talent_id, "commission_rate": new_rate_to_log, "agency_id": agency_id}).to_string()).execute().await;
+    let _ = state
+        .pg
+        .from("agency_creator_commissions")
+        .upsert(
+            json!({
+                "creator_id": creator_id,
+                "agency_id": agency_id,
+                "commission_rate": new_rate_to_log,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
+        .on_conflict("agency_id,creator_id")
+        .execute()
+        .await;
+    let _ = state
+        .pg
+        .from("agency_creator_commission_history")
+        .insert(
+            json!({
+                "creator_id": creator_id,
+                "commission_rate": new_rate_to_log,
+                "agency_id": agency_id
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
 
     Ok(StatusCode::OK)
 }
