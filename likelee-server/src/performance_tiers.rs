@@ -234,6 +234,8 @@ pub async fn get_performance_tiers(
             .from("agency_users")
             .eq("agency_id", agency_id)
             .eq("role", "talent")
+            .in_("status", vec!["active", "inactive"])
+            .not("is", "creator_id", "null")
             .limit(500)
             .select("id, creator_id, full_legal_name, profile_photo_url, performance_tier_name")
             .execute(),
@@ -242,7 +244,7 @@ pub async fn get_performance_tiers(
             .from("agency_talent_relationships")
             .eq("agency_id", agency_id)
             .is("talent_id", "null")
-            .in_("status", vec!["active", "pending"])
+            .eq("status", "active")
             .select("creator_id, performance_tier_name, creators(full_name, profile_photo_url)")
             .limit(500)
             .execute(),
@@ -622,7 +624,7 @@ pub async fn update_talent_commission(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Json(payload): Json<UpdateTalentCommissionRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let creator_id = payload.creator_id.trim().to_string();
@@ -635,15 +637,15 @@ pub async fn update_talent_commission(
         state
             .pg
             .from("agency_users")
-            .select("id")
+            .select("creator_id")
             .eq("agency_id", agency_id)
-            .eq("creator_id", &creator_id)
+            .or(format!("id.eq.{},creator_id.eq.{}", creator_id, creator_id))
             .limit(1)
             .execute(),
         state
             .pg
             .from("agency_talent_relationships")
-            .select("id")
+            .select("creator_id")
             .eq("agency_id", agency_id)
             .eq("creator_id", &creator_id)
             .limit(1)
@@ -664,8 +666,15 @@ pub async fn update_talent_commission(
         ));
     }
 
+    let mut actual_creator_id = creator_id.clone();
+    if let Some(row) = roster_rows.first() {
+        if let Some(cid) = row.get("creator_id").and_then(|v| v.as_str()) {
+            actual_creator_id = cid.to_string();
+        }
+    }
+
     let (resp_user, resp_tiers_db, resp_agency) = tokio::try_join!(
-        state.pg.from("agency_creator_commissions").select("commission_rate").eq("creator_id", &creator_id).eq("agency_id", agency_id).limit(1).execute(),
+        state.pg.from("agency_creator_commissions").select("commission_rate").eq("creator_id", &actual_creator_id).eq("agency_id", agency_id).limit(1).execute(),
         state.pg.from("performance_tiers").eq("agency_id", agency_id).select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent").execute(),
         state.pg.from("agencies").select("performance_commission_config").eq("id", agency_id).execute()
     ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -760,12 +769,12 @@ pub async fn update_talent_commission(
     let default_tier_rate = assigned_tier.commission_rate;
     let new_rate_to_log = payload.custom_rate.unwrap_or(default_tier_rate);
 
-    let _ = state
+    let resp = state
         .pg
         .from("agency_creator_commissions")
         .upsert(
             json!({
-                "creator_id": creator_id,
+                "creator_id": actual_creator_id,
                 "agency_id": agency_id,
                 "commission_rate": new_rate_to_log,
                 "updated_at": chrono::Utc::now().to_rfc3339()
@@ -774,22 +783,35 @@ pub async fn update_talent_commission(
         )
         .on_conflict("agency_id,creator_id")
         .execute()
-        .await;
-    let _ = state
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let txt = resp.text().await.unwrap_or_else(|_| "upsert failed".into());
+        return Err((StatusCode::BAD_REQUEST, txt));
+    }
+
+    let resp_hist = state
         .pg
         .from("agency_creator_commission_history")
         .insert(
             json!({
-                "creator_id": creator_id,
+                "creator_id": actual_creator_id,
                 "commission_rate": new_rate_to_log,
                 "agency_id": agency_id
             })
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(StatusCode::OK)
+    if !resp_hist.status().is_success() {
+        let txt = resp_hist.text().await.unwrap_or_else(|_| "insert history failed".into());
+        return Err((StatusCode::BAD_REQUEST, txt));
+    }
+
+    Ok(Json(json!({ "status": "ok" })))
 }
 
 pub async fn get_commission_history(

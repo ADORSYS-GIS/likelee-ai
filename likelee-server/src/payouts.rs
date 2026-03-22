@@ -2466,7 +2466,8 @@ async fn handle_licensing_requests_checkout_session_completed(
             })
             .clamp(0.0, 100.0);
 
-        let talent_earnings_cents = ((gross_cents as f64) * (talent_rate / 100.0)).round() as i64;
+        let talent_payout_rate = (100.0 - talent_rate).max(0.0).min(100.0);
+        let talent_earnings_cents = ((gross_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
         let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_cents);
         let agency_earnings_cents = (gross_cents - talent_earnings_cents).max(0);
 
@@ -4958,8 +4959,9 @@ async fn handle_campaign_offer_agency_distribution(
             .unwrap_or_else(|| default_rate_by_creator.get(&creator_id).copied().unwrap_or(0.0))
             .clamp(0.0, 100.0);
 
+        let talent_payout_rate = (100.0 - talent_rate).max(0.0).min(100.0);
         let talent_earnings_cents =
-            ((gross_share_cents as f64) * (talent_rate / 100.0)).round() as i64;
+            ((gross_share_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
         let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_share_cents);
         let agency_earnings_cents = (gross_share_cents - talent_earnings_cents).max(0);
 
