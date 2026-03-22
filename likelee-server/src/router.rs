@@ -245,6 +245,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::performance_tiers::update_talent_commission),
         )
         .route(
+            "/api/agency/dashboard/talent-commissions/bulk-update",
+            post(crate::performance_tiers::bulk_update_talent_commissions),
+        )
+        .route(
             "/api/agency/dashboard/talent-commissions/history",
             get(crate::performance_tiers::get_commission_history),
         )

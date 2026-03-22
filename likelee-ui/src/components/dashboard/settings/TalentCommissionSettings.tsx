@@ -82,25 +82,22 @@ export const TalentCommissionSettings: React.FC<{
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({
-      creatorId,
-      rate,
-    }: {
-      creatorId: string;
-      rate: number | null;
-    }) => {
-      await base44.post("/agency/dashboard/talent-commissions/update", {
-        creator_id: creatorId,
-        custom_rate: rate,
+    mutationFn: async (updates: { creatorId: string; rate: number | null }[]) => {
+      await base44.post("/agency/dashboard/talent-commissions/bulk-update", {
+        updates: updates.map(u => ({
+          creator_id: u.creatorId,
+          custom_rate: u.rate,
+        })),
       });
       return true;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
-      toast.success("Commission rate updated successfully");
+      toast.success(`${variables.length > 1 ? `${variables.length} commission settings` : "Commission setting"} updated successfully`);
+      setDraftRates({});
     },
     onError: (err: any) => {
-      toast.error(err.message || "Failed to update commission rate");
+      toast.error(err.message || "Failed to update commission settings");
     },
   });
 
@@ -119,27 +116,16 @@ export const TalentCommissionSettings: React.FC<{
     setDraftRates((prev) => ({ ...prev, [talentId]: value }));
   };
 
-  const saveRate = (talent: TalentPerformance) => {
-    const draft = draftRates[talent.id];
-    if (draft === undefined) return;
-
-    const rate = parseFloat(draft);
-    if (isNaN(rate)) {
-      toast.error("Please enter a valid number");
-      return;
-    }
-
-    const clamped = Math.max(0, Math.min(100, rate));
-    updateMutation.mutate({ creatorId: talent.id, rate: clamped });
-    setDraftRates((prev) => {
-      const next = { ...prev };
-      delete next[talent.id];
-      return next;
-    });
+  const handleBulkSave = () => {
+    const updates = Object.entries(draftRates).map(([talentId, rate]) => ({
+      creatorId: talentId,
+      rate: parseFloat(rate),
+    }));
+    updateMutation.mutate(updates);
   };
 
   const resetRate = (talentId: string) => {
-    updateMutation.mutate({ creatorId: talentId, rate: null });
+    updateMutation.mutate([{ creatorId: talentId, rate: null }]);
     setDraftRates((prev) => {
       const next = { ...prev };
       delete next[talentId];
@@ -311,16 +297,15 @@ export const TalentCommissionSettings: React.FC<{
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => saveRate(talent)}
-                              className="w-8 h-8 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg"
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleRateChange(talent.id, undefined as any)}
+                              onClick={() => {
+                                setDraftRates(prev => {
+                                  const next = { ...prev };
+                                  delete next[talent.id];
+                                  return next;
+                                });
+                              }}
                               className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                              title="Discard change"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -361,7 +346,7 @@ export const TalentCommissionSettings: React.FC<{
         </table>
       </div>
 
-      <div className="p-4 sm:p-6 bg-indigo-50/50 border-t border-indigo-100">
+      <div className="p-4 sm:p-6 bg-indigo-50/50 border-t border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-start gap-4">
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-indigo-200">
             <DollarSign className="w-4 h-4 text-indigo-600" />
@@ -374,6 +359,41 @@ export const TalentCommissionSettings: React.FC<{
               the {entitySingularLower} receives 80% of the gross payment).
             </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {Object.keys(draftRates).length > 0 && (
+            <Button
+              variant="ghost"
+              onClick={() => setDraftRates({})}
+              className="h-12 px-6 rounded-xl font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all border border-gray-200 bg-white"
+            >
+              Discard All
+            </Button>
+          )}
+          
+          <Button
+            className={cn(
+              "rounded-xl px-8 h-12 font-bold shadow-lg transition-all gap-2 relative overflow-hidden min-w-[200px]",
+              Object.keys(draftRates).length > 0
+                ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200/50 hover:scale-[1.02] active:scale-[0.98]"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+            )}
+            disabled={Object.keys(draftRates).length === 0 || updateMutation.isPending}
+            onClick={handleBulkSave}
+          >
+            {updateMutation.isPending ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes {Object.keys(draftRates).length > 0 && `(${Object.keys(draftRates).length})`}
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </Card>

@@ -81,10 +81,15 @@ pub struct CommissionHistoryLog {
     pub changed_at: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct UpdateTalentCommissionRequest {
     pub creator_id: String,
     pub custom_rate: Option<f64>,
+}
+
+#[derive(Deserialize)]
+pub struct BulkUpdateTalentCommissionsRequest {
+    pub updates: Vec<UpdateTalentCommissionRequest>,
 }
 
 #[derive(Deserialize)]
@@ -809,6 +814,111 @@ pub async fn update_talent_commission(
     if !resp_hist.status().is_success() {
         let txt = resp_hist.text().await.unwrap_or_else(|_| "insert history failed".into());
         return Err((StatusCode::BAD_REQUEST, txt));
+    }
+
+    Ok(Json(json!({ "status": "ok" })))
+}
+
+pub async fn bulk_update_talent_commissions(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Json(payload): Json<BulkUpdateTalentCommissionsRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
+    let agency_id = &auth_user.id;
+
+    for update in payload.updates {
+        let creator_id = update.creator_id.trim().to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+
+        // Validate creator is actually linked to this agency (created talent or connected creator).
+        let (roster_resp, rel_resp) = tokio::try_join!(
+            state
+                .pg
+                .from("agency_users")
+                .select("creator_id")
+                .eq("agency_id", agency_id)
+                .or(format!("id.eq.{},creator_id.eq.{}", creator_id, creator_id))
+                .limit(1)
+                .execute(),
+            state
+                .pg
+                .from("agency_talent_relationships")
+                .select("creator_id")
+                .eq("agency_id", agency_id)
+                .eq("creator_id", &creator_id)
+                .limit(1)
+                .execute()
+        )
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let roster_text = roster_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let roster_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&roster_text).unwrap_or_default();
+        let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+        let roster_ok = !roster_rows.is_empty();
+        let rel_ok = !rel_rows.is_empty();
+        if !roster_ok && !rel_ok {
+            continue;
+        }
+
+        let mut actual_creator_id = creator_id.clone();
+        if let Some(row) = roster_rows.first() {
+            if let Some(cid) = row.get("creator_id").and_then(|v| v.as_str()) {
+                actual_creator_id = cid.to_string();
+            }
+        }
+
+        if let Some(new_rate) = update.custom_rate {
+            let resp = state
+                .pg
+                .from("agency_creator_commissions")
+                .upsert(
+                    json!({
+                        "creator_id": actual_creator_id,
+                        "agency_id": agency_id,
+                        "commission_rate": new_rate,
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    })
+                    .to_string(),
+                )
+                .on_conflict("agency_id,creator_id")
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !resp.status().is_success() {
+                let txt = resp.text().await.unwrap_or_else(|_| "upsert failed".into());
+                return Err((StatusCode::BAD_REQUEST, txt));
+            }
+
+            let _ = state
+                .pg
+                .from("agency_creator_commission_history")
+                .insert(
+                    json!({
+                        "creator_id": actual_creator_id,
+                        "commission_rate": new_rate,
+                        "agency_id": agency_id
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+        } else {
+            // Reset to default: delete the override row.
+            let _ = state
+                .pg
+                .from("agency_creator_commissions")
+                .delete()
+                .eq("agency_id", agency_id)
+                .eq("creator_id", &actual_creator_id)
+                .execute()
+                .await;
+        }
     }
 
     Ok(Json(json!({ "status": "ok" })))
