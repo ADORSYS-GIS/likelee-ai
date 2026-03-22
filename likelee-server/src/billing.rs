@@ -591,11 +591,11 @@ pub async fn create_campaign_offer_checkout(
             ));
         }
 
-        // 2) At least one talent must be assigned
+        // 2) At least one creator-backed talent must be assigned
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
-            .select("talent_id")
+            .select("creator_id")
             .eq("offer_id", &offer_id)
             .eq("agency_id", target_id)
             .eq("status", "assigned")
@@ -614,15 +614,15 @@ pub async fn create_campaign_offer_checkout(
             .unwrap_or_else(|_| "[]".into());
         let assignments_rows: Vec<serde_json::Value> =
             serde_json::from_str(&assignments_txt).unwrap_or_default();
-        let mut talent_ids: Vec<String> = assignments_rows
+        let mut creator_ids: Vec<String> = assignments_rows
             .iter()
-            .filter_map(|r| r.get("talent_id").and_then(|v| v.as_str()))
+            .filter_map(|r| r.get("creator_id").and_then(|v| v.as_str()))
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
-        talent_ids.sort();
-        talent_ids.dedup();
-        if talent_ids.is_empty() {
+        creator_ids.sort();
+        creator_ids.dedup();
+        if creator_ids.is_empty() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "At least one talent must be assigned before the brand can pay for this offer"
@@ -630,85 +630,12 @@ pub async fn create_campaign_offer_checkout(
             ));
         }
 
-        // 3) Every assigned talent must map to a creator with a connected Stripe account
-        let talent_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
-        let talent_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,stage_name,full_legal_name,creator_id")
-            .eq("agency_id", target_id)
-            .in_("id", talent_refs)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !talent_resp.status().is_success() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                talent_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let talent_text = talent_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let talent_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&talent_text).unwrap_or_default();
-
-        let mut creator_ids: Vec<String> = vec![];
-        let mut name_by_talent: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-        let mut creator_by_talent: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-
-        for r in &talent_rows {
-            let tid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
-            if tid.is_empty() {
-                continue;
-            }
-            let name = r
-                .get("stage_name")
-                .or_else(|| r.get("full_legal_name"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("Talent")
-                .trim()
-                .to_string();
-            name_by_talent.insert(tid.to_string(), name);
-            let cid = r
-                .get("creator_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !cid.is_empty() {
-                creator_by_talent.insert(tid.to_string(), cid.clone());
-                creator_ids.push(cid);
-            }
-        }
-        creator_ids.sort();
-        creator_ids.dedup();
-
-        let mut missing_creator: Vec<String> = vec![];
-        for tid in &talent_ids {
-            if !creator_by_talent.contains_key(tid) {
-                let name = name_by_talent
-                    .get(tid)
-                    .cloned()
-                    .unwrap_or_else(|| tid.clone());
-                missing_creator.push(name);
-            }
-        }
-        if !missing_creator.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "The following talents must be linked to a Creator profile before the brand can pay: {}",
-                    missing_creator.join(", ")
-                ),
-            ));
-        }
-
+        // 3) Every assigned creator must have a connected Stripe account
         let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
         let creators_resp = state
             .pg
             .from("creators")
-            .select("id,stripe_connect_account_id")
+            .select("id,full_name,stripe_connect_account_id")
             .in_("id", creator_refs)
             .execute()
             .await
@@ -722,12 +649,21 @@ pub async fn create_campaign_offer_checkout(
         let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
         let creators_rows: Vec<serde_json::Value> =
             serde_json::from_str(&creators_text).unwrap_or_default();
-        let mut stripe_by_creator: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
+        let mut stripe_by_creator: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut name_by_creator: std::collections::HashMap<String, String> = std::collections::HashMap::new();
         for r in &creators_rows {
             let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
             if cid.is_empty() {
                 continue;
+            }
+            let name = r
+                .get("full_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !name.is_empty() {
+                name_by_creator.insert(cid.to_string(), name);
             }
             let acct = r
                 .get("stripe_connect_account_id")
@@ -741,21 +677,20 @@ pub async fn create_campaign_offer_checkout(
         }
 
         let mut missing_stripe: Vec<String> = vec![];
-        for tid in &talent_ids {
-            let cid = creator_by_talent.get(tid).cloned().unwrap_or_default();
-            if cid.is_empty() || !stripe_by_creator.contains_key(&cid) {
-                let name = name_by_talent
-                    .get(tid)
+        for cid in &creator_ids {
+            if !stripe_by_creator.contains_key(cid) {
+                let label = name_by_creator
+                    .get(cid)
                     .cloned()
-                    .unwrap_or_else(|| tid.clone());
-                missing_stripe.push(name);
+                    .unwrap_or_else(|| cid.clone());
+                missing_stripe.push(label);
             }
         }
         if !missing_stripe.is_empty() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The following talents must connect their Stripe account before the brand can pay: {}",
+                    "The following creators must connect their Stripe account before the brand can pay: {}",
                     missing_stripe.join(", ")
                 ),
             ));
