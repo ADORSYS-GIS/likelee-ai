@@ -1928,6 +1928,16 @@ export default function BrandCampaignDashboard({
       ? selectedCampaignExpectedDeliverables
       : selectedCampaignSubmittedCount;
 
+  const deliverablesByCollaborator = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    selectedCampaignDeliverables.forEach((d) => {
+      const label = d.collaborator_label || "Other Collaborators";
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(d);
+    });
+    return groups;
+  }, [selectedCampaignDeliverables]);
+
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
       {/* Top Navigation */}
@@ -3785,7 +3795,7 @@ export default function BrandCampaignDashboard({
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-gray-900 uppercase tracking-widest text-sm">
                   Deliverables & Feedback
                 </h3>
                 <Alert className="border-2 border-gray-200 rounded-none">
@@ -3798,8 +3808,9 @@ export default function BrandCampaignDashboard({
                 </Alert>
                 {loadingSelectedCampaignDetails && (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
-                    <p className="text-sm text-gray-600">
-                      Loading campaign deliverables...
+                    <p className="text-xs text-gray-600 flex items-center gap-2">
+                       <Loader2 className="w-3 h-3 animate-spin" />
+                       Loading campaign deliverables...
                     </p>
                   </Card>
                 )}
@@ -3811,194 +3822,146 @@ export default function BrandCampaignDashboard({
                       </p>
                     </Card>
                   )}
+
                 {!loadingSelectedCampaignDetails &&
-                  selectedCampaignDeliverables.map(
-                    (deliverable: any, idx: number) => {
-                      const status = String(
-                        deliverable?.status || "pending_review",
-                      ).toLowerCase();
-                      const deliverableId = String(deliverable?.id || "");
-                      const isBusy = reviewingDeliverableId === deliverableId;
-                      const isApproved = [
-                        "approved",
-                        "accepted",
-                        "brand_approved",
-                      ].includes(status);
-                      const displayStatus =
-                        status === "brand_approved" ? "approved" : status;
-                      const statusClass =
-                        displayStatus === "approved" ||
-                        displayStatus === "accepted"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : displayStatus === "changes_requested" ||
-                              displayStatus === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-800";
-                      const uploadedAtRaw = String(
-                        deliverable?.created_at || "",
-                      ).trim();
-                      const uploadedAt = uploadedAtRaw
-                        ? new Date(uploadedAtRaw).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "N/A";
-                      return (
-                        <Card
-                          key={String(deliverable?.id || idx)}
-                          className="p-6 border-2 border-gray-200 rounded-none"
-                        >
-                          <div className="flex items-start gap-6">
-                            <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden">
-                              {String(deliverable?.asset_type || "").startsWith(
-                                "image",
-                              ) && deliverable?.asset_url ? (
-                                <img
-                                  src={deliverablePreviewSrc(deliverable)}
-                                  alt={String(
-                                    deliverable?.caption ||
-                                      `Deliverable #${idx + 1}`,
-                                  )}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Play className="w-12 h-12 text-gray-400" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-3">
-                                <div>
-                                  <h4 className="font-bold text-gray-900 mb-1">
-                                    {`Deliverable ${idx + 1}`}
-                                  </h4>
-                                  <p className="text-sm text-gray-600 mb-2">
-                                    Uploaded {uploadedAt} by{" "}
-                                    {String(
-                                      deliverable?.collaborator_label ||
-                                        "Campaign collaborator",
+                  selectedCampaignCollaborators.map((collaboratorLabel) => {
+                    const items = deliverablesByCollaborator[collaboratorLabel] || [];
+                    if (items.length === 0) return null;
+
+                    return (
+                      <div
+                        key={collaboratorLabel}
+                        className="space-y-4 pt-8 first:pt-2"
+                      >
+                        <div className="flex items-center gap-3 pb-3 border-b-2 border-gray-100">
+                          <div className="bg-[#F7B750] p-1.5 rounded-none">
+                            <Users className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px]">
+                            {collaboratorLabel}
+                          </h4>
+                          <span className="ml-auto text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 border border-gray-100 uppercase tracking-tighter">
+                            {items.length} {items.length === 1 ? 'Asset' : 'Assets'}
+                          </span>
+                        </div>
+                        <div className="space-y-6">
+                          {items.map((deliverable: any, idx: number) => {
+                            const status = String(deliverable?.status || "pending_review").toLowerCase();
+                            const deliverableId = String(deliverable?.id || "");
+                            const isBusy = reviewingDeliverableId === deliverableId;
+                            const isApproved = ["approved", "accepted", "brand_approved"].includes(status);
+                            const displayStatus = status === "brand_approved" ? "approved" : status;
+                            const statusClass = (displayStatus === "approved" || displayStatus === "accepted")
+                                ? "bg-emerald-100 text-emerald-700 font-bold border-none"
+                                : (displayStatus === "changes_requested" || displayStatus === "rejected")
+                                  ? "bg-red-100 text-red-700 font-bold border-none"
+                                  : "bg-yellow-100 text-yellow-800 font-bold border-none";
+                            
+                            const uploadedAtRaw = String(deliverable?.created_at || "").trim();
+                            const uploadedAt = uploadedAtRaw
+                              ? new Date(uploadedAtRaw).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                              : "N/A";
+                            
+                            return (
+                              <Card key={deliverableId || idx} className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none">
+                                <div className="flex items-start gap-6">
+                                  <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
+                                    {String(deliverable?.asset_type || "").startsWith("image") && deliverable?.asset_url ? (
+                                      <img
+                                        src={deliverablePreviewSrc(deliverable)}
+                                        alt={`Deliverable ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex flex-col items-center gap-2">
+                                        <Play className="w-8 h-8 text-gray-300" />
+                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Video Content</span>
+                                      </div>
                                     )}
-                                  </p>
-                                  <Badge className={statusClass}>
-                                    {displayStatus.replace(/_/g, " ")}
-                                  </Badge>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white rounded-none"
-                                    disabled={isApproved || isBusy}
-                                    onClick={() =>
-                                      void reviewSelectedCampaignDeliverable(
-                                        deliverable,
-                                        "approve",
-                                      )
-                                    }
-                                  >
-                                    {isApproved
-                                      ? "Approved"
-                                      : isBusy
-                                        ? "Approving..."
-                                        : "Approve"}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-2 border-gray-300 rounded-none"
-                                    disabled={isApproved || isBusy}
-                                    onClick={() =>
-                                      void reviewSelectedCampaignDeliverable(
-                                        deliverable,
-                                        "changes_requested",
-                                      )
-                                    }
-                                  >
-                                    Request Edit
-                                  </Button>
-                                  {isApproved && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-2 border-gray-300 rounded-none"
-                                      onClick={() =>
-                                        void downloadSelectedCampaignDeliverable(
-                                          deliverable,
-                                          idx,
-                                        )
-                                      }
-                                    >
-                                      <Download className="w-3 h-3 mr-1" />
-                                      Download
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="border-t-2 border-gray-200 pt-4">
-                                <h5 className="text-sm font-bold text-gray-900 mb-1">
-                                  Comments &amp; Feedback
-                                </h5>
-                                <div className="space-y-3">
-                                  {(Array.isArray(
-                                    deliverable?.meta?.feedback_comments,
-                                  )
-                                    ? deliverable.meta.feedback_comments
-                                    : []
-                                  ).map((comment: any) => (
-                                    <div
-                                      key={String(comment?.id || Math.random())}
-                                      className="rounded-md border border-gray-200 bg-white px-3 py-2"
-                                    >
-                                      <p className="text-sm font-semibold text-gray-900">
-                                        {String(comment?.author_role || "User")}
-                                      </p>
-                                      <p className="text-sm text-gray-700">
-                                        {String(comment?.message || "")}
-                                      </p>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {comment?.created_at
-                                          ? new Date(
-                                              String(comment.created_at),
-                                            ).toLocaleString()
-                                          : ""}
-                                      </p>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <div>
+                                        <h4 className="font-black text-gray-900 mb-1 uppercase tracking-tight">
+                                          Deliverable {idx + 1}
+                                        </h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">
+                                          Uploaded {uploadedAt}
+                                        </p>
+                                        <Badge className={`${statusClass} text-[10px] uppercase tracking-wider h-5 rounded-none px-2`}>
+                                          {displayStatus.replace(/_/g, " ")}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          className="bg-green-600 hover:bg-green-700 text-white rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
+                                          disabled={isApproved || isBusy}
+                                          onClick={() => void reviewSelectedCampaignDeliverable(deliverable, "approve")}
+                                        >
+                                          {isApproved ? "Approved" : isBusy ? "..." : "Approve"}
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
+                                          disabled={isApproved || isBusy}
+                                          onClick={() => void reviewSelectedCampaignDeliverable(deliverable, "changes_requested")}
+                                        >
+                                          Request Edit
+                                        </Button>
+                                        {isApproved && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-3 shadow-none"
+                                            onClick={() => window.open(deliverableFileSrc(deliverable), "_blank")}
+                                          >
+                                            <Download className="w-3.5 h-3.5" />
+                                          </Button>
+                                        )}
+                                      </div>
                                     </div>
-                                  ))}
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      value={
-                                        deliverableCommentDrafts[
-                                          String(deliverable?.id || "")
-                                        ] || ""
-                                      }
-                                      onChange={(event) =>
-                                        setDeliverableCommentDrafts((prev) => ({
-                                          ...prev,
-                                          [String(deliverable?.id || "")]:
-                                            event.target.value,
-                                        }))
-                                      }
-                                      placeholder="Add a comment..."
-                                      className="border-2 border-gray-300 rounded-none"
-                                    />
-                                    <Button
-                                      className="bg-black hover:bg-gray-900 text-white rounded-none"
-                                      onClick={() =>
-                                        void commentSelectedCampaignDeliverable(
-                                          deliverable,
-                                        )
-                                      }
-                                    >
-                                      Send
-                                    </Button>
+
+                                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                                      <div className="space-y-2">
+                                        {deliverable?.meta?.feedback_comments?.map((comment: any, cidx: number) => (
+                                          <div key={cidx} className="bg-gray-50 p-3 border border-gray-100 rounded-none">
+                                            <div className="flex justify-between items-center mb-1.5">
+                                              <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">{comment?.author_role || "User"}</span>
+                                              <span className="text-[9px] text-gray-400 font-bold">
+                                                {comment?.created_at ? new Date(comment.created_at).toLocaleTimeString() : ""}
+                                              </span>
+                                            </div>
+                                            <p className="text-xs text-gray-700 leading-relaxed">{comment?.message}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      <div className="flex gap-2">
+                                        <Input 
+                                          placeholder="Type feedback here..."
+                                          value={deliverableCommentDrafts[deliverableId] || ""}
+                                          onChange={(e) => setDeliverableCommentDrafts(prev => ({ ...prev, [deliverableId]: e.target.value }))}
+                                          className="border-2 border-gray-200 rounded-none h-9 text-xs focus:border-gray-900 transition-colors shadow-none"
+                                        />
+                                        <Button
+                                          onClick={() => void commentSelectedCampaignDeliverable(deliverable)}
+                                          className="bg-gray-900 hover:bg-black text-white rounded-none h-9 text-[10px] font-black uppercase tracking-widest px-5 shadow-none"
+                                        >
+                                          Send
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    },
-                  )}
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </Card>
           </div>
