@@ -132,6 +132,8 @@ fn normalize_asset_url(s: &str) -> String {
 #[derive(Serialize, Deserialize)]
 pub struct TalentRow {
     pub id: String,
+    pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
     pub name: String,
     pub stage_name: String,
     pub role: String,
@@ -285,11 +287,22 @@ pub async fn get_roster(
                 .cloned()
                 .unwrap_or_else(|| serde_json::json!({}));
             let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
-            let id = item
+            let talent_id_raw = item
                 .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            let creator_id_raw = item
+                .get("creator_id")
+                .or_else(|| get_field("creator_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let id = if !talent_id_raw.trim().is_empty() {
+                talent_id_raw.clone()
+            } else {
+                creator_id_raw.clone()
+            };
             // Try full_legal_name, then stage_name, then full_name
             let name = get_field("full_legal_name")
                 .or(get_field("stage_name"))
@@ -525,15 +538,20 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("USD")
                 .to_string();
-            let creator_id_str = item
-                .get("creator_id")
-                .or_else(|| get_field("creator_id"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
+            let creator_id_str = creator_id_raw;
 
             let roster_row = TalentRow {
                 id: id.clone(),
+                talent_id: if talent_id_raw.trim().is_empty() {
+                    None
+                } else {
+                    Some(talent_id_raw.clone())
+                },
+                creator_id: if creator_id_str.trim().is_empty() {
+                    None
+                } else {
+                    Some(creator_id_str.clone())
+                },
                 name,
                 stage_name,
                 role,
@@ -584,8 +602,8 @@ pub async fn get_roster(
             };
 
             roster.push(roster_row);
-            if !id.is_empty() {
-                talent_ids.push(id.clone());
+            if !talent_id_raw.is_empty() {
+                talent_ids.push(talent_id_raw.clone());
             }
             if !creator_id_str.trim().is_empty() && !id.is_empty() {
                 creator_id_by_talent.insert(id.clone(), creator_id_str);
