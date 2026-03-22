@@ -2368,13 +2368,15 @@ pub async fn list_campaign_offers(
 
     let mut target_name_map: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
+    let mut target_logo_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
 
     if !creator_ids.is_empty() {
         let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
         if let Ok(creator_resp) = state
             .pg
             .from("creators")
-            .select("id,full_name,email")
+            .select("id,full_name,email,profile_photo_url")
             .in_("id", creator_refs)
             .execute()
             .await
@@ -2400,8 +2402,17 @@ pub async fn list_campaign_offers(
                             .unwrap_or("")
                             .trim()
                             .to_string();
+                        let logo = creator
+                            .get("profile_photo_url")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
                         if !name.is_empty() {
-                            target_name_map.insert(id, name);
+                            target_name_map.insert(id.clone(), name);
+                        }
+                        if !logo.is_empty() {
+                            target_logo_map.insert(id, logo);
                         }
                     }
                 }
@@ -2414,7 +2425,7 @@ pub async fn list_campaign_offers(
         if let Ok(agency_resp) = state
             .pg
             .from("agencies")
-            .select("id,agency_name,email")
+            .select("id,agency_name,email,logo_url")
             .in_("id", agency_refs)
             .execute()
             .await
@@ -2440,8 +2451,17 @@ pub async fn list_campaign_offers(
                             .unwrap_or("")
                             .trim()
                             .to_string();
+                        let logo = agency
+                            .get("logo_url")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
                         if !name.is_empty() {
-                            target_name_map.insert(id, name);
+                            target_name_map.insert(id.clone(), name);
+                        }
+                        if !logo.is_empty() {
+                            target_logo_map.insert(id, logo);
                         }
                     }
                 }
@@ -2462,6 +2482,11 @@ pub async fn list_campaign_offers(
         if let Some(target_name) = target_name_map.get(&target_id) {
             if let Some(obj) = row.as_object_mut() {
                 obj.insert("target_name".to_string(), json!(target_name));
+            }
+        }
+        if let Some(target_logo) = target_logo_map.get(&target_id) {
+            if let Some(obj) = row.as_object_mut() {
+                obj.insert("target_logo".to_string(), json!(target_logo));
             }
         }
     }

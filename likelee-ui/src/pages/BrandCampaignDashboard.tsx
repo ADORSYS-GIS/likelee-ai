@@ -148,7 +148,7 @@ export default function BrandCampaignDashboard({
   >(null);
   const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
-    useState<string[]>([]);
+    useState<{ label: string; logo?: string }[]>([]);
   const [markDoneOpen, setMarkDoneOpen] = useState(false);
   const [markDoneBusy, setMarkDoneBusy] = useState(false);
   const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
@@ -782,13 +782,17 @@ export default function BrandCampaignDashboard({
           );
         }
       }
-      const collaborators = Array.from(
-        new Set(
-          offers
-            .map((offer: any) => collaboratorLabelFromOffer(offer))
-            .filter(Boolean),
-        ),
-      );
+      const collaboratorsMap = new Map<string, { label: string; logo?: string }>();
+      offers.forEach((offer: any) => {
+        const label = collaboratorLabelFromOffer(offer);
+        if (label && !collaboratorsMap.has(label)) {
+          collaboratorsMap.set(label, {
+            label,
+            logo: offer?.target_logo,
+          });
+        }
+      });
+      const collaborators = Array.from(collaboratorsMap.values());
       const deliverablesByOffer = await Promise.all(
         offers.map(async (offer: any) => {
           const offerId = String(offer?.id || "").trim();
@@ -1637,6 +1641,8 @@ export default function BrandCampaignDashboard({
       ? `${proxyUrl}?token=${encodeURIComponent(authToken)}`
       : proxyUrl;
   };
+
+  const deliverableFileSrc = (deliverable: any) => deliverablePreviewSrc(deliverable);
 
   const handleSendOffer = async () => {
     if (savingCampaign) return;
@@ -2811,45 +2817,31 @@ export default function BrandCampaignDashboard({
                   {campaignForm.collaborator_type === "creator" && (
                     <div className="space-y-3">
                       <label className="text-sm font-medium text-gray-700 block">
-                        {campaignForm.collaborator_type === "agency"
-                          ? "Select Talents"
-                          : "Select Creators"}
+                        Select Creators
                       </label>
                       <Input
                         value={creatorSearch}
                         onChange={(e) => setCreatorSearch(e.target.value)}
-                        placeholder={
-                          campaignForm.collaborator_type === "agency"
-                            ? "Search talents..."
-                            : "Search creators..."
-                        }
+                        placeholder="Search creators..."
                         className="border-2 border-gray-300 rounded-none"
                       />
                       <div className="border-2 border-gray-200 rounded-none p-3 max-h-[340px] overflow-y-auto space-y-3">
                         {loadingMarketplaceCreators ? (
                           <p className="text-sm text-gray-500">
-                            {campaignForm.collaborator_type === "agency"
-                              ? "Loading talents..."
-                              : "Loading creators..."}
+                            Loading creators...
                           </p>
                         ) : marketplaceCreators.length === 0 ? (
                           <p className="text-sm text-gray-500">
-                            {campaignForm.collaborator_type === "agency"
-                              ? "No talents found for this agency."
-                              : "No connected creators found."}
+                            No connected creators found.
                           </p>
                         ) : (
                           marketplaceCreators.map((creator) => {
                             const creatorId = String(creator?.id || "");
                             const selected =
-                              campaignForm.collaborator_type === "agency"
-                                ? selectedTalentCreatorIds.has(creatorId)
-                                : campaignForm.collaborators?.includes(
-                                    creatorId,
-                                  );
+                              selectedTalentCreatorIds.has(creatorId) ||
+                              campaignForm.collaborators?.includes(creatorId);
                             const alreadyInCampaign =
                               creatorId &&
-                              campaignForm.collaborator_type !== "agency" &&
                               existingCampaignCreatorIds.has(creatorId);
                             const name = getDisplayName(
                               creator?.display_name ||
@@ -2857,10 +2849,7 @@ export default function BrandCampaignDashboard({
                                 creator?.name,
                             );
                             const creatorType = String(
-                              creator?.creator_type ||
-                                (campaignForm.collaborator_type === "agency"
-                                  ? "Talent"
-                                  : "Creator"),
+                              creator?.creator_type || "Creator",
                             );
                             const baseRateWeeklyCents = Number(
                               creator?.base_rate_weekly_cents ??
@@ -3782,14 +3771,17 @@ export default function BrandCampaignDashboard({
                       No collaborators assigned yet.
                     </span>
                   ) : (
-                    selectedCampaignCollaborators.map((label, idx) => (
-                      <Badge
-                        key={`${label}-${idx}`}
-                        className="bg-gray-200 text-gray-700"
-                      >
-                        {label}
-                      </Badge>
-                    ))
+                    selectedCampaignCollaborators.map((collaborator, idx) => {
+                      const label = typeof collaborator === 'string' ? collaborator : collaborator.label;
+                      return (
+                        <Badge
+                          key={`${label}-${idx}`}
+                          className="bg-gray-200 text-gray-700"
+                        >
+                          {label}
+                        </Badge>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -3824,21 +3816,27 @@ export default function BrandCampaignDashboard({
                   )}
 
                 {!loadingSelectedCampaignDetails &&
-                  selectedCampaignCollaborators.map((collaboratorLabel) => {
-                    const items = deliverablesByCollaborator[collaboratorLabel] || [];
+                  selectedCampaignCollaborators.map((collaborator) => {
+                    const label = typeof collaborator === 'string' ? collaborator : collaborator.label;
+                    const logo = typeof collaborator === 'string' ? null : collaborator.logo;
+                    const items = deliverablesByCollaborator[label] || [];
                     if (items.length === 0) return null;
 
                     return (
                       <div
-                        key={collaboratorLabel}
+                        key={label}
                         className="space-y-4 pt-8 first:pt-2"
                       >
                         <div className="flex items-center gap-3 pb-3 border-b-2 border-gray-100">
-                          <div className="bg-[#F7B750] p-1.5 rounded-none">
-                            <Users className="w-3.5 h-3.5 text-white" />
+                          <div className="bg-[#F7B750] w-7 h-7 flex items-center justify-center rounded-none overflow-hidden">
+                            {logo ? (
+                              <img src={logo} alt={label} className="w-full h-full object-cover" />
+                            ) : (
+                              <Users className="w-3.5 h-3.5 text-white" />
+                            )}
                           </div>
                           <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px]">
-                            {collaboratorLabel}
+                            {label}
                           </h4>
                           <span className="ml-auto text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 border border-gray-100 uppercase tracking-tighter">
                             {items.length} {items.length === 1 ? 'Asset' : 'Assets'}
