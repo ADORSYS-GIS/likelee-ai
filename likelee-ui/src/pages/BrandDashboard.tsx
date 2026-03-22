@@ -3842,10 +3842,17 @@ export default function BrandDashboard() {
               </div>
               {expanded && (
                 <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
-                  {selectedOfferHubContracts.filter(
-                    (c: any) =>
-                      c?.docuseal_status && c.docuseal_status !== "draft",
-                  ).length === 0 ? (
+                  {loadingOfferHubDetails ? (
+                    <div className="p-8 text-center bg-white">
+                      <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+                      <p className="text-sm text-gray-500 font-medium">
+                        Loading contracts...
+                      </p>
+                    </div>
+                  ) : selectedOfferHubContracts.filter(
+                      (c: any) =>
+                        c?.docuseal_status && c.docuseal_status !== "draft",
+                    ).length === 0 ? (
                     <div className="p-8 text-center bg-white">
                       <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                       <p className="text-sm text-gray-500 font-medium">
