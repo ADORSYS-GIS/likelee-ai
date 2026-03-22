@@ -197,6 +197,14 @@ export default function BrandCampaignDashboard({
   >(new Set());
   const [savingCampaign, setSavingCampaign] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [existingCampaignAgencyIds, setExistingCampaignAgencyIds] = useState<
+    Set<string>
+  >(new Set());
+  const [existingCampaignCreatorIds, setExistingCampaignCreatorIds] = useState<
+    Set<string>
+  >(new Set());
+  const [loadingExistingCollaborators, setLoadingExistingCollaborators] =
+    useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -316,6 +324,53 @@ export default function BrandCampaignDashboard({
 
     setShowNewCampaignModal(true);
   }, [embedded, openNewCampaignSignal, prefillCampaignContext]);
+
+  useEffect(() => {
+    if (!showNewCampaignModal) return;
+    const campaignId = String(brandCampaignId || "").trim();
+    if (!campaignId) {
+      setExistingCampaignAgencyIds(new Set());
+      setExistingCampaignCreatorIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const loadExistingCollaborators = async () => {
+      setLoadingExistingCollaborators(true);
+      try {
+        const offersResp = await base44.get<{ offers?: any[] }>(
+          `/api/brand/campaigns/${encodeURIComponent(campaignId)}/offers`,
+        );
+        const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+        const nextAgency = new Set<string>();
+        const nextCreator = new Set<string>();
+        offers.forEach((offer: any) => {
+          const targetType = String(
+            offer?.target_type || offer?.targetType || "",
+          )
+            .trim()
+            .toLowerCase();
+          const targetId = String(offer?.target_id || offer?.targetId || "")
+            .trim();
+          if (!targetId) return;
+          if (targetType === "agency") nextAgency.add(targetId);
+          if (targetType === "creator") nextCreator.add(targetId);
+        });
+        if (cancelled) return;
+        setExistingCampaignAgencyIds(nextAgency);
+        setExistingCampaignCreatorIds(nextCreator);
+      } catch {
+        if (cancelled) return;
+        setExistingCampaignAgencyIds(new Set());
+        setExistingCampaignCreatorIds(new Set());
+      } finally {
+        if (!cancelled) setLoadingExistingCollaborators(false);
+      }
+    };
+    void loadExistingCollaborators();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandCampaignId, showNewCampaignModal]);
 
   const getDisplayName = (value: unknown) => {
     const normalized = String(value ?? "").trim();
@@ -1189,6 +1244,13 @@ export default function BrandCampaignDashboard({
   const toggleCreatorCollaborator = (creator: any) => {
     const creatorId = String(creator?.id || "");
     if (!creatorId) return;
+    if (existingCampaignCreatorIds.has(creatorId)) {
+      toast({
+        title: "Collaborator already added",
+        description: "This creator is already part of the campaign.",
+      });
+      return;
+    }
     setCampaignForm((prev) => {
       const exists = (prev.collaborators || []).some(
         (id) => String(id) === creatorId,
@@ -1219,6 +1281,9 @@ export default function BrandCampaignDashboard({
     setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
     setBrandCampaignId("");
+    setExistingCampaignAgencyIds(new Set());
+    setExistingCampaignCreatorIds(new Set());
+    setLoadingExistingCollaborators(false);
     setCampaignForm({
       name: "",
       objective: "",
@@ -1574,6 +1639,7 @@ export default function BrandCampaignDashboard({
   };
 
   const handleSendOffer = async () => {
+    if (savingCampaign) return;
     if (!brandCampaignId) {
       toast({
         title: "Campaign not ready",
@@ -1583,6 +1649,8 @@ export default function BrandCampaignDashboard({
       return;
     }
 
+    setSavingCampaign(true);
+    try {
     if (campaignForm.collaborator_type === "creator") {
       if (newCampaignStep >= 5 && !contractDraft.docuseal_template_id.trim()) {
         toast({
@@ -1598,6 +1666,18 @@ export default function BrandCampaignDashboard({
         toast({
           title: "Select at least one creator",
           description: "Choose one or more creators before sending offer.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      const duplicates = creatorIds.filter((id) => existingCampaignCreatorIds.has(String(id)));
+      if (duplicates.length > 0) {
+        toast({
+          title: "Collaborator already added",
+          description:
+            duplicates.length === 1
+              ? "One selected creator is already part of this campaign."
+              : "Some selected creators are already part of this campaign.",
           variant: "destructive" as any,
         });
         return;
@@ -1716,6 +1796,13 @@ export default function BrandCampaignDashboard({
       });
       return;
     }
+    if (existingCampaignAgencyIds.has(agencyId)) {
+      toast({
+        title: "Collaborator already added",
+        description: "This agency is already part of the campaign.",
+      });
+      return;
+    }
     try {
       await base44.post(`/api/brand/campaigns/${brandCampaignId}/offers`, {
         target_type: "agency",
@@ -1754,6 +1841,9 @@ export default function BrandCampaignDashboard({
       if (msg === "This record already exists.") {
         await loadCampaignCards();
       }
+    }
+    } finally {
+      setSavingCampaign(false);
     }
   };
 
@@ -2620,6 +2710,11 @@ export default function BrandCampaignDashboard({
                       <label className="text-sm font-medium text-gray-700 block">
                         Select Agency
                       </label>
+                      {loadingExistingCollaborators ? (
+                        <p className="text-xs text-gray-500">
+                          Loading existing campaign collaborators…
+                        </p>
+                      ) : null}
                       <Input
                         value={agencySearch}
                         onChange={(e) => setAgencySearch(e.target.value)}
@@ -2642,6 +2737,8 @@ export default function BrandCampaignDashboard({
                             );
                             const selected =
                               campaignForm.collaborators?.includes(agencyId);
+                            const alreadyInCampaign =
+                              agencyId && existingCampaignAgencyIds.has(agencyId);
                             return (
                               <div
                                 key={agencyId}
@@ -2661,19 +2758,34 @@ export default function BrandCampaignDashboard({
                                     <p className="text-xs text-gray-600 mt-1">
                                       {agency?.agency_type || "Agency"}
                                     </p>
+                                    {alreadyInCampaign ? (
+                                      <p className="text-[11px] font-semibold text-amber-700 mt-1">
+                                        Already part of this campaign
+                                      </p>
+                                    ) : null}
                                   </div>
                                   <Button
                                     type="button"
                                     variant="outline"
                                     className="h-10 border-2 border-gray-300 rounded-none"
                                     onClick={() =>
-                                      setCampaignForm((prev) => ({
-                                        ...prev,
-                                        collaborators: agencyId
-                                          ? [agencyId]
-                                          : [],
-                                      }))
+                                      (() => {
+                                        if (!agencyId) return;
+                                        if (alreadyInCampaign) {
+                                          toast({
+                                            title: "Collaborator already added",
+                                            description:
+                                              "This agency is already part of the campaign.",
+                                          });
+                                          return;
+                                        }
+                                        setCampaignForm((prev) => ({
+                                          ...prev,
+                                          collaborators: [agencyId],
+                                        }));
+                                      })()
                                     }
+                                    disabled={alreadyInCampaign}
                                   >
                                     {selected ? "Selected" : "Select"}
                                   </Button>
@@ -2725,6 +2837,10 @@ export default function BrandCampaignDashboard({
                                 : campaignForm.collaborators?.includes(
                                     creatorId,
                                   );
+                            const alreadyInCampaign =
+                              creatorId &&
+                              campaignForm.collaborator_type !== "agency" &&
+                              existingCampaignCreatorIds.has(creatorId);
                             const name = getDisplayName(
                               creator?.display_name ||
                                 creator?.full_name ||
@@ -2780,6 +2896,14 @@ export default function BrandCampaignDashboard({
                                     variant="outline"
                                     className="h-10 border-2 border-gray-300 rounded-none"
                                     onClick={() => {
+                                      if (alreadyInCampaign) {
+                                        toast({
+                                          title: "Collaborator already added",
+                                          description:
+                                            "This creator is already part of the campaign.",
+                                        });
+                                        return;
+                                      }
                                       if (
                                         campaignForm.collaborator_type ===
                                         "agency"
@@ -2801,6 +2925,7 @@ export default function BrandCampaignDashboard({
                                       }
                                       toggleCreatorCollaborator(creator);
                                     }}
+                                    disabled={alreadyInCampaign}
                                   >
                                     {selected ? "Selected" : "Select"}
                                   </Button>
@@ -3037,9 +3162,17 @@ export default function BrandCampaignDashboard({
                       <Button
                         type="button"
                         onClick={handleSendOffer}
+                        disabled={savingCampaign}
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
-                        Send Offer
+                        {savingCampaign ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          "Send Offer"
+                        )}
                       </Button>
                     )}
                   </div>
@@ -3100,7 +3233,14 @@ export default function BrandCampaignDashboard({
                         }
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
-                        Send Offer
+                        {savingCampaign ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          "Send Offer"
+                        )}
                       </Button>
                     </div>
                   </div>
