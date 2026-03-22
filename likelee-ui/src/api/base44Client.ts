@@ -102,6 +102,9 @@ function userFriendlyMessage(
   if (code === "23505" || lower.includes("already exists")) {
     return "This record already exists.";
   }
+  if (code === "23514" || lower.includes("violates check constraint")) {
+    return "A validation error occurred. Please check your input and try again.";
+  }
   if (status === 409) {
     return "This action conflicts with an existing record. Please refresh and try again.";
   }
