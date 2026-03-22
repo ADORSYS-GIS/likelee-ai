@@ -278,18 +278,21 @@ pub struct SubmitDeliverableRequest {
     pub brand_id: Option<String>,
     pub brand_campaign_id: Option<String>,
     pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
     pub asset_request_id: Option<String>,
     pub meta: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CreateOfferTalentAssignmentRequest {
-    pub talent_id: String,
+    pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CreateOfferAssetRequestRequest {
-    pub talent_id: String,
+    pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
     pub title: Option<String>,
     pub message: Option<String>,
     pub file_url: Option<String>,
@@ -504,60 +507,6 @@ async fn resolve_offer_assignment_for_creator(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if let Some(row) = rows.first().cloned() {
         return Ok(row);
-    }
-
-    // Fallback: resolve agency user (talent) id for this creator, then match by talent_id.
-    let talent_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .or(format!(
-            "creator_id.eq.{},user_id.eq.{}",
-            creator_id, creator_id
-        ))
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !talent_resp.status().is_success() {
-        return Err(sanitize_db_error(
-            talent_resp.status().as_u16(),
-            talent_resp.text().await.unwrap_or_default(),
-        ));
-    }
-    let talent_text = talent_resp.text().await.unwrap_or_default();
-    let talent_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&talent_text).unwrap_or_default();
-    let talent_id = talent_rows
-        .first()
-        .and_then(|row| row.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if !talent_id.is_empty() {
-        let resp = state
-            .pg
-            .from("offer_talent_assignments")
-            .select("*")
-            .eq("offer_id", offer_id)
-            .eq("talent_id", &talent_id)
-            .eq("status", "assigned")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !resp.status().is_success() {
-            return Err(sanitize_db_error(
-                resp.status().as_u16(),
-                resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let text = resp.text().await.unwrap_or_default();
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-        if let Some(row) = rows.first().cloned() {
-            return Ok(row);
-        }
     }
 
     Err((
@@ -4646,7 +4595,7 @@ pub async fn list_offer_talent_assignments(
     let resp = state
         .pg
         .from("offer_talent_assignments")
-        .select("*, agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
+        .select("*, creators(id, full_name, profile_photo_url), agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
         .eq("offer_id", &offer_id)
         .eq("agency_id", &user.id)
         .eq("status", "assigned")
@@ -4746,29 +4695,107 @@ pub async fn create_offer_talent_assignment(
             "cannot_change_assignments_after_payment_started".to_string(),
         ));
     }
-    let talent_id = trim_non_empty(&payload.talent_id, "talent_id")?;
-    let talent = resolve_agency_talent(&state, &user.id, &talent_id).await?;
-    let canonical_talent_id = talent
-        .get("id")
-        .and_then(|v| v.as_str())
+    let mut creator_id = payload
+        .creator_id
+        .as_deref()
         .unwrap_or("")
         .trim()
         .to_string();
-    if canonical_talent_id.is_empty() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to resolve talent id".to_string(),
-        ));
+    let mut canonical_talent_id = payload
+        .talent_id
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if creator_id.is_empty() {
+        // Legacy/roster flow: resolve by talent_id (agency_users.id or alias id shapes).
+        canonical_talent_id =
+            trim_non_empty(&canonical_talent_id, "talent_id")?;
+        let talent = resolve_agency_talent(&state, &user.id, &canonical_talent_id).await?;
+        canonical_talent_id = talent
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        creator_id = talent
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "This talent must create a creator account before they can be assigned to a contract."
+                    .to_string(),
+            ));
+        }
+    } else {
+        // Creator-only assignment: ensure relationship exists OR creator is already on roster.
+        let rel_resp = state
+            .pg
+            .from("agency_talent_relationships")
+            .select("id,status")
+            .eq("agency_id", &user.id)
+            .eq("creator_id", &creator_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !rel_resp.status().is_success() {
+            return Err(sanitize_db_error(
+                rel_resp.status().as_u16(),
+                rel_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let rel_text = rel_resp.text().await.unwrap_or_default();
+        let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+        let rel_status = rel_rows
+            .first()
+            .and_then(|r| r.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if rel_rows.is_empty() {
+            // Allow direct roster creators even if relationship row is missing.
+            let roster_resp = state
+                .pg
+                .from("agency_users")
+                .select("id")
+                .eq("agency_id", &user.id)
+                .eq("creator_id", &creator_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !roster_resp.status().is_success() {
+                return Err(sanitize_db_error(
+                    roster_resp.status().as_u16(),
+                    roster_resp.text().await.unwrap_or_default(),
+                ));
+            }
+            let roster_text = roster_resp.text().await.unwrap_or_default();
+            let roster_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&roster_text).unwrap_or_default();
+            if roster_rows.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "creator is not linked to this agency".to_string(),
+                ));
+            }
+        } else if rel_status == "declined" || rel_status == "inactive" {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "creator is not linked to this agency".to_string(),
+            ));
+        }
     }
-    let creator_id = talent
-        .get("creator_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
     let insert_payload = json!({
         "offer_id": offer_id,
         "agency_id": user.id,
-        "talent_id": canonical_talent_id,
-        "creator_id": if creator_id.is_empty() { serde_json::Value::Null } else { json!(creator_id) },
+        "talent_id": if canonical_talent_id.is_empty() { serde_json::Value::Null } else { json!(canonical_talent_id) },
+        "creator_id": creator_id,
         "status": "assigned",
         "assigned_by": user.id,
         "meta": json!({}),
@@ -4777,17 +4804,65 @@ pub async fn create_offer_talent_assignment(
         .pg
         .from("offer_talent_assignments")
         .upsert(insert_payload.to_string())
-        .on_conflict("offer_id,talent_id")
+        .on_conflict("offer_id,creator_id")
         .select("*")
         .single()
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !resp.status().is_success() {
-        return Err(sanitize_db_error(
-            resp.status().as_u16(),
-            resp.text().await.unwrap_or_default(),
-        ));
+        let status_code = resp.status().as_u16();
+        let body = resp.text().await.unwrap_or_default();
+        // Backward/partial-migration compatibility: if the UNIQUE index backing our ON CONFLICT
+        // does not exist yet, Postgres returns 42P10. In that case, fallback to a manual
+        // read-then-insert flow.
+        if body.contains("42P10")
+            || body.contains("no unique or exclusion constraint matching the ON CONFLICT")
+        {
+            let existing_resp = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", &offer_id)
+                .eq("agency_id", &user.id)
+                .eq("creator_id", &creator_id)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if existing_resp.status().is_success() {
+                let existing_text = existing_resp.text().await.unwrap_or_default();
+                let existing_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&existing_text).unwrap_or_default();
+                if let Some(row) = existing_rows.first().cloned() {
+                    return Ok(Json(json!({ "status": "ok", "assignment": row })));
+                }
+            }
+
+            let insert_only_resp = state
+                .pg
+                .from("offer_talent_assignments")
+                .insert(insert_payload.to_string())
+                .select("*")
+                .single()
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !insert_only_resp.status().is_success() {
+                return Err(sanitize_db_error(
+                    insert_only_resp.status().as_u16(),
+                    insert_only_resp.text().await.unwrap_or_default(),
+                ));
+            }
+            let row: serde_json::Value = serde_json::from_str(
+                &insert_only_resp.text().await.unwrap_or_default(),
+            )
+            .unwrap_or_default();
+            return Ok(Json(json!({ "status": "ok", "assignment": row })));
+        }
+
+        return Err(sanitize_db_error(status_code, body));
     }
     let row: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
@@ -4871,7 +4946,7 @@ pub async fn list_offer_asset_requests(
     let resp = state
         .pg
         .from("offer_asset_requests")
-        .select("*, agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
+        .select("*, creators(id, full_name, profile_photo_url), agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
         .eq("offer_id", &offer_id)
         .eq("agency_id", &user.id)
         .order("created_at.desc")
@@ -4899,47 +4974,49 @@ pub async fn create_offer_asset_request(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
-    let talent_id = trim_non_empty(&payload.talent_id, "talent_id")?;
-    let assignment_resp = state
-        .pg
-        .from("offer_talent_assignments")
-        .select("*")
-        .eq("offer_id", &offer_id)
-        .eq("agency_id", &user.id)
-        .eq("talent_id", &talent_id)
-        .eq("status", "assigned")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !assignment_resp.status().is_success() {
-        return Err(sanitize_db_error(
-            assignment_resp.status().as_u16(),
-            assignment_resp.text().await.unwrap_or_default(),
-        ));
+    let mut creator_id = payload
+        .creator_id
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let mut talent_id = payload
+        .talent_id
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if creator_id.is_empty() {
+        talent_id = trim_non_empty(&talent_id, "talent_id")?;
+        let talent = resolve_agency_talent(&state, &user.id, &talent_id).await?;
+        creator_id = talent
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "This talent must create a creator account before they can be assigned to a contract."
+                    .to_string(),
+            ));
+        }
     }
-    let assignment_text = assignment_resp.text().await.unwrap_or_default();
-    let assignment_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&assignment_text).unwrap_or_default();
-    let assignment = assignment_rows.first().cloned().ok_or((
-        StatusCode::BAD_REQUEST,
-        "talent not assigned to this offer".to_string(),
-    ))?;
-    let creator_id = assignment
-        .get("creator_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+
+    let assignment = resolve_offer_assignment_for_creator(&state, &offer_id, &creator_id).await?;
     let insert_payload = json!({
         "offer_id": offer_id,
         "agency_id": user.id,
-        "talent_id": talent_id,
-        "creator_id": if creator_id.is_empty() { serde_json::Value::Null } else { json!(creator_id) },
+        "talent_id": if talent_id.is_empty() { serde_json::Value::Null } else { json!(talent_id) },
+        "creator_id": creator_id,
         "title": payload.title,
         "message": payload.message,
         "file_url": payload.file_url,
         "status": "sent",
         "created_by": user.id,
-        "meta": json!({}),
+        "meta": assignment.get("meta").cloned().unwrap_or_else(|| json!({})),
     });
     let resp = state
         .pg
@@ -5167,45 +5244,115 @@ pub async fn submit_offer_deliverable(
         None
     };
     let (talent_id, creator_id) = if user.role == "agency" {
-        let tid = payload
-            .talent_id
+        let payload_creator_id = payload
+            .creator_id
             .as_deref()
             .map(str::trim)
             .filter(|s| !s.is_empty())
-            .ok_or((StatusCode::BAD_REQUEST, "talent_id required".to_string()))?;
-        let talent = resolve_agency_talent(&state, &user.id, tid).await?;
-        let assignment = state
-            .pg
-            .from("offer_talent_assignments")
-            .select("*")
-            .eq("offer_id", &offer_id)
-            .eq("agency_id", &user.id)
-            .eq("talent_id", tid)
-            .eq("status", "assigned")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !assignment.status().is_success() {
-            return Err(sanitize_db_error(
-                assignment.status().as_u16(),
-                assignment.text().await.unwrap_or_default(),
-            ));
-        }
-        let assignment_text = assignment.text().await.unwrap_or_default();
-        let assignment_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&assignment_text).unwrap_or_default();
-        if assignment_rows.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "talent not assigned to this offer".to_string(),
-            ));
-        }
-        let creator = talent
-            .get("creator_id")
-            .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-        (Some(tid.to_string()), creator)
+
+        if let Some(creator_id) = payload_creator_id {
+            // Creator-first: validate assignment by creator_id (Option 2).
+            let assignment = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", &offer_id)
+                .eq("agency_id", &user.id)
+                .eq("creator_id", &creator_id)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !assignment.status().is_success() {
+                return Err(sanitize_db_error(
+                    assignment.status().as_u16(),
+                    assignment.text().await.unwrap_or_default(),
+                ));
+            }
+            let assignment_text = assignment.text().await.unwrap_or_default();
+            let assignment_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&assignment_text).unwrap_or_default();
+            if assignment_rows.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "creator not assigned to this offer".to_string(),
+                ));
+            }
+
+            // Best-effort: preserve talent_id if the agency provided it and it matches the creator.
+            let tid_opt = payload
+                .talent_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty());
+            let talent_id = if let Some(tid) = tid_opt {
+                let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+                let canonical_tid = talent
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let talent_creator_id = talent
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if !canonical_tid.is_empty() && talent_creator_id == creator_id {
+                    Some(canonical_tid)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            (talent_id, Some(creator_id))
+        } else {
+            // Legacy/roster flow: resolve by talent_id.
+            let tid = payload
+                .talent_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .ok_or((StatusCode::BAD_REQUEST, "talent_id or creator_id required".to_string()))?;
+            let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+            let assignment = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", &offer_id)
+                .eq("agency_id", &user.id)
+                .eq("talent_id", tid)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !assignment.status().is_success() {
+                return Err(sanitize_db_error(
+                    assignment.status().as_u16(),
+                    assignment.text().await.unwrap_or_default(),
+                ));
+            }
+            let assignment_text = assignment.text().await.unwrap_or_default();
+            let assignment_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&assignment_text).unwrap_or_default();
+            if assignment_rows.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "talent not assigned to this offer".to_string(),
+                ));
+            }
+            let creator = talent
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (Some(tid.to_string()), creator)
+        }
     } else {
         let resolved_creator = resolve_effective_creator_id(&state, &user).await;
         let target_type = _offer
@@ -5803,6 +5950,7 @@ pub async fn upload_offer_deliverable_form(
     let mut asset_type = "file".to_string();
     let mut caption = None;
     let mut talent_id: Option<String> = None;
+    let mut creator_id_field: Option<String> = None;
     let mut asset_request_id: Option<String> = None;
     let mut desired_status: Option<String> = None;
 
@@ -5837,6 +5985,14 @@ pub async fn upload_offer_deliverable_form(
             }
             Some("talent_id") => {
                 talent_id = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+                );
+            }
+            Some("creator_id") => {
+                creator_id_field = Some(
                     field
                         .text()
                         .await
@@ -5923,44 +6079,107 @@ pub async fn upload_offer_deliverable_form(
         None
     };
     let (resolved_talent_id, resolved_creator_id) = if user.role == "agency" {
-        let tid = talent_id
+        let cid_opt = creator_id_field
             .as_deref()
             .map(str::trim)
             .filter(|s| !s.is_empty())
-            .ok_or((StatusCode::BAD_REQUEST, "talent_id required".to_string()))?;
-        let talent = resolve_agency_talent(&state, &user.id, tid).await?;
-        let assignment = state
-            .pg
-            .from("offer_talent_assignments")
-            .select("*")
-            .eq("offer_id", &offer_id)
-            .eq("agency_id", &user.id)
-            .eq("talent_id", tid)
-            .eq("status", "assigned")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !assignment.status().is_success() {
-            return Err(sanitize_db_error(
-                assignment.status().as_u16(),
-                assignment.text().await.unwrap_or_default(),
-            ));
-        }
-        let assignment_text = assignment.text().await.unwrap_or_default();
-        let assignment_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&assignment_text).unwrap_or_default();
-        if assignment_rows.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "talent not assigned to this offer".to_string(),
-            ));
-        }
-        let creator = talent
-            .get("creator_id")
-            .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-        (Some(tid.to_string()), creator)
+
+        if let Some(creator_id) = cid_opt {
+            let assignment = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", &offer_id)
+                .eq("agency_id", &user.id)
+                .eq("creator_id", &creator_id)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !assignment.status().is_success() {
+                return Err(sanitize_db_error(
+                    assignment.status().as_u16(),
+                    assignment.text().await.unwrap_or_default(),
+                ));
+            }
+            let assignment_text = assignment.text().await.unwrap_or_default();
+            let assignment_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&assignment_text).unwrap_or_default();
+            if assignment_rows.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "creator not assigned to this offer".to_string(),
+                ));
+            }
+
+            // Best-effort: preserve talent_id if supplied and it matches the creator.
+            let tid_opt = talent_id.as_deref().map(str::trim).filter(|s| !s.is_empty());
+            let talent_id = if let Some(tid) = tid_opt {
+                let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+                let canonical_tid = talent
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let talent_creator_id = talent
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if !canonical_tid.is_empty() && talent_creator_id == creator_id {
+                    Some(canonical_tid)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            (talent_id, Some(creator_id))
+        } else {
+            let tid = talent_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .ok_or((StatusCode::BAD_REQUEST, "talent_id or creator_id required".to_string()))?;
+            let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+            let assignment = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", &offer_id)
+                .eq("agency_id", &user.id)
+                .eq("talent_id", tid)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !assignment.status().is_success() {
+                return Err(sanitize_db_error(
+                    assignment.status().as_u16(),
+                    assignment.text().await.unwrap_or_default(),
+                ));
+            }
+            let assignment_text = assignment.text().await.unwrap_or_default();
+            let assignment_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&assignment_text).unwrap_or_default();
+            if assignment_rows.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "talent not assigned to this offer".to_string(),
+                ));
+            }
+            let creator = talent
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (Some(tid.to_string()), creator)
+        }
     } else {
         let resolved_creator = resolve_effective_creator_id(&state, &user).await;
         let target_type = _offer
@@ -6837,31 +7056,39 @@ async fn release_campaign_offer_transfers(
         .unwrap_or_default();
 
     for split in &talent_splits {
-        let talent_id = split
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
         let amount_cents = split
             .get("amount_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-        if talent_id.is_empty() || amount_cents <= 0 {
+        if amount_cents <= 0 {
             continue;
         }
 
-        let creator_id = split
+        let talent_id = split
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let split_creator_id = split
             .get("creator_id")
             .and_then(|v| v.as_str())
             .unwrap_or("")
-            .trim();
+            .trim()
+            .to_string();
 
-        let creator_id = if creator_id.is_empty() {
-            get_creator_id_from_talent_id(state, talent_id)
+        let creator_id = if !split_creator_id.is_empty() {
+            split_creator_id
+        } else if !talent_id.is_empty() {
+            get_creator_id_from_talent_id(state, &talent_id)
                 .await
                 .unwrap_or_default()
         } else {
-            creator_id.to_string()
+            String::new()
         };
+        if creator_id.is_empty() {
+            continue;
+        }
         let talent_account_id_result = if !creator_id.is_empty() {
             get_creator_stripe_account(state, &creator_id).await
         } else {
@@ -6869,12 +7096,14 @@ async fn release_campaign_offer_transfers(
         };
 
         if let Ok(talent_account_id) = talent_account_id_result {
-            let metadata = std::collections::HashMap::from([
+            let mut metadata = std::collections::HashMap::from([
                 ("offer_id".to_string(), offer_id.to_string()),
-                ("talent_id".to_string(), talent_id.to_string()),
                 ("creator_id".to_string(), creator_id.to_string()),
                 ("type".to_string(), "talent_earnings".to_string()),
             ]);
+            if !talent_id.is_empty() {
+                metadata.insert("talent_id".to_string(), talent_id.to_string());
+            }
 
             let _ = crate::payouts::execute_and_record_stripe_transfer(
                 state,
@@ -7399,7 +7628,7 @@ pub async fn ensure_campaign_billing_stub(
             let assignments_resp = state
                 .pg
                 .from("offer_talent_assignments")
-                .select("talent_id")
+                .select("creator_id")
                 .eq("offer_id", offer_id)
                 .eq("status", "assigned")
                 .execute()
@@ -7416,17 +7645,17 @@ pub async fn ensure_campaign_billing_stub(
             }
             let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
             for assigned in &assignments {
-                let tid = assigned
-                    .get("talent_id")
+                let cid = assigned
+                    .get("creator_id")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
-                if tid.is_empty() {
+                if cid.trim().is_empty() {
                     continue;
                 }
                 let payment_body = json!({
                     "agency_id": agency_id,
                     "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_id.to_string()) },
-                    "talent_id": tid,
+                    "creator_id": cid,
                     "campaign_id": if brand_campaign_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_campaign_id.to_string()) },
                     "status": "pending",
                     "currency_code": "USD",
@@ -7443,16 +7672,16 @@ pub async fn ensure_campaign_billing_stub(
                     Ok(resp) => {
                         if !resp.status().is_success() {
                             tracing::error!(
-                                "Failed to insert missing payment for talent {}: {}",
-                                tid,
+                                "Failed to insert missing payment for creator {}: {}",
+                                cid,
                                 resp.text().await.unwrap_or_default()
                             );
                         }
                     }
                     Err(e) => {
                         tracing::error!(
-                            "Network error inserting missing payment for talent {}: {}",
-                            tid,
+                            "Network error inserting missing payment for creator {}: {}",
+                            cid,
                             e
                         );
                     }
@@ -7491,7 +7720,7 @@ pub async fn ensure_campaign_billing_stub(
     let assignments_resp = state
         .pg
         .from("offer_talent_assignments")
-        .select("talent_id")
+        .select("creator_id")
         .eq("offer_id", offer_id)
         .eq("status", "assigned")
         .execute()
@@ -7513,16 +7742,23 @@ pub async fn ensure_campaign_billing_stub(
     }
 
     let split_cents = (budget_total / assignments.len() as f64 * 100.0).round() as i64;
-    let primary_talent_id = assignments
+    let primary_creator_id = assignments
         .first()
-        .and_then(|a| a.get("talent_id"))
+        .and_then(|a| a.get("creator_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    if primary_creator_id.trim().is_empty() {
+        tracing::warn!(
+            offer_id,
+            "No creator_id found on assigned talents for offer; cannot create billing stub."
+        );
+        return Err("assigned_talents_missing_creator_id".to_string());
+    }
 
     let lr_body = json!({
         "agency_id": agency_id,
         "brand_id": if brand_id.is_empty() { None } else { Some(brand_id.to_string()) },
-        "talent_id": primary_talent_id,
+        "creator_id": primary_creator_id,
         "status": "approved", // Auto-approved to allow payment
         "context_type": "campaign",
         "campaign_offer_id": offer_id,
@@ -7561,20 +7797,20 @@ pub async fn ensure_campaign_billing_stub(
         .execute()
         .await;
 
-    // Create tracking rows in `payments`
+    // Create tracking rows in `payments` (creator_id-native; talent_id optional).
     for assigned in assignments {
-        let tid = assigned
-            .get("talent_id")
+        let cid = assigned
+            .get("creator_id")
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        if tid.is_empty() {
+        if cid.trim().is_empty() {
             continue;
         }
 
         let payment_body = json!({
             "agency_id": agency_id,
             "brand_id": if brand_id.is_empty() { None } else { Some(brand_id.to_string()) },
-            "talent_id": tid,
+            "creator_id": cid,
             "campaign_id": if brand_campaign_id.is_empty() { None } else { Some(brand_campaign_id.to_string()) },
             "status": "pending",
             "currency_code": "USD",
@@ -7592,14 +7828,14 @@ pub async fn ensure_campaign_billing_stub(
             Ok(resp) => {
                 if !resp.status().is_success() {
                     tracing::error!(
-                        "Failed to insert payment for talent {}: {}",
-                        tid,
+                        "Failed to insert payment for creator {}: {}",
+                        cid,
                         resp.text().await.unwrap_or_default()
                     );
                 }
             }
             Err(e) => {
-                tracing::error!("Network error inserting payment for talent {}: {}", tid, e);
+                tracing::error!("Network error inserting payment for creator {}: {}", cid, e);
             }
         }
     }
