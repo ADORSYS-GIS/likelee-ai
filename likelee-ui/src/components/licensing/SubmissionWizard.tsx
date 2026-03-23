@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -436,6 +437,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       <DialogContent
         className={`max-w-5xl h-[92vh] p-0 border-none bg-slate-50 rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${step === 3 ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
       >
+        <DialogDescription className="sr-only">
+          Fill in deal details, select talent, and finalize the contract.
+        </DialogDescription>
         <div className="flex flex-col h-full overflow-hidden">
           {/* Wizard Header / Progress */}
           <div className="bg-white p-8 border-b border-slate-100 rounded-t-3xl shrink-0">
@@ -603,15 +607,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {talents.map((t) => {
+                                    const talentName =
+                                      t.full_name ||
+                                      t.stage_name ||
+                                      t.full_legal_name ||
+                                      t.email ||
+                                      `Unknown ${entitySingularTitle}`;
                                     const isSelected = formData.talent_name
                                       ? formData.talent_name
                                           .split(", ")
-                                          .includes(t.full_name)
+                                          .includes(talentName)
                                       : false;
                                     return (
                                       <CommandItem
                                         key={t.id}
-                                        value={t.full_name}
+                                        value={talentName}
                                         onSelect={() => {
                                           const currentNames =
                                             formData.talent_name
@@ -624,7 +634,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
                                           if (isSelected) {
                                             updatedNames = currentNames.filter(
-                                              (n) => n !== t.full_name,
+                                              (n) => n !== talentName,
                                             );
                                             // Remove ID
                                             if (t.id) {
@@ -633,10 +643,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               );
                                             }
                                           } else {
-                                            if (t.full_name) {
+                                            if (talentName) {
                                               updatedNames = [
                                                 ...currentNames,
-                                                t.full_name,
+                                                talentName,
                                               ];
                                             } else {
                                               updatedNames = currentNames;
@@ -680,8 +690,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               isSelected && "text-indigo-600",
                                             )}
                                           >
-                                            {t.full_name ||
-                                              `Unknown ${entitySingularTitle}`}
+                                            {talentName}
                                           </span>
                                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                             {`Agency ${entitySingularTitle}`}
@@ -962,6 +971,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         }}
       >
         <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogDescription className="sr-only">
+            Review and complete the agency signature.
+          </DialogDescription>
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Agency Signature</DialogTitle>
           </DialogHeader>

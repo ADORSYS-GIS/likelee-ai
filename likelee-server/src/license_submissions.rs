@@ -163,6 +163,105 @@ pub async fn create_draft(
         .clone()
         .or(license_template.start_date.clone());
 
+    let mut incoming_talent_ids: Vec<String> = vec![];
+    if let Some(id) = req.talent_id.clone().filter(|s| !s.is_empty()) {
+        incoming_talent_ids.push(id);
+    }
+    if let Some(ids) = req.talent_ids.clone() {
+        for id in ids {
+            if !id.trim().is_empty() {
+                incoming_talent_ids.push(id);
+            }
+        }
+    }
+    incoming_talent_ids.sort();
+    incoming_talent_ids.dedup();
+
+    let mut resolved_talent_ids: Vec<String> = vec![];
+    if !incoming_talent_ids.is_empty() {
+        let ids_csv = incoming_talent_ids.join(",");
+        let lookup_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id")
+            .eq("agency_id", &agency_id)
+            .or(format!("id.in.({}),creator_id.in.({})", ids_csv, ids_csv))
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lookup_text = lookup_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lookup_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&lookup_text).unwrap_or_default();
+        let mut map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        for row in lookup_rows {
+            if let Some(au_id) = row.get("id").and_then(|v| v.as_str()) {
+                let au_id = au_id.trim();
+                if !au_id.is_empty() {
+                    map.insert(au_id.to_string(), au_id.to_string());
+                }
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    let creator_id = creator_id.trim();
+                    if !creator_id.is_empty() {
+                        map.insert(creator_id.to_string(), au_id.to_string());
+                    }
+                }
+            }
+        }
+
+        let unresolved_ids: Vec<String> = incoming_talent_ids
+            .iter()
+            .filter(|id| !map.contains_key(*id))
+            .cloned()
+            .collect();
+        if !unresolved_ids.is_empty() {
+            let unresolved_csv = unresolved_ids.join(",");
+            let rel_resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select("talent_id,creator_id")
+                .eq("agency_id", &agency_id)
+                .or(format!(
+                    "talent_id.in.({}),creator_id.in.({})",
+                    unresolved_csv, unresolved_csv
+                ))
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_text = rel_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&rel_text).unwrap_or_default();
+            for row in rel_rows {
+                if let Some(talent_id) = row.get("talent_id").and_then(|v| v.as_str()) {
+                    let talent_id = talent_id.trim();
+                    if !talent_id.is_empty() {
+                        map.insert(talent_id.to_string(), talent_id.to_string());
+                    }
+                    if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                        let creator_id = creator_id.trim();
+                        if !creator_id.is_empty() {
+                            map.insert(creator_id.to_string(), talent_id.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        for id in &incoming_talent_ids {
+            if let Some(mapped) = map.get(id) {
+                if !resolved_talent_ids.contains(mapped) {
+                    resolved_talent_ids.push(mapped.clone());
+                }
+            }
+        }
+    }
+    let resolved_primary_talent_id = resolved_talent_ids.first().cloned();
+
     let draft_data = json!({
         "agency_id": agency_id,
         "client_id": req.client_id,
@@ -172,8 +271,8 @@ pub async fn create_draft(
         "requires_agency_signature": req.requires_agency_signature.unwrap_or(false),
         "client_name": client_name,
         "client_email": req.client_email,
-        "talent_id": req.talent_id,
-        "talent_ids": req.talent_ids,
+        "talent_id": resolved_primary_talent_id,
+        "talent_ids": if resolved_talent_ids.is_empty() { serde_json::Value::Null } else { json!(resolved_talent_ids) },
         "talent_names": talent_names,
         "license_fee": req.license_fee,
         "duration_days": req.duration_days,
