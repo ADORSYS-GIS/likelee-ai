@@ -366,9 +366,15 @@ const BrandConnectionsView = () => {
   const selectedOfferLockInfo = useMemo(() => {
     const offerId = String(selectedOfferId || "").trim();
     if (!offerId) return { locked: false, contractSigned: false };
-    const offer = (offers || []).find((o: any) => String(o?.id || "") === offerId);
-    const status = String(offer?.status || "").trim().toLowerCase();
-    const pay = String(offer?.payment_status || "unpaid").trim().toLowerCase();
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid")
+      .trim()
+      .toLowerCase();
     const contractSigned = status === "contract_fully_signed";
     const locked =
       (pay !== "unpaid" && pay !== "") ||
@@ -536,7 +542,6 @@ const BrandConnectionsView = () => {
     return "";
   }, [busyIds, currentContractId, selectedOfferId]);
 
-
   const assignmentLockedForOffer = useMemo(() => {
     const offerId = assignDialog.offerId;
     if (!offerId) return false;
@@ -694,20 +699,20 @@ const BrandConnectionsView = () => {
     }
   };
 
-	  const handleUnassignTalent = async () => {
-	    const offerId = String(unassignConfirm.offerId || "").trim();
-	    const assignmentId = String(unassignConfirm.assignmentId || "").trim();
-	    if (!offerId || !assignmentId) return;
-	    if (assignmentLockedForSelectedOffer) {
-	      toast({
-	        title: "Assignments locked",
-	        description: selectedOfferContractSigned
-	          ? "Contract is already signed and you can’t change assigned talents."
-	          : "You can’t unassign talent after the contract is sent.",
-	        variant: "destructive",
-	      });
-	      return;
-	    }
+  const handleUnassignTalent = async () => {
+    const offerId = String(unassignConfirm.offerId || "").trim();
+    const assignmentId = String(unassignConfirm.assignmentId || "").trim();
+    if (!offerId || !assignmentId) return;
+    if (assignmentLockedForSelectedOffer) {
+      toast({
+        title: "Assignments locked",
+        description: selectedOfferContractSigned
+          ? "Contract is already signed and you can’t change assigned talents."
+          : "You can’t unassign talent after the contract is sent.",
+        variant: "destructive",
+      });
+      return;
+    }
     setAssignSubmitting(true);
     try {
       await base44.delete(
@@ -728,7 +733,12 @@ const BrandConnectionsView = () => {
       });
     } finally {
       setAssignSubmitting(false);
-      setUnassignConfirm({ open: false, offerId: "", assignmentId: "", talentName: "" });
+      setUnassignConfirm({
+        open: false,
+        offerId: "",
+        assignmentId: "",
+        talentName: "",
+      });
     }
   };
 
@@ -3337,59 +3347,62 @@ const BrandConnectionsView = () => {
               </div>
               <div className="flex-1 relative">
                 <docuseal-builder
-                data-token={builderToken}
-                data-autosave={true}
-                data-save-button-text="Save Contract"
-                data-with-send-button={false}
-                data-with-sign-yourself-button={false}
-                className="w-full h-full block"
-                ref={(el: any) => {
-                  if (el && !el._hasSaveListener) {
-                    const hideActionButtons = (root: ParentNode) => {
-                      const buttons = Array.from(
-                        root.querySelectorAll("button"),
-                      );
-                      buttons.forEach((btn) => {
-                        const label = (btn.textContent || "")
-                          .replace(/\s+/g, " ")
-                          .trim()
-                          .toLowerCase();
-                        if (
-                          label === "sign yourself" ||
-                          label === "send" ||
-                          label.includes("sign yourself")
-                        ) {
-                          (btn as HTMLElement).style.display = "none";
-                        }
-                      });
-                    };
-                    const root = el.shadowRoot || el;
-                    hideActionButtons(root);
-                    const observer = new MutationObserver(() =>
-                      hideActionButtons(root),
-                    );
-                    observer.observe(root, { childList: true, subtree: true });
-                    el._hideObserver = observer;
-                    el.addEventListener("save", () => {
-                      if (selectedOfferId) {
-                        queryClient.invalidateQueries({
-                          queryKey: [
-                            "agency",
-                            "offer-contracts",
-                            selectedOfferId,
-                          ],
+                  data-token={builderToken}
+                  data-autosave={true}
+                  data-save-button-text="Save Contract"
+                  data-with-send-button={false}
+                  data-with-sign-yourself-button={false}
+                  className="w-full h-full block"
+                  ref={(el: any) => {
+                    if (el && !el._hasSaveListener) {
+                      const hideActionButtons = (root: ParentNode) => {
+                        const buttons = Array.from(
+                          root.querySelectorAll("button"),
+                        );
+                        buttons.forEach((btn) => {
+                          const label = (btn.textContent || "")
+                            .replace(/\s+/g, " ")
+                            .trim()
+                            .toLowerCase();
+                          if (
+                            label === "sign yourself" ||
+                            label === "send" ||
+                            label.includes("sign yourself")
+                          ) {
+                            (btn as HTMLElement).style.display = "none";
+                          }
                         });
-                      }
-                      toast({
-                        title: "Contract saved",
-                        description:
-                          "Your changes have been saved successfully.",
+                      };
+                      const root = el.shadowRoot || el;
+                      hideActionButtons(root);
+                      const observer = new MutationObserver(() =>
+                        hideActionButtons(root),
+                      );
+                      observer.observe(root, {
+                        childList: true,
+                        subtree: true,
                       });
-                    });
-                    el._hasSaveListener = true;
-                  }
-                }}
-              ></docuseal-builder>
+                      el._hideObserver = observer;
+                      el.addEventListener("save", () => {
+                        if (selectedOfferId) {
+                          queryClient.invalidateQueries({
+                            queryKey: [
+                              "agency",
+                              "offer-contracts",
+                              selectedOfferId,
+                            ],
+                          });
+                        }
+                        toast({
+                          title: "Contract saved",
+                          description:
+                            "Your changes have been saved successfully.",
+                        });
+                      });
+                      el._hasSaveListener = true;
+                    }
+                  }}
+                ></docuseal-builder>
               </div>
             </div>
           </div>

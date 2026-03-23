@@ -178,8 +178,11 @@ export function AgencyDeliverablesView() {
     const offerId = String(unassignDialog.offerId || "").trim();
     const assignmentId = String(unassignDialog.assignmentId || "").trim();
     if (!offerId || !assignmentId) return;
-    const status = String(unassignDialog.offerStatus || "").trim().toLowerCase();
-    const locked = status === "contract_sent" || status === "contract_fully_signed";
+    const status = String(unassignDialog.offerStatus || "")
+      .trim()
+      .toLowerCase();
+    const locked =
+      status === "contract_sent" || status === "contract_fully_signed";
     if (locked) {
       toast({
         title: "Assignments locked",
@@ -1432,7 +1435,10 @@ export function AgencyDeliverablesView() {
                       key={
                         creatorId ||
                         String(
-                          talent?.id || talent?.talent_id || talent?.email || "",
+                          talent?.id ||
+                            talent?.talent_id ||
+                            talent?.email ||
+                            "",
                         )
                       }
                       onClick={() => {
@@ -1466,45 +1472,45 @@ export function AgencyDeliverablesView() {
                       }`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
-                      <Avatar className="w-16 h-16 rounded-2xl">
-                        <AvatarImage src={getTalentAvatar(talent)} />
-                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
-                          {getTalentInitial(talent)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                        {talent?.stage_name ||
-                          talent?.name ||
-                          talent?.full_name ||
-                          talent?.full_legal_name ||
-                          "Talent"}
-                      </h6>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        {alreadyAssigned && (
-                          <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                            Assigned
+                        <Avatar className="w-16 h-16 rounded-2xl">
+                          <AvatarImage src={getTalentAvatar(talent)} />
+                          <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
+                            {getTalentInitial(talent)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
+                          {talent?.stage_name ||
+                            talent?.name ||
+                            talent?.full_name ||
+                            talent?.full_legal_name ||
+                            "Talent"}
+                        </h6>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {alreadyAssigned && (
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                              Assigned
+                            </Badge>
+                          )}
+                          <Badge
+                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
+                              talent?.has_creator_account
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {talent?.has_creator_account
+                              ? "Dashboard Access"
+                              : "No Dashboard Access"}
                           </Badge>
-                        )}
-                        <Badge
-                          className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                            talent?.has_creator_account
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
-                        >
-                          {talent?.has_creator_account
-                            ? "Dashboard Access"
-                            : "No Dashboard Access"}
-                        </Badge>
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
+                      {isSelected && (
+                        <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
                     </Card>
                   );
                 })}
@@ -1572,9 +1578,9 @@ export function AgencyDeliverablesView() {
           <AlertDialogHeader>
             <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove <strong>{unassignDialog.talentName}</strong> from this offer.
-              You can change assigned talents before the contract is sent. After
-              you send the contract, assignments are locked.
+              Remove <strong>{unassignDialog.talentName}</strong> from this
+              offer. You can change assigned talents before the contract is
+              sent. After you send the contract, assignments are locked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

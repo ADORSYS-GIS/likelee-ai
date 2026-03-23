@@ -1987,8 +1987,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   {`Set specific commission rates for individual ${entityPluralLower}. These overrides take precedence over the default agency and division rates.`}
                 </p>
               </div>
-              
-              <TalentCommissionSettings entitySingularLower={entitySingularLower} />
+
+              <TalentCommissionSettings
+                entitySingularLower={entitySingularLower}
+              />
             </div>
 
             <div className="flex justify-end">

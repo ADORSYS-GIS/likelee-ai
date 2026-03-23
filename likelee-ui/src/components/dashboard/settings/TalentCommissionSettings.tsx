@@ -82,9 +82,11 @@ export const TalentCommissionSettings: React.FC<{
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: { creatorId: string; rate: number | null }[]) => {
+    mutationFn: async (
+      updates: { creatorId: string; rate: number | null }[],
+    ) => {
       await base44.post("/agency/dashboard/talent-commissions/bulk-update", {
-        updates: updates.map(u => ({
+        updates: updates.map((u) => ({
           creator_id: u.creatorId,
           custom_rate: u.rate,
         })),
@@ -93,7 +95,9 @@ export const TalentCommissionSettings: React.FC<{
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
-      toast.success(`${variables.length > 1 ? `${variables.length} commission settings` : "Commission setting"} updated successfully`);
+      toast.success(
+        `${variables.length > 1 ? `${variables.length} commission settings` : "Commission setting"} updated successfully`,
+      );
       setDraftRates({});
     },
     onError: (err: any) => {
@@ -137,7 +141,9 @@ export const TalentCommissionSettings: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
         <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-        <p className="text-sm font-bold text-gray-500">Loading roster data...</p>
+        <p className="text-sm font-bold text-gray-500">
+          Loading roster data...
+        </p>
       </div>
     );
   }
@@ -146,10 +152,14 @@ export const TalentCommissionSettings: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-red-50/50 rounded-2xl border border-dashed border-red-200">
         <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
-        <p className="text-sm font-bold text-red-600">Failed to load roster data</p>
+        <p className="text-sm font-bold text-red-600">
+          Failed to load roster data
+        </p>
         <Button
           variant="ghost"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["performance-tiers"] })}
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ["performance-tiers"] })
+          }
           className="mt-4 text-red-700 hover:bg-red-100 font-bold"
         >
           Try Again
@@ -165,9 +175,13 @@ export const TalentCommissionSettings: React.FC<{
           <Info className="w-4 h-4 text-blue-600" />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-blue-900 leading-tight">Connection Required</h4>
+          <h4 className="text-sm font-bold text-blue-900 leading-tight">
+            Connection Required
+          </h4>
           <p className="text-xs text-blue-700/80 font-medium mt-0.5 leading-relaxed">
-            Only talents with an active creator account are listed here. To manage commissions for pending or uninvited roster members, please ensure they have accepted their invitation to the talent portal.
+            Only talents with an active creator account are listed here. To
+            manage commissions for pending or uninvited roster members, please
+            ensure they have accepted their invitation to the talent portal.
           </p>
         </div>
       </div>
@@ -217,13 +231,17 @@ export const TalentCommissionSettings: React.FC<{
           <tbody className="divide-y divide-gray-50">
             {filteredTalents.length > 0 ? (
               filteredTalents.map((talent) => {
-                const tier = TIER_CONFIG[talent.tier.tier_name] || TIER_CONFIG.Inactive;
+                const tier =
+                  TIER_CONFIG[talent.tier.tier_name] || TIER_CONFIG.Inactive;
                 const TierIcon = tier.icon;
                 const draft = draftRates[talent.id];
                 const isDirty = draft !== undefined;
 
                 return (
-                  <tr key={talent.id} className="group hover:bg-gray-50/50 transition-colors">
+                  <tr
+                    key={talent.id}
+                    className="group hover:bg-gray-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10 border border-gray-100 shadow-sm">
@@ -233,25 +251,33 @@ export const TalentCommissionSettings: React.FC<{
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <p className="text-sm font-bold text-gray-900 truncate">{talent.name}</p>
-                          <div className={cn(
-                            "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold mt-1 border",
-                            talent.is_custom_rate
-                              ? "bg-indigo-50 text-indigo-600 border-indigo-100"
-                              : "bg-gray-50 text-gray-400 border-gray-100"
-                          )}>
-                            {talent.is_custom_rate ? "Custom Applied" : "Using Default"}
+                          <p className="text-sm font-bold text-gray-900 truncate">
+                            {talent.name}
+                          </p>
+                          <div
+                            className={cn(
+                              "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold mt-1 border",
+                              talent.is_custom_rate
+                                ? "bg-indigo-50 text-indigo-600 border-indigo-100"
+                                : "bg-gray-50 text-gray-400 border-gray-100",
+                            )}
+                          >
+                            {talent.is_custom_rate
+                              ? "Custom Applied"
+                              : "Using Default"}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center">
-                        <div className={cn(
-                          "flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm",
-                          tier.bgColor,
-                          tier.borderColor
-                        )}>
+                        <div
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm",
+                            tier.bgColor,
+                            tier.borderColor,
+                          )}
+                        >
                           <TierIcon className={cn("w-3.5 h-3.5", tier.color)} />
                           <span className={cn("text-xs font-bold", tier.color)}>
                             {talent.tier.tier_name}
@@ -265,7 +291,9 @@ export const TalentCommissionSettings: React.FC<{
                           <span className="text-lg font-black text-gray-900 leading-none">
                             {talent.commission_rate}
                           </span>
-                          <span className="text-[10px] font-bold text-gray-400">%</span>
+                          <span className="text-[10px] font-bold text-gray-400">
+                            %
+                          </span>
                         </div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">
                           Agency Share
@@ -281,10 +309,14 @@ export const TalentCommissionSettings: React.FC<{
                             max="100"
                             step="0.1"
                             value={draft ?? talent.commission_rate}
-                            onChange={(e) => handleRateChange(talent.id, e.target.value)}
+                            onChange={(e) =>
+                              handleRateChange(talent.id, e.target.value)
+                            }
                             className={cn(
                               "w-24 h-9 text-right pr-7 font-bold text-sm bg-white border-gray-200 rounded-lg transition-all",
-                              isDirty ? "border-indigo-300 ring-2 ring-indigo-500/10" : "group-hover/input:border-gray-300"
+                              isDirty
+                                ? "border-indigo-300 ring-2 ring-indigo-500/10"
+                                : "group-hover/input:border-gray-300",
                             )}
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">
@@ -298,7 +330,7 @@ export const TalentCommissionSettings: React.FC<{
                               size="icon"
                               variant="ghost"
                               onClick={() => {
-                                setDraftRates(prev => {
+                                setDraftRates((prev) => {
                                   const next = { ...prev };
                                   delete next[talent.id];
                                   return next;
@@ -336,7 +368,9 @@ export const TalentCommissionSettings: React.FC<{
                       <Target className="w-6 h-6 text-gray-200" />
                     </div>
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                      {searchTerm ? "No results found" : `No ${entitySingularLower} found`}
+                      {searchTerm
+                        ? "No results found"
+                        : `No ${entitySingularLower} found`}
                     </p>
                   </div>
                 </td>
@@ -352,11 +386,17 @@ export const TalentCommissionSettings: React.FC<{
             <DollarSign className="w-4 h-4 text-indigo-600" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-gray-900 mb-1">Commission Model</h4>
+            <h4 className="text-sm font-bold text-gray-900 mb-1">
+              Commission Model
+            </h4>
             <p className="text-xs text-indigo-700/80 font-medium leading-relaxed max-w-2xl">
-              Commission rates represent the <span className="font-bold underline decoration-indigo-300">agency's share</span>.
-              The {entitySingularLower} will receive the remaining amount (e.g., if agency commission is 20%,
-              the {entitySingularLower} receives 80% of the gross payment).
+              Commission rates represent the{" "}
+              <span className="font-bold underline decoration-indigo-300">
+                agency's share
+              </span>
+              . The {entitySingularLower} will receive the remaining amount
+              (e.g., if agency commission is 20%, the {entitySingularLower}{" "}
+              receives 80% of the gross payment).
             </p>
           </div>
         </div>
@@ -371,15 +411,17 @@ export const TalentCommissionSettings: React.FC<{
               Discard All
             </Button>
           )}
-          
+
           <Button
             className={cn(
               "rounded-xl px-8 h-12 font-bold shadow-lg transition-all gap-2 relative overflow-hidden min-w-[200px]",
               Object.keys(draftRates).length > 0
                 ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200/50 hover:scale-[1.02] active:scale-[0.98]"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none",
             )}
-            disabled={Object.keys(draftRates).length === 0 || updateMutation.isPending}
+            disabled={
+              Object.keys(draftRates).length === 0 || updateMutation.isPending
+            }
             onClick={handleBulkSave}
           >
             {updateMutation.isPending ? (
@@ -390,7 +432,9 @@ export const TalentCommissionSettings: React.FC<{
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes {Object.keys(draftRates).length > 0 && `(${Object.keys(draftRates).length})`}
+                Save Changes{" "}
+                {Object.keys(draftRates).length > 0 &&
+                  `(${Object.keys(draftRates).length})`}
               </>
             )}
           </Button>

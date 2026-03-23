@@ -723,6 +723,43 @@ BEGIN
       ADD CONSTRAINT offer_talent_assignments_creator_required
       CHECK (creator_id IS NOT NULL);
 
+    -- Defensive cleanup: older partial UNIQUE indexes allowed multiple historical rows.
+    -- We now require one row per (offer_id, creator_id) and (offer_id, talent_id) to support backend upserts.
+    --
+    -- Strategy: keep the "best" row per key:
+    -- 1) prefer status='assigned' if present
+    -- 2) otherwise keep the most recently updated
+    -- and delete any remaining duplicates.
+    WITH ranked_creator AS (
+      SELECT
+        id,
+        row_number() OVER (
+          PARTITION BY offer_id, creator_id
+          ORDER BY (status = 'assigned') DESC, updated_at DESC, created_at DESC, id DESC
+        ) AS rn
+      FROM public.offer_talent_assignments
+      WHERE creator_id IS NOT NULL
+    )
+    DELETE FROM public.offer_talent_assignments ota
+    USING ranked_creator rc
+    WHERE ota.id = rc.id
+      AND rc.rn > 1;
+
+    WITH ranked_talent AS (
+      SELECT
+        id,
+        row_number() OVER (
+          PARTITION BY offer_id, talent_id
+          ORDER BY (status = 'assigned') DESC, updated_at DESC, created_at DESC, id DESC
+        ) AS rn
+      FROM public.offer_talent_assignments
+      WHERE talent_id IS NOT NULL
+    )
+    DELETE FROM public.offer_talent_assignments ota
+    USING ranked_talent rt
+    WHERE ota.id = rt.id
+      AND rt.rn > 1;
+
     -- Backend upserts use ON CONFLICT (offer_id, creator_id). Ensure a matching UNIQUE index exists.
     DROP INDEX IF EXISTS public.uq_offer_talent_assignments_offer_creator;
     CREATE UNIQUE INDEX IF NOT EXISTS uq_offer_talent_assignments_offer_creator
