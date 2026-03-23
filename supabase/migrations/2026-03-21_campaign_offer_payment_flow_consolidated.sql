@@ -33,9 +33,10 @@ BEGIN
     -- before re-applying the stricter CHECK constraint. We default to `submitted` because it
     -- is the safest non-final state.
     UPDATE public.campaign_offer_deliverables
-    SET status = 'submitted'
+    SET status = 'draft'
     WHERE status IS NULL
       OR status NOT IN (
+        'draft',
         'submitted',
         'agency_review',
         'brand_review',
@@ -49,6 +50,7 @@ BEGIN
       ADD CONSTRAINT campaign_offer_deliverables_status_check
       CHECK (
         status IN (
+          'draft',
           'submitted',
           'agency_review',
           'brand_review',
@@ -58,6 +60,9 @@ BEGIN
           'rejected'
         )
       );
+
+    ALTER TABLE public.campaign_offer_deliverables
+      ALTER COLUMN status SET DEFAULT 'draft';
   END IF;
 END $$;
 
@@ -365,5 +370,392 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ---------------------------------------------------------------------------
+-- Option 2 hardening: creator_id-native billing + agency-scoped commissions
+-- (Squashed from:
+--  - 2026-03-21_creator_id_billing_flows.sql
+--  - 2026-03-21_agency_creator_commissions_and_creator_assignments.sql)
+-- ---------------------------------------------------------------------------
+
+-- licensing_requests: allow creator_id-based subjects (campaign stubs + modern flows)
+ALTER TABLE public.licensing_requests
+  ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE SET NULL;
+
+DO $$
+DECLARE
+  has_talent_ids boolean;
+  has_talent_name boolean;
+  has_context_type boolean;
+  has_campaign_offer_id boolean;
+  check_sql text;
+  subject_sql text;
+BEGIN
+  -- Drop NOT NULL on talent_id (legacy licensing uses it; campaign stubs can use creator_id).
+  BEGIN
+    ALTER TABLE public.licensing_requests
+      ALTER COLUMN talent_id DROP NOT NULL;
+  EXCEPTION
+    WHEN undefined_column THEN
+      NULL;
+  END;
+
+  -- Best-effort backfill before we tighten constraints.
+  UPDATE public.licensing_requests lr
+  SET creator_id = au.creator_id
+  FROM public.agency_users au
+  WHERE lr.creator_id IS NULL
+    AND lr.talent_id = au.id
+    AND au.creator_id IS NOT NULL;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'talent_ids'
+  ) INTO has_talent_ids;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'talent_name'
+  ) INTO has_talent_name;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'context_type'
+  ) INTO has_context_type;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'campaign_offer_id'
+  ) INTO has_campaign_offer_id;
+
+  IF has_context_type THEN
+    UPDATE public.licensing_requests
+    SET context_type = NULL
+    WHERE context_type IS NOT NULL
+      AND btrim(context_type) = '';
+
+    UPDATE public.licensing_requests
+    SET context_type = lower(btrim(context_type))
+    WHERE context_type IS NOT NULL;
+  END IF;
+
+  IF has_context_type AND has_campaign_offer_id THEN
+    UPDATE public.licensing_requests
+    SET context_type = 'campaign'
+    WHERE (context_type IS NULL OR btrim(context_type) = '')
+      AND campaign_offer_id IS NOT NULL;
+
+    UPDATE public.licensing_requests
+    SET context_type = 'licensing'
+    WHERE COALESCE(context_type, 'licensing') = 'campaign'
+      AND campaign_offer_id IS NULL;
+  END IF;
+
+  -- Defensive cleanup: keep legacy licensing rows compatible with the subject CHECK.
+  IF has_talent_name THEN
+    IF has_context_type THEN
+      IF has_talent_ids THEN
+        UPDATE public.licensing_requests
+        SET talent_name = '(legacy missing talent)'
+        WHERE COALESCE(context_type, 'licensing') <> 'campaign'
+          AND talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_ids IS NULL OR cardinality(talent_ids) = 0)
+          AND (talent_name IS NULL OR btrim(talent_name) = '');
+      ELSE
+        UPDATE public.licensing_requests
+        SET talent_name = '(legacy missing talent)'
+        WHERE COALESCE(context_type, 'licensing') <> 'campaign'
+          AND talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_name IS NULL OR btrim(talent_name) = '');
+      END IF;
+    ELSE
+      IF has_talent_ids THEN
+        UPDATE public.licensing_requests
+        SET talent_name = '(legacy missing talent)'
+        WHERE talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_ids IS NULL OR cardinality(talent_ids) = 0)
+          AND (talent_name IS NULL OR btrim(talent_name) = '');
+      ELSE
+        UPDATE public.licensing_requests
+        SET talent_name = '(legacy missing talent)'
+        WHERE talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_name IS NULL OR btrim(talent_name) = '');
+      END IF;
+    END IF;
+  ELSE
+    IF has_context_type THEN
+      IF has_talent_ids THEN
+        DELETE FROM public.licensing_requests
+        WHERE COALESCE(context_type, 'licensing') <> 'campaign'
+          AND talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_ids IS NULL OR cardinality(talent_ids) = 0);
+      ELSE
+        DELETE FROM public.licensing_requests
+        WHERE COALESCE(context_type, 'licensing') <> 'campaign'
+          AND talent_id IS NULL
+          AND creator_id IS NULL;
+      END IF;
+    ELSE
+      IF has_talent_ids THEN
+        DELETE FROM public.licensing_requests
+        WHERE talent_id IS NULL
+          AND creator_id IS NULL
+          AND (talent_ids IS NULL OR cardinality(talent_ids) = 0);
+      ELSE
+        DELETE FROM public.licensing_requests
+        WHERE talent_id IS NULL
+          AND creator_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  subject_sql := 'talent_id IS NOT NULL OR creator_id IS NOT NULL';
+  IF has_talent_ids THEN
+    subject_sql := subject_sql || ' OR (talent_ids IS NOT NULL AND cardinality(talent_ids) > 0)';
+  END IF;
+  IF has_talent_name THEN
+    subject_sql := subject_sql || ' OR (talent_name IS NOT NULL AND btrim(talent_name) <> '''')';
+  END IF;
+
+  IF has_context_type AND has_campaign_offer_id THEN
+    check_sql := '( (COALESCE(context_type,''licensing'') = ''campaign'' AND campaign_offer_id IS NOT NULL) OR (COALESCE(context_type,''licensing'') <> ''campaign'' AND (' || subject_sql || ')) )';
+  ELSE
+    check_sql := '(' || subject_sql || ')';
+  END IF;
+
+  EXECUTE 'ALTER TABLE public.licensing_requests DROP CONSTRAINT IF EXISTS licensing_requests_subject_check';
+  EXECUTE format(
+    'ALTER TABLE public.licensing_requests ADD CONSTRAINT licensing_requests_subject_check CHECK (%s)',
+    check_sql
+  );
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_creator_id
+  ON public.licensing_requests(creator_id);
+
+-- payments: allow creator_id without talent_id
+ALTER TABLE public.payments
+  ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE SET NULL;
+
+DO $$
+BEGIN
+  BEGIN
+    ALTER TABLE public.payments
+      ALTER COLUMN talent_id DROP NOT NULL;
+  EXCEPTION
+    WHEN undefined_column THEN
+      NULL;
+  END;
+
+  UPDATE public.payments p
+  SET creator_id = au.creator_id
+  FROM public.agency_users au
+  WHERE p.creator_id IS NULL
+    AND p.talent_id = au.id
+    AND au.creator_id IS NOT NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_payments_creator_id
+  ON public.payments(creator_id);
+
+-- Agency-scoped commission overrides by creator_id
+CREATE TABLE IF NOT EXISTS public.agency_creator_commissions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
+  commission_rate numeric(10, 2) NOT NULL CHECK (commission_rate >= 0 AND commission_rate <= 100),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT uq_agency_creator_commissions UNIQUE (agency_id, creator_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agency_creator_commissions_agency_creator
+  ON public.agency_creator_commissions (agency_id, creator_id);
+
+ALTER TABLE public.agency_creator_commissions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agencies can view creator commissions" ON public.agency_creator_commissions;
+CREATE POLICY "Agencies can view creator commissions"
+  ON public.agency_creator_commissions FOR SELECT
+  USING (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can insert creator commissions" ON public.agency_creator_commissions;
+CREATE POLICY "Agencies can insert creator commissions"
+  ON public.agency_creator_commissions FOR INSERT
+  WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can update creator commissions" ON public.agency_creator_commissions;
+CREATE POLICY "Agencies can update creator commissions"
+  ON public.agency_creator_commissions FOR UPDATE
+  USING (agency_id = auth.uid())
+  WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can delete creator commissions" ON public.agency_creator_commissions;
+CREATE POLICY "Agencies can delete creator commissions"
+  ON public.agency_creator_commissions FOR DELETE
+  USING (agency_id = auth.uid());
+
+CREATE TABLE IF NOT EXISTS public.agency_creator_commission_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
+  commission_rate numeric(10, 2) NOT NULL CHECK (commission_rate >= 0 AND commission_rate <= 100),
+  changed_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_agency_creator_commission_history_agency_changed
+  ON public.agency_creator_commission_history (agency_id, changed_at DESC);
+
+ALTER TABLE public.agency_creator_commission_history ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agencies can view creator commission history" ON public.agency_creator_commission_history;
+CREATE POLICY "Agencies can view creator commission history"
+  ON public.agency_creator_commission_history FOR SELECT
+  USING (agency_id = auth.uid());
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'talent_commissions'
+  ) THEN
+    INSERT INTO public.agency_creator_commissions (agency_id, creator_id, commission_rate, updated_at)
+    SELECT
+      tc.agency_id,
+      au.creator_id,
+      tc.commission_rate,
+      COALESCE(tc.updated_at, now())
+    FROM public.talent_commissions tc
+    JOIN public.agency_users au ON au.id = tc.talent_id
+    WHERE au.creator_id IS NOT NULL
+    ON CONFLICT (agency_id, creator_id) DO UPDATE
+    SET
+      commission_rate = EXCLUDED.commission_rate,
+      updated_at = GREATEST(public.agency_creator_commissions.updated_at, EXCLUDED.updated_at);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'talent_commissions'
+  ) THEN
+    DROP TABLE public.talent_commissions;
+  END IF;
+END $$;
+
+-- agency_talent_relationships: allow creator-only memberships (talent_id NULL) + tier label
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_talent_relationships'
+  ) THEN
+    ALTER TABLE public.agency_talent_relationships
+      ALTER COLUMN talent_id DROP NOT NULL;
+
+    ALTER TABLE public.agency_talent_relationships
+      ADD COLUMN IF NOT EXISTS performance_tier_name text NOT NULL DEFAULT 'Inactive';
+
+    DROP INDEX IF EXISTS public.uq_agency_talent_relationships_agency_talent;
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_talent
+      ON public.agency_talent_relationships(agency_id, talent_id)
+      WHERE talent_id IS NOT NULL;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_creator
+      ON public.agency_talent_relationships(agency_id, creator_id)
+      WHERE creator_id IS NOT NULL;
+
+    ALTER TABLE public.agency_talent_relationships
+      DROP CONSTRAINT IF EXISTS agency_talent_relationships_identity_check;
+    ALTER TABLE public.agency_talent_relationships
+      ADD CONSTRAINT agency_talent_relationships_identity_check
+      CHECK (talent_id IS NOT NULL OR creator_id IS NOT NULL);
+  END IF;
+END $$;
+
+-- offer_talent_assignments + offer_asset_requests: allow creator-only memberships (talent_id NULL)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'offer_talent_assignments'
+  ) THEN
+    UPDATE public.offer_talent_assignments ota
+    SET creator_id = au.creator_id
+    FROM public.agency_users au
+    WHERE ota.creator_id IS NULL
+      AND ota.talent_id IS NOT NULL
+      AND au.id = ota.talent_id
+      AND au.creator_id IS NOT NULL;
+
+    ALTER TABLE public.offer_talent_assignments
+      ALTER COLUMN talent_id DROP NOT NULL;
+
+    ALTER TABLE public.offer_talent_assignments
+      DROP CONSTRAINT IF EXISTS offer_talent_assignments_creator_required;
+    ALTER TABLE public.offer_talent_assignments
+      ADD CONSTRAINT offer_talent_assignments_creator_required
+      CHECK (creator_id IS NOT NULL);
+
+    -- Backend upserts use ON CONFLICT (offer_id, creator_id). Ensure a matching UNIQUE index exists.
+    DROP INDEX IF EXISTS public.uq_offer_talent_assignments_offer_creator;
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_offer_talent_assignments_offer_creator
+      ON public.offer_talent_assignments(offer_id, creator_id);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_offer_talent_assignments_offer_talent
+      ON public.offer_talent_assignments(offer_id, talent_id)
+      WHERE talent_id IS NOT NULL;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'offer_asset_requests'
+  ) THEN
+    UPDATE public.offer_asset_requests oar
+    SET creator_id = au.creator_id
+    FROM public.agency_users au
+    WHERE oar.creator_id IS NULL
+      AND oar.talent_id IS NOT NULL
+      AND au.id = oar.talent_id
+      AND au.creator_id IS NOT NULL;
+
+    ALTER TABLE public.offer_asset_requests
+      ALTER COLUMN talent_id DROP NOT NULL;
+
+    ALTER TABLE public.offer_asset_requests
+      DROP CONSTRAINT IF EXISTS offer_asset_requests_creator_required;
+    ALTER TABLE public.offer_asset_requests
+      ADD CONSTRAINT offer_asset_requests_creator_required
+      CHECK (creator_id IS NOT NULL);
+  END IF;
+END $$;
 
 COMMIT;
