@@ -913,6 +913,7 @@ export default function BrandDashboard() {
   const [contractHubRows, setContractHubRows] = useState<any[]>([]);
   const [loadingContractHubRows, setLoadingContractHubRows] = useState(false);
   const [loadingOfferHubDetails, setLoadingOfferHubDetails] = useState(false);
+  const contractRefreshThrottleRef = useRef<Record<string, number>>({});
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
@@ -1258,6 +1259,42 @@ export default function BrandDashboard() {
     };
   }, [authToken]);
 
+  const isRefreshableDocuSealContract = (contract: any) => {
+    if (!contract) return false;
+    const status = String(contract?.docuseal_status || "").toLowerCase().trim();
+    if (!status || status === "draft") return false;
+    if (
+      [
+        "completed",
+        "signed",
+        "declined",
+        "rejected",
+        "archived",
+        "voided",
+      ].includes(status)
+    ) {
+      return false;
+    }
+    return Boolean(contract?.docuseal_submission_id || contract?.docuseal_slug);
+  };
+
+  const shouldAttemptDocuSealRefresh = (contract: any) => {
+    if (!isRefreshableDocuSealContract(contract)) return false;
+
+    const lastSyncedAt = Date.parse(String(contract?.last_synced_at || ""));
+    if (!Number.isNaN(lastSyncedAt)) {
+      // Avoid hammering DocuSeal refresh when the UI polls frequently.
+      if (Date.now() - lastSyncedAt < 30_000) return false;
+    }
+
+    const contractId = String(contract?.id || "").trim();
+    if (!contractId) return false;
+    const lastAttempt = contractRefreshThrottleRef.current[contractId] || 0;
+    if (Date.now() - lastAttempt < 15_000) return false;
+
+    return true;
+  };
+
   useEffect(() => {
     if (activeSection !== "campaigns-contract-hub") return;
     let mounted = true;
@@ -1279,13 +1316,9 @@ export default function BrandDashboard() {
                 contracts.map(async (contract: any) => {
                   const contractId = String(contract?.id || "").trim();
                   if (!contractId) return contract;
-                  if (
-                    !contract?.docuseal_submission_id &&
-                    !contract?.docuseal_slug
-                  ) {
-                    return contract;
-                  }
+                  if (!shouldAttemptDocuSealRefresh(contract)) return contract;
                   try {
+                    contractRefreshThrottleRef.current[contractId] = Date.now();
                     const refreshed = await base44.post<{ contract?: any }>(
                       `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
                       {},
@@ -1392,7 +1425,7 @@ export default function BrandDashboard() {
         selectedOfferHubId &&
         activeSection === "campaigns-contract-hub"
       ) {
-        loadOfferHubDetails(selectedOfferHubId);
+        loadOfferHubDetails(selectedOfferHubId, { silent: true });
       }
     }, 5000);
 
@@ -3463,13 +3496,16 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const loadOfferHubDetails = async (offerId: string) => {
+  const loadOfferHubDetails = async (
+    offerId: string,
+    opts?: { silent?: boolean },
+  ) => {
     if (!offerId) {
       setSelectedOfferHubContracts([]);
       setSelectedOfferHubDeliverables([]);
       return;
     }
-    setLoadingOfferHubDetails(true);
+    if (!opts?.silent) setLoadingOfferHubDetails(true);
     try {
       const [contractsResp, deliverablesResp] = await Promise.all([
         base44.get<{ contracts?: any[] }>(
@@ -3488,8 +3524,9 @@ export default function BrandDashboard() {
         contracts.map(async (contract: any) => {
           const contractId = String(contract?.id || "").trim();
           if (!contractId) return contract;
-          if (!contract?.docuseal_submission_id) return contract;
+          if (!shouldAttemptDocuSealRefresh(contract)) return contract;
           try {
+            contractRefreshThrottleRef.current[contractId] = Date.now();
             const refreshed = await base44.post<{ contract?: any }>(
               `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
               {},
@@ -3510,7 +3547,7 @@ export default function BrandDashboard() {
       setSelectedOfferHubContracts([]);
       setSelectedOfferHubDeliverables([]);
     } finally {
-      setLoadingOfferHubDetails(false);
+      if (!opts?.silent) setLoadingOfferHubDetails(false);
     }
   };
   const loadCampaignContractsForOffer = async (offerId: string) => {

@@ -860,8 +860,28 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Agency Signature</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full bg-gray-50 overflow-auto">
-            {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+          <div className="flex-1 w-full bg-gray-50 overflow-hidden flex flex-col">
+            <div className="px-6 py-3 border-b border-gray-200 bg-white shadow-sm flex items-center justify-between shrink-0">
+              <div className="text-xs sm:text-sm text-gray-700 font-medium flex items-center gap-4">
+                <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                  Party mapping:
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-sm shadow-red-200" />
+                    First Party = Agency
+                  </span>
+                  <ArrowRight className="w-3 h-3 text-gray-300" />
+                  <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 shadow-sm shadow-blue-200" />
+                    Second Party = Client
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+            </div>
           </div>
           <div className="p-4 border-t flex justify-end">
             <Button
