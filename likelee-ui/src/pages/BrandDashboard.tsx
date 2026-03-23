@@ -123,7 +123,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LicensingRequestsView } from "@/components/brand/LicensingRequestsView";
 
 const ensureProtocol = (url: string | null | undefined) => {
   if (!url) return "";
