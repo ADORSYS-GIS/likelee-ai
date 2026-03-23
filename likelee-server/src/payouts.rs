@@ -2411,67 +2411,57 @@ async fn handle_payment_link_checkout_completed(
         );
     }
 
-    // Update payment link status
-    let update = json!({
-        "status": "paid",
-        "paid_at": chrono::Utc::now().to_rfc3339(),
-        "stripe_payment_intent_id": payment_intent_id,
+    // Use atomic RPC to complete the payment link checkout in a single transaction.
+    // This ensures: payment link update, licensing_payouts insert, payments update,
+    // and archival of related records all succeed or all roll back together.
+    let rpc_payload = json!({
+        "p_payment_link_id": payment_link_id,
+        "p_payment_intent_id": payment_intent_id,
+        "p_agency_id": agency_id,
+        "p_licensing_request_ids": licensing_request_ids_str,
+        "p_agency_amount_cents": agency_amount_cents,
+        "p_talent_amount_cents": talent_amount_cents,
+        "p_platform_fee_cents": platform_fee_cents,
+        "p_net_amount_cents": net_amount_cents,
+        "p_currency": currency,
+        "p_talent_splits": talent_splits,
+        "p_commission_rate": effective_commission_rate
     });
 
-    let _ = state
+    match state
         .pg
-        .from("agency_payment_links")
-        .eq("id", &payment_link_id)
-        .update(update.to_string())
+        .rpc("complete_payment_link_checkout", rpc_payload.to_string())
         .execute()
-        .await;
-
-    // Insert into licensing_payouts to trigger balance updates
-    // This will trigger both agency and creator balance updates
-    let payout_record = json!({
-        "licensing_request_id": first_lr_id,
-        "agency_id": agency_id,
-        "amount_cents": agency_amount_cents,  // Agency commission
-        "talent_earnings_cents": talent_amount_cents,  // Total talent share
-        "talent_splits": talent_splits,
-        "platform_fee_cents": platform_fee_cents,
-        "net_amount_cents": net_amount_cents,
-        "currency": currency,
-        "payment_link_id": payment_link_id,
-        "stripe_payment_intent_id": payment_intent_id,
-        "commission_rate": effective_commission_rate,
-        "paid_at": chrono::Utc::now().to_rfc3339(),
-    });
-
-    let _ = state
-        .pg
-        .from("licensing_payouts")
-        .insert(payout_record.to_string())
-        .execute()
-        .await;
-    // Update payments table status
-    let payment_update = json!({
-        "status": "paid",
-        "paid_at": chrono::Utc::now().to_rfc3339(),
-        "stripe_payment_intent_id": payment_intent_id,
-    });
-
-    for lr_id in &lr_ids {
-        let _ = state
-            .pg
-            .from("payments")
-            .eq("licensing_request_id", *lr_id)
-            .update(payment_update.to_string())
-            .execute()
-            .await;
+        .await
+    {
+        Ok(resp) => {
+            if !resp.status().is_success() {
+                let err_text = resp.text().await.unwrap_or_else(|_| "unknown error".into());
+                error!(
+                    payment_link_id = %payment_link_id,
+                    error = %err_text,
+                    "Atomic payment link checkout completion failed"
+                );
+                return Err(format!("complete_payment_link_checkout RPC failed: {}", err_text));
+            }
+            let result_text = resp.text().await.unwrap_or_else(|_| "{}".into());
+            info!(
+                payment_link_id = %payment_link_id,
+                agency_id = %agency_id,
+                amount_cents = amount_total,
+                result = %result_text,
+                "Payment link checkout completed atomically"
+            );
+        }
+        Err(e) => {
+            error!(
+                payment_link_id = %payment_link_id,
+                error = %e,
+                "Failed to call complete_payment_link_checkout RPC"
+            );
+            return Err(format!("RPC call failed: {}", e));
+        }
     }
-
-    info!(
-        payment_link_id = %payment_link_id,
-        agency_id = %agency_id,
-        amount_cents = amount_total,
-        "Payment link checkout completed and balances updated"
-    );
 
     // Create Stripe transfers to connected accounts
     match create_payment_link_transfers(
@@ -2502,64 +2492,9 @@ async fn handle_payment_link_checkout_completed(
         }
     }
 
-    // Delete associated license_submissions and licensing_requests after successful payment.
-    // We do this best-effort so a deletion failure doesn't block the payment confirmation.
-    for lr_id in &lr_ids {
-        // First fetch the submission_id linked to this licensing request
-        if let Ok(sub_resp) = state
-            .pg
-            .from("licensing_requests")
-            .select("id,submission_id")
-            .eq("id", *lr_id)
-            .limit(1)
-            .execute()
-            .await
-        {
-            if sub_resp.status().is_success() {
-                let sub_text = sub_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let sub_rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&sub_text).unwrap_or_default();
-                if let Some(row) = sub_rows.first() {
-                    if let Some(submission_id) = row.get("submission_id").and_then(|v| v.as_str()) {
-                        // Delete the license_submission
-                        let _ = state
-                            .pg
-                            .from("license_submissions")
-                            .eq("id", submission_id)
-                            .update(json!({"status": "archived", "archived_at": chrono::Utc::now().to_rfc3339()}).to_string())
-                            .execute()
-                            .await;
-                        info!(
-                            submission_id = %submission_id,
-                            "Archived license_submission after payment"
-                        );
-                    }
-                }
-            }
-        }
+    // Note: Archival of license_submissions and licensing_requests is now handled
+    // atomically within the complete_payment_link_checkout RPC function above.
 
-        // Delete the licensing_request itself
-        let _ = state
-            .pg
-            .from("licensing_requests")
-            .eq("id", *lr_id)
-            .update(
-                json!({"status": "archived", "archived_at": chrono::Utc::now().to_rfc3339()})
-                    .to_string(),
-            )
-            .execute()
-            .await;
-        info!(
-            licensing_request_id = %lr_id,
-            "Archived licensing_request after payment"
-        );
-    }
-
-    info!(
-        payment_link_id = %payment_link_id,
-        agency_id = %agency_id,
-        "Licensing requests and submissions archived after payment"
-    );
     Ok(())
 }
 
