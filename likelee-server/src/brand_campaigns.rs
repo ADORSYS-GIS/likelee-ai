@@ -3521,7 +3521,7 @@ pub async fn refresh_offer_contract_status(
         contract_id,
     }): Path<OfferContractPath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
     let resp = state
         .pg
         .from("campaign_offer_contracts")
@@ -3546,28 +3546,86 @@ pub async fn refresh_offer_contract_status(
         .cloned()
         .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
 
-    let submission_id = existing
+    // Refresh is best-effort: never break the UI if DocuSeal is unavailable or misconfigured.
+    // When we can't refresh, return the existing row (with any derived signing link we can compute)
+    // as 200 OK and include a lightweight warning in `meta`.
+    let submission_id_opt = existing
         .get("docuseal_submission_id")
-        .and_then(|v| v.as_i64())
-        .ok_or((
-            StatusCode::BAD_REQUEST,
-            "docuseal submission id missing for this contract".to_string(),
-        ))?;
-    if state.docuseal_api_key.trim().is_empty() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "docuseal_api_key_not_configured".to_string(),
-        ));
+        .and_then(|v| v.as_i64());
+
+    if submission_id_opt.is_none() || state.docuseal_api_key.trim().is_empty() {
+        let signer_slug = existing
+            .get("docuseal_slug")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                existing
+                    .get("meta")
+                    .and_then(|v| v.as_object())
+                    .and_then(|m| m.get("docuseal_slug"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or_default();
+        let signing_url = if signer_slug.trim().is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "{}/s/{}",
+                state.docuseal_app_url.trim_end_matches('/'),
+                signer_slug.trim()
+            )
+        };
+        let mut merged_meta = existing
+            .get("meta")
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+        if !signing_url.is_empty() {
+            merged_meta.insert("docuseal_signing_url".to_string(), json!(signing_url));
+        }
+        merged_meta.insert(
+            "docuseal_refresh_warning".to_string(),
+            json!(if submission_id_opt.is_none() {
+                "docuseal_submission_id_missing"
+            } else {
+                "docuseal_api_key_not_configured"
+            }),
+        );
+        let mut contract = existing.clone();
+        contract["meta"] = serde_json::Value::Object(merged_meta);
+        return Ok(Json(json!({"status":"ok","contract": contract, "refreshed": false})));
     }
 
-    let docuseal_client = DocuSealClient::new(
-        state.docuseal_api_key.clone(),
-        state.docuseal_api_url.clone(),
-    );
-    let details = docuseal_client
-        .get_submission(submission_id as i32)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let submission_id = submission_id_opt.unwrap_or_default();
+    let docuseal_client =
+        DocuSealClient::new(state.docuseal_api_key.clone(), state.docuseal_api_url.clone());
+    let details = match docuseal_client.get_submission(submission_id as i32).await {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(
+                offer_id = %offer_id,
+                contract_id = %contract_id,
+                submission_id,
+                error = %e,
+                "DocuSeal refresh failed; returning existing contract without refresh"
+            );
+            let mut merged_meta = existing
+                .get("meta")
+                .and_then(|v| v.as_object().cloned())
+                .unwrap_or_default();
+            merged_meta.insert(
+                "docuseal_refresh_warning".to_string(),
+                json!("docuseal_sync_failed"),
+            );
+            merged_meta.insert(
+                "docuseal_refresh_failed_at".to_string(),
+                json!(chrono::Utc::now().to_rfc3339()),
+            );
+            let mut contract = existing.clone();
+            contract["meta"] = serde_json::Value::Object(merged_meta);
+            return Ok(Json(json!({"status":"ok","contract": contract, "refreshed": false})));
+        }
+    };
 
     let signer_slug = details
         .submitters
@@ -3617,7 +3675,7 @@ pub async fn refresh_offer_contract_status(
         })
         .collect::<Vec<_>>();
     merged_meta.insert("submitter_statuses".to_string(), json!(submitter_statuses));
-    let target_type = existing
+    let target_type = offer
         .get("target_type")
         .and_then(|v| v.as_str())
         .unwrap_or("");

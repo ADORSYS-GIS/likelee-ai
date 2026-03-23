@@ -1572,10 +1572,18 @@ pub async fn sync_status(
         .get_submission(docuseal_submission_id)
         .await
         .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("DocuSeal fetch failed: {e}"),
-            )
+            let msg = e.to_string();
+            if msg.contains("404") {
+                (
+                    StatusCode::NOT_FOUND,
+                    "DocuSeal submission not found. It may have been deleted.".to_string(),
+                )
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal fetch failed: {msg}"),
+                )
+            }
         })?;
 
     let mut update = serde_json::Map::new();
