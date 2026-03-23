@@ -43,7 +43,7 @@ erDiagram
     CAMPAIGN_OFFER_DELIVERABLES {
         uuid id PK
         uuid offer_id FK
-        text status "submitted, agency_review, brand_review, brand_approved, approved"
+        text status "draft, submitted, agency_review, brand_review, brand_approved, approved"
         text asset_url
     }
 
@@ -118,3 +118,28 @@ Deliverables follow a strictly enforced pipeline:
 3. **Submitted to Brand**: Agency-approved work is sent to the Brand.
 4. **Brand Approved**: First brand approval can trigger escrow release (once per offer).
 5. **Approved**: Final state for the deliverable.
+
+### 4. Distribution & Commission (Agency collaborator offers)
+For offers where the collaborator is an **agency**, the brand’s payment is collected into platform escrow and then distributed on escrow release (first brand deliverable approval trigger).
+
+Key rules:
+- The payout pool is the **net** amount (`budget_creator_payment` / `net_amount_cents`). The platform fee is tracked separately.
+- Assigned recipients come from `offer_talent_assignments` and are keyed by `creator_id` (connected creators may have `talent_id = NULL`).
+- If per-creator payment weights exist (`payments.gross_cents` rows for the offer billing stub), they are used as allocation weights; otherwise the net is split evenly across assigned creators.
+
+Commission semantics (important):
+- `commission_rate` is interpreted as the **agency commission percent** for each creator’s share.
+- `creator_payout_percent = 100 - commission_rate`
+- `creator_earnings = gross_share_cents * creator_payout_percent`
+- `agency_earnings = gross_share_cents - creator_earnings`
+
+Commission resolution order (per `creator_id`):
+1) `agency_creator_commissions(agency_id, creator_id).commission_rate` (override, if present)
+2) `agencies.performance_commission_config[tier].commission_rate` (tier default)
+   - tier comes from `agency_talent_relationships.performance_tier_name` for connected creators
+   - `agency_users.performance_tier_name` overrides when present for roster creators
+
+Example (net = 5,000 USD, 3 creators, agency commission = 12%):
+- Each creator share ≈ 1,666.67
+- Each creator earns 88% ≈ 1,466.67
+- Agency earns 12% ≈ 200.00 per creator → 600.00 total

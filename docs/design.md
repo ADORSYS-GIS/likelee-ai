@@ -2,7 +2,7 @@
 
 > **Technical Documentation**: See [`docs/knowledge/`](./knowledge/) for detailed technical docs:
 > - [Architecture Overview](./knowledge/architecture.md) - System architecture, components, data flow
-> - [API Reference](./knowledge/api-reference.md) - All API endpoints and webhooks
+> - [API Reference](./api-reference.md) - All API endpoints and webhooks
 > - [Coding Conventions](./knowledge/coding-conventions.md) - Naming, formatting, and code review checklist
 > - [Development Setup](./knowledge/development-setup.md) - Local development environment setup
 
@@ -475,7 +475,7 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - Ensure assets are stored securely and accessed only by authorized parties.
 
 ### Workflow
-1. **Draft Stage**: Creators upload assets to their "Asset Library". These assets stay in a `draft` state and are only visible to the creator.
+1. **Draft Stage**: Creators and agencies can upload assets as deliverables. These assets start in a `draft` state (default) and are only visible to the submitting party until submitted.
 2. **Submission**: Creators explicitly "Submit to Agency". This updates the deliverable status to `submitted` and notifies the agency.
 3. **Agency Review**: Agencies can `approve` or `request_changes` on deliverables.
 4. **Brand Review**: Once approved by the agency, deliverables are visible to the Brand for final approval.
@@ -499,6 +499,20 @@ Agency campaign offers track escrow release separately from deliverable workflow
 - Dashboard balances distinguish:
   - **Held (pending transfer)**: internal Likelee tracking
   - **Cashoutable (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
+
+#### Commission semantics (agency campaign offers)
+When distributing a campaign offer payout for an **agency** collaborator, `commission_rate` is interpreted as the **agency commission percent** for each creator share.
+
+- `creator_payout_percent = 100 - commission_rate`
+- `creator_earnings = gross_share_cents * creator_payout_percent`
+- `agency_earnings = gross_share_cents - creator_earnings`
+
+Commission resolution order (per assigned `creator_id`):
+1) `agency_creator_commissions(agency_id, creator_id).commission_rate` (override, if present)
+2) Tier default from `agencies.performance_commission_config[tier].commission_rate`
+   - tier comes from `agency_talent_relationships.performance_tier_name` for connected creators
+   - `agency_users.performance_tier_name` overrides when present for roster creators
+3) Fallback default (used only when no config is present)
 ### Calendly Integration (IRL Booking)
 
 #### System Configuration
