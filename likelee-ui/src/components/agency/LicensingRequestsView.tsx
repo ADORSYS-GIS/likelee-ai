@@ -18,12 +18,23 @@ import {
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
   sendLicensingRequestPaymentLink,
+  getAgencyBrandLicenseRequests,
+  updateAgencyBrandLicenseRequestStatus,
 } from "@/api/functions";
 
 const LicensingRequestsView = ({
   isSportsAgency = false,
+  onBrandRequestAccepted,
 }: {
   isSportsAgency?: boolean;
+  onBrandRequestAccepted?: (ctx: {
+    brandId: string;
+    brandName?: string;
+    brandEmail?: string;
+    licensingRequestId?: string;
+    talentId?: string;
+    talentName?: string;
+  }) => void;
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
@@ -38,18 +49,40 @@ const LicensingRequestsView = ({
     },
   });
 
+  const {
+    data: rawBrandLicenseData,
+    isLoading: isLoadingBrandRequests,
+    error: brandRequestsError,
+  } = useQuery({
+    queryKey: ["agency", "brand-license-requests"],
+    queryFn: async () => {
+      const resp = await getAgencyBrandLicenseRequests();
+      console.log("Brand license requests response:", resp);
+      return resp as any;
+    },
+  });
+  const brandLicenseData = Array.isArray(rawBrandLicenseData)
+    ? rawBrandLicenseData
+    : rawBrandLicenseData?.requests || [];
+  
+  console.log("brandLicenseData:", brandLicenseData, "length:", brandLicenseData.length);
+
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [groupToDecline, setGroupToDecline] = useState<any>(null);
   const [activeRequestTab, setActiveRequestTab] = useState<
-    "Active" | "Archive"
+    "Active" | "Archive" | "Brand Requests"
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
-    if (status === "rejected") return "bg-red-100 text-red-700";
+    if (status === "rejected" || status === "declined")
+      return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-700";
   };
 
@@ -72,7 +105,13 @@ const LicensingRequestsView = ({
 
   const updateGroupStatus = async (
     group: any,
-    status: "pending" | "approved" | "rejected" | "negotiating" | "archived",
+    status:
+      | "pending"
+      | "approved"
+      | "rejected"
+      | "declined"
+      | "negotiating"
+      | "archived",
     notes?: string,
   ) => {
     const ids = (group?.talents || [])
@@ -89,6 +128,17 @@ const LicensingRequestsView = ({
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
+      if (status === "approved") {
+        const isBrand = isBrandRequestGroup(group);
+        if (isBrand && onBrandRequestAccepted) {
+          onBrandRequestAccepted({
+            brandId: String(group?.brand_id || ""),
+            brandName: String(group?.brand_name || ""),
+            brandEmail: String(group?.brand_email || ""),
+            licensingRequestId: String(ids[0] || ""),
+          });
+        }
+      }
       if (status === "negotiating") {
         setCounterOfferModalOpen(false);
         setCounterOfferMessage("");
@@ -102,6 +152,53 @@ const LicensingRequestsView = ({
       toast({
         title: "Update failed",
         description: e?.message || "Could not update licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const updateBrandRequestStatus = async (
+    req: any,
+    status: "pending" | "approved" | "rejected" | "declined" | "archived",
+    decline_reason?: string,
+  ) => {
+    try {
+      await updateAgencyBrandLicenseRequestStatus({
+        brand_request_ids: [req.id],
+        status,
+        decline_reason,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "brand-license-requests"],
+      });
+      if (status === "approved" && onBrandRequestAccepted) {
+        onBrandRequestAccepted({
+          brandId: String(req?.brand_id || ""),
+          brandName: String(req?.brands?.company_name || ""),
+          brandEmail: String(req?.brands?.email || ""),
+          licensingRequestId: String(req?.id || ""),
+          talentId: String(req?.talent_id || ""),
+          talentName: String(
+            req?.talent_name ||
+            req?.creators?.full_legal_name ||
+            req?.creators?.stage_name ||
+            entitySingularTitle
+          ),
+        });
+      }
+      if (["declined", "rejected"].includes(status)) {
+        setDeclineModalOpen(false);
+        setDeclineReason("");
+        setGroupToDecline(null);
+        toast({
+          title: "Request declined",
+          description: "The brand has been notified.",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Could not update brand license request",
         variant: "destructive" as any,
       });
     }
@@ -168,13 +265,6 @@ const LicensingRequestsView = ({
     }
   };
 
-  const filteredData = (data || []).filter((group: any) => {
-    const isArchived = ["rejected", "declined", "archived"].includes(
-      group.status,
-    );
-    return activeRequestTab === "Active" ? !isArchived : isArchived;
-  });
-
   const getRequestDetails = (group: any) => {
     const rawNotes = String(group?.notes || "").trim();
     if (!rawNotes) return {};
@@ -188,6 +278,29 @@ const LicensingRequestsView = ({
     }
   };
 
+  const isBrandRequestGroup = (group: any) => {
+    const details = getRequestDetails(group);
+    const source = String(details?.source || "").toLowerCase();
+    return source === "brand_dashboard";
+  };
+
+  const filteredData = (data || []).filter((group: any) => {
+    const isArchived = ["rejected", "declined", "archived"].includes(
+      group.status,
+    );
+    const isBrandRequest = isBrandRequestGroup(group);
+    const matchesStatus =
+      activeRequestTab === "Active" ? !isArchived : isArchived;
+    if (!matchesStatus) return false;
+    return !isBrandRequest;
+  });
+
+  const filteredBrandData = brandLicenseData.filter((req: any) => {
+    const isArchived = ["rejected", "declined", "archived"].includes(req.status);
+    return activeRequestTab === "Active" ? !isArchived : true; 
+    // In this view, "Brand Requests" tab shows all pending brand requests.
+  });
+
   return (
     <>
       <div className="space-y-6">
@@ -197,7 +310,7 @@ const LicensingRequestsView = ({
               Licensing Requests
             </h2>
             <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
-              {["Active", "Archive"].map((tab) => (
+              {["Active", "Archive", "Brand Requests"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveRequestTab(tab as any)}
@@ -231,17 +344,20 @@ const LicensingRequestsView = ({
             </Card>
           )}
 
-          {!isLoading && !error && filteredData.length === 0 && (
-            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">
-                {activeRequestTab === "Active"
-                  ? "No active licensing requests"
-                  : "No archived licensing requests"}
-              </div>
-            </Card>
-          )}
+          {!isLoading &&
+            !error &&
+            filteredData.length === 0 &&
+            activeRequestTab !== "Brand Requests" && (
+              <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+                <div className="text-gray-500 font-medium">
+                  {activeRequestTab === "Active"
+                    ? "No active licensing requests"
+                    : "No archived licensing requests"}
+                </div>
+              </Card>
+            )}
 
-          {filteredData.map((group: any) => (
+          {activeRequestTab !== "Brand Requests" && filteredData.map((group: any) => (
             <Card
               key={group.group_key}
               className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
@@ -304,7 +420,14 @@ const LicensingRequestsView = ({
                       Usage Scope
                     </p>
                     <p className="text-sm font-bold text-gray-900">
-                      {(group.usage_scope || "").trim() || "\u2014"}
+                      {(() => {
+                        const details = getRequestDetails(group);
+                        const territory = String(
+                          details?.territory || "",
+                        ).trim();
+                        if (territory) return territory;
+                        return (group.usage_scope || "").trim() || "\u2014";
+                      })()}
                     </p>
                   </div>
                   <div>
@@ -324,17 +447,6 @@ const LicensingRequestsView = ({
                 </div>
               </div>
 
-              <div className="mb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedGroup(group)}
-                  className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View details
-                </Button>
-              </div>
-
               {group.status === "approved" ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
@@ -348,7 +460,8 @@ const LicensingRequestsView = ({
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
                       disabled={
                         !!sendPaymentBusyKey &&
-                        sendPaymentBusyKey === String(group?.group_key || "")
+                        sendPaymentBusyKey ===
+                          String(group?.group_key || "")
                       }
                     >
                       <Send className="w-4 h-4" />
@@ -362,7 +475,8 @@ const LicensingRequestsView = ({
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
                       disabled={
                         !!sendPaymentBusyKey &&
-                        sendPaymentBusyKey === String(group?.group_key || "")
+                        sendPaymentBusyKey ===
+                          String(group?.group_key || "")
                       }
                     >
                       <Send className="w-4 h-4" />
@@ -407,6 +521,152 @@ const LicensingRequestsView = ({
                   <Button
                     variant="outline"
                     onClick={() => updateGroupStatus(group, "rejected")}
+                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                      <span className="text-[10px] font-bold">\u2715</span>
+                    </div>
+                    Decline
+                  </Button>
+                </div>
+              )}
+            </Card>
+          ))}
+
+          {activeRequestTab === "Brand Requests" && brandLicenseData.length === 0 && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-gray-500 font-medium">
+                No active brand requests
+              </div>
+            </Card>
+          )}
+
+          {activeRequestTab === "Brand Requests" && filteredBrandData.map((req: any) => (
+            <Card
+              key={req.id}
+              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {req.brands?.company_name || "Unknown Brand"}
+                  </h3>
+                  <p className="text-gray-500 font-medium text-sm">
+                    {req.description || "No description provided"}
+                  </p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(req.status)}`}
+                >
+                  {req.status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase">
+                  {req.talent_name || req.creators?.full_legal_name || req.creators?.stage_name || "Unknown"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      License Fee
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.license_fee ? `$${Number(req.license_fee).toLocaleString()}` : "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Territory
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.territory || req.usage_scope || "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Exclusivity
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.exclusivity || "\u2014"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Duration
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.duration_days ? `${req.duration_days} Days` : "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Timeline
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.license_start_date && req.license_end_date
+                        ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
+                        : req.license_start_date
+                          ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
+                          : "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Modifications Allowed
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {req.modifications_allowed || "\u2014"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {req.custom_terms && (
+                <div className="mb-8">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Custom Terms</p>
+                  <p className="text-sm font-medium text-gray-900 whitespace-pre-wrap">{req.custom_terms}</p>
+                </div>
+              )}
+
+              {req.status === "approved" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                    <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> Contract Phase
+                    </p>
+                  </div>
+                </div>
+              ) : req.status === "declined" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
+                    <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
+                      <span className="text-[10px] font-bold">\u2715</span> Declined
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    onClick={() => updateBrandRequestStatus(req, "approved")}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px] font-bold">✓</span>
+                    </div>
+                    Accept & Write Contract
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setGroupToDecline(req);
+                      setDeclineModalOpen(true);
+                    }}
                     className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                   >
                     <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
@@ -466,6 +726,62 @@ const LicensingRequestsView = ({
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               >
                 Send Counter Offer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={declineModalOpen}
+          onOpenChange={(open) => {
+            setDeclineModalOpen(open);
+            if (!open) {
+              setDeclineReason("");
+              setGroupToDecline(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Decline Brand Request</DialogTitle>
+              <DialogDescription>
+                Share a brief reason so the brand understands your decision.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Reason</Label>
+                <Textarea
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
+                  placeholder="Tell the brand why you are declining..."
+                  rows={5}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeclineModalOpen(false);
+                  setDeclineReason("");
+                  setGroupToDecline(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  updateGroupStatus(groupToDecline, "declined", declineReason)
+                }
+                disabled={!declineReason.trim()}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold"
+              >
+                Decline Request
               </Button>
             </DialogFooter>
           </DialogContent>

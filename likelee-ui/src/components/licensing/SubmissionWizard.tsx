@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,7 @@ import {
   finalizeLicenseSubmission,
   syncLicenseSubmissionStatus,
 } from "@/api/licenseSubmissions";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyTalents, getAgencyBrandConnections } from "@/api/functions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
 import {
@@ -63,6 +64,14 @@ interface SubmissionWizardProps {
   template: LicenseTemplate;
   onComplete: () => void;
   isSportsAgency?: boolean;
+  brandRequestContext?: {
+    brand_id: string;
+    brand_name?: string;
+    brand_email?: string;
+    licensing_request_id?: string;
+    talent_id?: string;
+    talent_name?: string;
+  } | null;
 }
 
 const AVAILABLE_CONTRACT_VARIABLES = [
@@ -107,6 +116,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   template,
   onComplete,
   isSportsAgency = false,
+  brandRequestContext,
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talents";
@@ -124,7 +134,32 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   );
   const [talents, setTalents] = useState<any[]>([]);
   const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [allowBrandChange, setAllowBrandChange] = useState(false);
+  const [talentPopoverOpen, setTalentPopoverOpen] = useState(false);
   const { toast } = useToast();
+
+  const { data: brandConnectionsData } = useQuery({
+    queryKey: ["agency", "brand-connections"],
+    queryFn: getAgencyBrandConnections,
+    enabled: isOpen,
+  });
+
+  const brandOptions = useMemo(() => {
+    const rows = Array.isArray(brandConnectionsData?.connections)
+      ? brandConnectionsData.connections
+      : [];
+    return rows.map((row: any) => ({
+      id: String(row?.brand_id || ""),
+      name: String(
+        row?.brands?.company_name ||
+          row?.brands?.name ||
+          row?.brand_name ||
+          "Brand",
+      ),
+      email: String(row?.brands?.email || row?.brand_email || "").trim(),
+    }));
+  }, [brandConnectionsData]);
 
   const {
     register,
@@ -152,6 +187,24 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
   const formData = watch();
 
+  // Auto-enable dropdown and pre-select brand when coming from brand request
+  useEffect(() => {
+    if (isOpen && brandRequestContext?.brand_id && brandOptions.length > 0) {
+      setAllowBrandChange(true); // Turn on the toggle
+      const match = brandOptions.find((b) => b.id === brandRequestContext.brand_id);
+      if (match) {
+        setSelectedBrandId(match.id);
+        setValue("client_name", match.name);
+        if (match.email) setValue("client_email", match.email);
+      } else if (brandRequestContext.brand_id) {
+        // Brand not in connections, but we have the ID from context
+        setSelectedBrandId(brandRequestContext.brand_id);
+        if (brandRequestContext.brand_name) setValue("client_name", brandRequestContext.brand_name);
+        if (brandRequestContext.brand_email) setValue("client_email", brandRequestContext.brand_email);
+      }
+    }
+  }, [isOpen, brandRequestContext, brandOptions, setValue]);
+
   useEffect(() => {
     if (isOpen) {
       setStep(1);
@@ -162,10 +215,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
-      setSelectedTalentIds([]);
+      setSelectedTalentIds(brandRequestContext?.talent_id ? [brandRequestContext.talent_id] : []);
       reset({
-        client_name: "",
-        talent_name: "",
+        client_name: brandRequestContext?.brand_name || "",
+        talent_name: brandRequestContext?.talent_name || "",
         start_date: new Date().toISOString().split("T")[0],
         duration_days: template.duration_days || 90,
         territory: template.territory || "Worldwide",
@@ -174,7 +227,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         license_fee: template.license_fee ? template.license_fee / 100 : 0,
         custom_terms: template.custom_terms || "",
         contract_body: template.contract_body || "",
-        client_email: "", // Reset for new field
+        client_email: brandRequestContext?.brand_email || "", // Reset for new field
       });
 
       // Fetch agency talents
@@ -230,6 +283,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
           requires_agency_signature: requiresAgencySignature,
+          licensing_request_id: brandRequestContext?.licensing_request_id,
         });
 
         if (draft?.id) {
@@ -316,6 +370,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
           requires_agency_signature: requiresAgencySignature,
+          licensing_request_id: brandRequestContext?.licensing_request_id,
         });
         submissionId = draft?.id;
         if (!submissionId) {
@@ -334,6 +389,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         talent_id: selectedTalentIds[0] || undefined,
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
+        licensing_request_id: brandRequestContext?.licensing_request_id,
       });
 
       const embedUrl =
@@ -491,7 +547,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           {`${entitySingularTitle} Name *`}
                         </Label>
-                        <Popover>
+                        <Popover open={talentPopoverOpen} onOpenChange={setTalentPopoverOpen}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -536,7 +592,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
                             align="start"
                           >
-                            <Command className="border-none">
+                            <Command className="border-none" shouldFilter={false}>
                               <CommandInput
                                 placeholder={`Search ${entitySingularLower}...`}
                                 className="border-none focus:ring-0 h-12"
@@ -646,15 +702,76 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Client Email *
-                        </Label>
-                        <Input
-                          type="email"
-                          {...register("client_email", { required: true })}
-                          placeholder="client@example.com"
-                          className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
-                        />
+                        <div className="flex items-center justify-between ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            Client Email *
+                          </Label>
+                          {brandOptions.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="allow-brand-change-wizard" className="text-xs text-gray-500 cursor-pointer">
+                                Use connected brands
+                              </Label>
+                              <Switch
+                                id="allow-brand-change-wizard"
+                                checked={allowBrandChange}
+                                onCheckedChange={setAllowBrandChange}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {brandOptions.length > 0 && allowBrandChange ? (
+                          <>
+                            <Select
+                              value={selectedBrandId}
+                              onValueChange={(val) => {
+                                setSelectedBrandId(val);
+                                const match = brandOptions.find((b) => b.id === val);
+                                if (match) {
+                                  setValue("client_name", match.name);
+                                  if (match.email) setValue("client_email", match.email);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all">
+                                <SelectValue placeholder="Select brand" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {brandRequestContext &&
+                                  brandRequestContext.brand_id &&
+                                  !brandOptions.some(
+                                    (b) => b.id === brandRequestContext.brand_id,
+                                  ) && (
+                                    <SelectItem value={brandRequestContext.brand_id}>
+                                      {brandRequestContext.brand_name || "Selected Brand"}
+                                    </SelectItem>
+                                  )}
+                                {brandOptions.map((brand) => (
+                                  <SelectItem key={brand.id} value={brand.id}>
+                                    {brand.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 ml-1">
+                              Select from your connected brands. Toggle off to enter email manually.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <Input
+                              type="email"
+                              {...register("client_email", { required: true })}
+                              placeholder="client@example.com"
+                              className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
+                            />
+                            {brandOptions.length > 0 && (
+                              <p className="text-xs text-gray-500 ml-1">
+                                Toggle on to select from connected brands.
+                              </p>
+                            )}
+                          </>
+                        )}
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">

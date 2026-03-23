@@ -17081,6 +17081,14 @@ export default function AgencyDashboard() {
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
+  const [brandRequestContext, setBrandRequestContext] = useState<{
+    brandId: string;
+    brandName?: string;
+    brandEmail?: string;
+    licensingRequestId?: string;
+    talentId?: string;
+    talentName?: string;
+  } | null>(null);
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
@@ -18848,7 +18856,13 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && (
-              <LicensingRequestsView isSportsAgency={isSportsAgency} />
+              <LicensingRequestsView
+                isSportsAgency={isSportsAgency}
+                onBrandRequestAccepted={(ctx) => {
+                  setBrandRequestContext(ctx);
+                  setActiveView("licensing", "License Templates");
+                }}
+              />
             )}
           {activeTab === "licensing" &&
             activeSubTab === "Brand Connections" && <BrandConnectionsView />}
@@ -18865,7 +18879,25 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && (
-              <LicenseTemplatesTab isSportsAgency={isSportsAgency} />
+              <LicenseTemplatesTab
+                isSportsAgency={isSportsAgency}
+                brandRequestContext={
+                  brandRequestContext
+                    ? {
+                        brand_id: brandRequestContext.brandId,
+                        brand_name: brandRequestContext.brandName,
+                        brand_email: brandRequestContext.brandEmail,
+                        licensing_request_id:
+                          brandRequestContext.licensingRequestId,
+                        talent_id: brandRequestContext.talentId,
+                        talent_name: brandRequestContext.talentName,
+                      }
+                    : null
+                }
+                onBrandRequestContextHandled={() =>
+                  setBrandRequestContext(null)
+                }
+              />
             )}
           {activeTab === "protection" &&
             activeSubTab === "Protect & Usage" &&

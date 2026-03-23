@@ -497,6 +497,40 @@ pub async fn list_for_agency(
     Ok(Json(out))
 }
 
+pub async fn list_for_brand(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,agency_id,brand_id,talent_id,status,created_at,campaign_title,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,agencies(agency_name,logo_url),license_submissions!licensing_requests_submission_id_fkey(id,docuseal_submission_id,docuseal_slug,client_submitter_slug,status,license_fee,client_email,client_name)")
+        .eq("brand_id", &effective_brand_id)
+        .order("created_at.desc")
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(Json(rows))
+}
+
 pub async fn update_status_bulk(
     State(state): State<AppState>,
     user: AuthUser,

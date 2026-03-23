@@ -19,6 +19,7 @@ pub struct LicenseSubmission {
     pub client_id: Option<String>,
     pub template_id: String,
     pub licensing_request_id: Option<String>,
+    pub brand_request_id: Option<String>,
     pub docuseal_submission_id: Option<i32>,
     pub docuseal_slug: Option<String>,
     pub docuseal_template_id: Option<i32>,
@@ -63,6 +64,7 @@ pub struct CreateSubmissionRequest {
     pub start_date: Option<String>,
     pub custom_terms: Option<String>,
     pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -177,6 +179,8 @@ pub async fn create_draft(
         "duration_days": req.duration_days,
         "start_date": start_date,
         "custom_terms": req.custom_terms,
+        "brand_request_id": req.licensing_request_id,
+        "licensing_request_id": req.licensing_request_id,
     });
 
     let resp = state
@@ -483,6 +487,7 @@ pub struct FinalizeSubmissionRequest {
     pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
     pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
 }
 
 /// POST /api/license-submissions/:id/finalize - Finalize and send a draft submission
@@ -722,6 +727,10 @@ pub async fn finalize(
             "requires_agency_signature".to_string(),
             json!(requires_agency_signature),
         );
+        if let Some(br_id) = &req.licensing_request_id {
+            update_json.insert("brand_request_id".to_string(), json!(br_id));
+            update_json.insert("licensing_request_id".to_string(), json!(br_id));
+        }
 
         let _ = state
             .pg
@@ -1033,6 +1042,32 @@ pub async fn finalize(
             tracing::error!("Error creating licensing_request: {}", e);
         }
     }
+    
+    // Update brand_license_requests with submission_id if this is linked to a brand request
+    let brand_request_id_opt = req.licensing_request_id.clone()
+        .or_else(|| submission_data["brand_request_id"].as_str().map(|s| s.to_string()));
+    
+    if let Some(brand_request_id) = brand_request_id_opt {
+        let update_brand_req = json!({
+            "submission_id": submission.id,
+            "status": "approved",
+            "updated_at": chrono::Utc::now().to_rfc3339()
+        });
+        
+        let _ = state
+            .pg
+            .from("brand_license_requests")
+            .update(update_brand_req.to_string())
+            .eq("id", &brand_request_id)
+            .execute()
+            .await;
+            
+        tracing::info!(
+            "Updated brand_license_request {} with submission_id {}",
+            brand_request_id,
+            submission.id
+        );
+    }
 
     Ok(Json(submission))
 }
@@ -1266,6 +1301,7 @@ pub async fn resend(
                 .as_str()
                 .map(|s| s.to_string()),
             requires_agency_signature: existing_data["requires_agency_signature"].as_bool(),
+            licensing_request_id: existing_data["brand_request_id"].as_str().map(|s| s.to_string()),
         }
     };
 
@@ -1340,6 +1376,7 @@ pub async fn resend(
         talent_ids: req.talent_ids,
         talent_names: req.talent_names,
         requires_agency_signature: req.requires_agency_signature,
+        licensing_request_id: req.licensing_request_id,
     };
 
     finalize(
@@ -1950,6 +1987,7 @@ pub async fn create_and_send(
         client_id: None,
         template_id: req.template_id,
         licensing_request_id: None, // We just created it, but we can't get ID easily without another fetch.
+        brand_request_id: None,
         docuseal_submission_id: Some(docuseal_submission.id),
         docuseal_slug: Some(docuseal_submission.slug),
         docuseal_template_id: Some(docuseal_template_id),
@@ -2124,6 +2162,20 @@ pub async fn handle_webhook(
                         .and_then(|doc| doc["url"].as_str())
                     {
                         update_map.insert("signed_document_url".to_string(), json!(url));
+                    }
+                    
+                    // Update brand_license_requests status if linked
+                    if let Some(brand_request_id) = sub.get("brand_request_id").and_then(|v| v.as_str()) {
+                        let _ = pg
+                            .from("brand_license_requests")
+                            .update(json!({
+                                "status": "completed",
+                                "submission_id": sub_id,
+                                "updated_at": chrono::Utc::now().to_rfc3339()
+                            }).to_string())
+                            .eq("id", brand_request_id)
+                            .execute()
+                            .await;
                     }
                 }
                 "submission.declined" | "form.declined" => {
