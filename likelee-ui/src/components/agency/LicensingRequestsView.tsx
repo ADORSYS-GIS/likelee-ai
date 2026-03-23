@@ -57,15 +57,12 @@ const LicensingRequestsView = ({
     queryKey: ["agency", "brand-license-requests"],
     queryFn: async () => {
       const resp = await getAgencyBrandLicenseRequests();
-      console.log("Brand license requests response:", resp);
       return resp as any;
     },
   });
   const brandLicenseData = Array.isArray(rawBrandLicenseData)
     ? rawBrandLicenseData
     : rawBrandLicenseData?.requests || [];
-  
-  console.log("brandLicenseData:", brandLicenseData, "length:", brandLicenseData.length);
 
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);

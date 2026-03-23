@@ -596,11 +596,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
                             align="start"
                           >
-                            <Command className="border-none" shouldFilter={false}>
-                              <CommandInput
-                                placeholder={`Search ${entitySingularLower}...`}
-                                className="border-none focus:ring-0 h-12"
-                              />
+                            {talentPopoverOpen && (
+                              <Command key="talent-command" className="border-none" shouldFilter={false}>
+                                <CommandInput
+                                  placeholder={`Search ${entitySingularLower}...`}
+                                  className="border-none focus:ring-0 h-12"
+                                />
                               <CommandList className="max-h-[300px]">
                                 <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
                                   {`No ${entitySingularLower} found.`}
@@ -702,6 +703,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 </CommandGroup>
                               </CommandList>
                             </Command>
+                            )}
                           </PopoverContent>
                         </Popover>
                         {errors.talent_name && (
