@@ -297,10 +297,13 @@ export default function JobBoardContent() {
       };
 
       // Update the query cache with the enhanced job
-      queryClient.setQueryData(["job-board", searchQuery, locationFilter], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.map((j) => (j.id === job.id ? updatedJob : j));
-      });
+      queryClient.setQueryData(
+        ["job-board", searchQuery, locationFilter],
+        (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((j) => (j.id === job.id ? updatedJob : j));
+        },
+      );
       setEnhancedJobs((prev) => new Set([...prev, job.id]));
 
       return updatedJob;

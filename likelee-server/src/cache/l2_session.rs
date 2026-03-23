@@ -54,7 +54,7 @@ impl SessionCache {
     /// Get a cached value for a session
     pub fn get(&self, session_id: &str, key: &str) -> Option<Arc<[u8]>> {
         let full_key = Self::session_key(session_id, key);
-        
+
         self.inner.get(&full_key).and_then(|entry| {
             // Check if expired
             let elapsed = entry.last_accessed.elapsed();
@@ -64,19 +64,22 @@ impl SessionCache {
                 self.inner.remove(&full_key);
                 return None;
             }
-            
+
             // Update last accessed time
             // Note: DashMap doesn't allow mutation through read guard, so we use update
             let value = entry.value.clone();
             let ttl = entry.ttl;
             drop(entry);
-            
-            self.inner.insert(full_key, SessionCacheEntry {
-                value: value.clone(),
-                last_accessed: Instant::now(),
-                ttl,
-            });
-            
+
+            self.inner.insert(
+                full_key,
+                SessionCacheEntry {
+                    value: value.clone(),
+                    last_accessed: Instant::now(),
+                    ttl,
+                },
+            );
+
             Some(value)
         })
     }
@@ -93,11 +96,14 @@ impl SessionCache {
         }
 
         let full_key = Self::session_key(session_id, key);
-        self.inner.insert(full_key, SessionCacheEntry {
-            value,
-            last_accessed: Instant::now(),
-            ttl: ttl.unwrap_or(self.default_ttl),
-        });
+        self.inner.insert(
+            full_key,
+            SessionCacheEntry {
+                value,
+                last_accessed: Instant::now(),
+                ttl: ttl.unwrap_or(self.default_ttl),
+            },
+        );
     }
 
     /// Delete a cached value for a session
@@ -143,22 +149,22 @@ impl SessionCache {
     /// Evict all expired entries
     pub fn evict_expired(&self) {
         let now = Instant::now();
-        self.inner.retain(|_, entry| {
-            now.duration_since(entry.last_accessed) <= entry.ttl
-        });
+        self.inner
+            .retain(|_, entry| now.duration_since(entry.last_accessed) <= entry.ttl);
     }
 
     /// Evict the N oldest entries
     fn evict_oldest(&self, count: usize) {
         // Collect entries with their keys and access times
-        let mut entries: Vec<(String, Instant)> = self.inner
+        let mut entries: Vec<(String, Instant)> = self
+            .inner
             .iter()
             .map(|entry| (entry.key().clone(), entry.last_accessed))
             .collect();
-        
+
         // Sort by access time (oldest first)
         entries.sort_by_key(|(_, time)| *time);
-        
+
         // Remove the oldest entries
         for (key, _) in entries.into_iter().take(count) {
             self.inner.remove(&key);
@@ -183,13 +189,13 @@ mod tests {
     #[test]
     fn test_session_cache_basic() {
         let cache = SessionCache::new(Duration::from_secs(60), 100);
-        
+
         cache.set("session1", "key1", Arc::from(b"value1".as_slice()), None);
         assert_eq!(
             cache.get("session1", "key1"),
             Some(Arc::from(b"value1".as_slice()))
         );
-        
+
         cache.delete("session1", "key1");
         assert!(cache.get("session1", "key1").is_none());
     }
@@ -197,10 +203,10 @@ mod tests {
     #[test]
     fn test_session_isolation() {
         let cache = SessionCache::new(Duration::from_secs(60), 100);
-        
+
         cache.set("session1", "key1", Arc::from(b"value1".as_slice()), None);
         cache.set("session2", "key1", Arc::from(b"value2".as_slice()), None);
-        
+
         assert_eq!(
             cache.get("session1", "key1"),
             Some(Arc::from(b"value1".as_slice()))
@@ -214,13 +220,13 @@ mod tests {
     #[test]
     fn test_clear_session() {
         let cache = SessionCache::new(Duration::from_secs(60), 100);
-        
+
         cache.set("session1", "key1", Arc::from(b"value1".as_slice()), None);
         cache.set("session1", "key2", Arc::from(b"value2".as_slice()), None);
         cache.set("session2", "key1", Arc::from(b"value3".as_slice()), None);
-        
+
         cache.clear_session("session1");
-        
+
         assert!(cache.get("session1", "key1").is_none());
         assert!(cache.get("session1", "key2").is_none());
         assert!(cache.get("session2", "key1").is_some());

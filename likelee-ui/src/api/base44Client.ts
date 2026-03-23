@@ -179,7 +179,9 @@ export const base44 = {
       ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...(config?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(config?.idempotencyKey ? { "Idempotency-Key": config.idempotencyKey } : {}),
+      ...(config?.idempotencyKey
+        ? { "Idempotency-Key": config.idempotencyKey }
+        : {}),
     };
 
     const body = isForm
@@ -219,7 +221,9 @@ export const base44 = {
       ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...(config?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(config?.idempotencyKey ? { "Idempotency-Key": config.idempotencyKey } : {}),
+      ...(config?.idempotencyKey
+        ? { "Idempotency-Key": config.idempotencyKey }
+        : {}),
     };
 
     const body = isForm
@@ -257,7 +261,9 @@ export const base44 = {
       "Content-Type": "application/json",
       ...(config?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(config?.idempotencyKey ? { "Idempotency-Key": config.idempotencyKey } : {}),
+      ...(config?.idempotencyKey
+        ? { "Idempotency-Key": config.idempotencyKey }
+        : {}),
     };
 
     const body =

@@ -114,7 +114,9 @@ async fn main() {
     let cache_idempotency = Arc::new(likelee_server::cache::IdempotencyStore::new(
         Duration::from_secs(cfg.cache_idempotency_ttl_secs),
     ));
-    let cache_metrics = Arc::new(likelee_server::cache::CacheMetrics::new(Duration::from_secs(60)));
+    let cache_metrics = Arc::new(likelee_server::cache::CacheMetrics::new(
+        Duration::from_secs(60),
+    ));
 
     info!(
         l2_ttl_secs = cfg.cache_l2_ttl_secs,

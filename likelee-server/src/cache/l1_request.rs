@@ -86,10 +86,10 @@ mod tests {
     #[test]
     fn test_request_cache_basic() {
         let mut cache = RequestCache::new();
-        
+
         cache.set("key1", Arc::from(b"value1".as_slice()), None);
         assert_eq!(cache.get("key1"), Some(Arc::from(b"value1".as_slice())));
-        
+
         cache.delete("key1");
         assert!(cache.get("key1").is_none());
     }
@@ -97,10 +97,10 @@ mod tests {
     #[test]
     fn test_request_cache_json() {
         let mut cache = RequestCache::new();
-        
+
         let data = serde_json::json!({"name": "test", "value": 42});
         cache.set_json("json_key", &data);
-        
+
         let retrieved: Option<serde_json::Value> = cache.get_json("json_key");
         assert_eq!(retrieved, Some(data));
     }

@@ -17,14 +17,14 @@
  */
 export function generateIdempotencyKey(): string {
   // Use crypto.randomUUID if available (modern browsers)
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  
+
   // Fallback: generate UUID v4 manually
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -38,12 +38,12 @@ export function generateIdempotencyKey(): string {
  */
 export function withIdempotencyKey(
   existingHeaders: Record<string, string> = {},
-  key?: string
+  key?: string,
 ): Record<string, string> {
   const idempotencyKey = key ?? generateIdempotencyKey();
   return {
     ...existingHeaders,
-    'Idempotency-Key': idempotencyKey,
+    "Idempotency-Key": idempotencyKey,
   };
 }
 
@@ -63,10 +63,10 @@ const pendingKeys = new Map<string, Promise<unknown>>();
  */
 export function trackPendingMutation<T>(
   key: string,
-  mutationPromise: Promise<T>
+  mutationPromise: Promise<T>,
 ): Promise<T> {
   pendingKeys.set(key, mutationPromise);
-  
+
   // Auto-cleanup when resolved
   mutationPromise
     .finally(() => {
@@ -75,7 +75,7 @@ export function trackPendingMutation<T>(
     .catch(() => {
       // Error handled by caller
     });
-  
+
   return mutationPromise;
 }
 
@@ -112,23 +112,28 @@ export function clearPendingMutations(): void {
  * });
  * ```
  */
-export function useIdempotentMutationOptions<TData = unknown, TVariables = unknown>(
-  options: {
-    mutationFn: (variables: TVariables, idempotencyKey: string) => Promise<TData>;
-    onSuccess?: (data: TData, variables: TVariables) => void | Promise<void>;
-    onError?: (error: Error, variables: TVariables) => void;
-    onSettled?: (data: TData | undefined, error: Error | null, variables: TVariables) => void;
-  }
-) {
+export function useIdempotentMutationOptions<
+  TData = unknown,
+  TVariables = unknown,
+>(options: {
+  mutationFn: (variables: TVariables, idempotencyKey: string) => Promise<TData>;
+  onSuccess?: (data: TData, variables: TVariables) => void | Promise<void>;
+  onError?: (error: Error, variables: TVariables) => void;
+  onSettled?: (
+    data: TData | undefined,
+    error: Error | null,
+    variables: TVariables,
+  ) => void;
+}) {
   const idempotencyKey = generateIdempotencyKey();
-  
+
   return {
     mutationFn: async (variables: TVariables) => {
       // Check for pending mutation with same key
       if (isPendingKey(idempotencyKey)) {
         return getPendingPromise<TData>(idempotencyKey)!;
       }
-      
+
       const promise = options.mutationFn(variables, idempotencyKey);
       return trackPendingMutation(idempotencyKey, promise);
     },
@@ -143,10 +148,11 @@ export function useIdempotentMutationOptions<TData = unknown, TVariables = unkno
  * Helper to extract idempotency key from mutation context
  */
 export function getIdempotencyKeyFromContext(
-  context: unknown
+  context: unknown,
 ): string | undefined {
-  if (typeof context === 'object' && context !== null && 'meta' in context) {
-    return (context as { meta?: { idempotencyKey?: string } }).meta?.idempotencyKey;
+  if (typeof context === "object" && context !== null && "meta" in context) {
+    return (context as { meta?: { idempotencyKey?: string } }).meta
+      ?.idempotencyKey;
   }
   return undefined;
 }

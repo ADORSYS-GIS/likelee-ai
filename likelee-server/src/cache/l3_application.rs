@@ -55,7 +55,7 @@ impl ApplicationCache {
     /// Create a new application cache with the given configuration
     pub fn new(default_ttl: Duration, max_entries: usize) -> Self {
         let (stop_tx, _) = tokio::sync::watch::channel(false);
-        
+
         Self {
             inner: RwLock::new(HashMap::new()),
             default_ttl,
@@ -67,14 +67,14 @@ impl ApplicationCache {
     /// Get a cached value by key
     pub fn get(&self, key: &str) -> Option<Arc<[u8]>> {
         let inner = self.inner.read();
-        
+
         inner.get(key).and_then(|entry| {
             // Check if expired
             if entry.created_at.elapsed() > entry.ttl {
                 // Entry expired - return None, caller should re-fetch
                 return None;
             }
-            
+
             Some(entry.value.clone())
         })
     }
@@ -82,7 +82,7 @@ impl ApplicationCache {
     /// Set a value with optional custom TTL
     pub fn set(&self, key: &str, value: Arc<[u8]>, ttl: Option<Duration>) {
         let mut inner = self.inner.write();
-        
+
         // Evict if at capacity
         if inner.len() >= self.max_entries && !inner.contains_key(key) {
             self.evict_expired_locked(&mut inner);
@@ -91,11 +91,14 @@ impl ApplicationCache {
             }
         }
 
-        inner.insert(key.to_string(), ApplicationCacheEntry {
-            value,
-            created_at: Instant::now(),
-            ttl: ttl.unwrap_or(self.default_ttl),
-        });
+        inner.insert(
+            key.to_string(),
+            ApplicationCacheEntry {
+                value,
+                created_at: Instant::now(),
+                ttl: ttl.unwrap_or(self.default_ttl),
+            },
+        );
     }
 
     /// Delete a cached value
@@ -126,11 +129,14 @@ impl ApplicationCache {
     pub fn preload(&self, entries: Vec<(String, Arc<[u8]>, Option<Duration>)>) {
         let mut inner = self.inner.write();
         for (key, value, ttl) in entries {
-            inner.insert(key, ApplicationCacheEntry {
-                value,
-                created_at: Instant::now(),
-                ttl: ttl.unwrap_or(self.default_ttl),
-            });
+            inner.insert(
+                key,
+                ApplicationCacheEntry {
+                    value,
+                    created_at: Instant::now(),
+                    ttl: ttl.unwrap_or(self.default_ttl),
+                },
+            );
         }
     }
 
@@ -143,22 +149,24 @@ impl ApplicationCache {
     /// Evict all expired entries (called internally)
     fn evict_expired_locked(&self, inner: &mut HashMap<String, ApplicationCacheEntry>) {
         let now = Instant::now();
-        inner.retain(|_, entry| {
-            now.duration_since(entry.created_at) <= entry.ttl
-        });
+        inner.retain(|_, entry| now.duration_since(entry.created_at) <= entry.ttl);
     }
 
     /// Evict the N oldest entries (called internally)
-    fn evict_oldest_locked(&self, inner: &mut HashMap<String, ApplicationCacheEntry>, count: usize) {
+    fn evict_oldest_locked(
+        &self,
+        inner: &mut HashMap<String, ApplicationCacheEntry>,
+        count: usize,
+    ) {
         // Collect entries with their keys and creation times
         let mut entries: Vec<(String, Instant)> = inner
             .iter()
             .map(|(k, v)| (k.clone(), v.created_at))
             .collect();
-        
+
         // Sort by creation time (oldest first)
         entries.sort_by_key(|(_, time)| *time);
-        
+
         // Remove the oldest entries
         for (key, _) in entries.into_iter().take(count) {
             inner.remove(&key);
@@ -191,6 +199,10 @@ impl ApplicationCache {
         if let Some(tx) = &self.stop_tx {
             let _ = tx.send(true);
         }
+    }
+
+    pub(crate) fn stop_rx(&self) -> Option<tokio::sync::watch::Receiver<bool>> {
+        self.stop_tx.as_ref().map(|tx| tx.subscribe())
     }
 }
 
@@ -226,19 +238,28 @@ impl CacheRefreshTask {
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = Option<Arc<[u8]>>> + Send + 'static,
     {
-        self.refreshers.insert(
-            key.to_string(),
-            Box::new(move || Box::pin(refresh_fn())),
-        );
+        self.refreshers
+            .insert(key.to_string(), Box::new(move || Box::pin(refresh_fn())));
     }
 
     /// Start the background refresh loop
     pub fn start(self) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(self.interval);
+            let mut stop_rx = self
+                .cache
+                .stop_rx()
+                .expect("ApplicationCache stop channel missing");
             loop {
-                interval.tick().await;
-                
+                tokio::select! {
+                    _ = interval.tick() => {}
+                    _ = stop_rx.changed() => {
+                        if *stop_rx.borrow() {
+                            break;
+                        }
+                    }
+                }
+
                 // Refresh each registered key
                 for (key, refresher) in &self.refreshers {
                     if let Some(value) = refresher().await {
@@ -258,13 +279,10 @@ mod tests {
     #[test]
     fn test_application_cache_basic() {
         let cache = ApplicationCache::new(Duration::from_secs(60), 100);
-        
+
         cache.set("key1", Arc::from(b"value1".as_slice()), None);
-        assert_eq!(
-            cache.get("key1"),
-            Some(Arc::from(b"value1".as_slice()))
-        );
-        
+        assert_eq!(cache.get("key1"), Some(Arc::from(b"value1".as_slice())));
+
         cache.delete("key1");
         assert!(cache.get("key1").is_none());
     }
@@ -272,12 +290,12 @@ mod tests {
     #[test]
     fn test_application_cache_preload() {
         let cache = ApplicationCache::new(Duration::from_secs(60), 100);
-        
+
         cache.preload(vec![
             ("key1".to_string(), Arc::from(b"value1".as_slice()), None),
             ("key2".to_string(), Arc::from(b"value2".as_slice()), None),
         ]);
-        
+
         assert_eq!(cache.len(), 2);
         assert!(cache.get("key1").is_some());
         assert!(cache.get("key2").is_some());
@@ -286,10 +304,10 @@ mod tests {
     #[test]
     fn test_application_cache_json() {
         let cache = ApplicationCache::new(Duration::from_secs(60), 100);
-        
+
         let data = serde_json::json!({"config": "value"});
         cache.set_json("config", &data, None);
-        
+
         let retrieved: Option<serde_json::Value> = cache.get_json("config");
         assert_eq!(retrieved, Some(data));
     }

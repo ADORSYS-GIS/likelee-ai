@@ -285,10 +285,10 @@ export function AgencyDeliverablesView() {
         ? (resp as any).deliverables
         : [];
       setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: rows }));
-      
+
       // Cache deliverables to IndexedDB
-      const { setCachedQuery } = await import('@/lib/indexedDb');
-      await setCachedQuery(['offer-deliverables', offerId], rows, offerId);
+      const { setCachedQuery } = await import("@/lib/indexedDb");
+      await setCachedQuery(["offer-deliverables", offerId], rows, offerId);
     } catch {
       setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: [] }));
     } finally {
@@ -299,13 +299,17 @@ export function AgencyDeliverablesView() {
   // Load deliverables from IndexedDB cache on offer expand
   const loadDeliverablesWithCache = async (offerId: string) => {
     // Try to load from cache first
-    const { getCachedQuery } = await import('@/lib/indexedDb');
-    const cached = await getCachedQuery<any[]>(['offer-deliverables', offerId], offerId, 60 * 1000);
-    
+    const { getCachedQuery } = await import("@/lib/indexedDb");
+    const cached = await getCachedQuery<any[]>(
+      ["offer-deliverables", offerId],
+      offerId,
+      60 * 1000,
+    );
+
     if (cached) {
       setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: cached }));
     }
-    
+
     // Always fetch fresh data in background
     await loadDeliverables(offerId);
   };
@@ -660,7 +664,10 @@ export function AgencyDeliverablesView() {
     setExpandedOfferId(next);
     setSelectedTalentId("");
     if (next) {
-      await Promise.all([loadAssignments(next), loadDeliverablesWithCache(next)]);
+      await Promise.all([
+        loadAssignments(next),
+        loadDeliverablesWithCache(next),
+      ]);
     }
   };
 

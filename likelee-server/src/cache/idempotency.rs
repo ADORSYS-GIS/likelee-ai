@@ -59,7 +59,7 @@ impl IdempotencyStore {
                 self.inner.remove(key);
                 return None;
             }
-            
+
             Some((entry.response_body.clone(), entry.status_code))
         })
     }
@@ -67,13 +67,16 @@ impl IdempotencyStore {
     /// Store a result for an idempotency key
     /// Should only be called AFTER the database transaction commits successfully
     pub fn set(&self, key: &str, response_body: Arc<[u8]>, status_code: u16) {
-        self.inner.insert(key.to_string(), IdempotencyRecord {
-            response_body,
-            status_code,
-            created_at: Instant::now(),
-            ttl: self.default_ttl,
-        });
-        
+        self.inner.insert(
+            key.to_string(),
+            IdempotencyRecord {
+                response_body,
+                status_code,
+                created_at: Instant::now(),
+                ttl: self.default_ttl,
+            },
+        );
+
         debug!(key = %key, "Idempotency key stored");
     }
 
@@ -85,12 +88,15 @@ impl IdempotencyStore {
         status_code: u16,
         ttl: Duration,
     ) {
-        self.inner.insert(key.to_string(), IdempotencyRecord {
-            response_body,
-            status_code,
-            created_at: Instant::now(),
-            ttl,
-        });
+        self.inner.insert(
+            key.to_string(),
+            IdempotencyRecord {
+                response_body,
+                status_code,
+                created_at: Instant::now(),
+                ttl,
+            },
+        );
     }
 
     /// Remove an idempotency key (use if operation failed after storing)
@@ -100,17 +106,17 @@ impl IdempotencyStore {
 
     /// Check if key exists (without retrieving)
     pub fn contains(&self, key: &str) -> bool {
-        self.inner.get(key).map(|entry| {
-            entry.created_at.elapsed() <= entry.ttl
-        }).unwrap_or(false)
+        self.inner
+            .get(key)
+            .map(|entry| entry.created_at.elapsed() <= entry.ttl)
+            .unwrap_or(false)
     }
 
     /// Evict all expired entries
     pub fn evict_expired(&self) {
         let now = Instant::now();
-        self.inner.retain(|_, entry| {
-            now.duration_since(entry.created_at) <= entry.ttl
-        });
+        self.inner
+            .retain(|_, entry| now.duration_since(entry.created_at) <= entry.ttl);
     }
 
     /// Get number of entries
@@ -147,16 +153,16 @@ mod tests {
     #[test]
     fn test_idempotency_store_basic() {
         let store = IdempotencyStore::new(Duration::from_secs(3600));
-        
+
         let key = "test-key-123";
         let response: Arc<[u8]> = Arc::from(b"{\"status\":\"success\"}".as_slice());
-        
+
         // Initially not present
         assert!(store.get(key).is_none());
-        
+
         // Store result
         store.set(key, response.clone(), 200);
-        
+
         // Retrieve result
         let (body, status) = store.get(key).unwrap();
         assert_eq!(body.as_ref(), b"{\"status\":\"success\"}");
@@ -166,13 +172,13 @@ mod tests {
     #[test]
     fn test_idempotency_expiry() {
         let store = IdempotencyStore::new(Duration::from_millis(10));
-        
+
         let key = "expiring-key";
         store.set(key, Arc::from(b"response".as_slice()), 200);
-        
+
         // Wait for expiry
         std::thread::sleep(Duration::from_millis(20));
-        
+
         // Should be expired
         assert!(store.get(key).is_none());
     }
@@ -180,10 +186,13 @@ mod tests {
     #[test]
     fn test_extract_idempotency_key() {
         use axum::http::HeaderMap;
-        
+
         let mut headers = HeaderMap::new();
         headers.insert("Idempotency-Key", "uuid-1234".parse().unwrap());
-        
-        assert_eq!(extract_idempotency_key(&headers), Some("uuid-1234".to_string()));
+
+        assert_eq!(
+            extract_idempotency_key(&headers),
+            Some("uuid-1234".to_string())
+        );
     }
 }

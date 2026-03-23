@@ -5,8 +5,13 @@
  * Provides background sync, merge strategies, and optimistic updates.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { useQuery, useQueryClient, useMutation, type UseQueryOptions } from '@tanstack/react-query';
+import { useEffect, useRef, useCallback } from "react";
+import {
+  useQuery,
+  useQueryClient,
+  useMutation,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 import {
   getCacheItem,
   setCacheItem,
@@ -14,9 +19,12 @@ import {
   CACHE_KEYS,
   type MergeStrategy,
   type CacheEntry,
-} from './localStorageCache';
+} from "./localStorageCache";
 
-interface UseCachedQueryOptions<T extends { id: string }> extends Omit<UseQueryOptions<T[], Error, T[]>, 'queryKey' | 'queryFn'> {
+interface UseCachedQueryOptions<T extends { id: string }> extends Omit<
+  UseQueryOptions<T[], Error, T[]>,
+  "queryKey" | "queryFn"
+> {
   /** Cache key for localStorage */
   cacheKey: string;
   /** Query key for React Query */
@@ -43,13 +51,13 @@ interface UseCachedQueryOptions<T extends { id: string }> extends Omit<UseQueryO
  * - Automatic sync interval
  */
 export function useCachedQuery<T extends { id: string }>(
-  options: UseCachedQueryOptions<T>
+  options: UseCachedQueryOptions<T>,
 ) {
   const {
     cacheKey,
     queryKey,
     queryFn,
-    mergeStrategy = 'merge-by-id',
+    mergeStrategy = "merge-by-id",
     maxAge = 5 * 60 * 1000, // 5 min
     syncInterval,
     staleWhileRevalidate = true,
@@ -67,11 +75,11 @@ export function useCachedQuery<T extends { id: string }>(
     queryKey,
     queryFn: async () => {
       const data = await queryFn();
-      
+
       // Merge with cache and update
       const result = mergeCacheData(cacheKey, data, mergeStrategy);
       lastSyncRef.current = Date.now();
-      
+
       return result.data;
     },
     initialData: staleWhileRevalidate ? initialData : undefined,
@@ -115,19 +123,19 @@ export function useCachedQuery<T extends { id: string }>(
  * Optimized for large datasets (100+ talents)
  */
 export function useAgencyRosterCache(agencyId: string | undefined) {
-  const cacheKey = agencyId ? CACHE_KEYS.AGENCY_ROSTER(agencyId) : '';
-  
+  const cacheKey = agencyId ? CACHE_KEYS.AGENCY_ROSTER(agencyId) : "";
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useCachedQuery<any>({
     cacheKey,
-    queryKey: ['agency-roster', agencyId],
+    queryKey: ["agency-roster", agencyId],
     queryFn: async () => {
       // This will be replaced with actual API call
-      const { getAgencyRoster } = await import('@/api/functions');
+      const { getAgencyRoster } = await import("@/api/functions");
       const resp = await getAgencyRoster();
       return (resp as any)?.talents ?? [];
     },
-    mergeStrategy: 'merge-by-id',
+    mergeStrategy: "merge-by-id",
     maxAge: 5 * 60 * 1000, // 5 min
     syncInterval: 60 * 1000, // Sync every minute
     staleWhileRevalidate: true,
@@ -138,21 +146,25 @@ export function useAgencyRosterCache(agencyId: string | undefined) {
 /**
  * Hook for syncing marketplace data
  */
-export function useMarketplaceCache(filters: Record<string, string | number | boolean> = {}) {
+export function useMarketplaceCache(
+  filters: Record<string, string | number | boolean> = {},
+) {
   const filtersKey = JSON.stringify(filters);
   const cacheKey = CACHE_KEYS.MARKETPLACE(filtersKey);
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useCachedQuery<any>({
     cacheKey,
-    queryKey: ['marketplace', filters],
+    queryKey: ["marketplace", filters],
     queryFn: async () => {
       // This will be replaced with actual API call
-      const { base44 } = await import('@/api/base44Client');
-      const resp = await base44.get<{ items?: any[] }>('/api/marketplace', { params: filters });
+      const { base44 } = await import("@/api/base44Client");
+      const resp = await base44.get<{ items?: any[] }>("/api/marketplace", {
+        params: filters,
+      });
       return resp?.items ?? [];
     },
-    mergeStrategy: 'merge-by-id',
+    mergeStrategy: "merge-by-id",
     maxAge: 2 * 60 * 1000, // 2 min
     syncInterval: 30 * 1000, // Sync every 30 seconds
     staleWhileRevalidate: true,
@@ -163,18 +175,20 @@ export function useMarketplaceCache(filters: Record<string, string | number | bo
  * Hook for syncing jobs data
  */
 export function useJobsCache(agencyId: string | undefined) {
-  const cacheKey = agencyId ? CACHE_KEYS.JOBS(agencyId) : '';
-  
+  const cacheKey = agencyId ? CACHE_KEYS.JOBS(agencyId) : "";
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useCachedQuery<any>({
     cacheKey,
-    queryKey: ['jobs', agencyId],
+    queryKey: ["jobs", agencyId],
     queryFn: async () => {
-      const { base44 } = await import('@/api/base44Client');
-      const resp = await base44.get<{ jobs?: any[] }>('/api/jobs', { params: { limit: 100 } });
+      const { base44 } = await import("@/api/base44Client");
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { limit: 100 },
+      });
       return resp?.jobs ?? [];
     },
-    mergeStrategy: 'merge-by-id',
+    mergeStrategy: "merge-by-id",
     maxAge: 60 * 1000, // 1 min
     syncInterval: 30 * 1000, // Sync every 30 seconds
     staleWhileRevalidate: true,
@@ -193,33 +207,33 @@ export function useCacheInvalidation() {
       queryKey: readonly unknown[],
       cacheKey: string,
       fetcher: () => Promise<T[]>,
-      mergeStrategy: MergeStrategy = 'merge-by-id'
+      mergeStrategy: MergeStrategy = "merge-by-id",
     ) => {
       // Fetch fresh data
       const newData = await fetcher();
-      
+
       // Merge with cache
       const result = mergeCacheData(cacheKey, newData, mergeStrategy);
-      
+
       // Update React Query cache
       queryClient.setQueryData(queryKey, result.data);
-      
+
       return result;
     },
-    [queryClient]
+    [queryClient],
   );
 
   const clearCache = useCallback(
     (cacheKey: string, queryKey?: readonly unknown[]) => {
       // Clear localStorage
       setCacheItem(cacheKey, []);
-      
+
       // Clear React Query if key provided
       if (queryKey) {
         queryClient.removeQueries({ queryKey });
       }
     },
-    [queryClient]
+    [queryClient],
   );
 
   return {
@@ -233,7 +247,7 @@ export function useCacheInvalidation() {
  */
 export function useOptimisticCache<T extends { id: string }>(
   queryKey: readonly unknown[],
-  cacheKey: string
+  cacheKey: string,
 ) {
   const queryClient = useQueryClient();
 
@@ -241,16 +255,16 @@ export function useOptimisticCache<T extends { id: string }>(
     (updater: (old: T[] | undefined) => T[]) => {
       // Get current data
       const oldData = queryClient.getQueryData<T[]>(queryKey);
-      
+
       // Optimistically update
       const newData = updater(oldData);
-      
+
       // Update React Query
       queryClient.setQueryData(queryKey, newData);
-      
+
       // Update localStorage
       setCacheItem(cacheKey, newData);
-      
+
       // Return rollback function
       return () => {
         if (oldData) {
@@ -259,7 +273,7 @@ export function useOptimisticCache<T extends { id: string }>(
         }
       };
     },
-    [queryClient, queryKey, cacheKey]
+    [queryClient, queryKey, cacheKey],
   );
 
   return { optimisticUpdate };
@@ -272,7 +286,7 @@ export function prefetchAndCache<T extends { id: string }>(
   queryClient: ReturnType<typeof useQueryClient>,
   queryKey: readonly unknown[],
   cacheKey: string,
-  fetcher: () => Promise<T[]>
+  fetcher: () => Promise<T[]>,
 ) {
   return queryClient.prefetchQuery({
     queryKey,

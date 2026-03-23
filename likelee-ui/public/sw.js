@@ -16,23 +16,23 @@ const SYNC_INTERVAL = 60 * 1000; // 1 minute
 
 // Sync event names
 const SYNC_EVENTS = {
-  TALENTS: 'sync-talents',
-  JOBS: 'sync-jobs',
-  MARKETPLACE: 'sync-marketplace',
-  MUTATIONS: 'sync-mutations',
-} as const;
+  TALENTS: "sync-talents",
+  JOBS: "sync-jobs",
+  MARKETPLACE: "sync-marketplace",
+  MUTATIONS: "sync-mutations",
+};
 
 // ============================================
 // Install & Activate
 // ============================================
 
-self.addEventListener('install', (event: ExtendableEvent) => {
-  console.log('[SW] Service worker installed');
+self.addEventListener("install", (event) => {
+  console.log("[SW] Service worker installed");
   event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener('activate', (event: ExtendableEvent) => {
-  console.log('[SW] Service worker activated');
+self.addEventListener("activate", (event) => {
+  console.log("[SW] Service worker activated");
   event.waitUntil(self.clients.claim());
 });
 
@@ -40,9 +40,9 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
 // Background Sync
 // ============================================
 
-self.addEventListener('sync', (event: SyncEvent) => {
-  console.log('[SW] Sync event:', event.tag);
-  
+self.addEventListener("sync", (event) => {
+  console.log("[SW] Sync event:", event.tag);
+
   if (event.tag === SYNC_EVENTS.TALENTS) {
     event.waitUntil(syncTalents());
   } else if (event.tag === SYNC_EVENTS.JOBS) {
@@ -58,10 +58,10 @@ self.addEventListener('sync', (event: SyncEvent) => {
 // Periodic Background Sync (if supported)
 // ============================================
 
-self.addEventListener('periodicsync', (event: PeriodicSyncEvent) => {
-  console.log('[SW] Periodic sync event:', event.tag);
-  
-  if (event.tag === 'sync-all') {
+self.addEventListener("periodicsync", (event) => {
+  console.log("[SW] Periodic sync event:", event.tag);
+
+  if (event.tag === "sync-all") {
     event.waitUntil(syncAll());
   }
 });
@@ -70,126 +70,133 @@ self.addEventListener('periodicsync', (event: PeriodicSyncEvent) => {
 // Sync Functions
 // ============================================
 
-async function syncTalents(): Promise<void> {
+async function syncTalents() {
   try {
     // Get agency ID from IndexedDB
     const agencyId = await getStoredAgencyId();
     if (!agencyId) return;
-    
+
     // Fetch talents from server
     const response = await fetch(`/api/agency/${agencyId}/roster`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    
-    if (!response.ok) throw new Error('Failed to fetch talents');
-    
+
+    if (!response.ok) throw new Error("Failed to fetch talents");
+
     const data = await response.json();
     const talents = data.talents || data;
-    
+
     // Store in IndexedDB via message to client
     await sendMessageToClients({
-      type: 'CACHE_UPDATE',
-      store: 'talents',
+      type: "CACHE_UPDATE",
+      store: "talents",
       data: talents,
       agencyId,
     });
-    
-    console.log('[SW] Synced talents:', talents.length);
+
+    console.log("[SW] Synced talents:", talents.length);
   } catch (error) {
-    console.error('[SW] Failed to sync talents:', error);
+    console.error("[SW] Failed to sync talents:", error);
     throw error; // Retry later
   }
 }
 
-async function syncJobs(): Promise<void> {
+async function syncJobs() {
   try {
-    const response = await fetch('/api/jobs?limit=100', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/jobs?limit=100", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    
-    if (!response.ok) throw new Error('Failed to fetch jobs');
-    
+
+    if (!response.ok) throw new Error("Failed to fetch jobs");
+
     const data = await response.json();
     const jobs = data.jobs || [];
-    
+
     await sendMessageToClients({
-      type: 'CACHE_UPDATE',
-      store: 'jobs',
+      type: "CACHE_UPDATE",
+      store: "jobs",
       data: jobs,
     });
-    
-    console.log('[SW] Synced jobs:', jobs.length);
+
+    console.log("[SW] Synced jobs:", jobs.length);
   } catch (error) {
-    console.error('[SW] Failed to sync jobs:', error);
+    console.error("[SW] Failed to sync jobs:", error);
     throw error;
   }
 }
 
-async function syncMarketplace(): Promise<void> {
+async function syncMarketplace() {
   try {
-    const response = await fetch('/api/marketplace', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/marketplace", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    
-    if (!response.ok) throw new Error('Failed to fetch marketplace');
-    
+
+    if (!response.ok) throw new Error("Failed to fetch marketplace");
+
     const data = await response.json();
     const items = data.items || [];
-    
+
     await sendMessageToClients({
-      type: 'CACHE_UPDATE',
-      store: 'marketplace',
+      type: "CACHE_UPDATE",
+      store: "marketplace",
       data: items,
     });
-    
-    console.log('[SW] Synced marketplace:', items.length);
+
+    console.log("[SW] Synced marketplace:", items.length);
   } catch (error) {
-    console.error('[SW] Failed to sync marketplace:', error);
+    console.error("[SW] Failed to sync marketplace:", error);
     throw error;
   }
 }
 
-async function syncMutations(): Promise<void> {
+async function syncMutations() {
   try {
     // Get pending mutations from IndexedDB
     const mutations = await getPendingMutations();
-    
+
     for (const mutation of mutations) {
       try {
         const response = await fetch(mutation.endpoint, {
           method: mutation.type,
           headers: {
-            'Content-Type': 'application/json',
-            'Idempotency-Key': mutation.idempotencyKey,
+            "Content-Type": "application/json",
+            "Idempotency-Key": mutation.idempotencyKey,
           },
-          body: mutation.type !== 'DELETE' ? JSON.stringify(mutation.payload) : undefined,
+          body:
+            mutation.type !== "DELETE"
+              ? JSON.stringify(mutation.payload)
+              : undefined,
         });
-        
+
         if (response.ok) {
-          await updateMutationStatus(mutation.id!, 'completed');
-          console.log('[SW] Completed mutation:', mutation.id);
+          await updateMutationStatus(mutation.id, "completed");
+          console.log("[SW] Completed mutation:", mutation.id);
         } else {
           const retryCount = (mutation.retryCount || 0) + 1;
           if (retryCount >= 3) {
-            await updateMutationStatus(mutation.id!, 'failed', `Failed after ${retryCount} retries`);
+            await updateMutationStatus(
+              mutation.id,
+              "failed",
+              `Failed after ${retryCount} retries`,
+            );
           } else {
-            await updateMutationRetryCount(mutation.id!, retryCount);
+            await updateMutationRetryCount(mutation.id, retryCount);
           }
         }
       } catch (error) {
-        console.error('[SW] Failed to process mutation:', mutation.id, error);
+        console.error("[SW] Failed to process mutation:", mutation.id, error);
       }
     }
   } catch (error) {
-    console.error('[SW] Failed to sync mutations:', error);
+    console.error("[SW] Failed to sync mutations:", error);
     throw error;
   }
 }
 
-async function syncAll(): Promise<void> {
+async function syncAll() {
   await Promise.all([
     syncTalents(),
     syncJobs(),
@@ -202,28 +209,28 @@ async function syncAll(): Promise<void> {
 // Message Handling
 // ============================================
 
-self.addEventListener('message', (event: MessageEvent) => {
+self.addEventListener("message", (event) => {
   const { type, payload } = event.data;
-  
+
   switch (type) {
-    case 'REGISTER_SYNC':
+    case "REGISTER_SYNC":
       registerSync(payload.tag);
       break;
-    case 'GET_CACHE_STATS':
+    case "GET_CACHE_STATS":
       getCacheStatsAndSend();
       break;
-    case 'CLEAR_CACHE':
+    case "CLEAR_CACHE":
       clearAllCache();
       break;
   }
 });
 
-async function registerSync(tag: string): Promise<void> {
+async function registerSync(tag) {
   try {
-    await (self as any).registration.sync.register(tag);
-    console.log('[SW] Registered sync:', tag);
+    await self.registration.sync.register(tag);
+    console.log("[SW] Registered sync:", tag);
   } catch (error) {
-    console.error('[SW] Failed to register sync:', error);
+    console.error("[SW] Failed to register sync:", error);
   }
 }
 
@@ -231,35 +238,35 @@ async function registerSync(tag: string): Promise<void> {
 // IndexedDB Helpers (via client messages)
 // ============================================
 
-async function getStoredAgencyId(): Promise<string | null> {
+async function getStoredAgencyId() {
   // Request from client
   return new Promise((resolve) => {
-    sendMessageToClients({ type: 'GET_AGENCY_ID' }).then((response) => {
+    sendMessageToClients({ type: "GET_AGENCY_ID" }).then((response) => {
       resolve(response?.agencyId || null);
     });
   });
 }
 
-async function getPendingMutations(): Promise<any[]> {
+async function getPendingMutations() {
   return new Promise((resolve) => {
-    sendMessageToClients({ type: 'GET_PENDING_MUTATIONS' }).then((response) => {
+    sendMessageToClients({ type: "GET_PENDING_MUTATIONS" }).then((response) => {
       resolve(response?.mutations || []);
     });
   });
 }
 
-async function updateMutationStatus(id: number, status: string, error?: string): Promise<void> {
+async function updateMutationStatus(id, status, error) {
   await sendMessageToClients({
-    type: 'UPDATE_MUTATION_STATUS',
+    type: "UPDATE_MUTATION_STATUS",
     mutationId: id,
     status,
     error,
   });
 }
 
-async function updateMutationRetryCount(id: number, retryCount: number): Promise<void> {
+async function updateMutationRetryCount(id, retryCount) {
   await sendMessageToClients({
-    type: 'UPDATE_MUTATION_RETRY',
+    type: "UPDATE_MUTATION_RETRY",
     mutationId: id,
     retryCount,
   });
@@ -269,11 +276,11 @@ async function updateMutationRetryCount(id: number, retryCount: number): Promise
 // Utility Functions
 // ============================================
 
-async function sendMessageToClients(message: any): Promise<any> {
+async function sendMessageToClients(message) {
   const clients = await self.clients.matchAll();
-  
+
   if (clients.length === 0) return null;
-  
+
   // Send to first client and wait for response
   const client = clients[0];
   return new Promise((resolve) => {
@@ -285,31 +292,11 @@ async function sendMessageToClients(message: any): Promise<any> {
   });
 }
 
-async function getCacheStatsAndSend(): Promise<void> {
-  const stats = await sendMessageToClients({ type: 'GET_CACHE_STATS' });
-  await sendMessageToClients({ type: 'CACHE_STATS', stats });
+async function getCacheStatsAndSend() {
+  const stats = await sendMessageToClients({ type: "GET_CACHE_STATS" });
+  await sendMessageToClients({ type: "CACHE_STATS", stats });
 }
 
-async function clearAllCache(): Promise<void> {
-  await sendMessageToClients({ type: 'CLEAR_ALL_CACHE' });
-}
-
-// ============================================
-// Type Declarations
-// ============================================
-
-declare const self: ServiceWorkerGlobalScope;
-
-interface ExtendableEvent extends Event {
-  waitUntil(promise: Promise<any>): void;
-}
-
-interface SyncEvent extends Event {
-  tag: string;
-  waitUntil(promise: Promise<any>): void;
-}
-
-interface PeriodicSyncEvent extends Event {
-  tag: string;
-  waitUntil(promise: Promise<any>): void;
+async function clearAllCache() {
+  await sendMessageToClients({ type: "CLEAR_ALL_CACHE" });
 }

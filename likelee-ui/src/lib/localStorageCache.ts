@@ -12,7 +12,7 @@
  * - Compression for large datasets
  */
 
-const CACHE_PREFIX = 'likelee_cache_';
+const CACHE_PREFIX = "likelee_cache_";
 const CACHE_VERSION = 1;
 const MAX_CACHE_SIZE = 4 * 1024 * 1024; // 4MB limit (leaving room for other storage)
 
@@ -44,7 +44,11 @@ export interface SyncResult<T> {
   hasChanges: boolean;
 }
 
-export type MergeStrategy = 'replace' | 'merge-by-id' | 'append-new' | 'prepend-new';
+export type MergeStrategy =
+  | "replace"
+  | "merge-by-id"
+  | "append-new"
+  | "prepend-new";
 
 /**
  * Get item from localStorage cache
@@ -53,15 +57,15 @@ export function getCacheItem<T>(key: string): CacheEntry<T> | null {
   try {
     const raw = localStorage.getItem(`${CACHE_PREFIX}${key}`);
     if (!raw) return null;
-    
+
     const entry: CacheEntry<T> = JSON.parse(raw);
-    
+
     // Version mismatch - invalidate cache
     if (entry.version !== CACHE_VERSION) {
       removeCacheItem(key);
       return null;
     }
-    
+
     return entry;
   } catch (error) {
     console.warn(`[Cache] Failed to read cache key "${key}":`, error);
@@ -73,13 +77,13 @@ export function getCacheItem<T>(key: string): CacheEntry<T> | null {
  * Set item in localStorage cache
  */
 export function setCacheItem<T>(
-  key: string, 
-  data: T, 
-  options?: { 
-    etag?: string; 
+  key: string,
+  data: T,
+  options?: {
+    etag?: string;
     totalCount?: number;
     lastSync?: number;
-  }
+  },
 ): boolean {
   try {
     const entry: CacheEntry<T> = {
@@ -90,18 +94,20 @@ export function setCacheItem<T>(
       totalCount: options?.totalCount,
       lastSync: options?.lastSync ?? Date.now(),
     };
-    
+
     const serialized = JSON.stringify(entry);
-    
+
     // Check size limit
     if (serialized.length > MAX_CACHE_SIZE) {
-      console.warn(`[Cache] Cache entry "${key}" exceeds size limit (${serialized.length} bytes)`);
+      console.warn(
+        `[Cache] Cache entry "${key}" exceeds size limit (${serialized.length} bytes)`,
+      );
       return false;
     }
-    
+
     // Evict old entries if storage is full
     ensureStorageSpace(serialized.length);
-    
+
     localStorage.setItem(`${CACHE_PREFIX}${key}`, serialized);
     return true;
   } catch (error) {
@@ -133,9 +139,9 @@ export function clearCache(): void {
         keysToRemove.push(key);
       }
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   } catch (error) {
-    console.warn('[Cache] Failed to clear cache:', error);
+    console.warn("[Cache] Failed to clear cache:", error);
   }
 }
 
@@ -162,12 +168,12 @@ export function isCacheStale(key: string, maxAge: number): boolean {
 export function mergeCacheData<T extends { id: string }>(
   cacheKey: string,
   newData: T[],
-  strategy: MergeStrategy = 'merge-by-id'
+  strategy: MergeStrategy = "merge-by-id",
 ): SyncResult<T> {
   const cached = getCacheItem<T[]>(cacheKey);
   const cachedData = cached?.data ?? [];
-  
-  if (strategy === 'replace') {
+
+  if (strategy === "replace") {
     setCacheItem(cacheKey, newData);
     return {
       data: newData,
@@ -177,10 +183,10 @@ export function mergeCacheData<T extends { id: string }>(
       hasChanges: true,
     };
   }
-  
-  if (strategy === 'append-new') {
-    const existingIds = new Set(cachedData.map(item => item.id));
-    const newItems = newData.filter(item => !existingIds.has(item.id));
+
+  if (strategy === "append-new") {
+    const existingIds = new Set(cachedData.map((item) => item.id));
+    const newItems = newData.filter((item) => !existingIds.has(item.id));
     const merged = [...cachedData, ...newItems];
     setCacheItem(cacheKey, merged);
     return {
@@ -191,10 +197,10 @@ export function mergeCacheData<T extends { id: string }>(
       hasChanges: newItems.length > 0,
     };
   }
-  
-  if (strategy === 'prepend-new') {
-    const existingIds = new Set(cachedData.map(item => item.id));
-    const newItems = newData.filter(item => !existingIds.has(item.id));
+
+  if (strategy === "prepend-new") {
+    const existingIds = new Set(cachedData.map((item) => item.id));
+    const newItems = newData.filter((item) => !existingIds.has(item.id));
     const merged = [...newItems, ...cachedData];
     setCacheItem(cacheKey, merged);
     return {
@@ -205,15 +211,15 @@ export function mergeCacheData<T extends { id: string }>(
       hasChanges: newItems.length > 0,
     };
   }
-  
+
   // merge-by-id: Update existing, add new, remove items not in new data
-  const newDataMap = new Map(newData.map(item => [item.id, item]));
-  const cachedMap = new Map(cachedData.map(item => [item.id, item]));
-  
+  const newDataMap = new Map(newData.map((item) => [item.id, item]));
+  const cachedMap = new Map(cachedData.map((item) => [item.id, item]));
+
   let added = 0;
   let updated = 0;
   let removed = 0;
-  
+
   // Count updates and additions
   for (const item of newData) {
     if (!cachedMap.has(item.id)) {
@@ -226,21 +232,21 @@ export function mergeCacheData<T extends { id: string }>(
       }
     }
   }
-  
+
   // Count removals
   for (const item of cachedData) {
     if (!newDataMap.has(item.id)) {
       removed++;
     }
   }
-  
+
   const hasChanges = added > 0 || updated > 0 || removed > 0;
-  
+
   // Use new data as source of truth
   if (hasChanges) {
     setCacheItem(cacheKey, newData);
   }
-  
+
   return {
     data: newData,
     added,
@@ -259,11 +265,11 @@ export async function getOrFetch<T>(
   options?: {
     maxAge?: number;
     forceRefresh?: boolean;
-  }
+  },
 ): Promise<{ data: T; fromCache: boolean }> {
   const maxAge = options?.maxAge ?? 5 * 60 * 1000; // 5 min default
   const forceRefresh = options?.forceRefresh ?? false;
-  
+
   // Check cache
   if (!forceRefresh && !isCacheStale(cacheKey, maxAge)) {
     const cached = getCacheItem<T>(cacheKey);
@@ -271,7 +277,7 @@ export async function getOrFetch<T>(
       return { data: cached.data, fromCache: true };
     }
   }
-  
+
   // Fetch fresh data
   const data = await fetcher();
   setCacheItem(cacheKey, data);
@@ -286,7 +292,7 @@ function ensureStorageSpace(requiredSize: number): void {
     // Get current usage
     let totalSize = 0;
     const entries: Array<{ key: string; size: number; timestamp: number }> = [];
-    
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(CACHE_PREFIX)) {
@@ -294,7 +300,7 @@ function ensureStorageSpace(requiredSize: number): void {
         if (raw) {
           const size = raw.length;
           totalSize += size;
-          
+
           try {
             const entry = JSON.parse(raw);
             entries.push({ key, size, timestamp: entry.timestamp ?? 0 });
@@ -305,16 +311,16 @@ function ensureStorageSpace(requiredSize: number): void {
         }
       }
     }
-    
+
     // Check if we need to evict
     const availableSpace = MAX_CACHE_SIZE - totalSize;
     if (availableSpace >= requiredSize) {
       return; // Enough space
     }
-    
+
     // Sort by timestamp (oldest first) for LRU eviction
     entries.sort((a, b) => a.timestamp - b.timestamp);
-    
+
     // Evict until we have enough space
     let freedSpace = 0;
     for (const entry of entries) {
@@ -325,7 +331,7 @@ function ensureStorageSpace(requiredSize: number): void {
       freedSpace += entry.size;
     }
   } catch (error) {
-    console.warn('[Cache] Failed to ensure storage space:', error);
+    console.warn("[Cache] Failed to ensure storage space:", error);
   }
 }
 
@@ -339,7 +345,7 @@ export function getCacheStats(): {
 } {
   let totalSize = 0;
   const entries: Array<{ key: string; size: number; age: number }> = [];
-  
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(CACHE_PREFIX)) {
@@ -347,21 +353,21 @@ export function getCacheStats(): {
       if (raw) {
         const size = raw.length;
         totalSize += size;
-        
+
         try {
           const entry = JSON.parse(raw);
           entries.push({
-            key: key.replace(CACHE_PREFIX, ''),
+            key: key.replace(CACHE_PREFIX, ""),
             size,
             age: Date.now() - (entry.timestamp ?? 0),
           });
         } catch {
-          entries.push({ key: key.replace(CACHE_PREFIX, ''), size, age: 0 });
+          entries.push({ key: key.replace(CACHE_PREFIX, ""), size, age: 0 });
         }
       }
     }
   }
-  
+
   return {
     totalEntries: entries.length,
     totalSize,
@@ -386,5 +392,5 @@ export const CACHE_KEYS = {
   /** Creator profiles (for talent portal) */
   CREATOR_PROFILES: (creatorId: string) => `creator_profiles_${creatorId}`,
   /** Session data */
-  SESSION_DATA: 'session_data',
+  SESSION_DATA: "session_data",
 } as const;

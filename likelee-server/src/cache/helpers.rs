@@ -3,14 +3,12 @@
 //! Provides convenient functions for using the multi-level cache
 //! with the fallback chain pattern: L1 → L2 → L3 → DB.
 
+use parking_lot::RwLock;
 use std::sync::Arc;
 use std::time::Duration;
-use parking_lot::RwLock;
 use tracing::debug;
 
-use super::{
-    ApplicationCache, CacheMetrics, CacheLevel, RequestCache, SessionCache,
-};
+use super::{ApplicationCache, CacheLevel, CacheMetrics, RequestCache, SessionCache};
 
 /// Execute a database query with multi-level cache fallback.
 ///
@@ -154,10 +152,7 @@ pub fn invalidate_all_levels(
 }
 
 /// Invalidate cache for a session (e.g., on logout).
-pub fn invalidate_session(
-    l2: &Arc<SessionCache>,
-    session_id: &str,
-) {
+pub fn invalidate_session(l2: &Arc<SessionCache>, session_id: &str) {
     l2.clear_session(session_id);
     debug!(session_id = %session_id, "Session cache cleared");
 }
@@ -173,7 +168,8 @@ mod tests {
         let l3 = Arc::new(ApplicationCache::new(Duration::from_secs(60), 100));
 
         // Set values in all levels
-        l1.write().set("key1", Arc::from(b"value1".as_slice()), None);
+        l1.write()
+            .set("key1", Arc::from(b"value1".as_slice()), None);
         l2.set("session1", "key1", Arc::from(b"value1".as_slice()), None);
         l3.set("key1", Arc::from(b"value1".as_slice()), None);
 

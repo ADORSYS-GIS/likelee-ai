@@ -17321,7 +17321,7 @@ export default function AgencyDashboard() {
   const brandConnectionJobInvitesQuery = useIndexedDbQuery({
     queryKey: ["agency-job-invites", user?.id],
     queryFn: async () => {
-      const resp = await base44.get<{ jobs?: any[] }>('/api/jobs', {
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
       });
       const jobs = Array.isArray(resp?.jobs) ? resp.jobs : [];
@@ -17347,7 +17347,7 @@ export default function AgencyDashboard() {
     queryKey: ["agency-package-feedback", user?.id],
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
-        '/api/agency/brand-offers/package-feedback',
+        "/api/agency/brand-offers/package-feedback",
       );
       return Array.isArray(resp?.items) ? resp.items : [];
     },

@@ -7,26 +7,22 @@
 //!
 //! Fallback chain: L1 → L2 → L3 → Database
 
+pub mod helpers;
+mod idempotency;
 mod l1_request;
 mod l2_session;
 mod l3_application;
-mod idempotency;
 mod metrics;
 pub mod middleware;
-pub mod helpers;
 
+pub use idempotency::{IdempotencyRecord, IdempotencyStore};
 pub use l1_request::RequestCache;
 pub use l2_session::{SessionCache, SessionCacheEntry};
 pub use l3_application::{ApplicationCache, ApplicationCacheEntry};
-pub use idempotency::{IdempotencyStore, IdempotencyRecord};
-pub use metrics::{CacheMetrics, CacheLevel};
+pub use metrics::{CacheLevel, CacheMetrics};
 pub use middleware::{
-    RequestCacheExt,
-    cache_layer,
-    idempotency_layer,
-    store_idempotency_result,
-    get_idempotency_key,
-    get_request_cache,
+    cache_layer, get_idempotency_key, get_request_cache, idempotency_layer,
+    store_idempotency_result, RequestCacheExt,
 };
 
 use std::sync::Arc;
@@ -36,13 +32,13 @@ use std::time::Duration;
 pub trait Cache: Send + Sync {
     /// Get a cached value by key
     fn get(&self, key: &str) -> Option<Arc<[u8]>>;
-    
+
     /// Set a value with optional TTL
     fn set(&self, key: &str, value: Arc<[u8]>, ttl: Option<Duration>);
-    
+
     /// Delete a cached value
     fn delete(&self, key: &str);
-    
+
     /// Check if key exists
     fn contains(&self, key: &str) -> bool;
 }
@@ -72,8 +68,8 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            l2_ttl: Duration::from_secs(1800),        // 30 min
-            l3_ttl: Duration::from_secs(3600),       // 1 hour
+            l2_ttl: Duration::from_secs(1800),             // 30 min
+            l3_ttl: Duration::from_secs(3600),             // 1 hour
             l3_refresh_interval: Duration::from_secs(300), // 5 min
             l2_max_entries: 10_000,
             l3_max_entries: 1_000,

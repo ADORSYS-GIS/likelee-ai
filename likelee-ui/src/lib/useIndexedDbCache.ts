@@ -8,8 +8,13 @@
  * IndexedDB is used for: talents, jobs, marketplace, query cache
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { useQuery, useQueryClient, useMutation, type UseQueryOptions } from '@tanstack/react-query';
+import { useEffect, useRef, useCallback } from "react";
+import {
+  useQuery,
+  useQueryClient,
+  useMutation,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 import {
   db,
   getCachedQuery,
@@ -21,10 +26,13 @@ import {
   getPendingMutations,
   updateMutationStatus,
   type CachedTalent,
-} from './indexedDb';
-import { registerBackgroundSync } from './swRegistration';
+} from "./indexedDb";
+import { registerBackgroundSync } from "./swRegistration";
 
-interface UseIndexedDbQueryOptions<T> extends Omit<UseQueryOptions<T, Error, T>, 'queryKey' | 'queryFn'> {
+interface UseIndexedDbQueryOptions<T> extends Omit<
+  UseQueryOptions<T, Error, T>,
+  "queryKey" | "queryFn"
+> {
   /** Query key for React Query */
   queryKey: readonly unknown[];
   /** Fetch function */
@@ -50,9 +58,7 @@ interface UseIndexedDbQueryOptions<T> extends Omit<UseQueryOptions<T, Error, T>,
  * - Stale-while-revalidate pattern
  * - Automatic sync interval
  */
-export function useIndexedDbQuery<T>(
-  options: UseIndexedDbQueryOptions<T>
-) {
+export function useIndexedDbQuery<T>(options: UseIndexedDbQueryOptions<T>) {
   const {
     queryKey,
     queryFn,
@@ -71,11 +77,11 @@ export function useIndexedDbQuery<T>(
     queryKey,
     queryFn: async () => {
       const data = await queryFn();
-      
+
       // Cache to IndexedDB
       await setCachedQuery(queryKey, data, agencyId);
       lastSyncRef.current = Date.now();
-      
+
       return data;
     },
     staleTime: maxAge,
@@ -92,7 +98,14 @@ export function useIndexedDbQuery<T>(
         }
       });
     }
-  }, [queryKey, agencyId, maxAge, staleWhileRevalidate, query.data, queryClient]);
+  }, [
+    queryKey,
+    agencyId,
+    maxAge,
+    staleWhileRevalidate,
+    query.data,
+    queryClient,
+  ]);
 
   // Background sync interval
   useEffect(() => {
@@ -109,7 +122,7 @@ export function useIndexedDbQuery<T>(
   const getSyncStatus = useCallback(async () => {
     const key = JSON.stringify(queryKey);
     const meta = await getSyncMeta(key);
-    
+
     return {
       lastSync: meta?.lastSync ?? lastSyncRef.current ?? null,
       isStale: meta ? Date.now() - meta.lastSync > maxAge : true,
@@ -130,12 +143,12 @@ export function useIndexedDbQuery<T>(
  * Optimized for large datasets (100+ talents)
  */
 export function useAgencyRosterIndexedDb(agencyId: string | undefined) {
-  const queryKey = ['agency-roster', agencyId] as const;
-  
+  const queryKey = ["agency-roster", agencyId] as const;
+
   const query = useIndexedDbQuery<{ talents: CachedTalent[] }>({
     queryKey,
     queryFn: async () => {
-      const { getAgencyRoster } = await import('@/api/functions');
+      const { getAgencyRoster } = await import("@/api/functions");
       const resp = await getAgencyRoster();
       return { talents: (resp as any)?.talents || [] };
     },
@@ -147,14 +160,17 @@ export function useAgencyRosterIndexedDb(agencyId: string | undefined) {
   });
 
   // Merge talents into IndexedDB store
-  const mergeToStore = useCallback(async (talents: CachedTalent[]) => {
-    if (!agencyId) return { added: 0, updated: 0, removed: 0 };
-    return mergeTalents(talents, agencyId);
-  }, [agencyId]);
+  const mergeToStore = useCallback(
+    async (talents: CachedTalent[]) => {
+      if (!agencyId) return { added: 0, updated: 0, removed: 0 };
+      return mergeTalents(talents, agencyId);
+    },
+    [agencyId],
+  );
 
   // Trigger background sync
   const triggerBackgroundSync = useCallback(async () => {
-    await registerBackgroundSync('sync-talents');
+    await registerBackgroundSync("sync-talents");
   }, []);
 
   return {
@@ -170,10 +186,12 @@ export function useAgencyRosterIndexedDb(agencyId: string | undefined) {
  */
 export function useJobsIndexedDb(agencyId: string | undefined) {
   return useIndexedDbQuery<{ jobs: any[] }>({
-    queryKey: ['agency-job-invites', agencyId] as const,
+    queryKey: ["agency-job-invites", agencyId] as const,
     queryFn: async () => {
-      const { base44 } = await import('@/api/base44Client');
-      const resp = await base44.get<{ jobs?: any[] }>('/api/jobs', { params: { limit: 100 } });
+      const { base44 } = await import("@/api/base44Client");
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { limit: 100 },
+      });
       return { jobs: resp?.jobs ?? [] };
     },
     agencyId,
@@ -187,15 +205,16 @@ export function useJobsIndexedDb(agencyId: string | undefined) {
 /**
  * Hook for offline mutations with IndexedDB queue
  */
-export function useOfflineMutation<TData = unknown, TVariables = unknown>(
-  options: {
-    mutationFn: (variables: TVariables) => Promise<TData>;
-    endpoint: string;
-    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    onSuccess?: (data: TData, variables: TVariables) => void;
-    onError?: (error: Error, variables: TVariables) => void;
-  }
-) {
+export function useOfflineMutation<
+  TData = unknown,
+  TVariables = unknown,
+>(options: {
+  mutationFn: (variables: TVariables) => Promise<TData>;
+  endpoint: string;
+  method: "POST" | "PUT" | "PATCH" | "DELETE";
+  onSuccess?: (data: TData, variables: TVariables) => void;
+  onError?: (error: Error, variables: TVariables) => void;
+}) {
   const queryClient = useQueryClient();
   const { mutationFn, endpoint, method, onSuccess, onError } = options;
 
@@ -205,7 +224,7 @@ export function useOfflineMutation<TData = unknown, TVariables = unknown>(
       if (navigator.onLine) {
         return mutationFn(variables);
       }
-      
+
       // Queue for later if offline
       const idempotencyKey = `offline_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await queueMutation({
@@ -214,10 +233,10 @@ export function useOfflineMutation<TData = unknown, TVariables = unknown>(
         payload: variables,
         idempotencyKey,
       });
-      
+
       // Trigger background sync when back online
-      registerBackgroundSync('sync-mutations');
-      
+      registerBackgroundSync("sync-mutations");
+
       // Return placeholder
       return { queued: true, idempotencyKey } as TData;
     },
@@ -242,33 +261,33 @@ export function useIndexedDbInvalidation() {
     async <T>(
       queryKey: readonly unknown[],
       fetcher: () => Promise<T>,
-      agencyId?: string
+      agencyId?: string,
     ) => {
       // Fetch fresh data
       const data = await fetcher();
-      
+
       // Update IndexedDB
       await setCachedQuery(queryKey, data, agencyId);
-      
+
       // Update React Query
       queryClient.setQueryData(queryKey, data);
-      
+
       return data;
     },
-    [queryClient]
+    [queryClient],
   );
 
   const clearCache = useCallback(
     async (queryKey: readonly unknown[]) => {
       const keyStr = JSON.stringify(queryKey);
-      
+
       // Clear from IndexedDB
       await db.queryCache.delete(keyStr);
-      
+
       // Clear from React Query
       queryClient.removeQueries({ queryKey });
     },
-    [queryClient]
+    [queryClient],
   );
 
   return {
@@ -281,30 +300,32 @@ export function useIndexedDbInvalidation() {
  * Hook for pending offline mutations
  */
 export function usePendingMutations() {
-  const [pending, setPending] = React.useState<ReturnType<typeof getPendingMutations> extends Promise<infer T> ? T : never>([]);
-  
+  const [pending, setPending] = React.useState<
+    ReturnType<typeof getPendingMutations> extends Promise<infer T> ? T : never
+  >([]);
+
   useEffect(() => {
     getPendingMutations().then(setPending);
-    
+
     // Refresh on online event
     const handleOnline = () => {
       getPendingMutations().then(setPending);
     };
-    
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, []);
-  
+
   const retryMutation = useCallback(async (id: number) => {
-    await updateMutationStatus(id, 'pending');
-    await registerBackgroundSync('sync-mutations');
+    await updateMutationStatus(id, "pending");
+    await registerBackgroundSync("sync-mutations");
   }, []);
-  
+
   return { pending, retryMutation };
 }
 
 // Need to import React for useState
-import React from 'react';
+import React from "react";
 
 /**
  * Prefetch and cache data to IndexedDB
@@ -313,7 +334,7 @@ export async function prefetchToIndexedDb<T>(
   queryClient: ReturnType<typeof useQueryClient>,
   queryKey: readonly unknown[],
   fetcher: () => Promise<T>,
-  agencyId?: string
+  agencyId?: string,
 ) {
   return queryClient.prefetchQuery({
     queryKey,

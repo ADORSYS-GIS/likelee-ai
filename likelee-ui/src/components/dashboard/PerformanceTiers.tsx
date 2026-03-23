@@ -155,30 +155,31 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
     Record<string, { min_earnings: number; min_bookings: number }>
   >({});
 
-  const { data, isLoading, error } = useIndexedDbQuery<PerformanceTiersResponse>({
-    queryKey: ["performance-tiers"],
-    queryFn: async () => {
-      try {
-        const resp = await base44.get<PerformanceTiersResponse>(
-          "/agency/dashboard/performance-tiers",
-        );
-        return resp;
-      } catch (err: any) {
-        // If the backend sent a "Dashboard Error: ..." message, use it directly
-        const errorMessage = err?.response?.data || err.message;
-        if (
-          typeof errorMessage === "string" &&
-          errorMessage.includes("Dashboard Error:")
-        ) {
-          throw new Error(errorMessage.split("Dashboard Error:")[1].trim());
+  const { data, isLoading, error } =
+    useIndexedDbQuery<PerformanceTiersResponse>({
+      queryKey: ["performance-tiers"],
+      queryFn: async () => {
+        try {
+          const resp = await base44.get<PerformanceTiersResponse>(
+            "/agency/dashboard/performance-tiers",
+          );
+          return resp;
+        } catch (err: any) {
+          // If the backend sent a "Dashboard Error: ..." message, use it directly
+          const errorMessage = err?.response?.data || err.message;
+          if (
+            typeof errorMessage === "string" &&
+            errorMessage.includes("Dashboard Error:")
+          ) {
+            throw new Error(errorMessage.split("Dashboard Error:")[1].trim());
+          }
+          throw new Error(errorMessage || "Failed to load performance tiers");
         }
-        throw new Error(errorMessage || "Failed to load performance tiers");
-      }
-    },
-    maxAge: 60 * 1000, // 1 minute
-    syncInterval: 60 * 1000, // Sync every minute
-    staleWhileRevalidate: true,
-  });
+      },
+      maxAge: 60 * 1000, // 1 minute
+      syncInterval: 60 * 1000, // Sync every minute
+      staleWhileRevalidate: true,
+    });
 
   useEffect(() => {
     if (data?.config) {

@@ -7,7 +7,7 @@
  * localStorage remains for: settings, preferences, session data
  */
 
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type Table } from "dexie";
 
 // ============================================
 // Type Definitions
@@ -82,7 +82,7 @@ export interface SyncMeta {
 export interface QueuedMutation {
   id?: number;
   /** HTTP method */
-  type: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  type: "POST" | "PUT" | "PATCH" | "DELETE";
   /** API endpoint */
   endpoint: string;
   /** Request payload */
@@ -90,7 +90,7 @@ export interface QueuedMutation {
   /** When queued */
   timestamp: number;
   /** Status: pending, syncing, failed */
-  status: 'pending' | 'syncing' | 'failed' | 'completed';
+  status: "pending" | "syncing" | "failed" | "completed";
   /** Idempotency key for safe retries */
   idempotencyKey: string;
   /** Retry count */
@@ -113,22 +113,22 @@ export class LikeleeDatabase extends Dexie {
   mutations!: Table<QueuedMutation, number>;
 
   constructor() {
-    super('likelee_cache');
-    
+    super("likelee_cache");
+
     this.version(1).stores({
       // Primary data stores (indexed for queries)
-      talents: 'id, agency_id, stage_name, status, created_at, updated_at',
-      jobs: 'id, agency_id, status, created_at',
-      marketplace: 'id, category, status, created_at',
-      
+      talents: "id, agency_id, stage_name, status, created_at, updated_at",
+      jobs: "id, agency_id, status, created_at",
+      marketplace: "id, category, status, created_at",
+
       // Query result cache
-      queryCache: 'id, queryKey, agencyId, timestamp',
-      
+      queryCache: "id, queryKey, agencyId, timestamp",
+
       // Sync metadata
-      syncMeta: 'key',
-      
+      syncMeta: "key",
+
       // Offline mutations queue (auto-increment id)
-      mutations: '++id, type, endpoint, timestamp, status, idempotencyKey',
+      mutations: "++id, type, endpoint, timestamp, status, idempotencyKey",
     });
   }
 }
@@ -152,7 +152,10 @@ export const CACHE_VERSION = 1;
 /**
  * Generate a cache key from query key
  */
-export function getQueryCacheKey(queryKey: readonly unknown[], agencyId?: string): string {
+export function getQueryCacheKey(
+  queryKey: readonly unknown[],
+  agencyId?: string,
+): string {
   const keyStr = JSON.stringify(queryKey);
   return agencyId ? `${keyStr}:${agencyId}` : keyStr;
 }
@@ -163,29 +166,29 @@ export function getQueryCacheKey(queryKey: readonly unknown[], agencyId?: string
 export async function getCachedQuery<T>(
   queryKey: readonly unknown[],
   agencyId?: string,
-  maxAge?: number
+  maxAge?: number,
 ): Promise<T | null> {
   const id = getQueryCacheKey(queryKey, agencyId);
-  
+
   try {
     const cached = await db.queryCache.get(id);
-    
+
     if (!cached) return null;
-    
+
     // Version mismatch
     if (cached.version !== CACHE_VERSION) {
       await db.queryCache.delete(id);
       return null;
     }
-    
+
     // Age check
     if (maxAge && Date.now() - cached.timestamp > maxAge) {
       return null; // Stale, but don't delete (stale-while-revalidate)
     }
-    
+
     return cached.data as T;
   } catch (error) {
-    console.warn('[IndexedDB] Failed to get cached query:', error);
+    console.warn("[IndexedDB] Failed to get cached query:", error);
     return null;
   }
 }
@@ -197,10 +200,10 @@ export async function setCachedQuery<T>(
   queryKey: readonly unknown[],
   data: T,
   agencyId?: string,
-  etag?: string
+  etag?: string,
 ): Promise<void> {
   const id = getQueryCacheKey(queryKey, agencyId);
-  
+
   try {
     await db.queryCache.put({
       id,
@@ -212,7 +215,7 @@ export async function setCachedQuery<T>(
       version: CACHE_VERSION,
     });
   } catch (error) {
-    console.warn('[IndexedDB] Failed to set cached query:', error);
+    console.warn("[IndexedDB] Failed to set cached query:", error);
   }
 }
 
@@ -223,7 +226,7 @@ export async function clearQueryCache(): Promise<void> {
   try {
     await db.queryCache.clear();
   } catch (error) {
-    console.warn('[IndexedDB] Failed to clear query cache:', error);
+    console.warn("[IndexedDB] Failed to clear query cache:", error);
   }
 }
 
@@ -241,7 +244,7 @@ export async function clearAllData(): Promise<void> {
       db.mutations.clear(),
     ]);
   } catch (error) {
-    console.warn('[IndexedDB] Failed to clear all data:', error);
+    console.warn("[IndexedDB] Failed to clear all data:", error);
   }
 }
 
@@ -252,11 +255,13 @@ export async function clearAllData(): Promise<void> {
 /**
  * Get all cached talents for an agency
  */
-export async function getCachedTalents(agencyId: string): Promise<CachedTalent[]> {
+export async function getCachedTalents(
+  agencyId: string,
+): Promise<CachedTalent[]> {
   try {
-    return await db.talents.where('agency_id').equals(agencyId).toArray();
+    return await db.talents.where("agency_id").equals(agencyId).toArray();
   } catch (error) {
-    console.warn('[IndexedDB] Failed to get cached talents:', error);
+    console.warn("[IndexedDB] Failed to get cached talents:", error);
     return [];
   }
 }
@@ -268,44 +273,47 @@ export async function putTalents(talents: CachedTalent[]): Promise<void> {
   try {
     await db.talents.bulkPut(talents);
   } catch (error) {
-    console.warn('[IndexedDB] Failed to put talents:', error);
+    console.warn("[IndexedDB] Failed to put talents:", error);
   }
 }
 
 /**
  * Merge talents with existing (update existing, add new)
  */
-export async function mergeTalents(newTalents: CachedTalent[], agencyId: string): Promise<{
+export async function mergeTalents(
+  newTalents: CachedTalent[],
+  agencyId: string,
+): Promise<{
   added: number;
   updated: number;
   removed: number;
 }> {
   try {
     const existing = await getCachedTalents(agencyId);
-    const existingIds = new Set(existing.map(t => t.id));
-    const newIds = new Set(newTalents.map(t => t.id));
-    
+    const existingIds = new Set(existing.map((t) => t.id));
+    const newIds = new Set(newTalents.map((t) => t.id));
+
     // Count changes
-    const added = newTalents.filter(t => !existingIds.has(t.id)).length;
-    const removed = existing.filter(t => !newIds.has(t.id)).length;
-    
+    const added = newTalents.filter((t) => !existingIds.has(t.id)).length;
+    const removed = existing.filter((t) => !newIds.has(t.id)).length;
+
     let updated = 0;
     for (const talent of newTalents) {
       if (existingIds.has(talent.id)) {
-        const existingTalent = existing.find(t => t.id === talent.id);
+        const existingTalent = existing.find((t) => t.id === talent.id);
         if (JSON.stringify(existingTalent) !== JSON.stringify(talent)) {
           updated++;
         }
       }
     }
-    
+
     // Replace all talents for this agency
-    await db.talents.where('agency_id').equals(agencyId).delete();
+    await db.talents.where("agency_id").equals(agencyId).delete();
     await db.talents.bulkPut(newTalents);
-    
+
     return { added, updated, removed };
   } catch (error) {
-    console.warn('[IndexedDB] Failed to merge talents:', error);
+    console.warn("[IndexedDB] Failed to merge talents:", error);
     return { added: 0, updated: 0, removed: 0 };
   }
 }
@@ -326,7 +334,7 @@ export async function getSyncMeta(key: string): Promise<SyncMeta | undefined> {
  */
 export async function updateSyncMeta(
   key: string,
-  data: Partial<Omit<SyncMeta, 'key'>>
+  data: Partial<Omit<SyncMeta, "key">>,
 ): Promise<void> {
   await db.syncMeta.put({
     key,
@@ -344,12 +352,12 @@ export async function updateSyncMeta(
  * Queue a mutation for offline support
  */
 export async function queueMutation(
-  mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'status' | 'retryCount'>
+  mutation: Omit<QueuedMutation, "id" | "timestamp" | "status" | "retryCount">,
 ): Promise<number> {
   const id = await db.mutations.add({
     ...mutation,
     timestamp: Date.now(),
-    status: 'pending',
+    status: "pending",
     retryCount: 0,
   });
   return id as number;
@@ -359,7 +367,7 @@ export async function queueMutation(
  * Get pending mutations
  */
 export async function getPendingMutations(): Promise<QueuedMutation[]> {
-  return db.mutations.where('status').equals('pending').toArray();
+  return db.mutations.where("status").equals("pending").toArray();
 }
 
 /**
@@ -367,8 +375,8 @@ export async function getPendingMutations(): Promise<QueuedMutation[]> {
  */
 export async function updateMutationStatus(
   id: number,
-  status: QueuedMutation['status'],
-  error?: string
+  status: QueuedMutation["status"],
+  error?: string,
 ): Promise<void> {
   await db.mutations.update(id, { status, error });
 }
@@ -377,7 +385,7 @@ export async function updateMutationStatus(
  * Clear completed mutations
  */
 export async function clearCompletedMutations(): Promise<void> {
-  await db.mutations.where('status').equals('completed').delete();
+  await db.mutations.where("status").equals("completed").delete();
 }
 
 // ============================================
@@ -394,13 +402,14 @@ export async function getDbStats(): Promise<{
   queryCache: number;
   pendingMutations: number;
 }> {
-  const [talents, jobs, marketplace, queryCache, pendingMutations] = await Promise.all([
-    db.talents.count(),
-    db.jobs.count(),
-    db.marketplace.count(),
-    db.queryCache.count(),
-    db.mutations.where('status').equals('pending').count(),
-  ]);
-  
+  const [talents, jobs, marketplace, queryCache, pendingMutations] =
+    await Promise.all([
+      db.talents.count(),
+      db.jobs.count(),
+      db.marketplace.count(),
+      db.queryCache.count(),
+      db.mutations.where("status").equals("pending").count(),
+    ]);
+
   return { talents, jobs, marketplace, queryCache, pendingMutations };
 }

@@ -178,11 +178,11 @@ mod tests {
     #[test]
     fn test_metrics_counters() {
         let metrics = CacheMetrics::new(Duration::from_secs(60));
-        
+
         metrics.hit(CacheLevel::L1);
         metrics.hit(CacheLevel::L1);
         metrics.miss(CacheLevel::L1);
-        
+
         let (hits, misses) = metrics.get_stats(CacheLevel::L1);
         assert_eq!(hits, 2);
         assert_eq!(misses, 1);
