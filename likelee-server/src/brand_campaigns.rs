@@ -6908,7 +6908,8 @@ async fn try_release_campaign_offer_escrow(
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
 
-    if target_type != "agency" {
+    // Escrow release applies to both agency-collaborated offers and independent creator offers.
+    if target_type != "agency" && target_type != "creator" {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
@@ -6940,7 +6941,10 @@ async fn try_release_campaign_offer_escrow(
         .from("campaign_offer_deliverables")
         .select("id")
         .eq("offer_id", offer_id)
-        .eq("status", "brand_approved")
+        .in_(
+            "status",
+            vec!["brand_approved".to_string(), "approved".to_string()],
+        )
         .limit(1)
         .execute()
         .await
@@ -6962,15 +6966,229 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    let agency_id = offer
-        .get("target_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    // Independent creator offers do not use licensing_requests/licensing_payouts.
+    // We transfer the creator payout directly from the platform balance using budget_snapshot.
+    if target_type == "creator" {
+        let creator_id = offer
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+
+        let budget_snapshot = offer
+            .get("budget_snapshot")
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+        let net_str = budget_snapshot
+            .get("budget_creator_payment")
+            .and_then(|v| v.as_str())
+            .unwrap_or("0")
+            .replace(",", "");
+        let net_amount: f64 = net_str.parse().unwrap_or(0.0);
+        let net_amount_cents = (net_amount * 100.0).round() as i64;
+        if net_amount_cents <= 0 {
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+
+        // Atomically claim the escrow release (holding -> releasing) before triggering transfers.
+        let claim_resp = state
+            .pg
+            .from("campaign_offers")
+            .update(json!({"escrow_status": "releasing"}).to_string())
+            .eq("id", offer_id)
+            .eq("escrow_status", "holding")
+            .select("id")
+            .execute()
+            .await;
+
+        let claim_text = match claim_resp {
+            Ok(resp) if resp.status().is_success() => {
+                resp.text().await.unwrap_or_else(|_| "[]".into())
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                let err_text = resp.text().await.unwrap_or_default();
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    status = %status,
+                    err = %err_text,
+                    "escrow claim via releasing failed for creator offer; attempting fallback claim via released"
+                );
+                let fallback_resp = state
+                    .pg
+                    .from("campaign_offers")
+                    .update(json!({"escrow_status": "released"}).to_string())
+                    .eq("id", offer_id)
+                    .eq("escrow_status", "holding")
+                    .select("id")
+                    .execute()
+                    .await
+                    .map_err(|e| e.to_string())?;
+                if !fallback_resp.status().is_success() {
+                    return Ok(EscrowReleaseOutcome {
+                        payment_status: payment_status.to_string(),
+                        escrow_status: escrow_status.to_string(),
+                        released_now: false,
+                    });
+                }
+                fallback_resp.text().await.unwrap_or_else(|_| "[]".into())
+            }
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    error = %e,
+                    "escrow claim request failed for creator offer"
+                );
+                return Ok(EscrowReleaseOutcome {
+                    payment_status: payment_status.to_string(),
+                    escrow_status: escrow_status.to_string(),
+                    released_now: false,
+                });
+            }
+        };
+
+        let claimed_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&claim_text).unwrap_or_default();
+        if claimed_rows.is_empty() {
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: "released".to_string(),
+                released_now: false,
+            });
+        }
+
+        // Trigger the Stripe transfer to the creator (best-effort; failures are logged/recorded).
+        let currency = "USD".to_string();
+        let currency_enum = stripe_sdk::Currency::USD;
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        if let Ok(creator_account_id) = get_creator_stripe_account(state, &creator_id).await {
+            let metadata = std::collections::HashMap::from([
+                ("offer_id".to_string(), offer_id.to_string()),
+                ("creator_id".to_string(), creator_id.to_string()),
+                ("type".to_string(), "creator_earnings".to_string()),
+            ]);
+            let _ = crate::payouts::execute_and_record_stripe_transfer(
+                state,
+                &client,
+                &currency,
+                currency_enum,
+                "creator",
+                &creator_id,
+                &creator_account_id,
+                net_amount_cents,
+                metadata,
+                "record_campaign_offer_transfer",
+                "p_offer_id",
+                offer_id,
+            )
+            .await;
+        }
+
+        let _ = state
+            .pg
+            .from("campaign_offers")
+            .eq("id", offer_id)
+            .update(
+                json!({
+                    "escrow_status": "released",
+                    "escrow_released_at": chrono::Utc::now().to_rfc3339(),
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: "released".to_string(),
+            released_now: true,
+        });
+    }
+
     let billing_request_id = offer
         .get("billing_request_id")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if agency_id.is_empty() || billing_request_id.is_empty() {
+    if billing_request_id.is_empty() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    // Ensure we have a payout record ready before claiming the escrow release. If this is missing,
+    // transferring would be a no-op and we'd risk leaving the offer stuck in "releasing".
+    let payouts_resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("id,amount_cents,talent_splits")
+        .eq("licensing_request_id", billing_request_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !payouts_resp.status().is_success() {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+    let payouts_text = payouts_resp.text().await.map_err(|e| e.to_string())?;
+    let payouts_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&payouts_text).unwrap_or_default();
+    let payout = match payouts_rows.first() {
+        Some(p) => p,
+        None => {
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            })
+        }
+    };
+    let payout_agency_amount_cents = payout
+        .get("amount_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let payout_splits_total_cents = payout
+        .get("talent_splits")
+        .and_then(|v| v.as_array())
+        .map(|splits| {
+            splits
+                .iter()
+                .filter_map(|s| s.get("amount_cents").and_then(|v| v.as_i64()))
+                .sum::<i64>()
+        })
+        .unwrap_or(0);
+    if payout_agency_amount_cents <= 0 && payout_splits_total_cents <= 0 {
+        return Ok(EscrowReleaseOutcome {
+            payment_status: payment_status.to_string(),
+            escrow_status: escrow_status.to_string(),
+            released_now: false,
+        });
+    }
+
+    let agency_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if agency_id.is_empty() {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
