@@ -2442,7 +2442,10 @@ async fn handle_payment_link_checkout_completed(
                     error = %err_text,
                     "Atomic payment link checkout completion failed"
                 );
-                return Err(format!("complete_payment_link_checkout RPC failed: {}", err_text));
+                return Err(format!(
+                    "complete_payment_link_checkout RPC failed: {}",
+                    err_text
+                ));
             }
             let result_text = resp.text().await.unwrap_or_else(|_| "{}".into());
             info!(
