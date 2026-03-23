@@ -177,9 +177,9 @@ const LicensingRequestsView = ({
           talentId: String(req?.talent_id || ""),
           talentName: String(
             req?.talent_name ||
-            req?.creators?.full_legal_name ||
-            req?.creators?.stage_name ||
-            entitySingularTitle
+              req?.creators?.full_legal_name ||
+              req?.creators?.stage_name ||
+              entitySingularTitle,
           ),
         });
       }
@@ -293,8 +293,10 @@ const LicensingRequestsView = ({
   });
 
   const filteredBrandData = brandLicenseData.filter((req: any) => {
-    const isArchived = ["rejected", "declined", "archived"].includes(req.status);
-    return activeRequestTab === "Active" ? !isArchived : true; 
+    const isArchived = ["rejected", "declined", "archived"].includes(
+      req.status,
+    );
+    return activeRequestTab === "Active" ? !isArchived : true;
     // In this view, "Brand Requests" tab shows all pending brand requests.
   });
 
@@ -354,327 +356,340 @@ const LicensingRequestsView = ({
               </Card>
             )}
 
-          {activeRequestTab !== "Brand Requests" && filteredData.map((group: any) => (
-            <Card
-              key={group.group_key}
-              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {group.brand_name || "Unknown brand"}
-                  </h3>
-                  <p className="text-gray-500 font-medium">
-                    {(group.campaign_title || "").trim() || "\u2014"}
-                  </p>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
-                >
-                  {group.status}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-8">
-                {(group.talents || []).map((t: any) => {
-                  const names = (t.talent_name || "")
-                    .split(",")
-                    .map((s: string) => s.trim())
-                    .filter(Boolean);
-                  return names.map((name: string, i: number) => (
-                    <span
-                      key={`${t.licensing_request_id}-${i}`}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
-                    >
-                      {name || entitySingularTitle}
-                    </span>
-                  ));
-                })}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                <div className="space-y-4">
+          {activeRequestTab !== "Brand Requests" &&
+            filteredData.map((group: any) => (
+              <Card
+                key={group.group_key}
+                className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+              >
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Budget Range
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {formatBudget(group.budget_min, group.budget_max)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Regions
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {group.regions || "\u2014"}
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {group.brand_name || "Unknown brand"}
+                    </h3>
+                    <p className="text-gray-500 font-medium">
+                      {(group.campaign_title || "").trim() || "\u2014"}
                     </p>
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Usage Scope
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {(() => {
-                        const details = getRequestDetails(group);
-                        const territory = String(
-                          details?.territory || "",
-                        ).trim();
-                        if (territory) return territory;
-                        return (group.usage_scope || "").trim() || "\u2014";
-                      })()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      {group.license_start_date ? "Duration" : "Deadline"}
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {group.license_start_date && group.license_end_date
-                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
-                        : group.license_start_date
-                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
-                          : group.deadline
-                            ? new Date(group.deadline).toLocaleDateString()
-                            : "\u2014"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {group.status === "approved" ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                    <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" /> Approved
-                    </p>
-                  </div>
-                  {group.payment_link_id || group.payment_link_url ? (
-                    <Button
-                      onClick={() => sendPaymentLinkForGroup(group)}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                      disabled={
-                        !!sendPaymentBusyKey &&
-                        sendPaymentBusyKey ===
-                          String(group?.group_key || "")
-                      }
-                    >
-                      <Send className="w-4 h-4" />
-                      {sendPaymentBusyKey === String(group?.group_key || "")
-                        ? "Sending..."
-                        : "Resend payment link"}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => sendPaymentLinkForGroup(group)}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                      disabled={
-                        !!sendPaymentBusyKey &&
-                        sendPaymentBusyKey ===
-                          String(group?.group_key || "")
-                      }
-                    >
-                      <Send className="w-4 h-4" />
-                      {sendPaymentBusyKey === String(group?.group_key || "")
-                        ? "Sending..."
-                        : "Send payment link"}
-                    </Button>
-                  )}
-                </div>
-              ) : activeRequestTab === "Archive" ? (
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "pending")}
-                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  <span
+                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    Recover to Active
-                  </Button>
+                    {group.status}
+                  </span>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button
-                    onClick={() => updateGroupStatus(group, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <span className="text-[10px] font-bold">✓</span>
+
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {(group.talents || []).map((t: any) => {
+                    const names = (t.talent_name || "")
+                      .split(",")
+                      .map((s: string) => s.trim())
+                      .filter(Boolean);
+                    return names.map((name: string, i: number) => (
+                      <span
+                        key={`${t.licensing_request_id}-${i}`}
+                        className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+                      >
+                        {name || entitySingularTitle}
+                      </span>
+                    ));
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Budget Range
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {formatBudget(group.budget_min, group.budget_max)}
+                      </p>
                     </div>
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToCounter(group);
-                      setCounterOfferModalOpen(true);
-                    }}
-                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-                  >
-                    Counter Offer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "rejected")}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                      <span className="text-[10px] font-bold">\u2715</span>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Regions
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {group.regions || "\u2014"}
+                      </p>
                     </div>
-                    Decline
-                  </Button>
-                </div>
-              )}
-            </Card>
-          ))}
-
-          {activeRequestTab === "Brand Requests" && brandLicenseData.length === 0 && (
-            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">
-                No active brand requests
-              </div>
-            </Card>
-          )}
-
-          {activeRequestTab === "Brand Requests" && filteredBrandData.map((req: any) => (
-            <Card
-              key={req.id}
-              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {req.brands?.company_name || "Unknown Brand"}
-                  </h3>
-                  <p className="text-gray-500 font-medium text-sm">
-                    {req.description || "No description provided"}
-                  </p>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(req.status)}`}
-                >
-                  {req.status}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase">
-                  {req.talent_name || req.creators?.full_legal_name || req.creators?.stage_name || "Unknown"}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      License Fee
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.license_fee ? `$${Number(req.license_fee).toLocaleString()}` : "\u2014"}
-                    </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Territory
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.territory || req.usage_scope || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Exclusivity
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.exclusivity || "\u2014"}
-                    </p>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Usage Scope
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {(() => {
+                          const details = getRequestDetails(group);
+                          const territory = String(
+                            details?.territory || "",
+                          ).trim();
+                          if (territory) return territory;
+                          return (group.usage_scope || "").trim() || "\u2014";
+                        })()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        {group.license_start_date ? "Duration" : "Deadline"}
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {group.license_start_date && group.license_end_date
+                          ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                          : group.license_start_date
+                            ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                            : group.deadline
+                              ? new Date(group.deadline).toLocaleDateString()
+                              : "\u2014"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Duration
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.duration_days ? `${req.duration_days} Days` : "\u2014"}
+
+                {group.status === "approved" ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> Approved
+                      </p>
+                    </div>
+                    {group.payment_link_id || group.payment_link_url ? (
+                      <Button
+                        onClick={() => sendPaymentLinkForGroup(group)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                        disabled={
+                          !!sendPaymentBusyKey &&
+                          sendPaymentBusyKey === String(group?.group_key || "")
+                        }
+                      >
+                        <Send className="w-4 h-4" />
+                        {sendPaymentBusyKey === String(group?.group_key || "")
+                          ? "Sending..."
+                          : "Resend payment link"}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => sendPaymentLinkForGroup(group)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                        disabled={
+                          !!sendPaymentBusyKey &&
+                          sendPaymentBusyKey === String(group?.group_key || "")
+                        }
+                      >
+                        <Send className="w-4 h-4" />
+                        {sendPaymentBusyKey === String(group?.group_key || "")
+                          ? "Sending..."
+                          : "Send payment link"}
+                      </Button>
+                    )}
+                  </div>
+                ) : activeRequestTab === "Archive" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => updateGroupStatus(group, "pending")}
+                      className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Recover to Active
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button
+                      onClick={() => updateGroupStatus(group, "approved")}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                        <span className="text-[10px] font-bold">✓</span>
+                      </div>
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGroupToCounter(group);
+                        setCounterOfferModalOpen(true);
+                      }}
+                      className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                    >
+                      Counter Offer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => updateGroupStatus(group, "rejected")}
+                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                        <span className="text-[10px] font-bold">\u2715</span>
+                      </div>
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            ))}
+
+          {activeRequestTab === "Brand Requests" &&
+            brandLicenseData.length === 0 && (
+              <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+                <div className="text-gray-500 font-medium">
+                  No active brand requests
+                </div>
+              </Card>
+            )}
+
+          {activeRequestTab === "Brand Requests" &&
+            filteredBrandData.map((req: any) => (
+              <Card
+                key={req.id}
+                className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {req.brands?.company_name || "Unknown Brand"}
+                    </h3>
+                    <p className="text-gray-500 font-medium text-sm">
+                      {req.description || "No description provided"}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Timeline
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.license_start_date && req.license_end_date
-                        ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
-                        : req.license_start_date
-                          ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
+                  <span
+                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(req.status)}`}
+                  >
+                    {req.status}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-8">
+                  <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase">
+                    {req.talent_name ||
+                      req.creators?.full_legal_name ||
+                      req.creators?.stage_name ||
+                      "Unknown"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        License Fee
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.license_fee
+                          ? `$${Number(req.license_fee).toLocaleString()}`
                           : "\u2014"}
-                    </p>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Territory
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.territory || req.usage_scope || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Exclusivity
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.exclusivity || "\u2014"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Modifications Allowed
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {req.modifications_allowed || "\u2014"}
-                    </p>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Duration
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.duration_days
+                          ? `${req.duration_days} Days`
+                          : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Timeline
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.license_start_date && req.license_end_date
+                          ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
+                          : req.license_start_date
+                            ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
+                            : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        Modifications Allowed
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {req.modifications_allowed || "\u2014"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              {req.custom_terms && (
-                <div className="mb-8">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Custom Terms</p>
-                  <p className="text-sm font-medium text-gray-900 whitespace-pre-wrap">{req.custom_terms}</p>
-                </div>
-              )}
 
-              {req.status === "approved" ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                    <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" /> Contract Phase
+                {req.custom_terms && (
+                  <div className="mb-8">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Custom Terms
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 whitespace-pre-wrap">
+                      {req.custom_terms}
                     </p>
                   </div>
-                </div>
-              ) : req.status === "declined" ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
-                    <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
-                      <span className="text-[10px] font-bold">\u2715</span> Declined
-                    </p>
+                )}
+
+                {req.status === "approved" ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> Contract Phase
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    onClick={() => updateBrandRequestStatus(req, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <span className="text-[10px] font-bold">✓</span>
+                ) : req.status === "declined" ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
+                      <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-[10px] font-bold">\u2715</span>{" "}
+                        Declined
+                      </p>
                     </div>
-                    Accept & Write Contract
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToDecline(req);
-                      setDeclineModalOpen(true);
-                    }}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                      <span className="text-[10px] font-bold">\u2715</span>
-                    </div>
-                    Decline
-                  </Button>
-                </div>
-              )}
-            </Card>
-          ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button
+                      onClick={() => updateBrandRequestStatus(req, "approved")}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                        <span className="text-[10px] font-bold">✓</span>
+                      </div>
+                      Accept & Write Contract
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGroupToDecline(req);
+                        setDeclineModalOpen(true);
+                      }}
+                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                        <span className="text-[10px] font-bold">\u2715</span>
+                      </div>
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            ))}
         </div>
 
         <Dialog

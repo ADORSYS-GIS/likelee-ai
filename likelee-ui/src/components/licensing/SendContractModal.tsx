@@ -123,7 +123,10 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     const rows = Array.isArray(brandConnectionsData?.connections)
       ? brandConnectionsData.connections
       : [];
-    console.log("SendContractModal - Brand connections data:", brandConnectionsData);
+    console.log(
+      "SendContractModal - Brand connections data:",
+      brandConnectionsData,
+    );
     console.log("SendContractModal - Brand options count:", rows.length);
     const options = rows.map((row: any) => ({
       id: String(row?.brand_id || ""),
@@ -193,17 +196,23 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
       getAgencyTalents()
         .then((res) => {
           setTalents(res || []);
-          
+
           // Pre-select talent from brand request context
-          if (brandRequestContext?.talent_id && brandRequestContext?.talent_name) {
+          if (
+            brandRequestContext?.talent_id &&
+            brandRequestContext?.talent_name
+          ) {
             const talentList = res || [];
             const matchingTalent = talentList.find(
-              (t: any) => String(t.id) === String(brandRequestContext.talent_id)
+              (t: any) =>
+                String(t.id) === String(brandRequestContext.talent_id),
             );
-            
+
             if (matchingTalent) {
               setSelectedTalentIds([String(matchingTalent.id)]);
-              setSelectedTalentNames([matchingTalent.full_name || brandRequestContext.talent_name]);
+              setSelectedTalentNames([
+                matchingTalent.full_name || brandRequestContext.talent_name,
+              ]);
             } else if (brandRequestContext.talent_name) {
               // If talent not found in list, still show the name
               setSelectedTalentNames([brandRequestContext.talent_name]);
@@ -457,8 +466,13 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                 <Label htmlFor="client_email">Client Email</Label>
                 {brandOptions.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="allow-brand-change" className="text-xs text-gray-500 cursor-pointer">
-                      {brandRequestContext ? "Allow changing brand" : "Lock brand selection"}
+                    <Label
+                      htmlFor="allow-brand-change"
+                      className="text-xs text-gray-500 cursor-pointer"
+                    >
+                      {brandRequestContext
+                        ? "Allow changing brand"
+                        : "Lock brand selection"}
                     </Label>
                     <Switch
                       id="allow-brand-change"
@@ -468,7 +482,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                   </div>
                 )}
               </div>
-              
+
               {brandOptions.length > 0 ? (
                 <>
                   <Select
@@ -479,7 +493,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                         const match = brandOptions.find((b) => b.id === val);
                         if (match) {
                           setValue("client_name", match.name);
-                          if (match.email) setValue("client_email", match.email);
+                          if (match.email)
+                            setValue("client_email", match.email);
                         }
                       }
                     }}
@@ -495,7 +510,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                           (b) => b.id === brandRequestContext.brand_id,
                         ) && (
                           <SelectItem value={brandRequestContext.brand_id}>
-                            {brandRequestContext.brand_name || "Selected Brand"} ({brandRequestContext.brand_email || "No email"})
+                            {brandRequestContext.brand_name || "Selected Brand"}{" "}
+                            ({brandRequestContext.brand_email || "No email"})
                           </SelectItem>
                         )}
                       {brandOptions.map((brand) => (
@@ -507,7 +523,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                   </Select>
                   {brandRequestContext && !allowBrandChange && (
                     <p className="text-xs text-gray-500">
-                      Brand is locked to the request. Toggle to select a different brand.
+                      Brand is locked to the request. Toggle to select a
+                      different brand.
                     </p>
                   )}
                   {!brandRequestContext && allowBrandChange && (

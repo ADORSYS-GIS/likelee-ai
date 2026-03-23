@@ -1860,8 +1860,11 @@ export default function BrandDashboard() {
     const fee = Number(licenseRequestForm.license_fee || 0);
     setCreatingLicenseRequest(true);
     try {
-      const agencyId = selectedLicenseCreator.agency_id || selectedLicenseCreator.agency || undefined;
-      
+      const agencyId =
+        selectedLicenseCreator.agency_id ||
+        selectedLicenseCreator.agency ||
+        undefined;
+
       await createAgencyBrandLicensingRequest({
         creator_id: selectedLicenseCreator.id,
         agency_id: agencyId,
@@ -1878,7 +1881,7 @@ export default function BrandDashboard() {
         custom_terms: licenseRequestForm.custom_terms,
         modifications_allowed: licenseRequestForm.modifications_allowed,
       });
-      
+
       toast({
         title: "Licensing request created",
         description: "Your request has been sent to the agency.",
@@ -3462,12 +3465,12 @@ export default function BrandDashboard() {
               : status === "Declined"
                 ? "bg-red-100 text-red-700 border-red-200"
                 : "bg-amber-100 text-amber-700 border-amber-200";
-          
+
           const licenseFeeValue = req?.license_fee;
           const licenseFee = licenseFeeValue
             ? `$${Number(licenseFeeValue).toLocaleString()}`
             : "\u2014";
-            
+
           // Submissions might be an array or object
           let submissions = req?.license_submissions;
           if (submissions && !Array.isArray(submissions)) {
@@ -3479,7 +3482,7 @@ export default function BrandDashboard() {
             submission?.client_submitter_slug || submission?.docuseal_slug;
           const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
           const declineReason = String(req?.decline_reason || "").trim();
-          
+
           return (
             <Card
               key={req?.id}
@@ -3524,9 +3527,7 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <p className="text-gray-500">License Fee</p>
-                    <p className="font-semibold text-gray-900">
-                      {licenseFee}
-                    </p>
+                    <p className="font-semibold text-gray-900">{licenseFee}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Territory</p>
@@ -3556,7 +3557,7 @@ export default function BrandDashboard() {
                     </p>
                   </div>
                 )}
-                
+
                 {req?.description && (
                   <div className="text-sm">
                     <p className="text-gray-500">Description</p>

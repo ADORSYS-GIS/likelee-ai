@@ -192,7 +192,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   useEffect(() => {
     if (isOpen && brandRequestContext?.brand_id && brandOptions.length > 0) {
       setAllowBrandChange(true); // Turn on the toggle
-      const match = brandOptions.find((b) => b.id === brandRequestContext.brand_id);
+      const match = brandOptions.find(
+        (b) => b.id === brandRequestContext.brand_id,
+      );
       if (match) {
         setSelectedBrandId(match.id);
         setValue("client_name", match.name);
@@ -200,8 +202,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       } else if (brandRequestContext.brand_id) {
         // Brand not in connections, but we have the ID from context
         setSelectedBrandId(brandRequestContext.brand_id);
-        if (brandRequestContext.brand_name) setValue("client_name", brandRequestContext.brand_name);
-        if (brandRequestContext.brand_email) setValue("client_email", brandRequestContext.brand_email);
+        if (brandRequestContext.brand_name)
+          setValue("client_name", brandRequestContext.brand_name);
+        if (brandRequestContext.brand_email)
+          setValue("client_email", brandRequestContext.brand_email);
       }
     }
   }, [isOpen, brandRequestContext, brandOptions, setValue]);
@@ -216,7 +220,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
-      setSelectedTalentIds(brandRequestContext?.talent_id ? [brandRequestContext.talent_id] : []);
+      setSelectedTalentIds(
+        brandRequestContext?.talent_id ? [brandRequestContext.talent_id] : [],
+      );
       reset({
         client_name: brandRequestContext?.brand_name || "",
         talent_name: brandRequestContext?.talent_name || "",
@@ -259,6 +265,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         !currentData.talent_name ||
         !currentData.client_email
       ) {
+        // Debug: log which fields are missing
+        const missing = [];
+        if (!currentData.client_name) missing.push("client_name");
+        if (!currentData.talent_name) missing.push("talent_name");
+        if (!currentData.client_email) missing.push("client_email");
+        console.error("Validation failed. Missing fields:", missing, "Current data:", currentData);
+        
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields marked with *",
@@ -551,7 +564,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           {`${entitySingularTitle} Name *`}
                         </Label>
-                        <Popover open={talentPopoverOpen} onOpenChange={setTalentPopoverOpen}>
+                        <input type="hidden" {...register("talent_name", { required: true })} />
+                        <Popover
+                          open={talentPopoverOpen}
+                          onOpenChange={setTalentPopoverOpen}
+                        >
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -597,112 +614,119 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             align="start"
                           >
                             {talentPopoverOpen && (
-                              <Command key="talent-command" className="border-none" shouldFilter={false}>
+                              <Command
+                                key="talent-command"
+                                className="border-none"
+                                shouldFilter={false}
+                              >
                                 <CommandInput
                                   placeholder={`Search ${entitySingularLower}...`}
                                   className="border-none focus:ring-0 h-12"
                                 />
-                              <CommandList className="max-h-[300px]">
-                                <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
-                                  {`No ${entitySingularLower} found.`}
-                                </CommandEmpty>
-                                <CommandGroup>
-                                  {talents.map((t) => {
-                                    const talentName =
-                                      t.full_name ||
-                                      t.stage_name ||
-                                      t.full_legal_name ||
-                                      t.email ||
-                                      `Unknown ${entitySingularTitle}`;
-                                    const isSelected = formData.talent_name
-                                      ? formData.talent_name
-                                          .split(", ")
-                                          .includes(talentName)
-                                      : false;
-                                    return (
-                                      <CommandItem
-                                        key={t.id}
-                                        value={talentName}
-                                        onSelect={() => {
-                                          const currentNames =
-                                            formData.talent_name
-                                              ? formData.talent_name.split(", ")
-                                              : [];
-                                          let updatedNames;
-                                          let updatedIds = [
-                                            ...selectedTalentIds,
-                                          ];
+                                <CommandList className="max-h-[300px]">
+                                  <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
+                                    {`No ${entitySingularLower} found.`}
+                                  </CommandEmpty>
+                                  <CommandGroup>
+                                    {talents.map((t) => {
+                                      const talentName =
+                                        t.full_name ||
+                                        t.stage_name ||
+                                        t.full_legal_name ||
+                                        t.email ||
+                                        `Unknown ${entitySingularTitle}`;
+                                      const isSelected = formData.talent_name
+                                        ? formData.talent_name
+                                            .split(", ")
+                                            .includes(talentName)
+                                        : false;
+                                      return (
+                                        <CommandItem
+                                          key={t.id}
+                                          value={talentName}
+                                          onSelect={() => {
+                                            const currentNames =
+                                              formData.talent_name
+                                                ? formData.talent_name.split(
+                                                    ", ",
+                                                  )
+                                                : [];
+                                            let updatedNames;
+                                            let updatedIds = [
+                                              ...selectedTalentIds,
+                                            ];
 
-                                          if (isSelected) {
-                                            updatedNames = currentNames.filter(
-                                              (n) => n !== talentName,
-                                            );
-                                            // Remove ID
-                                            if (t.id) {
-                                              updatedIds = updatedIds.filter(
-                                                (id) => id !== t.id,
-                                              );
-                                            }
-                                          } else {
-                                            if (talentName) {
-                                              updatedNames = [
-                                                ...currentNames,
-                                                talentName,
-                                              ];
+                                            if (isSelected) {
+                                              updatedNames =
+                                                currentNames.filter(
+                                                  (n) => n !== talentName,
+                                                );
+                                              // Remove ID
+                                              if (t.id) {
+                                                updatedIds = updatedIds.filter(
+                                                  (id) => id !== t.id,
+                                                );
+                                              }
                                             } else {
-                                              updatedNames = currentNames;
+                                              if (talentName) {
+                                                updatedNames = [
+                                                  ...currentNames,
+                                                  talentName,
+                                                ];
+                                              } else {
+                                                updatedNames = currentNames;
+                                              }
+                                              // Add ID
+                                              if (
+                                                t.id &&
+                                                !updatedIds.includes(t.id)
+                                              ) {
+                                                updatedIds.push(t.id);
+                                              }
                                             }
-                                            // Add ID
-                                            if (
-                                              t.id &&
-                                              !updatedIds.includes(t.id)
-                                            ) {
-                                              updatedIds.push(t.id);
-                                            }
-                                          }
-                                          setSelectedTalentIds(updatedIds);
-                                          setValue(
-                                            "talent_name",
-                                            updatedNames.join(", "),
-                                          );
-                                        }}
-                                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
-                                      >
-                                        <div className="relative">
-                                          <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                                            <AvatarImage
-                                              src={t.profile_photo_url}
-                                            />
-                                            <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
-                                              {t.full_name?.substring(0, 2) ||
-                                                "UT"}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          {isSelected && (
-                                            <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
-                                              <Check className="h-2.5 w-2.5 text-white" />
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex flex-col">
-                                          <span
-                                            className={cn(
-                                              "font-bold text-slate-900",
-                                              isSelected && "text-indigo-600",
+                                            setSelectedTalentIds(updatedIds);
+                                            setValue(
+                                              "talent_name",
+                                              updatedNames.join(", "),
+                                            );
+                                          }}
+                                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                                        >
+                                          <div className="relative">
+                                            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                              <AvatarImage
+                                                src={t.profile_photo_url}
+                                              />
+                                              <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                                {t.full_name?.substring(0, 2) ||
+                                                  "UT"}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            {isSelected && (
+                                              <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                                <Check className="h-2.5 w-2.5 text-white" />
+                                              </div>
                                             )}
-                                          >
-                                            {talentName}
-                                          </span>
-                                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                            {`Agency ${entitySingularTitle}`}
-                                          </span>
-                                        </div>
-                                      </CommandItem>
-                                    );
-                                  })}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
+                                          </div>
+                                          <div className="flex flex-col">
+                                            <span
+                                              className={cn(
+                                                "font-bold text-slate-900",
+                                                isSelected && "text-indigo-600",
+                                              )}
+                                            >
+                                              {talentName}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                              {`Agency ${entitySingularTitle}`}
+                                            </span>
+                                          </div>
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
                             )}
                           </PopoverContent>
                         </Popover>
@@ -719,7 +743,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </Label>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
-                              <Label htmlFor="allow-brand-change-wizard" className="text-xs text-gray-500 cursor-pointer">
+                              <Label
+                                htmlFor="allow-brand-change-wizard"
+                                className="text-xs text-gray-500 cursor-pointer"
+                              >
                                 Use connected brands
                               </Label>
                               <Switch
@@ -730,17 +757,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             </div>
                           )}
                         </div>
-                        
+
                         {brandOptions.length > 0 && allowBrandChange ? (
                           <>
+                            <input type="hidden" {...register("client_email", { required: true })} />
                             <Select
                               value={selectedBrandId}
                               onValueChange={(val) => {
                                 setSelectedBrandId(val);
-                                const match = brandOptions.find((b) => b.id === val);
+                                const match = brandOptions.find(
+                                  (b) => b.id === val,
+                                );
                                 if (match) {
                                   setValue("client_name", match.name);
-                                  if (match.email) setValue("client_email", match.email);
+                                  if (match.email)
+                                    setValue("client_email", match.email);
                                 }
                               }}
                             >
@@ -751,10 +782,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 {brandRequestContext &&
                                   brandRequestContext.brand_id &&
                                   !brandOptions.some(
-                                    (b) => b.id === brandRequestContext.brand_id,
+                                    (b) =>
+                                      b.id === brandRequestContext.brand_id,
                                   ) && (
-                                    <SelectItem value={brandRequestContext.brand_id}>
-                                      {brandRequestContext.brand_name || "Selected Brand"}
+                                    <SelectItem
+                                      value={brandRequestContext.brand_id}
+                                    >
+                                      {brandRequestContext.brand_name ||
+                                        "Selected Brand"}
                                     </SelectItem>
                                   )}
                                 {brandOptions.map((brand) => (
@@ -765,7 +800,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-gray-500 ml-1">
-                              Select from your connected brands. Toggle off to enter email manually.
+                              Select from your connected brands. Toggle off to
+                              enter email manually.
                             </p>
                           </>
                         ) : (
