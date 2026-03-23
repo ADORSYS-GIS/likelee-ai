@@ -649,8 +649,10 @@ pub async fn create_campaign_offer_checkout(
         let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
         let creators_rows: Vec<serde_json::Value> =
             serde_json::from_str(&creators_text).unwrap_or_default();
-        let mut stripe_by_creator: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-        let mut name_by_creator: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut stripe_by_creator: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        let mut name_by_creator: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
         for r in &creators_rows {
             let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
             if cid.is_empty() {

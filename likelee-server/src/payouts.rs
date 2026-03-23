@@ -2467,7 +2467,8 @@ async fn handle_licensing_requests_checkout_session_completed(
             .clamp(0.0, 100.0);
 
         let talent_payout_rate = (100.0 - talent_rate).max(0.0).min(100.0);
-        let talent_earnings_cents = ((gross_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
+        let talent_earnings_cents =
+            ((gross_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
         let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_cents);
         let agency_earnings_cents = (gross_cents - talent_earnings_cents).max(0);
 
@@ -4567,10 +4568,7 @@ async fn handle_campaign_offer_agency_distribution(
         .execute()
         .await
         .map_err(|e| e.to_string())?;
-    let payments_txt = payments_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".into());
+    let payments_txt = payments_resp.text().await.unwrap_or_else(|_| "[]".into());
     let payment_rows: Vec<serde_json::Value> =
         serde_json::from_str(&payments_txt).unwrap_or_default();
 
@@ -4666,7 +4664,10 @@ async fn handle_campaign_offer_agency_distribution(
     if !missing_creator_by_talent.is_empty() {
         missing_creator_by_talent.sort();
         missing_creator_by_talent.dedup();
-        let tid_refs: Vec<&str> = missing_creator_by_talent.iter().map(|s| s.as_str()).collect();
+        let tid_refs: Vec<&str> = missing_creator_by_talent
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
         let map_resp = state
             .pg
             .from("agency_users")
@@ -4825,7 +4826,8 @@ async fn handle_campaign_offer_agency_distribution(
         .map_err(|e| e.to_string())?;
     if comm_resp.status().is_success() {
         let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let comm_rows: Vec<serde_json::Value> = serde_json::from_str(&comm_text).unwrap_or_default();
+        let comm_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&comm_text).unwrap_or_default();
         for r in comm_rows {
             let cid = r
                 .get("creator_id")
@@ -4956,7 +4958,12 @@ async fn handle_campaign_offer_agency_distribution(
         let talent_rate = custom_by_creator
             .get(&creator_id)
             .copied()
-            .unwrap_or_else(|| default_rate_by_creator.get(&creator_id).copied().unwrap_or(0.0))
+            .unwrap_or_else(|| {
+                default_rate_by_creator
+                    .get(&creator_id)
+                    .copied()
+                    .unwrap_or(0.0)
+            })
             .clamp(0.0, 100.0);
 
         let talent_payout_rate = (100.0 - talent_rate).max(0.0).min(100.0);

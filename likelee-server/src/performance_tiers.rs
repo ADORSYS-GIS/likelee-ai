@@ -634,7 +634,10 @@ pub async fn update_talent_commission(
     let agency_id = &auth_user.id;
     let creator_id = payload.creator_id.trim().to_string();
     if creator_id.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "creator_id is required".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "creator_id is required".to_string(),
+        ));
     }
 
     // Validate creator is actually linked to this agency (created talent or connected creator).
@@ -658,9 +661,13 @@ pub async fn update_talent_commission(
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let roster_text = roster_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let roster_text = roster_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let roster_rows: Vec<serde_json::Value> = serde_json::from_str(&roster_text).unwrap_or_default();
+    let roster_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&roster_text).unwrap_or_default();
     let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
     let roster_ok = !roster_rows.is_empty();
     let rel_ok = !rel_rows.is_empty();
@@ -679,10 +686,28 @@ pub async fn update_talent_commission(
     }
 
     let (resp_user, resp_tiers_db, resp_agency) = tokio::try_join!(
-        state.pg.from("agency_creator_commissions").select("commission_rate").eq("creator_id", &actual_creator_id).eq("agency_id", agency_id).limit(1).execute(),
-        state.pg.from("performance_tiers").eq("agency_id", agency_id).select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent").execute(),
-        state.pg.from("agencies").select("performance_commission_config").eq("id", agency_id).execute()
-    ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        state
+            .pg
+            .from("agency_creator_commissions")
+            .select("commission_rate")
+            .eq("creator_id", &actual_creator_id)
+            .eq("agency_id", agency_id)
+            .limit(1)
+            .execute(),
+        state
+            .pg
+            .from("performance_tiers")
+            .eq("agency_id", agency_id)
+            .select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent")
+            .execute(),
+        state
+            .pg
+            .from("agencies")
+            .select("performance_commission_config")
+            .eq("id", agency_id)
+            .execute()
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let text_user = resp_user.text().await.unwrap_or_else(|_| "[]".to_string());
     let user_data: Vec<serde_json::Value> = serde_json::from_str(&text_user).unwrap_or_default();
@@ -812,7 +837,10 @@ pub async fn update_talent_commission(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp_hist.status().is_success() {
-        let txt = resp_hist.text().await.unwrap_or_else(|_| "insert history failed".into());
+        let txt = resp_hist
+            .text()
+            .await
+            .unwrap_or_else(|_| "insert history failed".into());
         return Err((StatusCode::BAD_REQUEST, txt));
     }
 
@@ -854,7 +882,10 @@ pub async fn bulk_update_talent_commissions(
         )
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        let roster_text = roster_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let roster_text = roster_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
         let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".to_string());
         let roster_rows: Vec<serde_json::Value> =
             serde_json::from_str(&roster_text).unwrap_or_default();

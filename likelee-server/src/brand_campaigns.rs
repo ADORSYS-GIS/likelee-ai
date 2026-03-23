@@ -3593,12 +3593,16 @@ pub async fn refresh_offer_contract_status(
         );
         let mut contract = existing.clone();
         contract["meta"] = serde_json::Value::Object(merged_meta);
-        return Ok(Json(json!({"status":"ok","contract": contract, "refreshed": false})));
+        return Ok(Json(
+            json!({"status":"ok","contract": contract, "refreshed": false}),
+        ));
     }
 
     let submission_id = submission_id_opt.unwrap_or_default();
-    let docuseal_client =
-        DocuSealClient::new(state.docuseal_api_key.clone(), state.docuseal_api_url.clone());
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
     let details = match docuseal_client.get_submission(submission_id as i32).await {
         Ok(d) => d,
         Err(e) => {
@@ -3623,7 +3627,9 @@ pub async fn refresh_offer_contract_status(
             );
             let mut contract = existing.clone();
             contract["meta"] = serde_json::Value::Object(merged_meta);
-            return Ok(Json(json!({"status":"ok","contract": contract, "refreshed": false})));
+            return Ok(Json(
+                json!({"status":"ok","contract": contract, "refreshed": false}),
+            ));
         }
     };
 
@@ -4793,8 +4799,7 @@ pub async fn create_offer_talent_assignment(
 
     if creator_id.is_empty() {
         // Legacy/roster flow: resolve by talent_id (agency_users.id or alias id shapes).
-        canonical_talent_id =
-            trim_non_empty(&canonical_talent_id, "talent_id")?;
+        canonical_talent_id = trim_non_empty(&canonical_talent_id, "talent_id")?;
         let talent = resolve_agency_talent(&state, &user.id, &canonical_talent_id).await?;
         canonical_talent_id = talent
             .get("id")
@@ -4938,10 +4943,9 @@ pub async fn create_offer_talent_assignment(
                     insert_only_resp.text().await.unwrap_or_default(),
                 ));
             }
-            let row: serde_json::Value = serde_json::from_str(
-                &insert_only_resp.text().await.unwrap_or_default(),
-            )
-            .unwrap_or_default();
+            let row: serde_json::Value =
+                serde_json::from_str(&insert_only_resp.text().await.unwrap_or_default())
+                    .unwrap_or_default();
             return Ok(Json(json!({ "status": "ok", "assignment": row })));
         }
 
@@ -5401,7 +5405,10 @@ pub async fn submit_offer_deliverable(
                 .as_deref()
                 .map(str::trim)
                 .filter(|s| !s.is_empty())
-                .ok_or((StatusCode::BAD_REQUEST, "talent_id or creator_id required".to_string()))?;
+                .ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "talent_id or creator_id required".to_string(),
+                ))?;
             let talent = resolve_agency_talent(&state, &user.id, tid).await?;
             let assignment = state
                 .pg
@@ -6198,7 +6205,10 @@ pub async fn upload_offer_deliverable_form(
             }
 
             // Best-effort: preserve talent_id if supplied and it matches the creator.
-            let tid_opt = talent_id.as_deref().map(str::trim).filter(|s| !s.is_empty());
+            let tid_opt = talent_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty());
             let talent_id = if let Some(tid) = tid_opt {
                 let talent = resolve_agency_talent(&state, &user.id, tid).await?;
                 let canonical_tid = talent
@@ -6228,7 +6238,10 @@ pub async fn upload_offer_deliverable_form(
                 .as_deref()
                 .map(str::trim)
                 .filter(|s| !s.is_empty())
-                .ok_or((StatusCode::BAD_REQUEST, "talent_id or creator_id required".to_string()))?;
+                .ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "talent_id or creator_id required".to_string(),
+                ))?;
             let talent = resolve_agency_talent(&state, &user.id, tid).await?;
             let assignment = state
                 .pg

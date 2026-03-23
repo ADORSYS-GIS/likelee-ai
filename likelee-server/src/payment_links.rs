@@ -674,8 +674,8 @@ pub async fn generate_payment_link(
 
             // effective_rate is interpreted as the agency commission (deducted from gross).
             let talent_payout_rate = (100.0 - effective_rate).max(0.0).min(100.0);
-            let amount_cents = ((gross_share_cents as f64) * (talent_payout_rate / 100.0)).round()
-                as i64;
+            let amount_cents =
+                ((gross_share_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
             let amount_cents = amount_cents.max(0).min(gross_share_cents);
             let agency_commission_cents = (gross_share_cents - amount_cents).max(0);
 
