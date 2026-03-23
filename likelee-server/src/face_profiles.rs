@@ -506,7 +506,7 @@ pub async fn search_marketplace_profiles(
                 }
             }
         }
-        
+
         let mut agency_by_creator_id: HashMap<String, String> = HashMap::new();
 
         if profile_type == "all"

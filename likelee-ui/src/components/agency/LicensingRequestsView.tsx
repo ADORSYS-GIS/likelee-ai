@@ -532,6 +532,7 @@ const LicensingRequestsView = ({
             ))}
 
           {activeRequestTab === "Brand Requests" &&
+            !isLoadingBrandRequests &&
             brandLicenseData.length === 0 && (
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">

@@ -279,8 +279,12 @@ pub async fn create_draft(
         "start_date": start_date,
         "custom_terms": req.custom_terms,
         "brand_request_id": req.licensing_request_id,
-        "licensing_request_id": req.licensing_request_id,
     });
+
+    tracing::info!(
+        licensing_request_id = ?req.licensing_request_id,
+        "Creating draft with brand_request_id (NOT setting licensing_request_id to avoid FK constraint)"
+    );
 
     let resp = state
         .pg
@@ -827,8 +831,11 @@ pub async fn finalize(
             json!(requires_agency_signature),
         );
         if let Some(br_id) = &req.licensing_request_id {
+            tracing::info!(
+                brand_request_id = %br_id,
+                "Updating submission with brand_request_id in finalize (NOT setting licensing_request_id)"
+            );
             update_json.insert("brand_request_id".to_string(), json!(br_id));
-            update_json.insert("licensing_request_id".to_string(), json!(br_id));
         }
 
         let _ = state
@@ -1141,18 +1148,21 @@ pub async fn finalize(
             tracing::error!("Error creating licensing_request: {}", e);
         }
     }
-    
+
     // Update brand_license_requests with submission_id if this is linked to a brand request
-    let brand_request_id_opt = req.licensing_request_id.clone()
-        .or_else(|| submission_data["brand_request_id"].as_str().map(|s| s.to_string()));
-    
+    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
+        submission_data["brand_request_id"]
+            .as_str()
+            .map(|s| s.to_string())
+    });
+
     if let Some(brand_request_id) = brand_request_id_opt {
         let update_brand_req = json!({
             "submission_id": submission.id,
             "status": "approved",
             "updated_at": chrono::Utc::now().to_rfc3339()
         });
-        
+
         let _ = state
             .pg
             .from("brand_license_requests")
@@ -1160,7 +1170,7 @@ pub async fn finalize(
             .eq("id", &brand_request_id)
             .execute()
             .await;
-            
+
         tracing::info!(
             "Updated brand_license_request {} with submission_id {}",
             brand_request_id,
@@ -1400,7 +1410,9 @@ pub async fn resend(
                 .as_str()
                 .map(|s| s.to_string()),
             requires_agency_signature: existing_data["requires_agency_signature"].as_bool(),
-            licensing_request_id: existing_data["brand_request_id"].as_str().map(|s| s.to_string()),
+            licensing_request_id: existing_data["brand_request_id"]
+                .as_str()
+                .map(|s| s.to_string()),
         }
     };
 
@@ -2262,16 +2274,21 @@ pub async fn handle_webhook(
                     {
                         update_map.insert("signed_document_url".to_string(), json!(url));
                     }
-                    
+
                     // Update brand_license_requests status if linked
-                    if let Some(brand_request_id) = sub.get("brand_request_id").and_then(|v| v.as_str()) {
+                    if let Some(brand_request_id) =
+                        sub.get("brand_request_id").and_then(|v| v.as_str())
+                    {
                         let _ = pg
                             .from("brand_license_requests")
-                            .update(json!({
-                                "status": "completed",
-                                "submission_id": sub_id,
-                                "updated_at": chrono::Utc::now().to_rfc3339()
-                            }).to_string())
+                            .update(
+                                json!({
+                                    "status": "completed",
+                                    "submission_id": sub_id,
+                                    "updated_at": chrono::Utc::now().to_rfc3339()
+                                })
+                                .to_string(),
+                            )
                             .eq("id", brand_request_id)
                             .execute()
                             .await;

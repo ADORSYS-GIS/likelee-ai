@@ -239,15 +239,21 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
 
   // UseTemplate logic:
   const handleUseTemplate = (template: LicenseTemplate) => {
+    console.log(
+      "handleUseTemplate called with brandRequestContext:",
+      brandRequestContext,
+    );
     setSendTemplateId(template.id);
     setSendDocusealTemplateId(template.docuseal_template_id ?? null);
     setSendLicenseFee(template.license_fee);
     if (brandRequestContext) {
+      console.log("Setting initial values from brandRequestContext");
       setSendInitialValues({
         client_name: brandRequestContext.brand_name,
         client_email: brandRequestContext.brand_email,
       });
     } else {
+      console.log("No brandRequestContext, using empty initial values");
       setSendInitialValues({});
     }
     setIsSendModalOpen(true);
@@ -624,11 +630,25 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
           onClose={() => setWizardTemplate(null)}
           isSportsAgency={isSportsAgency}
           template={wizardTemplate}
+          brandRequestContext={
+            brandRequestContext
+              ? {
+                  brand_id: brandRequestContext.brand_id,
+                  brand_name: brandRequestContext.brand_name,
+                  brand_email: brandRequestContext.brand_email,
+                  licensing_request_id:
+                    brandRequestContext.licensing_request_id,
+                  talent_id: brandRequestContext.talent_id,
+                  talent_name: brandRequestContext.talent_name,
+                }
+              : undefined
+          }
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({
               queryKey: ["license-submissions"],
             });
+            onBrandRequestContextHandled?.();
           }}
         />
       )}

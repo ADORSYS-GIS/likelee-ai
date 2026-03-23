@@ -270,8 +270,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         if (!currentData.client_name) missing.push("client_name");
         if (!currentData.talent_name) missing.push("talent_name");
         if (!currentData.client_email) missing.push("client_email");
-        console.error("Validation failed. Missing fields:", missing, "Current data:", currentData);
-        
+        console.error(
+          "Validation failed. Missing fields:",
+          missing,
+          "Current data:",
+          currentData,
+        );
+
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields marked with *",
@@ -282,6 +287,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
       setIsSyncing(true);
       try {
+        // Debug: log what we're sending
+        console.log(
+          "Creating draft with brandRequestContext:",
+          brandRequestContext,
+        );
+        console.log(
+          "licensing_request_id being sent:",
+          brandRequestContext?.licensing_request_id,
+        );
+
         // 1. Create/Update draft in Likelee DB to persist client info early
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
@@ -564,7 +579,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           {`${entitySingularTitle} Name *`}
                         </Label>
-                        <input type="hidden" {...register("talent_name", { required: true })} />
+                        <input
+                          type="hidden"
+                          {...register("talent_name", { required: true })}
+                        />
                         <Popover
                           open={talentPopoverOpen}
                           onOpenChange={setTalentPopoverOpen}
@@ -760,7 +778,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
                         {brandOptions.length > 0 && allowBrandChange ? (
                           <>
-                            <input type="hidden" {...register("client_email", { required: true })} />
+                            <input
+                              type="hidden"
+                              {...register("client_email", { required: true })}
+                            />
                             <Select
                               value={selectedBrandId}
                               onValueChange={(val) => {

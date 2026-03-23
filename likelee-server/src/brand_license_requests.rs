@@ -86,7 +86,7 @@ pub async fn create(
     if !agency_id_hint.is_empty() {
         roster_query = roster_query.eq("agency_id", &agency_id_hint);
     }
-    
+
     // Don't limit yet - let's see all active entries first
     let roster_resp = roster_query
         .execute()
@@ -98,15 +98,23 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    tracing::info!("Agency roster lookup for creator {}: status={}, response={}", creator_id, roster_status, roster_text);
+    tracing::info!(
+        "Agency roster lookup for creator {}: status={}, response={}",
+        creator_id,
+        roster_status,
+        roster_text
+    );
 
     if !roster_status.is_success() {
-        return Err(sanitize_db_error(roster_status.as_u16(), roster_text.clone()));
+        return Err(sanitize_db_error(
+            roster_status.as_u16(),
+            roster_text.clone(),
+        ));
     }
 
     let mut roster_rows: Vec<serde_json::Value> =
         serde_json::from_str(&roster_text).unwrap_or_default();
-    
+
     if roster_rows.is_empty() {
         return Err((
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -116,7 +124,7 @@ pub async fn create(
                 .to_string(),
         ));
     }
-    
+
     // If multiple active entries, warn and pick the most recent
     if roster_rows.len() > 1 {
         tracing::warn!(
@@ -131,7 +139,7 @@ pub async fn create(
             b_date.cmp(a_date)
         });
     }
-    
+
     let talent_row = &roster_rows[0];
 
     let agency_id = talent_row
@@ -139,8 +147,13 @@ pub async fn create(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    
-    tracing::info!("Selected agency_id {} for creator {} from {} roster entries", agency_id, creator_id, roster_rows.len());
+
+    tracing::info!(
+        "Selected agency_id {} for creator {} from {} roster entries",
+        agency_id,
+        creator_id,
+        roster_rows.len()
+    );
     let talent_id = talent_row
         .get("id")
         .and_then(|v| v.as_str())
@@ -160,11 +173,15 @@ pub async fn create(
         ));
     }
 
-    let effective_brand_id = crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
     tracing::info!(
         "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
-        user.id, user.role, effective_brand_id, agency_id
+        user.id,
+        user.role,
+        effective_brand_id,
+        agency_id
     );
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
@@ -185,7 +202,11 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    tracing::info!("brand_agency_connections query status: {}, response: {}", connected_status, connected_text);
+    tracing::info!(
+        "brand_agency_connections query status: {}, response: {}",
+        connected_status,
+        connected_text
+    );
 
     let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
         serde_json::from_str(&connected_text).unwrap_or_default()
@@ -193,7 +214,9 @@ pub async fn create(
         &connected_text,
         "brand_agency_connections",
     ) {
-        tracing::info!("brand_agency_connections table not found, checking brand_agency_connection_requests");
+        tracing::info!(
+            "brand_agency_connections table not found, checking brand_agency_connection_requests"
+        );
         // Fallback: check connection requests table
         let fallback_resp = state
             .pg
@@ -210,9 +233,13 @@ pub async fn create(
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
-        tracing::info!("brand_agency_connection_requests query status: {}, response: {}", fb_status, fb_text);
-        
+
+        tracing::info!(
+            "brand_agency_connection_requests query status: {}, response: {}",
+            fb_status,
+            fb_text
+        );
+
         if !fb_status.is_success() {
             return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
         }
@@ -232,7 +259,7 @@ pub async fn create(
             .eq("brand_id", &effective_brand_id)
             .execute()
             .await;
-        
+
         if let Ok(resp) = all_conns_resp {
             if let Ok(text) = resp.text().await {
                 tracing::info!("All connections for brand {}: {}", effective_brand_id, text);
@@ -242,11 +269,12 @@ pub async fn create(
 
     // Check if connection exists with any status (active or accepted)
     if !connected_rows.is_empty() {
-        let conn_status = connected_rows[0].get("status")
+        let conn_status = connected_rows[0]
+            .get("status")
             .and_then(|v| v.as_str())
             .unwrap_or("");
         tracing::info!("Found connection with status: {}", conn_status);
-        
+
         // Accept both "active" and "accepted" statuses
         if conn_status != "active" && conn_status != "accepted" {
             return Err((
@@ -255,80 +283,14 @@ pub async fn create(
             ));
         }
     } else {
-        // No connection found - auto-create a connection request
-        tracing::info!(
-            "No connection found between brand {} and agency {}, auto-creating connection",
-            effective_brand_id, agency_id
-        );
-        
-        let connection_payload = json!({
-            "brand_id": effective_brand_id,
-            "agency_id": agency_id,
-            "status": "active",  // Changed from "accepted" to "active" for brand_agency_connections table
-            "connected_at": chrono::Utc::now().to_rfc3339(),
-            "created_at": chrono::Utc::now().to_rfc3339(),
-            "updated_at": chrono::Utc::now().to_rfc3339()
-        });
-        
-        tracing::info!("Creating connection with payload: {}", connection_payload);
-        
-        // Try to create in brand_agency_connections first
-        let create_conn_resp = state
-            .pg
-            .from("brand_agency_connections")
-            .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS
-            .insert(connection_payload.to_string())
-            .execute()
-            .await;
-            
-        match create_conn_resp {
-            Ok(resp) => {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                
-                if status.is_success() {
-                    tracing::info!("Successfully auto-created brand_agency_connection: {}", text);
-                } else if crate::face_profiles::is_missing_relation_error(&text, "brand_agency_connections") {
-                    // Table doesn't exist, try connection_requests table
-                    tracing::info!("brand_agency_connections table missing, trying connection_requests");
-                    let req_payload = json!({
-                        "brand_id": effective_brand_id,
-                        "agency_id": agency_id,
-                        "status": "accepted",
-                        "message": "Auto-created via license request",
-                        "created_at": chrono::Utc::now().to_rfc3339(),
-                        "updated_at": chrono::Utc::now().to_rfc3339()
-                    });
-                    
-                    let req_resp = state
-                        .pg
-                        .from("brand_agency_connection_requests")
-                        .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS
-                        .insert(req_payload.to_string())
-                        .execute()
-                        .await;
-                        
-                    match req_resp {
-                        Ok(r) if r.status().is_success() => {
-                            tracing::info!("Successfully auto-created brand_agency_connection_request");
-                        }
-                        Ok(r) => {
-                            let status = r.status();
-                            let err_text = r.text().await.unwrap_or_default();
-                            tracing::warn!("Failed to create connection_request: status={}, body={}", status, err_text);
-                        }
-                        Err(e) => {
-                            tracing::warn!("Error creating connection_request: {}", e);
-                        }
-                    }
-                } else {
-                    tracing::warn!("Failed to auto-create connection: status={}, body={}", status, text);
-                }
-            }
-            Err(e) => {
-                tracing::warn!("Error auto-creating connection: {}", e);
-            }
-        }
+        // No connection found - require explicit connection
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!(
+                "You are not connected to this agency. Please connect with the agency first before requesting licenses for their talent. \
+                Contact the agency directly or use the agency connection feature in your dashboard."
+            ),
+        ));
     }
 
     // ── Step 3: Build and insert the request ──
@@ -371,12 +333,15 @@ pub async fn create(
         "status": "pending",
     });
 
-    tracing::info!("Creating brand license request with payload: {}", insert_payload);
+    tracing::info!(
+        "Creating brand license request with payload: {}",
+        insert_payload
+    );
 
     let create_resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS
+        .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
         .insert(insert_payload.to_string())
         .select("id")
         .single()
@@ -471,7 +436,7 @@ pub async fn list_for_agency(
         .limit(10)
         .execute()
         .await;
-    
+
     if let Ok(resp) = all_requests_resp {
         if let Ok(text) = resp.text().await {
             tracing::info!("ALL brand license requests in database (last 10): {}", text);
@@ -498,7 +463,11 @@ pub async fn list_for_agency(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !status.is_success() {
-        tracing::error!("Failed to fetch brand license requests: status={}, body={}", status, text);
+        tracing::error!(
+            "Failed to fetch brand license requests: status={}, body={}",
+            status,
+            text
+        );
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 

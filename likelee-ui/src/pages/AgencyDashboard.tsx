@@ -18879,6 +18879,7 @@ export default function AgencyDashboard() {
               <LicensingRequestsView
                 isSportsAgency={isSportsAgency}
                 onBrandRequestAccepted={(ctx) => {
+                  console.log("Brand request accepted, context:", ctx);
                   setBrandRequestContext(ctx);
                   setActiveView("licensing", "License Templates");
                 }}
@@ -18914,9 +18915,10 @@ export default function AgencyDashboard() {
                       }
                     : null
                 }
-                onBrandRequestContextHandled={() =>
-                  setBrandRequestContext(null)
-                }
+                onBrandRequestContextHandled={() => {
+                  console.log("Brand request context handled, clearing");
+                  setBrandRequestContext(null);
+                }}
               />
             )}
           {activeTab === "protection" &&
