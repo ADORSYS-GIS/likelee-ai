@@ -2643,7 +2643,14 @@ export default function BrandCampaignDashboard({
                   setCampaignBrief={setCampaignBrief}
                   onReferenceImagesUpload={handleReferenceImageUpload}
                   onBrandAssetsUpload={handleBrandAssetsUpload}
-                  onBack={() => setNewCampaignStep(1)}
+                  onBack={() => {
+                    if (brandCampaignId) {
+                      // Do nothing or optionally show a toast.
+                      // Since the user says step 1 shouldn't change, we stay at step 2.
+                      return;
+                    }
+                    setNewCampaignStep(1);
+                  }}
                   onNext={handleStep2Next}
                   uploading={uploadingImages}
                 />

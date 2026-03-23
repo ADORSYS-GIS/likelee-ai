@@ -4673,13 +4673,21 @@ export default function BrandDashboard() {
         brandCampaignId: campaignId,
         name: campaign?.name || "",
         objective: campaign?.objective || "",
-        start_date: campaign?.due_date || "",
+        start_date: campaign?.start_date || "",
         brief_snapshot:
           campaign?.brief_snapshot &&
           typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {},
-        startStep: 3,
+        category: campaign?.category || "",
+        description: campaign?.description || "",
+        usage_scope: campaign?.usage_scope || "",
+        territory: campaign?.territory || "",
+        exclusivity: campaign?.exclusivity || "",
+        budget_range: campaign?.budget_range || "",
+        custom_terms: campaign?.custom_terms || "",
+        duration_days: campaign?.duration_days || "",
+        startStep: 2,
       });
       setActiveSection("campaigns-hub");
       setOpenCampaignModalSignal((prev) => prev + 1);
@@ -4783,9 +4791,16 @@ export default function BrandDashboard() {
           String(offer?.target_avatar_url || "").trim() || "/favicon.svg",
         ],
         channels: [],
-        go_live: formattedStartDate,
-        due_date: formattedDueDate,
         duration_days: durationDays,
+        category: String(brandCampaigns?.category || "").trim(),
+        description: String(brandCampaigns?.description || "").trim(),
+        objective: String(brandCampaigns?.objective || "").trim(),
+        usage_scope: String(brandCampaigns?.usage_scope || "").trim(),
+        territory: String(brandCampaigns?.territory || "").trim(),
+        exclusivity: String(brandCampaigns?.exclusivity || "").trim(),
+        budget_range: String(brandCampaigns?.budget_range || "").trim(),
+        start_date: String(brandCampaigns?.start_date || "").trim(),
+        custom_terms: String(brandCampaigns?.custom_terms || "").trim(),
         assets_delivered: 0,
         last_update: offer?.updated_at
           ? new Date(String(offer.updated_at)).toLocaleString()
