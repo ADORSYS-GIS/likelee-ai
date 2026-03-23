@@ -1261,7 +1261,9 @@ export default function BrandDashboard() {
 
   const isRefreshableDocuSealContract = (contract: any) => {
     if (!contract) return false;
-    const status = String(contract?.docuseal_status || "").toLowerCase().trim();
+    const status = String(contract?.docuseal_status || "")
+      .toLowerCase()
+      .trim();
     if (!status || status === "draft") return false;
     if (
       [
