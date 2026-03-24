@@ -949,7 +949,7 @@ pub async fn get_balance(
             .any(|c| c == &r.currency.to_uppercase())
     });
 
-    // Stripe-connected cashoutable balance snapshot (best-effort).
+    // Stripe-connected cashout balance snapshot (best-effort).
     let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
     let stripe_account_id = match state
         .pg
@@ -3809,7 +3809,7 @@ pub async fn get_agency_balance(
         .unwrap_or("USD")
         .to_string();
 
-    // Stripe-connected cashoutable balance snapshot (best-effort).
+    // Stripe-connected cashout balance snapshot (best-effort).
     let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
     let stripe_account_id = match state
         .pg
