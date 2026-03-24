@@ -9185,7 +9185,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              Cashoutable Balance (Stripe)
+              cashout Balance (Stripe)
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
@@ -12524,7 +12524,7 @@ export default function CreatorDashboard() {
               const internalHeldCents =
                 balances.find((b) => b.currency === "USD")?.available_cents ||
                 0;
-              const stripeCashoutableCents =
+              const stripecashoutCents =
                 stripeBalances.find((b) => b.currency === "USD")
                   ?.available_cents || 0;
               return (
@@ -12537,7 +12537,7 @@ export default function CreatorDashboard() {
                           Held (pending transfer)
                         </div>
                         <div className="text-xs text-amber-800/70">
-                          Tracked in Likelee. Not necessarily cashoutable yet.
+                          Tracked in Likelee. Not necessarily cashout yet.
                         </div>
                       </div>
                     </div>
@@ -12551,7 +12551,7 @@ export default function CreatorDashboard() {
                       <WalletIcon className="h-5 w-5 text-emerald-600" />
                       <div className="leading-tight">
                         <div className="text-emerald-900 font-medium">
-                          Cashoutable (Stripe)
+                          cashout (Stripe)
                         </div>
                         <div className="text-xs text-emerald-800/70">
                           Available in your connected Stripe account.
@@ -12559,7 +12559,7 @@ export default function CreatorDashboard() {
                       </div>
                     </div>
                     <span className="text-emerald-900 font-bold text-lg">
-                      ${(stripeCashoutableCents / 100).toFixed(2)}
+                      ${(stripecashoutCents / 100).toFixed(2)}
                     </span>
                   </div>
                 </div>

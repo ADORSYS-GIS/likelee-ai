@@ -336,13 +336,13 @@ const ConnectBankView = ({
       return;
     }
     const amountCents = Math.round(amountDollars * 100);
-    const stripeCashoutableCents =
+    const stripecashoutCents =
       status?.stripe_balances?.find((b) => b.currency === "USD")
         ?.available_cents || 0;
-    if (amountCents > stripeCashoutableCents) {
+    if (amountCents > stripecashoutCents) {
       toast({
         title: "Insufficient funds",
-        description: `Cashoutable in Stripe: $${(stripeCashoutableCents / 100).toFixed(2)}`,
+        description: `cashout in Stripe: $${(stripecashoutCents / 100).toFixed(2)}`,
         variant: "destructive" as any,
       });
       return;
@@ -466,7 +466,7 @@ const ConnectBankView = ({
                       : "$0.00"}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium mt-1">
-                    Tracked in Likelee. Not necessarily cashoutable yet.
+                    Tracked in Likelee. Not necessarily cashout yet.
                   </p>
                 </Card>
 
@@ -474,7 +474,7 @@ const ConnectBankView = ({
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-indigo-600" />
                     <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                      Cashoutable (Stripe)
+                      cashout (Stripe)
                     </p>
                   </div>
                   <p className="text-2xl font-black text-gray-900">
