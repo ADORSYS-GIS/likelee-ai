@@ -16387,7 +16387,9 @@ const RoyaltiesPayoutsView = ({
                                 PREVIOUS
                               </p>
                               <span className="text-sm font-bold text-gray-300 line-through decoration-1">
-                                {item.old_rate ? `${item.old_rate}%` : "0%"}
+                                {typeof item.old_rate === "number"
+                                  ? `${item.old_rate}%`
+                                  : "—"}
                               </span>
                             </div>
                             <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-300 transition-colors" />
@@ -16396,7 +16398,11 @@ const RoyaltiesPayoutsView = ({
                                 NEW RATE
                               </p>
                               <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-md shadow-indigo-100 block">
-                                {item.new_rate}%
+                                {item.action === "reset"
+                                  ? "Reset"
+                                  : typeof item.new_rate === "number"
+                                    ? `${item.new_rate}%`
+                                    : "—"}
                               </span>
                             </div>
                           </div>
@@ -16545,14 +16551,17 @@ const RoyaltiesPayoutsView = ({
                                 step="1"
                                 value={
                                   talentCustomRateDrafts?.[
-                                    (talent.creator_id as string) || ""
+                                    (talent.creator_id as string | undefined) ||
+                                      talent.id
                                   ] ?? ""
                                 }
                                 onChange={(e) =>
                                   setTalentCustomRateDrafts((prev) => ({
                                     ...(prev || {}),
-                                    [(talent.creator_id as string) || ""]:
-                                      e.target.value,
+                                    [
+                                      (talent.creator_id as string | undefined) ||
+                                        talent.id
+                                    ]: e.target.value,
                                   }))
                                 }
                                 onBlur={() =>

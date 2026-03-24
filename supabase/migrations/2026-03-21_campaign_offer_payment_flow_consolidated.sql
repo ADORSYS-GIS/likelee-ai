@@ -615,7 +615,8 @@ CREATE TABLE IF NOT EXISTS public.agency_creator_commission_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
   creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
-  commission_rate numeric(10, 2) NOT NULL CHECK (commission_rate >= 0 AND commission_rate <= 100),
+  action text NOT NULL DEFAULT 'set' CHECK (action IN ('set', 'reset')),
+  commission_rate numeric(10, 2) CHECK (commission_rate >= 0 AND commission_rate <= 100),
   changed_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -628,6 +629,45 @@ DROP POLICY IF EXISTS "Agencies can view creator commission history" ON public.a
 CREATE POLICY "Agencies can view creator commission history"
   ON public.agency_creator_commission_history FOR SELECT
   USING (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can insert creator commission history" ON public.agency_creator_commission_history;
+CREATE POLICY "Agencies can insert creator commission history"
+  ON public.agency_creator_commission_history FOR INSERT
+  WITH CHECK (agency_id = auth.uid());
+
+-- Forward-compat: if the table existed before this migration, ensure it supports reset rows.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_creator_commission_history'
+      AND column_name = 'commission_rate'
+      AND is_nullable = 'NO'
+  ) THEN
+    ALTER TABLE public.agency_creator_commission_history
+      ALTER COLUMN commission_rate DROP NOT NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_creator_commission_history'
+      AND column_name = 'action'
+  ) THEN
+    ALTER TABLE public.agency_creator_commission_history
+      ADD COLUMN action text NOT NULL DEFAULT 'set';
+  END IF;
+
+  -- Re-apply the action check constraint defensively.
+  ALTER TABLE public.agency_creator_commission_history
+    DROP CONSTRAINT IF EXISTS agency_creator_commission_history_action_check;
+  ALTER TABLE public.agency_creator_commission_history
+    ADD CONSTRAINT agency_creator_commission_history_action_check
+    CHECK (action IN ('set', 'reset'));
+END $$;
 
 DO $$
 BEGIN
