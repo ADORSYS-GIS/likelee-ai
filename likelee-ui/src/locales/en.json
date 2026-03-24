@@ -2624,7 +2624,8 @@
       "modalTitle": "Upload Reference Image",
       "sectionLabel": "Section:",
       "bestForLabel": "Best For:"
-    },
+    }
+  },
     "contentTypes": {
       "socialMediaAds": "Social media ads",
       "webBannerCampaigns": "Web & banner campaigns",
