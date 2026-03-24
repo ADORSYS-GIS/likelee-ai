@@ -645,6 +645,8 @@ export default function BrandDashboard() {
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
+  // Note: "completed" state maps to "Expired" UI label per #360
+  // Expired campaigns can be marked as "completed" (done) or "incomplete" (not done)
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");

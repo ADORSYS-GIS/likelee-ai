@@ -913,13 +913,17 @@ pub async fn mark_campaign_done(
     let updated_row: serde_json::Value =
         serde_json::from_str(&update_text).unwrap_or_else(|_| json!({}));
 
-    let terminal_offer_statuses = "(cancelled,declined,expired,completed)";
-    let _ = state
+    // Update non-terminal offers to completed status
+    // Using individual neq() calls for better Postgrest compatibility
+    if let Err(e) = state
         .pg
         .from("campaign_offers")
         .eq("brand_campaign_id", &campaign_id)
         .eq("brand_id", &user.id)
-        .not("status", "in", terminal_offer_statuses)
+        .neq("status", "cancelled")
+        .neq("status", "declined")
+        .neq("status", "expired")
+        .neq("status", "completed")
         .update(
             json!({
                 "status": "completed",
@@ -928,7 +932,10 @@ pub async fn mark_campaign_done(
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to update campaign offers status: {}", e);
+    }
 
     let campaign_name = row
         .get("name")
@@ -5725,13 +5732,24 @@ pub async fn handle_webhook(
         .map(|s| is_submitter_signed(&s.to_lowercase()))
         .unwrap_or(false);
 
-    // 2. Update the parent campaign_offers status
+    // 2. Update the parent campaign_offers status and log activity
     if !offer_id.is_empty() {
         if brand_signed || new_status == "completed" {
             info!(
                 offer_id,
                 "Updating campaign offer status to contract_fully_signed via webhook"
             );
+
+            // Fetch offer details for activity logging
+            let offer_resp = state
+                .pg
+                .from("campaign_offers")
+                .select("brand_id,brand_campaign_id,target_type,target_id")
+                .eq("id", offer_id)
+                .single()
+                .execute()
+                .await;
+
             let _ = state
                 .pg
                 .from("campaign_offers")
@@ -5745,6 +5763,51 @@ pub async fn handle_webhook(
                 .eq("id", offer_id)
                 .execute()
                 .await;
+
+            // Log contract signing activity
+            if let Ok(offer_resp) = offer_resp {
+                if let Ok(offer_text) = offer_resp.text().await {
+                    if let Ok(offer_data) = serde_json::from_str::<serde_json::Value>(&offer_text) {
+                        let brand_id = offer_data
+                            .get("brand_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let campaign_id =
+                            offer_data.get("brand_campaign_id").and_then(|v| v.as_str());
+                        let target_type = offer_data
+                            .get("target_type")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let target_id = offer_data
+                            .get("target_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+
+                        if !brand_id.is_empty() && !target_id.is_empty() {
+                            let actor_name = if target_type == "agency" {
+                                resolve_agency_name(&state, target_id)
+                                    .await
+                                    .unwrap_or_else(|| "Agency".to_string())
+                            } else {
+                                resolve_creator_name(&state, target_id)
+                                    .await
+                                    .unwrap_or_else(|| "Creator".to_string())
+                            };
+
+                            log_activity_event(
+                                &state,
+                                brand_id,
+                                campaign_id,
+                                target_type,
+                                &actor_name,
+                                "contract.signed",
+                                format!("{} signed the contract.", actor_name),
+                            )
+                            .await;
+                        }
+                    }
+                }
+            }
         } else if new_status == "opened" {
             let _ = state
                 .pg
