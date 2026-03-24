@@ -757,9 +757,9 @@ export default function ReserveProfile() {
           msg.includes("already exists")
         ) {
           toast({
-            title: "Email Already Registered",
+            title: "Verification Email Sent",
             description:
-              "This email is already registered. Please log in instead.",
+              "A verification email has been sent to your inbox. Please check your email and click the verification link to continue.",
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
         } else {
@@ -908,6 +908,42 @@ export default function ReserveProfile() {
       return;
     }
     try {
+      // Construct payload from formData
+      const payload: any = {
+        id: user.id,
+        email: formData.email,
+        full_name:
+          formData.creator_type === "model_actor"
+            ? formData.stage_name || formData.full_name
+            : formData.full_name,
+        creator_type: formData.creator_type,
+        content_types: formData.content_types || [],
+        content_other: formData.content_other || null,
+        industries: formData.industries || [],
+        primary_platform: formData.primary_platform || null,
+        platform_handle: formData.platform_handle || null,
+        work_types: formData.work_types || [],
+        representation_status: formData.representation_status || "",
+        headshot_url: formData.headshot_url || "",
+        sport: formData.sport || null,
+        athlete_type: formData.athlete_type || null,
+        school_name: formData.school_name || null,
+        age: formData.age || null,
+        languages: formData.languages || null,
+        instagram_handle: formData.instagram_handle || null,
+        twitter_handle: formData.twitter_handle || null,
+        brand_categories: formData.brand_categories || [],
+        bio: formData.bio || null,
+        city: formData.city || "",
+        state: formData.state || "",
+        birthdate: formData.birthdate || "",
+        ethnicity: formData.ethnicity || [],
+        gender: formData.gender || "",
+        vibes: formData.vibes || [],
+        visibility: formData.visibility || "private",
+        status: "waitlist",
+      };
+
       const { error } = await supabase
         .from("creators")
         .upsert(payload, { onConflict: "id" });
