@@ -878,10 +878,12 @@ pub async fn mark_campaign_done(
     if completed_at_exists {
         return Ok(Json(row));
     }
-    if status_raw == "archived" {
+    // Only allow marking done for active campaigns
+    let allowed_statuses = ["active", "in_progress", "pending"];
+    if !allowed_statuses.contains(&status_raw.as_str()) {
         return Err((
             StatusCode::BAD_REQUEST,
-            "campaign cannot be marked done".to_string(),
+            format!("Cannot mark campaign as done with status: {}", status_raw),
         ));
     }
 
@@ -914,7 +916,7 @@ pub async fn mark_campaign_done(
         serde_json::from_str(&update_text).unwrap_or_else(|_| json!({}));
 
     let terminal_offer_statuses = "(cancelled,declined,expired,completed)";
-    let _ = state
+    if let Err(e) = state
         .pg
         .from("campaign_offers")
         .eq("brand_campaign_id", &campaign_id)
@@ -928,7 +930,10 @@ pub async fn mark_campaign_done(
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to update campaign offers status: {}", e);
+    }
 
     let campaign_name = row
         .get("name")
@@ -6391,12 +6396,15 @@ pub(crate) async fn log_activity_event_with_subject(
     payload.insert("subject_id".to_string(), json!(subject_value));
     payload.insert("title".to_string(), json!(description));
     payload.insert("subtitle".to_string(), json!(actor_name));
-    let _ = state
+    if let Err(e) = state
         .pg
         .from("brand_activity_events")
         .insert(serde_json::Value::Object(payload).to_string())
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to log activity event: {}", e);
+    }
 }
 
 async fn log_activity_event(
