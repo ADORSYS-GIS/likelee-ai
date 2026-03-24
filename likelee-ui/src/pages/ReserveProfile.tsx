@@ -757,9 +757,8 @@ export default function ReserveProfile() {
           msg.includes("already exists")
         ) {
           toast({
-            title: "Verification Email Sent",
-            description:
-              "A verification email has been sent to your inbox. Please check your email and click the verification link to continue.",
+            title: t("reserveProfile.toasts.emailRegisteredTitle"),
+            description: t("reserveProfile.toasts.emailRegisteredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
         } else {
