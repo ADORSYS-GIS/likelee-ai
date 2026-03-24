@@ -16558,10 +16558,10 @@ const RoyaltiesPayoutsView = ({
                                 onChange={(e) =>
                                   setTalentCustomRateDrafts((prev) => ({
                                     ...(prev || {}),
-                                    [
-                                      (talent.creator_id as string | undefined) ||
-                                        talent.id
-                                    ]: e.target.value,
+                                    [(talent.creator_id as
+                                      | string
+                                      | undefined) || talent.id]:
+                                      e.target.value,
                                   }))
                                 }
                                 onBlur={() =>
