@@ -28,6 +28,7 @@ pub struct ApplicationCacheEntry {
 
 /// Function type for background refresh
 /// Returns a boxed future that resolves to an optional cached value
+#[allow(dead_code)]
 pub type RefreshFn = Box<
     dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Arc<[u8]>>> + Send>>
         + Send
@@ -201,6 +202,7 @@ impl ApplicationCache {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn stop_rx(&self) -> Option<tokio::sync::watch::Receiver<bool>> {
         self.stop_tx.as_ref().map(|tx| tx.subscribe())
     }
@@ -213,6 +215,7 @@ impl Drop for ApplicationCache {
 }
 
 /// Background refresh task for application cache
+#[allow(dead_code)]
 pub struct CacheRefreshTask {
     /// Cache reference
     cache: Arc<ApplicationCache>,
@@ -222,6 +225,7 @@ pub struct CacheRefreshTask {
     refreshers: HashMap<String, RefreshFn>,
 }
 
+#[allow(dead_code)]
 impl CacheRefreshTask {
     /// Create a new refresh task
     pub fn new(cache: Arc<ApplicationCache>, interval: Duration) -> Self {

@@ -45,6 +45,7 @@ use super::{ApplicationCache, CacheLevel, CacheMetrics, RequestCache, SessionCac
 ///     }
 /// ).await?;
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub async fn with_cache_fallback<T, F, Fut>(
     l1: &Arc<RwLock<RequestCache>>,
     l2: &Arc<SessionCache>,

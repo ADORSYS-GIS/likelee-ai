@@ -131,6 +131,7 @@ impl IdempotencyStore {
 }
 
 /// Helper to extract idempotency key from request headers
+#[allow(dead_code)]
 pub fn extract_idempotency_key(headers: &axum::http::HeaderMap) -> Option<String> {
     headers
         .get("Idempotency-Key")
@@ -140,6 +141,7 @@ pub fn extract_idempotency_key(headers: &axum::http::HeaderMap) -> Option<String
 }
 
 /// Helper to validate idempotency key format (should be a UUID)
+#[allow(dead_code)]
 pub fn is_valid_idempotency_key(key: &str) -> bool {
     // Accept any non-empty string for flexibility
     // Client is responsible for generating unique keys

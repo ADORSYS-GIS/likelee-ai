@@ -19,7 +19,7 @@ export default [
       },
     },
   },
-  { ignores: ["dist"] },
+  { ignores: ["dist", "public/sw.js"] },
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
