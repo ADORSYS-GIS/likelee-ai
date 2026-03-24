@@ -91,7 +91,7 @@ sequenceDiagram
     B->>Server: Approve deliverable (first approval triggers escrow)
     Server->>Server: escrow_status: holding -> releasing -> released
     Server->>S: Stripe Transfers (agency + talent splits)
-    Note over Server: Internal "held" balances remain until transfer succeeds; "cashoutable" is Stripe available on connected accounts
+    Note over Server: Internal "held" balances remain until transfer succeeds; "cashout" is Stripe available on connected accounts
 ```
 
 ## Key Interactions

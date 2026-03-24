@@ -498,7 +498,7 @@ Agency campaign offers track escrow release separately from deliverable workflow
 - Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
 - Dashboard balances distinguish:
   - **Held (pending transfer)**: internal Likelee tracking
-  - **Cashoutable (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
+  - **cashout (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
 
 #### Commission semantics (agency campaign offers)
 When distributing a campaign offer payout for an **agency** collaborator, `commission_rate` is interpreted as the **agency commission percent** for each creator share.
