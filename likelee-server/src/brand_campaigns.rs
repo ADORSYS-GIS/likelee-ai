@@ -878,16 +878,15 @@ pub async fn mark_campaign_done(
     if completed_at_exists {
         return Ok(Json(row));
     }
-    if status_raw == "archived" {
+    if status_raw != "active" && status_raw != "expired" {
         return Err((
             StatusCode::BAD_REQUEST,
-            "campaign cannot be marked done".to_string(),
+            "campaign can only be marked done when active or expired".to_string(),
         ));
     }
 
     let completed_at = chrono::Utc::now().to_rfc3339();
     let mut update = serde_json::Map::new();
-    update.insert("status".to_string(), json!("completed"));
     update.insert("completed_at".to_string(), json!(completed_at));
     update.insert("updated_at".to_string(), json!(completed_at));
 
@@ -922,7 +921,6 @@ pub async fn mark_campaign_done(
         .eq("brand_id", &user.id)
         .neq("status", "cancelled")
         .neq("status", "declined")
-        .neq("status", "expired")
         .neq("status", "completed")
         .update(
             json!({
