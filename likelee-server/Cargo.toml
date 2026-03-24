@@ -12,7 +12,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["clock"] }
 tower-http = { version = "0.5", features = ["cors"] }
-postgrest = "1"
+postgrest = "1.6"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
 hmac = "0.12"
 sha2 = "0.10"
@@ -20,8 +20,8 @@ hex = "0.4"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-aws-config = "1"
-aws-sdk-rekognition = "1"
+aws-config = "1.8"
+aws-sdk-rekognition = "1.94"
 aws-types = "1"
 envconfig = "0.11"
 image = { version = "0.24", default-features = false, features = ["png", "jpeg", "webp"] }
@@ -29,9 +29,16 @@ kamadak-exif = { version = "0.5" }
 lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "pool", "smtp-transport", "tokio1-rustls-tls"] }
 urlencoding = "2"
 jsonwebtoken = "9"
-stripe-sdk = { package = "async-stripe", version = "0.33.0", features = ["runtime-tokio-hyper-rustls"] }
+stripe-sdk = { package = "async-stripe", version = "0.41", features = ["runtime-tokio-hyper-rustls"] }
 base64 = "0.22.1"
 bcrypt = "0.18.0"
 printpdf = "0.7"
 pulldown-cmark = "0.12"
 regex = "1"
+[patch.crates-io]
+postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }
+# hyper-rustls = { git = "https://github.com/rustls/hyper-rustls", branch = "main" }
+# aws-smithy-http-client = { git = "https://github.com/smithy-lang/smithy-rs" }
+
+[audit]
+ignore = ["RUSTSEC-2026-0049"]

@@ -118,11 +118,13 @@ pub async fn create_my_onboarding_link(
 }
 
 fn extract_bank_last4(acct: &stripe_sdk::Account) -> Option<String> {
-    for ea in acct.external_accounts.data.iter() {
-        if let stripe_sdk::ExternalAccount::BankAccount(ba) = ea {
-            if let Some(last4) = ba.last4.as_ref() {
-                if !last4.trim().is_empty() {
-                    return Some(last4.clone());
+    if let Some(ea_list) = acct.external_accounts.as_ref() {
+        for ea in ea_list.data.iter() {
+            if let stripe_sdk::ExternalAccount::BankAccount(ba) = ea {
+                if let Some(last4) = ba.last4.as_ref() {
+                    if !last4.trim().is_empty() {
+                        return Some(last4.clone());
+                    }
                 }
             }
         }
