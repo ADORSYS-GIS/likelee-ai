@@ -788,9 +788,15 @@ const LicensingRequestsView = ({
                 Cancel
               </Button>
               <Button
-                onClick={() =>
-                  updateGroupStatus(groupToDecline, "declined", declineReason)
-                }
+                onClick={() => {
+                  if (groupToDecline?.id && !groupToDecline?.group_key) {
+                    // This is a brand request
+                    updateBrandRequestStatus(groupToDecline, "declined", declineReason);
+                  } else {
+                    // This is a regular licensing request group
+                    updateGroupStatus(groupToDecline, "declined", declineReason);
+                  }
+                }}
                 disabled={!declineReason.trim()}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold"
               >
