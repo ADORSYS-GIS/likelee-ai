@@ -250,6 +250,12 @@ The server implements a three-level hierarchical caching strategy to reduce data
 - **L2 (Session)**: User-scoped cache keyed by session ID with TTL
 - **L3 (Application)**: Global shared data with background refresh
 
+Idempotency keys (`Idempotency-Key` header) can be used on mutating endpoints (POST/PATCH/DELETE) to safely support retries.
+
+- The middleware can replay cached responses for repeated keys.
+- Handlers must store the result only after a successful commit (via `store_idempotency_result`).
+- Replayed responses preserve the original `Content-Type` when it is stored (otherwise defaults to `application/json`).
+
 Configuration variables:
 
 - `CACHE_L2_TTL_SECS`
