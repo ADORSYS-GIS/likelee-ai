@@ -791,10 +791,18 @@ const LicensingRequestsView = ({
                 onClick={() => {
                   if (groupToDecline?.id && !groupToDecline?.group_key) {
                     // This is a brand request
-                    updateBrandRequestStatus(groupToDecline, "declined", declineReason);
+                    updateBrandRequestStatus(
+                      groupToDecline,
+                      "declined",
+                      declineReason,
+                    );
                   } else {
                     // This is a regular licensing request group
-                    updateGroupStatus(groupToDecline, "declined", declineReason);
+                    updateGroupStatus(
+                      groupToDecline,
+                      "declined",
+                      declineReason,
+                    );
                   }
                 }}
                 disabled={!declineReason.trim()}
