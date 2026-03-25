@@ -497,3 +497,54 @@ erDiagram
 
   AGENCIES ||--|| AGENCY_COMMISSION_SETTINGS : agency_id
 ```
+
+ ## Brand License Requests Addendum (2026-03)
+ 
+ ```mermaid
+ erDiagram
+   BRANDS {
+     uuid id PK
+   }
+ 
+   AGENCIES {
+     uuid id PK
+   }
+ 
+   CREATORS {
+     uuid id PK
+   }
+ 
+   AGENCY_USERS {
+     uuid id PK
+   }
+ 
+   BRAND_LICENSE_REQUESTS {
+     uuid id PK
+     uuid brand_id FK
+     uuid agency_id FK
+     uuid creator_id FK
+     uuid talent_id FK
+     bigint submission_id FK
+     text status
+     timestamptz created_at
+     timestamptz updated_at
+   }
+ 
+   LICENSE_SUBMISSIONS {
+     bigint id PK
+     uuid agency_id FK
+     uuid creator_id FK
+     uuid talent_id FK
+     uuid brand_request_id FK
+     timestamptz created_at
+     timestamptz updated_at
+   }
+ 
+   BRANDS ||--o{ BRAND_LICENSE_REQUESTS : brand_id
+   AGENCIES ||--o{ BRAND_LICENSE_REQUESTS : agency_id
+   CREATORS ||--o{ BRAND_LICENSE_REQUESTS : creator_id
+   AGENCY_USERS ||--o{ BRAND_LICENSE_REQUESTS : talent_id
+ 
+   BRAND_LICENSE_REQUESTS ||--o{ LICENSE_SUBMISSIONS : brand_request_id
+   LICENSE_SUBMISSIONS ||--o{ BRAND_LICENSE_REQUESTS : submission_id
+ ```
