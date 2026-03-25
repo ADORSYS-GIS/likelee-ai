@@ -7629,7 +7629,7 @@ pub async fn handle_webhook(
             );
 
             // Fetch offer details for activity logging
-            let offer_resp = state
+            let _offer_resp = state
                 .pg
                 .from("campaign_offers")
                 .select("brand_id,brand_campaign_id,target_type,target_id")
