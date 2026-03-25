@@ -651,6 +651,8 @@ export default function BrandDashboard() {
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
+  // Note: "completed" tab key maps to "Expired" UI label per #360.
+  // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
@@ -1614,12 +1616,11 @@ export default function BrandDashboard() {
       const completedAt =
         campaignMeta?.completed_at || offer?.completed_at || null;
       const campaignStatus = String(campaignMeta?.status || "").toLowerCase();
-      const offerStatus =
-        completedAt || campaignStatus === "completed" || isAfterEnd
-          ? "completed"
-          : isFullySigned
-            ? "in_progress"
-            : "pending_approval";
+      const offerStatus = isAfterEnd
+        ? "completed"
+        : isFullySigned
+          ? "in_progress"
+          : "pending_approval";
       const deliverables = Array.isArray(offer?.offer_deliverables)
         ? offer.offer_deliverables
         : [];
@@ -2290,25 +2291,26 @@ export default function BrandDashboard() {
                           {campaign.creator_name}
                         </p>
                       </div>
-                      <Badge
-                        className={
-                          campaign.status === "in_progress"
-                            ? "bg-blue-100 text-blue-700 border border-blue-300"
-                            : campaign.status === "pending_approval"
-                              ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                              : campaign.status === "completed"
-                                ? campaign.completed_at
-                                  ? "bg-green-100 text-green-700 border border-green-300"
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            campaign.status === "in_progress"
+                              ? "bg-blue-100 text-blue-700 border border-blue-300"
+                              : campaign.status === "pending_approval"
+                                ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                                : campaign.status === "completed"
+                                  ? "bg-gray-100 text-gray-700 border border-gray-300"
                                   : "bg-gray-100 text-gray-700 border border-gray-300"
-                                : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }
-                      >
-                        {campaign.status === "completed"
-                          ? campaign.completed_at
-                            ? "completed"
-                            : "incomplete"
-                          : String(campaign.status).replace(/_/g, " ")}
-                      </Badge>
+                          }
+                        >
+                          {String(campaign.status).replace(/_/g, " ")}
+                        </Badge>
+                        {campaign.completed_at && (
+                          <Badge className="bg-green-100 text-green-700 border border-green-300">
+                            Done
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
@@ -4902,11 +4904,8 @@ export default function BrandDashboard() {
       const isAfterEnd = Boolean(
         endDate && todayOnly.getTime() > endDate.getTime(),
       );
-      const isExpired =
-        Boolean(completedAt) ||
-        campaignStatus === "completed" ||
-        statuses.has("completed") ||
-        isAfterEnd;
+      const isExpired = isAfterEnd;
+      const isDone = Boolean(completedAt);
 
       const groupStatus:
         | "pending_approval"
@@ -4924,6 +4923,8 @@ export default function BrandDashboard() {
       return {
         ...group,
         status: groupStatus,
+        is_done: isDone,
+        is_expired: isExpired,
         completed_at: completedAt,
         objective: representative?.objective || "Campaign offer",
         budget: Number(representative?.budget || 0),
@@ -4936,7 +4937,7 @@ export default function BrandDashboard() {
     const filteredCampaigns = groupedCampaigns.filter((c: any) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
-      if (campaignView === "completed") return c.status === "completed";
+      if (campaignView === "completed") return c.is_expired;
       return c.status === "in_progress";
     });
 
@@ -5416,19 +5417,26 @@ export default function BrandDashboard() {
           {/* Project Header */}
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <Badge
-                className={
-                  campaign.status === "in_progress"
-                    ? "bg-blue-100 text-blue-700 border border-blue-300"
-                    : campaign.status === "pending_approval"
-                      ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                      : campaign.status === "completed"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-gray-100 text-gray-700 border border-gray-300"
-                }
-              >
-                {campaign.status.replace("_", " ")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  className={
+                    campaign.status === "in_progress"
+                      ? "bg-blue-100 text-blue-700 border border-blue-300"
+                      : campaign.status === "pending_approval"
+                        ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                        : campaign.status === "completed"
+                          ? "bg-gray-100 text-gray-700 border border-gray-300"
+                          : "bg-gray-100 text-gray-700 border border-gray-300"
+                  }
+                >
+                  {campaign.status.replace("_", " ")}
+                </Badge>
+                {campaign.completed_at && (
+                  <Badge className="bg-green-100 text-green-700 border border-green-300">
+                    Done
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Due Date</p>
@@ -5614,12 +5622,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Expired (
-            {
-              groupedCampaigns.filter((c: any) => c.status === "completed")
-                .length
-            }
-            )
+            Expired ({groupedCampaigns.filter((c: any) => c.is_expired).length})
           </button>
         </div>
 
@@ -5642,7 +5645,7 @@ export default function BrandDashboard() {
                 : campaign.status === "pending_approval"
                   ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
                   : campaign.status === "completed"
-                    ? "bg-green-100 text-green-700 border border-green-300"
+                    ? "bg-gray-100 text-gray-700 border border-gray-300"
                     : "bg-gray-100 text-gray-700 border border-gray-300";
 
             return (
@@ -5661,12 +5664,13 @@ export default function BrandDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusBadgeClass}>
-                      {campaign.status === "completed"
-                        ? campaign.completed_at
-                          ? "completed"
-                          : "incomplete"
-                        : String(campaign.status).replace(/_/g, " ")}
+                      {String(campaign.status).replace(/_/g, " ")}
                     </Badge>
+                    {campaign.completed_at && (
+                      <Badge className="bg-green-100 text-green-700 border border-green-300">
+                        Done
+                      </Badge>
+                    )}
                   </div>
                 </div>
 

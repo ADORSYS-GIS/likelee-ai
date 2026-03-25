@@ -1034,16 +1034,15 @@ pub async fn mark_campaign_done(
     if completed_at_exists {
         return Ok(Json(row));
     }
-    if status_raw == "archived" {
+    if status_raw != "active" && status_raw != "expired" {
         return Err((
             StatusCode::BAD_REQUEST,
-            "campaign cannot be marked done".to_string(),
+            "campaign can only be marked done when active or expired".to_string(),
         ));
     }
 
     let completed_at = chrono::Utc::now().to_rfc3339();
     let mut update = serde_json::Map::new();
-    update.insert("status".to_string(), json!("completed"));
     update.insert("completed_at".to_string(), json!(completed_at));
     update.insert("updated_at".to_string(), json!(completed_at));
 
@@ -1069,13 +1068,16 @@ pub async fn mark_campaign_done(
     let updated_row: serde_json::Value =
         serde_json::from_str(&update_text).unwrap_or_else(|_| json!({}));
 
-    let terminal_offer_statuses = "(cancelled,declined,expired,completed)";
-    let _ = state
+    // Update non-terminal offers to completed status
+    // Using individual neq() calls for better Postgrest compatibility
+    if let Err(e) = state
         .pg
         .from("campaign_offers")
         .eq("brand_campaign_id", &campaign_id)
         .eq("brand_id", &user.id)
-        .not("status", "in", terminal_offer_statuses)
+        .neq("status", "cancelled")
+        .neq("status", "declined")
+        .neq("status", "completed")
         .update(
             json!({
                 "status": "completed",
@@ -1084,7 +1086,10 @@ pub async fn mark_campaign_done(
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to update campaign offers status: {}", e);
+    }
 
     let campaign_name = row
         .get("name")
@@ -7615,13 +7620,24 @@ pub async fn handle_webhook(
         .map(|s| is_submitter_signed(&s.to_lowercase()))
         .unwrap_or(false);
 
-    // 2. Update the parent campaign_offers status
+    // 2. Update the parent campaign_offers status and log activity
     if !offer_id.is_empty() {
         if brand_signed || new_status == "completed" {
             info!(
                 offer_id,
                 "Updating campaign offer status to contract_fully_signed via webhook"
             );
+
+            // Fetch offer details for activity logging
+            let offer_resp = state
+                .pg
+                .from("campaign_offers")
+                .select("brand_id,brand_campaign_id,target_type,target_id")
+                .eq("id", offer_id)
+                .single()
+                .execute()
+                .await;
+
             let _ = state
                 .pg
                 .from("campaign_offers")
