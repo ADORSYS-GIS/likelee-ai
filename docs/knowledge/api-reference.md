@@ -130,8 +130,9 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 | POST | `/webhooks/stripe` | Stripe events (checkout, payouts) |
 | POST | `/webhooks/kyc/veriff` | Veriff verification results |
 | POST | `/webhooks/calendly` | Calendly booking events |
-| POST | `/webhooks/docuseal` | DocuSeal contract signing |
-| POST | `/webhooks/docuseal/campaign-contracts` | Campaign contract events |
+| POST | `/webhooks/docuseal` | DocuSeal webhook for scouting offers |
+| POST | `/webhooks/docuseal/campaign-contracts` | DocuSeal webhook for campaign offer contracts |
+| POST | `/api/webhooks/licenseContract` | DocuSeal webhook for licensing contracts |
 
 ## Error Codes
 

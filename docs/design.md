@@ -394,7 +394,8 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 - `DOCUSEAL_APP_URL`
   - DocuSeal app URL for document viewing (default `https://docuseal.co`).
 - `DOCUSEAL_WEBHOOK_URL`
-  - Webhook URL for DocuSeal callbacks.
+  - DocuSeal webhook URL used for **scouting offers**.
+  - Campaign and licensing webhooks use **separate endpoints** (see below).
 - `DOCUSEAL_USER_EMAIL`
   - DocuSeal account email.
 - `DOCUSEAL_MASTER_TEMPLATE_ID`
@@ -743,6 +744,10 @@ Brands can create campaigns, make offers to talent, and manage deliverables.
 
 - **Backend Logic**: `likelee-server/src/brand_campaigns.rs`
 - **Contract Integration**: DocuSeal webhooks at `/webhooks/docuseal/campaign-contracts`
+- **DocuSeal Webhooks (by flow)**:
+  - Scouting offers: `POST /webhooks/docuseal`
+  - Campaign offer contracts: `POST /webhooks/docuseal/campaign-contracts`
+  - Licensing contracts: `POST /api/webhooks/licenseContract`
 
 ---
 

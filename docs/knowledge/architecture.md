@@ -91,7 +91,7 @@ graph TB
 5. Response serialized and returned
 
 ### Webhook Flow
-1. External service (Stripe, Veriff, Calendly, DocuSeal) sends POST to `/webhooks/*`
+1. External service (Stripe, Veriff, Calendly, DocuSeal) sends POST to `/webhooks/*` (DocuSeal has multiple endpoints by flow)
 2. Handler validates signature/secret
 3. Handler processes event and updates database
 4. Background jobs may be triggered
