@@ -52,6 +52,7 @@ const TIER_CONFIG: Record<string, any> = {
 
 interface TalentPerformance {
   id: string;
+  creator_id?: string | null;
   name: string;
   photo_url: string | null;
   tier: {
@@ -110,6 +111,14 @@ export const TalentCommissionSettings: React.FC<{
     return data.tiers.flatMap((tier) => tier.talents);
   }, [data]);
 
+  const creatorIdByTalentId = React.useMemo(() => {
+    const map: Record<string, string | null | undefined> = {};
+    for (const t of allTalents) {
+      map[t.id] = t.creator_id;
+    }
+    return map;
+  }, [allTalents]);
+
   const filteredTalents = React.useMemo(() => {
     if (!searchTerm) return allTalents;
     const term = searchTerm.toLowerCase();
@@ -122,14 +131,16 @@ export const TalentCommissionSettings: React.FC<{
 
   const handleBulkSave = () => {
     const updates = Object.entries(draftRates).map(([talentId, rate]) => ({
-      creatorId: talentId,
+      creatorId: creatorIdByTalentId[talentId] ?? talentId,
       rate: parseFloat(rate),
     }));
     updateMutation.mutate(updates);
   };
 
   const resetRate = (talentId: string) => {
-    updateMutation.mutate([{ creatorId: talentId, rate: null }]);
+    updateMutation.mutate([
+      { creatorId: creatorIdByTalentId[talentId] ?? talentId, rate: null },
+    ]);
     setDraftRates((prev) => {
       const next = { ...prev };
       delete next[talentId];
@@ -234,7 +245,8 @@ export const TalentCommissionSettings: React.FC<{
                 const tier =
                   TIER_CONFIG[talent.tier.tier_name] || TIER_CONFIG.Inactive;
                 const TierIcon = tier.icon;
-                const draft = draftRates[talent.id];
+                const creatorId = talent.creator_id ?? null;
+                const draft = creatorId ? draftRates[creatorId] : undefined;
                 const isDirty = draft !== undefined;
 
                 return (
@@ -310,13 +322,17 @@ export const TalentCommissionSettings: React.FC<{
                             step="0.1"
                             value={draft ?? talent.commission_rate}
                             onChange={(e) =>
-                              handleRateChange(talent.id, e.target.value)
+                              creatorId
+                                ? handleRateChange(creatorId, e.target.value)
+                                : undefined
                             }
+                            disabled={!creatorId}
                             className={cn(
                               "w-24 h-9 text-right pr-7 font-bold text-sm bg-white border-gray-200 rounded-lg transition-all",
                               isDirty
                                 ? "border-indigo-300 ring-2 ring-indigo-500/10"
                                 : "group-hover/input:border-gray-300",
+                              !creatorId && "opacity-60 cursor-not-allowed",
                             )}
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">
@@ -330,9 +346,10 @@ export const TalentCommissionSettings: React.FC<{
                               size="icon"
                               variant="ghost"
                               onClick={() => {
+                                if (!creatorId) return;
                                 setDraftRates((prev) => {
                                   const next = { ...prev };
-                                  delete next[talent.id];
+                                  delete next[creatorId];
                                   return next;
                                 });
                               }}
@@ -342,11 +359,11 @@ export const TalentCommissionSettings: React.FC<{
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
-                        ) : talent.is_custom_rate ? (
+                        ) : creatorId && talent.is_custom_rate ? (
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => resetRate(talent.id)}
+                            onClick={() => resetRate(creatorId)}
                             title="Reset to tier default"
                             className="w-8 h-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                           >
