@@ -23,6 +23,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 aws-config = "1"
 aws-sdk-rekognition = "1"
 aws-types = "1"
+aws-sdk-sts = "1"
+aws-sdk-sso = "1"
+aws-sdk-ssooidc = "1"
+aws-runtime = "1"
+aws-credential-types = "1"
 envconfig = "0.11"
 image = { version = "0.24", default-features = false, features = [
     "png",

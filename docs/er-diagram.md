@@ -498,53 +498,172 @@ erDiagram
   AGENCIES ||--|| AGENCY_COMMISSION_SETTINGS : agency_id
 ```
 
- ## Brand License Requests Addendum (2026-03)
- 
- ```mermaid
- erDiagram
-   BRANDS {
-     uuid id PK
-   }
- 
-   AGENCIES {
-     uuid id PK
-   }
- 
-   CREATORS {
-     uuid id PK
-   }
- 
-   AGENCY_USERS {
-     uuid id PK
-   }
- 
-   BRAND_LICENSE_REQUESTS {
-     uuid id PK
-     uuid brand_id FK
-     uuid agency_id FK
-     uuid creator_id FK
-     uuid talent_id FK
-     bigint submission_id FK
-     text status
-     timestamptz created_at
-     timestamptz updated_at
-   }
- 
-   LICENSE_SUBMISSIONS {
-     bigint id PK
-     uuid agency_id FK
-     uuid creator_id FK
-     uuid talent_id FK
-     uuid brand_request_id FK
-     timestamptz created_at
-     timestamptz updated_at
-   }
- 
-   BRANDS ||--o{ BRAND_LICENSE_REQUESTS : brand_id
-   AGENCIES ||--o{ BRAND_LICENSE_REQUESTS : agency_id
-   CREATORS ||--o{ BRAND_LICENSE_REQUESTS : creator_id
-   AGENCY_USERS ||--o{ BRAND_LICENSE_REQUESTS : talent_id
- 
-   BRAND_LICENSE_REQUESTS ||--o{ LICENSE_SUBMISSIONS : brand_request_id
-   LICENSE_SUBMISSIONS ||--o{ BRAND_LICENSE_REQUESTS : submission_id
- ```
+## Brand Dashboard: Campaign Completion & Activity Tracking (2026-03-16)
+
+```mermaid
+erDiagram
+  BRANDS {
+    uuid id PK
+    text name
+    text email
+    timestamptz created_at
+  }
+
+  BRAND_CAMPAIGNS {
+    uuid id PK
+    uuid brand_id FK "REFERENCES brands(id) ON DELETE CASCADE"
+    text name
+    text status
+    date start_date
+    integer duration_days
+    timestamptz completed_at "NEW - timestamp when brand marks campaign as done"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  BRAND_ACTIVITY_EVENTS {
+    uuid id PK "NEW TABLE - logs all brand-related activities"
+    uuid brand_id FK "REFERENCES brands(id) ON DELETE CASCADE"
+    uuid campaign_id FK "REFERENCES brand_campaigns(id) ON DELETE SET NULL"
+    text type "event type identifier"
+    text actor_type "brand | agency | creator | system"
+    text actor_name "human-readable actor name"
+    text event_type "enum: campaign.created, campaign.completed, contract.signed, deliverable.comment, etc."
+    text description "human-readable event description"
+    text subject_table "table name of the subject entity"
+    uuid subject_id "id of the subject entity"
+    text title "display title for UI"
+    text subtitle "display subtitle for UI"
+    timestamptz created_at "default now()"
+  }
+
+  CAMPAIGN_OFFERS {
+    uuid id PK
+    uuid brand_id FK
+    uuid brand_campaign_id FK "REFERENCES brand_campaigns(id)"
+    text status
+    text target_type "agency | creator"
+    uuid target_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  CAMPAIGN_OFFER_CONTRACTS {
+    uuid id PK
+    uuid offer_id FK "REFERENCES campaign_offers(id)"
+    uuid brand_id FK
+    text docuseal_status "pending | sent | opened | completed"
+    text signed_document_url
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  BRANDS ||--o{ BRAND_CAMPAIGNS : brand_id
+  BRANDS ||--o{ BRAND_ACTIVITY_EVENTS : brand_id
+  BRAND_CAMPAIGNS ||--o{ BRAND_ACTIVITY_EVENTS : campaign_id
+  BRAND_CAMPAIGNS ||--o{ CAMPAIGN_OFFERS : brand_campaign_id
+  CAMPAIGN_OFFERS ||--o{ CAMPAIGN_OFFER_CONTRACTS : offer_id
+```
+
+### Notes
+
+- **completed_at Column**: Added to `brand_campaigns` to track when a brand manually marks a campaign as done. This is the authoritative completion timestamp used for turnaround calculations.
+
+- **brand_activity_events Table**: Central activity log for all brand-related events including:
+  - Campaign lifecycle events (created, completed, status changes)
+  - Contract signing events (contract.signed)
+  - Deliverable events (submitted, approved, commented)
+  - Job posting events
+  - Asset uploads
+  
+- **Activity Event Types**: 
+  - `campaign.created` - Campaign was created
+  - `campaign.completed` - Brand marked campaign as done
+  - `contract.signed` - Party signed the contract
+  - `deliverable.comment` - Comment added to deliverable
+  - Additional event types can be added as features are developed
+
+- **RLS Policies**: 
+  - Brands can view their own activity events (`brand_id = auth.uid()`)
+  - Brands can insert their own activity events (`brand_id = auth.uid()`)
+  - Backend uses service role which bypasses RLS
+
+- **Indexes**:
+  - `idx_brand_activity_events_brand_created` on `(brand_id, created_at DESC)` for efficient activity feed queries
+  - `idx_brand_activity_events_campaign_created` on `(campaign_id, created_at DESC)` for campaign-specific activity
+
+### SQL Functions
+
+**brand_avg_turnaround_hours(p_brand_id uuid, p_month date)**
+- Calculates average turnaround time in hours for a brand's campaigns in a given month
+- Formula: `AVG(EXTRACT(EPOCH FROM (completed_at - start_date)) / 3600)`
+- Only includes campaigns with non-null `completed_at`
+- Returns 0 if no completed campaigns exist
+
+**industry_avg_turnaround_hours(p_month date)**
+- Calculates industry-wide average turnaround time for a given month
+- Same formula as brand-specific function but across all brands
+- Used for benchmarking
+
+### Dashboard Metrics
+
+**Active Projects**: Count of campaigns where both parties have signed contracts (status = 'contract_fully_signed' or 'signed' or 'completed') and campaign is not expired/cancelled.
+
+**Pending Approvals**: Count of campaigns where at least one party has not signed the contract yet, excluding cancelled/archived campaigns.
+
+**Avg Turnaround**: Monthly average hours from `start_date` to `completed_at` for campaigns marked as done by the brand.
+
+**Recent Projects**: Top 6 campaigns by most recent activity (considers campaign updates, deliverable submissions, contract updates, comments, and completion timestamps).
+
+**Activity Feed**: 10 most recent events from `brand_activity_events` ordered by `created_at DESC`, with visual highlighting for events requiring brand attention.
+
+## Brand License Requests Addendum (2026-03)
+
+```mermaid
+erDiagram
+  BRANDS {
+    uuid id PK
+  }
+
+  AGENCIES {
+    uuid id PK
+  }
+
+  CREATORS {
+    uuid id PK
+  }
+
+  AGENCY_USERS {
+    uuid id PK
+  }
+
+  BRAND_LICENSE_REQUESTS {
+    uuid id PK
+    uuid brand_id FK
+    uuid agency_id FK
+    uuid creator_id FK
+    uuid talent_id FK
+    bigint submission_id FK
+    text status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  LICENSE_SUBMISSIONS {
+    bigint id PK
+    uuid agency_id FK
+    uuid creator_id FK
+    uuid talent_id FK
+    uuid brand_request_id FK
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  BRANDS ||--o{ BRAND_LICENSE_REQUESTS : brand_id
+  AGENCIES ||--o{ BRAND_LICENSE_REQUESTS : agency_id
+  CREATORS ||--o{ BRAND_LICENSE_REQUESTS : creator_id
+  AGENCY_USERS ||--o{ BRAND_LICENSE_REQUESTS : talent_id
+
+  BRAND_LICENSE_REQUESTS ||--o{ LICENSE_SUBMISSIONS : brand_request_id
+  LICENSE_SUBMISSIONS ||--o{ BRAND_LICENSE_REQUESTS : submission_id
+```
