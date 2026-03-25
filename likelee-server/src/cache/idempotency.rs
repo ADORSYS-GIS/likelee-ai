@@ -24,6 +24,8 @@ pub struct IdempotencyRecord {
     pub response_body: Arc<[u8]>,
     /// HTTP status code of the original response
     pub status_code: u16,
+    /// Response content type (if known)
+    pub content_type: Option<Arc<str>>,
     /// When this record was created
     pub created_at: Instant,
     /// TTL for this record
@@ -51,7 +53,7 @@ impl IdempotencyStore {
     }
 
     /// Check if a key has been processed and return the cached response
-    pub fn get(&self, key: &str) -> Option<(Arc<[u8]>, u16)> {
+    pub fn get(&self, key: &str) -> Option<(Arc<[u8]>, u16, Option<Arc<str>>)> {
         self.inner.get(key).and_then(|entry| {
             // Check if expired
             if entry.created_at.elapsed() > entry.ttl {
@@ -60,18 +62,29 @@ impl IdempotencyStore {
                 return None;
             }
 
-            Some((entry.response_body.clone(), entry.status_code))
+            Some((
+                entry.response_body.clone(),
+                entry.status_code,
+                entry.content_type.clone(),
+            ))
         })
     }
 
     /// Store a result for an idempotency key
     /// Should only be called AFTER the database transaction commits successfully
-    pub fn set(&self, key: &str, response_body: Arc<[u8]>, status_code: u16) {
+    pub fn set(
+        &self,
+        key: &str,
+        response_body: Arc<[u8]>,
+        status_code: u16,
+        content_type: Option<Arc<str>>,
+    ) {
         self.inner.insert(
             key.to_string(),
             IdempotencyRecord {
                 response_body,
                 status_code,
+                content_type,
                 created_at: Instant::now(),
                 ttl: self.default_ttl,
             },
@@ -86,6 +99,7 @@ impl IdempotencyStore {
         key: &str,
         response_body: Arc<[u8]>,
         status_code: u16,
+        content_type: Option<Arc<str>>,
         ttl: Duration,
     ) {
         self.inner.insert(
@@ -93,6 +107,7 @@ impl IdempotencyStore {
             IdempotencyRecord {
                 response_body,
                 status_code,
+                content_type,
                 created_at: Instant::now(),
                 ttl,
             },
@@ -163,12 +178,13 @@ mod tests {
         assert!(store.get(key).is_none());
 
         // Store result
-        store.set(key, response.clone(), 200);
+        store.set(key, response.clone(), 200, Some(Arc::from("application/json")));
 
         // Retrieve result
-        let (body, status) = store.get(key).unwrap();
+        let (body, status, content_type) = store.get(key).unwrap();
         assert_eq!(body.as_ref(), b"{\"status\":\"success\"}");
         assert_eq!(status, 200);
+        assert_eq!(content_type.as_deref(), Some("application/json"));
     }
 
     #[test]
@@ -176,7 +192,7 @@ mod tests {
         let store = IdempotencyStore::new(Duration::from_millis(10));
 
         let key = "expiring-key";
-        store.set(key, Arc::from(b"response".as_slice()), 200);
+        store.set(key, Arc::from(b"response".as_slice()), 200, None);
 
         // Wait for expiry
         std::thread::sleep(Duration::from_millis(20));

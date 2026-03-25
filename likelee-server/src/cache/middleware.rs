@@ -82,7 +82,7 @@ pub async fn idempotency_layer(
     // Check for idempotency key
     if let Some(key) = get_idempotency_key(&request) {
         // Check if key has been processed
-        if let Some((body, status_code)) = idempotency_store.get(&key) {
+        if let Some((body, status_code, content_type)) = idempotency_store.get(&key) {
             cache_metrics.hit(CacheLevel::Idempotency);
             debug!(
                 key = %key,
@@ -90,11 +90,13 @@ pub async fn idempotency_layer(
                 "Idempotency key hit - returning cached response"
             );
 
+            let content_type = content_type.as_deref().unwrap_or("application/json");
+
             // Return cached response
             return Response::builder()
                 .status(StatusCode::from_u16(status_code).unwrap_or(StatusCode::OK))
                 .header("X-Idempotent-Replayed", "true")
-                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::CONTENT_TYPE, content_type)
                 .body(Body::from(body.as_ref().to_vec()))
                 .unwrap();
         }
@@ -115,6 +117,7 @@ pub fn store_idempotency_result(
     key: &str,
     response_body: &[u8],
     status_code: u16,
+    content_type: Option<&str>,
 ) {
     if key.is_empty() {
         return;
@@ -124,6 +127,7 @@ pub fn store_idempotency_result(
         key,
         Arc::from(response_body.to_vec().into_boxed_slice()),
         status_code,
+        content_type.map(Arc::from),
     );
 }
 
