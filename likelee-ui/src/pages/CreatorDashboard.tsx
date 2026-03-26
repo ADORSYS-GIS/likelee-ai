@@ -9766,8 +9766,6 @@ export default function CreatorDashboard() {
                       className="border-2 border-gray-300"
                     />
                   </div>
-
-
                 </div>
               </div>
 
