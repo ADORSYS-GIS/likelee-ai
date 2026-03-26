@@ -2126,8 +2126,6 @@ export default function CreatorDashboard() {
     tiktok_handle: "",
     portfolio_url: "",
     instagram_connected: false,
-    instagram_followers: "",
-    engagement_rate: "",
     content_types: [] as string[],
     industries: [] as string[],
     content_restrictions: [] as string[],
@@ -2166,7 +2164,7 @@ export default function CreatorDashboard() {
         kyc_status: profile.kyc_status || prev.kyc_status,
         location: [profile.city, profile.state].filter(Boolean).join(", "),
         bio: profile.bio ?? prev.bio,
-        birthday: profile.birthday ?? prev.birthday,
+        birthday: profile.birthdate ?? prev.birthday,
         gender: profile.gender ?? prev.gender,
         ethnicity: profile.ethnicity ?? prev.ethnicity,
         creator_type: profile.creator_type ?? prev.creator_type,
@@ -2177,14 +2175,6 @@ export default function CreatorDashboard() {
           typeof profile.height_cm === "number"
             ? String(profile.height_cm)
             : prev.height_cm,
-        instagram_followers:
-          typeof profile.instagram_followers === "number"
-            ? String(profile.instagram_followers)
-            : prev.instagram_followers,
-        engagement_rate:
-          typeof profile.engagement_rate === "number"
-            ? String(profile.engagement_rate)
-            : prev.engagement_rate,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
         is_public_brands: resolvePublicBrandsVisibility(profile),
@@ -2703,7 +2693,7 @@ export default function CreatorDashboard() {
           instagram_handle: profile.platform_handle
             ? `@${profile.platform_handle}`
             : prev.instagram_handle,
-          birthday: profile.birthday ?? prev.birthday,
+          birthday: profile.birthdate ?? prev.birthday,
           gender: profile.gender ?? prev.gender,
           ethnicity: profile.ethnicity ?? prev.ethnicity,
           creator_type: profile.creator_type ?? prev.creator_type,
@@ -2714,14 +2704,6 @@ export default function CreatorDashboard() {
             typeof profile.height_cm === "number"
               ? String(profile.height_cm)
               : prev.height_cm,
-          instagram_followers:
-            typeof profile.instagram_followers === "number"
-              ? String(profile.instagram_followers)
-              : prev.instagram_followers,
-          engagement_rate:
-            typeof profile.engagement_rate === "number"
-              ? String(profile.engagement_rate)
-              : prev.engagement_rate,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
           is_public_brands: resolvePublicBrandsVisibility(profile),
@@ -3447,16 +3429,7 @@ export default function CreatorDashboard() {
       first_name: fullName,
       location,
       handles,
-      followers: (() => {
-        if (typeof creator.instagram_followers === "number") {
-          return creator.instagram_followers.toLocaleString();
-        }
-        const parsed = Number.parseInt(
-          String(creator.instagram_followers || "").trim(),
-          10,
-        );
-        return Number.isFinite(parsed) ? parsed.toLocaleString() : "0";
-      })(),
+      followers: "0",
       bio: creator.bio || profile?.bio || "",
       active_campaigns: Array.isArray(activeCampaigns)
         ? activeCampaigns.length
@@ -4626,7 +4599,7 @@ export default function CreatorDashboard() {
       base_monthly_price_cents: Math.round(
         (creator.price_per_month || 0) * 100 * 4.345,
       ),
-      birthday:
+      birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
           : undefined,
@@ -4658,8 +4631,6 @@ export default function CreatorDashboard() {
           : undefined,
       height_cm: parseOptionalInt(creator.height_cm),
       platform_handle: creator.instagram_handle?.replace("@", ""),
-      instagram_followers: parseOptionalInt(creator.instagram_followers),
-      engagement_rate: parseOptionalFloat(creator.engagement_rate),
       tiktok_handle: normalizedTiktok,
       portfolio_link: normalizedPortfolio,
       accept_negotiations:
@@ -4708,7 +4679,7 @@ export default function CreatorDashboard() {
             [savedProfile.city, savedProfile.state]
               .filter(Boolean)
               .join(", ") || prev.location,
-          birthday: savedProfile.birthday ?? prev.birthday,
+          birthday: savedProfile.birthdate ?? prev.birthday,
           gender: savedProfile.gender ?? prev.gender,
           ethnicity: savedProfile.ethnicity ?? prev.ethnicity,
           creator_type: savedProfile.creator_type ?? prev.creator_type,
@@ -4719,14 +4690,6 @@ export default function CreatorDashboard() {
             typeof savedProfile.height_cm === "number"
               ? String(savedProfile.height_cm)
               : prev.height_cm,
-          instagram_followers:
-            typeof savedProfile.instagram_followers === "number"
-              ? String(savedProfile.instagram_followers)
-              : prev.instagram_followers,
-          engagement_rate:
-            typeof savedProfile.engagement_rate === "number"
-              ? String(savedProfile.engagement_rate)
-              : prev.engagement_rate,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
@@ -9798,43 +9761,6 @@ export default function CreatorDashboard() {
                         setCreator({
                           ...creator,
                           height_cm: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Instagram Followers
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={String(creator.instagram_followers || "")}
-                      onChange={(e) =>
-                        setCreator({
-                          ...creator,
-                          instagram_followers: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Engagement Rate (%)
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={String(creator.engagement_rate || "")}
-                      onChange={(e) =>
-                        setCreator({
-                          ...creator,
-                          engagement_rate: e.target.value,
                         })
                       }
                       className="border-2 border-gray-300"
