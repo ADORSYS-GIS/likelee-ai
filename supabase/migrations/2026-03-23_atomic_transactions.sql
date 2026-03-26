@@ -27,6 +27,7 @@ CREATE OR REPLACE FUNCTION public.adjust_wallet_credits(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_wallet_id uuid;
@@ -136,6 +137,7 @@ CREATE OR REPLACE FUNCTION public.complete_payment_link_checkout(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_lr_id text;
@@ -147,6 +149,7 @@ DECLARE
     v_archived_submissions bigint := 0;
     v_archived_requests bigint := 0;
     v_submission_id uuid;
+    v_current_row_count bigint;  -- Temporary variable for accurate row count
 BEGIN
     -- Parse and validate licensing request IDs
     v_lr_ids := string_to_array(p_licensing_request_ids, ',');
@@ -220,8 +223,8 @@ BEGIN
         WHERE licensing_request_id = v_lr_id::uuid
           AND status IS DISTINCT FROM 'paid';
         
-        GET DIAGNOSTICS v_updated_payments = ROW_COUNT;
-        v_updated_payments := v_updated_payments + ROW_COUNT;
+        GET DIAGNOSTICS v_current_row_count = ROW_COUNT;
+        v_updated_payments := v_updated_payments + v_current_row_count;
     END LOOP;
     
     -- 4. Archive license_submissions and licensing_requests (best-effort within transaction)
@@ -287,6 +290,7 @@ CREATE OR REPLACE FUNCTION public.setup_agency_stripe_connect(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_existing_account_id text;
@@ -397,6 +401,7 @@ CREATE OR REPLACE FUNCTION public.bulk_update_payments_status(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_updated_count bigint;
