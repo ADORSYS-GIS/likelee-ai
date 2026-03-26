@@ -90,9 +90,7 @@ pub async fn idempotency_layer(
                 "Idempotency key hit - returning cached response"
             );
 
-            let content_type = content_type
-                .as_deref()
-                .unwrap_or("application/json");
+            let content_type = content_type.as_deref().unwrap_or("application/json");
 
             // Return cached response
             return Response::builder()

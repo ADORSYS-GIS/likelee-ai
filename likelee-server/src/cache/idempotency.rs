@@ -32,6 +32,9 @@ pub struct IdempotencyRecord {
     pub ttl: Duration,
 }
 
+/// Type alias for the cached response returned by the idempotency store
+pub type IdempotencyResult = (Arc<[u8]>, u16, Option<Arc<str>>);
+
 /// Store for idempotency keys using DashMap for concurrent access.
 ///
 /// Keys are stored with a TTL (default 24 hours) and automatically
@@ -53,7 +56,7 @@ impl IdempotencyStore {
     }
 
     /// Check if a key has been processed and return the cached response
-    pub fn get(&self, key: &str) -> Option<(Arc<[u8]>, u16, Option<Arc<str>>)> {
+    pub fn get(&self, key: &str) -> Option<IdempotencyResult> {
         self.inner.get(key).and_then(|entry| {
             // Check if expired
             if entry.created_at.elapsed() > entry.ttl {
@@ -178,7 +181,12 @@ mod tests {
         assert!(store.get(key).is_none());
 
         // Store result
-        store.set(key, response.clone(), 200, Some(Arc::from("application/json")));
+        store.set(
+            key,
+            response.clone(),
+            200,
+            Some(Arc::from("application/json")),
+        );
 
         // Retrieve result
         let (body, status, content_type) = store.get(key).unwrap();

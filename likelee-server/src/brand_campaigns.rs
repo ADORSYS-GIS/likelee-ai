@@ -11,7 +11,7 @@ use axum::{
     Json,
 };
 use base64::{engine::general_purpose, Engine as _};
-use chrono::Datelike;
+use chrono::{Datelike, TimeZone};
 use postgrest::Postgrest;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -1166,7 +1166,7 @@ pub async fn get_campaign_metrics(
         let is_fully_signed =
             has_completed_contract || fully_signed_offer_statuses.contains(status_raw.as_str());
 
-        let (start_date, duration_days, campaign_status, completed_at) = offer
+        let (start_date, duration_days, completed_at) = offer
             .get("brand_campaigns")
             .and_then(|v| v.as_object())
             .map(|obj| {
@@ -1180,22 +1180,16 @@ pub async fn get_campaign_metrics(
                     .get("duration_days")
                     .and_then(|v| v.as_i64())
                     .unwrap_or(30);
-                let status = obj
-                    .get("status")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .trim()
-                    .to_lowercase();
                 let completed_at = obj
                     .get("completed_at")
                     .and_then(|v| v.as_str())
                     .map(|v| v.trim().to_string())
                     .filter(|v| !v.is_empty());
-                (start, duration, status, completed_at)
+                (start, duration, completed_at)
             })
-            .unwrap_or_else(|| ("".to_string(), 30, String::new(), None));
+            .unwrap_or_else(|| ("".to_string(), 30, None));
 
-        if campaign_status == "completed" || completed_at.is_some() {
+        if completed_at.is_some() {
             continue;
         }
 
@@ -1297,6 +1291,403 @@ pub async fn get_campaign_metrics(
         "action_needed": pending_approvals_count > 0,
         "avg_turnaround_hours": avg_turnaround_hours,
         "industry_avg_turnaround_hours": industry_avg_turnaround_hours
+    })))
+}
+
+pub async fn get_brand_analytics(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let now = chrono::Utc::now();
+    let year_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), 1, 1, 0, 0, 0)
+        .unwrap();
+
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,brand_campaign_id,target_type,target_id,status,created_at,brand_campaigns(start_date,duration_days,status,completed_at)")
+        .eq("brand_id", &user.id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let offers_status = offers_resp.status();
+    let offers_text = offers_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !offers_status.is_success() {
+        return Err(sanitize_db_error(offers_status.as_u16(), offers_text));
+    }
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+    if offers.is_empty() {
+        return Ok(Json(json!({
+            "total_projects_ytd": 0,
+            "talent_performance": []
+        })));
+    }
+
+    let offer_ids: Vec<String> = offers
+        .iter()
+        .filter_map(|o| o.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .collect();
+    let offer_refs: Vec<&str> = offer_ids.iter().map(|s| s.as_str()).collect();
+    let contracts_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("offer_id,docuseal_status")
+        .eq("brand_id", &user.id)
+        .in_("offer_id", offer_refs)
+        .eq("docuseal_status", "completed")
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contracts_status = contracts_resp.status();
+    let contracts_text = contracts_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !contracts_status.is_success() {
+        return Err(sanitize_db_error(contracts_status.as_u16(), contracts_text));
+    }
+    let contracts: Vec<serde_json::Value> =
+        serde_json::from_str(&contracts_text).unwrap_or_default();
+    let mut signed_offer_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for row in &contracts {
+        if let Some(offer_id) = row.get("offer_id").and_then(|v| v.as_str()) {
+            let offer_id = offer_id.trim();
+            if !offer_id.is_empty() {
+                signed_offer_ids.insert(offer_id.to_string());
+            }
+        }
+    }
+
+    let fully_signed_offer_statuses: std::collections::HashSet<&'static str> =
+        ["contract_fully_signed", "signed", "completed"]
+            .into_iter()
+            .collect();
+    let participation_terminal_statuses: std::collections::HashSet<&'static str> =
+        ["cancelled", "declined", "expired"].into_iter().collect();
+
+    struct TargetAccumulator {
+        target_type: String,
+        target_id: String,
+        projects: std::collections::HashSet<String>,
+        completed_seen: std::collections::HashSet<String>,
+        turnaround_sum: f64,
+        turnaround_count: i64,
+        success_count: i64,
+    }
+
+    let mut ytd_projects: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut target_stats: std::collections::HashMap<String, TargetAccumulator> =
+        std::collections::HashMap::new();
+
+    for offer in &offers {
+        let offer_id = offer
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if offer_id.is_empty() {
+            continue;
+        }
+        let campaign_key = offer_id.clone();
+        let status_raw = offer
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let is_fully_signed = signed_offer_ids.contains(&offer_id)
+            || fully_signed_offer_statuses.contains(status_raw.as_str());
+
+        let (start_date, duration_days, completed_at) = offer
+            .get("brand_campaigns")
+            .and_then(|v| v.as_object())
+            .map(|obj| {
+                let start = obj
+                    .get("start_date")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let duration = obj
+                    .get("duration_days")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(30);
+                let completed_at = obj
+                    .get("completed_at")
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty());
+                (start, duration, completed_at)
+            })
+            .unwrap_or_else(|| ("".to_string(), 30, None));
+
+        if is_fully_signed {
+            if let Some(created_at) = offer.get("created_at").and_then(|v| v.as_str()) {
+                if let Ok(created_dt) = chrono::DateTime::parse_from_rfc3339(created_at) {
+                    let created_dt = created_dt.with_timezone(&chrono::Utc);
+                    if created_dt >= year_start && created_dt <= now {
+                        ytd_projects.insert(campaign_key.clone());
+                    }
+                }
+            }
+        }
+
+        if !is_fully_signed || participation_terminal_statuses.contains(status_raw.as_str()) {
+            continue;
+        }
+        let target_type = offer
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let target_id = offer
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if target_type.is_empty() || target_id.is_empty() {
+            continue;
+        }
+        let target_key = format!("{}:{}", target_type, target_id);
+        let entry = target_stats.entry(target_key).or_insert(TargetAccumulator {
+            target_type: target_type.clone(),
+            target_id: target_id.clone(),
+            projects: std::collections::HashSet::new(),
+            completed_seen: std::collections::HashSet::new(),
+            turnaround_sum: 0.0,
+            turnaround_count: 0,
+            success_count: 0,
+        });
+        entry.projects.insert(campaign_key.clone());
+
+        if let (Some(completed_at), true) = (completed_at.as_deref(), !start_date.is_empty()) {
+            if let (Ok(start), Ok(done)) = (
+                chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d"),
+                chrono::DateTime::parse_from_rfc3339(completed_at),
+            ) {
+                let done = done.with_timezone(&chrono::Utc);
+                if done.date_naive() >= start && entry.completed_seen.insert(campaign_key.clone()) {
+                    let start_dt = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                        start.and_hms_opt(0, 0, 0).unwrap(),
+                        chrono::Utc,
+                    );
+                    let diff_hours = (done - start_dt).num_seconds() as f64 / 3600.0;
+                    if diff_hours >= 0.0 {
+                        entry.turnaround_sum += diff_hours;
+                        entry.turnaround_count += 1;
+                    }
+                    let end_date = start + chrono::Duration::days(duration_days.saturating_sub(1));
+                    if done.date_naive() <= end_date {
+                        entry.success_count += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    let mut agency_ids: Vec<String> = Vec::new();
+    let mut creator_ids: Vec<String> = Vec::new();
+    for entry in target_stats.values() {
+        if entry.target_type == "agency" {
+            agency_ids.push(entry.target_id.clone());
+        } else {
+            creator_ids.push(entry.target_id.clone());
+        }
+    }
+
+    let mut agency_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut agency_logo_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !agency_ids.is_empty() {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("id,agency_name,logo_url,email")
+            .in_("id", agency_ids.clone())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if resp.status().is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            for row in rows {
+                if let (Some(id), Some(name)) = (
+                    row.get("id").and_then(|v| v.as_str()),
+                    row.get("agency_name").and_then(|v| v.as_str()),
+                ) {
+                    if !name.trim().is_empty() {
+                        agency_name_map.insert(id.to_string(), name.trim().to_string());
+                    }
+                    if let Some(logo) = row.get("logo_url").and_then(|v| v.as_str()) {
+                        if !logo.trim().is_empty() {
+                            agency_logo_map.insert(id.to_string(), logo.trim().to_string());
+                        }
+                    }
+                    if !agency_name_map.contains_key(id) {
+                        if let Some(email) = row.get("email").and_then(|v| v.as_str()) {
+                            if !email.trim().is_empty() {
+                                agency_name_map.insert(id.to_string(), email.trim().to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut creator_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut creator_photo_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,profile_photo_url,email")
+            .in_("id", creator_ids.clone())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if resp.status().is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            for row in rows {
+                if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                    let name = row
+                        .get("full_name")
+                        .and_then(|v| v.as_str())
+                        .filter(|v| !v.trim().is_empty())
+                        .map(|v| v.trim().to_string());
+                    if let Some(name) = name {
+                        creator_name_map.insert(id.to_string(), name);
+                    }
+                    if let Some(photo) = row.get("profile_photo_url").and_then(|v| v.as_str()) {
+                        if !photo.trim().is_empty() {
+                            creator_photo_map.insert(id.to_string(), photo.trim().to_string());
+                        }
+                    }
+                    if !creator_name_map.contains_key(id) {
+                        if let Some(email) = row.get("email").and_then(|v| v.as_str()) {
+                            if !email.trim().is_empty() {
+                                creator_name_map.insert(id.to_string(), email.trim().to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut talent_performance: Vec<serde_json::Value> = target_stats
+        .values()
+        .map(|entry| {
+            let projects_count = entry.projects.len() as i64;
+            let avg_turnaround_hours = if entry.turnaround_count > 0 {
+                (entry.turnaround_sum / entry.turnaround_count as f64).round() as i64
+            } else {
+                0
+            };
+            let success_rate_pct = if projects_count > 0 {
+                ((entry.success_count as f64 / projects_count as f64) * 100.0).round() as i64
+            } else {
+                0
+            };
+            let (name, image_url) = if entry.target_type == "agency" {
+                let name = agency_name_map
+                    .get(&entry.target_id)
+                    .cloned()
+                    .unwrap_or_else(|| "Agency".to_string());
+                let image = agency_logo_map
+                    .get(&entry.target_id)
+                    .cloned()
+                    .unwrap_or_default();
+                (name, image)
+            } else {
+                let name = creator_name_map
+                    .get(&entry.target_id)
+                    .cloned()
+                    .unwrap_or_else(|| "Creator".to_string());
+                let image = creator_photo_map
+                    .get(&entry.target_id)
+                    .cloned()
+                    .unwrap_or_default();
+                (name, image)
+            };
+            json!({
+                "target_type": entry.target_type,
+                "target_id": entry.target_id,
+                "name": name,
+                "image_url": image_url,
+                "projects_count": projects_count,
+                "avg_turnaround_hours": avg_turnaround_hours,
+                "success_rate_pct": success_rate_pct,
+                "total_cost_cents": serde_json::Value::Null,
+                "avg_rating": serde_json::Value::Null
+            })
+        })
+        .collect();
+
+    talent_performance.sort_by(|a, b| {
+        let a_projects = a
+            .get("projects_count")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let b_projects = b
+            .get("projects_count")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let a_turnaround = a
+            .get("avg_turnaround_hours")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let b_turnaround = b
+            .get("avg_turnaround_hours")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let a_success = a
+            .get("success_rate_pct")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let b_success = b
+            .get("success_rate_pct")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let a_turnaround_sort = if a_turnaround == 0 {
+            i64::MAX
+        } else {
+            a_turnaround
+        };
+        let b_turnaround_sort = if b_turnaround == 0 {
+            i64::MAX
+        } else {
+            b_turnaround
+        };
+        b_projects
+            .cmp(&a_projects)
+            .then_with(|| a_turnaround_sort.cmp(&b_turnaround_sort))
+            .then_with(|| b_success.cmp(&a_success))
+    });
+    if talent_performance.len() > 10 {
+        talent_performance.truncate(10);
+    }
+
+    Ok(Json(json!({
+        "total_projects_ytd": ytd_projects.len(),
+        "talent_performance": talent_performance
     })))
 }
 
@@ -6061,12 +6452,15 @@ pub(crate) async fn log_activity_event_with_subject(
     payload.insert("subject_id".to_string(), json!(subject_value));
     payload.insert("title".to_string(), json!(description));
     payload.insert("subtitle".to_string(), json!(actor_name));
-    let _ = state
+    if let Err(e) = state
         .pg
         .from("brand_activity_events")
         .insert(serde_json::Value::Object(payload).to_string())
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to log activity event: {}", e);
+    }
 }
 
 async fn log_activity_event(

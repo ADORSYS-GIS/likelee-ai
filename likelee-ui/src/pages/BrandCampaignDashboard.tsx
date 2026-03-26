@@ -68,7 +68,6 @@ import {
   Trash2,
   Settings,
   Clock,
-  TrendingUp,
   Zap,
   Shield,
   Briefcase,
@@ -1790,7 +1789,7 @@ export default function BrandCampaignDashboard({
           </div>
         )}
         {/* Metrics Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
@@ -1812,14 +1811,6 @@ export default function BrandCampaignDashboard({
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">
               {dashboardMetrics.campaignsLaunched}
-            </p>
-          </Card>
-
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {dashboardMetrics.avgRoi}x
             </p>
           </Card>
         </div>
