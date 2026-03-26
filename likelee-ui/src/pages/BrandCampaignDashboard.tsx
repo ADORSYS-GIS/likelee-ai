@@ -13,6 +13,16 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -58,7 +68,6 @@ import {
   Trash2,
   Settings,
   Clock,
-  TrendingUp,
   Zap,
   Shield,
   Briefcase,
@@ -136,6 +145,8 @@ export default function BrandCampaignDashboard({
     useState<any[]>([]);
   const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
     useState<string[]>([]);
+  const [markDoneOpen, setMarkDoneOpen] = useState(false);
+  const [markDoneBusy, setMarkDoneBusy] = useState(false);
   const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
     useState(false);
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
@@ -333,13 +344,23 @@ export default function BrandCampaignDashboard({
     return { min: match[1], max: match[2] };
   };
 
+  const formatCampaignStatusLabel = (campaign: any): string => {
+    const status = String(campaign?.status || "").toLowerCase();
+    if (status === "completed") {
+      const label = campaign?.completed_at ? "completed" : "incomplete";
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+    const cleaned = status.replace("_", " ");
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  };
+
   const budgetParts = parseBudgetRange(campaignForm.budget_range);
   const dashboardMetrics = useMemo(() => {
-    const activeCount = campaignCards.filter(
+    const activeCampaigns = campaignCards.filter(
       (c) => String(c?.status || "") === "active",
-    ).length;
+    );
     const uniqueCollaborators = new Set<string>();
-    campaignCards.forEach((campaign: any) => {
+    activeCampaigns.forEach((campaign: any) => {
       const collaborators = Array.isArray(campaign?.collaborators)
         ? campaign.collaborators
         : [];
@@ -348,12 +369,17 @@ export default function BrandCampaignDashboard({
         if (value) uniqueCollaborators.add(value);
       });
     });
+    const campaignsLaunched = campaignCards.reduce((sum, campaign: any) => {
+      const offersCount = Number(campaign?.offers_count);
+      if (Number.isFinite(offersCount)) return sum + offersCount;
+      return sum + 1;
+    }, 0);
     return {
       totalSpend: 0,
       activeCollaborators: uniqueCollaborators.size,
-      campaignsLaunched: campaignCards.length,
+      campaignsLaunched,
       avgRoi: 0,
-      activeCount,
+      activeCount: activeCampaigns.length,
     };
   }, [campaignCards]);
 
@@ -498,6 +524,8 @@ export default function BrandCampaignDashboard({
     deliverableStats?: { total: number; approved: number },
   ) => {
     const rawStatus = String(campaign?.status || "").toLowerCase();
+    const completedAt = campaign?.completed_at || null;
+    const isMarkedDone = Boolean(completedAt);
     const safeOffers = Array.isArray(offers) ? offers : [];
     const hasSignedOffer = safeOffers.some((offer: any) =>
       SIGNED_OFFER_STATUSES.has(String(offer?.status || "").toLowerCase()),
@@ -531,7 +559,10 @@ export default function BrandCampaignDashboard({
       endDate && todayOnly.getTime() > endDate.getTime(),
     );
     const status =
-      rawStatus === "completed" || rawStatus === "archived" || isAfterEnd
+      isMarkedDone ||
+      rawStatus === "completed" ||
+      rawStatus === "archived" ||
+      isAfterEnd
         ? "completed"
         : hasSignedOffer
           ? "active"
@@ -557,6 +588,9 @@ export default function BrandCampaignDashboard({
       ),
       budget,
       collaborators: collaboratorLabels,
+      collaborator_count: collaboratorLabels.length,
+      offers_count: safeOffers.length,
+      completed_at: completedAt,
       deliverables: totalDeliverables,
       approved: Number(deliverableStats?.approved || 0),
       start_date: String(campaign?.start_date || "N/A"),
@@ -721,6 +755,44 @@ export default function BrandCampaignDashboard({
       setSelectedCampaignDeliverables([]);
     } finally {
       setLoadingSelectedCampaignDetails(false);
+    }
+  };
+
+  const handleMarkCampaignDone = async () => {
+    if (!selectedCampaign) return;
+    const campaignId = String(
+      selectedCampaign?.id || selectedCampaign?.brand_campaign_id || "",
+    ).trim();
+    if (!campaignId) return;
+    setMarkDoneBusy(true);
+    try {
+      const res = await base44.post<any>(
+        `/api/brand/campaigns/${campaignId}/mark-done`,
+      );
+      const completedAt = res?.completed_at || new Date().toISOString();
+      const updatedCampaign = {
+        ...selectedCampaign,
+        status: "completed",
+        completed_at: completedAt,
+      };
+      setSelectedCampaign(updatedCampaign);
+      setCampaignCards((prev) =>
+        prev.map((item) =>
+          String(item?.id || "") === campaignId
+            ? { ...item, status: "completed", completed_at: completedAt }
+            : item,
+        ),
+      );
+      toast({ title: "Campaign marked as done" });
+    } catch {
+      toast({
+        title: "Unable to mark campaign as done",
+        description: "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setMarkDoneBusy(false);
+      setMarkDoneOpen(false);
     }
   };
   const resolveDownloadFileName = (deliverable: any, fallbackIndex: number) => {
@@ -1717,7 +1789,7 @@ export default function BrandCampaignDashboard({
           </div>
         )}
         {/* Metrics Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
@@ -1739,14 +1811,6 @@ export default function BrandCampaignDashboard({
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">
               {dashboardMetrics.campaignsLaunched}
-            </p>
-          </Card>
-
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {dashboardMetrics.avgRoi}x
             </p>
           </Card>
         </div>
@@ -1893,18 +1957,7 @@ export default function BrandCampaignDashboard({
                     : "border-gray-300"
                 }`}
               >
-                Completed
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCampaignListTab("inbox")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "inbox"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
-              >
-                Inbox
+                Expired
               </Button>
             </div>
           </div>
@@ -1928,7 +1981,7 @@ export default function BrandCampaignDashboard({
                       ? "No active campaigns yet."
                       : campaignListTab === "pending_approval"
                         ? "No campaigns pending approval."
-                        : "No completed campaigns yet."}
+                        : "No expired campaigns yet."}
                   </p>
                 </Card>
               );
@@ -1953,7 +2006,7 @@ export default function BrandCampaignDashboard({
                               : "bg-gray-100 text-gray-800"
                         }
                       >
-                        {campaign.status.replace("_", " ")}
+                        {formatCampaignStatusLabel(campaign)}
                       </Badge>
                       <span className="text-sm text-gray-600">
                         {campaign.objective}
@@ -3326,21 +3379,33 @@ export default function BrandCampaignDashboard({
                     {selectedCampaign.name}
                   </h2>
                   <Badge className="mt-2 bg-green-100 text-green-800">
-                    {selectedCampaign.status.replace("_", " ")}
+                    {formatCampaignStatusLabel(selectedCampaign)}
                   </Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setSelectedCampaign(null);
-                    setSelectedCampaignDeliverables([]);
-                    setSelectedCampaignCollaborators([]);
-                  }}
-                  className="rounded-none"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                <div className="flex items-center gap-3">
+                  {(selectedCampaign.status === "active" ||
+                    (selectedCampaign.status === "completed" &&
+                      !selectedCampaign.completed_at)) && (
+                    <Button
+                      onClick={() => setMarkDoneOpen(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white rounded-none"
+                    >
+                      Mark as Done
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedCampaign(null);
+                      setSelectedCampaignDeliverables([]);
+                      setSelectedCampaignCollaborators([]);
+                    }}
+                    className="rounded-none"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -3367,6 +3432,24 @@ export default function BrandCampaignDashboard({
                   </p>
                 </Card>
               </div>
+              {selectedCampaign.status === "completed" && (
+                <Card className="p-4 border-2 border-gray-200 rounded-none mb-8">
+                  <p className="text-sm text-gray-600 mb-1">
+                    Completion Status
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {selectedCampaign.completed_at ? "Completed" : "Incomplete"}
+                  </p>
+                  {selectedCampaign.completed_at && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Marked done on{" "}
+                      {new Date(
+                        String(selectedCampaign.completed_at),
+                      ).toLocaleString()}
+                    </p>
+                  )}
+                </Card>
+              )}
               <div className="mb-8">
                 <p className="text-sm text-gray-600 mb-2">Collaborators</p>
                 <div className="flex flex-wrap gap-2">
@@ -3629,6 +3712,29 @@ export default function BrandCampaignDashboard({
           </div>
         </div>
       )}
+
+      <AlertDialog open={markDoneOpen} onOpenChange={setMarkDoneOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark campaign as done?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is irreversible. The campaign will be marked as
+              completed and removed from Active.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={markDoneBusy}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleMarkCampaignDone}
+              disabled={markDoneBusy}
+            >
+              {markDoneBusy ? "Saving..." : "Mark as Done"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

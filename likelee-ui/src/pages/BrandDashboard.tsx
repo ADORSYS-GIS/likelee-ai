@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -645,14 +645,104 @@ export default function BrandDashboard() {
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
+  // Note: "completed" tab key maps to "Expired" UI label per #360.
+  // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
+  const activeSectionRef = useRef(activeSection);
+  const campaignHubTabRef = useRef(campaignHubTab);
+  const pendingSectionOverrideRef = useRef<string | null>(null);
   const [brandJobs, setBrandJobs] = useState<any[]>([]);
   const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
+  const hasLoadedOffersRef = useRef(false);
+  const hasLoadedBrandAnalyticsRef = useRef(false);
+  const [activityEvents, setActivityEvents] = useState<any[]>([]);
+  const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
+
+  useEffect(() => {
+    campaignHubTabRef.current = campaignHubTab;
+  }, [campaignHubTab]);
+
+  const [campaignMetrics, setCampaignMetrics] = useState<{
+    active_projects_count: number;
+    pending_approvals_count: number;
+    action_needed: boolean;
+    avg_turnaround_hours: number;
+    loading: boolean;
+  }>({
+    active_projects_count: 0,
+    pending_approvals_count: 0,
+    action_needed: false,
+    avg_turnaround_hours: 0,
+    loading: true,
+  });
+
+  const [brandAnalytics, setBrandAnalytics] = useState<{
+    total_projects_ytd: number;
+    talent_performance: any[];
+    loading: boolean;
+  }>({
+    total_projects_ytd: 0,
+    talent_performance: [],
+    loading: true,
+  });
+
+  const navigateToSection = (
+    nextSection: string,
+    options?: {
+      campaignHubTab?: "active" | "pending_approval" | "completed" | "jobs";
+      campaignView?: "active" | "pending" | "completed";
+      replace?: boolean;
+    },
+  ) => {
+    pendingSectionOverrideRef.current = nextSection;
+    setActiveSection(nextSection);
+    if (options?.campaignHubTab) {
+      setCampaignHubTab(options.campaignHubTab);
+    }
+    if (options?.campaignView) {
+      setCampaignView(options.campaignView);
+    }
+    const params = new URLSearchParams(location.search);
+    params.set(
+      "section",
+      nextSection === "campaigns-hub" ? "campaigns" : nextSection,
+    );
+    setSearchParams(params, { replace: options?.replace ?? false });
+  };
+
+  const goToCampaignsSection = () => {
+    navigateToSection("campaigns-hub", {
+      campaignHubTab: "active",
+      replace: false,
+    });
+  };
+
+  const formatRelativeTime = (value?: string | null) => {
+    if (!value) return "Just now";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Just now";
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
+  };
 
   const resolveJobAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -859,11 +949,26 @@ export default function BrandDashboard() {
   });
 
   useEffect(() => {
-    const sectionFromQuery = String(searchParams.get("section") || "").trim();
-    if (sectionFromQuery) {
-      const targetSection =
-        sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
-      if (activeSection !== targetSection) {
+    const sectionFromQuery = String(
+      new URLSearchParams(location.search).get("section") || "",
+    ).trim();
+    const mappedSectionFromQuery =
+      sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
+    if (pendingSectionOverrideRef.current) {
+      if (mappedSectionFromQuery === pendingSectionOverrideRef.current) {
+        pendingSectionOverrideRef.current = null;
+      }
+      return;
+    }
+    if (mappedSectionFromQuery) {
+      const targetSection = mappedSectionFromQuery;
+      if (
+        targetSection === "campaigns-hub" &&
+        campaignHubTabRef.current !== "active"
+      ) {
+        setCampaignHubTab("active");
+      }
+      if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
       }
       return;
@@ -873,28 +978,134 @@ export default function BrandDashboard() {
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
       const targetSection =
         sectionFromState === "campaigns" ? "campaigns-hub" : sectionFromState;
-      if (activeSection !== targetSection) {
+      if (
+        targetSection === "campaigns-hub" &&
+        campaignHubTabRef.current !== "active"
+      ) {
+        setCampaignHubTab("active");
+      }
+      if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
       }
     }
-  }, [location.state, searchParams]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
-    const nextSection =
-      activeSection === "campaigns-hub" ? "campaigns" : activeSection;
-    const currentSection = String(searchParams.get("section") || "").trim();
-    if (nextSection && nextSection !== currentSection) {
-      const params = new URLSearchParams(searchParams);
-      params.set("section", nextSection);
-      setSearchParams(params, { replace: true });
+    let mounted = true;
+    const loadMetrics = async () => {
+      try {
+        setCampaignMetrics((prev) => ({ ...prev, loading: true }));
+        const res = await base44.get<{
+          active_projects_count?: number;
+          pending_approvals_count?: number;
+          action_needed?: boolean;
+          avg_turnaround_hours?: number;
+        }>("/api/brand/campaigns/metrics", {});
+        if (!mounted) return;
+        setCampaignMetrics((prev) => ({
+          ...prev,
+          active_projects_count: Number(res?.active_projects_count || 0),
+          pending_approvals_count: Number(res?.pending_approvals_count || 0),
+          action_needed: Boolean(res?.action_needed),
+          avg_turnaround_hours: Number(res?.avg_turnaround_hours || 0),
+          loading: false,
+        }));
+      } catch {
+        if (!mounted) return;
+        setCampaignMetrics((prev) => ({
+          ...prev,
+          active_projects_count: 0,
+          pending_approvals_count: 0,
+          action_needed: false,
+          avg_turnaround_hours: 0,
+          loading: false,
+        }));
+      }
+    };
+
+    loadMetrics();
+    const onFocus = () => {
+      loadMetrics();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
     }
-  }, [activeSection, searchParams, setSearchParams]);
+    return () => {
+      mounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (hasLoadedBrandAnalyticsRef.current) {
+      return () => {
+        mounted = false;
+      };
+    }
+    const loadAnalytics = async () => {
+      try {
+        setBrandAnalytics((prev) => ({ ...prev, loading: true }));
+        const res = await base44.get<{
+          total_projects_ytd?: number;
+          talent_performance?: any[];
+        }>("/api/brand/analytics", {});
+        if (!mounted) return;
+        setBrandAnalytics({
+          total_projects_ytd: Number(res?.total_projects_ytd || 0),
+          talent_performance: Array.isArray(res?.talent_performance)
+            ? res.talent_performance
+            : [],
+          loading: false,
+        });
+        hasLoadedBrandAnalyticsRef.current = true;
+      } catch {
+        if (!mounted) return;
+        setBrandAnalytics({
+          total_projects_ytd: 0,
+          talent_performance: [],
+          loading: false,
+        });
+        hasLoadedBrandAnalyticsRef.current = true;
+      }
+    };
+    loadAnalytics();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);
   }, [searchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadActivityEvents = async () => {
+      try {
+        setLoadingActivityEvents(true);
+        const res = await base44.get<{ events?: any[] }>(
+          "/api/brand/activity-events",
+          { params: { limit: 10 } },
+        );
+        if (!mounted) return;
+        setActivityEvents(Array.isArray(res?.events) ? res.events : []);
+      } catch {
+        if (!mounted) return;
+        setActivityEvents([]);
+      } finally {
+        if (mounted) setLoadingActivityEvents(false);
+      }
+    };
+    loadActivityEvents();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -1100,6 +1311,7 @@ export default function BrandDashboard() {
 
   useEffect(() => {
     if (
+      activeSection !== "home" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
       activeSection !== "campaigns-deliverables"
@@ -1108,6 +1320,7 @@ export default function BrandDashboard() {
     }
     let mounted = true;
     const loadMyOffers = async () => {
+      if (hasLoadedOffersRef.current) return;
       try {
         setLoadingBrandOfferItems(true);
         const response = await base44.get<{ offers?: any[] }>(
@@ -1147,6 +1360,7 @@ export default function BrandDashboard() {
         );
         if (!mounted) return;
         setBrandOfferItems(withDeliverables);
+        hasLoadedOffersRef.current = true;
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
@@ -1291,6 +1505,165 @@ export default function BrandDashboard() {
       (c) => c.status === "in_progress" || c.status === "pending_approval",
     )
     .reduce((sum, c) => sum + c.escrow_amount, 0);
+
+  const recentProjects = useMemo(() => {
+    const parseDate = (value?: string | null) => {
+      if (!value) return null;
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+    const extractLatest = (dates: Array<Date | null>) =>
+      dates.reduce<Date | null>((latest, current) => {
+        if (!current) return latest;
+        if (!latest || current.getTime() > latest.getTime()) return current;
+        return latest;
+      }, null);
+    const fullySignedStatuses = new Set([
+      "contract_fully_signed",
+      "signed",
+      "completed",
+    ]);
+
+    const grouped = new Map<string, any>();
+
+    brandOfferItems.forEach((offer: any) => {
+      const offerId = String(offer?.id || "");
+      if (!offerId) return;
+      const campaignId = String(
+        offer?.brand_campaign_id || offer?.brand_campaigns?.id || "",
+      ).trim();
+      const key = campaignId || offerId;
+      const campaignMeta =
+        offer?.brand_campaigns && typeof offer.brand_campaigns === "object"
+          ? offer.brand_campaigns
+          : {};
+      const startDateRaw = String(campaignMeta?.start_date || "").trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(campaignMeta?.duration_days || 0);
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const isAfterEnd = Boolean(
+        endDate && today.getTime() > endDate.getTime(),
+      );
+      const statusRaw = String(offer?.status || "").toLowerCase();
+      const contractStatuses = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      const hasCompletedContract = contractStatuses.some((contract: any) => {
+        const st = String(
+          contract?.docuseal_status || contract?.status || "",
+        ).toLowerCase();
+        return st === "completed" || st === "signed";
+      });
+      const isFullySigned =
+        fullySignedStatuses.has(statusRaw) || hasCompletedContract;
+      const completedAt =
+        campaignMeta?.completed_at || offer?.completed_at || null;
+      const campaignStatus = String(campaignMeta?.status || "").toLowerCase();
+      const offerStatus = isAfterEnd
+        ? "completed"
+        : isFullySigned
+          ? "in_progress"
+          : "pending_approval";
+      const deliverables = Array.isArray(offer?.offer_deliverables)
+        ? offer.offer_deliverables
+        : [];
+      const deliverableDates = deliverables.flatMap((deliverable: any) => {
+        const commentDates = Array.isArray(deliverable?.meta?.feedback_comments)
+          ? deliverable.meta.feedback_comments.map((comment: any) =>
+              parseDate(comment?.created_at),
+            )
+          : [];
+        return [
+          parseDate(deliverable?.created_at),
+          parseDate(deliverable?.updated_at),
+          parseDate(deliverable?.submitted_at),
+          ...commentDates,
+        ];
+      });
+      const contractDates = contractStatuses.map((contract: any) =>
+        parseDate(contract?.updated_at || contract?.created_at),
+      );
+      const activityDates = [
+        parseDate(offer?.updated_at),
+        parseDate(offer?.created_at),
+        parseDate(campaignMeta?.updated_at),
+        parseDate(campaignMeta?.created_at),
+        parseDate(completedAt),
+        ...deliverableDates,
+        ...contractDates,
+      ];
+      const lastActivity = extractLatest(activityDates);
+      const creatorName =
+        String(offer?.target_name || "").trim() ||
+        (offer?.target_type === "agency"
+          ? "Agency"
+          : offer?.target_type === "creator"
+            ? "Creator"
+            : "Collaborator");
+      const campaignName =
+        String(campaignMeta?.name || "").trim() ||
+        String(offer?.offer_title || "").trim() ||
+        "Campaign";
+      const dueDate = endDate || startDate || now;
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, {
+          id: key,
+          offer_id: offerId,
+          name: campaignName,
+          creator_name: creatorName,
+          due_date: dueDate,
+          status: offerStatus,
+          completed_at: completedAt,
+          last_activity_at: lastActivity || now,
+        });
+        return;
+      }
+      const latestActivity = extractLatest([
+        existing.last_activity_at,
+        lastActivity,
+      ]);
+      existing.last_activity_at = latestActivity || existing.last_activity_at;
+      existing.due_date =
+        dueDate && dueDate.getTime() > existing.due_date.getTime()
+          ? dueDate
+          : existing.due_date;
+      if (offerStatus === "completed") {
+        existing.status = "completed";
+      } else if (
+        offerStatus === "in_progress" &&
+        existing.status !== "completed"
+      ) {
+        existing.status = "in_progress";
+      } else if (
+        offerStatus === "pending_approval" &&
+        existing.status === "pending_approval"
+      ) {
+        existing.status = "pending_approval";
+      }
+      if (!existing.completed_at && completedAt) {
+        existing.completed_at = completedAt;
+      }
+    });
+
+    return Array.from(grouped.values())
+      .sort(
+        (a, b) => b.last_activity_at.getTime() - a.last_activity_at.getTime(),
+      )
+      .slice(0, 6);
+  }, [brandOfferItems]);
 
   const pendingApprovalCount = mockCampaigns.filter(
     (c) => c.status === "pending_approval",
@@ -1719,10 +2092,10 @@ export default function BrandDashboard() {
               <Target className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-4xl font-bold text-gray-900">
-              {mockCampaigns.filter((c) => c.status === "in_progress").length}
+              {campaignMetrics.active_projects_count}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {pendingApprovalCount} awaiting approval
+              {campaignMetrics.pending_approvals_count} awaiting approval
             </p>
           </Card>
 
@@ -1750,9 +2123,9 @@ export default function BrandDashboard() {
               <AlertCircle className="w-5 h-5 text-yellow-600" />
             </div>
             <p className="text-4xl font-bold text-gray-900">
-              {pendingApprovalCount}
+              {campaignMetrics.pending_approvals_count}
             </p>
-            {pendingApprovalCount > 0 && (
+            {campaignMetrics.pending_approvals_count > 0 && (
               <Badge className="mt-1 bg-yellow-100 text-yellow-700 border border-yellow-300">
                 Action needed
               </Badge>
@@ -1777,7 +2150,11 @@ export default function BrandDashboard() {
               </p>
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">14h</p>
+            <p className="text-4xl font-bold text-gray-900">
+              {campaignMetrics.avg_turnaround_hours > 0
+                ? `${campaignMetrics.avg_turnaround_hours}h`
+                : "—"}
+            </p>
             <p className="text-sm text-gray-600 mt-1">Industry: 48h</p>
           </Card>
         </div>
@@ -1789,7 +2166,9 @@ export default function BrandDashboard() {
           </h2>
           <div className="grid md:grid-cols-5 gap-4">
             <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
+              onClick={() => {
+                goToCampaignsSection();
+              }}
               className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
               <Plus className="w-6 h-6" />
@@ -1803,13 +2182,20 @@ export default function BrandDashboard() {
               <span>Browse Creators</span>
             </Button>
             <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
+              onClick={() => {
+                goToCampaignsSection();
+              }}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
               <span>View Active Campaigns</span>
             </Button>
-            <Button className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2">
+            <Button
+              onClick={() => {
+                goToCampaignsSection();
+              }}
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+            >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
@@ -1830,47 +2216,83 @@ export default function BrandDashboard() {
               Recent Projects
             </h3>
             <div className="space-y-3">
-              {mockCampaigns.slice(0, 5).map((campaign) => (
-                <Card
-                  key={campaign.id}
-                  className="p-4 bg-gray-50 border border-gray-200 hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900 mb-1">
-                        {campaign.name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {campaign.creators.join(", ")}
-                      </p>
-                    </div>
-                    <Badge
-                      className={
-                        campaign.status === "in_progress"
-                          ? "bg-blue-100 text-blue-700 border border-blue-300"
-                          : campaign.status === "pending_approval"
-                            ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                            : campaign.status === "completed"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }
-                    >
-                      {campaign.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">
-                      Due: {new Date(campaign.due_date).toLocaleDateString()}
-                    </span>
-                    <Button
-                      variant="link"
-                      className="text-[#F7B750] p-0 h-auto"
-                    >
-                      View Project →
-                    </Button>
-                  </div>
+              {loadingBrandOfferItems && (
+                <Card className="p-4 bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Loading recent projects...
+                  </p>
                 </Card>
-              ))}
+              )}
+              {!loadingBrandOfferItems &&
+                recentProjects.map((campaign: any) => (
+                  <Card
+                    key={campaign.id}
+                    className="p-4 bg-gray-50 border border-gray-200 hover:shadow-md transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 mb-1">
+                          {campaign.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {campaign.creator_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            campaign.status === "in_progress"
+                              ? "bg-blue-100 text-blue-700 border border-blue-300"
+                              : campaign.status === "pending_approval"
+                                ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                                : campaign.status === "completed"
+                                  ? "bg-gray-100 text-gray-700 border border-gray-300"
+                                  : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }
+                        >
+                          {String(campaign.status).replace(/_/g, " ")}
+                        </Badge>
+                        {campaign.completed_at && (
+                          <Badge className="bg-green-100 text-green-700 border border-green-300">
+                            Done
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        Due: {campaign.due_date.toLocaleDateString()}
+                      </span>
+                      <Button
+                        variant="link"
+                        className="text-[#F7B750] p-0 h-auto"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (campaign.offer_id) {
+                            setSelectedCampaign(campaign.offer_id);
+                          }
+                          navigateToSection("campaign-offers", {
+                            campaignView:
+                              campaign.status === "pending_approval"
+                                ? "pending"
+                                : campaign.status === "completed"
+                                  ? "completed"
+                                  : "active",
+                          });
+                        }}
+                      >
+                        View Project →
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {!loadingBrandOfferItems && recentProjects.length === 0 && (
+                <Card className="p-4 bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No recent projects yet.
+                  </p>
+                </Card>
+              )}
             </div>
           </Card>
 
@@ -1879,32 +2301,106 @@ export default function BrandDashboard() {
               Activity Feed
             </h3>
             <div className="space-y-3">
-              {mockActivities.map((activity, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg border ${
-                    activity.urgent
-                      ? "bg-yellow-50 border-yellow-300"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.urgent ? "bg-yellow-500" : "bg-gray-400"
-                      }`}
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-medium">
-                        {activity.message}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </div>
+              {loadingActivityEvents && (
+                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Loading activity feed...
+                  </p>
                 </div>
-              ))}
+              )}
+              {!loadingActivityEvents && activityEvents.length === 0 && (
+                <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No recent activity yet.
+                  </p>
+                </div>
+              )}
+              {!loadingActivityEvents &&
+                activityEvents.map((event: any) => {
+                  const eventType = String(
+                    event?.event_type || "",
+                  ).toLowerCase();
+                  const isAttention = [
+                    "deliverable.submitted",
+                    "deliverable.changes_requested",
+                    "deliverable.comment",
+                  ].includes(eventType);
+                  const actor = String(event?.actor_name || "").trim();
+                  const actorTypeRaw = String(
+                    event?.actor_type || "",
+                  ).toLowerCase();
+                  const actorLabel =
+                    actor ||
+                    (actorTypeRaw === "agency"
+                      ? "Agency"
+                      : actorTypeRaw === "creator"
+                        ? "Creator"
+                        : actorTypeRaw === "brand"
+                          ? "You"
+                          : "Someone");
+                  const description = String(event?.description || "");
+                  const createdAt = formatRelativeTime(event?.created_at);
+                  const fallbackActionMap: Record<string, string> = {
+                    "campaign.created": "created a campaign",
+                    "campaign.completed": "marked a campaign as done",
+                    "offer.sent": "sent an offer",
+                    "deliverable.submitted": "submitted a deliverable",
+                    "deliverable.changes_requested":
+                      "requested edits on a deliverable",
+                    "deliverable.approved": "approved a deliverable",
+                    "deliverable.comment": "left feedback on a deliverable",
+                    "job.created": "created a job",
+                    "job.invite.sent": "sent a job invite",
+                    "job.invite.accepted": "accepted a job invite",
+                    "job.invite.declined": "declined a job invite",
+                    "job.application.submitted": "applied for a job",
+                    "connection.request.sent": "sent a connection request",
+                    "connection.request.accepted":
+                      "accepted a connection request",
+                    "connection.request.declined":
+                      "declined a connection request",
+                  };
+                  const fallbackAction =
+                    fallbackActionMap[eventType] ||
+                    (eventType
+                      ? eventType.replace(/_/g, " ").replace(/\./g, " ")
+                      : "performed an action");
+                  const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
+                  let message = description || fallbackDescription;
+                  if (actorTypeRaw === "brand" && message) {
+                    if (actor && message.startsWith(actor)) {
+                      message = `You${message.slice(actor.length)}`;
+                    } else if (message.startsWith("Brand")) {
+                      message = `You${message.slice("Brand".length)}`;
+                    }
+                  }
+                  return (
+                    <div
+                      key={String(event?.id || Math.random())}
+                      className={`p-3 rounded-lg border ${
+                        isAttention
+                          ? "bg-yellow-50 border-yellow-300"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            isAttention ? "bg-yellow-500" : "bg-gray-400"
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900 font-medium">
+                            {message}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {createdAt}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </Card>
         </div>
@@ -4082,6 +4578,10 @@ export default function BrandDashboard() {
           : offer?.target_type === "creator"
             ? "Creator"
             : "Collaborator");
+      const brandCampaigns =
+        offer?.brand_campaigns && typeof offer.brand_campaigns === "object"
+          ? offer.brand_campaigns
+          : {};
       return {
         id: String(offer?.id || Math.random()),
         offer_id: String(offer?.id || ""),
@@ -4090,6 +4590,9 @@ export default function BrandDashboard() {
         ).trim(),
         name: campaignName,
         status: mappedStatus,
+        brand_campaigns: brandCampaigns,
+        completed_at: brandCampaigns?.completed_at || null,
+        campaign_status: String(brandCampaigns?.status || "").toLowerCase(),
         objective:
           String(offer?.brand_campaigns?.objective || "").trim() ||
           "Campaign offer",
@@ -4131,23 +4634,61 @@ export default function BrandDashboard() {
     ).map((group: any) => {
       const offers = Array.isArray(group?.offers) ? group.offers : [];
       const statuses = new Set(offers.map((o: any) => String(o?.status || "")));
+      const campaignMeta =
+        offers[0]?.brand_campaigns &&
+        typeof offers[0].brand_campaigns === "object"
+          ? offers[0].brand_campaigns
+          : {};
+      const completedAt =
+        offers.find((o: any) => o?.completed_at)?.completed_at || null;
+      const campaignStatus = String(
+        offers.find((o: any) => o?.campaign_status)?.campaign_status || "",
+      ).toLowerCase();
+      const startDateRaw = String(campaignMeta?.start_date || "").trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(campaignMeta?.duration_days || 0);
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const today = new Date();
+      const todayOnly = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      const isAfterEnd = Boolean(
+        endDate && todayOnly.getTime() > endDate.getTime(),
+      );
+      const isExpired = isAfterEnd;
+      const isDone = Boolean(completedAt);
 
       const groupStatus:
         | "pending_approval"
         | "in_progress"
         | "completed"
-        | "draft" = statuses.has("in_progress")
-        ? "in_progress"
-        : statuses.has("pending_approval")
-          ? "pending_approval"
-          : statuses.has("completed")
-            ? "completed"
+        | "draft" = isExpired
+        ? "completed"
+        : statuses.has("in_progress")
+          ? "in_progress"
+          : statuses.has("pending_approval")
+            ? "pending_approval"
             : "draft";
 
       const representative = offers[0] || {};
       return {
         ...group,
         status: groupStatus,
+        is_done: isDone,
+        is_expired: isExpired,
+        completed_at: completedAt,
         objective: representative?.objective || "Campaign offer",
         budget: Number(representative?.budget || 0),
         due_date: representative?.due_date,
@@ -4159,8 +4700,8 @@ export default function BrandDashboard() {
     const filteredCampaigns = groupedCampaigns.filter((c: any) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
-      if (campaignView === "completed") return c.status === "completed";
-      return c.status === "draft";
+      if (campaignView === "completed") return c.is_expired;
+      return c.status === "in_progress";
     });
 
     if (selectedCampaign) {
@@ -4639,19 +5180,26 @@ export default function BrandDashboard() {
           {/* Project Header */}
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <Badge
-                className={
-                  campaign.status === "in_progress"
-                    ? "bg-blue-100 text-blue-700 border border-blue-300"
-                    : campaign.status === "pending_approval"
-                      ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                      : campaign.status === "completed"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-gray-100 text-gray-700 border border-gray-300"
-                }
-              >
-                {campaign.status.replace("_", " ")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  className={
+                    campaign.status === "in_progress"
+                      ? "bg-blue-100 text-blue-700 border border-blue-300"
+                      : campaign.status === "pending_approval"
+                        ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                        : campaign.status === "completed"
+                          ? "bg-gray-100 text-gray-700 border border-gray-300"
+                          : "bg-gray-100 text-gray-700 border border-gray-300"
+                  }
+                >
+                  {campaign.status.replace("_", " ")}
+                </Badge>
+                {campaign.completed_at && (
+                  <Badge className="bg-green-100 text-green-700 border border-green-300">
+                    Done
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Due Date</p>
@@ -4837,23 +5385,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Completed (
-            {
-              groupedCampaigns.filter((c: any) => c.status === "completed")
-                .length
-            }
-            )
-          </button>
-          <button
-            onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Drafts (
-            {groupedCampaigns.filter((c: any) => c.status === "draft").length})
+            Expired ({groupedCampaigns.filter((c: any) => c.is_expired).length})
           </button>
         </div>
 
@@ -4876,7 +5408,7 @@ export default function BrandDashboard() {
                 : campaign.status === "pending_approval"
                   ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
                   : campaign.status === "completed"
-                    ? "bg-green-100 text-green-700 border border-green-300"
+                    ? "bg-gray-100 text-gray-700 border border-gray-300"
                     : "bg-gray-100 text-gray-700 border border-gray-300";
 
             return (
@@ -4897,6 +5429,11 @@ export default function BrandDashboard() {
                     <Badge className={statusBadgeClass}>
                       {String(campaign.status).replace(/_/g, " ")}
                     </Badge>
+                    {campaign.completed_at && (
+                      <Badge className="bg-green-100 text-green-700 border border-green-300">
+                        Done
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -5023,7 +5560,7 @@ export default function BrandDashboard() {
                 ? "No active campaigns"
                 : campaignView === "pending"
                   ? "No pending approval campaigns"
-                  : "No completed campaigns"}
+                  : "No expired campaigns"}
             </h3>
             <p className="text-gray-600 mb-6">
               Start a new campaign to get creators working on your content
@@ -5050,7 +5587,7 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-8">
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
@@ -5066,11 +5603,6 @@ export default function BrandDashboard() {
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">12</p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
-            <p className="text-3xl font-bold text-gray-900">3.2x</p>
-          </Card>
         </div>
 
         <div className="grid md:grid-cols-5 gap-6">
@@ -5078,7 +5610,12 @@ export default function BrandDashboard() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
-            <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
+            <Button
+              onClick={() => {
+                goToCampaignsSection();
+              }}
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+            >
               Invite Agency
             </Button>
           </Card>
@@ -5152,14 +5689,7 @@ export default function BrandDashboard() {
                 onClick={() => setCampaignHubTab("completed")}
                 className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Completed
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCampaignHubTab("inbox")}
-                className={`border-2 rounded-none ${campaignHubTab === "inbox" ? "border-black bg-black text-white" : "border-gray-300"}`}
-              >
-                Inbox
+                Expired
               </Button>
               <Button
                 variant="outline"
@@ -5170,9 +5700,7 @@ export default function BrandDashboard() {
               </Button>
             </div>
           </div>
-          {campaignHubTab === "inbox" ? (
-            renderInboxSubtab()
-          ) : campaignHubTab === "jobs" ? (
+          {campaignHubTab === "jobs" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -5660,20 +6188,21 @@ export default function BrandDashboard() {
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
-          <p className="text-3xl font-bold text-gray-900">12</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {brandAnalytics.loading ? "—" : brandAnalytics.total_projects_ytd}
+          </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
-          <p className="text-3xl font-bold text-gray-900">14h</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {campaignMetrics.avg_turnaround_hours > 0
+              ? `${campaignMetrics.avg_turnaround_hours}h`
+              : "—"}
+          </p>
           <p className="text-xs text-gray-500 mt-1">Industry: 48h</p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Approval Rate</p>
-          <p className="text-3xl font-bold text-gray-900">96%</p>
-          <p className="text-xs text-green-600 mt-1">First submission</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
@@ -5682,10 +6211,6 @@ export default function BrandDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
           <p className="text-3xl font-bold text-gray-900">$3.8K</p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Revision Rate</p>
-          <p className="text-3xl font-bold text-gray-900">4%</p>
         </Card>
       </div>
 
@@ -5711,9 +6236,6 @@ export default function BrandDashboard() {
                   Projects
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Avg Rating
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                   Avg Turnaround
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
@@ -5725,52 +6247,82 @@ export default function BrandDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              <tr className="hover:bg-gray-50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png"
-                      className="w-10 h-10 rounded-full object-cover"
-                      alt="Emma"
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900">Emma</p>
-                      <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs">
-                        Top Performer
-                      </Badge>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-gray-900">5</td>
-                <td className="px-4 py-4 text-gray-900">★★★★★ 4.9</td>
-                <td className="px-4 py-4 text-gray-900">12h</td>
-                <td className="px-4 py-4 text-green-600 font-semibold">100%</td>
-                <td className="px-4 py-4 font-bold text-gray-900">$8,200</td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png"
-                      className="w-10 h-10 rounded-full object-cover"
-                      alt="Marcus"
-                    />
-                    <p className="font-semibold text-gray-900">Marcus Davis</p>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-gray-900">3</td>
-                <td className="px-4 py-4 text-gray-900">★★★★☆ 4.7</td>
-                <td className="px-4 py-4 text-gray-900">16h</td>
-                <td className="px-4 py-4 text-green-600 font-semibold">95%</td>
-                <td className="px-4 py-4 font-bold text-gray-900">$6,000</td>
-              </tr>
+              {brandAnalytics.loading && (
+                <tr>
+                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                    Loading talent performance...
+                  </td>
+                </tr>
+              )}
+              {!brandAnalytics.loading &&
+                brandAnalytics.talent_performance.length === 0 && (
+                  <tr>
+                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                      No talent performance data yet.
+                    </td>
+                  </tr>
+                )}
+              {!brandAnalytics.loading &&
+                brandAnalytics.talent_performance.map(
+                  (talent: any, idx: number) => {
+                    const name = String(talent?.name || "Talent");
+                    const imageUrl = String(talent?.image_url || "").trim();
+                    const projectsCount = Number(talent?.projects_count || 0);
+                    const avgTurnaround = Number(
+                      talent?.avg_turnaround_hours || 0,
+                    );
+                    const successRate = Number(talent?.success_rate_pct || 0);
+                    return (
+                      <tr
+                        key={`${talent?.target_type || "talent"}-${talent?.target_id || name}`}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                                {name.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {name}
+                              </p>
+                              {idx < 3 && (
+                                <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs mt-1">
+                                  Top Performer
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {projectsCount}
+                        </td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {avgTurnaround > 0 ? `${avgTurnaround}h` : "—"}
+                        </td>
+                        <td className="px-4 py-4 text-green-600 font-semibold">
+                          {projectsCount > 0 ? `${successRate}%` : "—"}
+                        </td>
+                        <td className="px-4 py-4 font-bold text-gray-900">—</td>
+                      </tr>
+                    );
+                  },
+                )}
             </tbody>
           </table>
         </div>
       </Card>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-1 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             Spend by Month
@@ -5789,59 +6341,6 @@ export default function BrandDashboard() {
               />
             </LineChart>
           </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Project Completion Time
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">0-12 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: "40%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">40%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">12-24 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500"
-                    style={{ width: "35%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">35%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">24-48 hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-500"
-                    style={{ width: "20%" }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">20%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">48+ hours</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-500" style={{ width: "5%" }} />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">5%</span>
-              </div>
-            </div>
-          </div>
         </Card>
       </div>
 
@@ -9546,12 +10045,13 @@ export default function BrandDashboard() {
                     <button
                       onClick={() => {
                         if (item.id === "campaigns") {
-                          setActiveSection("campaigns-hub");
-                          setCampaignHubTab("active");
+                          navigateToSection("campaigns-hub", {
+                            campaignHubTab: "active",
+                          });
                           setSelectedCampaign(null);
                           return;
                         }
-                        setActiveSection(item.id);
+                        navigateToSection(item.id);
                         setShowEscrowDetails(false);
                         setShowBriefDetails(false);
                         setShowCreatorProfile(false);
@@ -9620,8 +10120,9 @@ export default function BrandDashboard() {
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
-                          setActiveSection("campaign-offers");
-                          setCampaignView("active");
+                          navigateToSection("campaign-offers", {
+                            campaignView: "active",
+                          });
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaign-offers"
@@ -9634,7 +10135,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-inbox");
+                          navigateToSection("campaigns-inbox");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
@@ -9652,7 +10153,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-contract-hub");
+                          navigateToSection("campaigns-contract-hub");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-contract-hub"
@@ -9665,7 +10166,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-deliverables");
+                          navigateToSection("campaigns-deliverables");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-deliverables"
@@ -9678,8 +10179,9 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-hub");
-                          setCampaignHubTab("jobs");
+                          navigateToSection("campaigns-hub", {
+                            campaignHubTab: "jobs",
+                          });
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-hub" &&
