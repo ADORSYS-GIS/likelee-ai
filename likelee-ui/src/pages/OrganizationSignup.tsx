@@ -393,7 +393,15 @@ export default function OrganizationSignup() {
           "Profile not in context or incomplete, falling back to API calls",
         );
         try {
-          const [brandProfile, agencyProfile] = await Promise.all([
+          const expectedFlow =
+            flow ||
+            (user.user_metadata?.role === "brand"
+              ? "brand"
+              : user.user_metadata?.role === "agency"
+                ? "agency"
+                : null);
+
+          const fetchBrandProfile = () =>
             getBrandProfile().catch((err) => {
               if (
                 err.name === "AbortError" ||
@@ -402,7 +410,9 @@ export default function OrganizationSignup() {
                 console.log("getBrandProfile aborted");
               }
               return null;
-            }),
+            });
+
+          const fetchAgencyProfile = () =>
             getAgencyProfile().catch((err) => {
               if (
                 err.name === "AbortError" ||
@@ -411,8 +421,21 @@ export default function OrganizationSignup() {
                 console.log("getAgencyProfile aborted");
               }
               return null;
-            }),
-          ]);
+            });
+
+          let brandProfile = null;
+          let agencyProfile = null;
+
+          if (expectedFlow === "brand") {
+            brandProfile = await fetchBrandProfile();
+          } else if (expectedFlow === "agency") {
+            agencyProfile = await fetchAgencyProfile();
+          } else {
+            [brandProfile, agencyProfile] = await Promise.all([
+              fetchBrandProfile(),
+              fetchAgencyProfile(),
+            ]);
+          }
 
           const orgProfile = brandProfile || agencyProfile;
 
@@ -455,7 +478,7 @@ export default function OrganizationSignup() {
     };
 
     handleVerifiedUser();
-  }, [user, profile, toast]); // Rerun when user or profile state changes
+  }, [flow, user, profile, toast]); // Rerun when user or profile state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
