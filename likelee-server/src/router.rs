@@ -1138,8 +1138,8 @@ pub fn build_router(state: AppState) -> Router {
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)
-        .layer(axum::Extension(cache_idempotency))
-        .layer(axum::Extension(cache_metrics))
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))
+        .layer(axum::Extension(cache_metrics))
+        .layer(axum::Extension(cache_idempotency))
 }
