@@ -3,7 +3,7 @@ use crate::config::AppState;
 use crate::email;
 use crate::errors::sanitize_db_error;
 use crate::face_profiles::MarketplaceConnectPayload;
-use crate::services::docuseal::{DocuSealClient, Submitter, SubmitterField};
+use crate::services::docuseal::{DocuSealClient, Submitter};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -762,34 +762,6 @@ pub async fn create_marketplace_connect_contract(
             )
         })?;
 
-    let shared_fields = vec![
-        SubmitterField {
-            name: "Agency Name".to_string(),
-            default_value: Some(agency_name.clone()),
-            readonly: Some(true),
-        },
-        SubmitterField {
-            name: "Creator Name".to_string(),
-            default_value: Some(creator_name.clone()),
-            readonly: Some(true),
-        },
-        SubmitterField {
-            name: "Commission Rate".to_string(),
-            default_value: Some(format!("{:.2}%", commission_rate.clamp(0.0, 100.0))),
-            readonly: Some(true),
-        },
-        SubmitterField {
-            name: "Valid From".to_string(),
-            default_value: Some(valid_from.clone()),
-            readonly: Some(true),
-        },
-        SubmitterField {
-            name: "Valid Until".to_string(),
-            default_value: Some(valid_until.clone()),
-            readonly: Some(true),
-        },
-    ];
-
     let submission = docuseal
         .create_submission_with_submitters(
             ds_template.id,
@@ -799,7 +771,7 @@ pub async fn create_marketplace_connect_contract(
                     email: Some(agency_email),
                     role: Some("First Party".to_string()),
                     order: Some(0),
-                    fields: Some(shared_fields.clone()),
+                    fields: None,
                     values: None,
                 },
                 Submitter {
@@ -807,7 +779,7 @@ pub async fn create_marketplace_connect_contract(
                     email: creator_email.clone(),
                     role: Some("Second Party".to_string()),
                     order: Some(1),
-                    fields: Some(shared_fields),
+                    fields: None,
                     values: None,
                 },
             ],
