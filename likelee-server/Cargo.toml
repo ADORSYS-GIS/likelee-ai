@@ -12,7 +12,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["clock"] }
 tower-http = { version = "0.5", features = ["cors"] }
-postgrest = "1"
+postgrest = "1.6"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
 hmac = "0.12"
 sha2 = "0.10"
@@ -20,8 +20,8 @@ hex = "0.4"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-aws-config = "=1.8.11"
-aws-sdk-rekognition = "=1.94.0"
+aws-config = "1.8"
+aws-sdk-rekognition = "1.94"
 aws-types = "1"
 aws-runtime = "=1.7.2"
 aws-credential-types = "=1.2.14"
@@ -44,7 +44,7 @@ lettre = { version = "0.11", default-features = false, features = [
 ] }
 urlencoding = "2"
 jsonwebtoken = "9"
-stripe-sdk = { package = "async-stripe", version = "0.33.0", features = [
+stripe-sdk = { package = "async-stripe", version = "0.41", features = [
     "runtime-tokio-hyper-rustls",
 ] }
 base64 = "0.22.1"
@@ -52,3 +52,11 @@ bcrypt = "0.18.0"
 printpdf = "0.7"
 pulldown-cmark = "0.12"
 regex = "1"
+dashmap = "5"
+parking_lot = "0.12"
+
+[patch.crates-io]
+postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }
+
+[audit]
+ignore = []

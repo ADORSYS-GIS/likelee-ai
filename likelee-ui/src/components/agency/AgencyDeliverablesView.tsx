@@ -58,11 +58,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 export function AgencyDeliverablesView() {
   const [offers, setOffers] = useState<any[]>([]);
   const [roster, setRoster] = useState<any[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(false);
+  const queryClient = useQueryClient();
   const [expandedOfferId, setExpandedOfferId] = useState<string>("");
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [assignmentsByOffer, setAssignmentsByOffer] = useState<
@@ -71,7 +74,6 @@ export function AgencyDeliverablesView() {
   const [deliverablesByOffer, setDeliverablesByOffer] = useState<
     Record<string, any[]>
   >({});
-  const [loadingOffers, setLoadingOffers] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState<
     Record<string, boolean>
   >({});
@@ -227,6 +229,40 @@ export function AgencyDeliverablesView() {
     }
   };
 
+  // IndexedDB-backed queries for offers and roster
+  const offersQuery = useIndexedDbQuery<{ offers: any[] }>({
+    queryKey: ["agency-campaign-offers-my", "deliverables"],
+    queryFn: async () => {
+      const resp = await listMyCampaignOffers();
+      return { offers: (resp as any)?.offers || [] };
+    },
+    maxAge: 60 * 1000, // 1 minute
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
+  });
+
+  const rosterQuery = useIndexedDbQuery<{ talents: any[] }>({
+    queryKey: ["agency-roster", "deliverables"],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      const talents = Array.isArray(resp)
+        ? resp
+        : Array.isArray((resp as any)?.talents)
+          ? (resp as any).talents
+          : Array.isArray((resp as any)?.data?.talents)
+            ? (resp as any).data.talents
+            : [];
+      return { talents };
+    },
+    maxAge: 5 * 60 * 1000, // 5 minutes
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
+  });
+
+  const offers = offersQuery.data?.offers ?? [];
+  const roster = rosterQuery.data?.talents ?? [];
+  const loadingOffers = offersQuery.isLoading && !offersQuery.data;
+
   const rosterOptions = useMemo(
     () => (Array.isArray(roster) ? roster : []),
     [roster],
@@ -362,6 +398,43 @@ export function AgencyDeliverablesView() {
     } finally {
       setLoadingAssignments((prev) => ({ ...prev, [offerId]: false }));
     }
+  };
+
+  const loadDeliverables = async (offerId: string) => {
+    setLoadingDeliverables((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const resp = await listOfferDeliverables(offerId);
+      const rows = Array.isArray((resp as any)?.deliverables)
+        ? (resp as any).deliverables
+        : [];
+      setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: rows }));
+
+      // Cache deliverables to IndexedDB
+      const { setCachedQuery } = await import("@/lib/indexedDb");
+      await setCachedQuery(["offer-deliverables", offerId], rows, offerId);
+    } catch {
+      setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: [] }));
+    } finally {
+      setLoadingDeliverables((prev) => ({ ...prev, [offerId]: false }));
+    }
+  };
+
+  // Load deliverables from IndexedDB cache on offer expand
+  const loadDeliverablesWithCache = async (offerId: string) => {
+    // Try to load from cache first
+    const { getCachedQuery } = await import("@/lib/indexedDb");
+    const cached = await getCachedQuery<any[]>(
+      ["offer-deliverables", offerId],
+      offerId,
+      60 * 1000,
+    );
+
+    if (cached) {
+      setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: cached }));
+    }
+
+    // Always fetch fresh data in background
+    await loadDeliverables(offerId);
   };
 
   const deliverableStatusLabel = (statusRaw: unknown) => {
@@ -679,27 +752,15 @@ export function AgencyDeliverablesView() {
     );
   };
 
-  const loadDeliverables = async (offerId: string) => {
-    setLoadingDeliverables((prev) => ({ ...prev, [offerId]: true }));
-    try {
-      const resp = await listOfferDeliverables(offerId);
-      const rows = Array.isArray((resp as any)?.deliverables)
-        ? (resp as any).deliverables
-        : [];
-      setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: rows }));
-    } catch {
-      setDeliverablesByOffer((prev) => ({ ...prev, [offerId]: [] }));
-    } finally {
-      setLoadingDeliverables((prev) => ({ ...prev, [offerId]: false }));
-    }
-  };
-
   const openOffer = async (offerId: string) => {
     const next = offerId === expandedOfferId ? "" : offerId;
     setExpandedOfferId(next);
     setSelectedCreatorId("");
     if (next) {
-      await Promise.all([loadAssignments(next), loadDeliverables(next)]);
+      await Promise.all([
+        loadAssignments(next),
+        loadDeliverablesWithCache(next),
+      ]);
     }
   };
 

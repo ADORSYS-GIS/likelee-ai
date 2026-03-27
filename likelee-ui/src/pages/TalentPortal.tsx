@@ -139,6 +139,8 @@ export default function TalentPortal({
     queryKey: ["talentMe", "base"],
     queryFn: async () => await getTalentMe(),
     enabled: initialized && authenticated,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   const baseConnectedAgencies = Array.isArray(
@@ -173,6 +175,8 @@ export default function TalentPortal({
         profileAgencyId ? { agency_id: profileAgencyId } : undefined,
       ),
     enabled: initialized && authenticated && !!profileAgencyId,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   const agencyUser =
@@ -224,18 +228,24 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: analytics } = useQuery({
     queryKey: ["talentAnalytics", currentMonth],
     queryFn: async () => await getTalentAnalytics({ month: currentMonth }),
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: irlEarningsSummary } = useQuery({
     queryKey: ["talentIrlEarningsSummary"],
     queryFn: async () => await getTalentIrlEarningsSummary(),
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: irlPayments = [] } = useQuery({
@@ -249,6 +259,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const createIrlPayoutRequestMutation = useMutation({
@@ -271,6 +283,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const addBookOutMutation = useMutation({
@@ -294,6 +308,8 @@ export default function TalentPortal({
         profileAgencyId ? { agency_id: profileAgencyId } : {},
       ),
     enabled: !!talentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - rarely changes
+    refetchOnWindowFocus: false,
   });
 
   const updateBookingPreferencesMutation = useMutation({
@@ -338,6 +354,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: licenses = [] } = useQuery({
@@ -347,6 +365,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: licensingRevenue } = useQuery({
@@ -357,6 +377,8 @@ export default function TalentPortal({
         ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
       }),
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: earningsByCampaign = [] } = useQuery({
@@ -369,6 +391,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: earningsByAgency = [] } = useQuery({
@@ -385,6 +409,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: earningsByCampaignAllTime = [] } = useQuery({
@@ -394,6 +420,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   const fmtCents = (c?: number) => {
@@ -431,6 +459,8 @@ export default function TalentPortal({
       const r = await listMyCampaignOffers();
       return r?.offers || [];
     },
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const activeProjects = React.useMemo(() => {
@@ -791,6 +821,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: authenticated,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const uploadVoiceMutation = useMutation({
@@ -817,6 +849,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - portfolio rarely changes
+    refetchOnWindowFocus: false,
   });
 
   const { data: agencyInvitesResp, isLoading: agencyInvitesLoading } = useQuery(
@@ -824,6 +858,8 @@ export default function TalentPortal({
       queryKey: ["talentAgencyInvites"],
       queryFn: async () => await listTalentAgencyInvites(),
       enabled: authenticated,
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
     },
   );
 
@@ -837,6 +873,8 @@ export default function TalentPortal({
       queryKey: ["creatorAgencyConnections"],
       queryFn: async () => await listCreatorAgencyConnections(),
       enabled: authenticated,
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
     });
 
   const disconnectAgencyMutation = useMutation({
@@ -900,6 +938,8 @@ export default function TalentPortal({
     queryKey: ["talentPortalSettings"],
     queryFn: async () => await getTalentPortalSettings(),
     enabled: initialized && authenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes - settings rarely change
+    refetchOnWindowFocus: false,
   });
 
   const currentYear = React.useMemo(() => new Date().getFullYear(), []);
@@ -910,12 +950,16 @@ export default function TalentPortal({
     queryFn: async () =>
       await getLatestTalentTaxDocument({ doc_type: "1099", tax_year: taxYear }),
     enabled: !!talentId,
+    staleTime: 10 * 60 * 1000, // 10 minutes - tax docs rarely change
+    refetchOnWindowFocus: false,
   });
 
   const { data: w9Doc } = useQuery({
     queryKey: ["talentTaxDoc", "w9"],
     queryFn: async () => await getLatestTalentTaxDocument({ doc_type: "w9" }),
     enabled: !!talentId,
+    staleTime: 10 * 60 * 1000, // 10 minutes - tax docs rarely change
+    refetchOnWindowFocus: false,
   });
 
   const updatePortalSettingsMutation = useMutation({
@@ -937,6 +981,8 @@ export default function TalentPortal({
       return Array.isArray(rows) ? rows : [];
     },
     enabled: authenticated,
+    staleTime: 30 * 1000, // 30 seconds - notifications change frequently
+    refetchOnWindowFocus: false,
   });
 
   const markReadMutation = useMutation({

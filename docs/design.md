@@ -242,6 +242,35 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 - `LIVENESS_MIN_SCORE`
   - Minimum confidence score for liveness check (default `0.90`).
 
+### Multi-Level Cache
+
+The server implements a three-level hierarchical caching strategy to reduce database load:
+
+- **L1 (Request)**: Per-request scope, auto-cleanup on request completion
+- **L2 (Session)**: User-scoped cache keyed by session ID with TTL
+- **L3 (Application)**: Global shared data with background refresh
+
+Idempotency keys (`Idempotency-Key` header) can be used on mutating endpoints (POST/PATCH/DELETE) to safely support retries.
+
+- The middleware can replay cached responses for repeated keys.
+- Handlers must store the result only after a successful commit (via `store_idempotency_result`).
+- Replayed responses preserve the original `Content-Type` when it is stored (otherwise defaults to `application/json`).
+
+Configuration variables:
+
+- `CACHE_L2_TTL_SECS`
+  - TTL for L2 session cache entries (default `1800` = 30 minutes).
+- `CACHE_L3_TTL_SECS`
+  - TTL for L3 application cache entries (default `3600` = 1 hour).
+- `CACHE_L3_REFRESH_SECS`
+  - Interval for L3 background refresh (default `300` = 5 minutes).
+- `CACHE_L2_MAX_ENTRIES`
+  - Maximum entries in L2 session cache (default `10000`).
+- `CACHE_L3_MAX_ENTRIES`
+  - Maximum entries in L3 application cache (default `1000`).
+- `CACHE_IDEMPOTENCY_TTL_SECS`
+  - TTL for idempotency key records (default `86400` = 24 hours).
+
 ### Voice & Audio
 
 - `ELEVENLABS_API_KEY`
@@ -937,6 +966,91 @@ Identity verification via Veriff integration.
 ### Implementation
 
 - **Backend Logic**: `likelee-server/src/kyc.rs`
+
+---
+
+## Database Transaction Patterns
+
+### Overview
+
+Multi-step database operations are wrapped in PostgreSQL RPC functions to ensure atomicity (ACID compliance). The Postgrest client used by the Rust backend doesn't support client-side transactions, so all transactional logic is implemented server-side in PostgreSQL.
+
+### Migration Location
+
+- **File**: `supabase/migrations/2026-03-23_atomic_transactions.sql`
+
+### Key RPC Functions
+
+#### `adjust_wallet_credits`
+
+Atomically adjusts a user's wallet balance and records the transaction.
+
+**Parameters:**
+- `p_user_id` (uuid): User ID
+- `p_delta` (bigint): Credit change (positive for credit, negative for debit)
+- `p_reason` (text): Transaction reason
+- `p_provider` (text, nullable): Provider name (fal, higgsfield, kive)
+- `p_generation_id` (uuid, nullable): Generation job ID
+- `p_stripe_session_id` (text, nullable): Stripe checkout session ID
+
+**Returns:** JSONB with `wallet_id`, `balance_before`, `balance_after`, `transaction_id`
+
+**Usage in Rust:**
+```rust
+// In likelee-server/src/studio/wallet.rs
+let (_, balance_after) = call_adjust_wallet_credits(
+    pg, user_id, -amount, "generation_deduction",
+    Some(provider), Some(generation_id), None
+).await?;
+```
+
+#### `complete_payment_link_checkout`
+
+Atomically completes a payment link checkout: updates payment link status, inserts licensing_payouts, updates payments, and archives related records.
+
+**Parameters:**
+- `p_payment_link_id` (uuid)
+- `p_payment_intent_id` (text)
+- `p_agency_id` (uuid)
+- `p_licensing_request_ids` (text): Comma-separated UUIDs
+- `p_agency_amount_cents`, `p_talent_amount_cents`, `p_platform_fee_cents`, `p_net_amount_cents` (bigint)
+- `p_currency` (text)
+- `p_talent_splits` (jsonb)
+- `p_commission_rate` (numeric)
+
+**Returns:** JSONB with summary of updated records
+
+#### `setup_agency_stripe_connect`
+
+Atomically creates agency profile (if needed) and sets Stripe Connect account ID.
+
+#### `bulk_update_payments_status`
+
+Atomically updates multiple payments to the same status.
+
+### Existing Transactional Functions
+
+The following function was created in an earlier migration and remains the source of truth:
+
+- **`record_stripe_transfer`** (migration `0044_fix_payout_triggers_available_cents.sql`): Records Stripe transfers and adjusts balances atomically.
+
+### Pattern Guidelines
+
+1. **Single Responsibility**: Each RPC function handles one logical unit of work.
+2. **Explicit Transactions**: PostgreSQL functions are implicitly transactional.
+3. **Error Handling**: Functions raise exceptions on failure, causing automatic rollback.
+4. **JSONB Returns**: Functions return JSONB for flexibility and structured error reporting.
+5. **SECURITY DEFINER**: Functions run with elevated privileges to bypass RLS where needed.
+
+### When to Use Transactions
+
+| Operation Type | Transaction Required? |
+|----------------|----------------------|
+| Wallet balance + transaction record | Yes |
+| Payment link completion (multi-table) | Yes |
+| Agency onboarding (create + update) | Yes |
+| Single SELECT query | No |
+| Single INSERT/UPDATE | No |
 
 ---
 
