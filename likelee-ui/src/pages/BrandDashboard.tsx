@@ -5173,7 +5173,6 @@ export default function BrandDashboard() {
         duration_days: durationDays,
         category: String(brandCampaigns?.category || "").trim(),
         description: String(brandCampaigns?.description || "").trim(),
-        objective: String(brandCampaigns?.objective || "").trim(),
         usage_scope: String(brandCampaigns?.usage_scope || "").trim(),
         territory: String(brandCampaigns?.territory || "").trim(),
         exclusivity: String(brandCampaigns?.exclusivity || "").trim(),
