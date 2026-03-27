@@ -149,36 +149,46 @@ async fn lookup_auth_user_email(state: &AppState, user_id: &str) -> Option<Strin
         .filter(|s| !s.is_empty())
 }
 
+struct MarketplaceContractNotification<'a> {
+    creator_user_id: &'a str,
+    agency_id: &'a str,
+    agency_name: &'a str,
+    creator_email: Option<&'a str>,
+    creator_sign_url: Option<&'a str>,
+    contract_id: &'a str,
+    invite_id: &'a str,
+}
+
 async fn notify_creator_about_marketplace_contract(
     state: &AppState,
-    creator_user_id: &str,
-    agency_id: &str,
-    agency_name: &str,
-    creator_email: Option<&str>,
-    creator_sign_url: Option<&str>,
-    contract_id: &str,
-    invite_id: &str,
+    notification: MarketplaceContractNotification<'_>,
 ) {
-    let subject = format!("{} sent you a marketplace connection contract", agency_name);
+    let subject = format!(
+        "{} sent you a marketplace connection contract",
+        notification.agency_name
+    );
     let mut body = format!(
         "{} sent you a marketplace connection contract on Likelee.\n\nYou can review and sign it from your Talent Portal.",
-        agency_name
+        notification.agency_name
     );
-    if let Some(url) = creator_sign_url.filter(|s| !s.trim().is_empty()) {
+    if let Some(url) = notification
+        .creator_sign_url
+        .filter(|s| !s.trim().is_empty())
+    {
         body.push_str(&format!("\n\nDirect signing link: {}", url));
     }
 
     let insert = json!({
-        "talent_user_id": creator_user_id,
-        "agency_id": agency_id,
-        "channel": if creator_email.is_some() { "email_and_dashboard" } else { "dashboard" },
-        "from_label": agency_name,
+        "talent_user_id": notification.creator_user_id,
+        "agency_id": notification.agency_id,
+        "channel": if notification.creator_email.is_some() { "email_and_dashboard" } else { "dashboard" },
+        "from_label": notification.agency_name,
         "subject": subject,
         "message": body,
         "meta_json": {
-            "contract_id": contract_id,
-            "invite_id": invite_id,
-            "creator_sign_url": creator_sign_url,
+            "contract_id": notification.contract_id,
+            "invite_id": notification.invite_id,
+            "creator_sign_url": notification.creator_sign_url,
             "notification_type": "marketplace_contract_signature"
         },
     });
@@ -189,8 +199,14 @@ async fn notify_creator_about_marketplace_contract(
         .execute()
         .await;
 
-    if let Some(dest) = creator_email.filter(|s| !s.trim().is_empty()) {
-        let _ = email::send_plain_text_email(state, dest, &subject, &body, Some(agency_name));
+    if let Some(dest) = notification.creator_email.filter(|s| !s.trim().is_empty()) {
+        let _ = email::send_plain_text_email(
+            state,
+            dest,
+            &subject,
+            &body,
+            Some(notification.agency_name),
+        );
     }
 }
 
@@ -881,13 +897,15 @@ pub async fn create_marketplace_connect_contract(
 
         notify_creator_about_marketplace_contract(
             state,
-            creator_id,
-            agency_id,
-            &agency_name,
-            creator_email.as_deref(),
-            creator_sign_url.as_deref(),
-            contract_id,
-            &invite_id,
+            MarketplaceContractNotification {
+                creator_user_id: creator_id,
+                agency_id,
+                agency_name: &agency_name,
+                creator_email: creator_email.as_deref(),
+                creator_sign_url: creator_sign_url.as_deref(),
+                contract_id,
+                invite_id: &invite_id,
+            },
         )
         .await;
     }
