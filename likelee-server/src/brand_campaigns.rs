@@ -8209,12 +8209,15 @@ pub(crate) async fn log_activity_event_with_subject(
     payload.insert("subject_id".to_string(), json!(subject_value));
     payload.insert("title".to_string(), json!(description));
     payload.insert("subtitle".to_string(), json!(actor_name));
-    let _ = state
+    if let Err(e) = state
         .pg
         .from("brand_activity_events")
         .insert(serde_json::Value::Object(payload).to_string())
         .execute()
-        .await;
+        .await
+    {
+        eprintln!("Failed to log activity event: {}", e);
+    }
 }
 
 async fn log_activity_event(

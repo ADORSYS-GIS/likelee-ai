@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -23,7 +23,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { DocusealForm } from "@docuseal/react";
 import { Switch } from "@/components/ui/switch";
 import { getUserFriendlyError } from "@/utils/error-utils";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyBrandConnections, getAgencyTalents } from "@/api/functions";
 import {
   Select,
   SelectContent,
@@ -57,6 +57,14 @@ interface SendContractModalProps {
   docusealTemplateId?: number;
   licenseFee?: number; // Optional overrides
   initialValues?: Partial<FormData>;
+  brandRequestContext?: {
+    brand_id: string;
+    brand_name?: string;
+    brand_email?: string;
+    licensing_request_id?: string;
+    talent_id?: string;
+    talent_name?: string;
+  };
   onSuccess?: () => void;
 }
 
@@ -84,8 +92,11 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>();
+  watch("client_name");
+  watch("client_email");
 
   const [draftId, setDraftId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -99,6 +110,37 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   const [talents, setTalents] = useState<any[]>([]);
   const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
   const [selectedTalentNames, setSelectedTalentNames] = useState<string[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [allowBrandChange, setAllowBrandChange] = useState(false); // Toggle for changing brand selection
+
+  const { data: brandConnectionsData } = useQuery({
+    queryKey: ["agency", "brand-connections"],
+    queryFn: getAgencyBrandConnections,
+    enabled: isOpen,
+  });
+
+  const brandOptions = useMemo(() => {
+    const rows = Array.isArray(brandConnectionsData?.connections)
+      ? brandConnectionsData.connections
+      : [];
+    console.log(
+      "SendContractModal - Brand connections data:",
+      brandConnectionsData,
+    );
+    console.log("SendContractModal - Brand options count:", rows.length);
+    const options = rows.map((row: any) => ({
+      id: String(row?.brand_id || ""),
+      name: String(
+        row?.brands?.company_name ||
+          row?.brands?.name ||
+          row?.brand_name ||
+          "Brand",
+      ),
+      email: String(row?.brands?.email || row?.brand_email || "").trim(),
+    }));
+    console.log("SendContractModal - Mapped brand options:", options);
+    return options;
+  }, [brandConnectionsData]);
 
   // Fetch the template to get default values
   const { data: templates } = useQuery({
@@ -121,16 +163,76 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     if (initialValues?.client_email) {
       setValue("client_email", initialValues.client_email);
     }
-  }, [isOpen, template, initialValues, setValue]);
+    if (brandRequestContext?.brand_id) {
+      const match = brandOptions.find(
+        (b) => b.id === brandRequestContext.brand_id,
+      );
+      if (match) {
+        setSelectedBrandId(match.id);
+        setValue("client_name", match.name);
+        if (match.email) setValue("client_email", match.email);
+      } else {
+        setSelectedBrandId(brandRequestContext.brand_id);
+        if (brandRequestContext.brand_name) {
+          setValue("client_name", brandRequestContext.brand_name);
+        }
+        if (brandRequestContext.brand_email) {
+          setValue("client_email", brandRequestContext.brand_email);
+        }
+      }
+    }
+  }, [
+    isOpen,
+    template,
+    initialValues,
+    brandRequestContext,
+    brandOptions,
+    setValue,
+  ]);
 
   useEffect(() => {
     if (isOpen) {
       // Fetch agency talents for the dropdown
       getAgencyTalents()
-        .then((res) => setTalents(res || []))
+        .then((res) => {
+          setTalents(res || []);
+
+          // Pre-select talent from brand request context
+          if (
+            brandRequestContext?.talent_id &&
+            brandRequestContext?.talent_name
+          ) {
+            const talentList = res || [];
+            const matchingTalent = talentList.find(
+              (t: any) =>
+                String(t.id) === String(brandRequestContext.talent_id),
+            );
+
+            if (matchingTalent) {
+              setSelectedTalentIds([String(matchingTalent.id)]);
+              setSelectedTalentNames([
+                matchingTalent.full_name || brandRequestContext.talent_name,
+              ]);
+            } else if (brandRequestContext.talent_name) {
+              // If talent not found in list, still show the name
+              setSelectedTalentNames([brandRequestContext.talent_name]);
+            }
+          }
+        })
         .catch((err) => console.error("Failed to fetch talents:", err));
     }
-  }, [isOpen]);
+  }, [isOpen, brandRequestContext]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (brandOptions.length === 0) return;
+    if (selectedBrandId) return;
+    const first = brandOptions[0];
+    if (!first?.id) return;
+    setSelectedBrandId(first.id);
+    setValue("client_name", first.name);
+    if (first.email) setValue("client_email", first.email);
+  }, [isOpen, brandOptions, selectedBrandId, setValue]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -142,10 +244,14 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
       setCurrentSubmissionId(null);
-      setSelectedTalentIds([]);
-      setSelectedTalentNames([]);
+      // Don't reset these if we have brand request context
+      if (!brandRequestContext) {
+        setSelectedTalentIds([]);
+        setSelectedTalentNames([]);
+        setSelectedBrandId("");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, brandRequestContext]);
 
   const draftMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -154,6 +260,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
+        licensing_request_id: brandRequestContext?.licensing_request_id,
         talent_ids:
           selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
         talent_id: selectedTalentIds[0] || undefined,
@@ -225,6 +332,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
+        licensing_request_id: brandRequestContext?.licensing_request_id,
         talent_ids:
           selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
         talent_id: selectedTalentIds[0] || undefined,
@@ -301,6 +409,42 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+            {brandOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <Select
+                  value={selectedBrandId}
+                  onValueChange={(val) => {
+                    setSelectedBrandId(val);
+                    const match = brandOptions.find((b) => b.id === val);
+                    if (match) {
+                      setValue("client_name", match.name);
+                      if (match.email) setValue("client_email", match.email);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brandRequestContext &&
+                      brandRequestContext.brand_id &&
+                      !brandOptions.some(
+                        (b) => b.id === brandRequestContext.brand_id,
+                      ) && (
+                        <SelectItem value={brandRequestContext.brand_id}>
+                          {brandRequestContext.brand_name || "Brand"}
+                        </SelectItem>
+                      )}
+                    {brandOptions.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="client_name">Client Name</Label>
               <Input
@@ -318,19 +462,91 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="client_email">Client Email</Label>
-              <Input
-                id="client_email"
-                type="email"
-                placeholder="client@example.com"
-                {...register("client_email", {
-                  required: "Client email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="client_email">Client Email</Label>
+                {brandOptions.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="allow-brand-change"
+                      className="text-xs text-gray-500 cursor-pointer"
+                    >
+                      {brandRequestContext
+                        ? "Allow changing brand"
+                        : "Lock brand selection"}
+                    </Label>
+                    <Switch
+                      id="allow-brand-change"
+                      checked={allowBrandChange}
+                      onCheckedChange={setAllowBrandChange}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {brandOptions.length > 0 ? (
+                <>
+                  <Select
+                    value={selectedBrandId}
+                    onValueChange={(val) => {
+                      if (allowBrandChange || !brandRequestContext) {
+                        setSelectedBrandId(val);
+                        const match = brandOptions.find((b) => b.id === val);
+                        if (match) {
+                          setValue("client_name", match.name);
+                          if (match.email)
+                            setValue("client_email", match.email);
+                        }
+                      }
+                    }}
+                    disabled={!allowBrandChange && brandRequestContext}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brandRequestContext &&
+                        brandRequestContext.brand_id &&
+                        !brandOptions.some(
+                          (b) => b.id === brandRequestContext.brand_id,
+                        ) && (
+                          <SelectItem value={brandRequestContext.brand_id}>
+                            {brandRequestContext.brand_name || "Selected Brand"}{" "}
+                            ({brandRequestContext.brand_email || "No email"})
+                          </SelectItem>
+                        )}
+                      {brandOptions.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>
+                          {brand.name} ({brand.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {brandRequestContext && !allowBrandChange && (
+                    <p className="text-xs text-gray-500">
+                      Brand is locked to the request. Toggle to select a
+                      different brand.
+                    </p>
+                  )}
+                  {!brandRequestContext && allowBrandChange && (
+                    <p className="text-xs text-gray-500">
+                      Brand selection is locked. Toggle off to change brands.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <Input
+                  id="client_email"
+                  type="email"
+                  placeholder="client@example.com"
+                  {...register("client_email", {
+                    required: "Client email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                />
+              )}
               {errors.client_email && (
                 <p className="text-red-500 text-xs">
                   {errors.client_email.message}

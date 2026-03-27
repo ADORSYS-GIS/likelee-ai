@@ -806,6 +806,30 @@ Agencies and creators can connect with brands for licensing and campaigns.
 
 ---
 
+## Brand License Requests
+
+Brand License Requests represent a brand-initiated request to license a creator (often via an agency). This is a separate workflow from the legacy `licensing_requests` flow.
+
+### Data Model
+
+- **Primary table**: `public.brand_license_requests`
+- **Contract/submission link**: `public.license_submissions.brand_request_id` → `public.brand_license_requests.id`
+
+### API Endpoints
+
+- `POST /api/brand/brand-license-requests` - Create a brand license request
+- `GET /api/brand/brand-license-requests` - List brand license requests (brand view)
+- `GET /api/agency/brand-license-requests` - List brand license requests (agency view)
+- `POST /api/agency/brand-license-requests/status` - Update request status (agency accept/decline)
+
+### Lifecycle
+
+- Brand creates a request in `brand_license_requests`.
+- Agency reviews and updates the request status (e.g. accept/decline).
+- When a contract is drafted/sent, a `license_submissions` row is created and linked back via `license_submissions.brand_request_id` and/or `brand_license_requests.submission_id`.
+
+---
+
 ## Talent Portal
 
 The Talent Portal allows creators to manage their profiles, approve licenses, and track earnings.

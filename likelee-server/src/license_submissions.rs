@@ -19,6 +19,7 @@ pub struct LicenseSubmission {
     pub client_id: Option<String>,
     pub template_id: String,
     pub licensing_request_id: Option<String>,
+    pub brand_request_id: Option<String>,
     pub docuseal_submission_id: Option<i32>,
     pub docuseal_slug: Option<String>,
     pub docuseal_template_id: Option<i32>,
@@ -63,6 +64,7 @@ pub struct CreateSubmissionRequest {
     pub start_date: Option<String>,
     pub custom_terms: Option<String>,
     pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -276,7 +278,13 @@ pub async fn create_draft(
         "duration_days": req.duration_days,
         "start_date": start_date,
         "custom_terms": req.custom_terms,
+        "brand_request_id": req.licensing_request_id,
     });
+
+    tracing::info!(
+        licensing_request_id = ?req.licensing_request_id,
+        "Creating draft with brand_request_id (NOT setting licensing_request_id to avoid FK constraint)"
+    );
 
     let resp = state
         .pg
@@ -582,6 +590,7 @@ pub struct FinalizeSubmissionRequest {
     pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
     pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
 }
 
 /// POST /api/license-submissions/:id/finalize - Finalize and send a draft submission
@@ -821,6 +830,13 @@ pub async fn finalize(
             "requires_agency_signature".to_string(),
             json!(requires_agency_signature),
         );
+        if let Some(br_id) = &req.licensing_request_id {
+            tracing::info!(
+                brand_request_id = %br_id,
+                "Updating submission with brand_request_id in finalize (NOT setting licensing_request_id)"
+            );
+            update_json.insert("brand_request_id".to_string(), json!(br_id));
+        }
 
         let _ = state
             .pg
@@ -1133,6 +1149,35 @@ pub async fn finalize(
         }
     }
 
+    // Update brand_license_requests with submission_id if this is linked to a brand request
+    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
+        submission_data["brand_request_id"]
+            .as_str()
+            .map(|s| s.to_string())
+    });
+
+    if let Some(brand_request_id) = brand_request_id_opt {
+        let update_brand_req = json!({
+            "submission_id": submission.id,
+            "status": "approved",
+            "updated_at": chrono::Utc::now().to_rfc3339()
+        });
+
+        let _ = state
+            .pg
+            .from("brand_license_requests")
+            .update(update_brand_req.to_string())
+            .eq("id", &brand_request_id)
+            .execute()
+            .await;
+
+        tracing::info!(
+            "Updated brand_license_request {} with submission_id {}",
+            brand_request_id,
+            submission.id
+        );
+    }
+
     Ok(Json(submission))
 }
 
@@ -1365,6 +1410,9 @@ pub async fn resend(
                 .as_str()
                 .map(|s| s.to_string()),
             requires_agency_signature: existing_data["requires_agency_signature"].as_bool(),
+            licensing_request_id: existing_data["brand_request_id"]
+                .as_str()
+                .map(|s| s.to_string()),
         }
     };
 
@@ -1439,6 +1487,7 @@ pub async fn resend(
         talent_ids: req.talent_ids,
         talent_names: req.talent_names,
         requires_agency_signature: req.requires_agency_signature,
+        licensing_request_id: req.licensing_request_id,
     };
 
     finalize(
@@ -2057,6 +2106,7 @@ pub async fn create_and_send(
         client_id: None,
         template_id: req.template_id,
         licensing_request_id: None, // We just created it, but we can't get ID easily without another fetch.
+        brand_request_id: None,
         docuseal_submission_id: Some(docuseal_submission.id),
         docuseal_slug: Some(docuseal_submission.slug),
         docuseal_template_id: Some(docuseal_template_id),
@@ -2116,6 +2166,7 @@ pub async fn handle_webhook(
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
     info!(
         event_type = %payload.event_type,
+        payload = ?payload,
         "Received DocuSeal licensing webhook"
     );
 
@@ -2132,6 +2183,7 @@ pub async fn handle_webhook(
             | "form.declined"
     );
     if !tracked_event {
+        info!("Ignoring untracked event: {}", payload.event_type);
         return Ok(axum::http::StatusCode::OK);
     }
 
@@ -2139,12 +2191,20 @@ pub async fn handle_webhook(
         .as_i64()
         .or_else(|| payload.data["id"].as_i64())
         .ok_or_else(|| {
-            error!("Missing submission id in licensing webhook payload");
+            error!(
+                "Missing submission id in licensing webhook payload: {:?}",
+                payload.data
+            );
             (
                 axum::http::StatusCode::BAD_REQUEST,
                 "Missing submission id".to_string(),
             )
         })?;
+
+    info!(
+        "Looking for submission with docuseal_submission_id: {}",
+        submission_id
+    );
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
@@ -2156,18 +2216,28 @@ pub async fn handle_webhook(
     // Update license_submissions
     let sub_response = pg
         .from("license_submissions")
-        .select("id,requires_agency_signature,agency_submitter_id,agency_signed_at")
+        .select(
+            "id,requires_agency_signature,agency_submitter_id,agency_signed_at,brand_request_id",
+        )
         .eq("docuseal_submission_id", submission_id.to_string())
         .single()
         .execute()
         .await
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    info!(
+        "Submission lookup response status: {}",
+        sub_response.status()
+    );
+
     if sub_response.status().is_success() {
         let sub_text = sub_response
             .text()
             .await
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        info!("Found submission record: {}", sub_text);
+
         let sub: serde_json::Value = serde_json::from_str(&sub_text)
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -2207,6 +2277,8 @@ pub async fn handle_webhook(
 
             match payload.event_type.as_str() {
                 "form.completed" => {
+                    info!("Processing form.completed event - requires_agency_signature: {}, is_agency_signer: {}, agency_already_signed: {}", 
+                          requires_agency_signature, is_agency_signer, agency_already_signed);
                     if requires_agency_signature && (is_agency_signer || !agency_already_signed) {
                         update_map.insert(
                             "agency_signed_at".to_string(),
@@ -2216,10 +2288,16 @@ pub async fn handle_webhook(
                     } else if requires_agency_signature && !agency_already_signed {
                         update_map.insert("status".to_string(), json!("agency_pending"));
                     } else {
-                        update_map.insert("status".to_string(), json!("opened"));
+                        // Brand signed and no agency signature required - contract is completed
+                        update_map.insert("status".to_string(), json!("completed"));
+                        update_map.insert(
+                            "signed_at".to_string(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
                     }
                 }
                 "submission.completed" => {
+                    info!("Processing submission.completed event");
                     update_map.insert("status".to_string(), json!("completed"));
                     update_map.insert(
                         "signed_at".to_string(),
@@ -2231,6 +2309,14 @@ pub async fn handle_webhook(
                         .and_then(|doc| doc["url"].as_str())
                     {
                         update_map.insert("signed_document_url".to_string(), json!(url));
+                    }
+
+                    // Don't update brand_license_requests status - it should only change based on agency accept/decline
+                    // Just log that the contract was signed
+                    if let Some(brand_request_id) =
+                        sub.get("brand_request_id").and_then(|v| v.as_str())
+                    {
+                        info!("Contract signed for brand_license_request: {} - status remains unchanged", brand_request_id);
                     }
                 }
                 "submission.declined" | "form.declined" => {
@@ -2257,12 +2343,20 @@ pub async fn handle_webhook(
             }
 
             if !update_map.is_empty() {
-                let _ = pg
+                info!("Updating submission {} with: {:?}", sub_id, update_map);
+                let update_result = pg
                     .from("license_submissions")
                     .update(serde_json::Value::Object(update_map).to_string())
                     .eq("id", sub_id)
                     .execute()
                     .await;
+
+                match update_result {
+                    Ok(resp) => info!("Update successful: {}", resp.status()),
+                    Err(e) => error!("Update failed: {}", e),
+                }
+            } else {
+                info!("No updates needed for submission {}", sub_id);
             }
 
             if matches!(
@@ -2276,7 +2370,14 @@ pub async fn handle_webhook(
                     .execute()
                     .await;
             }
+        } else {
+            error!("No submission ID found in database response");
         }
+    } else {
+        error!(
+            "Failed to find submission with docuseal_submission_id: {}",
+            submission_id
+        );
     }
 
     Ok(axum::http::StatusCode::OK)

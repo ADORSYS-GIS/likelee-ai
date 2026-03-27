@@ -491,6 +491,9 @@ export const updateCampaignSplit = (
 export const getAgencyLicensingRequests = () =>
   base44Client.get(`/agency/licensing-requests`);
 
+export const getAgencyBrandConnections = () =>
+  base44Client.get(`/api/agency/brand-connections`);
+
 export const getAgencyLicensingRequestsPaySplit = (
   licensing_request_ids: string,
 ) =>
@@ -517,7 +520,13 @@ export const getAgencyActiveLicensesStats = () =>
 
 export const updateAgencyLicensingRequestsStatus = (data: {
   licensing_request_ids: string[];
-  status: "pending" | "approved" | "rejected" | "negotiating" | "archived";
+  status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "declined"
+    | "negotiating"
+    | "archived";
   notes?: string;
 }) => base44Client.post(`/agency/licensing-requests/status`, data);
 
@@ -932,3 +941,50 @@ export const submitToBrand = (
     `/api/bookings-campaigns/${campaignId}/deliverables/submit-to-brand`,
     payload,
   );
+
+// ── Brand License Requests (new table, separate from licensing_requests) ───────
+// ── Brand License Requests (new table, separate from licensing_requests) ───────
+
+export const createBrandLicensingRequest = (data: {
+  agency_id?: string;
+  creator_id: string;
+  campaign_title: string;
+  usage_scope?: string;
+  territory?: string;
+  duration_days?: number;
+  start_date?: string;
+  offer_amount?: number;
+  category?: string;
+  description?: string;
+  exclusivity?: string;
+  custom_terms?: string;
+  modifications_allowed?: string;
+}) => base44Client.post(`/api/brand/licensing-requests`, data);
+
+export const createAgencyBrandLicensingRequest = (payload: {
+  creator_id: string;
+  agency_id?: string;
+  campaign_title: string;
+  description?: string;
+  category?: string;
+  exclusivity?: string;
+  modifications_allowed?: string;
+  territory?: string;
+  usage_scope?: string;
+  license_fee?: number;
+  duration_days?: number;
+  start_date?: string;
+  custom_terms?: string;
+}) => base44Client.post("/api/brand/brand-license-requests", payload);
+
+export const getBrandLicensingRequests = () =>
+  base44Client.get<{ requests: any[] }>("/api/brand/brand-license-requests");
+
+export const getAgencyBrandLicenseRequests = () =>
+  base44Client.get<{ requests: any[] }>("/api/agency/brand-license-requests");
+
+export const updateAgencyBrandLicenseRequestStatus = (payload: {
+  brand_request_ids: string[];
+  status: string;
+  decline_reason?: string;
+}) => base44Client.post("/api/agency/brand-license-requests/status", payload);

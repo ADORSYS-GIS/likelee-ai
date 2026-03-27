@@ -29,12 +29,24 @@ aws-sdk-sts = "=1.94.0"
 aws-sdk-sso = "=1.94.0"
 aws-sdk-ssooidc = "=1.94.0"
 envconfig = "0.11"
-image = { version = "0.24", default-features = false, features = ["png", "jpeg", "webp"] }
+image = { version = "0.24", default-features = false, features = [
+    "png",
+    "jpeg",
+    "webp",
+] }
 kamadak-exif = { version = "0.5" }
-lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "pool", "smtp-transport", "tokio1-rustls-tls"] }
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1-rustls-tls",
+] }
 urlencoding = "2"
 jsonwebtoken = "9"
-stripe-sdk = { package = "async-stripe", version = "0.33.0", features = ["runtime-tokio-hyper-rustls"] }
+stripe-sdk = { package = "async-stripe", version = "0.33.0", features = [
+    "runtime-tokio-hyper-rustls",
+] }
 base64 = "0.22.1"
 bcrypt = "0.18.0"
 printpdf = "0.7"

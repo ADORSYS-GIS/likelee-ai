@@ -8,7 +8,14 @@ import React, {
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { getBrandProfile } from "@/api/functions";
+import {
+  createBrandLicensingRequest,
+  createAgencyBrandLicensingRequest,
+  getBrandLicensingRequests,
+  getBrandProfile,
+  listOfferDeliverables,
+  reviewOfferDeliverable,
+} from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Button } from "@/components/ui/button";
@@ -70,7 +77,8 @@ import {
   Maximize2,
   Trash2,
 } from "lucide-react";
-import { reviewOfferDeliverable, listOfferDeliverables } from "@/api/functions";
+import { DocusealForm } from "@docuseal/react";
+import { MarketplaceProfile } from "@/components/marketplace/MarketplaceSection";
 import {
   Dialog,
   DialogContent,
@@ -874,6 +882,28 @@ export default function BrandDashboard() {
   const [showBriefDetails, setShowBriefDetails] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState(null);
+  const [showLicenseRequestModal, setShowLicenseRequestModal] = useState(false);
+  const [selectedLicenseCreator, setSelectedLicenseCreator] =
+    useState<MarketplaceProfile | null>(null);
+  const [creatingLicenseRequest, setCreatingLicenseRequest] = useState(false);
+  const [brandLicensingRequests, setBrandLicensingRequests] = useState<any[]>(
+    [],
+  );
+  const [loadingBrandLicensingRequests, setLoadingBrandLicensingRequests] =
+    useState(false);
+  const [licenseRequestForm, setLicenseRequestForm] = useState({
+    start_date: new Date().toISOString().slice(0, 10),
+    license_fee: "",
+    modifications_allowed: "",
+    exclusivity: "",
+    duration_days: "30",
+    territory: "Global",
+    category: "",
+    description: "",
+    custom_terms: "",
+  });
+  const [brandSignUrl, setBrandSignUrl] = useState<string | null>(null);
+  const [brandSignOpen, setBrandSignOpen] = useState(false);
   const [showContractBuilder, setShowContractBuilder] = useState(false);
   const [contractStep, setContractStep] = useState(1);
   const [showCreatorProfile, setShowCreatorProfile] = useState(false);
@@ -1440,6 +1470,34 @@ export default function BrandDashboard() {
   }, [activeSection, selectedOfferHubId]);
 
   useEffect(() => {
+    if (activeSection !== "licensing-requests") return;
+    let mounted = true;
+    const loadBrandLicenses = async () => {
+      try {
+        setLoadingBrandLicensingRequests(true);
+        const resp = await getBrandLicensingRequests();
+        console.log(
+          "getBrandLicensingRequests raw response:",
+          JSON.stringify(resp, null, 2),
+        );
+        if (!mounted) return;
+        const rows = Array.isArray(resp) ? resp : resp?.requests || [];
+        setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!mounted) return;
+        setBrandLicensingRequests([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingBrandLicensingRequests(false);
+      }
+    };
+    loadBrandLicenses();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
     const fetchCreators = async () => {
       setLoading(true);
       try {
@@ -1738,6 +1796,11 @@ export default function BrandDashboard() {
       label: "My Campaigns",
       icon: Target,
     },
+    {
+      id: "licensing-requests",
+      label: "Licensing Requests",
+      icon: FileText,
+    },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
       id: "usage",
@@ -1780,6 +1843,42 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
+  const handleOpenLicenseRequest = (creator: MarketplaceProfile | null) => {
+    if (!creator) return;
+    setSelectedLicenseCreator(creator);
+    setLicenseRequestForm((prev) => ({
+      ...prev,
+      start_date: new Date().toISOString().slice(0, 10),
+      license_fee: "",
+      modifications_allowed: "",
+      exclusivity: "",
+      duration_days: prev.duration_days || "30",
+      territory: prev.territory || "Global",
+      custom_terms: "",
+    }));
+    setShowLicenseRequestModal(true);
+  };
+
+  const parseLicensingNotes = (raw: any) => {
+    const text = String(raw || "").trim();
+    if (!text) return {};
+    try {
+      const parsed = JSON.parse(text);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const formatLicenseStatus = (value: string) => {
+    const normalized = String(value || "pending").toLowerCase();
+    if (normalized === "approved") return "Approved";
+    if (normalized === "declined" || normalized === "rejected")
+      return "Declined";
+    if (normalized === "negotiating") return "Negotiating";
+    return "Pending";
+  };
+
   const handleContractOption = (option) => {
     if (option === "self") {
       setShowHireModal(false);
@@ -1802,6 +1901,51 @@ export default function BrandDashboard() {
         description: "Browse agencies feature coming soon! (Demo mode)",
       });
       setShowHireModal(false);
+    }
+  };
+
+  const handleSubmitLicenseRequest = async () => {
+    if (!selectedLicenseCreator) return;
+    const duration = Number(licenseRequestForm.duration_days || 0);
+    const fee = Number(licenseRequestForm.license_fee || 0);
+    setCreatingLicenseRequest(true);
+    try {
+      const agencyId =
+        selectedLicenseCreator.agency_id ||
+        selectedLicenseCreator.agency ||
+        undefined;
+
+      await createAgencyBrandLicensingRequest({
+        creator_id: selectedLicenseCreator.id,
+        agency_id: agencyId,
+        campaign_title: `${selectedLicenseCreator.display_name || selectedLicenseCreator.full_name || "Licensing Request"}`,
+        usage_scope: licenseRequestForm.territory,
+        territory: licenseRequestForm.territory,
+        duration_days:
+          Number.isFinite(duration) && duration > 0 ? duration : 30,
+        start_date: licenseRequestForm.start_date,
+        license_fee: Number.isFinite(fee) ? fee : undefined,
+        category: licenseRequestForm.category || undefined,
+        description: licenseRequestForm.description,
+        exclusivity: licenseRequestForm.exclusivity,
+        custom_terms: licenseRequestForm.custom_terms,
+        modifications_allowed: licenseRequestForm.modifications_allowed,
+      });
+
+      toast({
+        title: "Licensing request created",
+        description: "Your request has been sent to the agency.",
+      });
+      setShowLicenseRequestModal(false);
+      setActiveSection("licensing-requests");
+    } catch (e: any) {
+      toast({
+        title: "Failed to create request",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingLicenseRequest(false);
     }
   };
 
@@ -3333,6 +3477,200 @@ export default function BrandDashboard() {
       resultLimit={60}
       queryScope="brand-agency-marketplace"
     />
+  );
+
+  const renderBrandLicensingRequests = () => (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Licensing Requests
+          </h2>
+          <p className="text-gray-600">
+            Track licensing requests you have sent to agencies.
+          </p>
+        </div>
+      </div>
+
+      {loadingBrandLicensingRequests && (
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600">Loading licensing requests...</p>
+        </Card>
+      )}
+
+      {!loadingBrandLicensingRequests &&
+        brandLicensingRequests.length === 0 && (
+          <Card className="p-8 text-center text-sm text-gray-600">
+            No licensing requests yet.
+          </Card>
+        )}
+
+      {!loadingBrandLicensingRequests &&
+        brandLicensingRequests.map((req: any) => {
+          const agencyName =
+            req?.agencies?.agency_name || req?.agency_name || "Agency";
+          const status = formatLicenseStatus(req?.status || "pending");
+          const statusClass =
+            status === "Approved"
+              ? "bg-green-100 text-green-700 border-green-200"
+              : status === "Declined"
+                ? "bg-red-100 text-red-700 border-red-200"
+                : "bg-amber-100 text-amber-700 border-amber-200";
+
+          const licenseFeeValue = req?.license_fee;
+          const licenseFee = licenseFeeValue
+            ? `$${Number(licenseFeeValue).toLocaleString()}`
+            : "\u2014";
+
+          // Submissions might be an array or object
+          let submissions = req?.license_submissions;
+          if (submissions && !Array.isArray(submissions)) {
+            submissions = [submissions];
+          }
+          const submission = Array.isArray(submissions) ? submissions[0] : null;
+
+          const slug =
+            submission?.client_submitter_slug || submission?.docuseal_slug;
+          const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
+          const declineReason = String(req?.decline_reason || "").trim();
+
+          return (
+            <Card
+              key={req?.id}
+              className="p-6 bg-white border border-gray-200 rounded-xl"
+            >
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      {req?.campaign_title || "Licensing Request"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Agency: {agencyName}
+                      {req?.talent_name ? ` • Talent: ${req.talent_name}` : ""}
+                    </p>
+                  </div>
+                  <Badge className={`border ${statusClass}`}>{status}</Badge>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Start Date</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.license_start_date
+                        ? new Date(req.license_start_date).toLocaleDateString()
+                        : "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">End Date</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.license_end_date
+                        ? new Date(req.license_end_date).toLocaleDateString()
+                        : "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Duration (Days)</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.duration_days || "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">License Fee</p>
+                    <p className="font-semibold text-gray-900">{licenseFee}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Territory</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.territory || req?.regions || "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Exclusivity</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.exclusivity || req?.usage_scope || "\u2014"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Modifications Allowed</p>
+                    <p className="font-semibold text-gray-900">
+                      {req?.modifications_allowed || "\u2014"}
+                    </p>
+                  </div>
+                </div>
+
+                {req?.custom_terms && (
+                  <div className="text-sm">
+                    <p className="text-gray-500">Additional Terms</p>
+                    <p className="font-semibold text-gray-900">
+                      {String(req.custom_terms)}
+                    </p>
+                  </div>
+                )}
+
+                {req?.description && (
+                  <div className="text-sm">
+                    <p className="text-gray-500">Description</p>
+                    <p className="font-semibold text-gray-900">
+                      {String(req.description)}
+                    </p>
+                  </div>
+                )}
+
+                {declineReason && status === "Declined" && (
+                  <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
+                    <span className="font-semibold">Decline reason: </span>
+                    {declineReason}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {signingUrl && submission?.status !== "completed" ? (
+                    <Button
+                      className="text-white"
+                      style={{ backgroundColor: "#E9A23B" }}
+                      onMouseEnter={(e) =>
+                        (e.target.style.backgroundColor = "#D4941F")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.target.style.backgroundColor = "#E9A23B")
+                      }
+                      onClick={() => {
+                        setBrandSignUrl(signingUrl);
+                        setBrandSignOpen(true);
+                      }}
+                    >
+                      Sign Contract
+                    </Button>
+                  ) : submission?.status === "completed" ? (
+                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Contract Signed
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
+                      Awaiting contract from agency
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+    </div>
   );
 
   const renderInboxSubtab = () => (
@@ -8570,6 +8908,189 @@ export default function BrandDashboard() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={showLicenseRequestModal}
+        onOpenChange={setShowLicenseRequestModal}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Request License
+            </DialogTitle>
+            <DialogDescription>
+              {selectedLicenseCreator
+                ? `Send a licensing request for ${selectedLicenseCreator.display_name || selectedLicenseCreator.full_name || "this talent"}.`
+                : "Send a licensing request."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input
+                  type="date"
+                  value={licenseRequestForm.start_date}
+                  onChange={(e) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      start_date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Duration (Days)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={licenseRequestForm.duration_days}
+                  onChange={(e) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      duration_days: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>License Fee</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="e.g. 5000"
+                  value={licenseRequestForm.license_fee}
+                  onChange={(e) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      license_fee: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={licenseRequestForm.category}
+                  onValueChange={(value) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      category: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="border-2 border-gray-300">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Social Media">Social Media</SelectItem>
+                    <SelectItem value="E-commerce">E-commerce</SelectItem>
+                    <SelectItem value="Advertising">Advertising</SelectItem>
+                    <SelectItem value="Editorial">Editorial</SelectItem>
+                    <SelectItem value="Film & TV">Film & TV</SelectItem>
+                    <SelectItem value="Custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Territory</Label>
+                <Input
+                  placeholder="e.g. Global"
+                  value={licenseRequestForm.territory}
+                  onChange={(e) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      territory: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Exclusivity</Label>
+                <Select
+                  value={licenseRequestForm.exclusivity}
+                  onValueChange={(value) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      exclusivity: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="border-2 border-gray-300">
+                    <SelectValue placeholder="Select exclusivity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Non-exclusive">Non-exclusive</SelectItem>
+                    <SelectItem value="Category exclusive">
+                      Category exclusive
+                    </SelectItem>
+                    <SelectItem value="Full exclusivity">
+                      Full exclusivity
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Modifications Allowed</Label>
+                <Input
+                  placeholder="e.g. Light edits allowed"
+                  value={licenseRequestForm.modifications_allowed}
+                  onChange={(e) =>
+                    setLicenseRequestForm((prev) => ({
+                      ...prev,
+                      modifications_allowed: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Add a short description for this license request"
+                value={licenseRequestForm.description}
+                onChange={(e) =>
+                  setLicenseRequestForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Additional Custom Terms</Label>
+              <Textarea
+                rows={4}
+                value={licenseRequestForm.custom_terms}
+                onChange={(e) =>
+                  setLicenseRequestForm((prev) => ({
+                    ...prev,
+                    custom_terms: e.target.value,
+                  }))
+                }
+                placeholder="Add any custom licensing terms..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowLicenseRequestModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitLicenseRequest}
+              disabled={creatingLicenseRequest || !selectedLicenseCreator}
+              className="bg-[#F7B750] hover:bg-[#E6A640] text-white"
+            >
+              {creatingLicenseRequest
+                ? "Creating..."
+                : "Create licensing request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Contract Modal */}
       <Dialog open={showContractModal} onOpenChange={setShowContractModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -8658,6 +9179,40 @@ export default function BrandDashboard() {
                 </>
               )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={brandSignOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBrandSignOpen(false);
+            setBrandSignUrl(null);
+          }
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Sign Contract</DialogTitle>
+            <DialogDescription>
+              Review and sign the licensing contract.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-auto">
+            {brandSignUrl ? <DocusealForm src={brandSignUrl} /> : null}
+          </div>
+          <DialogFooter className="p-4 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setBrandSignOpen(false);
+                setBrandSignUrl(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -10475,6 +11030,8 @@ export default function BrandDashboard() {
               subtitle="Verified creators only"
               verifiedBadgeLabel=""
               queryScope="brand-creator-marketplace"
+              showRequestLicense
+              onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
             />
           )}
           {activeSection === "marketplace-agencies" &&
@@ -10728,6 +11285,8 @@ export default function BrandDashboard() {
           {activeSection === "campaigns-deliverables" &&
             renderCampaignDeliverablesHub()}
           {activeSection === "studio" && renderStudio()}
+          {activeSection === "licensing-requests" &&
+            renderBrandLicensingRequests()}
           {activeSection === "analytics" && renderAnalytics()}
           {activeSection === "usage" && renderUsageRights()}
           {activeSection === "billing" && renderBilling()}

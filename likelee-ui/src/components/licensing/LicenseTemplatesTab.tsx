@@ -74,12 +74,23 @@ export interface RenewalLaunchContext {
 interface LicenseTemplatesTabProps {
   renewalLaunchContext?: RenewalLaunchContext | null;
   onRenewalLaunchHandled?: () => void;
+  brandRequestContext?: {
+    brand_id: string;
+    brand_name?: string;
+    brand_email?: string;
+    licensing_request_id?: string;
+    talent_id?: string;
+    talent_name?: string;
+  } | null;
+  onBrandRequestContextHandled?: () => void;
   isSportsAgency?: boolean;
 }
 
 export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   renewalLaunchContext,
   onRenewalLaunchHandled,
+  brandRequestContext,
+  onBrandRequestContextHandled,
   isSportsAgency = false,
 }) => {
   const [topTab, setTopTab] = useState<
@@ -228,10 +239,23 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
 
   // UseTemplate logic:
   const handleUseTemplate = (template: LicenseTemplate) => {
+    console.log(
+      "handleUseTemplate called with brandRequestContext:",
+      brandRequestContext,
+    );
     setSendTemplateId(template.id);
     setSendDocusealTemplateId(template.docuseal_template_id ?? null);
     setSendLicenseFee(template.license_fee);
-    setSendInitialValues({});
+    if (brandRequestContext) {
+      console.log("Setting initial values from brandRequestContext");
+      setSendInitialValues({
+        client_name: brandRequestContext.brand_name,
+        client_email: brandRequestContext.brand_email,
+      });
+    } else {
+      console.log("No brandRequestContext, using empty initial values");
+      setSendInitialValues({});
+    }
     setIsSendModalOpen(true);
   };
 
@@ -241,6 +265,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     setSendDocusealTemplateId(null);
     setSendLicenseFee(undefined);
     setSendInitialValues({});
+    onBrandRequestContextHandled?.();
     queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
     queryClient.invalidateQueries({ queryKey: ["license-templates"] });
     toast({ title: "Sent", description: "Contract sent successfully!" });
@@ -281,6 +306,12 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     toast,
     onRenewalLaunchHandled,
   ]);
+
+  useEffect(() => {
+    if (brandRequestContext) {
+      setTopTab("templates");
+    }
+  }, [brandRequestContext]);
 
   // Handlers
   const handleCreate = async (data: CreateTemplateRequest) => {
@@ -378,6 +409,14 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {brandRequestContext && (
+        <Card className="p-4 bg-amber-50 border border-amber-200">
+          <div className="text-sm font-semibold text-amber-900">
+            Any contract submission created will be sent to{" "}
+            {brandRequestContext.brand_name || "the brand"}.
+          </div>
+        </Card>
+      )}
       <Tabs value={topTab} onValueChange={(v) => setTopTab(v as any)}>
         <div className="overflow-x-auto">
           <TabsList className="w-max min-w-full justify-start bg-transparent p-0 border-b rounded-none">
@@ -569,6 +608,19 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
           docusealTemplateId={sendDocusealTemplateId ?? undefined}
           licenseFee={sendLicenseFee}
           initialValues={sendInitialValues}
+          brandRequestContext={
+            brandRequestContext
+              ? {
+                  brand_id: brandRequestContext.brand_id,
+                  brand_name: brandRequestContext.brand_name,
+                  brand_email: brandRequestContext.brand_email,
+                  licensing_request_id:
+                    brandRequestContext.licensing_request_id,
+                  talent_id: brandRequestContext.talent_id,
+                  talent_name: brandRequestContext.talent_name,
+                }
+              : undefined
+          }
           onSuccess={handleUseSuccess}
         />
       )}
@@ -578,11 +630,25 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
           onClose={() => setWizardTemplate(null)}
           isSportsAgency={isSportsAgency}
           template={wizardTemplate}
+          brandRequestContext={
+            brandRequestContext
+              ? {
+                  brand_id: brandRequestContext.brand_id,
+                  brand_name: brandRequestContext.brand_name,
+                  brand_email: brandRequestContext.brand_email,
+                  licensing_request_id:
+                    brandRequestContext.licensing_request_id,
+                  talent_id: brandRequestContext.talent_id,
+                  talent_name: brandRequestContext.talent_name,
+                }
+              : undefined
+          }
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({
               queryKey: ["license-submissions"],
             });
+            onBrandRequestContextHandled?.();
           }}
         />
       )}
