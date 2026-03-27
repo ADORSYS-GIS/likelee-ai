@@ -1,0 +1,302 @@
+/**
+ * Service Worker for Background Sync
+ *
+ * Handles:
+ * - Background sync of cached data when online
+ * - Offline mutation queue replay
+ * - Push notifications (future)
+ *
+ * Register in main.tsx: import('./swRegistration').then(r => r.register())
+ */
+
+/// <reference lib="webworker" />
+
+const CACHE_VERSION = 1;
+const SYNC_INTERVAL = 60 * 1000; // 1 minute
+
+// Sync event names
+const SYNC_EVENTS = {
+  TALENTS: "sync-talents",
+  JOBS: "sync-jobs",
+  MARKETPLACE: "sync-marketplace",
+  MUTATIONS: "sync-mutations",
+};
+
+// ============================================
+// Install & Activate
+// ============================================
+
+self.addEventListener("install", (event) => {
+  console.log("[SW] Service worker installed");
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", (event) => {
+  console.log("[SW] Service worker activated");
+  event.waitUntil(self.clients.claim());
+});
+
+// ============================================
+// Background Sync
+// ============================================
+
+self.addEventListener("sync", (event) => {
+  console.log("[SW] Sync event:", event.tag);
+
+  if (event.tag === SYNC_EVENTS.TALENTS) {
+    event.waitUntil(syncTalents());
+  } else if (event.tag === SYNC_EVENTS.JOBS) {
+    event.waitUntil(syncJobs());
+  } else if (event.tag === SYNC_EVENTS.MARKETPLACE) {
+    event.waitUntil(syncMarketplace());
+  } else if (event.tag === SYNC_EVENTS.MUTATIONS) {
+    event.waitUntil(syncMutations());
+  }
+});
+
+// ============================================
+// Periodic Background Sync (if supported)
+// ============================================
+
+self.addEventListener("periodicsync", (event) => {
+  console.log("[SW] Periodic sync event:", event.tag);
+
+  if (event.tag === "sync-all") {
+    event.waitUntil(syncAll());
+  }
+});
+
+// ============================================
+// Sync Functions
+// ============================================
+
+async function syncTalents() {
+  try {
+    // Get agency ID from IndexedDB
+    const agencyId = await getStoredAgencyId();
+    if (!agencyId) return;
+
+    // Fetch talents from server
+    const response = await fetch(`/api/agency/${agencyId}/roster`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch talents");
+
+    const data = await response.json();
+    const talents = data.talents || data;
+
+    // Store in IndexedDB via message to client
+    await sendMessageToClients({
+      type: "CACHE_UPDATE",
+      store: "talents",
+      data: talents,
+      agencyId,
+    });
+
+    console.log("[SW] Synced talents:", talents.length);
+  } catch (error) {
+    console.error("[SW] Failed to sync talents:", error);
+    throw error; // Retry later
+  }
+}
+
+async function syncJobs() {
+  try {
+    const response = await fetch("/api/jobs?limit=100", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch jobs");
+
+    const data = await response.json();
+    const jobs = data.jobs || [];
+
+    await sendMessageToClients({
+      type: "CACHE_UPDATE",
+      store: "jobs",
+      data: jobs,
+    });
+
+    console.log("[SW] Synced jobs:", jobs.length);
+  } catch (error) {
+    console.error("[SW] Failed to sync jobs:", error);
+    throw error;
+  }
+}
+
+async function syncMarketplace() {
+  try {
+    const response = await fetch("/api/marketplace", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch marketplace");
+
+    const data = await response.json();
+    const items = data.items || [];
+
+    await sendMessageToClients({
+      type: "CACHE_UPDATE",
+      store: "marketplace",
+      data: items,
+    });
+
+    console.log("[SW] Synced marketplace:", items.length);
+  } catch (error) {
+    console.error("[SW] Failed to sync marketplace:", error);
+    throw error;
+  }
+}
+
+async function syncMutations() {
+  try {
+    // Get pending mutations from IndexedDB
+    const mutations = await getPendingMutations();
+
+    for (const mutation of mutations) {
+      try {
+        const response = await fetch(mutation.endpoint, {
+          method: mutation.type,
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": mutation.idempotencyKey,
+          },
+          body:
+            mutation.type !== "DELETE"
+              ? JSON.stringify(mutation.payload)
+              : undefined,
+        });
+
+        if (response.ok) {
+          await updateMutationStatus(mutation.id, "completed");
+          console.log("[SW] Completed mutation:", mutation.id);
+        } else {
+          const retryCount = (mutation.retryCount || 0) + 1;
+          if (retryCount >= 3) {
+            await updateMutationStatus(
+              mutation.id,
+              "failed",
+              `Failed after ${retryCount} retries`,
+            );
+          } else {
+            await updateMutationRetryCount(mutation.id, retryCount);
+          }
+        }
+      } catch (error) {
+        console.error("[SW] Failed to process mutation:", mutation.id, error);
+      }
+    }
+  } catch (error) {
+    console.error("[SW] Failed to sync mutations:", error);
+    throw error;
+  }
+}
+
+async function syncAll() {
+  await Promise.all([
+    syncTalents(),
+    syncJobs(),
+    syncMarketplace(),
+    syncMutations(),
+  ]);
+}
+
+// ============================================
+// Message Handling
+// ============================================
+
+self.addEventListener("message", (event) => {
+  const { type, payload } = event.data;
+
+  switch (type) {
+    case "REGISTER_SYNC":
+      registerSync(payload.tag);
+      break;
+    case "GET_CACHE_STATS":
+      getCacheStatsAndSend();
+      break;
+    case "CLEAR_CACHE":
+      clearAllCache();
+      break;
+  }
+});
+
+async function registerSync(tag) {
+  try {
+    await self.registration.sync.register(tag);
+    console.log("[SW] Registered sync:", tag);
+  } catch (error) {
+    console.error("[SW] Failed to register sync:", error);
+  }
+}
+
+// ============================================
+// IndexedDB Helpers (via client messages)
+// ============================================
+
+async function getStoredAgencyId() {
+  // Request from client
+  return new Promise((resolve) => {
+    sendMessageToClients({ type: "GET_AGENCY_ID" }).then((response) => {
+      resolve(response?.agencyId || null);
+    });
+  });
+}
+
+async function getPendingMutations() {
+  return new Promise((resolve) => {
+    sendMessageToClients({ type: "GET_PENDING_MUTATIONS" }).then((response) => {
+      resolve(response?.mutations || []);
+    });
+  });
+}
+
+async function updateMutationStatus(id, status, error) {
+  await sendMessageToClients({
+    type: "UPDATE_MUTATION_STATUS",
+    mutationId: id,
+    status,
+    error,
+  });
+}
+
+async function updateMutationRetryCount(id, retryCount) {
+  await sendMessageToClients({
+    type: "UPDATE_MUTATION_RETRY",
+    mutationId: id,
+    retryCount,
+  });
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+async function sendMessageToClients(message) {
+  const clients = await self.clients.matchAll();
+
+  if (clients.length === 0) return null;
+
+  // Send to first client and wait for response
+  const client = clients[0];
+  return new Promise((resolve) => {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (event) => {
+      resolve(event.data);
+    };
+    client.postMessage(message, [messageChannel.port2]);
+  });
+}
+
+async function getCacheStatsAndSend() {
+  const stats = await sendMessageToClients({ type: "GET_CACHE_STATS" });
+  await sendMessageToClients({ type: "CACHE_STATS", stats });
+}
+
+async function clearAllCache() {
+  await sendMessageToClients({ type: "CLEAR_ALL_CACHE" });
+}
