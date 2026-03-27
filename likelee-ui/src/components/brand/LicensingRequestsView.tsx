@@ -23,16 +23,28 @@ import {
 interface LicensingRequestsViewProps {
   brandLicensingRequests: any[];
   loadingBrandLicensingRequests: boolean;
-  formatLicenseStatus: (status: string) => string;
   setBrandSignUrl: (url: string) => void;
   setBrandSignOpen: (open: boolean) => void;
   navigateToSection: (section: string) => void;
 }
 
+const formatLicenseStatus = (status: string) => {
+  switch (String(status || "").toLowerCase()) {
+    case "approved":
+      return "Approved";
+    case "declined":
+      return "Declined";
+    case "completed":
+      return "Completed";
+    case "pending":
+    default:
+      return "Pending";
+  }
+};
+
 export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
   brandLicensingRequests,
   loadingBrandLicensingRequests,
-  formatLicenseStatus,
   setBrandSignUrl,
   setBrandSignOpen,
   navigateToSection,

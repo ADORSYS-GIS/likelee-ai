@@ -69,11 +69,11 @@ pub async fn create(
     // ── Step 1: Auto-resolve agency_id from the creator's active roster entry ──
     // If the caller supplied an agency_id hint we use it to narrow the lookup;
     // otherwise we just find any active agency for this creator.
-    let agency_id_hint = payload
+    let agency_id_hint: Option<String> = payload
         .get("agency_id")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
-        .unwrap_or_default();
+        .filter(|s| !s.is_empty());
 
     let mut roster_query = state
         .pg
@@ -83,8 +83,8 @@ pub async fn create(
         .eq("role", "talent")
         .eq("status", "active");
 
-    if !agency_id_hint.is_empty() {
-        roster_query = roster_query.eq("agency_id", &agency_id_hint);
+    if let Some(ref hint) = agency_id_hint {
+        roster_query = roster_query.eq("agency_id", hint);
     }
 
     // Don't limit yet - let's see all active entries first
@@ -159,17 +159,18 @@ pub async fn create(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let talent_name = talent_row
+    let talent_name: Option<String> = talent_row
         .get("full_legal_name")
         .or_else(|| talent_row.get("stage_name"))
         .and_then(|v| v.as_str())
-        .unwrap_or("Talent")
-        .to_string();
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
 
     if agency_id.is_empty() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            "Could not resolve agency for this creator.".to_string(),
+            "Could not resolve agency for this creator (active roster row is missing agency_id)."
+                .to_string(),
         ));
     }
 
