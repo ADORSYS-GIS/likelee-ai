@@ -292,15 +292,17 @@ COMMENT ON COLUMN public.campaign_offers.billing_request_id IS 'Reference to the
 -- ---------------------------------------------------------------------------
 -- Creator dashboard: ensure modern licensing_payouts are included in v_face_payouts
 -- ---------------------------------------------------------------------------
+DROP VIEW IF EXISTS public.v_face_payouts;
+
 CREATE OR REPLACE VIEW public.v_face_payouts AS
 -- 1. Legacy Royalty Ledger
 SELECT
   rl.face_id,
   p.full_name AS face_name,
   date_trunc('month', rl.period_month)::date AS period_month,
-  SUM(CASE WHEN rl.status = 'paid' THEN rl.amount_cents ELSE 0 END) AS paid_cents,
-  SUM(CASE WHEN rl.status = 'pending' THEN rl.amount_cents ELSE 0 END) AS pending_cents,
-  SUM(rl.amount_cents) AS total_cents,
+  SUM(CASE WHEN rl.status = 'paid' THEN rl.amount_cents ELSE 0 END)::bigint AS paid_cents,
+  SUM(CASE WHEN rl.status = 'pending' THEN rl.amount_cents ELSE 0 END)::bigint AS pending_cents,
+  SUM(rl.amount_cents)::bigint AS total_cents,
   COUNT(*) AS event_count
 FROM public.royalty_ledger rl
 JOIN public.creators p ON p.id = rl.face_id
@@ -313,9 +315,9 @@ SELECT
   (split->>'creator_id')::uuid AS face_id,
   c.full_name AS face_name,
   date_trunc('month', lp.paid_at)::date AS period_month,
-  SUM((split->>'amount_cents')::bigint) AS paid_cents,
-  0 AS pending_cents, -- These are always 'paid' once in this table
-  SUM((split->>'amount_cents')::bigint) AS total_cents,
+  SUM((split->>'amount_cents')::bigint)::bigint AS paid_cents,
+  0::bigint AS pending_cents, -- These are always 'paid' once in this table
+  SUM((split->>'amount_cents')::bigint)::bigint AS total_cents,
   COUNT(*) AS event_count
 FROM public.licensing_payouts lp
 CROSS JOIN LATERAL jsonb_array_elements(lp.talent_splits) AS split
