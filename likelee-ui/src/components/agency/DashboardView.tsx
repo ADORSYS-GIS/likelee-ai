@@ -2,12 +2,14 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatKycReason } from "@/utils/kycDisplay";
 import {
   Users,
   DollarSign,
   AlertCircle,
   Clock,
   CheckCircle2,
+  RefreshCw,
   Trophy,
   TrendingUp,
   ShieldAlert,
@@ -21,9 +23,11 @@ interface DashboardViewProps {
   agencyName: string;
   rosterData: any[];
   kycStatus?: string | null;
+  kycRejectionReason?: string | null;
   kycLoading?: boolean;
   onRefreshStatus?: () => void;
   refreshLoading?: boolean;
+  canResumeKyc?: boolean;
   licensingRequestsCount?: number;
   overview?: any;
   talentPerformance?: any;
@@ -38,7 +42,11 @@ const DashboardView = ({
   agencyName,
   rosterData,
   kycStatus,
+  kycRejectionReason,
   kycLoading,
+  onRefreshStatus,
+  refreshLoading,
+  canResumeKyc = false,
   licensingRequestsCount,
   overview,
   talentPerformance,
@@ -139,6 +147,80 @@ const DashboardView = ({
       ? pendingLicensingRequestsFromOverview
       : Math.max(0, licensingRequestsCount ?? 0);
   const pendingActionsTotal = pendingLicensingRequests + expiringLicenses;
+  const normalizedKycStatus = String(kycStatus || "")
+    .trim()
+    .toLowerCase();
+  const isKycApproved = normalizedKycStatus === "approved";
+  const isKycPending = normalizedKycStatus === "pending";
+  const isKycRejected =
+    normalizedKycStatus === "rejected" ||
+    normalizedKycStatus === "declined";
+  const formattedKycReason = formatKycReason(kycRejectionReason);
+  const hasPendingFollowUp = isKycPending && formattedKycReason.length > 0;
+  const kycTitle = isKycApproved
+    ? "KYC completed"
+    : hasPendingFollowUp
+      ? "Additional verification needed"
+      : isKycPending
+        ? "KYC verification in progress"
+        : isKycRejected
+          ? "Verification was not approved"
+          : "KYC verification required";
+  const kycDescription = isKycApproved
+    ? "Your agency identity verification is complete."
+    : hasPendingFollowUp
+      ? `Veriff requested one more step before approval. Continue below so payouts and licensing can stay available for your ${entityPluralLower}.`
+      : isKycPending
+        ? canResumeKyc
+          ? "Your verification is still in progress. If the window was closed, resume it below, or refresh once you've finished."
+          : "Your verification is still in progress. If the earlier link expired, start a new session below, or refresh once you've finished."
+        : isKycRejected
+          ? `Your last verification was not approved. Review the reason below, then retry so payouts and licensing can stay available for your ${entityPluralLower}.`
+          : `To enable payouts and licensing for your ${entitySingularLower}, please complete your agency's identity verification.`;
+  const kycBadgeLabel = isKycApproved
+    ? "Approved"
+    : hasPendingFollowUp
+      ? "Action needed"
+      : isKycPending
+        ? "Pending"
+        : isKycRejected
+          ? "Rejected"
+          : "Not started";
+  const kycButtonLabel = isKycPending
+    ? canResumeKyc
+      ? hasPendingFollowUp
+        ? "Continue KYC"
+        : "Resume KYC"
+      : "Start New KYC"
+    : isKycRejected
+      ? "Retry KYC"
+      : "Complete KYC";
+  const KycIcon = isKycApproved
+    ? CheckCircle2
+    : hasPendingFollowUp || isKycRejected
+      ? ShieldAlert
+      : isKycPending
+        ? Clock
+        : AlertCircle;
+  const kycBannerClassName = isKycApproved
+    ? "rounded-2xl bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-emerald-100"
+    : hasPendingFollowUp || isKycRejected
+      ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 p-5 shadow-sm ring-1 ring-rose-100"
+      : "rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-cyan-50 p-5 shadow-sm ring-1 ring-indigo-100";
+  const kycIconWrapClassName = isKycApproved
+    ? "bg-white/90 text-emerald-600"
+    : hasPendingFollowUp || isKycRejected
+      ? "bg-white/90 text-rose-600"
+      : isKycPending
+        ? "bg-white/90 text-amber-600"
+        : "bg-white/90 text-indigo-600";
+  const kycBadgeClassName = isKycApproved
+    ? "border-0 bg-white/90 text-emerald-700 shadow-sm"
+    : hasPendingFollowUp || isKycRejected
+      ? "border-0 bg-white/90 text-rose-700 shadow-sm"
+      : isKycPending
+        ? "border-0 bg-white/90 text-amber-700 shadow-sm"
+        : "border-0 bg-white/90 text-gray-700 shadow-sm";
 
   const formatCurrency = (val: number) => {
     if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
@@ -149,56 +231,60 @@ const DashboardView = ({
   return (
     <div className="space-y-8">
       {/* KYC Verification Alert */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white rounded-xl shadow-sm">
-            <ShieldAlert className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">
-              KYC Verification Required
-            </h3>
-            <p className="text-sm text-gray-500">
-              {`To enable payouts and licensing for your ${entitySingularLower}, please complete`}
-              your agency's ID verification.
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              {kycStatus === "approved" ? (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              ) : kycStatus === "pending" ? (
-                <Clock className="w-4 h-4 text-yellow-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-gray-500" />
+      <div className={kycBannerClassName}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5 ${kycIconWrapClassName}`}
+            >
+              <KycIcon className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900">{kycTitle}</h3>
+                <Badge variant="outline" className={kycBadgeClassName}>
+                  {kycBadgeLabel}
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-gray-600">
+                {kycDescription}
+              </p>
+              {(hasPendingFollowUp || isKycRejected) && formattedKycReason && (
+                <div className="mt-3 max-w-2xl rounded-2xl bg-white/90 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-100">
+                  <span className="font-semibold">
+                    {hasPendingFollowUp ? "Veriff note:" : "Reason:"}
+                  </span>{" "}
+                  {formattedKycReason}
+                </div>
               )}
-              <Badge
-                variant="outline"
-                className={
-                  kycStatus === "approved"
-                    ? "bg-green-100 text-green-700"
-                    : kycStatus === "pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
-                }
-              >
-                {kycStatus === "approved"
-                  ? "Approved"
-                  : kycStatus === "pending"
-                    ? "Pending"
-                    : "Not started"}
-              </Badge>
+              {!isKycApproved && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onRefreshStatus}
+                    disabled={!onRefreshStatus || !!kycLoading || !!refreshLoading}
+                    className="h-9 rounded-full border-gray-200 bg-white/90 px-3 text-gray-700 shadow-sm hover:bg-white"
+                  >
+                    <RefreshCw
+                      className={`mr-2 h-4 w-4 ${refreshLoading ? "animate-spin" : ""}`}
+                    />
+                    Refresh status
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+          <Button
+            variant="default"
+            className="h-12 rounded-full bg-indigo-600 px-8 font-bold text-white hover:bg-indigo-700"
+            onClick={onKYC}
+            disabled={!!kycLoading || !!refreshLoading || isKycApproved}
+          >
+            {kycButtonLabel}
+          </Button>
         </div>
-        <Button
-          variant="default"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-          onClick={onKYC}
-          disabled={
-            !!kycLoading || kycStatus === "approved" || kycStatus === "pending"
-          }
-        >
-          {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

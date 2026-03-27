@@ -70,15 +70,6 @@ pub fn docuseal_template_limit(tier: PlanTier) -> Option<usize> {
     }
 }
 
-pub fn veriff_monthly_limit(tier: PlanTier) -> u32 {
-    match tier {
-        PlanTier::Free => 1,
-        PlanTier::Basic => 50,
-        PlanTier::Pro => 150,
-        PlanTier::Enterprise => 150,
-    }
-}
-
 pub fn voice_clone_limit(tier: PlanTier) -> u32 {
     match tier {
         PlanTier::Free => 0,
