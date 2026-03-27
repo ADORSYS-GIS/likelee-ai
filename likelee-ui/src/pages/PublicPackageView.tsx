@@ -92,6 +92,7 @@ export function PublicPackageView() {
   const {
     data: packageData,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery<any>({
@@ -101,21 +102,41 @@ export function PublicPackageView() {
     retry: false, // We will handle retries manually for password prompt
   });
 
+  const isPasswordError = useMemo(() => {
+    const status = Number((error as any)?.status || 0);
+    const message = String((error as any)?.message || "").toLowerCase();
+    // Also inspect the raw backend payload since base44Client may transform the message
+    const rawData = (error as any)?.data;
+    const rawStr = (
+      typeof rawData === "string" ? rawData : JSON.stringify(rawData ?? "")
+    ).toLowerCase();
+    const mentionsPassword =
+      message.includes("password") ||
+      message.includes("unlock") ||
+      rawStr.includes("password") ||
+      rawStr.includes("unlock");
+    return (status === 401 || status === 403) && mentionsPassword;
+  }, [error]);
+
   const interactionMutation = useMutation({
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
   });
 
   useEffect(() => {
-    const message = (error as any)?.message || "";
-    if (message.includes(" 401 ")) {
-      setShowPasswordPrompt(true);
-      if (password) {
-        setPasswordError("Invalid password. Please try again.");
-      }
-    } else {
+    if (!isPasswordError) {
       setPasswordError(null);
+      return;
     }
-  }, [error, password]);
+    setShowPasswordPrompt(true);
+    if (password) setPasswordError("Invalid password. Please try again.");
+  }, [isPasswordError, password]);
+
+  useEffect(() => {
+    // Close the password prompt once the package loads successfully.
+    if (!packageData) return;
+    setShowPasswordPrompt(false);
+    setPasswordError(null);
+  }, [packageData]);
 
   const fullAssetsRequestMutation = useMutation({
     mutationFn: (data: {
@@ -253,19 +274,6 @@ export function PublicPackageView() {
       type: "favorite" | "callback" | "selected";
     }) => packageApi.deleteInteraction(token!, data),
   });
-
-  const isPasswordError = (() => {
-    const message = (error as any)?.message || "";
-    return message.includes(" 401 ");
-  })();
-
-  useEffect(() => {
-    if (isPasswordError) {
-      setShowPasswordPrompt(true);
-    } else {
-      setShowPasswordPrompt(false);
-    }
-  }, [isPasswordError]);
 
   useEffect(() => {
     if (packageData) {
@@ -578,8 +586,12 @@ export function PublicPackageView() {
             )}
           </div>
           <DialogFooter>
-            <Button type="submit" onClick={handlePasswordSubmit}>
-              Unlock Package
+            <Button
+              type="submit"
+              onClick={handlePasswordSubmit}
+              disabled={isFetching || !password.trim()}
+            >
+              {isFetching ? "Unlocking..." : "Unlock Package"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -800,7 +812,24 @@ export function PublicPackageView() {
       <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
         {(pkg.items || pkg.package_items || pkg.talents || [])?.map(
           (item: any, idx: number) => {
-            const talent = item.talent;
+            const talent = item?.talent || item?.agency_users || item || {};
+            const talentId = String(
+              talent?.id || item?.talent_id || item?.id || "",
+            ).trim();
+            const talentName = String(
+              talent?.stage_name ||
+                talent?.full_legal_name ||
+                talent?.full_name ||
+                item?.talent_name ||
+                item?.full_name ||
+                "Talent",
+            ).trim();
+            const photoUrl = String(
+              talent?.profile_photo_url ||
+                item?.profile_photo_url ||
+                item?.talent_profile_photo_url ||
+                "",
+            ).trim();
             return (
               <motion.div
                 key={item.id}
@@ -813,11 +842,11 @@ export function PublicPackageView() {
                   className="aspect-[3/4] rounded-3xl overflow-hidden relative mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
                   onClick={() => setSelectedItem(item)}
                 >
-                  {talent.profile_photo_url ? (
+                  {photoUrl ? (
                     <img
-                      src={talent.profile_photo_url}
+                      src={photoUrl}
                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      alt={talent.full_name}
+                      alt={talentName}
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
@@ -833,9 +862,9 @@ export function PublicPackageView() {
                     className="pointer-events-none absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
                   >
                     <Heart
-                      className={`w-5 h-5 ${selectedFavorites.has(talent.id) ? "text-red-500" : "text-gray-500"}`}
+                      className={`w-5 h-5 ${selectedFavorites.has(talentId) ? "text-red-500" : "text-gray-500"}`}
                       fill={
-                        selectedFavorites.has(talent.id)
+                        selectedFavorites.has(talentId)
                           ? "currentColor"
                           : "none"
                       }
@@ -850,7 +879,7 @@ export function PublicPackageView() {
                     className="pointer-events-none absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
                   >
                     <Check
-                      className={`w-5 h-5 ${selectedSelections.has(talent.id) ? "text-emerald-600" : "text-gray-500"}`}
+                      className={`w-5 h-5 ${selectedSelections.has(talentId) ? "text-emerald-600" : "text-gray-500"}`}
                     />
                   </button>
 
@@ -860,9 +889,7 @@ export function PublicPackageView() {
                         {talent.categories?.[0] || "Talent"}
                       </p>
                       <h3 className="text-3xl font-black uppercase tracking-tighter">
-                        {talent.stage_name ||
-                          talent.full_legal_name ||
-                          talent.full_name}
+                        {talentName}
                       </h3>
                     </div>
                     <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />

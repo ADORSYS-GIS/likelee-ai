@@ -91,7 +91,7 @@ graph TB
 5. Response serialized and returned
 
 ### Webhook Flow
-1. External service (Stripe, Veriff, Calendly, DocuSeal) sends POST to `/webhooks/*`
+1. External service (Stripe, Veriff, Calendly, DocuSeal) sends POST to `/webhooks/*` (DocuSeal has multiple endpoints by flow)
 2. Handler validates signature/secret
 3. Handler processes event and updates database
 4. Background jobs may be triggered
@@ -157,6 +157,7 @@ graph TB
 - Production secrets managed by deployment platform
 
 ### Data Protection
-- Private files stored in `likelee-private` bucket with signed URLs
+- Private files stored in `likelee-private` bucket and accessed via backend proxy endpoints (service role)
+- Direct client `SELECT` access to `likelee-private` is intentionally blocked (policies removed); do not rely on signed URLs for private bucket reads
 - Public files in `likelee-public` bucket
 - Temp uploads in `likelee-temp` bucket with TTL

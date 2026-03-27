@@ -1,10 +1,21 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +38,12 @@ import {
   Loader2,
   Plus,
   RefreshCw,
+  X,
   Trash2,
   Send,
   Wand2,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
@@ -53,6 +67,13 @@ const BrandConnectionsView = () => {
     | "deliverables"
     | "feedback"
   >("connections");
+
+  // Deliverables is handled in the main Agency sidebar; keep this tab as a redirect only.
+  useEffect(() => {
+    if (activeTab !== "deliverables") return;
+    navigate("/AgencyDashboard?tab=deliverables");
+    setActiveTab("connections");
+  }, [activeTab, navigate]);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
   const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
@@ -78,6 +99,13 @@ const BrandConnectionsView = () => {
   const [assignSearch, setAssignSearch] = useState("");
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [unassignConfirm, setUnassignConfirm] = useState<{
+    open: boolean;
+    offerId: string;
+    assignmentId: string;
+    talentName: string;
+  }>({ open: false, offerId: "", assignmentId: "", talentName: "" });
   const [messageDialog, setMessageDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -95,6 +123,14 @@ const BrandConnectionsView = () => {
     file: null,
     sending: false,
   });
+
+  const [sendPrecheckOpen, setSendPrecheckOpen] = useState(false);
+  const [sendPrecheckTitle, setSendPrecheckTitle] = useState("");
+  const [sendPrecheckBody, setSendPrecheckBody] =
+    useState<React.ReactNode>(null);
+  const [sendPrecheckActions, setSendPrecheckActions] = useState<
+    { label: string; onClick: () => void; variant?: "default" | "outline" }[]
+  >([]);
 
   const isConfidentialBrandPlaceholder = (value: unknown) =>
     String(value || "")
@@ -277,7 +313,6 @@ const BrandConnectionsView = () => {
       return Array.isArray(resp?.assignments) ? resp.assignments : [];
     },
   });
-
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
     return requestsQuery.data;
@@ -313,10 +348,215 @@ const BrandConnectionsView = () => {
   const assignedTalentIds = useMemo(() => {
     return new Set(
       (offerAssignmentsQuery.data || []).map((a: any) =>
-        String(a?.talent_id || ""),
+        String(
+          a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
+        ),
       ),
     );
   }, [offerAssignmentsQuery.data]);
+  const feedbackItems = useMemo(() => {
+    if (!Array.isArray(feedbackQuery.data)) return [];
+    return feedbackQuery.data;
+  }, [feedbackQuery.data]);
+
+  const hasAssignedTalent = useMemo(
+    () => (offerAssignmentsQuery.data || []).length > 0,
+    [offerAssignmentsQuery.data],
+  );
+  const selectedOfferLockInfo = useMemo(() => {
+    const offerId = String(selectedOfferId || "").trim();
+    if (!offerId) return { locked: false, contractSigned: false };
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid")
+      .trim()
+      .toLowerCase();
+    const contractSigned = status === "contract_fully_signed";
+    const locked =
+      (pay !== "unpaid" && pay !== "") ||
+      status === "contract_sent" ||
+      contractSigned;
+    return { locked, contractSigned };
+  }, [offers, selectedOfferId]);
+  const assignmentLockedForSelectedOffer = selectedOfferLockInfo.locked;
+  const selectedOfferContractSigned = selectedOfferLockInfo.contractSigned;
+
+  const agencyPayoutAccountStatusQuery = useQuery({
+    queryKey: ["agency", "payouts", "account_status"],
+    queryFn: async () => {
+      try {
+        return await base44.get<{
+          connected?: boolean;
+          payouts_enabled?: boolean;
+          transfers_enabled?: boolean;
+          last_error?: string;
+          bank_last4?: string | null;
+        }>("/api/agency/payouts/account_status");
+      } catch {
+        return {
+          connected: false,
+          payouts_enabled: false,
+          transfers_enabled: false,
+          last_error: "",
+          bank_last4: null,
+        };
+      }
+    },
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+
+  const agencyStripeConnected =
+    !!agencyPayoutAccountStatusQuery.data?.connected;
+  const agencyStripeTransfersEnabled =
+    !!agencyPayoutAccountStatusQuery.data?.transfers_enabled;
+  const agencyStripeReadyForPayouts =
+    agencyStripeConnected && agencyStripeTransfersEnabled;
+
+  const openSendPrecheckModal = (opts: {
+    title: string;
+    body: React.ReactNode;
+    actions: {
+      label: string;
+      onClick: () => void;
+      variant?: "default" | "outline";
+    }[];
+  }) => {
+    setSendPrecheckTitle(opts.title);
+    setSendPrecheckBody(opts.body);
+    setSendPrecheckActions(opts.actions);
+    setSendPrecheckOpen(true);
+  };
+
+  const attemptSendContract = (offerId: string, contractId: string) => {
+    if (busyIds.has(contractId)) return;
+
+    if (!hasAssignedTalent) {
+      openSendPrecheckModal({
+        title: "Assign talents before sending",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              This offer has no assigned talents. Assign at least 1 talent
+              before sending the contract.
+            </p>
+            <p className="text-xs text-gray-500">
+              Assignments are locked after the contract is sent.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Close",
+            variant: "outline",
+            onClick: () => setSendPrecheckOpen(false),
+          },
+        ],
+      });
+      return;
+    }
+
+    if (!agencyStripeConnected) {
+      openSendPrecheckModal({
+        title: "Connect Stripe before sending",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              Connect your agency Stripe account before sending contracts. This
+              ensures payouts and commissions can be transferred correctly when
+              the brand pays.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Go to Payouts",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              navigate("/AgencyDashboard?tab=payouts");
+            },
+          },
+          {
+            label: "Close",
+            variant: "outline",
+            onClick: () => setSendPrecheckOpen(false),
+          },
+        ],
+      });
+      return;
+    }
+
+    if (agencyStripeConnected && !agencyStripeTransfersEnabled) {
+      openSendPrecheckModal({
+        title: "Stripe transfers not enabled",
+        body: (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              Your Stripe account is connected, but Stripe reports that{" "}
+              <span className="font-semibold">transfers are not enabled</span>{" "}
+              for this account yet.
+            </p>
+            <p>
+              If you send this contract now, the brand may be able to pay, but
+              transfers to your agency and creators can fail until Stripe
+              enables transfers.
+            </p>
+            <p className="text-xs text-gray-500">
+              Recommendation: finish Stripe onboarding in Payouts. If transfers
+              stay disabled, contact system support for help.
+            </p>
+          </div>
+        ),
+        actions: [
+          {
+            label: "Send anyway",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              handleSendContract(offerId, contractId);
+            },
+          },
+          {
+            label: "Go to Payouts",
+            variant: "outline",
+            onClick: () => {
+              setSendPrecheckOpen(false);
+              navigate("/AgencyDashboard?tab=payouts");
+            },
+          },
+        ],
+      });
+      return;
+    }
+
+    handleSendContract(offerId, contractId);
+  };
+
+  const builderSendDisabledReason = useMemo(() => {
+    if (!selectedOfferId) return "Select an offer before sending.";
+    if (!currentContractId) return "Select a contract before sending.";
+    if (busyIds.has(currentContractId)) return "Sending…";
+    return "";
+  }, [busyIds, currentContractId, selectedOfferId]);
+
+  const assignmentLockedForOffer = useMemo(() => {
+    const offerId = assignDialog.offerId;
+    if (!offerId) return false;
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid")
+      .trim()
+      .toLowerCase();
+    if (pay !== "unpaid" && pay !== "") return true;
+    return status === "contract_sent" || status === "contract_fully_signed";
+  }, [assignDialog.offerId, offers]);
   const getTalentAvatar = (t: any) => {
     if (!t) return "";
     if (t.img) return t.img;
@@ -335,10 +575,6 @@ const BrandConnectionsView = () => {
       .toUpperCase();
     return name ? name.slice(0, 1) : "T";
   };
-  const feedbackItems = useMemo(() => {
-    if (!Array.isArray(feedbackQuery.data)) return [];
-    return feedbackQuery.data;
-  }, [feedbackQuery.data]);
 
   const updateStatus = async (id: string, action: "accept" | "decline") => {
     if (!id || busyIds.has(id)) return;
@@ -379,33 +615,130 @@ const BrandConnectionsView = () => {
   };
 
   const handleAssignTalents = async () => {
-    if (!assignDialog.offerId || assignSelectedIds.length === 0) return;
+    if (!assignDialog.offerId) return;
     if (assignSubmitting) return;
+    if (assignmentLockedForOffer) {
+      toast({
+        title: "Assignments locked",
+        description:
+          "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+        variant: "destructive",
+      });
+      return;
+    }
     setAssignSubmitting(true);
     try {
-      await Promise.all(
-        assignSelectedIds.map((talentId) =>
-          base44.post(
-            `/api/campaign-offers/${assignDialog.offerId}/assignments`,
-            { talent_id: talentId },
-          ),
-        ),
+      const offerId = assignDialog.offerId;
+      const current = Array.isArray(offerAssignmentsQuery.data)
+        ? offerAssignmentsQuery.data
+        : [];
+      const currentByCreatorId = new Map<string, string>();
+      current.forEach((a: any) => {
+        const tid = String(
+          a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
+        ).trim();
+        const aid = String(a?.id || "").trim();
+        if (tid && aid) currentByCreatorId.set(tid, aid);
+      });
+
+      const desiredIds = new Set(
+        assignSelectedIds.map((id) => String(id || "").trim()).filter(Boolean),
       );
+      const currentIds = new Set([...currentByCreatorId.keys()]);
+      const toAdd = [...desiredIds].filter((id) => !currentIds.has(id));
+      const toRemove = [...currentIds].filter((id) => !desiredIds.has(id));
+
+      if (toAdd.length === 0 && toRemove.length === 0) {
+        toast({
+          title: "No changes",
+          description: "Talent assignments are already up to date.",
+        });
+        setAssignDialog({ open: false, offerId: "", talentId: "" });
+        setAssignSelectedIds([]);
+        setAssignSearch("");
+        return;
+      }
+
+      await Promise.all([
+        ...toAdd.map((talentId) =>
+          base44.post(`/api/campaign-offers/${offerId}/assignments`, {
+            creator_id: talentId,
+          }),
+        ),
+        ...toRemove.map((talentId) => {
+          const assignmentId = currentByCreatorId.get(talentId);
+          if (!assignmentId) return Promise.resolve(null);
+          return base44.delete(
+            `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
+          );
+        }),
+      ]);
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-assignments", assignDialog.offerId],
       });
       setAssignDialog({ open: false, offerId: "", talentId: "" });
       setAssignSelectedIds([]);
       setAssignSearch("");
-      toast({ title: "Talent assigned" });
+      toast({
+        title: "Assignments updated",
+        description: "Talent assignments saved successfully.",
+      });
     } catch (e: any) {
+      const msg = String(e?.message || "");
       toast({
         title: "Assignment failed",
+        description: msg.includes(
+          "cannot_change_assignments_after_contract_sent",
+        )
+          ? "You can’t change assigned talents after the contract is sent."
+          : msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssignSubmitting(false);
+    }
+  };
+
+  const handleUnassignTalent = async () => {
+    const offerId = String(unassignConfirm.offerId || "").trim();
+    const assignmentId = String(unassignConfirm.assignmentId || "").trim();
+    if (!offerId || !assignmentId) return;
+    if (assignmentLockedForSelectedOffer) {
+      toast({
+        title: "Assignments locked",
+        description: selectedOfferContractSigned
+          ? "Contract is already signed and you can’t change assigned talents."
+          : "You can’t unassign talent after the contract is sent.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setAssignSubmitting(true);
+    try {
+      await base44.delete(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/assignments/${encodeURIComponent(assignmentId)}`,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-assignments", offerId],
+      });
+      toast({
+        title: "Talent unassigned",
+        description: "Talent was removed from this offer.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Unassign failed",
         description: e?.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
       setAssignSubmitting(false);
+      setUnassignConfirm({
+        open: false,
+        offerId: "",
+        assignmentId: "",
+        talentName: "",
+      });
     }
   };
 
@@ -546,10 +879,12 @@ const BrandConnectionsView = () => {
       // Automatically open builder for the new contract
       handlePrepareContract(offerId, resp.id);
     } catch (err: any) {
+      console.error("upload_offer_contract failed", err);
       toast({
         title: "Upload failed",
-        description: err.message || "Failed to upload contract.",
-        variant: "destructive",
+        description:
+          "Failed to upload contract. Please try again with a valid PDF.",
+        variant: "destructive" as any,
       });
     } finally {
       setIsUploading(false);
@@ -566,16 +901,27 @@ const BrandConnectionsView = () => {
       setCurrentContractId(contractId);
       setBuilderOpen(true);
     } catch (err: any) {
+      console.error("get_builder_token failed", err);
       toast({
         title: "Failed to load builder",
-        description: err.message || "Failed to get builder token.",
-        variant: "destructive",
+        description:
+          "Could not load the contract builder. Please refresh and try again.",
+        variant: "destructive" as any,
       });
     }
   };
 
   const handleSendContract = async (offerId: string, contractId: string) => {
     if (busyIds.has(contractId)) return;
+    if (!agencyStripeConnected) {
+      toast({
+        title: "Connect Stripe first",
+        description:
+          "Connect your agency Stripe account before sending contracts. Brands can’t pay until payout setup is complete.",
+        variant: "destructive",
+      });
+      return;
+    }
     setBusyIds((prev) => new Set(prev).add(contractId));
     try {
       const resp = await base44.post<{ contract?: any }>(
@@ -608,9 +954,16 @@ const BrandConnectionsView = () => {
         queryKey: ["agency", "campaign-offers-my"],
       });
     } catch (err: any) {
+      // Avoid showing raw backend/API errors to users. Log details for debugging.
+      console.error("send_offer_contract failed", err);
+      const msg = String(err?.message || "");
       toast({
         title: "Send failed",
-        description: err.message || "Failed to send contract.",
+        description: msg.includes("no_talents_assigned")
+          ? "Assign at least 1 talent to this offer before sending the contract."
+          : msg.toLowerCase().includes("template does not contain fields")
+            ? "This PDF template has no signature fields. Open Prepare, place fields, save, then try again."
+            : "Failed to send contract. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -888,7 +1241,10 @@ const BrandConnectionsView = () => {
         </Button>
         <Button
           variant={activeTab === "deliverables" ? "default" : "outline"}
-          onClick={() => setActiveTab("deliverables")}
+          onClick={() => {
+            navigate("/AgencyDashboard?tab=deliverables");
+            setActiveTab("connections");
+          }}
         >
           Deliverables
         </Button>
@@ -1249,6 +1605,19 @@ const BrandConnectionsView = () => {
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
+                            {isFullySigned && (
+                              <Badge
+                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                                  offer?.payment_status === "paid"
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                    : "bg-amber-100 text-amber-800 border-amber-200"
+                                }`}
+                              >
+                                {offer?.payment_status === "paid"
+                                  ? "Paid"
+                                  : "Awaiting Payment"}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1337,61 +1706,121 @@ const BrandConnectionsView = () => {
                               })()}
                             </>
                           )}
-                          {isFullySigned && (
-                            <Button
-                              variant="outline"
-                              className="border-indigo-200 text-indigo-700 font-bold"
-                              onClick={() =>
-                                setAssignDialog({
-                                  open: true,
-                                  offerId: selectedOfferId,
-                                  talentId: "",
-                                })
-                              }
-                            >
-                              <User className="h-4 w-4 mr-2" />
-                              Assign Talent
-                            </Button>
+                          {isFullySigned &&
+                            offer?.payment_status !== "paid" && (
+                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                <span className="text-amber-700 text-sm font-semibold">
+                                  ⏳ Brand has not yet completed payment.
+                                  Deliverable uploads and submissions are
+                                  disabled until paid.
+                                </span>
+                              </div>
+                            )}
+                          {(() => {
+                            const pay = String(
+                              offer?.payment_status || "unpaid",
+                            ).toLowerCase();
+                            const canEdit =
+                              pay !== "processing" &&
+                              pay !== "paid" &&
+                              !assignmentLockedForSelectedOffer;
+                            return (
+                              <Button
+                                variant="outline"
+                                className="border-indigo-200 text-indigo-700 font-bold"
+                                disabled={!canEdit}
+                                onClick={() =>
+                                  setAssignDialog({
+                                    open: true,
+                                    offerId: selectedOfferId,
+                                    talentId: "",
+                                  })
+                                }
+                                title={
+                                  assignmentLockedForSelectedOffer
+                                    ? selectedOfferContractSigned
+                                      ? "Contract is already signed. Assigned talents can’t be changed."
+                                      : "Assignments are locked after the contract is sent."
+                                    : undefined
+                                }
+                              >
+                                <User className="h-4 w-4 mr-2" />
+                                Assign Talent
+                              </Button>
+                            );
+                          })()}
+                          {assignmentLockedForSelectedOffer && (
+                            <p className="text-xs text-gray-500">
+                              {selectedOfferContractSigned
+                                ? "Contract is already signed and you can’t change assigned talents."
+                                : "Talent assignments are locked because the contract was already sent."}
+                            </p>
                           )}
                         </div>
 
-                        {isFullySigned && (
-                          <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-bold text-gray-900">
-                                Assigned Talent
-                              </p>
-                            </div>
-                            {(offerAssignmentsQuery.data || []).length === 0 ? (
-                              <p className="text-xs text-gray-500">
-                                No talent assigned yet.
-                              </p>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {(offerAssignmentsQuery.data || []).map(
-                                  (a: any) => {
-                                    const talent = a?.agency_users || {};
-                                    const tid = String(a?.talent_id || "");
-                                    return (
-                                      <div
-                                        key={String(a?.id)}
-                                        className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                            <User className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                          <div>
-                                            <p className="text-sm font-semibold text-gray-900">
-                                              {talent?.stage_name ||
-                                                talent?.full_legal_name ||
-                                                "Talent"}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                              Assigned
-                                            </p>
-                                          </div>
+                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-gray-900">
+                              Assigned Talent
+                            </p>
+                          </div>
+                          {(offerAssignmentsQuery.data || []).length === 0 ? (
+                            <p className="text-xs text-gray-500">
+                              Assign at least 1 talent before preparing/sending
+                              the contract and before the brand can pay.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {(offerAssignmentsQuery.data || []).map(
+                                (a: any) => {
+                                  const talent = a?.agency_users || {};
+                                  const tid = String(a?.talent_id || "");
+                                  const assignmentId = String(a?.id || "");
+                                  return (
+                                    <div
+                                      key={String(a?.id)}
+                                      className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <User className="h-4 w-4 text-gray-500" />
                                         </div>
+                                        <div>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {talent?.stage_name ||
+                                              talent?.full_legal_name ||
+                                              "Talent"}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Assigned
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {!assignmentLockedForSelectedOffer ? (
+                                          <Button
+                                            size="icon"
+                                            variant="outline"
+                                            className="h-9 w-9"
+                                            title="Unassign talent"
+                                            disabled={assignSubmitting}
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              setUnassignConfirm({
+                                                open: true,
+                                                offerId: selectedOfferId,
+                                                assignmentId,
+                                                talentName:
+                                                  talent?.stage_name ||
+                                                  talent?.full_legal_name ||
+                                                  "Talent",
+                                              });
+                                            }}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
+                                        ) : null}
                                         <Button
                                           size="sm"
                                           variant="outline"
@@ -1410,13 +1839,13 @@ const BrandConnectionsView = () => {
                                           Send Message
                                         </Button>
                                       </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                                    </div>
+                                  );
+                                },
+                              )}
+                            </div>
+                          )}
+                        </div>
 
                         {/* Full brief — shown directly, no duplicate summary */}
                         {offer?.brief_snapshot &&
@@ -1512,6 +1941,19 @@ const BrandConnectionsView = () => {
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
+                            {isFullySigned && (
+                              <Badge
+                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                  offer?.payment_status === "paid"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
+                              >
+                                {offer?.payment_status === "paid"
+                                  ? "Paid"
+                                  : "Unpaid"}
+                              </Badge>
+                            )}
                             {isPending && (
                               <>
                                 <Button
@@ -1869,6 +2311,39 @@ const BrandConnectionsView = () => {
                           </TabsTrigger>
                         </TabsList>
                       </div>
+                      {!hasAssignedTalent && (
+                        <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                          <span className="text-amber-700 text-sm font-semibold">
+                            Assign at least 1 talent before preparing/sending a
+                            contract. This is required for correct payouts when
+                            the brand pays.
+                          </span>
+                        </div>
+                      )}
+                      {!agencyStripeReadyForPayouts && (
+                        <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <AlertCircle className="h-4 w-4 text-blue-600" />
+                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
+                            <span>
+                              Before sending contracts, connect your agency
+                              Stripe account and complete onboarding. Brands
+                              can’t pay until payouts are set up, and
+                              commissions/talent earnings can’t be transferred
+                              unless transfers are enabled.
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
+                              onClick={() =>
+                                navigate("/AgencyDashboard?tab=payouts")
+                              }
+                            >
+                              Go to Payouts
+                            </Button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
 
                       <TabsContent
                         value="submissions"
@@ -1890,6 +2365,7 @@ const BrandConnectionsView = () => {
                               variant="outline"
                               className="border-blue-200 text-blue-600 hover:bg-blue-50"
                               onClick={() => setContractTab("upload")}
+                              disabled={!hasAssignedTalent}
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Create First Contract
@@ -1980,7 +2456,10 @@ const BrandConnectionsView = () => {
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy}
+                                                    disabled={
+                                                      isBusy ||
+                                                      !hasAssignedTalent
+                                                    }
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
                                                     Prepare
@@ -1990,7 +2469,7 @@ const BrandConnectionsView = () => {
                                                     variant="default"
                                                     className="bg-blue-600 hover:bg-blue-700 h-9"
                                                     onClick={() =>
-                                                      handleSendContract(
+                                                      attemptSendContract(
                                                         selectedOfferId,
                                                         cId,
                                                       )
@@ -2310,12 +2789,18 @@ const BrandConnectionsView = () => {
                                 request. You can place fields in the builder
                                 afterwards.
                               </p>
+                              {!hasAssignedTalent && (
+                                <p className="text-sm text-amber-700 font-semibold mb-6">
+                                  Assign at least 1 talent to this offer first.
+                                </p>
+                              )}
                               <div className="flex items-center justify-center gap-4">
                                 <input
                                   type="file"
                                   id="contract-pdf-upload"
                                   className="hidden"
                                   accept=".pdf"
+                                  disabled={!hasAssignedTalent}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file)
@@ -2328,7 +2813,11 @@ const BrandConnectionsView = () => {
                                 />
                                 <label
                                   htmlFor="contract-pdf-upload"
-                                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 flex items-center"
+                                  className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center ${
+                                    hasAssignedTalent
+                                      ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  }`}
                                 >
                                   <FileText className="w-5 h-5 mr-3" />
                                   Choose PDF File
@@ -2466,7 +2955,11 @@ const BrandConnectionsView = () => {
         open={assignDialog.open}
         onOpenChange={(open) => {
           setAssignDialog((prev) => ({ ...prev, open }));
-          if (!open) {
+          if (open) {
+            // Preselect currently assigned talents so the agency can also unassign
+            // by deselecting before saving (until the contract is sent).
+            setAssignSelectedIds(Array.from(assignedTalentIds));
+          } else {
             setAssignSearch("");
             setAssignSelectedIds([]);
           }
@@ -2477,11 +2970,27 @@ const BrandConnectionsView = () => {
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               Assign Talent
             </DialogTitle>
-            <p className="text-sm text-gray-500 font-medium mt-1">
+            <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
               Select one or more talents from your roster to assign to this
               offer.
-            </p>
+            </DialogDescription>
           </DialogHeader>
+
+          <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
+            <AlertDescription className="text-sm text-blue-900 font-medium">
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
+            </AlertDescription>
+          </Alert>
+
+          {assignmentLockedForOffer ? (
+            <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
+              <AlertDescription className="text-sm text-amber-900 font-semibold">
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -2494,80 +3003,105 @@ const BrandConnectionsView = () => {
           </div>
 
           <ScrollArea className="h-[450px] pr-2 sm:pr-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredRoster.map((talent: any) => {
-                const id = String(talent?.id || "");
-                const alreadyAssigned = assignedTalentIds.has(id);
-                const isSelected = assignSelectedIds.includes(id);
-                return (
-                  <Card
-                    key={id}
-                    onClick={() => {
-                      if (alreadyAssigned) return;
-                      setAssignSelectedIds((prev) =>
-                        prev.includes(id)
-                          ? prev.filter((x) => x !== id)
-                          : [...prev, id],
-                      );
-                    }}
-                    className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                      alreadyAssigned
-                        ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    } ${
-                      isSelected
-                        ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
-                        : "border-gray-50 hover:border-gray-100 bg-white"
-                    }`}
-                  >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
-                      <Avatar className="w-16 h-16 rounded-2xl">
-                        <AvatarImage src={getTalentAvatar(talent)} />
-                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
-                          {getTalentInitial(talent)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                        {talent?.stage_name ||
-                          talent?.name ||
-                          talent?.full_legal_name ||
-                          "Talent"}
-                      </h6>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        {alreadyAssigned && (
-                          <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                            Assigned
+            {rosterQuery.isLoading ? (
+              <div className="h-[420px] flex flex-col items-center justify-center text-center">
+                <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
+                <p className="text-sm font-bold text-gray-500">
+                  Loading talents…
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Fetching your agency roster.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredRoster.map((talent: any) => {
+                  const id = String(talent?.creator_id || talent?.id || "");
+                  const canAssign =
+                    Boolean(talent?.has_creator_account) && Boolean(id);
+                  const alreadyAssigned = assignedTalentIds.has(id);
+                  const isSelected = assignSelectedIds.includes(id);
+                  const willUnassign = alreadyAssigned && !isSelected;
+                  return (
+                    <Card
+                      key={id}
+                      onClick={() => {
+                        if (assignmentLockedForOffer) return;
+                        if (!canAssign) return;
+                        setAssignSelectedIds((prev) =>
+                          prev.includes(id)
+                            ? prev.filter((x) => x !== id)
+                            : [...prev, id],
+                        );
+                      }}
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                        assignmentLockedForOffer
+                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                          : "cursor-pointer"
+                      } ${
+                        isSelected
+                          ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                          : "border-gray-50 hover:border-gray-100 bg-white"
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                        <Avatar className="w-16 h-16 rounded-2xl">
+                          <AvatarImage src={getTalentAvatar(talent)} />
+                          <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
+                            {getTalentInitial(talent)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
+                          {talent?.stage_name ||
+                            talent?.name ||
+                            talent?.full_legal_name ||
+                            "Talent"}
+                        </h6>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {alreadyAssigned && (
+                            <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                              Assigned
+                            </Badge>
+                          )}
+                          {willUnassign && (
+                            <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                              Will unassign
+                            </Badge>
+                          )}
+                          <Badge
+                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
+                              talent?.has_creator_account
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {talent?.has_creator_account
+                              ? "Dashboard Access"
+                              : "No Dashboard Access"}
                           </Badge>
-                        )}
-                        <Badge
-                          className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                            talent?.has_creator_account
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
-                        >
-                          {talent?.has_creator_account
-                            ? "Dashboard Access"
-                            : "No Dashboard Access"}
-                        </Badge>
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
+                      {isSelected && (
+                        <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </ScrollArea>
 
           <Button
-            onClick={handleAssignTalents}
-            disabled={assignSelectedIds.length === 0 || assignSubmitting}
+            onClick={() => setAssignConfirmOpen(true)}
+            disabled={
+              assignmentLockedForOffer ||
+              assignSelectedIds.length === 0 ||
+              assignSubmitting
+            }
             className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
           >
             {assignSubmitting ? (
@@ -2578,6 +3112,69 @@ const BrandConnectionsView = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog
+        open={assignConfirmOpen}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setAssignConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can update assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting || assignmentLockedForOffer}
+              onClick={async () => {
+                await handleAssignTalents();
+                setAssignConfirmOpen(false);
+              }}
+            >
+              Confirm assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={unassignConfirm.open}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setUnassignConfirm((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove <strong>{unassignConfirm.talentName}</strong> from this
+              offer. You can re-assign talents until the contract is sent.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting || assignmentLockedForSelectedOffer}
+              onClick={async () => {
+                await handleUnassignTalent();
+              }}
+            >
+              Unassign
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={messageDialog.open}
         onOpenChange={(open) => setMessageDialog((prev) => ({ ...prev, open }))}
@@ -2585,6 +3182,10 @@ const BrandConnectionsView = () => {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Message Talent</DialogTitle>
+            <DialogDescription>
+              Send a short instruction or request to this talent. Attach a file
+              if needed.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Input
@@ -2646,6 +3247,29 @@ const BrandConnectionsView = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={sendPrecheckOpen} onOpenChange={setSendPrecheckOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>{sendPrecheckTitle || "Before you send"}</DialogTitle>
+            <DialogDescription>
+              Please review the information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-1">{sendPrecheckBody}</div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            {sendPrecheckActions.map((a, idx) => (
+              <Button
+                key={`${a.label}-${idx}`}
+                variant={a.variant === "outline" ? "outline" : "default"}
+                onClick={a.onClick}
+              >
+                {a.label}
+              </Button>
+            ))}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* DocuSeal Builder Modal */}
       {builderOpen && builderToken && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
@@ -2661,95 +3285,125 @@ const BrandConnectionsView = () => {
                     Place signature fields and save to finish
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  className="border-gray-200 hover:bg-gray-50"
+                  className="border-gray-200 hover:bg-gray-50 ml-3"
                   onClick={() => {
                     if (!selectedOfferId || !currentContractId) {
                       toast({
                         title: "Missing contract",
                         description: "Select a contract before sending.",
-                        variant: "destructive",
+                        variant: "destructive" as any,
                       });
                       return;
                     }
-                    handleSendContract(selectedOfferId, currentContractId);
+                    attemptSendContract(selectedOfferId, currentContractId);
                   }}
-                  disabled={!selectedOfferId || !currentContractId}
+                  disabled={
+                    !selectedOfferId ||
+                    !currentContractId ||
+                    busyIds.has(currentContractId)
+                  }
+                  title={builderSendDisabledReason || undefined}
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  Send
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setBuilderOpen(false);
-                    setBuilderToken(null);
-                    if (selectedOfferId) {
-                      queryClient.invalidateQueries({
-                        queryKey: [
-                          "agency",
-                          "offer-contracts",
-                          selectedOfferId,
-                        ],
-                      });
-                    }
-                  }}
-                  className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
-                >
-                  ✕
+                  {busyIds.has(currentContractId) ? "Sending..." : "Send"}
                 </Button>
               </div>
-            </div>
-            <div className="flex-1 bg-gray-50 relative">
-              <docuseal-builder
-                data-token={builderToken}
-                data-autosave={true}
-                className="w-full h-full block"
-                ref={(el: any) => {
-                  if (el && !el._hasSaveListener) {
-                    const hideActionButtons = (root: ParentNode) => {
-                      const buttons = Array.from(
-                        root.querySelectorAll("button"),
-                      );
-                      buttons.forEach((btn) => {
-                        const label = (btn.textContent || "")
-                          .trim()
-                          .toLowerCase();
-                        if (label === "sign yourself" || label === "send") {
-                          (btn as HTMLElement).style.display = "none";
-                        }
-                      });
-                    };
-                    const root = el.shadowRoot || el;
-                    hideActionButtons(root);
-                    const observer = new MutationObserver(() =>
-                      hideActionButtons(root),
-                    );
-                    observer.observe(root, { childList: true, subtree: true });
-                    el._hideObserver = observer;
-                    el.addEventListener("save", () => {
-                      if (selectedOfferId) {
-                        queryClient.invalidateQueries({
-                          queryKey: [
-                            "agency",
-                            "offer-contracts",
-                            selectedOfferId,
-                          ],
-                        });
-                      }
-                      toast({
-                        title: "Contract saved",
-                        description:
-                          "Your changes have been saved successfully.",
-                      });
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setBuilderOpen(false);
+                  setBuilderToken(null);
+                  if (selectedOfferId) {
+                    queryClient.invalidateQueries({
+                      queryKey: ["agency", "offer-contracts", selectedOfferId],
                     });
-                    el._hasSaveListener = true;
                   }
                 }}
-              ></docuseal-builder>
+                className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="flex-1 bg-gray-50 relative flex flex-col">
+              <div className="px-6 py-3 border-b border-gray-200 bg-white shadow-sm flex items-center justify-between shrink-0">
+                <div className="text-xs sm:text-sm text-gray-700 font-medium flex items-center gap-4">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    Party mapping:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1 text-xs font-bold">
+                      <span className="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-sm shadow-red-200" />
+                      First Party = Agency
+                    </span>
+                    <ArrowRight className="w-3 h-3 text-gray-300" />
+                    <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 shadow-sm shadow-blue-200" />
+                      Second Party = Client
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 relative">
+                <docuseal-builder
+                  data-token={builderToken}
+                  data-autosave={true}
+                  data-save-button-text="Save Contract"
+                  data-with-send-button={false}
+                  data-with-sign-yourself-button={false}
+                  className="w-full h-full block"
+                  ref={(el: any) => {
+                    if (el && !el._hasSaveListener) {
+                      const hideActionButtons = (root: ParentNode) => {
+                        const buttons = Array.from(
+                          root.querySelectorAll("button"),
+                        );
+                        buttons.forEach((btn) => {
+                          const label = (btn.textContent || "")
+                            .replace(/\s+/g, " ")
+                            .trim()
+                            .toLowerCase();
+                          if (
+                            label === "sign yourself" ||
+                            label === "send" ||
+                            label.includes("sign yourself")
+                          ) {
+                            (btn as HTMLElement).style.display = "none";
+                          }
+                        });
+                      };
+                      const root = el.shadowRoot || el;
+                      hideActionButtons(root);
+                      const observer = new MutationObserver(() =>
+                        hideActionButtons(root),
+                      );
+                      observer.observe(root, {
+                        childList: true,
+                        subtree: true,
+                      });
+                      el._hideObserver = observer;
+                      el.addEventListener("save", () => {
+                        if (selectedOfferId) {
+                          queryClient.invalidateQueries({
+                            queryKey: [
+                              "agency",
+                              "offer-contracts",
+                              selectedOfferId,
+                            ],
+                          });
+                        }
+                        toast({
+                          title: "Contract saved",
+                          description:
+                            "Your changes have been saved successfully.",
+                        });
+                      });
+                      el._hasSaveListener = true;
+                    }
+                  }}
+                ></docuseal-builder>
+              </div>
             </div>
           </div>
         </div>

@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
+import TalentCommissionSettings from "./TalentCommissionSettings";
 
 const InviteTeamMemberModal = ({
   open,
@@ -1977,23 +1978,20 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             </Card>
 
             {/* Per-Talent Custom Commissions */}
-            {/* Per-Talent Custom Commissions */}
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
-                {`Per-${entitySingularTitle} Custom Commissions`}
-              </h3>
-              <p className="text-sm text-gray-500 font-medium mb-8">
-                {`Override commission rates for specific ${entitySingularLower} (edit from ${entitySingularLower} profile)`}
-              </p>
-              <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl">
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="text-sm font-bold text-gray-500">
-                  No custom commission rates set
+            <div>
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
+                  {`Per-${entitySingularTitle} Custom Commissions`}
+                </h3>
+                <p className="text-sm text-gray-500 font-medium tracking-tight">
+                  {`Set specific commission rates for individual ${entityPluralLower}. These overrides take precedence over the default agency and division rates.`}
                 </p>
               </div>
-            </Card>
+
+              <TalentCommissionSettings
+                entitySingularLower={entitySingularLower}
+              />
+            </div>
 
             <div className="flex justify-end">
               <Button

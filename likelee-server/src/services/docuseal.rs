@@ -61,7 +61,8 @@ pub struct CreateSubmissionResponse {
 pub struct SubmitterResponse {
     pub id: i32,
     pub slug: String,
-    pub email: String,
+    #[serde(default)]
+    pub email: Option<String>,
     pub status: String,
     pub role: Option<String>,
     pub embed_src: Option<String>,
@@ -113,7 +114,7 @@ impl DocuSealClient {
             .map(|s| SubmitterResponse {
                 id: s.id,
                 slug: s.slug,
-                email: s.email.unwrap_or_default(),
+                email: s.email,
                 status: s.status.unwrap_or_else(|| "pending".to_string()),
                 role: s.role,
                 embed_src: s.embed_src,

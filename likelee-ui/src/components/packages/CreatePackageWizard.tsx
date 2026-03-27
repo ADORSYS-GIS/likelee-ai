@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -142,7 +142,35 @@ export function CreatePackageWizard({
 
   useEffect(() => {
     if (open && packageToEdit) {
-      // packageToEdit.items already has embedded talent and assets data from getPackage API
+      const rawItems = Array.isArray(packageToEdit.items)
+        ? packageToEdit.items
+        : [];
+      const normalizedItems = rawItems
+        .map((it: any) => {
+          const embeddedTalent =
+            it?.talent || it?.agency_users || it?.talent_profile || null;
+          const talentId = String(
+            it?.talent_id || embeddedTalent?.id || it?.id || "",
+          ).trim();
+          if (!talentId) return null;
+          const assets = Array.isArray(it?.assets)
+            ? it.assets
+            : Array.isArray(it?.asset_ids)
+              ? it.asset_ids
+              : [];
+          return {
+            ...it,
+            talent_id: talentId,
+            assets,
+            talent:
+              embeddedTalent ||
+              (it?.talent_name
+                ? { id: talentId, full_name: it.talent_name }
+                : null),
+          };
+        })
+        .filter(Boolean);
+
       setFormData({
         title: packageToEdit.title || "",
         description: packageToEdit.description || "",
@@ -172,7 +200,7 @@ export function CreatePackageWizard({
           mode === "send-from-template" || isOfferMode
             ? ""
             : packageToEdit.client_email || "",
-        items: packageToEdit.items || [],
+        items: normalizedItems as any[],
       });
     } else if (open && !isEditMode && mode !== "send-from-template") {
       setFormData(initialFormData);
@@ -203,11 +231,52 @@ export function CreatePackageWizard({
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+  const { data: allTalentsData } = useQuery({
+    queryKey: ["agency-talents", "all"],
+    queryFn: () => packageApi.listTalents(""),
+    enabled: open,
+  });
+
+  const talentById = useMemo(() => {
+    const rows = Array.isArray(allTalentsData) ? allTalentsData : [];
+    const m = new Map<string, any>();
+    for (const t of rows) {
+      const id = String((t as any)?.id || "").trim();
+      if (id) m.set(id, t);
+    }
+    return m;
+  }, [allTalentsData]);
+
   const { data: talentsData, isLoading: loadingTalents } = useQuery({
     queryKey: ["agency-talents", debouncedSearchTerm],
     queryFn: () => packageApi.listTalents(debouncedSearchTerm),
     enabled: open && showTalentSelector,
   });
+
+  const uniqueTalentsData = useMemo(() => {
+    const rows = Array.isArray(talentsData) ? talentsData : [];
+    const norm = (v: any) =>
+      String(v || "")
+        .trim()
+        .toLowerCase();
+    const score = (t: any) =>
+      (norm(t?.profile_photo_url) ? 10 : 0) + (t?.is_connected_creator ? 2 : 0);
+    const byKey = new Map<string, any>();
+    for (const t of rows) {
+      const creatorKey = norm((t as any)?.creator_id);
+      const emailKey = norm((t as any)?.email);
+      const nameKey = norm((t as any)?.full_name);
+      const idKey = norm((t as any)?.id);
+      const key = creatorKey || emailKey || nameKey || idKey;
+      const existing = byKey.get(key);
+      if (!existing) {
+        byKey.set(key, t);
+        continue;
+      }
+      if (score(t) > score(existing)) byKey.set(key, t);
+    }
+    return Array.from(byKey.values());
+  }, [talentsData]);
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -331,6 +400,17 @@ export function CreatePackageWizard({
   };
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
+
+  const removeTalentSelection = (talentId: string) => {
+    const id = String(talentId || "").trim();
+    if (!id) return;
+    setFormData((prev) => ({
+      ...prev,
+      items: (prev.items || []).filter(
+        (it: any) => String(it?.talent_id || "").trim() !== id,
+      ),
+    }));
+  };
 
   const toggleTalentSelection = (talent: any) => {
     const isSelected = formData.items.some(
@@ -725,73 +805,98 @@ export function CreatePackageWizard({
 
                     <div className="space-y-4">
                       <AnimatePresence mode="popLayout">
-                        {formData.items.map(
-                          (item, idx) =>
-                            item.talent && (
-                              <motion.div
-                                key={item.talent_id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
-                              >
-                                <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-                                  <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
-                                    <GripVertical className="w-5 h-5" />
-                                  </div>
-                                  <div className="w-16 h-16 rounded-[1.25rem] bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
+                        {formData.items.map((item, idx) => {
+                          const tid = String(item?.talent_id || "").trim();
+                          const resolvedTalent = item?.talent ||
+                            (tid ? talentById.get(tid) : null) || {
+                              id: tid,
+                              full_name: item?.talent_name || "Talent",
+                            };
+                          const talentName = String(
+                            resolvedTalent?.stage_name ||
+                              resolvedTalent?.name ||
+                              resolvedTalent?.full_legal_name ||
+                              resolvedTalent?.full_name ||
+                              item?.talent_name ||
+                              "Talent",
+                          ).trim();
+                          const photo = String(
+                            resolvedTalent?.profile_photo_url || "",
+                          ).trim();
+                          const assetsCount = Array.isArray(item?.assets)
+                            ? item.assets.length
+                            : Array.isArray(item?.asset_ids)
+                              ? item.asset_ids.length
+                              : 0;
+                          return (
+                            <motion.div
+                              key={tid || item.talent_id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
+                            >
+                              <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                                <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
+                                  <GripVertical className="w-5 h-5" />
+                                </div>
+                                <div className="w-16 h-16 rounded-[1.25rem] bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
+                                  {photo ? (
                                     <img
-                                      src={item.talent.profile_photo_url}
+                                      src={photo}
                                       className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
                                     />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <h5 className="font-black text-gray-900 tracking-tight text-lg">
-                                      {item.talent.full_name}
-                                    </h5>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <Badge
-                                        variant="secondary"
-                                        className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md"
-                                      >
-                                        {item.assets.length} Assets
-                                      </Badge>
-                                      <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                                        Selected
-                                      </p>
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                      <User className="w-7 h-7" />
                                     </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <h5 className="font-black text-gray-900 tracking-tight text-lg">
+                                    {talentName}
+                                  </h5>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md"
+                                    >
+                                      {assetsCount} Assets
+                                    </Badge>
+                                    <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+                                      Selected
+                                    </p>
                                   </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                  <Button
-                                    onClick={() =>
-                                      setActiveTalentForAssets({
-                                        id: item.talent_id,
-                                        name: item.talent.full_name,
-                                      })
-                                    }
-                                    className={`h-10 px-4 sm:px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 w-full sm:w-auto ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
-                                  >
-                                    <Layers className="w-4 h-4" />
-                                    {item.assets.length > 0
-                                      ? "Update Selection"
-                                      : "Select Assets"}
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      toggleTalentSelection(item.talent)
-                                    }
-                                    className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </motion.div>
-                            ),
-                        )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                                <Button
+                                  onClick={() =>
+                                    setActiveTalentForAssets({
+                                      id: tid,
+                                      name: talentName,
+                                    })
+                                  }
+                                  className={`h-10 px-4 sm:px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 w-full sm:w-auto ${assetsCount > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
+                                >
+                                  <Layers className="w-4 h-4" />
+                                  {assetsCount > 0
+                                    ? "Update Selection"
+                                    : "Select Assets"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeTalentSelection(tid)}
+                                  className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
                       </AnimatePresence>
                       {formData.items.length === 0 && (
                         <div className="p-20 text-center border-2 border-dashed border-gray-200 rounded-[2rem] bg-white">
@@ -1405,13 +1510,14 @@ export function CreatePackageWizard({
           <ScrollArea className="h-[450px] pr-2 sm:pr-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Array.isArray(talentsData) &&
-                talentsData.map((talent: any) => {
+                uniqueTalentsData.map((talent: any) => {
                   const isSelected = formData.items.some(
                     (i) => i.talent_id === talent.id,
                   );
                   const isConnectedCreator = Boolean(
                     (talent as any)?.is_connected_creator,
                   );
+                  const photo = String(talent?.profile_photo_url || "").trim();
                   return (
                     <Card
                       key={talent.id}
@@ -1419,10 +1525,16 @@ export function CreatePackageWizard({
                       className={`p-5 cursor-pointer rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${isSelected ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20" : "border-gray-50 hover:border-gray-100 bg-white"}`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
-                        <img
-                          src={talent.profile_photo_url}
-                          className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
-                        />
+                        {photo ? (
+                          <img
+                            src={photo}
+                            className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <User className="w-7 h-7" />
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">

@@ -1423,6 +1423,18 @@ export default function CreatorDashboard() {
       (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
     );
     const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
+    const isPaid =
+      String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
+
+    if (selectedOffer && !isPaid && !sendDeliverableRequestId) {
+      toast({
+        title: "Payment required",
+        description:
+          "The brand must complete the payment for this offer before deliverables can be uploaded.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!selectedOffer) {
       toast({
         title: "Campaign unavailable",
@@ -2394,6 +2406,7 @@ export default function CreatorDashboard() {
   const [showShoutOut, setShowShoutOut] = useState(true);
   const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
   const [balances, setBalances] = useState<any[]>([]);
+  const [stripeBalances, setStripeBalances] = useState<any[]>([]);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
   const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
@@ -2410,6 +2423,7 @@ export default function CreatorDashboard() {
       ]);
       setPayoutAccountStatus(statusRes.data);
       setBalances(balanceRes.data.balances || []);
+      setStripeBalances(balanceRes.data.stripe_balances || []);
       setPayoutHistory(historyRes.data.items || historyRes.items || []);
     } catch (e) {
       console.error("Failed to fetch payout status", e);
@@ -6251,6 +6265,9 @@ export default function CreatorDashboard() {
                         <div className="flex flex-wrap gap-2 pt-2">
                           <Button
                             size="sm"
+                            // If it's an asset request from an agency, we bypass the brand payment gate
+                            // because the agency's request implies they are managing the workflow.
+                            disabled={false}
                             onClick={async () => {
                               if (!offerId) {
                                 toast({
@@ -9131,17 +9148,24 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              Available Balance
+              cashout Balance (Stripe)
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
               {(
-                (balances.find((b) => b.currency === "USD")?.available_cents ||
-                  0) / 100
+                (stripeBalances.find((b) => b.currency === "USD")
+                  ?.available_cents || 0) / 100
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              {t("creatorDashboard.earnings.metrics.willUpdate")}
+              Available in your connected Stripe account.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 relative z-10">
+              Held (pending transfer): $
+              {(
+                (balances.find((b) => b.currency === "USD")?.available_cents ||
+                  0) / 100
+              ).toFixed(2)}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
@@ -10710,6 +10734,25 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
+              {(() => {
+                const selectedOffer = brandOffers.find(
+                  (o) => String(o.id) === sendDeliverableOfferId,
+                );
+                const isPaid =
+                  String(selectedOffer?.payment_status || "").toLowerCase() ===
+                  "paid";
+                if (sendDeliverableOfferId && !isPaid) {
+                  return (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <span className="text-amber-700 text-sm font-semibold">
+                        ⏳ Awaiting brand payment before deliverables can be
+                        uploaded.
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               <div className="space-y-2">
                 <Label htmlFor="deliverable-upload">Upload deliverables</Label>
                 <Input
@@ -10885,7 +10928,20 @@ export default function CreatorDashboard() {
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 onClick={sendDeliverable}
-                disabled={offerActionLoading}
+                disabled={
+                  offerActionLoading ||
+                  (sendDeliverableOfferId &&
+                    (() => {
+                      const selectedOffer = brandOffers.find(
+                        (o) => String(o.id) === sendDeliverableOfferId,
+                      );
+                      return (
+                        String(
+                          selectedOffer?.payment_status || "",
+                        ).toLowerCase() !== "paid"
+                      );
+                    })())
+                }
               >
                 {offerActionLoading ? "Sending..." : "Send"}
               </Button>
@@ -12390,21 +12446,51 @@ export default function CreatorDashboard() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <WalletIcon className="h-5 w-5 text-emerald-600" />
-                <span className="text-emerald-900 font-medium">
-                  Available Balance
-                </span>
-              </div>
-              <span className="text-emerald-900 font-bold text-lg">
-                $
-                {(
-                  (balances.find((b) => b.currency === "USD")
-                    ?.available_cents || 0) / 100
-                ).toFixed(2)}
-              </span>
-            </div>
+            {(() => {
+              const internalHeldCents =
+                balances.find((b) => b.currency === "USD")?.available_cents ||
+                0;
+              const stripecashoutCents =
+                stripeBalances.find((b) => b.currency === "USD")
+                  ?.available_cents || 0;
+              return (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <WalletIcon className="h-5 w-5 text-amber-700" />
+                      <div className="leading-tight">
+                        <div className="text-amber-900 font-medium">
+                          Held (pending transfer)
+                        </div>
+                        <div className="text-xs text-amber-800/70">
+                          Tracked in Likelee. Not necessarily cashout yet.
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-amber-900 font-bold text-lg">
+                      ${(internalHeldCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <WalletIcon className="h-5 w-5 text-emerald-600" />
+                      <div className="leading-tight">
+                        <div className="text-emerald-900 font-medium">
+                          cashout (Stripe)
+                        </div>
+                        <div className="text-xs text-emerald-800/70">
+                          Available in your connected Stripe account.
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-emerald-900 font-bold text-lg">
+                      ${(stripecashoutCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <Label htmlFor="payout-amount">Amount to Withdraw</Label>
@@ -12429,7 +12515,7 @@ export default function CreatorDashboard() {
                   onClick={() =>
                     setRequestPayoutAmount(
                       (
-                        (balances.find((b) => b.currency === "USD")
+                        (stripeBalances.find((b) => b.currency === "USD")
                           ?.available_cents || 0) / 100
                       ).toString(),
                     )
@@ -12466,7 +12552,7 @@ export default function CreatorDashboard() {
                 !requestPayoutAmount ||
                 parseFloat(requestPayoutAmount) <= 0 ||
                 parseFloat(requestPayoutAmount) >
-                  (balances.find((b) => b.currency === "USD")
+                  (stripeBalances.find((b) => b.currency === "USD")
                     ?.available_cents || 0) /
                     100 ||
                 isLoadingPayout

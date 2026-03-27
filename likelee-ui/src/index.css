@@ -192,4 +192,32 @@ button:focus-visible {
   .animate-twinkle {
     animation: twinkle 2s ease-in-out infinite;
   }
+
+  @keyframes bounce-short {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  .animate-bounce-short {
+    animation: bounce-short 1.5s ease-in-out infinite;
+  }
+
+  @keyframes ping-slow {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    70%,
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+  .animate-ping-slow {
+    animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
 }

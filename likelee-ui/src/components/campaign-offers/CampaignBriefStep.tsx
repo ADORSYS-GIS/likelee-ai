@@ -482,43 +482,54 @@ export default function CampaignBriefStep({
           </div>
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Budget & Timeline</p>
+        <p className="text-sm font-semibold text-gray-700">
+          Payment & Timeline
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Total Budget</p>
-            <Input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={campaignBrief.budget_total}
-              onChange={(e) =>
-                setCampaignBrief((prev) => ({
-                  ...prev,
-                  budget_total: e.target.value,
-                }))
-              }
-              placeholder="5000"
-              className="border-2 border-gray-300 rounded-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Creator Payment</p>
+            <p className="text-sm font-medium text-gray-700">
+              Collaborator Payout (Net)
+            </p>
             <Input
               type="number"
               min={1}
               step={1}
               inputMode="numeric"
               value={campaignBrief.budget_creator_payment}
-              onChange={(e) =>
+              onChange={(e) => {
+                const payout = Number(e.target.value) || 0;
+                const total = (payout * 1.02).toFixed(2);
                 setCampaignBrief((prev) => ({
                   ...prev,
                   budget_creator_payment: e.target.value,
-                }))
-              }
-              placeholder="4500"
+                  budget_total: total,
+                }));
+              }}
+              placeholder="5000"
               className="border-2 border-gray-300 rounded-none"
             />
+            <p className="text-[10px] text-gray-500">
+              The exact amount the creator or agency will receive.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700">
+              Offer Amount (Gross + 2% Fee)
+            </p>
+            <Input
+              type="number"
+              readOnly
+              value={campaignBrief.budget_total}
+              className="border-2 border-gray-300 rounded-none bg-gray-50 font-bold"
+            />
+            <p className="text-[10px] text-blue-600 font-medium">
+              Includes 2% Likelee platform fee ($
+              {(
+                Number(campaignBrief.budget_total || 0) -
+                Number(campaignBrief.budget_creator_payment || 0)
+              ).toFixed(2)}
+              ).
+            </p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">

@@ -143,8 +143,12 @@ export default function BrandCampaignDashboard({
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [selectedCampaignDeliverables, setSelectedCampaignDeliverables] =
     useState<any[]>([]);
+  const [reviewingDeliverableId, setReviewingDeliverableId] = useState<
+    string | null
+  >(null);
+  const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
-    useState<string[]>([]);
+    useState<{ label: string; logo?: string }[]>([]);
   const [markDoneOpen, setMarkDoneOpen] = useState(false);
   const [markDoneBusy, setMarkDoneBusy] = useState(false);
   const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
@@ -152,6 +156,8 @@ export default function BrandCampaignDashboard({
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
+  const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
+  const [escrowReleaseInfo, setEscrowReleaseInfo] = useState<any>(null);
   const [campaignListTab, setCampaignListTab] = useState<
     "active" | "pending_approval" | "completed"
   >("active");
@@ -191,6 +197,14 @@ export default function BrandCampaignDashboard({
   >(new Set());
   const [savingCampaign, setSavingCampaign] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [existingCampaignAgencyIds, setExistingCampaignAgencyIds] = useState<
+    Set<string>
+  >(new Set());
+  const [existingCampaignCreatorIds, setExistingCampaignCreatorIds] = useState<
+    Set<string>
+  >(new Set());
+  const [loadingExistingCollaborators, setLoadingExistingCollaborators] =
+    useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -310,6 +324,56 @@ export default function BrandCampaignDashboard({
 
     setShowNewCampaignModal(true);
   }, [embedded, openNewCampaignSignal, prefillCampaignContext]);
+
+  useEffect(() => {
+    if (!showNewCampaignModal) return;
+    const campaignId = String(brandCampaignId || "").trim();
+    if (!campaignId) {
+      setExistingCampaignAgencyIds(new Set());
+      setExistingCampaignCreatorIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const loadExistingCollaborators = async () => {
+      setLoadingExistingCollaborators(true);
+      try {
+        const offersResp = await base44.get<{ offers?: any[] }>(
+          `/api/brand/campaigns/${encodeURIComponent(campaignId)}/offers`,
+        );
+        const offers = Array.isArray(offersResp?.offers)
+          ? offersResp.offers
+          : [];
+        const nextAgency = new Set<string>();
+        const nextCreator = new Set<string>();
+        offers.forEach((offer: any) => {
+          const targetType = String(
+            offer?.target_type || offer?.targetType || "",
+          )
+            .trim()
+            .toLowerCase();
+          const targetId = String(
+            offer?.target_id || offer?.targetId || "",
+          ).trim();
+          if (!targetId) return;
+          if (targetType === "agency") nextAgency.add(targetId);
+          if (targetType === "creator") nextCreator.add(targetId);
+        });
+        if (cancelled) return;
+        setExistingCampaignAgencyIds(nextAgency);
+        setExistingCampaignCreatorIds(nextCreator);
+      } catch {
+        if (cancelled) return;
+        setExistingCampaignAgencyIds(new Set());
+        setExistingCampaignCreatorIds(new Set());
+      } finally {
+        if (!cancelled) setLoadingExistingCollaborators(false);
+      }
+    };
+    void loadExistingCollaborators();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandCampaignId, showNewCampaignModal]);
 
   const getDisplayName = (value: unknown) => {
     const normalized = String(value ?? "").trim();
@@ -439,7 +503,6 @@ export default function BrandCampaignDashboard({
     }
     return { ok: true };
   };
-  const SIGNED_OFFER_STATUSES = new Set(["contract_fully_signed", "signed"]);
   const isStartDateReached = (startDateRaw: unknown) => {
     const startDate = String(startDateRaw || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return false;
@@ -527,8 +590,10 @@ export default function BrandCampaignDashboard({
     const completedAt = campaign?.completed_at || null;
     const isMarkedDone = Boolean(completedAt);
     const safeOffers = Array.isArray(offers) ? offers : [];
+    // Campaign "Active vs Pending Approval" must not be affected by deliverable workflow statuses.
+    // Prefer backend-derived `is_fully_signed`.
     const hasSignedOffer = safeOffers.some((offer: any) =>
-      SIGNED_OFFER_STATUSES.has(String(offer?.status || "").toLowerCase()),
+      Boolean(offer?.is_fully_signed),
     );
     const collaboratorLabels = Array.from(
       new Set(
@@ -720,13 +785,20 @@ export default function BrandCampaignDashboard({
           );
         }
       }
-      const collaborators = Array.from(
-        new Set(
-          offers
-            .map((offer: any) => collaboratorLabelFromOffer(offer))
-            .filter(Boolean),
-        ),
-      );
+      const collaboratorsMap = new Map<
+        string,
+        { label: string; logo?: string }
+      >();
+      offers.forEach((offer: any) => {
+        const label = collaboratorLabelFromOffer(offer);
+        if (label && !collaboratorsMap.has(label)) {
+          collaboratorsMap.set(label, {
+            label,
+            logo: offer?.target_logo,
+          });
+        }
+      });
+      const collaborators = Array.from(collaboratorsMap.values());
       const deliverablesByOffer = await Promise.all(
         offers.map(async (offer: any) => {
           const offerId = String(offer?.id || "").trim();
@@ -814,11 +886,29 @@ export default function BrandCampaignDashboard({
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return;
+    if (deliverableReviewBusyRef.current.has(deliverableId)) return;
+    deliverableReviewBusyRef.current.add(deliverableId);
+    setReviewingDeliverableId(deliverableId);
     try {
-      await base44.post(
+      const resp = await base44.post<any>(
         `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/review`,
         { action },
       );
+
+      const escrow = resp?.escrow;
+      if (action === "approve" && escrow) {
+        if (escrow?.released_now) {
+          setEscrowReleaseInfo(escrow);
+          setShowEscrowReleaseModal(true);
+        } else if (String(escrow?.payment_status || "") !== "paid") {
+          toast({
+            title: "Approved, but payment not received",
+            description:
+              "Deliverable was approved. Escrow payout cannot be released until the offer is paid.",
+            variant: "destructive" as any,
+          });
+        }
+      }
       toast({
         title:
           action === "approve" ? "Deliverable approved" : "Edit request sent",
@@ -834,6 +924,9 @@ export default function BrandCampaignDashboard({
         description: e?.message || "Please try again.",
         variant: "destructive" as any,
       });
+    } finally {
+      deliverableReviewBusyRef.current.delete(deliverableId);
+      setReviewingDeliverableId(null);
     }
   };
   const commentSelectedCampaignDeliverable = async (deliverable: any) => {
@@ -879,17 +972,32 @@ export default function BrandCampaignDashboard({
   ) => {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
-    const assetUrl = String(deliverable?.asset_url || "").trim();
-    if (!assetUrl || !offerId || !deliverableId) {
+    const status = String(deliverable?.status || "").toLowerCase();
+    const approvedForDownload = [
+      "approved",
+      "accepted",
+      "brand_approved",
+    ].includes(status);
+    if (!offerId || !deliverableId) {
       toast({
         title: "Download unavailable",
-        description: "Deliverable file URL is missing.",
+        description: "Deliverable reference is missing.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!approvedForDownload) {
+      toast({
+        title: "Download unavailable",
+        description: "Approve this deliverable to unlock downloads.",
         variant: "destructive" as any,
       });
       return;
     }
     try {
-      const response = await fetch(assetUrl);
+      const response = await base44.getRaw(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file?download=true`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch deliverable file.");
       }
@@ -1146,6 +1254,13 @@ export default function BrandCampaignDashboard({
   const toggleCreatorCollaborator = (creator: any) => {
     const creatorId = String(creator?.id || "");
     if (!creatorId) return;
+    if (existingCampaignCreatorIds.has(creatorId)) {
+      toast({
+        title: "Collaborator already added",
+        description: "This creator is already part of the campaign.",
+      });
+      return;
+    }
     setCampaignForm((prev) => {
       const exists = (prev.collaborators || []).some(
         (id) => String(id) === creatorId,
@@ -1176,6 +1291,9 @@ export default function BrandCampaignDashboard({
     setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
     setBrandCampaignId("");
+    setExistingCampaignAgencyIds(new Set());
+    setExistingCampaignCreatorIds(new Set());
+    setLoadingExistingCollaborators(false);
     setCampaignForm({
       name: "",
       objective: "",
@@ -1497,7 +1615,44 @@ export default function BrandCampaignDashboard({
     }
   };
 
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setAuthToken(session?.access_token || null);
+      } catch {
+        if (!mounted) return;
+        setAuthToken(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const deliverablePreviewSrc = (deliverable: any) => {
+    const raw = String(deliverable?.asset_url || "").trim();
+    if (!raw) return "";
+    if (raw.startsWith("http")) return raw;
+    const offerId = String(deliverable?.offer_id || "").trim();
+    const deliverableId = String(deliverable?.id || "").trim();
+    if (!offerId || !deliverableId) return raw;
+    const proxyUrl = `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`;
+    return authToken
+      ? `${proxyUrl}?token=${encodeURIComponent(authToken)}`
+      : proxyUrl;
+  };
+
+  const deliverableFileSrc = (deliverable: any) =>
+    deliverablePreviewSrc(deliverable);
+
   const handleSendOffer = async () => {
+    if (savingCampaign) return;
     if (!brandCampaignId) {
       toast({
         title: "Campaign not ready",
@@ -1507,151 +1662,206 @@ export default function BrandCampaignDashboard({
       return;
     }
 
-    if (campaignForm.collaborator_type === "creator") {
-      if (newCampaignStep >= 5 && !contractDraft.docuseal_template_id.trim()) {
-        toast({
-          title: "DocuSeal template missing",
-          description:
-            "Upload a contract PDF first so we can create a DocuSeal template before sending.",
-          variant: "destructive" as any,
-        });
-        return;
-      }
-      const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
-      if (creatorIds.length === 0) {
-        toast({
-          title: "Select at least one creator",
-          description: "Choose one or more creators before sending offer.",
-          variant: "destructive" as any,
-        });
-        return;
-      }
-
-      try {
-        const created = await base44.post<{ offers?: any[] }>(
-          `/api/brand/campaigns/${brandCampaignId}/offers`,
-          {
-            target_type: "creator",
-            target_ids: creatorIds,
-            brief_snapshot: campaignBrief,
-            message: campaignForm.custom_terms || null,
-          },
-        );
-
-        const createdOffers = Array.isArray(created?.offers)
-          ? created.offers
-          : [];
-
-        const shouldCreateContract =
+    setSavingCampaign(true);
+    try {
+      if (campaignForm.collaborator_type === "creator") {
+        if (
           newCampaignStep >= 5 &&
-          (contractDraft.file_url.trim() ||
-            contractDraft.docuseal_template_id.trim());
-        let brandSignatureRequested = false;
-
-        if (shouldCreateContract && createdOffers.length > 0) {
-          let firstBrandSigningUrl = "";
-          await Promise.all(
-            createdOffers.map(async (offer: any) => {
-              const offerId = String(offer?.id || "").trim();
-              if (!offerId) return;
-              const contractResp = await base44.post<{ contract?: any }>(
-                `/api/campaign-offers/${offerId}/contracts`,
-                {
-                  title:
-                    contractDraft.title.trim() ||
-                    `${campaignForm.name || "Campaign"} Contract`,
-                  file_url: contractDraft.file_url.trim() || null,
-                  docuseal_template_id: contractDraft.docuseal_template_id
-                    ? Number(contractDraft.docuseal_template_id)
-                    : null,
-                },
-              );
-              const contractId = String(
-                contractResp?.contract?.id || "",
-              ).trim();
-              const sendResp = await base44.post<{ contract?: any }>(
-                `/api/campaign-offers/${offerId}/contracts/send`,
-                {
-                  contract_id: contractId || undefined,
-                },
-              );
-              const brandSigningUrl = String(
-                sendResp?.contract?.meta?.brand_signing_url || "",
-              ).trim();
-              if (!firstBrandSigningUrl && brandSigningUrl) {
-                firstBrandSigningUrl = brandSigningUrl;
-              }
-            }),
-          );
-          if (firstBrandSigningUrl) {
-            toast({
-              title: "Brand signature required",
-              description:
-                "Sign as First Party now. Creator (Second Party) signs after your signature.",
-            });
-            setAwaitingBrandSignature(true);
-            setBrandSignUrl(firstBrandSigningUrl);
-            setBrandSignOpen(true);
-            brandSignatureRequested = true;
-          }
-        }
-
-        const requiresBrandSignature = brandSignatureRequested;
-        if (requiresBrandSignature) {
+          !contractDraft.docuseal_template_id.trim()
+        ) {
           toast({
-            title: "Offers sent",
+            title: "DocuSeal template missing",
             description:
-              "Complete your brand signature before closing this campaign flow.",
+              "Upload a contract PDF first so we can create a DocuSeal template before sending.",
+            variant: "destructive" as any,
           });
-          await loadCampaignCards();
           return;
         }
-      } catch (e: any) {
+        const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
+        if (creatorIds.length === 0) {
+          toast({
+            title: "Select at least one creator",
+            description: "Choose one or more creators before sending offer.",
+            variant: "destructive" as any,
+          });
+          return;
+        }
+        const duplicates = creatorIds.filter((id) =>
+          existingCampaignCreatorIds.has(String(id)),
+        );
+        if (duplicates.length > 0) {
+          toast({
+            title: "Collaborator already added",
+            description:
+              duplicates.length === 1
+                ? "One selected creator is already part of this campaign."
+                : "Some selected creators are already part of this campaign.",
+            variant: "destructive" as any,
+          });
+          return;
+        }
+
+        try {
+          const created = await base44.post<{ offers?: any[] }>(
+            `/api/brand/campaigns/${brandCampaignId}/offers`,
+            {
+              target_type: "creator",
+              target_ids: creatorIds,
+              brief_snapshot: campaignBrief,
+              budget_snapshot: {
+                budget_total: campaignBrief.budget_total || "0",
+                budget_creator_payment:
+                  campaignBrief.budget_creator_payment || "0",
+                budget_submission_deadline:
+                  campaignBrief.budget_submission_deadline || null,
+              },
+              message: campaignForm.custom_terms || null,
+            },
+          );
+
+          const createdOffers = Array.isArray(created?.offers)
+            ? created.offers
+            : [];
+
+          const shouldCreateContract =
+            newCampaignStep >= 5 &&
+            (contractDraft.file_url.trim() ||
+              contractDraft.docuseal_template_id.trim());
+          let brandSignatureRequested = false;
+
+          if (shouldCreateContract && createdOffers.length > 0) {
+            let firstBrandSigningUrl = "";
+            await Promise.all(
+              createdOffers.map(async (offer: any) => {
+                const offerId = String(offer?.id || "").trim();
+                if (!offerId) return;
+                const contractResp = await base44.post<{ contract?: any }>(
+                  `/api/campaign-offers/${offerId}/contracts`,
+                  {
+                    title:
+                      contractDraft.title.trim() ||
+                      `${campaignForm.name || "Campaign"} Contract`,
+                    file_url: contractDraft.file_url.trim() || null,
+                    docuseal_template_id: contractDraft.docuseal_template_id
+                      ? Number(contractDraft.docuseal_template_id)
+                      : null,
+                  },
+                );
+                const contractId = String(
+                  contractResp?.contract?.id || "",
+                ).trim();
+                const sendResp = await base44.post<{ contract?: any }>(
+                  `/api/campaign-offers/${offerId}/contracts/send`,
+                  {
+                    contract_id: contractId || undefined,
+                  },
+                );
+                const brandSigningUrl = String(
+                  sendResp?.contract?.meta?.brand_signing_url || "",
+                ).trim();
+                if (!firstBrandSigningUrl && brandSigningUrl) {
+                  firstBrandSigningUrl = brandSigningUrl;
+                }
+              }),
+            );
+            if (firstBrandSigningUrl) {
+              toast({
+                title: "Brand signature required",
+                description:
+                  "Sign as First Party now. Creator (Second Party) signs after your signature.",
+              });
+              setAwaitingBrandSignature(true);
+              setBrandSignUrl(firstBrandSigningUrl);
+              setBrandSignOpen(true);
+              brandSignatureRequested = true;
+            }
+          }
+
+          const requiresBrandSignature = brandSignatureRequested;
+          if (requiresBrandSignature) {
+            toast({
+              title: "Offers sent",
+              description:
+                "Complete your brand signature before closing this campaign flow.",
+            });
+            await loadCampaignCards();
+            return;
+          }
+        } catch (e: any) {
+          toast({
+            title: "Failed to send offers",
+            description: e?.message || "Please try again.",
+            variant: "destructive" as any,
+          });
+          return;
+        }
+
         toast({
-          title: "Failed to send offers",
-          description: e?.message || "Please try again.",
+          title: "Offers sent",
+          description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
+        });
+        await loadCampaignCards();
+        resetCampaignBuilder();
+        return;
+      }
+
+      const agencyId = String(campaignForm.collaborators?.[0] || "");
+      if (!agencyId) {
+        toast({
+          title: "Select an agency",
+          description: "Choose a connected agency before sending offer.",
           variant: "destructive" as any,
         });
         return;
       }
-
-      toast({
-        title: "Offers sent",
-        description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
-      });
-      await loadCampaignCards();
-      resetCampaignBuilder();
-      return;
-    }
-
-    const agencyId = String(campaignForm.collaborators?.[0] || "");
-    if (!agencyId) {
-      toast({
-        title: "Select an agency",
-        description: "Choose a connected agency before sending offer.",
-        variant: "destructive" as any,
-      });
-      return;
-    }
-    try {
-      await base44.post(`/api/brand/campaigns/${brandCampaignId}/offers`, {
-        target_type: "agency",
-        target_ids: [agencyId],
-        brief_snapshot: campaignBrief,
-        message: campaignForm.custom_terms || null,
-      });
-      toast({
-        title: "Offer sent",
-        description: "Offer sent to the selected agency.",
-      });
-      await loadCampaignCards();
-      resetCampaignBuilder();
-    } catch (e: any) {
-      toast({
-        title: "Failed to send offer",
-        description: e?.message || "Please try again.",
-        variant: "destructive" as any,
-      });
+      if (existingCampaignAgencyIds.has(agencyId)) {
+        toast({
+          title: "Collaborator already added",
+          description: "This agency is already part of the campaign.",
+        });
+        return;
+      }
+      try {
+        await base44.post(`/api/brand/campaigns/${brandCampaignId}/offers`, {
+          target_type: "agency",
+          target_ids: [agencyId],
+          brief_snapshot: campaignBrief,
+          budget_snapshot: {
+            budget_total: campaignBrief.budget_total || "0",
+            budget_creator_payment: campaignBrief.budget_creator_payment || "0",
+            budget_submission_deadline:
+              campaignBrief.budget_submission_deadline || null,
+          },
+          message: campaignForm.custom_terms || null,
+        });
+        toast({
+          title: "Offer sent",
+          description: "Offer sent to the selected agency.",
+        });
+        await loadCampaignCards();
+        resetCampaignBuilder();
+      } catch (e: any) {
+        const msg = String(e?.message || "");
+        toast({
+          title:
+            msg === "This record already exists."
+              ? "Offer already sent"
+              : "Failed to send offer",
+          description:
+            msg === "This record already exists."
+              ? "An offer to this agency already exists for this campaign."
+              : msg || "Please try again.",
+          variant:
+            msg === "This record already exists."
+              ? ("default" as any)
+              : ("destructive" as any),
+        });
+        if (msg === "This record already exists.") {
+          await loadCampaignCards();
+        }
+      }
+    } finally {
+      setSavingCampaign(false);
     }
   };
 
@@ -1735,6 +1945,16 @@ export default function BrandCampaignDashboard({
     selectedCampaignExpectedDeliverables > 0
       ? selectedCampaignExpectedDeliverables
       : selectedCampaignSubmittedCount;
+
+  const deliverablesByCollaborator = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    selectedCampaignDeliverables.forEach((d) => {
+      const label = d.collaborator_label || "Other Collaborators";
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(d);
+    });
+    return groups;
+  }, [selectedCampaignDeliverables]);
 
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
@@ -2435,7 +2655,14 @@ export default function BrandCampaignDashboard({
                   setCampaignBrief={setCampaignBrief}
                   onReferenceImagesUpload={handleReferenceImageUpload}
                   onBrandAssetsUpload={handleBrandAssetsUpload}
-                  onBack={() => setNewCampaignStep(1)}
+                  onBack={() => {
+                    if (brandCampaignId) {
+                      // Do nothing or optionally show a toast.
+                      // Since the user says step 1 shouldn't change, we stay at step 2.
+                      return;
+                    }
+                    setNewCampaignStep(1);
+                  }}
                   onNext={handleStep2Next}
                   uploading={uploadingImages}
                 />
@@ -2518,6 +2745,11 @@ export default function BrandCampaignDashboard({
                       <label className="text-sm font-medium text-gray-700 block">
                         Select Agency
                       </label>
+                      {loadingExistingCollaborators ? (
+                        <p className="text-xs text-gray-500">
+                          Loading existing campaign collaborators…
+                        </p>
+                      ) : null}
                       <Input
                         value={agencySearch}
                         onChange={(e) => setAgencySearch(e.target.value)}
@@ -2540,6 +2772,9 @@ export default function BrandCampaignDashboard({
                             );
                             const selected =
                               campaignForm.collaborators?.includes(agencyId);
+                            const alreadyInCampaign =
+                              agencyId &&
+                              existingCampaignAgencyIds.has(agencyId);
                             return (
                               <div
                                 key={agencyId}
@@ -2559,19 +2794,34 @@ export default function BrandCampaignDashboard({
                                     <p className="text-xs text-gray-600 mt-1">
                                       {agency?.agency_type || "Agency"}
                                     </p>
+                                    {alreadyInCampaign ? (
+                                      <p className="text-[11px] font-semibold text-amber-700 mt-1">
+                                        Already part of this campaign
+                                      </p>
+                                    ) : null}
                                   </div>
                                   <Button
                                     type="button"
                                     variant="outline"
                                     className="h-10 border-2 border-gray-300 rounded-none"
                                     onClick={() =>
-                                      setCampaignForm((prev) => ({
-                                        ...prev,
-                                        collaborators: agencyId
-                                          ? [agencyId]
-                                          : [],
-                                      }))
+                                      (() => {
+                                        if (!agencyId) return;
+                                        if (alreadyInCampaign) {
+                                          toast({
+                                            title: "Collaborator already added",
+                                            description:
+                                              "This agency is already part of the campaign.",
+                                          });
+                                          return;
+                                        }
+                                        setCampaignForm((prev) => ({
+                                          ...prev,
+                                          collaborators: [agencyId],
+                                        }));
+                                      })()
                                     }
+                                    disabled={alreadyInCampaign}
                                   >
                                     {selected ? "Selected" : "Select"}
                                   </Button>
@@ -2587,52 +2837,39 @@ export default function BrandCampaignDashboard({
                   {campaignForm.collaborator_type === "creator" && (
                     <div className="space-y-3">
                       <label className="text-sm font-medium text-gray-700 block">
-                        {campaignForm.collaborator_type === "agency"
-                          ? "Select Talents"
-                          : "Select Creators"}
+                        Select Creators
                       </label>
                       <Input
                         value={creatorSearch}
                         onChange={(e) => setCreatorSearch(e.target.value)}
-                        placeholder={
-                          campaignForm.collaborator_type === "agency"
-                            ? "Search talents..."
-                            : "Search creators..."
-                        }
+                        placeholder="Search creators..."
                         className="border-2 border-gray-300 rounded-none"
                       />
                       <div className="border-2 border-gray-200 rounded-none p-3 max-h-[340px] overflow-y-auto space-y-3">
                         {loadingMarketplaceCreators ? (
                           <p className="text-sm text-gray-500">
-                            {campaignForm.collaborator_type === "agency"
-                              ? "Loading talents..."
-                              : "Loading creators..."}
+                            Loading creators...
                           </p>
                         ) : marketplaceCreators.length === 0 ? (
                           <p className="text-sm text-gray-500">
-                            {campaignForm.collaborator_type === "agency"
-                              ? "No talents found for this agency."
-                              : "No connected creators found."}
+                            No connected creators found.
                           </p>
                         ) : (
                           marketplaceCreators.map((creator) => {
                             const creatorId = String(creator?.id || "");
                             const selected =
-                              campaignForm.collaborator_type === "agency"
-                                ? selectedTalentCreatorIds.has(creatorId)
-                                : campaignForm.collaborators?.includes(
-                                    creatorId,
-                                  );
+                              selectedTalentCreatorIds.has(creatorId) ||
+                              campaignForm.collaborators?.includes(creatorId);
+                            const alreadyInCampaign =
+                              creatorId &&
+                              existingCampaignCreatorIds.has(creatorId);
                             const name = getDisplayName(
                               creator?.display_name ||
                                 creator?.full_name ||
                                 creator?.name,
                             );
                             const creatorType = String(
-                              creator?.creator_type ||
-                                (campaignForm.collaborator_type === "agency"
-                                  ? "Talent"
-                                  : "Creator"),
+                              creator?.creator_type || "Creator",
                             );
                             const baseRateWeeklyCents = Number(
                               creator?.base_rate_weekly_cents ??
@@ -2678,6 +2915,14 @@ export default function BrandCampaignDashboard({
                                     variant="outline"
                                     className="h-10 border-2 border-gray-300 rounded-none"
                                     onClick={() => {
+                                      if (alreadyInCampaign) {
+                                        toast({
+                                          title: "Collaborator already added",
+                                          description:
+                                            "This creator is already part of the campaign.",
+                                        });
+                                        return;
+                                      }
                                       if (
                                         campaignForm.collaborator_type ===
                                         "agency"
@@ -2699,6 +2944,7 @@ export default function BrandCampaignDashboard({
                                       }
                                       toggleCreatorCollaborator(creator);
                                     }}
+                                    disabled={alreadyInCampaign}
                                   >
                                     {selected ? "Selected" : "Select"}
                                   </Button>
@@ -2797,6 +3043,40 @@ export default function BrandCampaignDashboard({
                             : "N/A"}
                         </span>
                       </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex flex-col gap-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Financial Summary
+                      </p>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">
+                          Collaborator Payout (Net)
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          ${campaignBrief.budget_creator_payment || "0"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">
+                          Likelee Platform Fee (2%)
+                        </span>
+                        <span className="text-blue-600 font-medium">
+                          +$
+                          {(
+                            Number(campaignBrief.budget_total || 0) -
+                            Number(campaignBrief.budget_creator_payment || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-base pt-1 border-t border-dashed border-gray-200">
+                        <span className="font-bold text-gray-900">
+                          Total Brand Spend (Gross)
+                        </span>
+                        <span className="font-bold text-black">
+                          ${campaignBrief.budget_total || "0"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -2901,9 +3181,17 @@ export default function BrandCampaignDashboard({
                       <Button
                         type="button"
                         onClick={handleSendOffer}
+                        disabled={savingCampaign}
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
-                        Send Offer
+                        {savingCampaign ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          "Send Offer"
+                        )}
                       </Button>
                     )}
                   </div>
@@ -2964,7 +3252,14 @@ export default function BrandCampaignDashboard({
                         }
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
-                        Send Offer
+                        {savingCampaign ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          "Send Offer"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -2973,6 +3268,44 @@ export default function BrandCampaignDashboard({
           </div>
         </div>
       )}
+
+      <Dialog
+        open={showEscrowReleaseModal}
+        onOpenChange={(open) => {
+          setShowEscrowReleaseModal(open);
+          if (!open) setEscrowReleaseInfo(null);
+        }}
+      >
+        <DialogContent className="rounded-none">
+          <DialogHeader>
+            <DialogTitle>Escrow payout released</DialogTitle>
+            <DialogDescription>
+              Escrow has been released and Stripe transfers were triggered based
+              on your approval.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="text-sm text-gray-700 space-y-2">
+            <p>
+              <strong>Payment status:</strong>{" "}
+              {String(escrowReleaseInfo?.payment_status || "unknown")}
+            </p>
+            <p>
+              <strong>Escrow status:</strong>{" "}
+              {String(escrowReleaseInfo?.escrow_status || "unknown")}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              className="rounded-none"
+              onClick={() => setShowEscrowReleaseModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DocuSealBuilderModal
         open={showCampaignDocuSealBuilder}
@@ -3458,25 +3791,40 @@ export default function BrandCampaignDashboard({
                       No collaborators assigned yet.
                     </span>
                   ) : (
-                    selectedCampaignCollaborators.map((label, idx) => (
-                      <Badge
-                        key={`${label}-${idx}`}
-                        className="bg-gray-200 text-gray-700"
-                      >
-                        {label}
-                      </Badge>
-                    ))
+                    selectedCampaignCollaborators.map((collaborator, idx) => {
+                      const label =
+                        typeof collaborator === "string"
+                          ? collaborator
+                          : collaborator.label;
+                      return (
+                        <Badge
+                          key={`${label}-${idx}`}
+                          className="bg-gray-200 text-gray-700"
+                        >
+                          {label}
+                        </Badge>
+                      );
+                    })
                   )}
                 </div>
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-gray-900 uppercase tracking-widest text-sm">
                   Deliverables & Feedback
                 </h3>
+                <Alert className="border-2 border-gray-200 rounded-none">
+                  <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
+                    <Lock className="w-4 h-4" />
+                    Approving any 1 deliverable triggers escrow payout (once)
+                    and unlocks downloads for that deliverable. Approvals are
+                    final and can’t be undone.
+                  </AlertDescription>
+                </Alert>
                 {loadingSelectedCampaignDetails && (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-600 flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
                       Loading campaign deliverables...
                     </p>
                   </Card>
@@ -3489,179 +3837,238 @@ export default function BrandCampaignDashboard({
                       </p>
                     </Card>
                   )}
+
                 {!loadingSelectedCampaignDetails &&
-                  selectedCampaignDeliverables.map(
-                    (deliverable: any, idx: number) => {
-                      const status = String(
-                        deliverable?.status || "pending_review",
-                      ).toLowerCase();
-                      const displayStatus =
-                        status === "brand_approved" ? "approved" : status;
-                      const statusClass =
-                        displayStatus === "approved" ||
-                        displayStatus === "accepted"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : displayStatus === "changes_requested" ||
-                              displayStatus === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-800";
-                      const uploadedAtRaw = String(
-                        deliverable?.created_at || "",
-                      ).trim();
-                      const uploadedAt = uploadedAtRaw
-                        ? new Date(uploadedAtRaw).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "N/A";
-                      return (
-                        <Card
-                          key={String(deliverable?.id || idx)}
-                          className="p-6 border-2 border-gray-200 rounded-none"
-                        >
-                          <div className="flex items-start gap-6">
-                            <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden">
-                              {String(deliverable?.asset_type || "").startsWith(
-                                "image",
-                              ) && deliverable?.asset_url ? (
-                                <img
-                                  src={String(deliverable.asset_url)}
-                                  alt={String(
-                                    deliverable?.caption ||
-                                      `Deliverable #${idx + 1}`,
-                                  )}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Play className="w-12 h-12 text-gray-400" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-3">
-                                <div>
-                                  <h4 className="font-bold text-gray-900 mb-1">
-                                    {`Deliverable ${idx + 1}`}
-                                  </h4>
-                                  <p className="text-sm text-gray-600 mb-2">
-                                    Uploaded {uploadedAt} by{" "}
+                  selectedCampaignCollaborators.map((collaborator) => {
+                    const label =
+                      typeof collaborator === "string"
+                        ? collaborator
+                        : collaborator.label;
+                    const logo =
+                      typeof collaborator === "string"
+                        ? null
+                        : collaborator.logo;
+                    const items = deliverablesByCollaborator[label] || [];
+                    if (items.length === 0) return null;
+
+                    return (
+                      <div key={label} className="space-y-4 pt-8 first:pt-2">
+                        <div className="flex items-center gap-3 pb-3 border-b-2 border-gray-100">
+                          <div className="bg-[#F7B750] w-7 h-7 flex items-center justify-center rounded-none overflow-hidden">
+                            {logo ? (
+                              <img
+                                src={logo}
+                                alt={label}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Users className="w-3.5 h-3.5 text-white" />
+                            )}
+                          </div>
+                          <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px]">
+                            {label}
+                          </h4>
+                          <span className="ml-auto text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 border border-gray-100 uppercase tracking-tighter">
+                            {items.length}{" "}
+                            {items.length === 1 ? "Asset" : "Assets"}
+                          </span>
+                        </div>
+                        <div className="space-y-6">
+                          {items.map((deliverable: any, idx: number) => {
+                            const status = String(
+                              deliverable?.status || "pending_review",
+                            ).toLowerCase();
+                            const deliverableId = String(deliverable?.id || "");
+                            const isBusy =
+                              reviewingDeliverableId === deliverableId;
+                            const isApproved = [
+                              "approved",
+                              "accepted",
+                              "brand_approved",
+                            ].includes(status);
+                            const displayStatus =
+                              status === "brand_approved" ? "approved" : status;
+                            const statusClass =
+                              displayStatus === "approved" ||
+                              displayStatus === "accepted"
+                                ? "bg-emerald-100 text-emerald-700 font-bold border-none"
+                                : displayStatus === "changes_requested" ||
+                                    displayStatus === "rejected"
+                                  ? "bg-red-100 text-red-700 font-bold border-none"
+                                  : "bg-yellow-100 text-yellow-800 font-bold border-none";
+
+                            const uploadedAtRaw = String(
+                              deliverable?.created_at || "",
+                            ).trim();
+                            const uploadedAt = uploadedAtRaw
+                              ? new Date(uploadedAtRaw).toLocaleString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )
+                              : "N/A";
+
+                            return (
+                              <Card
+                                key={deliverableId || idx}
+                                className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none"
+                              >
+                                <div className="flex items-start gap-6">
+                                  <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
                                     {String(
-                                      deliverable?.collaborator_label ||
-                                        "Campaign collaborator",
+                                      deliverable?.asset_type || "",
+                                    ).startsWith("image") &&
+                                    deliverable?.asset_url ? (
+                                      <img
+                                        src={deliverablePreviewSrc(deliverable)}
+                                        alt={`Deliverable ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex flex-col items-center gap-2">
+                                        <Play className="w-8 h-8 text-gray-300" />
+                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">
+                                          Video Content
+                                        </span>
+                                      </div>
                                     )}
-                                  </p>
-                                  <Badge className={statusClass}>
-                                    {displayStatus.replace(/_/g, " ")}
-                                  </Badge>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white rounded-none"
-                                    onClick={() =>
-                                      void reviewSelectedCampaignDeliverable(
-                                        deliverable,
-                                        "approve",
-                                      )
-                                    }
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-2 border-gray-300 rounded-none"
-                                    onClick={() =>
-                                      void reviewSelectedCampaignDeliverable(
-                                        deliverable,
-                                        "changes_requested",
-                                      )
-                                    }
-                                  >
-                                    Request Edit
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-2 border-gray-300 rounded-none"
-                                    onClick={() =>
-                                      void downloadSelectedCampaignDeliverable(
-                                        deliverable,
-                                        idx,
-                                      )
-                                    }
-                                  >
-                                    <Download className="w-3 h-3 mr-1" />
-                                    Download
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="border-t-2 border-gray-200 pt-4">
-                                <h5 className="text-sm font-bold text-gray-900 mb-1">
-                                  Comments &amp; Feedback
-                                </h5>
-                                <div className="space-y-3">
-                                  {(Array.isArray(
-                                    deliverable?.meta?.feedback_comments,
-                                  )
-                                    ? deliverable.meta.feedback_comments
-                                    : []
-                                  ).map((comment: any) => (
-                                    <div
-                                      key={String(comment?.id || Math.random())}
-                                      className="rounded-md border border-gray-200 bg-white px-3 py-2"
-                                    >
-                                      <p className="text-sm font-semibold text-gray-900">
-                                        {String(comment?.author_role || "User")}
-                                      </p>
-                                      <p className="text-sm text-gray-700">
-                                        {String(comment?.message || "")}
-                                      </p>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {comment?.created_at
-                                          ? new Date(
-                                              String(comment.created_at),
-                                            ).toLocaleString()
-                                          : ""}
-                                      </p>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <div>
+                                        <h4 className="font-black text-gray-900 mb-1 uppercase tracking-tight">
+                                          Deliverable {idx + 1}
+                                        </h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">
+                                          Uploaded {uploadedAt}
+                                        </p>
+                                        <Badge
+                                          className={`${statusClass} text-[10px] uppercase tracking-wider h-5 rounded-none px-2`}
+                                        >
+                                          {displayStatus.replace(/_/g, " ")}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          className="bg-green-600 hover:bg-green-700 text-white rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
+                                          disabled={isApproved || isBusy}
+                                          onClick={() =>
+                                            void reviewSelectedCampaignDeliverable(
+                                              deliverable,
+                                              "approve",
+                                            )
+                                          }
+                                        >
+                                          {isApproved
+                                            ? "Approved"
+                                            : isBusy
+                                              ? "..."
+                                              : "Approve"}
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
+                                          disabled={isApproved || isBusy}
+                                          onClick={() =>
+                                            void reviewSelectedCampaignDeliverable(
+                                              deliverable,
+                                              "changes_requested",
+                                            )
+                                          }
+                                        >
+                                          Request Edit
+                                        </Button>
+                                        {isApproved && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-3 shadow-none"
+                                            onClick={() =>
+                                              window.open(
+                                                deliverableFileSrc(deliverable),
+                                                "_blank",
+                                              )
+                                            }
+                                          >
+                                            <Download className="w-3.5 h-3.5" />
+                                          </Button>
+                                        )}
+                                      </div>
                                     </div>
-                                  ))}
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      value={
-                                        deliverableCommentDrafts[
-                                          String(deliverable?.id || "")
-                                        ] || ""
-                                      }
-                                      onChange={(event) =>
-                                        setDeliverableCommentDrafts((prev) => ({
-                                          ...prev,
-                                          [String(deliverable?.id || "")]:
-                                            event.target.value,
-                                        }))
-                                      }
-                                      placeholder="Add a comment..."
-                                      className="border-2 border-gray-300 rounded-none"
-                                    />
-                                    <Button
-                                      className="bg-black hover:bg-gray-900 text-white rounded-none"
-                                      onClick={() =>
-                                        void commentSelectedCampaignDeliverable(
-                                          deliverable,
-                                        )
-                                      }
-                                    >
-                                      Send
-                                    </Button>
+
+                                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                                      <div className="space-y-2">
+                                        {deliverable?.meta?.feedback_comments?.map(
+                                          (comment: any, cidx: number) => (
+                                            <div
+                                              key={cidx}
+                                              className="bg-gray-50 p-3 border border-gray-100 rounded-none"
+                                            >
+                                              <div className="flex justify-between items-center mb-1.5">
+                                                <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
+                                                  {comment?.author_role ||
+                                                    "User"}
+                                                </span>
+                                                <span className="text-[9px] text-gray-400 font-bold">
+                                                  {comment?.created_at
+                                                    ? new Date(
+                                                        comment.created_at,
+                                                      ).toLocaleTimeString()
+                                                    : ""}
+                                                </span>
+                                              </div>
+                                              <p className="text-xs text-gray-700 leading-relaxed">
+                                                {comment?.message}
+                                              </p>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+
+                                      <div className="flex gap-2">
+                                        <Input
+                                          placeholder="Type feedback here..."
+                                          value={
+                                            deliverableCommentDrafts[
+                                              deliverableId
+                                            ] || ""
+                                          }
+                                          onChange={(e) =>
+                                            setDeliverableCommentDrafts(
+                                              (prev) => ({
+                                                ...prev,
+                                                [deliverableId]: e.target.value,
+                                              }),
+                                            )
+                                          }
+                                          className="border-2 border-gray-200 rounded-none h-9 text-xs focus:border-gray-900 transition-colors shadow-none"
+                                        />
+                                        <Button
+                                          onClick={() =>
+                                            void commentSelectedCampaignDeliverable(
+                                              deliverable,
+                                            )
+                                          }
+                                          className="bg-gray-900 hover:bg-black text-white rounded-none h-9 text-[10px] font-black uppercase tracking-widest px-5 shadow-none"
+                                        >
+                                          Send
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    },
-                  )}
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </Card>
           </div>

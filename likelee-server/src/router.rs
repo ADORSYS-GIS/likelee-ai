@@ -1,5 +1,5 @@
 use crate::config::AppState;
-use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use axum::http::header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
@@ -11,7 +11,12 @@ pub fn build_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
+        .allow_headers([
+            AUTHORIZATION,
+            CONTENT_TYPE,
+            ACCEPT,
+            HeaderName::from_static("x-package-password"),
+        ]);
 
     // Cache middleware layer - initializes L1 request cache
     let cache_layer = crate::cache::cache_layer;
@@ -245,6 +250,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/dashboard/talent-commissions/update",
             post(crate::performance_tiers::update_talent_commission),
+        )
+        .route(
+            "/api/agency/dashboard/talent-commissions/bulk-update",
+            post(crate::performance_tiers::bulk_update_talent_commissions),
         )
         .route(
             "/api/agency/dashboard/talent-commissions/history",
@@ -721,6 +730,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings/:id/files/upload",
             post(crate::bookings::upload_booking_file),
         )
+        .route(
+            "/api/bookings/:id/files/:file_id",
+            get(crate::bookings::serve_booking_file),
+        )
         .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
         .route(
             "/api/book-outs",
@@ -779,6 +792,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/my",
             get(crate::brand_campaigns::list_my_campaign_offers),
+        )
+        .route(
+            "/api/brand/campaign-offers/:id/checkout",
+            post(crate::billing::create_campaign_offer_checkout),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts",
@@ -1121,8 +1138,8 @@ pub fn build_router(state: AppState) -> Router {
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)
-        .layer(axum::Extension(cache_idempotency))
-        .layer(axum::Extension(cache_metrics))
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))
+        .layer(axum::Extension(cache_metrics))
+        .layer(axum::Extension(cache_idempotency))
 }

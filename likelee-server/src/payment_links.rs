@@ -553,15 +553,20 @@ pub async fn generate_payment_link(
             }
         }
 
-        // Fetch talent custom commission overrides
-        let mut custom_rate_by_talent: HashMap<String, f64> = HashMap::new();
-        if !t_refs.is_empty() {
+        // Fetch creator-level custom commission overrides
+        let mut custom_rate_by_creator: HashMap<String, f64> = HashMap::new();
+        let mut creator_ids: Vec<String> = talent_creator_map.values().cloned().collect();
+        creator_ids.retain(|s| !s.trim().is_empty());
+        creator_ids.sort();
+        creator_ids.dedup();
+        if !creator_ids.is_empty() {
+            let creator_id_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
             let custom_resp = state
                 .pg
-                .from("talent_commissions")
-                .select("talent_id,commission_rate")
+                .from("agency_creator_commissions")
+                .select("creator_id,commission_rate")
                 .eq("agency_id", &user.id)
-                .in_("talent_id", t_refs.clone())
+                .in_("creator_id", creator_id_refs)
                 .execute()
                 .await;
             if let Ok(custom_resp) = custom_resp {
@@ -570,14 +575,14 @@ pub async fn generate_payment_link(
                     let custom_rows: Vec<serde_json::Value> =
                         serde_json::from_str(&custom_text).unwrap_or_default();
                     for r in &custom_rows {
-                        let tid = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+                        let cid = r.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
                         let rate = r
                             .get("commission_rate")
                             .and_then(|v| v.as_f64())
                             .unwrap_or(0.0)
                             .clamp(0.0, 100.0);
-                        if !tid.is_empty() {
-                            custom_rate_by_talent.insert(tid.to_string(), rate);
+                        if !cid.trim().is_empty() {
+                            custom_rate_by_creator.insert(cid.trim().to_string(), rate);
                         }
                     }
                 }
@@ -657,15 +662,22 @@ pub async fn generate_payment_link(
                 .get(tier_name)
                 .copied()
                 .unwrap_or(0.0);
-            let effective_rate = custom_rate_by_talent
+            let creator_id = talent_creator_map
                 .get(talent_id)
+                .cloned()
+                .unwrap_or_default();
+            let effective_rate = custom_rate_by_creator
+                .get(&creator_id)
                 .copied()
                 .unwrap_or(default_rate)
                 .clamp(0.0, 100.0);
-            let agency_commission_cents =
-                ((gross_share_cents as f64) * (effective_rate / 100.0)).round() as i64;
-            let agency_commission_cents = agency_commission_cents.max(0).min(gross_share_cents);
-            let amount_cents = (gross_share_cents - agency_commission_cents).max(0);
+
+            // effective_rate is interpreted as the agency commission (deducted from gross).
+            let talent_payout_rate = (100.0 - effective_rate).clamp(0.0, 100.0);
+            let amount_cents =
+                ((gross_share_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
+            let amount_cents = amount_cents.max(0).min(gross_share_cents);
+            let agency_commission_cents = (gross_share_cents - amount_cents).max(0);
 
             total_agency_commission_cents += agency_commission_cents;
             total_talent_take_cents += amount_cents;
@@ -676,10 +688,6 @@ pub async fn generate_payment_link(
                 amount_cents,
             });
 
-            let creator_id = talent_creator_map
-                .get(talent_id)
-                .cloned()
-                .unwrap_or_default();
             let stripe_account_id = stripe_account_map
                 .get(&creator_id)
                 .cloned()

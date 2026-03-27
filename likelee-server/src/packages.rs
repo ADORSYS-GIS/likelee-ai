@@ -328,6 +328,20 @@ pub async fn create_package(
 
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
 
+    if payload.password_protected.unwrap_or(false) {
+        let pwd_ok = payload
+            .password
+            .as_ref()
+            .map(|p| !p.trim().is_empty())
+            .unwrap_or(false);
+        if !pwd_ok {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Password is required when password protection is enabled.".to_string(),
+            ));
+        }
+    }
+
     // 1. Insert Package metadata
     let package_insert = serde_json::json!({
         "agency_id": agency_id,
@@ -352,7 +366,7 @@ pub async fn create_package(
         "template_id": sanitize(&payload.template_id),
         "password_protected": payload.password_protected.unwrap_or(false),
         "password_hash": if payload.password_protected.unwrap_or(false) {
-            payload.password.as_ref().and_then(|p| bcrypt::hash(p, 10).ok())
+            payload.password.as_ref().filter(|p| !p.trim().is_empty()).and_then(|p| bcrypt::hash(p, 10).ok())
         } else {
             None
         },
@@ -603,7 +617,7 @@ pub async fn update_package(
     let exists_resp = state
         .pg
         .from("agency_talent_packages")
-        .select("id")
+        .select("id,password_protected,password_hash")
         .eq("id", &id)
         .eq("agency_id", &agency_id)
         .single()
@@ -618,36 +632,150 @@ pub async fn update_package(
         ));
     }
 
+    let exists_text = exists_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing: serde_json::Value = serde_json::from_str(&exists_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing_password_protected = existing["password_protected"].as_bool().unwrap_or(false);
+    let existing_password_hash_present = existing["password_hash"]
+        .as_str()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+
     // Helper to treat empty strings as None
     let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
-    // 2. Update Metadata
-    let package_update = serde_json::json!({
-        "title": payload.title,
-        "description": sanitize(&payload.description),
-        "cover_image_url": sanitize(&payload.cover_image_url),
-        "primary_color": sanitize(&payload.primary_color),
-        "secondary_color": sanitize(&payload.secondary_color),
-        "custom_message": sanitize(&payload.custom_message),
-        "allow_comments": payload.allow_comments.unwrap_or(true),
-        "allow_favorites": payload.allow_favorites.unwrap_or(true),
-        "allow_callbacks": payload.allow_callbacks.unwrap_or(true),
-        "consent_items": payload
+    let desired_password_protected = payload
+        .password_protected
+        .unwrap_or(existing_password_protected);
+
+    // If enabling protection and we don't already have a stored hash, require a password.
+    if desired_password_protected && !existing_password_hash_present {
+        let pwd_ok = payload
+            .password
+            .as_ref()
+            .map(|p| !p.trim().is_empty())
+            .unwrap_or(false);
+        if !pwd_ok {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Password is required when enabling password protection.".to_string(),
+            ));
+        }
+    }
+
+    // 2. Update Metadata (build dynamically so we don't accidentally null-out password_hash)
+    let mut package_update = serde_json::Map::new();
+    package_update.insert(
+        "title".to_string(),
+        serde_json::Value::String(payload.title),
+    );
+    package_update.insert(
+        "description".to_string(),
+        sanitize(&payload.description)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "cover_image_url".to_string(),
+        sanitize(&payload.cover_image_url)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "primary_color".to_string(),
+        sanitize(&payload.primary_color)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "secondary_color".to_string(),
+        sanitize(&payload.secondary_color)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "custom_message".to_string(),
+        sanitize(&payload.custom_message)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "allow_comments".to_string(),
+        serde_json::Value::Bool(payload.allow_comments.unwrap_or(true)),
+    );
+    package_update.insert(
+        "allow_favorites".to_string(),
+        serde_json::Value::Bool(payload.allow_favorites.unwrap_or(true)),
+    );
+    package_update.insert(
+        "allow_callbacks".to_string(),
+        serde_json::Value::Bool(payload.allow_callbacks.unwrap_or(true)),
+    );
+    package_update.insert(
+        "consent_items".to_string(),
+        payload
             .consent_items
             .as_ref()
-            .map(|v| serde_json::Value::Array(v.iter().map(|s| serde_json::Value::String(s.clone())).collect()))
+            .map(|v| {
+                serde_json::Value::Array(
+                    v.iter()
+                        .map(|s| serde_json::Value::String(s.clone()))
+                        .collect(),
+                )
+            })
             .unwrap_or_else(|| serde_json::json!([])),
-        "expires_at": sanitize(&payload.expires_at),
-        "client_name": sanitize(&payload.client_name),
-        "client_email": sanitize(&payload.client_email),
-        "password_protected": payload.password_protected.unwrap_or(false),
-        "password_hash": if payload.password_protected.unwrap_or(false) {
-            payload.password.as_ref().filter(|p| !p.is_empty()).and_then(|p| bcrypt::hash(p, 10).ok())
+    );
+    package_update.insert(
+        "expires_at".to_string(),
+        sanitize(&payload.expires_at)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "client_name".to_string(),
+        sanitize(&payload.client_name)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "client_email".to_string(),
+        sanitize(&payload.client_email)
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    package_update.insert(
+        "password_protected".to_string(),
+        serde_json::Value::Bool(desired_password_protected),
+    );
+
+    if !desired_password_protected {
+        // When turning off protection, clear the stored hash.
+        package_update.insert("password_hash".to_string(), serde_json::Value::Null);
+    } else if let Some(p) = payload
+        .password
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|p| !p.is_empty())
+    {
+        // Only update the hash when a new password is explicitly provided.
+        if let Ok(hash) = bcrypt::hash(p, 10) {
+            package_update.insert("password_hash".to_string(), serde_json::Value::String(hash));
         } else {
-            None
-        },
-        "updated_at": chrono::Utc::now().to_rfc3339(),
-    });
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to hash package password.".to_string(),
+            ));
+        }
+    }
+
+    package_update.insert(
+        "updated_at".to_string(),
+        serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+    );
+    let package_update = serde_json::Value::Object(package_update);
 
     let resp = state
         .pg

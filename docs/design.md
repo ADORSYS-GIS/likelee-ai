@@ -2,7 +2,7 @@
 
 > **Technical Documentation**: See [`docs/knowledge/`](./knowledge/) for detailed technical docs:
 > - [Architecture Overview](./knowledge/architecture.md) - System architecture, components, data flow
-> - [API Reference](./knowledge/api-reference.md) - All API endpoints and webhooks
+> - [API Reference](./api-reference.md) - All API endpoints and webhooks
 > - [Coding Conventions](./knowledge/coding-conventions.md) - Naming, formatting, and code review checklist
 > - [Development Setup](./knowledge/development-setup.md) - Local development environment setup
 
@@ -423,7 +423,8 @@ Configuration variables:
 - `DOCUSEAL_APP_URL`
   - DocuSeal app URL for document viewing (default `https://docuseal.co`).
 - `DOCUSEAL_WEBHOOK_URL`
-  - Webhook URL for DocuSeal callbacks.
+  - DocuSeal webhook URL used for **scouting offers**.
+  - Campaign and licensing webhooks use **separate endpoints** (see below).
 - `DOCUSEAL_USER_EMAIL`
   - DocuSeal account email.
 - `DOCUSEAL_MASTER_TEMPLATE_ID`
@@ -504,7 +505,7 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - Ensure assets are stored securely and accessed only by authorized parties.
 
 ### Workflow
-1. **Draft Stage**: Creators upload assets to their "Asset Library". These assets stay in a `draft` state and are only visible to the creator.
+1. **Draft Stage**: Creators and agencies can upload assets as deliverables. These assets start in a `draft` state (default) and are only visible to the submitting party until submitted.
 2. **Submission**: Creators explicitly "Submit to Agency". This updates the deliverable status to `submitted` and notifies the agency.
 3. **Agency Review**: Agencies can `approve` or `request_changes` on deliverables.
 4. **Brand Review**: Once approved by the agency, deliverables are visible to the Brand for final approval.
@@ -514,6 +515,34 @@ To protect private assets stored in Supabase, all deliverable media is accessed 
 - **Proxy Endpoint**: `/api/campaign-offers/:offer_id/deliverables/:id/file`
 - **Authentication**: Since browser `<img />` and `<video />` tags do not natively support custom headers (like `Authorization: Bearer <token>`), the backend supports a fallback authentication mechanism.
 - **Token Fallback**: If the `Authorization` header is missing, the server extracts the JWT from the `token` query parameter. This allows secure, authenticated access to private media files directly within HTML media elements.
+
+### Payment Gating
+To ensure financial security:
+- **Deliverable Gating**: Deliverable uploads and submissions (both creator and agency) are disabled until the campaign offer's `payment_status` is `paid`.
+- **Escrow Flow**: When a brand "Pays" an offer, funds are collected via Stripe Checkout. The `payment_status` switches from `unpaid` -> `processing` -> `paid`. For agency offers, funds are released via Stripe **Transfers** to the connected accounts after brand approval triggers escrow release.
+- **UI Gating**: Frontend components (`AgencyDeliverablesView`, `CreatorDashboard`) conditionally disable upload/review buttons and show "Awaiting Brand Payment" indicators based on the offer's payment status.
+
+### Escrow Status & Transfers
+Agency campaign offers track escrow release separately from deliverable workflow:
+- `campaign_offers.escrow_status`: `holding` → `releasing` → `released`
+- Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
+- Dashboard balances distinguish:
+  - **Held (pending transfer)**: internal Likelee tracking
+  - **cashout (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
+
+#### Commission semantics (agency campaign offers)
+When distributing a campaign offer payout for an **agency** collaborator, `commission_rate` is interpreted as the **agency commission percent** for each creator share.
+
+- `creator_payout_percent = 100 - commission_rate`
+- `creator_earnings = gross_share_cents * creator_payout_percent`
+- `agency_earnings = gross_share_cents - creator_earnings`
+
+Commission resolution order (per assigned `creator_id`):
+1) `agency_creator_commissions(agency_id, creator_id).commission_rate` (override, if present)
+2) Tier default from `agencies.performance_commission_config[tier].commission_rate`
+   - tier comes from `agency_talent_relationships.performance_tier_name` for connected creators
+   - `agency_users.performance_tier_name` overrides when present for roster creators
+3) Fallback default (used only when no config is present)
 ### Calendly Integration (IRL Booking)
 
 #### System Configuration
@@ -744,6 +773,10 @@ Brands can create campaigns, make offers to talent, and manage deliverables.
 
 - **Backend Logic**: `likelee-server/src/brand_campaigns.rs`
 - **Contract Integration**: DocuSeal webhooks at `/webhooks/docuseal/campaign-contracts`
+- **DocuSeal Webhooks (by flow)**:
+  - Scouting offers: `POST /webhooks/docuseal`
+  - Campaign offer contracts: `POST /webhooks/docuseal/campaign-contracts`
+  - Licensing contracts: `POST /api/webhooks/licenseContract`
 
 ---
 

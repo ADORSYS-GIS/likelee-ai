@@ -777,6 +777,7 @@ export const uploadOfferDeliverable = (
     file: File;
     caption?: string;
     talent_id?: string;
+    creator_id?: string;
     asset_request_id?: string;
     status?: string;
   },
@@ -785,6 +786,7 @@ export const uploadOfferDeliverable = (
   fd.append("file", data.file);
   if (data.caption) fd.append("caption", data.caption);
   if (data.talent_id) fd.append("talent_id", data.talent_id);
+  if (data.creator_id) fd.append("creator_id", data.creator_id);
   if (data.asset_request_id)
     fd.append("asset_request_id", data.asset_request_id);
   if (data.status) fd.append("status", data.status);
@@ -804,6 +806,7 @@ export const submitOfferDeliverable = (
     asset_type?: string;
     caption?: string;
     talent_id?: string;
+    creator_id?: string;
     asset_request_id?: string;
     meta?: any;
   },
@@ -814,10 +817,15 @@ export const listOfferTalentAssignments = (offerId: string) =>
 
 export const createOfferTalentAssignment = (
   offerId: string,
-  talentId: string,
+  talent:
+    | string
+    | {
+        talent_id?: string;
+        creator_id?: string;
+      },
 ) =>
   base44Client.post(`/api/campaign-offers/${offerId}/assignments`, {
-    talent_id: talentId,
+    ...(typeof talent === "string" ? { talent_id: talent } : talent),
   });
 
 export const deleteOfferTalentAssignment = (
@@ -843,7 +851,8 @@ export const listOfferAssetRequests = (offerId: string) =>
 export const createOfferAssetRequest = (
   offerId: string,
   data: {
-    talent_id: string;
+    talent_id?: string;
+    creator_id?: string;
     title?: string;
     message?: string;
     file_url?: string;

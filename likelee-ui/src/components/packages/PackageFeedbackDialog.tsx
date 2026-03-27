@@ -131,7 +131,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -141,7 +141,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                     <Check className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 z-[10000]"
+                  sideOffset={8}
+                >
                   {selected.length === 0 ? (
                     <DropdownMenuItem disabled>
                       No selections yet
@@ -174,7 +178,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -184,7 +188,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                     <Heart className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 z-[10000]"
+                  sideOffset={8}
+                >
                   {favorites.length === 0 ? (
                     <DropdownMenuItem disabled>
                       No favorites yet
@@ -217,7 +225,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -227,7 +235,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                     <Phone className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 z-[10000]"
+                  sideOffset={8}
+                >
                   {callbacks.length === 0 ? (
                     <DropdownMenuItem disabled>
                       No callbacks yet

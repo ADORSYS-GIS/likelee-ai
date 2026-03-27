@@ -452,6 +452,35 @@ export function PackagesView({
             const isOffer =
               pkg.meta?.wizard_source === "talent_packages" ||
               !!pkg.meta?.selected_brand_id;
+            const derivedCoverUrl = (() => {
+              const direct = String(pkg?.cover_image_url || "").trim();
+              if (direct) return direct;
+              const items = Array.isArray(pkg?.items)
+                ? pkg.items
+                : Array.isArray(pkg?.package_items)
+                  ? pkg.package_items
+                  : [];
+              for (const it of items) {
+                const assets = Array.isArray(it?.assets)
+                  ? it.assets
+                  : Array.isArray(it?.asset_ids)
+                    ? it.asset_ids
+                    : [];
+                const first = assets[0];
+                const url = String(
+                  first?.url ||
+                    first?.asset_url ||
+                    first?.public_url ||
+                    first?.file_url ||
+                    "",
+                ).trim();
+                if (url) return url;
+                const t = it?.talent || it?.agency_users || it || {};
+                const photo = String(t?.profile_photo_url || "").trim();
+                if (photo) return photo;
+              }
+              return "";
+            })();
 
             return (
               <Card
@@ -461,9 +490,9 @@ export function PackagesView({
               >
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4 sm:gap-6">
                   <div className="w-32 h-20 rounded-xl bg-gray-100 flex-shrink-0 relative overflow-hidden border border-gray-100">
-                    {pkg.cover_image_url ? (
+                    {derivedCoverUrl ? (
                       <img
-                        src={pkg.cover_image_url}
+                        src={derivedCoverUrl}
                         className="w-full h-full object-cover"
                       />
                     ) : (

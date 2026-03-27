@@ -55,6 +55,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
   );
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const [uploadingCount, setUploadingCount] = React.useState(0);
 
   React.useEffect(() => {
     if (open) {
@@ -73,6 +74,9 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
       packageApi.uploadTalentAsset(talentId, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["talent-assets", talentId] });
+    },
+    onSettled: () => {
+      setUploadingCount((c) => Math.max(0, c - 1));
     },
   });
 
@@ -122,8 +126,10 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
       const file = files[i];
       const formData = new FormData();
       formData.append("file", file);
+      setUploadingCount((c) => c + 1);
       uploadMutation.mutate(formData);
     }
+    e.target.value = "";
   };
 
   const toggleAsset = (id: string) => {
@@ -175,15 +181,17 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
               <Button
                 variant="outline"
                 onClick={handleUploadClick}
-                disabled={uploadMutation.isPending}
+                disabled={uploadingCount > 0}
                 className="rounded-xl font-bold bg-indigo-50 border-indigo-100 text-indigo-600 hover:bg-indigo-100 px-6"
               >
-                {uploadMutation.isPending ? (
+                {uploadingCount > 0 ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                Upload Assets
+                {uploadingCount > 0
+                  ? `Uploading (${uploadingCount})…`
+                  : "Upload Assets"}
               </Button>
               <Button
                 variant="ghost"

@@ -296,6 +296,52 @@ pub struct BalanceRow {
     pub earned_cents: i64,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StripeBalanceRow {
+    pub currency: String,
+    pub available_cents: i64,
+    pub pending_cents: i64,
+}
+
+async fn fetch_connected_balance_rows(
+    client: &stripe_sdk::Client,
+    connected_account_id: &str,
+    allowed_currencies: &[String],
+) -> Vec<StripeBalanceRow> {
+    let acct = match connected_account_id.parse::<stripe_sdk::AccountId>() {
+        Ok(a) => a,
+        Err(_) => return vec![],
+    };
+    let connected_client = client.clone().with_stripe_account(acct);
+    let bal = match stripe_sdk::Balance::retrieve(&connected_client, None).await {
+        Ok(b) => b,
+        Err(_) => return vec![],
+    };
+
+    let mut rows: Vec<StripeBalanceRow> = vec![];
+    for cur in allowed_currencies {
+        let cur_lc = cur.to_lowercase();
+        let available_cents = bal
+            .available
+            .iter()
+            .find(|a| a.currency.to_string() == cur_lc)
+            .map(|a| a.amount)
+            .unwrap_or(0);
+        let pending_cents = bal
+            .pending
+            .iter()
+            .find(|a| a.currency.to_string() == cur_lc)
+            .map(|a| a.amount)
+            .unwrap_or(0);
+        rows.push(StripeBalanceRow {
+            currency: cur.to_uppercase(),
+            available_cents,
+            pending_cents,
+        });
+    }
+    rows
+}
+
 pub async fn get_account_status(
     State(state): State<AppState>,
     Query(q): Query<ProfileQuery>,
@@ -802,6 +848,7 @@ pub async fn get_balance(
             return sanitized_error_response(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), msg);
         }
     };
+    let status = resp.status();
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
@@ -811,6 +858,90 @@ pub async fn get_balance(
             );
         }
     };
+    if !status.is_success() {
+        // Backward compatible fallback: some DBs may not have `earned_cents` yet.
+        if text.contains("earned_cents")
+            && (text.contains("does not exist") || text.contains("column"))
+        {
+            let resp2 = match state
+                .pg
+                .from("creator_balances")
+                .select("creator_id,currency,available_cents")
+                .eq("creator_id", &q.profile_id)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    return sanitized_error_response(
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                        e.to_string(),
+                    );
+                }
+            };
+            let status2 = resp2.status();
+            let text2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+            if !status2.is_success() {
+                return sanitized_error_response(status2.as_u16(), text2);
+            }
+            let mut v: Vec<serde_json::Value> = serde_json::from_str(&text2).unwrap_or_default();
+            for row in &mut v {
+                if let Some(obj) = row.as_object_mut() {
+                    obj.insert("earned_cents".to_string(), json!(0));
+                }
+            }
+            let mut rows: Vec<BalanceRow> = serde_json::from_value(json!(v)).unwrap_or_default();
+            rows.retain(|r| {
+                state
+                    .payout_allowed_currencies
+                    .iter()
+                    .any(|c| c == &r.currency.to_uppercase())
+            });
+
+            // Stripe connected balances best-effort (same as below).
+            let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+            let stripe_account_id = match state
+                .pg
+                .from("creators")
+                .select("stripe_connect_account_id")
+                .eq("id", &q.profile_id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => {
+                    let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+                    let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+                    v.first()
+                        .and_then(|row| row.get("stripe_connect_account_id"))
+                        .and_then(|x| x.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string()
+                }
+                Err(_) => "".to_string(),
+            };
+            if !stripe_account_id.is_empty() {
+                let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                stripe_balances = fetch_connected_balance_rows(
+                    &client,
+                    &stripe_account_id,
+                    &state.payout_allowed_currencies,
+                )
+                .await;
+            }
+
+            return (
+                StatusCode::OK,
+                Json(json!({
+                    "balances": rows,
+                    "stripe_balances": stripe_balances,
+                    "allowed_currencies": state.payout_allowed_currencies
+                })),
+            );
+        }
+        return sanitized_error_response(status.as_u16(), text);
+    }
     let mut rows: Vec<BalanceRow> = serde_json::from_str(&text).unwrap_or_default();
     // filter to allowed currencies
     rows.retain(|r| {
@@ -819,9 +950,46 @@ pub async fn get_balance(
             .iter()
             .any(|c| c == &r.currency.to_uppercase())
     });
+
+    // Stripe-connected cashout balance snapshot (best-effort).
+    let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+    let stripe_account_id = match state
+        .pg
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", &q.profile_id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => {
+            let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+            let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            v.first()
+                .and_then(|row| row.get("stripe_connect_account_id"))
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        }
+        Err(_) => "".to_string(),
+    };
+    if !stripe_account_id.is_empty() {
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        stripe_balances = fetch_connected_balance_rows(
+            &client,
+            &stripe_account_id,
+            &state.payout_allowed_currencies,
+        )
+        .await;
+    }
     (
         StatusCode::OK,
-        Json(json!({"balances": rows, "allowed_currencies": state.payout_allowed_currencies})),
+        Json(json!({
+            "balances": rows,
+            "stripe_balances": stripe_balances,
+            "allowed_currencies": state.payout_allowed_currencies
+        })),
     )
 }
 
@@ -924,13 +1092,13 @@ pub async fn request_payout(
     }
     let method = "instant".to_string();
 
-    // Read available balance
-    let bal_resp = match state
+    // Payouts are executed on the CONNECTED account balance.
+    // Therefore, the cashout ceiling must be based on Stripe (not internal ledger balances).
+    let resp = match state
         .pg
-        .from("creator_balances")
-        .select("available_cents")
-        .eq("creator_id", &payload.profile_id)
-        .eq("currency", &currency)
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", &payload.profile_id)
         .limit(1)
         .execute()
         .await
@@ -943,33 +1111,37 @@ pub async fn request_payout(
             );
         }
     };
-    let text = bal_resp.text().await.unwrap_or("[]".to_string());
-    let v: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    let available = v
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let account_id = rows
         .first()
-        .and_then(|r| r.get("available_cents").and_then(|x| x.as_i64()))
-        .unwrap_or(0);
-
-    info!(
-        profile_id = %payload.profile_id,
-        requested_cents = payload.amount_cents,
-        internal_available_cents = available,
-        currency = %currency,
-        "creator_payout_internal_balance_preflight"
-    );
-    if available < payload.amount_cents {
-        warn!(
-            profile_id = %payload.profile_id,
-            requested_cents = payload.amount_cents,
-            internal_available_cents = available,
-            currency = %currency,
-            "creator_payout_rejected_insufficient_internal_balance"
-        );
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if account_id.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
-            Json(
-                json!({"status":"error","error":"insufficient_funds","available_cents": available}),
-            ),
+            Json(json!({
+                "status":"error",
+                "error":"stripe_account_not_connected",
+                "message":"Please complete Stripe onboarding first."
+            })),
+        );
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let stripe_available_cents = fetch_connected_available_cents(&client, &account_id, &currency)
+        .await
+        .unwrap_or(0);
+    if stripe_available_cents < payload.amount_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"stripe_insufficient_available_balance",
+                "stripe_available_cents": stripe_available_cents
+            })),
         );
     }
 
@@ -1153,6 +1325,22 @@ async fn execute_payout(
 
     // Creator payouts should be executed directly on the connected account balance.
     // Creating a Transfer here would require platform balance (and fails in test mode).
+    if stripe_available_cents.unwrap_or(0) < net_cents {
+        let _ = state
+            .pg
+            .from("creator_payout_requests")
+            .eq("id", payout_request_id)
+            .update(
+                json!({
+                    "status":"failed",
+                    "failure_reason":"stripe_insufficient_available_balance"
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+        return Err(());
+    }
     let payout_currency = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
         Ok(c) => c,
         Err(_) => {
@@ -1289,6 +1477,7 @@ pub async fn stripe_webhook(
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    tracing::info!("Received Stripe webhook request");
     let sig = match headers
         .get("Stripe-Signature")
         .and_then(|v| v.to_str().ok())
@@ -1376,6 +1565,11 @@ pub async fn stripe_webhook(
                 } else {
                     let _ = handle_licensing_checkout_session_completed(&state, &obj).await;
                 }
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
+            if billing_domain == "campaign_offer" {
+                let _ = handle_campaign_offer_checkout_session_completed(&state, &obj).await;
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
@@ -2019,7 +2213,7 @@ async fn handle_licensing_requests_checkout_session_completed(
 
     let paid_at = chrono::Utc::now().to_rfc3339();
 
-    // Resolve custom commission overrides (talent_commissions).
+    // Resolve custom commission overrides (agency_creator_commissions).
     let mut talent_ids: Vec<String> = vec![];
     for lrid in &ids {
         let tid = lr_by_id
@@ -2037,33 +2231,73 @@ async fn handle_licensing_requests_checkout_session_completed(
     talent_ids.dedup();
     let talent_id_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
 
-    let comm_resp = state
+    // Resolve creator_ids for these talent_ids, then load per-creator overrides.
+    let au_resp = state
         .pg
-        .from("talent_commissions")
-        .select("talent_id,commission_rate")
+        .from("agency_users")
+        .select("id,creator_id")
         .eq("agency_id", &agency_id)
-        .in_("talent_id", talent_id_refs.clone())
+        .in_("id", talent_id_refs.clone())
         .execute()
         .await
         .map_err(|e| e.to_string())?;
-    let mut custom_by_talent: std::collections::HashMap<String, f64> =
+    let au_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&au_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let mut creator_id_by_talent: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
-    if comm_resp.status().is_success() {
-        let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let comm_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&comm_text).unwrap_or_default();
-        for r in comm_rows {
-            let tid = r
-                .get("talent_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim();
-            if tid.is_empty() {
-                continue;
-            }
-            let _old_custom_rate = r.get("commission_rate").and_then(|v| v.as_f64());
-            if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
-                custom_by_talent.insert(tid.to_string(), rate.clamp(0.0, 100.0));
+    let mut creator_ids: Vec<String> = vec![];
+    for r in au_rows {
+        let tid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+        let cid = r
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if tid.is_empty() || cid.is_empty() {
+            continue;
+        }
+        creator_id_by_talent.insert(tid.to_string(), cid.to_string());
+        creator_ids.push(cid.to_string());
+    }
+    creator_ids.sort();
+    creator_ids.dedup();
+
+    let comm_resp = if creator_ids.is_empty() {
+        None
+    } else {
+        let creator_id_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        Some(
+            state
+                .pg
+                .from("agency_creator_commissions")
+                .select("creator_id,commission_rate")
+                .eq("agency_id", &agency_id)
+                .in_("creator_id", creator_id_refs)
+                .execute()
+                .await
+                .map_err(|e| e.to_string())?,
+        )
+    };
+    let mut custom_by_creator: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    if let Some(comm_resp) = comm_resp {
+        if comm_resp.status().is_success() {
+            let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let comm_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&comm_text).unwrap_or_default();
+            for r in comm_rows {
+                let cid = r
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if cid.is_empty() {
+                    continue;
+                }
+                let _old_custom_rate = r.get("commission_rate").and_then(|v| v.as_f64());
+                if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                    custom_by_creator.insert(cid.to_string(), rate.clamp(0.0, 100.0));
+                }
             }
         }
     }
@@ -2223,9 +2457,9 @@ async fn handle_licensing_requests_checkout_session_completed(
         }
 
         let gross_cents = alloc_floor_by_lr.get(lrid).copied().unwrap_or(0).max(0);
-        let talent_rate = custom_by_talent
-            .get(&talent_id)
-            .copied()
+        let creator_id = creator_id_by_talent.get(&talent_id);
+        let talent_rate = creator_id
+            .and_then(|cid| custom_by_creator.get(cid).copied())
             .unwrap_or_else(|| {
                 default_rate_by_talent
                     .get(&talent_id)
@@ -2234,7 +2468,9 @@ async fn handle_licensing_requests_checkout_session_completed(
             })
             .clamp(0.0, 100.0);
 
-        let talent_earnings_cents = ((gross_cents as f64) * (talent_rate / 100.0)).round() as i64;
+        let talent_payout_rate = (100.0 - talent_rate).clamp(0.0, 100.0);
+        let talent_earnings_cents =
+            ((gross_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
         let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_cents);
         let agency_earnings_cents = (gross_cents - talent_earnings_cents).max(0);
 
@@ -2517,6 +2753,13 @@ async fn handle_payment_link_checkout_completed(
         }
     }
 
+    info!(
+        payment_link_id = %payment_link_id,
+        agency_id = %agency_id,
+        amount_cents = amount_total,
+        "Payment link checkout completed and committed via RPC"
+    );
+
     // Create Stripe transfers to connected accounts
     match create_payment_link_transfers(
         state,
@@ -2581,67 +2824,33 @@ async fn create_payment_link_transfers(
     if agency_amount_cents > 0 {
         match get_agency_stripe_account(state, agency_id).await {
             Ok(agency_account_id) => {
-                let mut params =
-                    stripe_sdk::CreateTransfer::new(currency_enum, agency_account_id.clone());
-                params.amount = Some(agency_amount_cents);
-                params.metadata = Some(std::collections::HashMap::from([
+                let metadata = std::collections::HashMap::from([
                     ("payment_link_id".to_string(), payment_link_id.to_string()),
                     ("agency_id".to_string(), agency_id.to_string()),
                     ("type".to_string(), "agency_commission".to_string()),
-                ]));
+                ]);
 
-                match stripe_sdk::Transfer::create(&client, params).await {
-                    Ok(transfer) => {
-                        results.agency_transfer_id = Some(transfer.id.to_string());
+                let res = execute_and_record_stripe_transfer(
+                    state,
+                    &client,
+                    currency,
+                    currency_enum,
+                    "agency",
+                    agency_id,
+                    &agency_account_id,
+                    agency_amount_cents,
+                    metadata,
+                    "record_stripe_transfer",
+                    "p_payment_link_id",
+                    payment_link_id,
+                )
+                .await;
 
-                        // Record transfer in DB via RPC
-                        let _ = state
-                            .pg
-                            .rpc(
-                                "record_stripe_transfer",
-                                json!({
-                                    "p_payment_link_id": payment_link_id,
-                                    "p_recipient_type": "agency",
-                                    "p_recipient_id": agency_id,
-                                    "p_stripe_connect_account_id": agency_account_id,
-                                    "p_amount_cents": agency_amount_cents,
-                                    "p_currency": currency,
-                                    "p_stripe_transfer_id": transfer.id,
-                                    "p_status": "created"
-                                })
-                                .to_string(),
-                            )
-                            .execute()
-                            .await;
-
-                        info!(
-                            agency_id = %agency_id,
-                            transfer_id = %transfer.id,
-                            amount = agency_amount_cents,
-                            "Agency transfer recorded successfully"
-                        );
-                    }
-                    Err(e) => {
-                        error!(agency_id = %agency_id, error = ?e, "Failed to create agency transfer");
-                        let _ = state
-                            .pg
-                            .rpc(
-                                "record_stripe_transfer",
-                                json!({
-                                    "p_payment_link_id": payment_link_id,
-                                    "p_recipient_type": "agency",
-                                    "p_recipient_id": agency_id,
-                                    "p_stripe_connect_account_id": agency_account_id,
-                                    "p_amount_cents": agency_amount_cents,
-                                    "p_currency": currency,
-                                    "p_status": "failed",
-                                    "p_failure_reason": format!("{:?}", e)
-                                })
-                                .to_string(),
-                            )
-                            .execute()
-                            .await;
-                    }
+                if let Ok(tid) = res {
+                    results.agency_transfer_id = Some(tid);
+                    info!(agency_id = %agency_id, amount = agency_amount_cents, "Agency transfer recorded successfully");
+                } else {
+                    error!(agency_id = %agency_id, error = ?res.err(), "Failed to create agency transfer");
                 }
             }
             Err(e) => {
@@ -2695,69 +2904,34 @@ async fn create_payment_link_transfers(
 
             match talent_account_id_result {
                 Ok(talent_account_id) => {
-                    let mut params =
-                        stripe_sdk::CreateTransfer::new(currency_enum, talent_account_id.clone());
-                    params.amount = Some(amount_cents);
-                    params.metadata = Some(std::collections::HashMap::from([
+                    let metadata = std::collections::HashMap::from([
                         ("payment_link_id".to_string(), payment_link_id.to_string()),
                         ("talent_id".to_string(), talent_id.to_string()),
                         ("creator_id".to_string(), creator_id.to_string()),
                         ("type".to_string(), "talent_earnings".to_string()),
-                    ]));
+                    ]);
 
-                    match stripe_sdk::Transfer::create(&client, params).await {
-                        Ok(transfer) => {
-                            results.talent_transfer_ids.push(transfer.id.to_string());
+                    let res = execute_and_record_stripe_transfer(
+                        state,
+                        &client,
+                        currency,
+                        currency_enum,
+                        "creator",
+                        talent_id,
+                        &talent_account_id,
+                        amount_cents,
+                        metadata,
+                        "record_stripe_transfer",
+                        "p_payment_link_id",
+                        payment_link_id,
+                    )
+                    .await;
 
-                            // Record transfer in DB via RPC
-                            let _ = state
-                                .pg
-                                .rpc(
-                                    "record_stripe_transfer",
-                                    json!({
-                                        "p_payment_link_id": payment_link_id,
-                                        "p_recipient_type": "creator",
-                                        "p_recipient_id": talent_id,
-                                        "p_stripe_connect_account_id": talent_account_id,
-                                        "p_amount_cents": amount_cents,
-                                        "p_currency": currency,
-                                        "p_stripe_transfer_id": transfer.id,
-                                        "p_status": "created"
-                                    })
-                                    .to_string(),
-                                )
-                                .execute()
-                                .await;
-
-                            info!(
-                                talent_id = %talent_id,
-                                creator_id = %creator_id,
-                                transfer_id = %transfer.id,
-                                amount = amount_cents,
-                                "Talent transfer recorded successfully"
-                            );
-                        }
-                        Err(e) => {
-                            error!(talent_id = %talent_id, error = ?e, "Failed to create talent transfer");
-                            let _ = state
-                                .pg
-                                .rpc(
-                                    "record_stripe_transfer",
-                                    json!({
-                                        "p_payment_link_id": payment_link_id,
-                                        "p_recipient_type": "creator",
-                                        "p_recipient_id": talent_id,
-                                        "p_stripe_connect_account_id": talent_account_id,
-                                        "p_amount_cents": amount_cents,
-                                        "p_currency": currency,
-                                        "p_status": "failed",
-                                        "p_failure_reason": format!("{:?}", e)
-                                    })
-                                    .to_string(),
-                                )
-                                .execute()
-                                .await;
-                        }
+                    if let Ok(tid) = res {
+                        results.talent_transfer_ids.push(tid);
+                        info!(talent_id = %talent_id, creator_id = %creator_id, amount = amount_cents, "Talent transfer recorded successfully");
+                    } else {
+                        error!(talent_id = %talent_id, error = ?res.err(), "Failed to create talent transfer");
                     }
                 }
                 Err(e) => {
@@ -2837,6 +3011,177 @@ async fn get_creator_stripe_account(state: &AppState, creator_id: &str) -> Resul
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .ok_or_else(|| "Creator has no connected Stripe account".to_string())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn execute_and_record_stripe_transfer(
+    state: &AppState,
+    client: &stripe_sdk::Client,
+    currency: &str,
+    currency_enum: stripe_sdk::Currency,
+    recipient_type: &str,
+    recipient_id: &str,
+    stripe_account_id: &str,
+    amount_cents: i64,
+    metadata: std::collections::HashMap<String, String>,
+    rpc_name: &str,
+    rpc_source_id_key: &str,
+    rpc_source_id_val: &str,
+) -> Result<String, String> {
+    let extract_code_from_text = |text: &str| -> Option<&'static str> {
+        let t = text.to_lowercase();
+        // Stripe error codes we care about most in Connect transfers.
+        if t.contains("insufficient_capabilities_for_transfer") {
+            return Some("insufficient_capabilities_for_transfer");
+        }
+        if t.contains("transfers_not_allowed") {
+            return Some("transfers_not_allowed");
+        }
+        if t.contains("payouts_not_allowed") {
+            return Some("payouts_not_allowed");
+        }
+        if t.contains("balance_insufficient") {
+            return Some("balance_insufficient");
+        }
+        None
+    };
+
+    // Preflight: ensure the connected account can receive transfers.
+    // This avoids confusing failures and keeps our DB `failure_reason` clean/actionable.
+    if let Ok(acct_id) = stripe_account_id.parse::<stripe_sdk::AccountId>() {
+        if let Ok(acct) = stripe_sdk::Account::retrieve(client, &acct_id, &[]).await {
+            let transfers_active = acct
+                .capabilities
+                .as_ref()
+                .and_then(|c| c.transfers.as_ref())
+                .map(|s| s == &stripe_sdk::CapabilityStatus::Active)
+                .unwrap_or(false);
+            if !transfers_active {
+                let mut payload = serde_json::Map::new();
+                payload.insert(
+                    rpc_source_id_key.to_string(),
+                    serde_json::json!(rpc_source_id_val),
+                );
+                payload.insert(
+                    "p_recipient_type".to_string(),
+                    serde_json::json!(recipient_type),
+                );
+                payload.insert(
+                    "p_recipient_id".to_string(),
+                    serde_json::json!(recipient_id),
+                );
+                payload.insert(
+                    "p_stripe_connect_account_id".to_string(),
+                    serde_json::json!(stripe_account_id),
+                );
+                payload.insert(
+                    "p_amount_cents".to_string(),
+                    serde_json::json!(amount_cents),
+                );
+                payload.insert("p_currency".to_string(), serde_json::json!(currency));
+                payload.insert("p_status".to_string(), serde_json::json!("failed"));
+                payload.insert(
+                    "p_failure_reason".to_string(),
+                    serde_json::json!(
+                        "insufficient_capabilities_for_transfer: connected account transfers capability is not active"
+                    ),
+                );
+                let _ = state
+                    .pg
+                    .rpc(rpc_name, serde_json::Value::Object(payload).to_string())
+                    .execute()
+                    .await;
+                return Err("insufficient_capabilities_for_transfer".to_string());
+            }
+        }
+    }
+
+    let mut params = stripe_sdk::CreateTransfer::new(currency_enum, stripe_account_id.to_string());
+    params.amount = Some(amount_cents);
+    params.metadata = Some(metadata);
+
+    match stripe_sdk::Transfer::create(client, params).await {
+        Ok(transfer) => {
+            let mut payload = serde_json::Map::new();
+            payload.insert(
+                rpc_source_id_key.to_string(),
+                serde_json::json!(rpc_source_id_val),
+            );
+            payload.insert(
+                "p_recipient_type".to_string(),
+                serde_json::json!(recipient_type),
+            );
+            payload.insert(
+                "p_recipient_id".to_string(),
+                serde_json::json!(recipient_id),
+            );
+            payload.insert(
+                "p_stripe_connect_account_id".to_string(),
+                serde_json::json!(stripe_account_id),
+            );
+            payload.insert(
+                "p_amount_cents".to_string(),
+                serde_json::json!(amount_cents),
+            );
+            payload.insert("p_currency".to_string(), serde_json::json!(currency));
+            payload.insert(
+                "p_stripe_transfer_id".to_string(),
+                serde_json::json!(transfer.id),
+            );
+            payload.insert("p_status".to_string(), serde_json::json!("created"));
+            let _ = state
+                .pg
+                .rpc(rpc_name, serde_json::Value::Object(payload).to_string())
+                .execute()
+                .await;
+            Ok(transfer.id.to_string())
+        }
+        Err(e) => {
+            // Avoid `{:?}` because the Stripe SDK may fail to deserialize new/unknown error codes
+            // (e.g. `insufficient_capabilities_for_transfer`) and produce a huge JSONSerialize(...) blob.
+            // Use Display + a best-effort extraction of the code so we persist stable failure reasons.
+            let display_msg = e.to_string();
+            let code = extract_code_from_text(&display_msg);
+            let failure_reason = if let Some(c) = code {
+                format!("{c}: {display_msg}")
+            } else {
+                display_msg.clone()
+            };
+            let mut payload = serde_json::Map::new();
+            payload.insert(
+                rpc_source_id_key.to_string(),
+                serde_json::json!(rpc_source_id_val),
+            );
+            payload.insert(
+                "p_recipient_type".to_string(),
+                serde_json::json!(recipient_type),
+            );
+            payload.insert(
+                "p_recipient_id".to_string(),
+                serde_json::json!(recipient_id),
+            );
+            payload.insert(
+                "p_stripe_connect_account_id".to_string(),
+                serde_json::json!(stripe_account_id),
+            );
+            payload.insert(
+                "p_amount_cents".to_string(),
+                serde_json::json!(amount_cents),
+            );
+            payload.insert("p_currency".to_string(), serde_json::json!(currency));
+            payload.insert("p_status".to_string(), serde_json::json!("failed"));
+            payload.insert(
+                "p_failure_reason".to_string(),
+                serde_json::json!(failure_reason),
+            );
+            let _ = state
+                .pg
+                .rpc(rpc_name, serde_json::Value::Object(payload).to_string())
+                .execute()
+                .await;
+            Err(display_msg)
+        }
+    }
 }
 
 async fn sync_licensing_access_grant_from_stripe_subscription(
@@ -3202,7 +3547,7 @@ pub async fn get_agency_balance(
     let balance_resp = match state
         .pg
         .from("agency_balances")
-        .select("available_cents,currency,updated_at")
+        .select("available_cents,earned_cents,currency,updated_at")
         .eq("agency_id", &user.id)
         .limit(1)
         .execute()
@@ -3214,25 +3559,96 @@ pub async fn get_agency_balance(
         }
     };
 
+    let balance_status = balance_resp.status();
     let balance_text = match balance_resp.text().await {
         Ok(t) => t,
         Err(e) => {
             return internal_error_response("get_agency_balance.read_body", e);
         }
     };
+    let balance_text = if !balance_status.is_success() {
+        // Backward compatible fallback: some DBs may not have `earned_cents` yet.
+        if balance_text.contains("earned_cents")
+            && (balance_text.contains("does not exist") || balance_text.contains("column"))
+        {
+            let resp2 = match state
+                .pg
+                .from("agency_balances")
+                .select("available_cents,currency,updated_at")
+                .eq("agency_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    return internal_error_response("get_agency_balance.fetch_fallback", e);
+                }
+            };
+            let st2 = resp2.status();
+            let txt2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+            if !st2.is_success() {
+                return sanitized_error_response(st2.as_u16(), txt2);
+            }
+            txt2
+        } else {
+            return sanitized_error_response(balance_status.as_u16(), balance_text);
+        }
+    } else {
+        balance_text
+    };
 
     let balance_rows: Vec<serde_json::Value> =
         serde_json::from_str(&balance_text).unwrap_or_default();
-    let balance_row = balance_rows.first().cloned().unwrap_or(json!({
+    let mut balance_row = balance_rows.first().cloned().unwrap_or(json!({
         "available_cents": 0,
         "currency": "USD"
     }));
+    // If fallback query ran (no earned_cents), ensure it exists for response shape.
+    if balance_row.get("earned_cents").is_none() {
+        if let Some(obj) = balance_row.as_object_mut() {
+            obj.insert("earned_cents".to_string(), json!(0));
+        }
+    }
 
     let currency = balance_row
         .get("currency")
         .and_then(|v| v.as_str())
         .unwrap_or("USD")
         .to_string();
+
+    // Stripe-connected cashout balance snapshot (best-effort).
+    let mut stripe_balances: Vec<StripeBalanceRow> = vec![];
+    let stripe_account_id = match state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => {
+            let txt = r.text().await.unwrap_or_else(|_| "[]".into());
+            let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            v.first()
+                .and_then(|row| row.get("stripe_connect_account_id"))
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        }
+        Err(_) => "".to_string(),
+    };
+    if !stripe_account_id.is_empty() {
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        stripe_balances = fetch_connected_balance_rows(
+            &client,
+            &stripe_account_id,
+            &state.payout_allowed_currencies,
+        )
+        .await;
+    }
 
     (
         StatusCode::OK,
@@ -3241,7 +3657,8 @@ pub async fn get_agency_balance(
                 "amount_cents": balance_row.get("available_cents").and_then(|v| v.as_i64()).unwrap_or(0),
                 "earned_cents": balance_row.get("earned_cents").and_then(|v| v.as_i64()).unwrap_or(0),
                 "currency": currency.clone()
-            }
+            },
+            "stripe_balances": stripe_balances
         })),
     )
 }
@@ -3326,56 +3743,6 @@ pub async fn request_agency_payout(
     }
     let method = "instant".to_string();
 
-    // Get agency's available balance
-    let balance_resp = match state
-        .pg
-        .from("agency_balances")
-        .select("available_cents")
-        .eq("agency_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            return internal_error_response("request_agency_payout.fetch_balance", e);
-        }
-    };
-
-    let balance_text = balance_resp.text().await.unwrap_or("[]".to_string());
-    let balance_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&balance_text).unwrap_or_default();
-    let available = balance_rows
-        .first()
-        .and_then(|r| r.get("available_cents").and_then(|x| x.as_i64()))
-        .unwrap_or(0);
-
-    info!(
-        agency_id = %user.id,
-        requested_cents = payload.amount_cents,
-        internal_available_cents = available,
-        currency = %currency,
-        "agency_payout_internal_balance_preflight"
-    );
-
-    if available < payload.amount_cents {
-        warn!(
-            agency_id = %user.id,
-            requested_cents = payload.amount_cents,
-            internal_available_cents = available,
-            currency = %currency,
-            "agency_payout_rejected_insufficient_internal_balance"
-        );
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "status":"error",
-                "error":"insufficient_funds",
-                "available_cents": available
-            })),
-        );
-    }
-
     // Get agency's Stripe Connect account
     let agency_resp = match state
         .pg
@@ -3414,7 +3781,27 @@ pub async fn request_agency_payout(
 
     // Compute fee
     let fee_cents = (payload.amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
+    let net_cents = payload.amount_cents - fee_cents;
 
+    // Payouts are executed on the CONNECTED account balance.
+    // Therefore, the cashout ceiling must be based on Stripe (not internal ledger balances).
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let stripe_available_cents =
+        fetch_connected_available_cents(&client, &stripe_account_id, &currency)
+            .await
+            .unwrap_or(0);
+    if stripe_available_cents < net_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"stripe_insufficient_available_balance",
+                "stripe_available_cents": stripe_available_cents
+            })),
+        );
+    }
+
+    // Compute fee
     // Auto-approve based on threshold
     let status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
         "approved"
@@ -3602,6 +3989,23 @@ pub async fn execute_agency_payout(
         }
     };
 
+    if stripe_available_cents.unwrap_or(0) < net_cents {
+        let _ = state
+            .pg
+            .from("agency_payout_requests")
+            .eq("id", payout_request_id)
+            .update(
+                json!({
+                    "status":"failed",
+                    "failure_reason":"stripe_insufficient_available_balance"
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+        return Err(());
+    }
+
     let connected_client = match stripe_account_id.parse::<stripe_sdk::AccountId>() {
         Ok(id) => client.clone().with_stripe_account(id),
         Err(_) => {
@@ -3732,4 +4136,738 @@ pub async fn get_agency_payout_history(
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     (StatusCode::OK, Json(json!({"items": rows})))
+}
+
+async fn handle_campaign_offer_checkout_session_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let offer_id = md
+        .get("offer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let target_type = md
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    tracing::info!(offer_id = %offer_id, "Processing campaign offer checkout completion");
+
+    if offer_id.is_empty() {
+        return Err("missing_offer_id".into());
+    }
+
+    // Mark the offer as paid
+    let update_resp = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(
+            json!({"payment_status": "paid", "updated_at": chrono::Utc::now().to_rfc3339()})
+                .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !update_resp.status().is_success() {
+        tracing::error!("Failed to update campaign offer {} to paid", offer_id);
+    }
+
+    if target_type == "agency" {
+        let billing_request_ids = md
+            .get("licensing_request_ids")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let agency_id = md
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        if billing_request_ids.is_empty() || agency_id.is_empty() || session_id.is_empty() {
+            tracing::warn!(
+                offer_id = %offer_id,
+                agency_id = %agency_id,
+                billing_request_ids = %billing_request_ids,
+                session_id = %session_id,
+                "campaign offer paid but missing billing identifiers; skipping distribution"
+            );
+            return Ok(());
+        }
+
+        // Distribute funds to agency + assigned talents by writing a single licensing_payouts row
+        // with talent_splits; DB triggers will credit agency_balances + creator_balances.
+        let _ = handle_campaign_offer_agency_distribution(
+            state,
+            &offer_id,
+            &agency_id,
+            &billing_request_ids,
+            &session_id,
+            obj,
+        )
+        .await;
+    } else {
+        // Handle independent creator checkout
+        let creator_id = md
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let amount_total = obj
+            .get("amount_total")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let currency = obj
+            .get("currency")
+            .and_then(|v| v.as_str())
+            .unwrap_or("usd")
+            .to_string();
+
+        if !creator_id.is_empty() && amount_total > 0 {
+            tracing::info!(creator_id = %creator_id, amount_cents = amount_total, "Adding funds to creator balance");
+
+            // We can simulate it or insert directly. Given existing table triggers, we insert into `creator_balances` directly.
+            // (assuming an `increment_creator_balance` function exists or we construct a query)
+            let _ = state
+                .pg
+                .rpc(
+                    "increment_creator_balance",
+                    json!({
+                        "p_creator_id": creator_id,
+                        "p_amount_cents": amount_total,
+                        "p_currency_code": currency
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_campaign_offer_agency_distribution(
+    state: &AppState,
+    offer_id: &str,
+    agency_id: &str,
+    billing_request_ids: &str,
+    stripe_checkout_session_id: &str,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    // For campaign offers, billing_request_ids is expected to be a single licensing_request_id (shadow stub).
+    let licensing_request_id = billing_request_ids
+        .split(',')
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if licensing_request_id.is_empty() {
+        return Ok(());
+    }
+
+    // Idempotency: if we've already inserted the payout for this (session, licensing_request_id), skip.
+    let existing_resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("id")
+        .eq("stripe_checkout_session_id", stripe_checkout_session_id)
+        .eq("licensing_request_id", &licensing_request_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if existing_resp.status().is_success() {
+        let txt = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+        if !rows.is_empty() {
+            tracing::info!(
+                offer_id = %offer_id,
+                licensing_request_id = %licensing_request_id,
+                stripe_checkout_session_id = %stripe_checkout_session_id,
+                "campaign offer distribution already processed (idempotent)"
+            );
+            return Ok(());
+        }
+    }
+
+    // Load offer budget snapshot for net vs gross.
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,budget_snapshot")
+        .eq("id", offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    let offer_txt = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_txt).unwrap_or_default();
+    let offer = offer_rows.first().cloned().unwrap_or(json!({}));
+    let budget_snapshot = offer
+        .get("budget_snapshot")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let gross_total_cents = obj
+        .get("amount_total")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0)
+        .max(0);
+    let currency_code = obj
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "USD".to_string());
+    let payment_intent_id = obj
+        .get("payment_intent")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let parse_dollars_to_cents = |s: &str| -> i64 {
+        let s = s.trim().replace(",", "");
+        if s.is_empty() {
+            return 0;
+        }
+        let v: f64 = s.parse().unwrap_or(0.0);
+        (v * 100.0).round() as i64
+    };
+
+    let net_amount_cents = budget_snapshot
+        .get("budget_creator_payment")
+        .and_then(|v| v.as_str())
+        .map(parse_dollars_to_cents)
+        .filter(|v| *v > 0)
+        .unwrap_or(gross_total_cents);
+    let platform_fee_cents = (gross_total_cents - net_amount_cents).max(0);
+
+    #[derive(Clone)]
+    struct DistributionRow {
+        payment_id: String,
+        creator_id: String,
+        talent_id: Option<String>,
+        weight_cents: i64,
+    }
+
+    // Prefer payments stub rows (created when the contract becomes fully signed). Fallback to assignments.
+    let payments_resp = state
+        .pg
+        .from("payments")
+        .select("id,creator_id,talent_id,gross_cents")
+        .eq("agency_id", agency_id)
+        .eq("licensing_request_id", &licensing_request_id)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    let payments_txt = payments_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let payment_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_txt).unwrap_or_default();
+
+    let mut rows: Vec<DistributionRow> = vec![];
+    for p in &payment_rows {
+        let payment_id = p.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+        if payment_id.is_empty() {
+            continue;
+        }
+        let creator_id = p
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let talent_id = p
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        let weight_cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        rows.push(DistributionRow {
+            payment_id: payment_id.to_string(),
+            creator_id,
+            talent_id,
+            weight_cents: weight_cents.max(0),
+        });
+    }
+
+    if rows.is_empty() {
+        tracing::warn!(
+            offer_id = %offer_id,
+            licensing_request_id = %licensing_request_id,
+            "no payments rows found for campaign offer distribution; falling back to assignments"
+        );
+        let assignments_resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("creator_id,talent_id")
+            .eq("offer_id", offer_id)
+            .eq("status", "assigned")
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        let assignments_txt = assignments_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
+        let assignments: Vec<serde_json::Value> =
+            serde_json::from_str(&assignments_txt).unwrap_or_default();
+        for a in &assignments {
+            let creator_id = a
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if creator_id.is_empty() {
+                continue;
+            }
+            let talent_id = a
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            rows.push(DistributionRow {
+                payment_id: String::new(), // no payments row to update in fallback
+                creator_id,
+                talent_id,
+                weight_cents: 1,
+            });
+        }
+    }
+
+    if rows.is_empty() {
+        tracing::warn!(
+            offer_id = %offer_id,
+            agency_id = %agency_id,
+            "no assigned creators found for campaign offer; skipping distribution"
+        );
+        return Ok(());
+    }
+
+    // Resolve any missing creator_id via talent_id -> agency_users.creator_id (legacy support).
+    let mut missing_creator_by_talent: Vec<String> = vec![];
+    for r in &rows {
+        if r.creator_id.trim().is_empty() {
+            if let Some(tid) = r.talent_id.as_deref() {
+                missing_creator_by_talent.push(tid.to_string());
+            }
+        }
+    }
+    if !missing_creator_by_talent.is_empty() {
+        missing_creator_by_talent.sort();
+        missing_creator_by_talent.dedup();
+        let tid_refs: Vec<&str> = missing_creator_by_talent
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        let map_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id")
+            .eq("agency_id", agency_id)
+            .in_("id", tid_refs)
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        if map_resp.status().is_success() {
+            let txt = map_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let map_rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            let mut creator_id_by_talent: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+            for m in map_rows {
+                let tid = m.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+                let cid = m
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if !tid.is_empty() && !cid.is_empty() {
+                    creator_id_by_talent.insert(tid.to_string(), cid.to_string());
+                }
+            }
+            for r in &mut rows {
+                if r.creator_id.trim().is_empty() {
+                    if let Some(tid) = r.talent_id.as_deref() {
+                        if let Some(cid) = creator_id_by_talent.get(tid) {
+                            r.creator_id = cid.clone();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Collect unique creators; missing creator_ids are not distributable.
+    let mut creator_ids: Vec<String> = rows
+        .iter()
+        .map(|r| r.creator_id.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    creator_ids.sort();
+    creator_ids.dedup();
+    if creator_ids.is_empty() {
+        tracing::warn!(
+            offer_id = %offer_id,
+            "campaign offer distribution has no valid creator_id rows; skipping"
+        );
+        return Ok(());
+    }
+
+    // Commission overrides + tier defaults (same model as licensing flow), but keyed by creator_id.
+    let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+
+    let (resp_agency, resp_roster_tiers, resp_rel_tiers) = tokio::try_join!(
+        async {
+            state
+                .pg
+                .from("agencies")
+                .select("performance_commission_config")
+                .eq("id", agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        },
+        async {
+            state
+                .pg
+                .from("agency_users")
+                .select("creator_id,performance_tier_name")
+                .eq("agency_id", agency_id)
+                .in_("creator_id", creator_refs.clone())
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        },
+        async {
+            state
+                .pg
+                .from("agency_talent_relationships")
+                .select("creator_id,performance_tier_name")
+                .eq("agency_id", agency_id)
+                .in_("creator_id", creator_refs.clone())
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        }
+    )?;
+
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_agency.text().await.unwrap_or_default()).unwrap_or_default();
+    let commission_cfg = agency_rows
+        .first()
+        .and_then(|r| r.get("performance_commission_config"))
+        .and_then(|v| v.as_object());
+
+    let roster_tier_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_roster_tiers.text().await.unwrap_or_default())
+            .unwrap_or_default();
+    let rel_tier_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_rel_tiers.text().await.unwrap_or_default()).unwrap_or_default();
+
+    let mut tier_by_creator: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    // Relationship tiers as baseline
+    for row in rel_tier_rows {
+        let cid = row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if cid.is_empty() {
+            continue;
+        }
+        let tier = row
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        tier_by_creator.insert(cid.to_string(), tier);
+    }
+    // Roster tiers override
+    for row in roster_tier_rows {
+        let cid = row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if cid.is_empty() {
+            continue;
+        }
+        let tier = row
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        tier_by_creator.insert(cid.to_string(), tier);
+    }
+
+    // Per-creator custom commission overrides for this agency.
+    let mut custom_by_creator: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    let comm_resp = state
+        .pg
+        .from("agency_creator_commissions")
+        .select("creator_id,commission_rate")
+        .eq("agency_id", agency_id)
+        .in_("creator_id", creator_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if comm_resp.status().is_success() {
+        let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let comm_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&comm_text).unwrap_or_default();
+        for r in comm_rows {
+            let cid = r
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            if cid.is_empty() {
+                continue;
+            }
+            if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                custom_by_creator.insert(cid.to_string(), rate.clamp(0.0, 100.0));
+            }
+        }
+    }
+
+    let mut default_rate_by_creator: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    for cid in &creator_ids {
+        let tier_name = tier_by_creator
+            .get(cid)
+            .map(String::as_str)
+            .unwrap_or("Inactive");
+        let rate = commission_cfg
+            .and_then(|cfg| cfg.get(tier_name))
+            .and_then(|tier_cfg| tier_cfg.get("commission_rate"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(60.0); // historical fallback: 40% to talent, 60% to agency
+        default_rate_by_creator.insert(cid.clone(), rate.clamp(0.0, 100.0));
+    }
+
+    // Allocate net_amount_cents across payment rows using their existing gross_cents as weights.
+    let mut sum_w: i64 = rows.iter().map(|r| r.weight_cents.max(0)).sum();
+    if sum_w <= 0 {
+        // equal weights if missing
+        sum_w = rows.len() as i64;
+        for r in &mut rows {
+            r.weight_cents = 1;
+        }
+    }
+
+    let mut alloc_floor_by_idx: std::collections::HashMap<usize, i64> =
+        std::collections::HashMap::new();
+    let mut remainders: Vec<(usize, i128)> = vec![];
+    let mut floor_sum: i64 = 0;
+
+    for (idx, r) in rows.iter().enumerate() {
+        let w = r.weight_cents.max(0);
+        let numer: i128 = (net_amount_cents as i128) * (w as i128);
+        let denom: i128 = (sum_w as i128).max(1);
+        let floor_alloc: i64 = (numer / denom) as i64;
+        let rem: i128 = numer - denom * (floor_alloc as i128);
+        let floor_alloc = floor_alloc.max(0);
+        alloc_floor_by_idx.insert(idx, floor_alloc);
+        remainders.push((idx, rem));
+        floor_sum += floor_alloc;
+    }
+
+    let mut leftover: i64 = (net_amount_cents - floor_sum).max(0);
+    remainders.sort_by(|(a_i, a_r), (b_i, b_r)| b_r.cmp(a_r).then_with(|| a_i.cmp(b_i)));
+    for (idx, _) in remainders {
+        if leftover <= 0 {
+            break;
+        }
+        if let Some(v) = alloc_floor_by_idx.get_mut(&idx) {
+            *v += 1;
+            leftover -= 1;
+        }
+    }
+
+    let alloc_sum: i64 = alloc_floor_by_idx.values().sum();
+    if alloc_sum != net_amount_cents {
+        return Err("campaign_offer_allocation_invariant_violated".to_string());
+    }
+
+    let paid_at = chrono::Utc::now().to_rfc3339();
+
+    // Resolve creator Stripe Connect account IDs + display names (best-effort; not required for balance crediting).
+    let mut stripe_acct_by_creator: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut creator_name_by_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let cr_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,stripe_connect_account_id")
+            .in_("id", creator_refs.clone())
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        if cr_resp.status().is_success() {
+            let cr_txt = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let cr_rows: Vec<serde_json::Value> = serde_json::from_str(&cr_txt).unwrap_or_default();
+            for r in cr_rows {
+                let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+                let name = r
+                    .get("full_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                let acct = r
+                    .get("stripe_connect_account_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if !cid.is_empty() && !acct.is_empty() {
+                    stripe_acct_by_creator.insert(cid.to_string(), acct.to_string());
+                }
+                if !cid.is_empty() && !name.is_empty() {
+                    creator_name_by_id.insert(cid.to_string(), name.to_string());
+                }
+            }
+        }
+    }
+
+    let mut agency_total_cents: i64 = 0;
+    let mut talent_total_cents: i64 = 0;
+    let mut talent_splits_json: Vec<serde_json::Value> = vec![];
+
+    // Update each payments row to reflect the computed per-creator distribution.
+    for (idx, r) in rows.iter().enumerate() {
+        let gross_share_cents = alloc_floor_by_idx.get(&idx).copied().unwrap_or(0).max(0);
+
+        let creator_id = r.creator_id.trim().to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+        let talent_rate = custom_by_creator
+            .get(&creator_id)
+            .copied()
+            .unwrap_or_else(|| {
+                default_rate_by_creator
+                    .get(&creator_id)
+                    .copied()
+                    .unwrap_or(0.0)
+            })
+            .clamp(0.0, 100.0);
+
+        let talent_payout_rate = (100.0 - talent_rate).clamp(0.0, 100.0);
+        let talent_earnings_cents =
+            ((gross_share_cents as f64) * (talent_payout_rate / 100.0)).round() as i64;
+        let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_share_cents);
+        let agency_earnings_cents = (gross_share_cents - talent_earnings_cents).max(0);
+
+        agency_total_cents += agency_earnings_cents;
+        talent_total_cents += talent_earnings_cents;
+
+        let update_body = json!({
+            "gross_cents": gross_share_cents,
+            "agency_earnings_cents": agency_earnings_cents,
+            "talent_earnings_cents": talent_earnings_cents,
+            "commission_rate": talent_rate,
+            "currency_code": currency_code,
+            "paid_at": paid_at,
+            "status": "succeeded",
+            "creator_id": creator_id
+        });
+        if !r.payment_id.trim().is_empty() {
+            let _ = state
+                .pg
+                .from("payments")
+                .eq("id", &r.payment_id)
+                .update(update_body.to_string())
+                .execute()
+                .await;
+        }
+
+        let stripe_acct = stripe_acct_by_creator
+            .get(&creator_id)
+            .cloned()
+            .unwrap_or_default();
+        let talent_name = creator_name_by_id
+            .get(&creator_id)
+            .cloned()
+            .unwrap_or_else(|| "Talent".to_string());
+
+        talent_splits_json.push(json!({
+            "talent_id": r.talent_id.clone().unwrap_or_default(),
+            "talent_name": talent_name,
+            "creator_id": creator_id,
+            "amount_cents": talent_earnings_cents,
+            "stripe_connect_account_id": stripe_acct,
+            "commission_rate": talent_rate,
+            "gross_share_cents": gross_share_cents,
+            "agency_commission_cents": agency_earnings_cents,
+        }));
+    }
+
+    // Credit internal balances (agency + creators) via a single licensing_payouts insert.
+    // Triggers (0044_fix_payout_triggers_available_cents.sql) will increment earned + available balances.
+    let payout_record = json!({
+        "licensing_request_id": licensing_request_id,
+        "agency_id": agency_id,
+        "amount_cents": agency_total_cents.max(0).min(net_amount_cents),
+        "talent_earnings_cents": talent_total_cents.max(0).min(net_amount_cents),
+        "talent_splits": talent_splits_json,
+        "platform_fee_cents": platform_fee_cents,
+        "net_amount_cents": net_amount_cents,
+        "currency": currency_code,
+        "paid_at": paid_at,
+        "stripe_checkout_session_id": stripe_checkout_session_id,
+        "stripe_payment_intent_id": payment_intent_id,
+    });
+
+    let ins_resp = state
+        .pg
+        .from("licensing_payouts")
+        .insert(payout_record.to_string())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !ins_resp.status().is_success() {
+        // Unique index may reject duplicates if a race occurs; treat as ok.
+        let err = ins_resp.text().await.unwrap_or_default();
+        tracing::warn!(
+            offer_id = %offer_id,
+            licensing_request_id = %licensing_request_id,
+            error = %err,
+            "failed to insert campaign offer licensing_payouts row"
+        );
+    }
+
+    tracing::info!(
+        offer_id = %offer_id,
+        licensing_request_id = %licensing_request_id,
+        agency_total_cents,
+        talent_total_cents,
+        platform_fee_cents,
+        net_amount_cents,
+        currency = %currency_code,
+        "campaign offer distribution credited to internal balances"
+    );
+
+    Ok(())
 }

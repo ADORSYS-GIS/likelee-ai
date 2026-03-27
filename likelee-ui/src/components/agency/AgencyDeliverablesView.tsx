@@ -19,6 +19,7 @@ import {
   Download,
   Video,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   createOfferAssetRequest,
@@ -39,10 +40,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { base44 } from "@/api/base44Client";
@@ -52,7 +64,7 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 export function AgencyDeliverablesView() {
   const queryClient = useQueryClient();
   const [expandedOfferId, setExpandedOfferId] = useState<string>("");
-  const [selectedTalentId, setSelectedTalentId] = useState<string>("");
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [assignmentsByOffer, setAssignmentsByOffer] = useState<
     Record<string, any[]>
   >({});
@@ -72,15 +84,32 @@ export function AgencyDeliverablesView() {
   const [assignDialog, setAssignDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
-  }>({ open: false, offerId: "", talentId: "" });
+  }>({ open: false, offerId: "" });
   const [assignSearch, setAssignSearch] = useState("");
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [unassignDialog, setUnassignDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    assignmentId: string;
+    creatorId: string;
+    talentName: string;
+    submitting: boolean;
+    offerStatus: string;
+  }>({
+    open: false,
+    offerId: "",
+    assignmentId: "",
+    creatorId: "",
+    talentName: "",
+    submitting: false,
+    offerStatus: "",
+  });
   const [requestDialog, setRequestDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
+    creatorId: string;
     title: string;
     message: string;
     file?: File | null;
@@ -88,7 +117,7 @@ export function AgencyDeliverablesView() {
   }>({
     open: false,
     offerId: "",
-    talentId: "",
+    creatorId: "",
     title: "",
     message: "",
     file: null,
@@ -97,7 +126,7 @@ export function AgencyDeliverablesView() {
   const [uploadDialog, setUploadDialog] = useState<{
     open: boolean;
     offerId: string;
-    talentId: string;
+    creatorId: string;
     caption: string;
     files?: File[];
     assetRequestId?: string;
@@ -105,7 +134,7 @@ export function AgencyDeliverablesView() {
   }>({
     open: false,
     offerId: "",
-    talentId: "",
+    creatorId: "",
     caption: "",
     files: [],
     assetRequestId: undefined,
@@ -115,28 +144,15 @@ export function AgencyDeliverablesView() {
     open: boolean;
     offerId: string;
     deliverableId: string;
-    action: "approve" | "changes_requested" | "reject" | "final_approve";
+    action: "changes_requested" | "reject" | "final_approve";
     note: string;
     submitting: boolean;
   }>({
     open: false,
     offerId: "",
     deliverableId: "",
-    action: "approve",
+    action: "changes_requested",
     note: "",
-    submitting: false,
-  });
-  const [confirmSendDialog, setConfirmSendDialog] = useState<{
-    open: boolean;
-    offerId: string;
-    deliverableId?: string;
-    mode: "creator" | "agency";
-    submitting: boolean;
-  }>({
-    open: false,
-    offerId: "",
-    deliverableId: "",
-    mode: "creator",
     submitting: false,
   });
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -156,6 +172,59 @@ export function AgencyDeliverablesView() {
   >([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const { toast } = useToast();
+  const confirmUnassign = async () => {
+    if (unassignDialog.submitting) return;
+    const offerId = String(unassignDialog.offerId || "").trim();
+    const assignmentId = String(unassignDialog.assignmentId || "").trim();
+    if (!offerId || !assignmentId) return;
+    const status = String(unassignDialog.offerStatus || "")
+      .trim()
+      .toLowerCase();
+    const locked =
+      status === "contract_sent" || status === "contract_fully_signed";
+    if (locked) {
+      toast({
+        title: "Assignments locked",
+        description:
+          status === "contract_fully_signed"
+            ? "Contract is already signed and you can’t change assigned talents."
+            : "You can’t change assigned talents after the contract is sent.",
+        variant: "destructive",
+      });
+      setUnassignDialog((prev) => ({ ...prev, open: false }));
+      return;
+    }
+    setUnassignDialog((prev) => ({ ...prev, submitting: true }));
+    try {
+      await base44.delete(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/assignments/${encodeURIComponent(assignmentId)}`,
+      );
+      if (selectedCreatorId && selectedCreatorId === unassignDialog.creatorId) {
+        setSelectedCreatorId("");
+      }
+      await loadAssignments(offerId);
+      toast({
+        title: "Talent unassigned",
+        description: "Talent was removed from this offer.",
+      });
+      setUnassignDialog({
+        open: false,
+        offerId: "",
+        assignmentId: "",
+        creatorId: "",
+        talentName: "",
+        submitting: false,
+        offerStatus: "",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Unassign failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+      setUnassignDialog((prev) => ({ ...prev, submitting: false }));
+    }
+  };
 
   // IndexedDB-backed queries for offers and roster
   const offersQuery = useIndexedDbQuery<{ offers: any[] }>({
@@ -190,6 +259,7 @@ export function AgencyDeliverablesView() {
   const offers = offersQuery.data?.offers ?? [];
   const roster = rosterQuery.data?.talents ?? [];
   const loadingOffers = offersQuery.isLoading && !offersQuery.data;
+  const loadingRoster = rosterQuery.isLoading && !rosterQuery.data;
 
   const rosterOptions = useMemo(
     () => (Array.isArray(roster) ? roster : []),
@@ -206,6 +276,8 @@ export function AgencyDeliverablesView() {
       return name.includes(q) || email.includes(q);
     });
   }, [assignSearch, rosterOptions]);
+  const getRosterCreatorId = (t: any) =>
+    String(t?.creator_id || t?.creatorId || t?.creator?.id || "").trim();
   const getTalentAvatar = (t: any) => {
     if (!t) return "";
     if (t.img) return t.img;
@@ -247,8 +319,24 @@ export function AgencyDeliverablesView() {
   const assignedTalentIds = useMemo(() => {
     const offerId = assignDialog.offerId;
     const rows = offerId ? assignmentsByOffer[offerId] || [] : [];
-    return new Set(rows.map((a: any) => String(a?.talent_id || "")));
+    return new Set(
+      rows
+        .map((a: any) => String(a?.creator_id || a?.talent_id || ""))
+        .filter(Boolean),
+    );
   }, [assignDialog.offerId, assignmentsByOffer]);
+
+  const assignmentLockedForOffer = useMemo(() => {
+    const offerId = assignDialog.offerId;
+    if (!offerId) return false;
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    return status === "contract_sent" || status === "contract_fully_signed";
+  }, [assignDialog.offerId, offers]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -562,12 +650,12 @@ export function AgencyDeliverablesView() {
 
           {options?.showActions && options?.offerId && (
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button
-                size="sm"
-                className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (isBrandApproved) {
+              {isBrandApproved && (
+                <Button
+                  size="sm"
+                  className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white col-span-2"
+                  onClick={(event) => {
+                    event.stopPropagation();
                     setReviewDialog({
                       open: true,
                       offerId: options.offerId || "",
@@ -576,28 +664,16 @@ export function AgencyDeliverablesView() {
                       note: "",
                       submitting: false,
                     });
-                  } else {
-                    setConfirmSendDialog({
-                      open: true,
-                      offerId: options.offerId || "",
-                      deliverableId: String(deliverable?.id || ""),
-                      mode: "creator",
-                      submitting: false,
-                    });
-                  }
-                }}
-                disabled={isSentToBrand || isFinalized}
-              >
-                {isSentToBrand
-                  ? "Sent to Brand"
-                  : isBrandApproved
-                    ? "Approve"
-                    : "Send to Brand"}
-              </Button>
+                  }}
+                  disabled={isFinalized}
+                >
+                  Approve
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50"
+                className={`h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50 ${isBrandApproved ? "col-span-1" : "col-span-2"}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   setReviewDialog({
@@ -635,25 +711,7 @@ export function AgencyDeliverablesView() {
             </div>
           )}
 
-          {options?.layout === "agency" && options?.offerId && isDraft && (
-            <div className="pt-1">
-              <Button
-                size="sm"
-                className="w-full h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setConfirmSendDialog({
-                    open: true,
-                    offerId: options.offerId || "",
-                    mode: "agency",
-                    submitting: false,
-                  });
-                }}
-              >
-                Send to Brand
-              </Button>
-            </div>
-          )}
+          {options?.layout === "agency" && options?.offerId && isDraft && null}
         </div>
       </Card>
     );
@@ -662,7 +720,7 @@ export function AgencyDeliverablesView() {
   const openOffer = async (offerId: string) => {
     const next = offerId === expandedOfferId ? "" : offerId;
     setExpandedOfferId(next);
-    setSelectedTalentId("");
+    setSelectedCreatorId("");
     if (next) {
       await Promise.all([
         loadAssignments(next),
@@ -674,22 +732,38 @@ export function AgencyDeliverablesView() {
   const handleAssignTalents = async () => {
     if (!assignDialog.offerId || assignSelectedIds.length === 0) return;
     if (assignSubmitting) return;
+    if (assignmentLockedForOffer) {
+      toast({
+        title: "Assignments locked",
+        description:
+          "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+        variant: "destructive",
+      });
+      return;
+    }
     setAssignSubmitting(true);
     try {
       await Promise.all(
-        assignSelectedIds.map((talentId) =>
-          createOfferTalentAssignment(assignDialog.offerId, talentId),
+        assignSelectedIds.map((creatorId) =>
+          createOfferTalentAssignment(assignDialog.offerId, {
+            creator_id: creatorId,
+          }),
         ),
       );
       await loadAssignments(assignDialog.offerId);
-      setAssignDialog({ open: false, offerId: "", talentId: "" });
+      setAssignDialog({ open: false, offerId: "" });
       setAssignSelectedIds([]);
       setAssignSearch("");
       toast({ title: "Talent assigned" });
     } catch (e: any) {
+      const msg = String(e?.message || "");
       toast({
         title: "Assignment failed",
-        description: e?.message || "Please try again.",
+        description: msg.includes(
+          "cannot_change_assignments_after_contract_sent",
+        )
+          ? "You can’t change assigned talents after the contract is sent."
+          : msg || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -698,7 +772,7 @@ export function AgencyDeliverablesView() {
   };
 
   const handleRequestAsset = async () => {
-    if (!requestDialog.offerId || !requestDialog.talentId) return;
+    if (!requestDialog.offerId || !requestDialog.creatorId) return;
     setRequestDialog((prev) => ({ ...prev, sending: true }));
     try {
       let fileUrl: string | undefined;
@@ -710,7 +784,7 @@ export function AgencyDeliverablesView() {
         fileUrl = (uploadResp as any)?.file_url;
       }
       await createOfferAssetRequest(requestDialog.offerId, {
-        talent_id: requestDialog.talentId,
+        creator_id: requestDialog.creatorId,
         title: requestDialog.title || undefined,
         message: requestDialog.message || undefined,
         file_url: fileUrl,
@@ -718,7 +792,7 @@ export function AgencyDeliverablesView() {
       setRequestDialog({
         open: false,
         offerId: "",
-        talentId: "",
+        creatorId: "",
         title: "",
         message: "",
         file: null,
@@ -739,7 +813,7 @@ export function AgencyDeliverablesView() {
   const handleUploadDeliverable = async () => {
     if (
       !uploadDialog.offerId ||
-      !uploadDialog.talentId ||
+      !uploadDialog.creatorId ||
       !uploadDialog.files ||
       uploadDialog.files.length === 0
     )
@@ -751,7 +825,7 @@ export function AgencyDeliverablesView() {
           uploadOfferDeliverable(uploadDialog.offerId, {
             file,
             caption: uploadDialog.caption || undefined,
-            talent_id: uploadDialog.talentId,
+            creator_id: uploadDialog.creatorId,
             asset_request_id: uploadDialog.assetRequestId,
             status: "draft",
           }),
@@ -761,7 +835,7 @@ export function AgencyDeliverablesView() {
       setUploadDialog({
         open: false,
         offerId: "",
-        talentId: "",
+        creatorId: "",
         caption: "",
         files: [],
         assetRequestId: undefined,
@@ -814,7 +888,7 @@ export function AgencyDeliverablesView() {
         open: false,
         offerId: "",
         deliverableId: "",
-        action: "approve",
+        action: "changes_requested",
         note: "",
         submitting: false,
       });
@@ -826,42 +900,6 @@ export function AgencyDeliverablesView() {
         variant: "destructive",
       });
       setReviewDialog((prev) => ({ ...prev, submitting: false }));
-    }
-  };
-
-  const handleSendToBrand = async () => {
-    if (!confirmSendDialog.offerId) return;
-    if (confirmSendDialog.submitting) return;
-    setConfirmSendDialog((prev) => ({ ...prev, submitting: true }));
-    try {
-      if (confirmSendDialog.mode === "creator") {
-        if (!confirmSendDialog.deliverableId) {
-          throw new Error("Missing deliverable");
-        }
-        await reviewOfferDeliverable(
-          confirmSendDialog.offerId,
-          confirmSendDialog.deliverableId,
-          { action: "approve" },
-        );
-      } else {
-        await submitAllDraftDeliverables(confirmSendDialog.offerId);
-      }
-      await loadDeliverables(confirmSendDialog.offerId);
-      setConfirmSendDialog({
-        open: false,
-        offerId: "",
-        deliverableId: "",
-        mode: "creator",
-        submitting: false,
-      });
-      toast({ title: "Sent to brand" });
-    } catch (e: any) {
-      toast({
-        title: "Send failed",
-        description: e?.message || "Please try again.",
-        variant: "destructive",
-      });
-      setConfirmSendDialog((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -922,7 +960,7 @@ export function AgencyDeliverablesView() {
             className="border-purple-300/50 text-white bg-white/10 hover:bg-white/20"
             onClick={() => {
               setExpandedOfferId("");
-              setSelectedTalentId("");
+              setSelectedCreatorId("");
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -942,22 +980,52 @@ export function AgencyDeliverablesView() {
           const expanded = expandedOfferId === offerId;
           const assignments = assignmentsByOffer[offerId] || [];
           const deliverables = deliverablesByOffer[offerId] || [];
-          const selectedTalent = assignments.find(
-            (a: any) => String(a?.talent_id) === selectedTalentId,
-          );
+          const selectedAssignment = selectedCreatorId
+            ? assignments.find(
+                (a: any) => String(a?.creator_id || "") === selectedCreatorId,
+              ) ||
+              assignments.find(
+                (a: any) => String(a?.talent_id || "") === selectedCreatorId,
+              )
+            : null;
+          const selectedLegacyTalentId = String(
+            selectedAssignment?.talent_id || "",
+          ).trim();
+          const deliverableMatchesSelection = (d: any) => {
+            if (!selectedCreatorId) return false;
+            const deliverableCreatorId = String(d?.creator_id || "").trim();
+            const deliverableTalentId = String(d?.talent_id || "").trim();
+            if (deliverableCreatorId) {
+              return deliverableCreatorId === selectedCreatorId;
+            }
+            if (selectedLegacyTalentId) {
+              return deliverableTalentId === selectedLegacyTalentId;
+            }
+            return false;
+          };
           const creatorDeliverables = deliverables.filter(
             (d: any) =>
-              String(d?.talent_id || "") === selectedTalentId &&
+              deliverableMatchesSelection(d) &&
               String(d?.submitted_by_role || "") !== "agency",
           );
           const agencyDeliverables = deliverables.filter(
             (d: any) =>
-              String(d?.talent_id || "") === selectedTalentId &&
+              deliverableMatchesSelection(d) &&
               String(d?.submitted_by_role || "") === "agency",
           );
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
           );
+          const isOfferPaid =
+            String(offer?.payment_status || "").toLowerCase() === "paid";
+          const offerAssignmentsLocked = (() => {
+            const status = String(offer?.status || "")
+              .trim()
+              .toLowerCase();
+            return (
+              status === "contract_sent" || status === "contract_fully_signed"
+            );
+          })();
           return (
             <motion.div
               key={offerId}
@@ -995,6 +1063,13 @@ export function AgencyDeliverablesView() {
                           {offerStatusLabel(offer?.status) ||
                             String(offer?.status || "")}
                         </Badge>
+                        {offer?.status === "contract_fully_signed" && (
+                          <Badge
+                            className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+                          >
+                            {isOfferPaid ? "Paid" : "Awaiting Payment"}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1015,8 +1090,18 @@ export function AgencyDeliverablesView() {
                       className="border-0 bg-gradient-to-r from-gray-900 to-slate-800 text-white hover:from-gray-800 hover:to-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setAssignDialog({ open: true, offerId, talentId: "" });
+                        if (offerAssignmentsLocked) {
+                          toast({
+                            title: "Assignments locked",
+                            description:
+                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        setAssignDialog({ open: true, offerId });
                       }}
+                      disabled={offerAssignmentsLocked}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {assignments.length === 0
@@ -1025,6 +1110,16 @@ export function AgencyDeliverablesView() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Payment gate banner for signed but unpaid offers */}
+                {offer?.status === "contract_fully_signed" && !isOfferPaid && (
+                  <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    <span className="text-amber-700 text-xs font-semibold">
+                      ⏳ Awaiting brand payment before deliverables can be
+                      uploaded or submitted.
+                    </span>
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {expanded && (
@@ -1047,13 +1142,20 @@ export function AgencyDeliverablesView() {
                         ) : (
                           <div className="space-y-2">
                             {assignments.map((assignment: any) => {
-                              const talent = assignment?.agency_users || {};
-                              const tid = String(assignment?.talent_id || "");
+                              const talent =
+                                assignment?.creators ||
+                                assignment?.agency_users ||
+                                {};
+                              const creatorId = String(
+                                assignment?.creator_id ||
+                                  assignment?.talent_id ||
+                                  "",
+                              ).trim();
                               return (
                                 <div
                                   key={assignment.id}
                                   className={`border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between ${
-                                    selectedTalentId === tid
+                                    selectedCreatorId === creatorId
                                       ? "bg-white"
                                       : "bg-white"
                                   }`}
@@ -1070,6 +1172,7 @@ export function AgencyDeliverablesView() {
                                     <div>
                                       <p className="text-sm font-semibold text-gray-900">
                                         {talent?.stage_name ||
+                                          talent?.full_name ||
                                           talent?.full_legal_name ||
                                           "Talent"}
                                       </p>
@@ -1079,17 +1182,51 @@ export function AgencyDeliverablesView() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    {!offerAssignmentsLocked ? (
+                                      <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
+                                        title="Unassign talent"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          if (!assignment?.id) return;
+                                          const name = String(
+                                            talent?.stage_name ||
+                                              talent?.full_name ||
+                                              talent?.full_legal_name ||
+                                              "Talent",
+                                          );
+                                          setUnassignDialog({
+                                            open: true,
+                                            offerId,
+                                            assignmentId: String(assignment.id),
+                                            creatorId,
+                                            talentName: name,
+                                            submitting: false,
+                                            offerStatus: String(
+                                              offer?.status || "",
+                                            ),
+                                          });
+                                        }}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    ) : null}
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                       onClick={() => {
-                                        setSelectedTalentId(
-                                          selectedTalentId === tid ? "" : tid,
+                                        if (!creatorId) return;
+                                        setSelectedCreatorId(
+                                          selectedCreatorId === creatorId
+                                            ? ""
+                                            : creatorId,
                                         );
                                       }}
                                     >
-                                      {selectedTalentId === tid ? (
+                                      {selectedCreatorId === creatorId ? (
                                         <ChevronDown className="w-4 h-4" />
                                       ) : (
                                         <ChevronRight className="w-4 h-4" />
@@ -1103,7 +1240,9 @@ export function AgencyDeliverablesView() {
                                         setRequestDialog({
                                           open: true,
                                           offerId,
-                                          talentId: tid,
+                                          creatorId: String(
+                                            assignment?.creator_id || "",
+                                          ).trim(),
                                           title: "",
                                           message: "",
                                           file: null,
@@ -1120,7 +1259,7 @@ export function AgencyDeliverablesView() {
                           </div>
                         )}
 
-                        {selectedTalentId && (
+                        {selectedCreatorId && selectedAssignment && (
                           <div className="border border-gray-200 rounded-lg p-4 space-y-3 bg-white">
                             <div className="flex items-center justify-between">
                               <div>
@@ -1128,8 +1267,10 @@ export function AgencyDeliverablesView() {
                                   Deliverables
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {selectedTalent?.agency_users?.stage_name ||
-                                    selectedTalent?.agency_users
+                                  {selectedAssignment?.creators?.full_name ||
+                                    selectedAssignment?.agency_users
+                                      ?.stage_name ||
+                                    selectedAssignment?.agency_users
                                       ?.full_legal_name ||
                                     "Talent"}
                                 </p>
@@ -1141,7 +1282,10 @@ export function AgencyDeliverablesView() {
                                   className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
-                                    submittingDrafts[offerId]
+                                    submittingDrafts[offerId] ||
+                                    (offer?.status ===
+                                      "contract_fully_signed" &&
+                                      !isOfferPaid)
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
@@ -1152,11 +1296,15 @@ export function AgencyDeliverablesView() {
                                 </Button>
                                 <Button
                                   size="sm"
+                                  disabled={
+                                    offer?.status === "contract_fully_signed" &&
+                                    !isOfferPaid
+                                  }
                                   onClick={() =>
                                     setUploadDialog({
                                       open: true,
                                       offerId,
-                                      talentId: selectedTalentId,
+                                      creatorId: selectedCreatorId,
                                       caption: "",
                                       files: [],
                                       assetRequestId: undefined,
@@ -1260,6 +1408,22 @@ export function AgencyDeliverablesView() {
             </p>
           </DialogHeader>
 
+          <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
+            <AlertDescription className="text-sm text-blue-900 font-medium">
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
+            </AlertDescription>
+          </Alert>
+
+          {assignmentLockedForOffer ? (
+            <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
+              <AlertDescription className="text-sm text-amber-900 font-semibold">
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -1271,80 +1435,122 @@ export function AgencyDeliverablesView() {
           </div>
 
           <ScrollArea className="h-[450px] pr-2 sm:pr-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredRoster.map((talent: any) => {
-                const id = String(talent?.id || "");
-                const alreadyAssigned = assignedTalentIds.has(id);
-                const isSelected = assignSelectedIds.includes(id);
-                return (
-                  <Card
-                    key={id}
-                    onClick={() => {
-                      if (alreadyAssigned) return;
-                      setAssignSelectedIds((prev) =>
-                        prev.includes(id)
-                          ? prev.filter((x) => x !== id)
-                          : [...prev, id],
-                      );
-                    }}
-                    className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                      alreadyAssigned
-                        ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    } ${
-                      isSelected
-                        ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
-                        : "border-gray-50 hover:border-gray-100 bg-white"
-                    }`}
-                  >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
-                      <Avatar className="w-16 h-16 rounded-2xl">
-                        <AvatarImage src={getTalentAvatar(talent)} />
-                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
-                          {getTalentInitial(talent)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                        {talent?.stage_name ||
-                          talent?.name ||
-                          talent?.full_legal_name ||
-                          "Talent"}
-                      </h6>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        {alreadyAssigned && (
-                          <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                            Assigned
+            {loadingRoster ? (
+              <div className="h-[420px] flex flex-col items-center justify-center text-center">
+                <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
+                <p className="text-sm font-bold text-gray-500">
+                  Loading talents…
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Fetching your agency roster.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredRoster.map((talent: any) => {
+                  const creatorId = getRosterCreatorId(talent);
+                  const canAssign = Boolean(creatorId);
+                  const alreadyAssigned = creatorId
+                    ? assignedTalentIds.has(creatorId)
+                    : false;
+                  const isSelected = creatorId
+                    ? assignSelectedIds.includes(creatorId)
+                    : false;
+                  return (
+                    <Card
+                      key={
+                        creatorId ||
+                        String(
+                          talent?.id ||
+                            talent?.talent_id ||
+                            talent?.email ||
+                            "",
+                        )
+                      }
+                      onClick={() => {
+                        if (assignmentLockedForOffer) return;
+                        if (!canAssign) {
+                          toast({
+                            title: "Talent not ready",
+                            description:
+                              "This talent needs a creator account before they can be assigned to a contract. Ask them to accept the invite and finish onboarding.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        if (alreadyAssigned) return;
+                        setAssignSelectedIds((prev) =>
+                          prev.includes(creatorId)
+                            ? prev.filter((x) => x !== creatorId)
+                            : [...prev, creatorId],
+                        );
+                      }}
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                        alreadyAssigned
+                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                          : assignmentLockedForOffer
+                            ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                            : "cursor-pointer"
+                      } ${
+                        isSelected
+                          ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                          : "border-gray-50 hover:border-gray-100 bg-white"
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                        <Avatar className="w-16 h-16 rounded-2xl">
+                          <AvatarImage src={getTalentAvatar(talent)} />
+                          <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
+                            {getTalentInitial(talent)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
+                          {talent?.stage_name ||
+                            talent?.name ||
+                            talent?.full_name ||
+                            talent?.full_legal_name ||
+                            "Talent"}
+                        </h6>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {alreadyAssigned && (
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                              Assigned
+                            </Badge>
+                          )}
+                          <Badge
+                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
+                              talent?.has_creator_account
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {talent?.has_creator_account
+                              ? "Dashboard Access"
+                              : "No Dashboard Access"}
                           </Badge>
-                        )}
-                        <Badge
-                          className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                            talent?.has_creator_account
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
-                        >
-                          {talent?.has_creator_account
-                            ? "Dashboard Access"
-                            : "No Dashboard Access"}
-                        </Badge>
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
+                      {isSelected && (
+                        <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </ScrollArea>
 
           <Button
-            onClick={handleAssignTalents}
-            disabled={assignSelectedIds.length === 0 || assignSubmitting}
+            onClick={() => setAssignConfirmOpen(true)}
+            disabled={
+              assignmentLockedForOffer ||
+              assignSelectedIds.length === 0 ||
+              assignSubmitting
+            }
             className="w-full mt-8 border-0 bg-gradient-to-r from-gray-900 to-slate-800 hover:from-gray-800 hover:to-slate-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md"
           >
             {assignSubmitting ? (
@@ -1355,6 +1561,68 @@ export function AgencyDeliverablesView() {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog
+        open={assignConfirmOpen}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setAssignConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can update assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting}
+              onClick={async () => {
+                await handleAssignTalents();
+                setAssignConfirmOpen(false);
+              }}
+            >
+              Confirm assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={unassignDialog.open}
+        onOpenChange={(open) => {
+          if (unassignDialog.submitting) return;
+          setUnassignDialog((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove <strong>{unassignDialog.talentName}</strong> from this
+              offer. You can change assigned talents before the contract is
+              sent. After you send the contract, assignments are locked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unassignDialog.submitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={unassignDialog.submitting}
+              onClick={confirmUnassign}
+            >
+              {unassignDialog.submitting ? "Unassigning..." : "Unassign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={requestDialog.open}
         onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
@@ -1362,15 +1630,18 @@ export function AgencyDeliverablesView() {
         <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           {(() => {
             const assigned = assignmentsByOffer[requestDialog.offerId] || [];
+            const assignment = assigned.find(
+              (a: any) =>
+                String(a?.creator_id || "").trim() ===
+                String(requestDialog.creatorId || "").trim(),
+            );
             const requestTalent =
-              assigned.find(
-                (a: any) =>
-                  String(a?.talent_id || "") ===
-                  String(requestDialog.talentId || ""),
-              )?.agency_users ||
+              assignment?.creators ||
+              assignment?.agency_users ||
               rosterOptions.find(
                 (t: any) =>
-                  String(t?.id || "") === String(requestDialog.talentId || ""),
+                  getRosterCreatorId(t) ===
+                  String(requestDialog.creatorId || "").trim(),
               ) ||
               null;
             return (
@@ -1400,6 +1671,7 @@ export function AgencyDeliverablesView() {
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-gray-900 truncate">
                           {requestTalent?.stage_name ||
+                            requestTalent?.full_name ||
                             requestTalent?.name ||
                             requestTalent?.full_legal_name ||
                             "Talent"}
@@ -1567,22 +1839,18 @@ export function AgencyDeliverablesView() {
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <DialogTitle className="text-2xl font-bold text-white">
-                {reviewDialog.action === "approve"
-                  ? "Send to Brand"
-                  : reviewDialog.action === "final_approve"
-                    ? "Approve Deliverable"
-                    : reviewDialog.action === "reject"
-                      ? "Reject Deliverable"
-                      : "Request Changes"}
+                {reviewDialog.action === "final_approve"
+                  ? "Approve Deliverable"
+                  : reviewDialog.action === "reject"
+                    ? "Reject Deliverable"
+                    : "Request Changes"}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                {reviewDialog.action === "approve"
-                  ? "Forward this deliverable to the brand for approval."
-                  : reviewDialog.action === "final_approve"
-                    ? "Mark this deliverable as approved after brand sign-off."
-                    : reviewDialog.action === "reject"
-                      ? "Reject this deliverable and notify the creator."
-                      : "Request revisions from the creator before sending to brand."}
+                {reviewDialog.action === "final_approve"
+                  ? "Mark this deliverable as approved after brand sign-off."
+                  : reviewDialog.action === "reject"
+                    ? "Reject this deliverable and notify the creator."
+                    : "Request revisions from the creator."}
               </p>
             </DialogHeader>
           </div>
@@ -1626,66 +1894,18 @@ export function AgencyDeliverablesView() {
                 onClick={handleReviewDeliverable}
                 disabled={
                   reviewDialog.submitting ||
-                  (reviewDialog.action !== "approve" &&
-                    reviewDialog.action !== "final_approve" &&
+                  (reviewDialog.action !== "final_approve" &&
                     !reviewDialog.note.trim())
                 }
               >
                 {reviewDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : reviewDialog.action === "approve" ? (
-                  "Send to Brand"
                 ) : reviewDialog.action === "final_approve" ? (
                   "Approve"
                 ) : reviewDialog.action === "reject" ? (
                   "Reject"
                 ) : (
                   "Send Feedback"
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={confirmSendDialog.open}
-        onOpenChange={(open) =>
-          setConfirmSendDialog((prev) => ({ ...prev, open }))
-        }
-      >
-        <DialogContent className="sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
-          <div className="bg-gray-900 p-6 text-white">
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-xl font-bold text-white">
-                Send to Brand
-              </DialogTitle>
-              <p className="text-gray-400 text-sm">
-                Are you sure you want to send this deliverable to the brand for
-                review?
-              </p>
-            </DialogHeader>
-          </div>
-          <div className="p-6 bg-white">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 h-11 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50"
-                onClick={() =>
-                  setConfirmSendDialog((prev) => ({ ...prev, open: false }))
-                }
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 h-11 rounded-none bg-black hover:bg-gray-800 text-white font-bold"
-                onClick={handleSendToBrand}
-                disabled={confirmSendDialog.submitting}
-              >
-                {confirmSendDialog.submitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Send"
                 )}
               </Button>
             </div>

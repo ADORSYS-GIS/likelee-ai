@@ -53,13 +53,88 @@ function extractErrorMessage(errorData: any): string {
   );
 }
 
+function normalizeErrorData(errorData: any): any {
+  if (!errorData) return null;
+  let body = errorData;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return errorData;
+    }
+  }
+  if (body?.status === "error" && typeof body?.error === "string") {
+    try {
+      const parsed = JSON.parse(body.error);
+      return parsed;
+    } catch {
+      return body;
+    }
+  }
+  return body;
+}
+
+function userFriendlyMessage(
+  status: number,
+  errorData: any,
+  url?: string,
+): string {
+  const normalized = normalizeErrorData(errorData);
+  const code = String(
+    normalized?.code || normalized?.error_code || normalized?.error?.code || "",
+  ).trim();
+  const msg = extractErrorMessage(normalized);
+  const lower = String(msg || "").toLowerCase();
+
+  // Public package password protection uses 401 with a plaintext message
+  // ("Password required" / "Invalid password"). Preserve that message to
+  // support the password-unlock UX instead of collapsing into a generic 401.
+  if (
+    (status === 401 || status === 403) &&
+    typeof url === "string" &&
+    url.includes("/public/packages/") &&
+    (lower.includes("password") || lower.includes("unlock"))
+  ) {
+    return msg || "Password required.";
+  }
+
+  if (status === 401 || status === 403 || lower.includes("not authorized")) {
+    return "You’re not authorized to perform this action.";
+  }
+  if (code === "23505" || lower.includes("already exists")) {
+    return "This record already exists.";
+  }
+  if (code === "23514" || lower.includes("violates check constraint")) {
+    return "A validation error occurred. Please check your input and try again.";
+  }
+  if (status === 409) {
+    return "This action conflicts with an existing record. Please refresh and try again.";
+  }
+  if (!msg || !String(msg).trim()) {
+    return "Something went wrong. Please try again.";
+  }
+  return msg;
+}
+
 function throwBackendError(
   method: string,
   url: string,
   status: number,
   errorData: any,
 ): never {
-  const msg = extractErrorMessage(errorData);
+  const msg = userFriendlyMessage(status, errorData, url);
+
+  // Log the raw error for developers, but avoid noisy logs for expected public
+  // password prompts (these are handled in the UI).
+  const lower = String(msg || "").toLowerCase();
+  const isExpectedPublicPassword401 =
+    (status === 401 || status === 403) &&
+    url.includes("/public/packages/") &&
+    (lower.includes("password") || lower.includes("unlock"));
+  if (!isExpectedPublicPassword401) {
+    // eslint-disable-next-line no-console
+    console.error(`[api] ${method} ${url} failed`, { status, errorData });
+  }
   const err: any = new Error(msg);
   err.status = status;
   err.method = method;
@@ -129,6 +204,24 @@ const API_BASE = (() => {
 import { supabase } from "@/lib/supabase";
 
 export const base44 = {
+  async getRaw(url: string, config?: RequestConfig): Promise<Response> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    // Get token from Supabase
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session?.access_token;
+
+    const headers = {
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    return await fetch(full, { headers });
+  },
   async get<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
 
@@ -148,14 +241,13 @@ export const base44 = {
     const res = await fetch(full, { headers });
     if (!res.ok) {
       const txt = await res.text();
-      // Try to parse as JSON for structured errors
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("GET", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        // If not JSON, throw with status and text
-        throw new Error(`GET ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("GET", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -192,12 +284,13 @@ export const base44 = {
     const res = await fetch(full, { method: "POST", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("POST", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`POST ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("POST", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -234,12 +327,13 @@ export const base44 = {
     const res = await fetch(full, { method: "PUT", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("PUT", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`PUT ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("PUT", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },
@@ -272,12 +366,13 @@ export const base44 = {
     const res = await fetch(full, { method: "DELETE", headers, body });
     if (!res.ok) {
       const txt = await res.text();
+      let errorData: any = txt;
       try {
-        const errorData = JSON.parse(txt);
-        throwBackendError("DELETE", url, res.status, errorData);
+        errorData = JSON.parse(txt);
       } catch {
-        throw new Error(`DELETE ${url} failed: ${res.status} ${txt}`);
+        // keep as text
       }
+      throwBackendError("DELETE", url, res.status, errorData);
     }
 
     if (res.status === 204) {

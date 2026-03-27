@@ -472,3 +472,384 @@ pub async fn create_agency_subscription_checkout(
     info!(agency_id = %user.id, plan = %payload.plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
 }
+
+#[derive(Debug, Serialize)]
+pub struct CampaignCheckoutResponse {
+    pub url: String,
+}
+
+pub async fn create_campaign_offer_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    axum::extract::Path(offer_id): axum::extract::Path<String>,
+) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    // 1. Fetch the campaign offer
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,status,payment_status,target_type,target_id,billing_request_id,budget_snapshot")
+        .eq("id", &offer_id)
+        .eq("brand_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        let err = offer_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if offer_status != "contract_fully_signed" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "contract_must_be_fully_signed".to_string(),
+        ));
+    }
+
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
+    if payment_status != "unpaid" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "offer_already_paid_or_processing".to_string(),
+        ));
+    }
+
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let target_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let mut billing_request_id = offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // Hard requirements for campaign offers:
+    // - Agency offers: at least one talent must be assigned BEFORE the brand can pay.
+    // - Agency offers: agency + all assigned talents must have Stripe Connect accounts (like licensing flow),
+    //   otherwise escrow will get stuck on the platform with no ability to transfer out.
+    // - Creator offers: the creator must have a Stripe Connect account.
+    if target_type == "agency" {
+        // 1) Agency must be connected to Stripe
+        let agency_acct_resp = state
+            .pg
+            .from("agencies")
+            .select("stripe_connect_account_id")
+            .eq("id", target_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !agency_acct_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                agency_acct_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let agency_acct_text = agency_acct_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
+        let agency_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&agency_acct_text).unwrap_or_default();
+        let agency_stripe_account_id = agency_rows
+            .first()
+            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if agency_stripe_account_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Agency must connect a Stripe account before the brand can pay for this offer"
+                    .to_string(),
+            ));
+        }
+
+        // 2) At least one creator-backed talent must be assigned
+        let assignments_resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("creator_id")
+            .eq("offer_id", &offer_id)
+            .eq("agency_id", target_id)
+            .eq("status", "assigned")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !assignments_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                assignments_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let assignments_txt = assignments_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".into());
+        let assignments_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&assignments_txt).unwrap_or_default();
+        let mut creator_ids: Vec<String> = assignments_rows
+            .iter()
+            .filter_map(|r| r.get("creator_id").and_then(|v| v.as_str()))
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        creator_ids.sort();
+        creator_ids.dedup();
+        if creator_ids.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "At least one talent must be assigned before the brand can pay for this offer"
+                    .to_string(),
+            ));
+        }
+
+        // 3) Every assigned creator must have a connected Stripe account
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        let creators_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,stripe_connect_account_id")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creators_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                creators_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let creators_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creators_text).unwrap_or_default();
+        let mut stripe_by_creator: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        let mut name_by_creator: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        for r in &creators_rows {
+            let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+            if cid.is_empty() {
+                continue;
+            }
+            let name = r
+                .get("full_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !name.is_empty() {
+                name_by_creator.insert(cid.to_string(), name);
+            }
+            let acct = r
+                .get("stripe_connect_account_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !acct.is_empty() {
+                stripe_by_creator.insert(cid.to_string(), acct);
+            }
+        }
+
+        let mut missing_stripe: Vec<String> = vec![];
+        for cid in &creator_ids {
+            if !stripe_by_creator.contains_key(cid) {
+                let label = name_by_creator
+                    .get(cid)
+                    .cloned()
+                    .unwrap_or_else(|| cid.clone());
+                missing_stripe.push(label);
+            }
+        }
+        if !missing_stripe.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The following creators must connect their Stripe account before the brand can pay: {}",
+                    missing_stripe.join(", ")
+                ),
+            ));
+        }
+    } else if target_type == "creator" {
+        let creator_resp = state
+            .pg
+            .from("creators")
+            .select("stripe_connect_account_id")
+            .eq("id", target_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creator_resp.status().is_success() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                creator_resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let creator_text = creator_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let creator_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creator_text).unwrap_or_default();
+        let stripe_id = creator_rows
+            .first()
+            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if stripe_id.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Creator must connect a Stripe account before the brand can pay for this offer"
+                    .to_string(),
+            ));
+        }
+    }
+
+    if target_type == "agency" && billing_request_id.is_empty() {
+        match crate::brand_campaigns::ensure_campaign_billing_stub(&state, &offer_id).await {
+            Ok(stub_id) => {
+                billing_request_id = stub_id;
+            }
+            Err(e) => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed_to_create_stub: {}", e),
+                ));
+            }
+        }
+    }
+
+    if target_type == "agency" && billing_request_id.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing_billing_stub_for_agency".to_string(),
+        ));
+    }
+
+    let budget_snapshot = offer
+        .get("budget_snapshot")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let budget_str = budget_snapshot
+        .get("budget_total")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "0".to_string());
+
+    let budget_str = budget_str.replace(",", "");
+    let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
+    let amount_cents = (budget_total * 100.0).round() as i64;
+
+    if amount_cents <= 0 {
+        return Err((StatusCode::BAD_REQUEST, "invalid_budget".to_string()));
+    }
+
+    let success_url = format!(
+        "{}/BrandDashboard?section=campaigns&paid=1&offer_id={}",
+        state.frontend_url, offer_id
+    );
+    let cancel_url = format!(
+        "{}/BrandDashboard?section=campaigns&canceled=1&offer_id={}",
+        state.frontend_url, offer_id
+    );
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.client_reference_id = Some(user.id.as_str());
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("billing_domain".to_string(), "campaign_offer".to_string());
+    md.insert("offer_id".to_string(), offer_id.clone());
+    md.insert("target_type".to_string(), target_type.to_string());
+    md.insert("target_id".to_string(), target_id.to_string());
+    md.insert("brand_id".to_string(), user.id.clone());
+
+    if target_type == "agency" {
+        md.insert("agency_id".to_string(), target_id.to_string());
+        md.insert(
+            "licensing_request_ids".to_string(),
+            billing_request_id.to_string(),
+        );
+    }
+
+    cs_params.metadata = Some(md);
+
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price_data: Some(stripe_sdk::CreateCheckoutSessionLineItemsPriceData {
+            currency: stripe_sdk::Currency::from_str("usd").unwrap(),
+            product_data: Some(
+                stripe_sdk::CreateCheckoutSessionLineItemsPriceDataProductData {
+                    name: "Campaign Offer Escrow Deposit".to_string(),
+                    description: Some(
+                        "Funds will be held in escrow until deliverables are approved.".to_string(),
+                    ),
+                    ..Default::default()
+                },
+            ),
+            unit_amount: Some(amount_cents),
+            ..Default::default()
+        }),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    // Mark as processing
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(json!({"payment_status": "processing", "stripe_checkout_session_id": session.id.to_string()}).to_string())
+        .execute()
+        .await;
+
+    info!(offer_id, "created campaign offer checkout session");
+    Ok(Json(CampaignCheckoutResponse { url }))
+}

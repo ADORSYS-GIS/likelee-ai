@@ -251,6 +251,11 @@ const ConnectBankView = ({
     last_error: string;
     bank_last4?: string;
     available_balance?: { amount_cents: number; currency: string };
+    stripe_balances?: {
+      currency: string;
+      available_cents: number;
+      pending_cents: number;
+    }[];
   } | null>(null);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
@@ -282,6 +287,7 @@ const ConnectBankView = ({
           bank_last4:
             String((statusData as any)?.bank_last4 || "") || undefined,
           available_balance: (balanceData as any)?.available_balance,
+          stripe_balances: (balanceData as any)?.stripe_balances || [],
         });
 
         setPayoutHistory((historyData as any)?.items || []);
@@ -331,11 +337,13 @@ const ConnectBankView = ({
       return;
     }
     const amountCents = Math.round(amountDollars * 100);
-    const availableCents = status?.available_balance?.amount_cents || 0;
-    if (amountCents > availableCents) {
+    const stripecashoutCents =
+      status?.stripe_balances?.find((b) => b.currency === "USD")
+        ?.available_cents || 0;
+    if (amountCents > stripecashoutCents) {
       toast({
         title: "Insufficient funds",
-        description: `Available balance: $${(availableCents / 100).toFixed(2)}`,
+        description: `cashout in Stripe: $${(stripecashoutCents / 100).toFixed(2)}`,
         variant: "destructive" as any,
       });
       return;
@@ -361,6 +369,7 @@ const ConnectBankView = ({
           ? {
               ...prev,
               available_balance: (balanceData as any)?.available_balance,
+              stripe_balances: (balanceData as any)?.stripe_balances || [],
             }
           : prev,
       );
@@ -438,28 +447,52 @@ const ConnectBankView = ({
 
           {connected && (
             <div className="mb-6">
-              <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <DollarSign className="w-4 h-4 text-indigo-600" />
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                    Available Balance
+              <div className="space-y-3">
+                <Card className="p-4 bg-amber-50 border-amber-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <DollarSign className="w-4 h-4 text-amber-700" />
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                      Held (Pending Transfer)
+                    </p>
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">
+                    {status?.available_balance
+                      ? new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency:
+                            status.available_balance.currency.toUpperCase(),
+                        }).format(
+                          (status.available_balance.amount_cents || 0) / 100,
+                        )
+                      : "$0.00"}
                   </p>
-                </div>
-                <p className="text-2xl font-black text-gray-900">
-                  {status?.available_balance
-                    ? new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency:
-                          status.available_balance.currency.toUpperCase(),
-                      }).format(
-                        (status.available_balance.amount_cents || 0) / 100,
-                      )
-                    : "$0.00"}
-                </p>
-                <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Ready for payout to your bank
-                </p>
-              </Card>
+                  <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    Tracked in Likelee. Not necessarily cashout yet.
+                  </p>
+                </Card>
+
+                <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <DollarSign className="w-4 h-4 text-indigo-600" />
+                    <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                      cashout (Stripe)
+                    </p>
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(
+                      (status?.stripe_balances?.find(
+                        (b) => b.currency === "USD",
+                      )?.available_cents || 0) / 100,
+                    )}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    Available in your connected Stripe account.
+                  </p>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -15822,7 +15855,8 @@ const RoyaltiesPayoutsView = ({
     const all = tiersData?.tiers?.flatMap((t: any) => t.talents) || [];
     const next: Record<string, string> = {};
     for (const t of all) {
-      next[t.id] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
+      const key = (t.creator_id as string | undefined) || t.id;
+      next[key] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
     }
     setTalentCustomRateDrafts(next);
     setLastSavedTalentDraft(next);
@@ -15857,14 +15891,14 @@ const RoyaltiesPayoutsView = ({
 
   const talentCommissionMutation = useMutation({
     mutationFn: async ({
-      talentId,
+      creatorId,
       rate,
     }: {
-      talentId: string;
+      creatorId: string;
       rate: number | null;
     }) => {
       await base44.post("/agency/dashboard/talent-commissions/update", {
-        talent_id: talentId,
+        creator_id: creatorId,
         custom_rate: rate,
       });
       return true;
@@ -16008,17 +16042,20 @@ const RoyaltiesPayoutsView = ({
     return false;
   })();
 
-  const commitTalentCustomRate = (talentId: string) => {
-    const draft = (talentCustomRateDrafts?.[talentId] ?? "").trim();
-    const lastSaved = lastSavedTalentDraft?.[talentId];
+  const commitTalentCustomRate = (creatorId: string) => {
+    const draft = (talentCustomRateDrafts?.[creatorId] ?? "").trim();
+    const lastSaved = lastSavedTalentDraft?.[creatorId];
     if (lastSaved === draft) return;
 
     const rate = draft === "" ? null : Number(draft);
     if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100))
       return;
 
-    setLastSavedTalentDraft((prev) => ({ ...(prev || {}), [talentId]: draft }));
-    talentCommissionMutation.mutate({ talentId, rate });
+    setLastSavedTalentDraft((prev) => ({
+      ...(prev || {}),
+      [creatorId]: draft,
+    }));
+    talentCommissionMutation.mutate({ creatorId, rate });
   };
 
   return (
@@ -16351,7 +16388,9 @@ const RoyaltiesPayoutsView = ({
                                 PREVIOUS
                               </p>
                               <span className="text-sm font-bold text-gray-300 line-through decoration-1">
-                                {item.old_rate ? `${item.old_rate}%` : "0%"}
+                                {typeof item.old_rate === "number"
+                                  ? `${item.old_rate}%`
+                                  : "—"}
                               </span>
                             </div>
                             <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-300 transition-colors" />
@@ -16360,7 +16399,11 @@ const RoyaltiesPayoutsView = ({
                                 NEW RATE
                               </p>
                               <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-md shadow-indigo-100 block">
-                                {item.new_rate}%
+                                {item.action === "reset"
+                                  ? "Reset"
+                                  : typeof item.new_rate === "number"
+                                    ? `${item.new_rate}%`
+                                    : "—"}
                               </span>
                             </div>
                           </div>
@@ -16508,20 +16551,33 @@ const RoyaltiesPayoutsView = ({
                                 max="100"
                                 step="1"
                                 value={
-                                  talentCustomRateDrafts?.[talent.id] ?? ""
+                                  talentCustomRateDrafts?.[
+                                    (talent.creator_id as string | undefined) ||
+                                      talent.id
+                                  ] ?? ""
                                 }
                                 onChange={(e) =>
                                   setTalentCustomRateDrafts((prev) => ({
                                     ...(prev || {}),
-                                    [talent.id]: e.target.value,
+                                    [(talent.creator_id as
+                                      | string
+                                      | undefined) || talent.id]:
+                                      e.target.value,
                                   }))
                                 }
-                                onBlur={() => commitTalentCustomRate(talent.id)}
+                                onBlur={() =>
+                                  talent.creator_id
+                                    ? commitTalentCustomRate(
+                                        talent.creator_id as string,
+                                      )
+                                    : undefined
+                                }
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
                                     (e.target as HTMLInputElement).blur();
                                   }
                                 }}
+                                disabled={!talent.creator_id}
                                 placeholder={
                                   talent.is_custom_rate ? "" : "Default"
                                 }
