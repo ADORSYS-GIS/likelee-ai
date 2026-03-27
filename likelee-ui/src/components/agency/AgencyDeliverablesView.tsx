@@ -62,9 +62,6 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 export function AgencyDeliverablesView() {
-  const [offers, setOffers] = useState<any[]>([]);
-  const [roster, setRoster] = useState<any[]>([]);
-  const [loadingRoster, setLoadingRoster] = useState(false);
   const queryClient = useQueryClient();
   const [expandedOfferId, setExpandedOfferId] = useState<string>("");
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
@@ -262,6 +259,7 @@ export function AgencyDeliverablesView() {
   const offers = offersQuery.data?.offers ?? [];
   const roster = rosterQuery.data?.talents ?? [];
   const loadingOffers = offersQuery.isLoading && !offersQuery.data;
+  const loadingRoster = rosterQuery.isLoading && !rosterQuery.data;
 
   const rosterOptions = useMemo(
     () => (Array.isArray(roster) ? roster : []),
@@ -351,39 +349,6 @@ export function AgencyDeliverablesView() {
         setAuthToken("");
       });
   }, []);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoadingOffers(true);
-      setLoadingRoster(true);
-      try {
-        const [offersResp, rosterResp] = await Promise.all([
-          listMyCampaignOffers(),
-          getAgencyRoster(),
-        ]);
-        const offerRows = (offersResp as any)?.offers || [];
-        setOffers(offerRows);
-        const rosterRows = Array.isArray(rosterResp)
-          ? rosterResp
-          : Array.isArray((rosterResp as any)?.talents)
-            ? (rosterResp as any).talents
-            : Array.isArray((rosterResp as any)?.data?.talents)
-              ? (rosterResp as any).data.talents
-              : [];
-        setRoster(rosterRows);
-      } catch (e) {
-        toast({
-          title: "Error",
-          description: "Failed to load offers.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingOffers(false);
-        setLoadingRoster(false);
-      }
-    };
-    load();
-  }, [toast]);
 
   const loadAssignments = async (offerId: string) => {
     setLoadingAssignments((prev) => ({ ...prev, [offerId]: true }));
