@@ -89,6 +89,11 @@ type MarketplaceSectionProps = {
     id: string,
   ) => string;
   queryScope?: string;
+  showRequestLicense?: boolean;
+  onRequestLicense?: (
+    profile: MarketplaceProfile,
+    details?: MarketplaceProfileDetails,
+  ) => void;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -155,6 +160,8 @@ export function MarketplaceSection({
   detailsEndpointBuilder = (profileType, id) =>
     `marketplace/${profileType}/${id}/details`,
   queryScope = "scouting-marketplace",
+  showRequestLicense = false,
+  onRequestLicense,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1268,6 +1275,33 @@ export function MarketplaceSection({
                     </div>
                   </Card>
                 )}
+                {showRequestLicense &&
+                  selectedProfile?.profile_type === "creator" && (
+                    <Card className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                          <h4 className="text-sm font-bold text-amber-900">
+                            Ready to license this talent?
+                          </h4>
+                          <p className="text-xs text-amber-700 mt-1">
+                            Send a licensing request to the represented agency.
+                          </p>
+                        </div>
+                        <Button
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                          onClick={() => {
+                            if (!selectedProfile) return;
+                            onRequestLicense?.(
+                              selectedProfile,
+                              detailsQuery.data || undefined,
+                            );
+                          }}
+                        >
+                          Request License
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
               </>
             )}
           </div>

@@ -2068,14 +2068,14 @@ async fn handle_licensing_requests_checkout_session_completed(
         }
     }
 
-    let (resp_agency, resp_talent_tiers) = tokio::try_join!(
+    let (resp_talent_tiers, resp_creator_tiers) = tokio::try_join!(
         async {
             state
                 .pg
-                .from("agencies")
-                .select("performance_commission_config")
-                .eq("id", &agency_id)
-                .limit(1)
+                .from("agency_users")
+                .select("id,creator_id,performance_tier_name")
+                .eq("agency_id", &agency_id)
+                .in_("id", talent_id_refs.clone())
                 .execute()
                 .await
                 .map_err(|e| e.to_string())
@@ -2084,58 +2084,108 @@ async fn handle_licensing_requests_checkout_session_completed(
             state
                 .pg
                 .from("agency_users")
-                .select("id,performance_tier_name")
+                .select("id,creator_id,performance_tier_name")
                 .eq("agency_id", &agency_id)
-                .in_("id", talent_id_refs.clone())
+                .in_("creator_id", talent_id_refs.clone())
                 .execute()
                 .await
                 .map_err(|e| e.to_string())
         }
     )?;
 
-    let agency_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&resp_agency.text().await.unwrap_or_default()).unwrap_or_default();
-    let commission_cfg = agency_rows
-        .first()
-        .and_then(|r| r.get("performance_commission_config"))
-        .and_then(|v| v.as_object());
-
-    let tier_rows: Vec<serde_json::Value> =
+    let mut tier_rows: Vec<serde_json::Value> =
         serde_json::from_str(&resp_talent_tiers.text().await.unwrap_or_default())
             .unwrap_or_default();
+    let mut creator_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_creator_tiers.text().await.unwrap_or_default())
+            .unwrap_or_default();
+    if !creator_rows.is_empty() {
+        tier_rows.append(&mut creator_rows);
+    }
     let mut tier_name_by_talent: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
     for row in tier_rows {
-        let tid = row
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if tid.is_empty() {
-            continue;
-        }
         let tier_name = row
             .get("performance_tier_name")
             .and_then(|v| v.as_str())
             .unwrap_or("Inactive")
             .trim()
             .to_string();
-        tier_name_by_talent.insert(tid, tier_name);
+        if tier_name.is_empty() {
+            continue;
+        }
+        let au_id = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if !au_id.is_empty() {
+            tier_name_by_talent.insert(au_id, tier_name.clone());
+        }
+        let creator_id = row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if !creator_id.is_empty() {
+            tier_name_by_talent.insert(creator_id, tier_name);
+        }
+    }
+
+    let tier_names: Vec<String> = tier_name_by_talent.values().cloned().collect();
+    let mut tier_payout_percent_map: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    let pt_query = if !tier_names.is_empty() {
+        let tn_refs: Vec<&str> = tier_names.iter().map(|s| s.as_str()).collect();
+        Some(
+            state
+                .pg
+                .from("performance_tiers")
+                .select("tier_name,payout_percent")
+                .eq("agency_id", &agency_id)
+                .in_("tier_name", tn_refs),
+        )
+    } else {
+        Some(
+            state
+                .pg
+                .from("performance_tiers")
+                .select("tier_name,payout_percent")
+                .eq("agency_id", &agency_id),
+        )
+    };
+
+    if let Some(pt_query) = pt_query {
+        let pt_resp = pt_query.execute().await;
+        if let Ok(pt_resp) = pt_resp {
+            if pt_resp.status().is_success() {
+                let pt_text = pt_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let pt_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&pt_text).unwrap_or_default();
+                for r in &pt_rows {
+                    let tn = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
+                    let pct = r
+                        .get("payout_percent")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(40.0);
+                    if !tn.is_empty() {
+                        tier_payout_percent_map.insert(tn.to_string(), pct);
+                    }
+                }
+            }
+        }
     }
 
     let mut default_rate_by_talent: std::collections::HashMap<String, f64> =
         std::collections::HashMap::new();
     for tid in &talent_ids {
-        let tier_name = tier_name_by_talent
-            .get(tid)
-            .map(String::as_str)
-            .unwrap_or("Inactive");
-        let rate = commission_cfg
-            .and_then(|cfg| cfg.get(tier_name))
-            .and_then(|tier_cfg| tier_cfg.get("commission_rate"))
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0);
+        let tier_name = tier_name_by_talent.get(tid).map(String::as_str);
+        let rate = match tier_name {
+            Some(name) => tier_payout_percent_map.get(name).copied().unwrap_or(40.0),
+            None => 40.0,
+        };
         default_rate_by_talent.insert(tid.clone(), rate.clamp(0.0, 100.0));
     }
 
@@ -2173,7 +2223,7 @@ async fn handle_licensing_requests_checkout_session_completed(
         }
 
         let gross_cents = alloc_floor_by_lr.get(lrid).copied().unwrap_or(0).max(0);
-        let effective_rate = custom_by_talent
+        let talent_rate = custom_by_talent
             .get(&talent_id)
             .copied()
             .unwrap_or_else(|| {
@@ -2184,16 +2234,15 @@ async fn handle_licensing_requests_checkout_session_completed(
             })
             .clamp(0.0, 100.0);
 
-        let agency_earnings_cents =
-            ((gross_cents as f64) * (effective_rate / 100.0)).round() as i64;
-        let agency_earnings_cents = agency_earnings_cents.max(0).min(gross_cents);
-        let talent_earnings_cents = (gross_cents - agency_earnings_cents).max(0);
+        let talent_earnings_cents = ((gross_cents as f64) * (talent_rate / 100.0)).round() as i64;
+        let talent_earnings_cents = talent_earnings_cents.max(0).min(gross_cents);
+        let agency_earnings_cents = (gross_cents - talent_earnings_cents).max(0);
 
         let update_body = json!({
             "gross_cents": gross_cents,
             "agency_earnings_cents": agency_earnings_cents,
             "talent_earnings_cents": talent_earnings_cents,
-            "commission_rate": effective_rate,
+            "commission_rate": talent_rate,
             "currency_code": currency_code,
             "paid_at": paid_at,
             "status": "succeeded"
@@ -2217,7 +2266,7 @@ async fn handle_licensing_requests_checkout_session_completed(
         row.insert("currency".into(), json!(currency_code));
         row.insert("paid_at".into(), json!(paid_at));
         row.insert("stripe_checkout_session_id".into(), json!(session_id));
-        row.insert("commission_rate".into(), json!(effective_rate));
+        row.insert("commission_rate".into(), json!(talent_rate));
         computed_payout_rows.push(serde_json::Value::Object(row));
     }
 
@@ -2270,6 +2319,12 @@ async fn handle_payment_link_checkout_completed(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    let stripe_payment_link_id = obj
+        .get("payment_link")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
     let amount_total = obj
         .get("amount_total")
         .and_then(|v| v.as_i64())
@@ -2277,44 +2332,36 @@ async fn handle_payment_link_checkout_completed(
 
     // Payment Links don't always propagate metadata to the Checkout Session.
     // If metadata is missing, attempt to resolve the payment link record via checkout.session.payment_link.
-    if agency_id.trim().is_empty() || licensing_request_ids_str.trim().is_empty() {
-        let stripe_payment_link_id = obj
-            .get("payment_link")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
+    if (agency_id.trim().is_empty() || licensing_request_ids_str.trim().is_empty())
+        && !stripe_payment_link_id.is_empty()
+    {
+        let pl_resp = state
+            .pg
+            .from("agency_payment_links")
+            .select("agency_id,licensing_request_id")
+            .eq("stripe_payment_link_id", &stripe_payment_link_id)
+            .limit(1)
+            .execute()
+            .await;
 
-        if !stripe_payment_link_id.is_empty() {
-            let pl_resp = state
-                .pg
-                .from("agency_payment_links")
-                .select("agency_id,licensing_request_id")
-                .eq("stripe_payment_link_id", &stripe_payment_link_id)
-                .limit(1)
-                .execute()
-                .await;
-
-            if let Ok(pl_resp) = pl_resp {
-                if pl_resp.status().is_success() {
-                    let text = pl_resp.text().await.unwrap_or_else(|_| "[]".into());
-                    let rows: Vec<serde_json::Value> =
-                        serde_json::from_str(&text).unwrap_or_default();
-                    if let Some(row) = rows.first() {
-                        if agency_id.trim().is_empty() {
-                            agency_id = row
-                                .get("agency_id")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string();
-                        }
-                        if licensing_request_ids_str.trim().is_empty() {
-                            licensing_request_ids_str = row
-                                .get("licensing_request_id")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string();
-                        }
+        if let Ok(pl_resp) = pl_resp {
+            if pl_resp.status().is_success() {
+                let text = pl_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                if let Some(row) = rows.first() {
+                    if agency_id.trim().is_empty() {
+                        agency_id = row
+                            .get("agency_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                    }
+                    if licensing_request_ids_str.trim().is_empty() {
+                        licensing_request_ids_str = row
+                            .get("licensing_request_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
                     }
                 }
             }
@@ -2335,16 +2382,18 @@ async fn handle_payment_link_checkout_completed(
     let first_lr_id = lr_ids.first().copied().unwrap_or("");
 
     // Find the payment link record
-    let pl_resp = state
+    let mut pl_query = state
         .pg
         .from("agency_payment_links")
-        .select("id,agency_id,licensing_request_id,campaign_id,total_amount_cents,platform_fee_cents,net_amount_cents,agency_amount_cents,talent_amount_cents,currency,talent_splits")
-        .eq("agency_id", &agency_id)
-        .eq("licensing_request_id", first_lr_id)
-        .eq("status", "active")
-        .limit(1)
-        .execute()
-        .await;
+        .select("id,agency_id,licensing_request_id,campaign_id,total_amount_cents,platform_fee_cents,net_amount_cents,agency_amount_cents,talent_amount_cents,currency,talent_splits");
+    if !stripe_payment_link_id.is_empty() {
+        pl_query = pl_query.eq("stripe_payment_link_id", &stripe_payment_link_id);
+    } else {
+        pl_query = pl_query
+            .eq("agency_id", &agency_id)
+            .eq("licensing_request_id", first_lr_id);
+    }
+    let pl_resp = pl_query.limit(1).execute().await;
 
     let payment_link = match pl_resp {
         Ok(resp) => {
@@ -2445,12 +2494,151 @@ async fn handle_payment_link_checkout_completed(
         "paid_at": chrono::Utc::now().to_rfc3339(),
     });
 
-    let _ = state
+    let insert_resp = state
         .pg
         .from("licensing_payouts")
         .insert(payout_record.to_string())
         .execute()
         .await;
+    let mut payout_inserted = false;
+    match insert_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            payout_inserted = status.is_success();
+            if !payout_inserted {
+                let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+                error!(
+                    payment_link_id = %payment_link_id,
+                    agency_id = %agency_id,
+                    status = %status,
+                    body = %text,
+                    "Failed to insert licensing_payouts row"
+                );
+            }
+        }
+        Err(e) => {
+            error!(
+                payment_link_id = %payment_link_id,
+                agency_id = %agency_id,
+                error = %e,
+                "Failed to insert licensing_payouts row"
+            );
+        }
+    }
+
+    if !payout_inserted {
+        let existing_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("id")
+            .eq("payment_link_id", &payment_link_id)
+            .limit(1)
+            .execute()
+            .await;
+        let mut has_existing = false;
+        if let Ok(existing_resp) = existing_resp {
+            if existing_resp.status().is_success() {
+                let text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                has_existing = !rows.is_empty();
+            }
+        }
+        if !has_existing {
+            if agency_amount_cents > 0 {
+                let mut new_available = agency_amount_cents;
+                if let Ok(balance_resp) = state
+                    .pg
+                    .from("agency_balances")
+                    .select("available_cents")
+                    .eq("agency_id", &agency_id)
+                    .limit(1)
+                    .execute()
+                    .await
+                {
+                    if balance_resp.status().is_success() {
+                        let text = balance_resp.text().await.unwrap_or_else(|_| "[]".into());
+                        let rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&text).unwrap_or_default();
+                        if let Some(row) = rows.first() {
+                            let current = row
+                                .get("available_cents")
+                                .and_then(|v| v.as_i64())
+                                .unwrap_or(0);
+                            new_available = current + agency_amount_cents;
+                        }
+                    }
+                }
+                let _ = state
+                    .pg
+                    .from("agency_balances")
+                    .upsert(
+                        json!({
+                            "agency_id": agency_id,
+                            "available_cents": new_available,
+                            "currency": currency,
+                            "updated_at": chrono::Utc::now().to_rfc3339(),
+                        })
+                        .to_string(),
+                    )
+                    .execute()
+                    .await;
+            }
+
+            if let Some(splits) = talent_splits.as_array() {
+                for split in splits {
+                    let creator_id = split
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    let amount = split
+                        .get("amount_cents")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(0);
+                    if creator_id.is_empty() || amount <= 0 {
+                        continue;
+                    }
+                    let mut creator_available = amount;
+                    if let Ok(balance_resp) = state
+                        .pg
+                        .from("creator_balances")
+                        .select("available_cents")
+                        .eq("creator_id", creator_id)
+                        .limit(1)
+                        .execute()
+                        .await
+                    {
+                        if balance_resp.status().is_success() {
+                            let text = balance_resp.text().await.unwrap_or_else(|_| "[]".into());
+                            let rows: Vec<serde_json::Value> =
+                                serde_json::from_str(&text).unwrap_or_default();
+                            if let Some(row) = rows.first() {
+                                let current = row
+                                    .get("available_cents")
+                                    .and_then(|v| v.as_i64())
+                                    .unwrap_or(0);
+                                creator_available = current + amount;
+                            }
+                        }
+                    }
+                    let _ = state
+                        .pg
+                        .from("creator_balances")
+                        .upsert(
+                            json!({
+                                "creator_id": creator_id,
+                                "available_cents": creator_available,
+                                "currency": currency,
+                                "updated_at": chrono::Utc::now().to_rfc3339(),
+                            })
+                            .to_string(),
+                        )
+                        .execute()
+                        .await;
+                }
+            }
+        }
+    }
     // Update payments table status
     let payment_update = json!({
         "status": "paid",

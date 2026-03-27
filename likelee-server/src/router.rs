@@ -318,6 +318,14 @@ pub fn build_router(state: AppState) -> Router {
                 .post(crate::licensing_requests::set_pay_split),
         )
         .route(
+            "/api/agency/brand-license-requests",
+            get(crate::brand_license_requests::list_for_agency),
+        )
+        .route(
+            "/api/agency/brand-license-requests/status",
+            post(crate::brand_license_requests::update_status_for_agency),
+        )
+        .route(
             "/api/agency/active-licenses",
             get(crate::active_licenses::list),
         )
@@ -493,7 +501,13 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/brand/licensing-requests",
-            post(crate::face_profiles::create_brand_licensing_request),
+            get(crate::licensing_requests::list_for_brand)
+                .post(crate::face_profiles::create_brand_licensing_request),
+        )
+        .route(
+            "/api/brand/brand-license-requests",
+            get(crate::brand_license_requests::list_for_brand)
+                .post(crate::brand_license_requests::create),
         )
         .route(
             "/api/brand/agency-talent-rates",
