@@ -8,7 +8,9 @@ const VERIFY_TYPE_FALLBACKS: Record<EmailOtpPurpose, EmailOtpType[]> = {
 };
 
 export function normalizeEmail(email: string) {
-  return String(email || "").trim().toLowerCase();
+  return String(email || "")
+    .trim()
+    .toLowerCase();
 }
 
 export async function verifyEmailOtpCode(

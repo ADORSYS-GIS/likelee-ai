@@ -80,7 +80,8 @@ export default function AgencyInviteLanding() {
   const effectiveRole = String(profile?.role || "").toLowerCase();
   const hasInviteRole =
     effectiveRole === "creator" || effectiveRole === "talent";
-  const canRespondDirectly = authenticated && hasInviteRole && emailMatchesInvite;
+  const canRespondDirectly =
+    authenticated && hasInviteRole && emailMatchesInvite;
   const isPending = status === "pending";
 
   const requireSupabase = () => {

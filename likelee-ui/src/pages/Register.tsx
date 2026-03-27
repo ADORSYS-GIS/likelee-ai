@@ -188,11 +188,11 @@ export default function Register() {
         onVerify={handleVerifyOtp}
         onResend={handleResendOtp}
         theme={{
-          headerClassName: "bg-gradient-to-r from-slate-900 to-black text-white",
+          headerClassName:
+            "bg-gradient-to-r from-slate-900 to-black text-white",
           headerTitleClassName: "text-white",
           headerDescriptionClassName: "text-white/80",
-          iconWrapperClassName:
-            "border border-white/20 bg-white/10 text-white",
+          iconWrapperClassName: "border border-white/20 bg-white/10 text-white",
           infoClassName: "border-slate-200 bg-slate-50 text-slate-950",
           primaryButtonClassName: "bg-black text-white hover:bg-slate-800",
           activeSlotClassName: "border-black ring-black/20",

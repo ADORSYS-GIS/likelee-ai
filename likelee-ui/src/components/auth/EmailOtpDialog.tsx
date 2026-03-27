@@ -211,7 +211,8 @@ export function EmailOtpDialog({
               resolvedTheme.infoClassName,
             )}
           >
-            Enter the 6-digit code sent to <span className="font-semibold">{email}</span>.
+            Enter the 6-digit code sent to{" "}
+            <span className="font-semibold">{email}</span>.
           </div>
 
           <div className="space-y-3">
@@ -286,7 +287,10 @@ export function EmailOtpDialog({
 
           <div className="space-y-3">
             <Button
-              className={cn("h-11 w-full", resolvedTheme.primaryButtonClassName)}
+              className={cn(
+                "h-11 w-full",
+                resolvedTheme.primaryButtonClassName,
+              )}
               disabled={verifyLoading || code.trim().length !== 6}
               onClick={handleVerify}
             >

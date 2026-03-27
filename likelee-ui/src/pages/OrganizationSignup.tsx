@@ -271,7 +271,8 @@ export default function OrganizationSignup() {
     setStep(2);
     toast({
       title: "Email verified",
-      description: "Your organization account is verified. Continue setup below.",
+      description:
+        "Your organization account is verified. Continue setup below.",
     });
   };
 
@@ -496,8 +497,7 @@ export default function OrganizationSignup() {
           iconWrapperClassName:
             "border border-slate-950/10 bg-white/35 text-slate-950",
           infoClassName: "border-amber-200 bg-amber-50 text-amber-950",
-          primaryButtonClassName:
-            "bg-[#F7B750] text-white hover:bg-[#E6A640]",
+          primaryButtonClassName: "bg-[#F7B750] text-white hover:bg-[#E6A640]",
           activeSlotClassName: "border-[#F7B750] ring-[#F7B750]/30",
           resendButtonClassName: "text-amber-700 hover:text-amber-800",
         } satisfies EmailOtpDialogTheme,
@@ -512,11 +512,9 @@ export default function OrganizationSignup() {
             "bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white",
           headerTitleClassName: "text-white",
           headerDescriptionClassName: "text-white/80",
-          iconWrapperClassName:
-            "border border-white/30 bg-white/15 text-white",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
           infoClassName: "border-cyan-100 bg-cyan-50 text-cyan-950",
-          primaryButtonClassName:
-            "bg-[#32C8D1] text-white hover:bg-[#2AB8C1]",
+          primaryButtonClassName: "bg-[#32C8D1] text-white hover:bg-[#2AB8C1]",
           activeSlotClassName: "border-[#32C8D1] ring-[#32C8D1]/30",
           resendButtonClassName: "text-cyan-700 hover:text-cyan-800",
         } satisfies EmailOtpDialogTheme,
@@ -531,8 +529,7 @@ export default function OrganizationSignup() {
             "bg-gradient-to-r from-indigo-600 to-purple-600 text-white",
           headerTitleClassName: "text-white",
           headerDescriptionClassName: "text-white/80",
-          iconWrapperClassName:
-            "border border-white/30 bg-white/15 text-white",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
           infoClassName: "border-indigo-100 bg-indigo-50 text-indigo-950",
           primaryButtonClassName:
             "bg-indigo-600 text-white hover:bg-indigo-700",
@@ -550,11 +547,9 @@ export default function OrganizationSignup() {
             "bg-gradient-to-r from-slate-700 to-gray-800 text-white",
           headerTitleClassName: "text-white",
           headerDescriptionClassName: "text-white/80",
-          iconWrapperClassName:
-            "border border-white/30 bg-white/15 text-white",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
           infoClassName: "border-slate-200 bg-slate-50 text-slate-950",
-          primaryButtonClassName:
-            "bg-slate-700 text-white hover:bg-slate-800",
+          primaryButtonClassName: "bg-slate-700 text-white hover:bg-slate-800",
           activeSlotClassName: "border-slate-500 ring-slate-500/30",
           resendButtonClassName: "text-slate-700 hover:text-slate-800",
         } satisfies EmailOtpDialogTheme,
@@ -569,11 +564,9 @@ export default function OrganizationSignup() {
             "bg-gradient-to-r from-[#0D1B3A] to-[#1E3A8A] text-white",
           headerTitleClassName: "text-white",
           headerDescriptionClassName: "text-white/80",
-          iconWrapperClassName:
-            "border border-white/30 bg-white/15 text-white",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
           infoClassName: "border-blue-100 bg-blue-50 text-blue-950",
-          primaryButtonClassName:
-            "bg-[#0D1B3A] text-white hover:bg-[#1E3A8A]",
+          primaryButtonClassName: "bg-[#0D1B3A] text-white hover:bg-[#1E3A8A]",
           activeSlotClassName: "border-[#1E3A8A] ring-[#1E3A8A]/30",
           resendButtonClassName: "text-blue-700 hover:text-blue-800",
         } satisfies EmailOtpDialogTheme,
