@@ -72,7 +72,7 @@ pub struct MarketplaceConnectPayload {
 
 #[derive(Deserialize)]
 pub struct BrandLicensingRequestPayload {
-    pub agency_id: String,
+    pub agency_id: Option<String>,
     pub creator_id: String,
     pub campaign_title: String,
     pub usage_scope: Option<String>,
@@ -84,6 +84,8 @@ pub struct BrandLicensingRequestPayload {
     pub exclusivity: Option<String>,
     pub custom_terms: Option<String>,
     pub modifications_allowed: Option<String>,
+    pub start_date: Option<String>,
+    pub license_fee: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -93,7 +95,7 @@ pub struct BrandAgencyTalentRatesQuery {
     pub limit: Option<usize>,
 }
 
-fn is_missing_relation_error(text: &str, relation_hint: &str) -> bool {
+pub(crate) fn is_missing_relation_error(text: &str, relation_hint: &str) -> bool {
     let lower = text.to_lowercase();
     if lower.contains("pgrst205") {
         return true;
@@ -505,6 +507,8 @@ pub async fn search_marketplace_profiles(
             }
         }
 
+        let mut agency_by_creator_id: HashMap<String, String> = HashMap::new();
+
         if profile_type == "all"
             || profile_type == "creator"
             || profile_type == "connected"
@@ -551,7 +555,7 @@ pub async fn search_marketplace_profiles(
                 let metrics_resp = state
                     .pg
                     .from("agency_users")
-                    .select("creator_id,instagram_followers,engagement_rate,updated_at")
+                    .select("creator_id,instagram_followers,engagement_rate,updated_at,agency_id")
                     .in_("creator_id", creator_refs)
                     .eq("role", "talent")
                     .eq("status", "active")
@@ -575,6 +579,11 @@ pub async fn search_marketplace_profiles(
                             .to_string();
                         if creator_id.is_empty() {
                             continue;
+                        }
+                        if let Some(aid) = row.get("agency_id").and_then(|v| v.as_str()) {
+                            if !agency_by_creator_id.contains_key(&creator_id) {
+                                agency_by_creator_id.insert(creator_id.clone(), aid.to_string());
+                            }
                         }
                         if !followers_by_creator_id.contains_key(&creator_id) {
                             if let Some(v) = row.get("instagram_followers").and_then(|v| v.as_i64())
@@ -690,6 +699,7 @@ pub async fn search_marketplace_profiles(
                 "currency_code": row.get("currency_code").cloned().unwrap_or(serde_json::json!("USD")),
                 "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
                 "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
+                "agency_id": agency_by_creator_id.get(creator_id).map(|s| serde_json::json!(s)).unwrap_or(serde_json::Value::Null),
             }));
         }
     } else {
@@ -3015,13 +3025,17 @@ pub async fn create_brand_licensing_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["brand"]).check(&user.role)?;
 
-    let agency_id = payload.agency_id.trim().to_string();
+    let agency_id = payload
+        .agency_id
+        .as_deref()
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
     let creator_id = payload.creator_id.trim().to_string();
     let campaign_title = payload.campaign_title.trim().to_string();
-    if agency_id.is_empty() || creator_id.is_empty() || campaign_title.is_empty() {
+    if creator_id.is_empty() || campaign_title.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
-            "agency_id, creator_id and campaign_title are required".to_string(),
+            "creator_id and campaign_title are required".to_string(),
         ));
     }
 
@@ -3033,97 +3047,130 @@ pub async fn create_brand_licensing_request(
         .trim()
         .to_string();
 
-    let connected_resp = state
-        .pg
-        .from("brand_agency_connections")
-        .select("id")
-        .eq("brand_id", &user.id)
-        .eq("agency_id", &agency_id)
-        .eq("status", "active")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let connected_status = connected_resp.status();
-    let connected_text = connected_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
-        serde_json::from_str(&connected_text).unwrap_or_default()
-    } else if is_missing_relation_error(&connected_text, "brand_agency_connections") {
-        let fallback_resp = state
+    // For independent creators (no agency), skip the connection + roster checks.
+    let (talent_id, talent_name) = if agency_id.is_empty() {
+        // Look up creator name directly from creators table
+        let creator_resp = state
             .pg
-            .from("brand_agency_connection_requests")
+            .from("creators")
+            .select("id,full_name")
+            .eq("id", &creator_id)
+            .single()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creator_status = creator_resp.status();
+        let creator_text = creator_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creator_status.is_success() {
+            return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
+        }
+        let creator_row: serde_json::Value =
+            serde_json::from_str(&creator_text).unwrap_or_default();
+        let name = creator_row
+            .get("full_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("Creator")
+            .to_string();
+        (String::new(), name)
+    } else {
+        // Agency creator: verify brand is connected to that agency
+        let connected_resp = state
+            .pg
+            .from("brand_agency_connections")
             .select("id")
             .eq("brand_id", &user.id)
             .eq("agency_id", &agency_id)
-            .eq("status", "accepted")
+            .eq("status", "active")
             .limit(1)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let fallback_status = fallback_resp.status();
-        let fallback_text = fallback_resp
+        let connected_status = connected_resp.status();
+        let connected_text = connected_resp
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !fallback_status.is_success() {
-            return Err(sanitize_db_error(fallback_status.as_u16(), fallback_text));
+        let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
+            serde_json::from_str(&connected_text).unwrap_or_default()
+        } else if is_missing_relation_error(&connected_text, "brand_agency_connections") {
+            let fallback_resp = state
+                .pg
+                .from("brand_agency_connection_requests")
+                .select("id")
+                .eq("brand_id", &user.id)
+                .eq("agency_id", &agency_id)
+                .eq("status", "accepted")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let fallback_status = fallback_resp.status();
+            let fallback_text = fallback_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !fallback_status.is_success() {
+                return Err(sanitize_db_error(fallback_status.as_u16(), fallback_text));
+            }
+            serde_json::from_str(&fallback_text).unwrap_or_default()
+        } else {
+            return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+        };
+        if connected_rows.is_empty() {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "You can only request licenses from connected agencies.".to_string(),
+            ));
         }
-        serde_json::from_str(&fallback_text).unwrap_or_default()
-    } else {
-        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
-    };
-    if connected_rows.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "You can only request licenses from connected agencies.".to_string(),
-        ));
-    }
 
-    let talent_resp = state
-        .pg
-        .from("agency_users")
-        .select("id,full_legal_name,stage_name")
-        .eq("agency_id", &agency_id)
-        .eq("creator_id", &creator_id)
-        .eq("status", "active")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talent_status = talent_resp.status();
-    let talent_text = talent_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !talent_status.is_success() {
-        return Err(sanitize_db_error(talent_status.as_u16(), talent_text));
-    }
-    let talent_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&talent_text).unwrap_or_default();
-    let talent = talent_rows.first().ok_or((
-        StatusCode::BAD_REQUEST,
-        "Creator is not in this agency roster.".to_string(),
-    ))?;
-    let talent_id = talent
-        .get("id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if talent_id.is_empty() {
-        return Err((
+        let talent_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,full_legal_name,stage_name")
+            .eq("agency_id", &agency_id)
+            .eq("creator_id", &creator_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let talent_status = talent_resp.status();
+        let talent_text = talent_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !talent_status.is_success() {
+            return Err(sanitize_db_error(talent_status.as_u16(), talent_text));
+        }
+        let talent_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&talent_text).unwrap_or_default();
+        let talent = talent_rows.first().ok_or((
             StatusCode::BAD_REQUEST,
-            "Invalid talent mapping".to_string(),
-        ));
-    }
-    let talent_name = talent
-        .get("full_legal_name")
-        .or_else(|| talent.get("stage_name"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("Talent")
-        .to_string();
+            "Creator is not in this agency roster.".to_string(),
+        ))?;
+        let tid = talent
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if tid.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid talent mapping".to_string(),
+            ));
+        }
+        let tname = talent
+            .get("full_legal_name")
+            .or_else(|| talent.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Talent")
+            .to_string();
+        (tid, tname)
+    };
 
     let start_date = chrono::Utc::now().date_naive();
     let end_date = start_date + chrono::Duration::days(duration_days);
@@ -3143,9 +3190,9 @@ pub async fn create_brand_licensing_request(
     });
 
     let insert_payload = serde_json::json!({
-        "agency_id": agency_id,
+        "agency_id": if agency_id.is_empty() { serde_json::Value::Null } else { serde_json::json!(agency_id) },
         "brand_id": user.id,
-        "talent_id": talent_id,
+        "talent_id": if talent_id.is_empty() { serde_json::Value::Null } else { serde_json::json!(talent_id) },
         "status": "pending",
         "campaign_title": campaign_title,
         "talent_name": talent_name,

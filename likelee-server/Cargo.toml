@@ -29,9 +29,19 @@ aws-sdk-ssooidc = "1"
 aws-runtime = "1"
 aws-credential-types = "1"
 envconfig = "0.11"
-image = { version = "0.24", default-features = false, features = ["png", "jpeg", "webp"] }
+image = { version = "0.24", default-features = false, features = [
+    "png",
+    "jpeg",
+    "webp",
+] }
 kamadak-exif = { version = "0.5" }
-lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "pool", "smtp-transport", "tokio1-rustls-tls"] }
+lettre = { version = "0.11", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1-rustls-tls",
+] }
 urlencoding = "2"
 jsonwebtoken = "9"
 stripe-sdk = { package = "async-stripe", version = "0.41", features = ["runtime-tokio-hyper-rustls"] }
