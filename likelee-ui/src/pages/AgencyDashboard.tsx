@@ -17351,6 +17351,10 @@ export default function AgencyDashboard() {
     return pending.length;
   }, [licensingRequestsCountQuery.data]);
 
+  const isBrandConnectionsActive =
+    activeTab === "brand-connections" ||
+    (activeTab === "licensing" && activeSubTab === "Brand Connections");
+
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency-brand-connection-requests", user?.id],
     queryFn: async () => {
@@ -17360,7 +17364,7 @@ export default function AgencyDashboard() {
       }>("/api/agency/brand-connection-requests");
       return Array.isArray(resp?.requests) ? resp.requests : [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isBrandConnectionsActive,
     refetchOnWindowFocus: false,
     staleTime: 30 * 1000,
     refetchInterval: 15 * 1000,
@@ -17379,7 +17383,7 @@ export default function AgencyDashboard() {
     maxAge: 60 * 1000,
     syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!user?.id,
+    enabled: !!user?.id && isBrandConnectionsActive,
     refetchOnWindowFocus: false,
   });
 
@@ -17404,7 +17408,7 @@ export default function AgencyDashboard() {
     maxAge: 60 * 1000,
     syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!user?.id,
+    enabled: !!user?.id && isBrandConnectionsActive,
     refetchOnWindowFocus: false,
   });
 
@@ -18276,12 +18280,6 @@ export default function AgencyDashboard() {
           { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-          {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
@@ -18289,6 +18287,12 @@ export default function AgencyDashboard() {
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
                 : undefined,
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
           },
         ]
       : [
@@ -18349,12 +18353,6 @@ export default function AgencyDashboard() {
           { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-          {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
@@ -18362,6 +18360,12 @@ export default function AgencyDashboard() {
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
                 : undefined,
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
           },
         ];
 

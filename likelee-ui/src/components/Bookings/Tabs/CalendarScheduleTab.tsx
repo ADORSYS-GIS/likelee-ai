@@ -443,9 +443,6 @@ export const CalendarScheduleTab = ({
                     <SelectItem value="selected">
                       {`Selected ${entitySingularTitle}`}
                     </SelectItem>
-                    <SelectItem value="all">All Talent</SelectItem>
-                    <SelectItem value="single">Single View</SelectItem>
-                    <SelectItem value="selected">Selected Talent</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -575,7 +572,7 @@ export const CalendarScheduleTab = ({
                 return (
                   <div
                     key={d}
-                    className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                    className={`p-2 h-full overflow-hidden flex flex-col relative group hover:bg-gray-50 transition-colors ${
                       isSelected
                         ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                         : ""
@@ -602,7 +599,7 @@ export const CalendarScheduleTab = ({
                     }}
                   >
                     <span
-                      className={`text-sm font-medium ${
+                      className={`text-sm font-medium shrink-0 ${
                         isSelected
                           ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                           : "text-gray-700"
@@ -610,7 +607,7 @@ export const CalendarScheduleTab = ({
                     >
                       {d}
                     </span>
-                    <div className="mt-1 space-y-1">
+                    <div className="mt-1 space-y-1 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar">
                       {dayBookings.map((b, idx) => {
                         const statusVal = (b.status || b.booking_status) as
                           | string
