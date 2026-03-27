@@ -367,7 +367,11 @@ export default function ReserveProfile() {
     const normalizedStatus = String(kycStatus || "")
       .trim()
       .toLowerCase();
-    if (!forceNewSession && normalizedStatus === "pending" && savedKycSessionUrl) {
+    if (
+      !forceNewSession &&
+      normalizedStatus === "pending" &&
+      savedKycSessionUrl
+    ) {
       setKycSessionUrl(savedKycSessionUrl);
       window.open(savedKycSessionUrl, "_blank");
       return;
@@ -2434,24 +2438,24 @@ export default function ReserveProfile() {
                             "reserveProfile.actions.retryVerification",
                             "Retry Verification",
                           )
-                      : t(
-                          "reserveProfile.actions.verifyIdentity",
-                          "Verify Identity Now",
-                        )}
+                        : t(
+                            "reserveProfile.actions.verifyIdentity",
+                            "Verify Identity Now",
+                          )}
                 </Button>
                 {normalizedKycStatus === "pending" && savedKycSessionUrl && (
-                    <Button
-                      onClick={startNewVerificationSession}
-                      variant="outline"
-                      disabled={kycLoading || kycRefreshLoading}
-                      className="w-full h-12 border-2 border-black rounded-none"
-                    >
-                      {t(
-                        "reserveProfile.actions.startNewVerification",
-                        "Start New Verification",
-                      )}
-                    </Button>
-                  )}
+                  <Button
+                    onClick={startNewVerificationSession}
+                    variant="outline"
+                    disabled={kycLoading || kycRefreshLoading}
+                    className="w-full h-12 border-2 border-black rounded-none"
+                  >
+                    {t(
+                      "reserveProfile.actions.startNewVerification",
+                      "Start New Verification",
+                    )}
+                  </Button>
+                )}
                 <div className="text-sm text-gray-700 flex items-center justify-between gap-3">
                   <span>
                     KYC:{" "}
@@ -2473,9 +2477,11 @@ export default function ReserveProfile() {
                                 "reserveProfile.verification.status.actionNeeded",
                                 "Action needed",
                               )
-                          : kycStatus === "rejected"
-                            ? t("reserveProfile.verification.status.rejected")
-                            : t("reserveProfile.verification.status.verifying")}
+                            : kycStatus === "rejected"
+                              ? t("reserveProfile.verification.status.rejected")
+                              : t(
+                                  "reserveProfile.verification.status.verifying",
+                                )}
                     </strong>
                   </span>
                   <Button
@@ -2546,20 +2552,20 @@ export default function ReserveProfile() {
                           "reserveProfile.verification.rejectedHint",
                           "Your last verification was not approved. Review the note above and retry with a new verification session.",
                         )
-                    : normalizedKycStatus === "pending"
-                    ? savedKycSessionUrl
-                      ? t(
-                          "reserveProfile.verification.resumeHint",
-                          "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
-                        )
-                      : t(
-                          "reserveProfile.verification.restartHint",
-                          "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
-                        )
-                    : t(
-                        "reserveProfile.verification.refreshHint",
-                        "If the status does not update automatically a few seconds after verification, use Refresh Status.",
-                      )}
+                      : normalizedKycStatus === "pending"
+                        ? savedKycSessionUrl
+                          ? t(
+                              "reserveProfile.verification.resumeHint",
+                              "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
+                            )
+                          : t(
+                              "reserveProfile.verification.restartHint",
+                              "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
+                            )
+                        : t(
+                            "reserveProfile.verification.refreshHint",
+                            "If the status does not update automatically a few seconds after verification, use Refresh Status.",
+                          )}
                 </p>
                 <div className="w-full">
                   <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">

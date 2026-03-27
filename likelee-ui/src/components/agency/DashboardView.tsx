@@ -153,8 +153,7 @@ const DashboardView = ({
   const isKycApproved = normalizedKycStatus === "approved";
   const isKycPending = normalizedKycStatus === "pending";
   const isKycRejected =
-    normalizedKycStatus === "rejected" ||
-    normalizedKycStatus === "declined";
+    normalizedKycStatus === "rejected" || normalizedKycStatus === "declined";
   const formattedKycReason = formatKycReason(kycRejectionReason);
   const hasPendingFollowUp = isKycPending && formattedKycReason.length > 0;
   const kycTitle = isKycApproved
@@ -264,7 +263,9 @@ const DashboardView = ({
                     variant="outline"
                     size="sm"
                     onClick={onRefreshStatus}
-                    disabled={!onRefreshStatus || !!kycLoading || !!refreshLoading}
+                    disabled={
+                      !onRefreshStatus || !!kycLoading || !!refreshLoading
+                    }
                     className="h-9 rounded-full border-gray-200 bg-white/90 px-3 text-gray-700 shadow-sm hover:bg-white"
                   >
                     <RefreshCw

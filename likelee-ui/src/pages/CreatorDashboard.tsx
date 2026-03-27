@@ -4882,9 +4882,10 @@ export default function CreatorDashboard() {
         : isPending
           ? Clock
           : Sparkles;
-    const bannerClassName = hasPendingFollowUp || isRejected
-      ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
-      : "rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
+    const bannerClassName =
+      hasPendingFollowUp || isRejected
+        ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
+        : "rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
 
     const title = hasPendingFollowUp
       ? t(
@@ -4892,56 +4893,53 @@ export default function CreatorDashboard() {
           "Continue verification to finish approval",
         )
       : isPending
-      ? t(
-          "creatorDashboard.marketplaceVerification.pendingTitle",
-          "Verification in review",
-        )
-      : isRejected
         ? t(
-            "creatorDashboard.marketplaceVerification.rejectedTitle",
-            "Verification was not approved",
+            "creatorDashboard.marketplaceVerification.pendingTitle",
+            "Verification in review",
           )
-      : t(
-          "creatorDashboard.marketplaceVerification.title",
-          "Verify to unlock marketplace visibility",
-        );
+        : isRejected
+          ? t(
+              "creatorDashboard.marketplaceVerification.rejectedTitle",
+              "Verification was not approved",
+            )
+          : t(
+              "creatorDashboard.marketplaceVerification.title",
+              "Verify to unlock marketplace visibility",
+            );
     const description = hasPendingFollowUp
       ? t(
           "creatorDashboard.marketplaceVerification.followUpDescription",
           "Veriff requested one more step before approval. Complete it below so your profile can appear to brands and agencies in marketplace discovery.",
         )
       : isPending
-      ? t(
-          "creatorDashboard.marketplaceVerification.pendingDescription",
-          savedKycSessionUrl
-            ? "Closed the verification window? Resume it anytime below. Once approved, your profile can appear to brands and agencies in marketplace discovery."
-            : "Your identity check is processing. If the last verification link expired, start a new session below. Once approved, your profile can appear to brands and agencies in marketplace discovery.",
-        )
-      : isRejected
         ? t(
-            "creatorDashboard.marketplaceVerification.rejectedDescription",
-            "Your last verification was not approved. Review the reason below and retry so your profile can appear to brands and agencies in marketplace discovery.",
+            "creatorDashboard.marketplaceVerification.pendingDescription",
+            savedKycSessionUrl
+              ? "Closed the verification window? Resume it anytime below. Once approved, your profile can appear to brands and agencies in marketplace discovery."
+              : "Your identity check is processing. If the last verification link expired, start a new session below. Once approved, your profile can appear to brands and agencies in marketplace discovery.",
           )
-        : t(
-            "creatorDashboard.marketplaceVerification.description",
-            "Complete identity verification so brands and agencies can discover your profile in the marketplace.",
-          );
+        : isRejected
+          ? t(
+              "creatorDashboard.marketplaceVerification.rejectedDescription",
+              "Your last verification was not approved. Review the reason below and retry so your profile can appear to brands and agencies in marketplace discovery.",
+            )
+          : t(
+              "creatorDashboard.marketplaceVerification.description",
+              "Complete identity verification so brands and agencies can discover your profile in the marketplace.",
+            );
     const statusLabel = hasPendingFollowUp
       ? t(
           "creatorDashboard.marketplaceVerification.followUpBadge",
           "Action needed",
         )
       : isPending
-      ? t("creatorDashboard.verificationStatus.pending", "Pending")
-      : isRejected
-        ? t(
-            "creatorDashboard.verificationStatus.rejected",
-            "Rejected",
-          )
-        : t(
-            "creatorDashboard.marketplaceVerification.notVerified",
-            "Not verified",
-          );
+        ? t("creatorDashboard.verificationStatus.pending", "Pending")
+        : isRejected
+          ? t("creatorDashboard.verificationStatus.rejected", "Rejected")
+          : t(
+              "creatorDashboard.marketplaceVerification.notVerified",
+              "Not verified",
+            );
     const primaryButtonLabel = isPending
       ? savedKycSessionUrl
         ? t(
@@ -4973,8 +4971,8 @@ export default function CreatorDashboard() {
                   hasPendingFollowUp || isRejected
                     ? "text-rose-600"
                     : isPending
-                    ? "text-amber-600"
-                    : "text-[#32C8D1]"
+                      ? "text-amber-600"
+                      : "text-[#32C8D1]"
                 }`}
               />
             </div>
@@ -5778,7 +5776,8 @@ export default function CreatorDashboard() {
                   }
                 >
                   {normalizedCreatorStatus
-                    ? isCreatorRejected && normalizedCreatorStatus === "declined"
+                    ? isCreatorRejected &&
+                      normalizedCreatorStatus === "declined"
                       ? t(
                           "creatorDashboard.verificationStatus.rejected",
                           "Rejected",
@@ -5788,9 +5787,9 @@ export default function CreatorDashboard() {
                             "creatorDashboard.verificationStatus.followUpNeeded",
                             "Action Needed",
                           )
-                      : t(
-                          `creatorDashboard.verificationStatus.${normalizedCreatorStatus}`,
-                        )
+                        : t(
+                            `creatorDashboard.verificationStatus.${normalizedCreatorStatus}`,
+                          )
                     : t("creatorDashboard.verificationStatus.notStarted")}
                 </Badge>
                 {!isCreatorApproved && (
@@ -5826,7 +5825,9 @@ export default function CreatorDashboard() {
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
-                disabled={kycLoading || kycStatusRefreshing || isCreatorApproved}
+                disabled={
+                  kycLoading || kycStatusRefreshing || isCreatorApproved
+                }
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
               >

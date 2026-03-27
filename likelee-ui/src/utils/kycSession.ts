@@ -33,10 +33,7 @@ export const storeKycSessionUrl = (
   const storage = getStorage();
   if (!storage || !sessionUrl.trim()) return;
 
-  storage.setItem(
-    buildKycSessionStorageKey(scope, userId),
-    sessionUrl.trim(),
-  );
+  storage.setItem(buildKycSessionStorageKey(scope, userId), sessionUrl.trim());
 };
 
 export const clearStoredKycSessionUrl = (
