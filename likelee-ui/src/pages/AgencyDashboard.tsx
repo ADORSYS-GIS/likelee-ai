@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
@@ -17081,6 +17081,14 @@ export default function AgencyDashboard() {
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
+  const [brandRequestContext, setBrandRequestContext] = useState<{
+    brandId: string;
+    brandName?: string;
+    brandEmail?: string;
+    licensingRequestId?: string;
+    talentId?: string;
+    talentName?: string;
+  } | null>(null);
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
@@ -17895,6 +17903,15 @@ export default function AgencyDashboard() {
   };
 
   // Wrapper functions to update both state and URL params
+  const tabsWithSubTabs = new Set([
+    "roster",
+    "licensing",
+    "protection",
+    "analytics",
+    "bookings",
+    "accounting",
+    "settings",
+  ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
     setAgencyModeState(mode);
     setSearchParams(
@@ -17914,13 +17931,25 @@ export default function AgencyDashboard() {
   }, [agencyMode, activeTab]);
 
   const setActiveTab = (tab: string) => {
-    setActiveTabState(tab);
+    startTransition(() => {
+      setActiveTabState(tab);
+    });
+    const resolvedSubTab = tabsWithSubTabs.has(tab)
+      ? getDefaultSubTab(tab)
+      : "";
+    if (resolvedSubTab) {
+      startTransition(() => {
+        setActiveSubTabState(resolvedSubTab);
+      });
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
         next.set("tab", tab);
-        if (!next.get("subTab")) {
-          next.set("subTab", getDefaultSubTab(tab));
+        if (resolvedSubTab) {
+          next.set("subTab", resolvedSubTab);
+        } else {
+          next.delete("subTab");
         }
         return next;
       },
@@ -17930,7 +17959,9 @@ export default function AgencyDashboard() {
 
   const setActiveSubTab = (subTab: string) => {
     const normalizedSubTab = normalizeSubTab(subTab);
-    setActiveSubTabState(normalizedSubTab);
+    startTransition(() => {
+      setActiveSubTabState(normalizedSubTab);
+    });
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -17943,8 +17974,10 @@ export default function AgencyDashboard() {
 
   const setActiveView = (tab: string, subTab?: string) => {
     const resolvedSubTab = normalizeSubTab(subTab) || getDefaultSubTab(tab);
-    setActiveTabState(tab);
-    setActiveSubTabState(resolvedSubTab);
+    startTransition(() => {
+      setActiveTabState(tab);
+      setActiveSubTabState(resolvedSubTab);
+    });
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -18113,15 +18146,10 @@ export default function AgencyDashboard() {
             icon: FileText,
             subItems: [
               "Licensing Requests",
-              "Brand Connections",
               "License Submissions",
               "Active Licenses",
               "License Templates",
             ],
-            badges:
-              pendingBrandConnectionCount > 0
-                ? { "Brand Connections": pendingBrandConnectionCount }
-                : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
@@ -18848,7 +18876,14 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && (
-              <LicensingRequestsView isSportsAgency={isSportsAgency} />
+              <LicensingRequestsView
+                isSportsAgency={isSportsAgency}
+                onBrandRequestAccepted={(ctx) => {
+                  console.log("Brand request accepted, context:", ctx);
+                  setBrandRequestContext(ctx);
+                  setActiveView("licensing", "License Templates");
+                }}
+              />
             )}
           {activeTab === "licensing" &&
             activeSubTab === "Brand Connections" && <BrandConnectionsView />}
@@ -18865,7 +18900,26 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && (
-              <LicenseTemplatesTab isSportsAgency={isSportsAgency} />
+              <LicenseTemplatesTab
+                isSportsAgency={isSportsAgency}
+                brandRequestContext={
+                  brandRequestContext
+                    ? {
+                        brand_id: brandRequestContext.brandId,
+                        brand_name: brandRequestContext.brandName,
+                        brand_email: brandRequestContext.brandEmail,
+                        licensing_request_id:
+                          brandRequestContext.licensingRequestId,
+                        talent_id: brandRequestContext.talentId,
+                        talent_name: brandRequestContext.talentName,
+                      }
+                    : null
+                }
+                onBrandRequestContextHandled={() => {
+                  console.log("Brand request context handled, clearing");
+                  setBrandRequestContext(null);
+                }}
+              />
             )}
           {activeTab === "protection" &&
             activeSubTab === "Protect & Usage" &&
