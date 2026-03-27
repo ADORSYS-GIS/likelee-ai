@@ -54,7 +54,16 @@ export const getFriendlyErrorMessage = (
   if (message.includes("Email not confirmed")) {
     return t
       ? t("organizationSignup.errors.emailNotConfirmed")
-      : "Please verify your email address. Check your inbox for a confirmation link.";
+      : "Please verify your email address. Check your inbox for a 6-digit verification code.";
+  }
+  if (
+    message.includes("Token has expired or is invalid") ||
+    message.includes("Invalid token") ||
+    message.includes("invalid otp") ||
+    message.includes("otp_expired") ||
+    message.includes("otp_disabled")
+  ) {
+    return "That verification code is invalid or has expired. Request a new code and try again.";
   }
   if (message.includes("Rate limit exceeded")) {
     return t

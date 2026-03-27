@@ -39,6 +39,8 @@ function extractErrorMessage(errorData: any): string {
       return (
         err?.error ||
         err?.message ||
+        err?.msg ||
+        err?.error_description ||
         err?.details ||
         "Something went wrong. Please try again."
       );
@@ -48,6 +50,8 @@ function extractErrorMessage(errorData: any): string {
   return (
     body?.error ||
     body?.message ||
+    body?.msg ||
+    body?.error_description ||
     body?.details ||
     "Something went wrong. Please try again."
   );

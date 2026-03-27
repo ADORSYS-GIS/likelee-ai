@@ -4,21 +4,52 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
+import { supabase } from "@/lib/supabase";
+import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import {
+  normalizeEmail,
+  resendSignupEmailOtp,
+  verifyEmailOtpCode,
+} from "@/lib/emailOtp";
 
 export default function Register() {
-  const { register, initialized, authenticated } = useAuth();
+  const { initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [name, setName] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [otpOpen, setOtpOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const creatorType = React.useMemo(
     () => new URLSearchParams(location.search).get("type"),
     [location.search],
   );
+
+  const requireSupabase = () => {
+    if (!supabase) {
+      throw new Error("Supabase not configured");
+    }
+
+    return supabase;
+  };
+
+  const handleVerifyOtp = async (code: string) => {
+    const client = requireSupabase();
+    await verifyEmailOtpCode(client, {
+      email,
+      token: code,
+      purpose: "signup",
+    });
+    setOtpOpen(false);
+  };
+
+  const handleResendOtp = async () => {
+    const client = requireSupabase();
+    await resendSignupEmailOtp(client, email);
+  };
 
   React.useEffect(() => {
     // If a creator type is supplied, delegate the entire flow to ReserveProfile (Step 1 handles signup)
@@ -60,13 +91,32 @@ export default function Register() {
             setError(null);
             setLoading(true);
             try {
-              await register(email, password, name);
-              if (creatorType) {
-                navigate(
-                  `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`,
-                );
-              } else {
-                navigate("/CreatorDashboard");
+              const client = requireSupabase();
+              const { data, error } = await client.auth.signUp({
+                email: normalizeEmail(email),
+                password,
+                options: {
+                  data: {
+                    full_name: name || null,
+                    role: "creator",
+                  },
+                },
+              });
+              if (error) {
+                const lower = String(error.message || "").toLowerCase();
+                if (
+                  lower.includes("already registered") ||
+                  lower.includes("already exists")
+                ) {
+                  await handleResendOtp();
+                  setOtpOpen(true);
+                  return;
+                }
+                throw error;
+              }
+
+              if (!data.session) {
+                setOtpOpen(true);
               }
             } catch (err: any) {
               setError(getFriendlyErrorMessage(err));
@@ -127,6 +177,28 @@ export default function Register() {
           </button>
         </form>
       )}
+      <EmailOtpDialog
+        open={otpOpen}
+        onOpenChange={setOtpOpen}
+        email={normalizeEmail(email)}
+        title="Verify your email"
+        description="Enter the 6-digit code from your inbox to finish creating your account without leaving this page."
+        helperText="Use resend if the code takes a moment to arrive."
+        verifyLabel="Create account"
+        onVerify={handleVerifyOtp}
+        onResend={handleResendOtp}
+        theme={{
+          headerClassName: "bg-gradient-to-r from-slate-900 to-black text-white",
+          headerTitleClassName: "text-white",
+          headerDescriptionClassName: "text-white/80",
+          iconWrapperClassName:
+            "border border-white/20 bg-white/10 text-white",
+          infoClassName: "border-slate-200 bg-slate-50 text-slate-950",
+          primaryButtonClassName: "bg-black text-white hover:bg-slate-800",
+          activeSlotClassName: "border-black ring-black/20",
+          resendButtonClassName: "text-slate-700 hover:text-slate-900",
+        }}
+      />
     </div>
   );
 }
