@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import {
   getAgencyTalents,
   getAgencyClients,
@@ -64,6 +65,25 @@ export const NewBookingModal = ({
   const { toast } = useToast();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+
+  const getBookingCreateErrorMessage = (err: any) => {
+    const body = err?.response?.data || err?.data;
+    const code =
+      body?.code ||
+      body?.error_code ||
+      body?.error?.code ||
+      err?.code ||
+      err?.error?.code;
+    if (String(code || "").trim() === "PGRST204") {
+      return "There was an issue processing your booking. Please verify your details and try again.";
+    }
+
+    const parsed = parseBackendError(err);
+    if (parsed && /\bPGRST204\b/i.test(parsed)) {
+      return "There was an issue processing your booking. Please verify your details and try again.";
+    }
+    return parsed;
+  };
   const [talents, setTalents] = useState<any[]>([]);
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
@@ -412,11 +432,7 @@ export const NewBookingModal = ({
       setTimeout(() => onOpenChange(false), 800);
     } catch (e: any) {
       const status = e?.status || e?.response?.status || e?.statusCode;
-      const body = e?.response?.data || e?.data || {};
-      const msg =
-        (typeof body === "string" && body) ||
-        (typeof e === "string" ? e : e?.message) ||
-        "Failed to create booking";
+      const msg = getBookingCreateErrorMessage(e) || "Failed to create booking";
       const isUnavailable =
         status === 409 ||
         /409/.test(String(msg)) ||

@@ -18,6 +18,8 @@ import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
+import { parseBackendError } from "@/utils/errorParser";
+
 import {
   LayoutDashboard,
   Users,
@@ -189,7 +191,6 @@ import {
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
-import { parseBackendError } from "@/utils/errorParser";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -17928,8 +17929,14 @@ export default function AgencyDashboard() {
         toast({ title: "Email notification", description: msg });
       }
     } catch (e: any) {
+      const parsed = parseBackendError(e);
+      const body = e?.response?.data || e?.data;
+      const code =
+        body?.code || body?.error_code || body?.error?.code || e?.code || "";
       const msg =
-        typeof e === "string" ? e : e?.message || "Failed to create booking";
+        String(code).trim() === "PGRST204" || /\bPGRST204\b/i.test(parsed)
+          ? "There was an issue processing your booking. Please verify your details and try again."
+          : parsed || "Failed to create booking";
       if (/409/.test(msg) || /unavailable/i.test(msg)) {
         toast({
           title: `${isSportsAgency ? "Athlete" : "Talent"} unavailable`,
