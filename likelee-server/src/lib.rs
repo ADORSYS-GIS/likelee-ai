@@ -16,6 +16,7 @@ pub mod bookings_campaigns;
 pub mod brand_campaigns;
 pub mod brand_license_requests;
 pub mod brands;
+pub mod cache;
 pub mod calendly;
 pub mod campaigns;
 pub mod catalogs;

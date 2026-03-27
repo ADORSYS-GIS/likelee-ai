@@ -13,6 +13,13 @@ pub fn build_router(state: AppState) -> Router {
         .allow_methods(Any)
         .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
+    // Cache middleware layer - initializes L1 request cache
+    let cache_layer = crate::cache::cache_layer;
+    let idempotency_layer = crate::cache::idempotency_layer;
+
+    let cache_idempotency = state.cache_idempotency.clone();
+    let cache_metrics = state.cache_metrics.clone();
+
     Router::new()
         .route("/api/health", get(crate::health::health))
         // --- Talent Portal ---
@@ -1114,4 +1121,8 @@ pub fn build_router(state: AppState) -> Router {
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)
+        .layer(axum::Extension(cache_idempotency))
+        .layer(axum::Extension(cache_metrics))
+        .layer(axum::middleware::from_fn(idempotency_layer))
+        .layer(axum::middleware::from_fn(cache_layer))
 }

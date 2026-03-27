@@ -16,6 +16,7 @@ import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 import {
   LayoutDashboard,
@@ -17173,90 +17174,116 @@ export default function AgencyDashboard() {
     });
   };
 
-  const rosterQuery = useQuery({
+  const rosterQuery = useIndexedDbQuery({
     queryKey: ["agency-roster", user?.id],
     queryFn: async () => {
       const resp = await getAgencyRoster();
       return (resp as any) || null;
     },
+    agencyId: user?.id,
+    maxAge: 5 * 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,
   });
 
-  const dashboardOverviewQuery = useQuery({
+  const dashboardOverviewQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-overview", user?.id],
     queryFn: async () => {
       const resp = await getAgencyDashboardOverview();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 1000,
   });
 
-  const talentPerformanceQuery = useQuery({
+  const talentPerformanceQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-talent-performance", user?.id],
     queryFn: async () => {
       const resp = await getAgencyTalentPerformance();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 1000,
   });
 
-  const revenueBreakdownQuery = useQuery({
+  const revenueBreakdownQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-revenue-breakdown", user?.id],
     queryFn: async () => {
       const resp = await getAgencyRevenueBreakdown();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 5 * 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,
   });
 
-  const licensingPipelineQuery = useQuery({
+  const licensingPipelineQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-licensing-pipeline", user?.id],
     queryFn: async () => {
       const resp = await getAgencyLicensingPipeline();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 1000,
   });
 
-  const recentActivityQuery = useQuery({
+  const recentActivityQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-recent-activity", user?.id],
     queryFn: async () => {
       const resp = await getAgencyRecentActivity();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 1000,
   });
 
-  const agencyProfileQuery = useQuery({
+  const agencyProfileQuery = useIndexedDbQuery({
     queryKey: ["agency-profile", user?.id],
     queryFn: async () => {
       const resp = await getAgencyProfile();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 5 * 60 * 1000, // 5 minutes - profile rarely changes
+    syncInterval: 5 * 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
+    refetchOnWindowFocus: false,
   });
 
-  const licensingRequestsCountQuery = useQuery({
+  const licensingRequestsCountQuery = useIndexedDbQuery({
     queryKey: ["agency-licensing-requests", user?.id],
     queryFn: async () => {
       const resp = await getAgencyLicensingRequests();
       return resp as any;
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 1000,
   });
 
   const pendingLicensingRequestsCount = useMemo(() => {
@@ -17282,7 +17309,7 @@ export default function AgencyDashboard() {
     refetchInterval: 15 * 1000,
   });
 
-  const brandConnectionOffersQuery = useQuery({
+  const brandConnectionOffersQuery = useIndexedDbQuery({
     queryKey: ["agency-campaign-offers-my", user?.id],
     queryFn: async () => {
       const resp = await base44.get<{ offers?: any[] }>(
@@ -17291,11 +17318,15 @@ export default function AgencyDashboard() {
       );
       return Array.isArray(resp?.offers) ? resp.offers : [];
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
-    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  const brandConnectionJobInvitesQuery = useQuery({
+  const brandConnectionJobInvitesQuery = useIndexedDbQuery({
     queryKey: ["agency-job-invites", user?.id],
     queryFn: async () => {
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
@@ -17312,11 +17343,15 @@ export default function AgencyDashboard() {
         );
       });
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 30 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
-    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  const brandConnectionFeedbackQuery = useQuery({
+  const brandConnectionFeedbackQuery = useIndexedDbQuery({
     queryKey: ["agency-package-feedback", user?.id],
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
@@ -17324,8 +17359,12 @@ export default function AgencyDashboard() {
       );
       return Array.isArray(resp?.items) ? resp.items : [];
     },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
     enabled: !!user?.id,
-    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const pendingBrandConnectionCount = useMemo(() => {
