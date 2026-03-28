@@ -14,10 +14,13 @@ pub struct CreatorAgencyInvite {
     pub agency_id: String,
     pub creator_id: String,
     pub status: String,
+    pub contract_id: Option<String>,
     pub created_at: Option<String>,
     pub responded_at: Option<String>,
     pub updated_at: Option<String>,
     pub agencies: Option<CreatorAgencyInviteAgency>,
+    pub marketplace_contract:
+        Option<crate::agency_marketplace_contracts::MarketplaceContractSummary>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -40,11 +43,13 @@ pub async fn list_invites(
 ) -> Result<Json<ListInvitesResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let creator_id = resolve_effective_creator_id(&state, &user).await?;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_creator(&state, &creator_id)
+        .await?;
 
     let resp = state
         .pg
         .from("creator_agency_invites")
-        .select("id,agency_id,creator_id,status,created_at,responded_at,updated_at,agencies(agency_name,logo_url,email,website)")
+        .select("id,agency_id,creator_id,status,contract_id,created_at,responded_at,updated_at,agencies(agency_name,logo_url,email,website)")
         .eq("creator_id", &creator_id)
         .order("created_at.desc")
         .execute()
@@ -63,11 +68,21 @@ pub async fn list_invites(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let invites: Vec<CreatorAgencyInvite> = match v {
+    let mut invites: Vec<CreatorAgencyInvite> = match v {
         serde_json::Value::Array(_) => serde_json::from_value(v)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
         _ => vec![],
     };
+
+    for invite in &mut invites {
+        invite.marketplace_contract =
+            crate::agency_marketplace_contracts::get_latest_contract_for_pair(
+                &state,
+                &invite.agency_id,
+                &invite.creator_id,
+            )
+            .await;
+    }
 
     Ok(Json(ListInvitesResponse {
         status: "ok".to_string(),
@@ -87,6 +102,46 @@ pub async fn decline_invite(
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let creator_id = resolve_effective_creator_id(&state, &user).await?;
+
+    let contract_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("invite_id", &id)
+        .order("created_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_text = contract_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&contract_text).unwrap_or_default();
+    if let Some(contract_row) = contract_rows.first() {
+        let _ = state
+            .pg
+            .from("agency_creator_marketplace_contracts")
+            .eq(
+                "id",
+                contract_row
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(""),
+            )
+            .update(
+                json!({
+                    "status": "declined",
+                    "docuseal_status": "declined",
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                    "last_synced_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+    }
 
     let payload = json!({
         "status": "declined",
@@ -141,18 +196,53 @@ async fn upsert_agency_talent_connection(
         "status": status,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
-    let resp = state
+
+    let existing_resp = state
         .pg
         .from("agency_talent_relationships")
-        .upsert(payload.to_string())
-        .on_conflict("agency_id,talent_id")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("creator_id", creator_id)
+        .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = resp.status();
-    if !status.is_success() {
+    let existing_status = existing_resp.status();
+    let existing_text = existing_resp.text().await.unwrap_or_default();
+    if !existing_status.is_success() {
+        return Err(sanitize_db_error(existing_status.as_u16(), existing_text));
+    }
+    let existing_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&existing_text).unwrap_or_default();
+
+    let resp = if let Some(existing_id) = existing_rows
+        .first()
+        .and_then(|row| row.get("id"))
+        .and_then(|v| v.as_str())
+        .filter(|id| !id.trim().is_empty())
+    {
+        state
+            .pg
+            .from("agency_talent_relationships")
+            .eq("id", existing_id)
+            .update(payload.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    } else {
+        state
+            .pg
+            .from("agency_talent_relationships")
+            .upsert(payload.to_string())
+            .on_conflict("agency_id,talent_id")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    };
+    let resp_status = resp.status();
+    if !resp_status.is_success() {
         let err = resp.text().await.unwrap_or_default();
-        return Err(sanitize_db_error(status.as_u16(), err));
+        return Err(sanitize_db_error(resp_status.as_u16(), err));
     }
     Ok(())
 }
@@ -164,6 +254,37 @@ pub async fn accept_invite(
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let creator_id = resolve_effective_creator_id(&state, &user).await?;
+
+    let contract_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("invite_id", &id)
+        .order("created_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_text = contract_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&contract_text).unwrap_or_default();
+    if let Some(contract_row) = contract_rows.first() {
+        let synced =
+            crate::agency_marketplace_contracts::sync_contract_for_row(&state, contract_row)
+                .await?;
+        if synced.status != "active" {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "This invitation requires contract signature before activation.".to_string(),
+            ));
+        }
+        return Ok(Json(ActionResponse {
+            status: "ok".to_string(),
+        }));
+    }
 
     // Load invite to get agency_id and ensure it belongs to this creator.
     let invite_resp = state
@@ -375,6 +496,8 @@ pub async fn list_connections(
 ) -> Result<Json<ListConnectionsResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let creator_id = resolve_effective_creator_id(&state, &user).await?;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_creator(&state, &creator_id)
+        .await?;
 
     let resp = state
         .pg
