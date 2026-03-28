@@ -32,6 +32,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
+import MarketplaceConnectContractModal from "@/components/marketplace/MarketplaceConnectContractModal";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 export type MarketplaceProfile = {
@@ -94,6 +95,7 @@ type MarketplaceSectionProps = {
     profile: MarketplaceProfile,
     details?: MarketplaceProfileDetails,
   ) => void;
+  enableAgencyContractConnect?: boolean;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -162,6 +164,7 @@ export function MarketplaceSection({
   queryScope = "scouting-marketplace",
   showRequestLicense = false,
   onRequestLicense,
+  enableAgencyContractConnect = false,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -176,6 +179,8 @@ export function MarketplaceSection({
     Set<string>
   >(new Set());
   const [selectedProfile, setSelectedProfile] =
+    useState<MarketplaceProfile | null>(null);
+  const [contractConnectProfile, setContractConnectProfile] =
     useState<MarketplaceProfile | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [profileType, setProfileType] = useState<
@@ -194,6 +199,9 @@ export function MarketplaceSection({
     "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
   const debouncedSearch = useDebounce(searchInput, 300);
   const detailsOpen = !!selectedProfile;
+  const selectedProfileId = String(selectedProfile?.id || "").trim();
+  const selectedProfileType = selectedProfile?.profile_type || entityType;
+  const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -236,22 +244,19 @@ export function MarketplaceSection({
   });
 
   const detailsQuery = useIndexedDbQuery<MarketplaceProfileDetails>({
-    queryKey: [
-      `${queryScope}-details`,
-      selectedProfile?.profile_type,
-      selectedProfile?.id,
-    ],
-    queryFn: async () =>
-      await base44.get<MarketplaceProfileDetails>(
-        detailsEndpointBuilder(
-          selectedProfile?.profile_type || entityType,
-          selectedProfile?.id || "",
-        ),
-      ),
+    queryKey: [`${queryScope}-details`, selectedProfileType, selectedProfileId],
+    queryFn: async () => {
+      if (!canFetchDetails) {
+        throw new Error("Missing marketplace profile id for details request.");
+      }
+      return await base44.get<MarketplaceProfileDetails>(
+        detailsEndpointBuilder(selectedProfileType, selectedProfileId),
+      );
+    },
     maxAge: 30 * 1000, // 30 seconds
     syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!selectedProfile,
+    enabled: canFetchDetails,
   });
 
   useEffect(() => {
@@ -794,6 +799,19 @@ export function MarketplaceSection({
                               new Set(prev).add(profileKey),
                             );
                             try {
+                              if (
+                                enableAgencyContractConnect &&
+                                profile.profile_type === "creator"
+                              ) {
+                                setRequestingConnectKeys((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(profileKey);
+                                  return next;
+                                });
+                                setContractConnectProfile(profile);
+                                return;
+                              }
+
                               const result: any = await base44.post(
                                 connectEndpoint,
                                 {
@@ -884,6 +902,26 @@ export function MarketplaceSection({
           </div>
         )}
       </div>
+
+      <MarketplaceConnectContractModal
+        open={!!contractConnectProfile}
+        profile={contractConnectProfile}
+        onClose={() => setContractConnectProfile(null)}
+        onSuccess={(contract) => {
+          if (!contractConnectProfile) return;
+          const profileKey = `${contractConnectProfile.profile_type}:${contractConnectProfile.id}`;
+          setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+          toast({
+            title: "Contract sent",
+            description: contract?.agency_sign_url
+              ? "The contract has been sent for signature and the agency signing link opened in a new tab."
+              : "The contract has been sent for signature.",
+          });
+          queryClient.invalidateQueries({
+            queryKey: [queryScope],
+          });
+        }}
+      />
 
       <Sheet
         open={detailsOpen}
