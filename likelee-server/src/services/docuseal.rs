@@ -57,7 +57,7 @@ pub struct CreateSubmissionResponse {
     pub submitters: Vec<SubmitterResponse>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SubmitterResponse {
     pub id: i32,
     pub slug: String,
