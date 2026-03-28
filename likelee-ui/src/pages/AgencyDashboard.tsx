@@ -10388,6 +10388,7 @@ const MarketplaceTab = () => (
     subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
+    enableAgencyContractConnect
   />
 );
 
