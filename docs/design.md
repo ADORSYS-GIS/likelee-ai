@@ -424,7 +424,7 @@ Configuration variables:
   - DocuSeal app URL for document viewing (default `https://docuseal.co`).
 - `DOCUSEAL_WEBHOOK_URL`
   - DocuSeal webhook URL used for **scouting offers**.
-  - Campaign and licensing webhooks use **separate endpoints** (see below).
+  - Campaign, licensing, and marketplace creator contracts use **separate endpoints** (see below).
 - `DOCUSEAL_USER_EMAIL`
   - DocuSeal account email.
 - `DOCUSEAL_MASTER_TEMPLATE_ID`
@@ -777,6 +777,7 @@ Brands can create campaigns, make offers to talent, and manage deliverables.
   - Scouting offers: `POST /webhooks/docuseal`
   - Campaign offer contracts: `POST /webhooks/docuseal/campaign-contracts`
   - Licensing contracts: `POST /api/webhooks/licenseContract`
+  - Marketplace creator contracts: `POST /webhooks/docuseal/marketplace-contracts`
 
 ---
 
@@ -803,9 +804,52 @@ Agencies can invite talent to join their roster:
 - `GET /api/creator/agency-connections` - List agency connections
 - `POST /api/creator/agency-connections/:agency_id/disconnect` - Disconnect from agency
 
+### Marketplace Contract-Backed Agency Connect
+
+- Agencies can start a creator connection from the marketplace `Connect` action.
+- The agency first enters locked commercial terms such as `commission_rate`, `valid_from`, and `valid_until`.
+- Those values are stored before contract rendering and injected into the contract body placeholders.
+- The first submit creates a draft marketplace contract plus a DocuSeal template.
+- The agency then uses the embedded DocuSeal builder to place signature fields and finalize the send.
+- After the creator signs, `POST /webhooks/docuseal/marketplace-contracts` updates the marketplace contract row and activates the creator-agency connection automatically.
+- Creator Dashboard, Talent Portal, and Agency Roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
+
+#### State Transitions and Table Ownership
+
+- `agency_creator_marketplace_contracts`
+  - Stores the contract lifecycle and signed-document metadata.
+  - This is the legal workflow table, not the final connection table.
+  - Main statuses: `draft`, `pending_signature`, `active`, `expired`, `declined`, `voided`.
+- `creator_agency_invites`
+  - Stores invite/request state for creator-facing pending invitations.
+  - A marketplace contract-backed invite starts as `pending` and is updated to `accepted` once the contract activates.
+- `agency_talent_relationships`
+  - This is the authoritative agency-to-creator connection table used for connected-state reads.
+  - When a marketplace contract becomes active, this row is created or updated to `status = active`.
+- `agency_users`
+  - Ensures the creator exists as an active talent row inside the agency account so roster views and downstream agency features work correctly.
+
+#### Completion Flow
+
+1. Agency clicks marketplace `Connect`.
+2. The backend creates:
+   - a draft row in `agency_creator_marketplace_contracts`
+   - a pending row in `creator_agency_invites`
+3. The agency uses embedded DocuSeal to place signature fields and send the contract.
+4. After both parties sign, the marketplace DocuSeal webhook `POST /webhooks/docuseal/marketplace-contracts` updates the contract row to `active`.
+5. Activation logic then:
+   - updates `creator_agency_invites.status` to `accepted`
+   - ensures `agency_users.status = active`
+   - upserts `agency_talent_relationships.status = active`
+6. UI surfaces then treat the pair as connected:
+   - Creator Dashboard connected agencies
+   - Talent Portal agency connections
+   - Agency roster
+   - Agency marketplace creator cards/details
+
 ### Implementation
 
-- **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`
+- **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`, `likelee-server/src/agency_marketplace_contracts.rs`
 
 ---
 
