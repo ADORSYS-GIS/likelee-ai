@@ -9,6 +9,7 @@ import {
   disconnectCreatorAgencyConnection,
   listCreatorAgencyConnections,
   listCreatorAgencyInvites,
+  syncCreatorAgencyMarketplaceContract,
   type CreatorAgencyConnection,
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
@@ -5797,7 +5798,10 @@ export default function CreatorDashboard() {
   );
 
   const renderAgencyConnection = () => {
-    const pending = agencyInvites.filter((i) => i.status === "pending");
+    const pending = agencyInvites.filter((i) => {
+      const contractStatus = String(i?.marketplace_contract?.status || "").toLowerCase();
+      return String(i?.status || "").toLowerCase() === "pending" && contractStatus !== "active";
+    });
     const isTalent =
       (profile as any)?.role === "talent" || agencyConnections.length > 0;
     const unseenAssetRequestCount = assetRequests.filter(
@@ -6031,115 +6035,220 @@ export default function CreatorDashboard() {
                       key={inv.id}
                       className="p-4 border border-gray-200 rounded-lg space-y-3"
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="min-w-0 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                            {inv?.agencies?.logo_url ? (
-                              <img
-                                src={inv.agencies.logo_url}
-                                alt={inv.agencies.agency_name || "Agency"}
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <Building2 className="w-5 h-5 text-gray-500" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              {inv?.agencies?.agency_name
-                                ? `Invitation from ${inv.agencies.agency_name}`
-                                : "Invitation from agency"}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {inv?.agencies?.email ||
-                                inv?.agencies?.website ||
-                                "Agency profile available on request"}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Button
-                            variant="outline"
-                            className="border-gray-200"
-                            onClick={async () => {
-                              try {
-                                const token = String(inv?.token || "");
-                                if (token) {
-                                  navigate(
-                                    `/invite/agency/${encodeURIComponent(token)}`,
-                                  );
-                                  return;
-                                }
+                      {(() => {
+                        const contract = inv.marketplace_contract;
+                        const requiresSignature =
+                          contract &&
+                          contract.status !== "active" &&
+                          contract.status !== "expired";
+                        return (
+                          <>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="min-w-0 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                  {inv?.agencies?.logo_url ? (
+                                    <img
+                                      src={inv.agencies.logo_url}
+                                      alt={inv.agencies.agency_name || "Agency"}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  ) : (
+                                    <Building2 className="w-5 h-5 text-gray-500" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-gray-900 truncate">
+                                    {inv?.agencies?.agency_name
+                                      ? `Invitation from ${inv.agencies.agency_name}`
+                                      : "Invitation from agency"}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate mt-1">
+                                    {inv?.agencies?.email ||
+                                      inv?.agencies?.website ||
+                                      "Agency profile available on request"}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Button
+                                  variant="outline"
+                                  className="border-gray-200"
+                                  onClick={async () => {
+                                    try {
+                                      const token = String(inv?.token || "");
+                                      if (token) {
+                                        navigate(
+                                          `/invite/agency/${encodeURIComponent(token)}`,
+                                        );
+                                        return;
+                                      }
 
-                                await declineCreatorAgencyInvite(inv.id);
-                                setAgencyInvites((prev) =>
-                                  prev.map((p) =>
-                                    p.id === inv.id
-                                      ? { ...p, status: "declined" }
-                                      : p,
-                                  ),
-                                );
-                                toast({ title: "Invitation declined" });
-                              } catch (e: any) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Failed to decline",
-                                  description:
-                                    "We could not decline this invitation right now. Please try again.",
-                                });
-                              }
-                            }}
-                          >
-                            Decline
-                          </Button>
-                          <Button
-                            className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                            onClick={async () => {
-                              try {
-                                const token = String(inv?.token || "");
-                                if (token) {
-                                  navigate(
-                                    `/invite/agency/${encodeURIComponent(token)}`,
-                                  );
-                                  return;
-                                }
+                                      await declineCreatorAgencyInvite(inv.id);
+                                      setAgencyInvites((prev) =>
+                                        prev.map((p) =>
+                                          p.id === inv.id
+                                            ? { ...p, status: "declined" }
+                                            : p,
+                                        ),
+                                      );
+                                      toast({ title: "Invitation declined" });
+                                    } catch (e: any) {
+                                      toast({
+                                        variant: "destructive",
+                                        title: "Failed to decline",
+                                        description:
+                                          "We could not decline this invitation right now. Please try again.",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Decline
+                                </Button>
+                                {requiresSignature ? (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      className="border-cyan-200 text-cyan-700"
+                                      onClick={async () => {
+                                        try {
+                                          if (contract?.creator_sign_url) {
+                                            window.open(
+                                              contract.creator_sign_url,
+                                              "_blank",
+                                              "noopener,noreferrer",
+                                            );
+                                          }
+                                          await syncCreatorAgencyMarketplaceContract(
+                                            contract?.id || "",
+                                          );
+                                          const [connections, invites] =
+                                            await Promise.all([
+                                              listCreatorAgencyConnections(),
+                                              listTalentAgencyInvites().then(
+                                                (r: any) =>
+                                                  (r?.invites as any[]) || [],
+                                              ),
+                                            ]);
+                                          setAgencyConnections(connections);
+                                          setAgencyInvites(invites);
+                                        } catch (e: any) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Failed to open contract",
+                                            description:
+                                              "We could not refresh this contract right now. Please try again.",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Review contract
+                                    </Button>
+                                    <Button
+                                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                      onClick={async () => {
+                                        try {
+                                          await syncCreatorAgencyMarketplaceContract(
+                                            contract?.id || "",
+                                          );
+                                          const [connections, invites] =
+                                            await Promise.all([
+                                              listCreatorAgencyConnections(),
+                                              listTalentAgencyInvites().then(
+                                                (r: any) =>
+                                                  (r?.invites as any[]) || [],
+                                              ),
+                                            ]);
+                                          setAgencyConnections(connections);
+                                          setAgencyInvites(invites);
+                                          toast({
+                                            title: "Contract synced",
+                                            description:
+                                              "We refreshed the contract status from DocuSeal.",
+                                          });
+                                        } catch (e: any) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Failed to sync contract",
+                                            description:
+                                              "We could not sync the contract right now. Please try again.",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Sync
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    onClick={async () => {
+                                      try {
+                                        const token = String(
+                                          (inv as any)?.token || "",
+                                        );
+                                        if (token) {
+                                          navigate(
+                                            `/invite/agency/${encodeURIComponent(token)}`,
+                                          );
+                                          return;
+                                        }
 
-                                await acceptCreatorAgencyInvite(inv.id);
-                                const [connections] = await Promise.all([
-                                  listCreatorAgencyConnections(),
-                                ]);
-                                setAgencyConnections(connections);
-                                setAgencyInvites((prev) =>
-                                  prev.map((p) =>
-                                    p.id === inv.id
-                                      ? { ...p, status: "accepted" }
-                                      : p,
-                                  ),
-                                );
-                                toast({
-                                  title: "Invitation accepted",
-                                  description:
-                                    "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
-                                });
-                              } catch (e: any) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Failed to accept",
-                                  description:
-                                    "We could not accept this invitation right now. Please try again.",
-                                });
-                              }
-                            }}
-                          >
-                            Accept
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
-                        <span className="font-semibold">Likelee notice:</span>{" "}
-                        This agency found your public profile in marketplace and
-                        sent a connection invitation.
-                      </div>
+                                        await acceptCreatorAgencyInvite(inv.id);
+                                        const [connections] = await Promise.all(
+                                          [listCreatorAgencyConnections()],
+                                        );
+                                        setAgencyConnections(connections);
+                                        setAgencyInvites((prev) =>
+                                          prev.map((p) =>
+                                            p.id === inv.id
+                                              ? { ...p, status: "accepted" }
+                                              : p,
+                                          ),
+                                        );
+                                        toast({
+                                          title: "Invitation accepted",
+                                          description:
+                                            "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
+                                        });
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to accept",
+                                          description:
+                                            "We could not accept this invitation right now. Please try again.",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Accept
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                              <span className="font-semibold">
+                                Likelee notice:
+                              </span>{" "}
+                              This agency found your public profile in
+                              marketplace and sent a connection invitation.
+                            </div>
+                            {contract ? (
+                              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                                Contract status:{" "}
+                                <span className="font-semibold capitalize">
+                                  {contract.status}
+                                </span>
+                                {contract.commission_rate != null
+                                  ? ` • ${contract.commission_rate}% commission`
+                                  : ""}
+                                {contract.valid_until
+                                  ? ` • valid until ${contract.valid_until}`
+                                  : ""}
+                              </div>
+                            ) : null}
+                          </>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
