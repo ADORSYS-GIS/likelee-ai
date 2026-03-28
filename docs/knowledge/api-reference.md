@@ -92,7 +92,8 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 |--------|------|-------------|
 | GET | `/api/marketplace/search` | Search profiles |
 | GET | `/api/marketplace/:type/:id/details` | Get profile details |
-| POST | `/api/marketplace/connect` | Request connection |
+| POST | `/api/marketplace/connect` | Create draft marketplace contract and DocuSeal template for a creator connection |
+| POST | `/api/marketplace/contracts/:id/finalize` | Finalize embedded DocuSeal builder work and send the marketplace contract for signature |
 
 ### KYC
 
@@ -133,6 +134,18 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 | POST | `/webhooks/docuseal` | DocuSeal webhook for scouting offers |
 | POST | `/webhooks/docuseal/campaign-contracts` | DocuSeal webhook for campaign offer contracts |
 | POST | `/api/webhooks/licenseContract` | DocuSeal webhook for licensing contracts |
+| POST | `/webhooks/docuseal/marketplace-contracts` | DocuSeal webhook for agency marketplace creator contracts |
+
+### Marketplace Contract Connection State
+
+- `agency_creator_marketplace_contracts` tracks the legal contract workflow.
+- `creator_agency_invites` tracks creator-facing invite state.
+- `agency_talent_relationships` is the final connected/not-connected source of truth for marketplace creator connections after signature.
+- After a successful marketplace contract completion event, the backend activates the relationship by updating:
+  - the marketplace contract row to `active`
+  - the invite row to `accepted`
+  - the agency talent relationship row to `active`
+  - the associated `agency_users` talent row to `active`
 
 ## Error Codes
 
