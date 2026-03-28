@@ -12,6 +12,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use tracing::{error, info};
 
 const REQUIRED_PLACEHOLDERS: [&str; 3] = ["{commission_rate}", "{valid_from}", "{valid_until}"];
 
@@ -22,6 +23,8 @@ pub struct MarketplaceContractSummary {
     pub commission_rate: Option<f64>,
     pub valid_from: Option<String>,
     pub valid_until: Option<String>,
+    pub template_name: Option<String>,
+    pub docuseal_template_id: Option<i32>,
     pub docuseal_status: Option<String>,
     pub creator_sign_url: Option<String>,
     pub agency_sign_url: Option<String>,
@@ -31,6 +34,18 @@ pub struct MarketplaceContractSummary {
 #[derive(Debug, Deserialize)]
 pub struct SyncContractPath {
     pub id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FinalizeContractPath {
+    pub id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    pub timestamp: String,
+    pub data: serde_json::Value,
 }
 
 fn default_contract_template() -> String {
@@ -87,6 +102,14 @@ fn parse_contract_summary(row: &Value) -> MarketplaceContractSummary {
             .get("valid_until")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
+        template_name: row
+            .get("template_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        docuseal_template_id: row
+            .get("docuseal_template_id")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
         docuseal_status: row
             .get("docuseal_status")
             .and_then(|v| v.as_str())
@@ -550,6 +573,30 @@ async fn activate_connection_from_contract_row(
         .to_string();
 
     if !talent_id.is_empty() {
+        let existing_rel_resp = state
+            .pg
+            .from("agency_talent_relationships")
+            .select("id,talent_id,creator_id")
+            .eq("agency_id", &agency_id)
+            .eq("creator_id", &creator_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let existing_rel_status = existing_rel_resp.status();
+        let existing_rel_text = existing_rel_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !existing_rel_status.is_success() {
+            return Err(sanitize_db_error(
+                existing_rel_status.as_u16(),
+                existing_rel_text,
+            ));
+        }
+        let existing_rel_rows: Vec<Value> =
+            serde_json::from_str(&existing_rel_text).unwrap_or_default();
+
         let rel_payload = json!({
             "agency_id": agency_id,
             "talent_id": talent_id,
@@ -557,13 +604,35 @@ async fn activate_connection_from_contract_row(
             "status": "active",
             "updated_at": chrono::Utc::now().to_rfc3339(),
         });
-        let _ = state
-            .pg
-            .from("agency_talent_relationships")
-            .upsert(rel_payload.to_string())
-            .on_conflict("agency_id,talent_id")
-            .execute()
-            .await;
+
+        let rel_resp = if let Some(existing_rel_id) = existing_rel_rows
+            .first()
+            .and_then(|r| r.get("id"))
+            .and_then(|v| v.as_str())
+            .filter(|id| !id.trim().is_empty())
+        {
+            state
+                .pg
+                .from("agency_talent_relationships")
+                .eq("id", existing_rel_id)
+                .update(rel_payload.to_string())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        } else {
+            state
+                .pg
+                .from("agency_talent_relationships")
+                .insert(rel_payload.to_string())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        };
+        let rel_status = rel_resp.status();
+        if !rel_status.is_success() {
+            let rel_err = rel_resp.text().await.unwrap_or_default();
+            return Err(sanitize_db_error(rel_status.as_u16(), rel_err));
+        }
     }
 
     if !invite_id.is_empty() {
@@ -723,8 +792,8 @@ pub async fn create_marketplace_connect_contract(
         })
         .unwrap_or_else(|| "markdown".to_string());
 
-    let (agency_name, agency_email) = resolve_agency_identity(state, agency_id).await?;
-    let (creator_name, creator_email) = resolve_creator_identity(state, creator_id).await?;
+    let (agency_name, _) = resolve_agency_identity(state, agency_id).await?;
+    let (creator_name, _) = resolve_creator_identity(state, creator_id).await?;
     let invite_id = ensure_invite_row(state, agency_id, creator_id).await?;
 
     let replacements = HashMap::from([
@@ -762,43 +831,6 @@ pub async fn create_marketplace_connect_contract(
             )
         })?;
 
-    let submission = docuseal
-        .create_submission_with_submitters(
-            ds_template.id,
-            vec![
-                Submitter {
-                    name: Some(agency_name.clone()),
-                    email: Some(agency_email),
-                    role: Some("First Party".to_string()),
-                    order: Some(0),
-                    fields: None,
-                    values: None,
-                },
-                Submitter {
-                    name: Some(creator_name.clone()),
-                    email: creator_email.clone(),
-                    role: Some("Second Party".to_string()),
-                    order: Some(1),
-                    fields: None,
-                    values: None,
-                },
-            ],
-            creator_email.is_some(),
-        )
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to create DocuSeal submission: {}", e),
-            )
-        })?;
-
-    let agency_submitter = submission.submitters.first().cloned();
-    let creator_submitter = submission.submitters.get(1).cloned();
-    let creator_sign_url = creator_submitter
-        .as_ref()
-        .map(|submitter| format!("https://docuseal.co/s/{}", submitter.slug));
-
     let insert_payload = json!({
         "agency_id": agency_id,
         "creator_id": creator_id,
@@ -816,20 +848,9 @@ pub async fn create_marketplace_connect_contract(
         "valid_from": valid_from,
         "valid_until": valid_until,
         "placeholder_values": json!(replacements),
-        "status": "pending_signature",
-        "docuseal_submission_id": submission.id,
+        "status": "draft",
         "docuseal_template_id": ds_template.id,
-        "docuseal_status": "sent",
-        "agency_submitter_id": agency_submitter.as_ref().map(|s| s.id),
-        "agency_submitter_slug": agency_submitter.as_ref().map(|s| s.slug.clone()),
-        "agency_embed_src": agency_submitter
-            .as_ref()
-            .and_then(|s| s.embed_src.clone())
-            .or_else(|| agency_submitter.as_ref().map(|s| format!("{}/s/{}", state.docuseal_app_url.trim_end_matches('/'), s.slug))),
-        "creator_submitter_id": creator_submitter.as_ref().map(|s| s.id),
-        "creator_submitter_slug": creator_submitter.as_ref().map(|s| s.slug.clone()),
-        "sent_at": chrono::Utc::now().to_rfc3339(),
-        "last_synced_at": chrono::Utc::now().to_rfc3339(),
+        "docuseal_status": "draft",
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
     let insert_resp = state
@@ -866,26 +887,183 @@ pub async fn create_marketplace_connect_contract(
             )
             .execute()
             .await;
-
-        notify_creator_about_marketplace_contract(
-            state,
-            MarketplaceContractNotification {
-                creator_user_id: creator_id,
-                agency_id,
-                agency_name: &agency_name,
-                creator_email: creator_email.as_deref(),
-                creator_sign_url: creator_sign_url.as_deref(),
-                contract_id,
-                invite_id: &invite_id,
-            },
-        )
-        .await;
     }
 
     Ok(json!({
-        "status": "pending_signature",
+        "status": "draft",
         "contract": parse_contract_summary(&contract_row),
     }))
+}
+
+pub async fn finalize_contract_endpoint(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(path): Path<FinalizeContractPath>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
+
+    let resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("id", &path.id)
+        .eq("agency_id", &auth_user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows.first().cloned().ok_or((
+        StatusCode::NOT_FOUND,
+        "marketplace contract not found".to_string(),
+    ))?;
+
+    let current_status = row
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft");
+    if current_status == "pending_signature" || current_status == "active" {
+        return Ok(Json(json!({
+            "status": current_status,
+            "contract": parse_contract_summary(&row),
+        })));
+    }
+
+    let contract_id = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let agency_id = row
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator_id = row
+        .get("creator_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let invite_id = row
+        .get("invite_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let docuseal_template_id = row
+        .get("docuseal_template_id")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32)
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "DocuSeal template is missing for this contract draft".to_string(),
+        ))?;
+
+    let (agency_name, agency_email) = resolve_agency_identity(&state, &agency_id).await?;
+    let (creator_name, creator_email) = resolve_creator_identity(&state, &creator_id).await?;
+
+    let docuseal = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_base_url.clone(),
+    );
+    let submission = docuseal
+        .create_submission_with_submitters(
+            docuseal_template_id,
+            vec![
+                Submitter {
+                    name: Some(agency_name.clone()),
+                    email: Some(agency_email),
+                    role: Some("First Party".to_string()),
+                    order: Some(0),
+                    fields: None,
+                    values: None,
+                },
+                Submitter {
+                    name: Some(creator_name.clone()),
+                    email: creator_email.clone(),
+                    role: Some("Second Party".to_string()),
+                    order: Some(1),
+                    fields: None,
+                    values: None,
+                },
+            ],
+            creator_email.is_some(),
+        )
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to create DocuSeal submission: {}", e),
+            )
+        })?;
+
+    let agency_submitter = submission.submitters.first().cloned();
+    let creator_submitter = submission.submitters.get(1).cloned();
+    let creator_sign_url = creator_submitter
+        .as_ref()
+        .map(|submitter| format!("https://docuseal.co/s/{}", submitter.slug));
+
+    let update_payload = json!({
+        "status": "pending_signature",
+        "docuseal_submission_id": submission.id,
+        "docuseal_status": "sent",
+        "agency_submitter_id": agency_submitter.as_ref().map(|s| s.id),
+        "agency_submitter_slug": agency_submitter.as_ref().map(|s| s.slug.clone()),
+        "agency_embed_src": agency_submitter
+            .as_ref()
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| agency_submitter.as_ref().map(|s| format!("{}/s/{}", state.docuseal_app_url.trim_end_matches('/'), s.slug))),
+        "creator_submitter_id": creator_submitter.as_ref().map(|s| s.id),
+        "creator_submitter_slug": creator_submitter.as_ref().map(|s| s.slug.clone()),
+        "sent_at": chrono::Utc::now().to_rfc3339(),
+        "last_synced_at": chrono::Utc::now().to_rfc3339(),
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let update_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .eq("id", &contract_id)
+        .eq("agency_id", &agency_id)
+        .update(update_payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let updated_rows: Vec<Value> = serde_json::from_str(&update_text).unwrap_or_default();
+    let updated_row = updated_rows.first().cloned().unwrap_or(row);
+
+    notify_creator_about_marketplace_contract(
+        &state,
+        MarketplaceContractNotification {
+            creator_user_id: &creator_id,
+            agency_id: &agency_id,
+            agency_name: &agency_name,
+            creator_email: creator_email.as_deref(),
+            creator_sign_url: creator_sign_url.as_deref(),
+            contract_id: &contract_id,
+            invite_id: &invite_id,
+        },
+    )
+    .await;
+
+    Ok(Json(json!({
+        "status": "pending_signature",
+        "contract": parse_contract_summary(&updated_row),
+    })))
 }
 
 pub async fn get_latest_contract_for_pair(
@@ -910,6 +1088,76 @@ pub async fn get_latest_contract_for_pair(
     let text = resp.text().await.ok()?;
     let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
     rows.first().map(parse_contract_summary)
+}
+
+pub async fn sync_open_contracts_for_creator(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<(), (StatusCode, String)> {
+    if creator_id.trim().is_empty() {
+        return Ok(());
+    }
+
+    let resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("creator_id", creator_id)
+        .in_("status", vec!["draft", "pending_signature"])
+        .order("created_at.desc")
+        .limit(50)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    for row in &rows {
+        let _ = sync_contract_for_row(state, row).await?;
+    }
+    Ok(())
+}
+
+pub async fn sync_open_contracts_for_agency(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<(), (StatusCode, String)> {
+    if agency_id.trim().is_empty() {
+        return Ok(());
+    }
+
+    let resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("agency_id", agency_id)
+        .in_("status", vec!["draft", "pending_signature"])
+        .order("created_at.desc")
+        .limit(100)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    for row in &rows {
+        let _ = sync_contract_for_row(state, row).await?;
+    }
+    Ok(())
 }
 
 pub async fn sync_contract_for_row(
@@ -1025,6 +1273,117 @@ pub async fn sync_contract_for_row(
     Ok(parse_contract_summary(&updated))
 }
 
+async fn apply_webhook_status_to_contract_row(
+    state: &AppState,
+    row: &Value,
+    live_status: &str,
+    payload: Option<&Value>,
+) -> Result<MarketplaceContractSummary, (StatusCode, String)> {
+    let contract_id = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if contract_id.is_empty() {
+        return Ok(parse_contract_summary(row));
+    }
+
+    let mut next_status = row
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("pending_signature")
+        .to_string();
+
+    if live_status == "completed" || live_status == "signed" {
+        next_status = "active".to_string();
+    } else if live_status == "declined" {
+        next_status = "declined".to_string();
+    } else if live_status == "archived" || live_status == "voided" {
+        next_status = "voided".to_string();
+    } else if live_status == "opened" || live_status == "viewed" || live_status == "started" {
+        next_status = "pending_signature".to_string();
+    }
+
+    let today = chrono::Utc::now().date_naive();
+    let valid_until = row
+        .get("valid_until")
+        .and_then(|v| v.as_str())
+        .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+    if next_status == "active" && valid_until.map(|d| d < today).unwrap_or(false) {
+        next_status = "expired".to_string();
+    }
+
+    let signed_document_url = payload
+        .and_then(|value| value.get("documents"))
+        .and_then(|v| v.as_array())
+        .and_then(|docs| docs.first())
+        .and_then(|doc| doc.get("url"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            row.get("signed_document_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
+
+    let update_payload = json!({
+        "status": next_status,
+        "docuseal_status": live_status,
+        "signed_document_url": signed_document_url,
+        "signed_at": if next_status == "active" { json!(chrono::Utc::now().to_rfc3339()) } else { Value::Null },
+        "last_synced_at": chrono::Utc::now().to_rfc3339(),
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let update_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .eq("id", &contract_id)
+        .update(update_payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = update_resp.status();
+    let text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    let updated = rows.first().cloned().unwrap_or_else(|| row.clone());
+
+    match next_status.as_str() {
+        "active" => {
+            activate_connection_from_contract_row(state, &updated).await?;
+        }
+        "expired" => {
+            deactivate_connection_for_contract_row(state, &updated).await;
+        }
+        "declined" | "voided" => {
+            if let Some(invite_id) = updated.get("invite_id").and_then(|v| v.as_str()) {
+                let _ = state
+                    .pg
+                    .from("creator_agency_invites")
+                    .eq("id", invite_id)
+                    .update(
+                        json!({
+                            "status": "declined",
+                            "responded_at": chrono::Utc::now().to_rfc3339(),
+                            "updated_at": chrono::Utc::now().to_rfc3339(),
+                        })
+                        .to_string(),
+                    )
+                    .execute()
+                    .await;
+            }
+        }
+        _ => {}
+    }
+
+    Ok(parse_contract_summary(&updated))
+}
+
 pub async fn sync_contract_endpoint(
     State(state): State<AppState>,
     auth_user: AuthUser,
@@ -1066,4 +1425,71 @@ pub async fn sync_contract_endpoint(
         "status": "ok",
         "contract": synced,
     })))
+}
+
+pub async fn handle_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    info!(
+        event_type = %payload.event_type,
+        timestamp = %payload.timestamp,
+        "Received DocuSeal marketplace contract webhook"
+    );
+
+    let status_update = match payload.event_type.as_str() {
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
+        | "form.viewed" => Some("opened"),
+        "submission.completed" | "form.completed" => Some("completed"),
+        "submission.declined" | "form.declined" => Some("declined"),
+        "submission.expired" => Some("voided"),
+        _ => None,
+    };
+
+    if status_update.is_none() {
+        return Ok(StatusCode::OK);
+    }
+
+    let submission_id = payload.data["submission_id"]
+        .as_i64()
+        .or_else(|| payload.data["id"].as_i64())
+        .ok_or_else(|| {
+            error!("Missing submission id in DocuSeal marketplace webhook");
+            (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
+        })?;
+
+    let resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("*")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    let Some(row) = rows.first() else {
+        info!(
+            submission_id,
+            "No marketplace contract found for DocuSeal webhook submission"
+        );
+        return Ok(StatusCode::OK);
+    };
+
+    let _ = apply_webhook_status_to_contract_row(
+        &state,
+        row,
+        status_update.unwrap(),
+        Some(&payload.data),
+    )
+    .await?;
+    Ok(StatusCode::OK)
 }
