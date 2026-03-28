@@ -1048,6 +1048,14 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::creator_agency_connection::disconnect_agency),
         )
         .route(
+            "/api/marketplace/contracts/:id/sync",
+            post(crate::agency_marketplace_contracts::sync_contract_endpoint),
+        )
+        .route(
+            "/api/marketplace/contracts/:id/finalize",
+            post(crate::agency_marketplace_contracts::finalize_contract_endpoint),
+        )
+        .route(
             "/api/invites/agency-talent/:token",
             get(crate::agency_talent_invites::get_by_token),
         )
@@ -1102,6 +1110,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::calendly::handle_calendly_webhook),
         )
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
+        .route(
+            "/webhooks/docuseal/marketplace-contracts",
+            post(crate::agency_marketplace_contracts::handle_webhook),
+        )
         .route(
             "/webhooks/docuseal/campaign-contracts",
             post(crate::brand_campaigns::handle_campaign_contract_webhook),
