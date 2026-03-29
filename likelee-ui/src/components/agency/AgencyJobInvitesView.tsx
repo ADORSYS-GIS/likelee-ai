@@ -29,6 +29,7 @@ const AgencyJobInvitesView = () => {
   const [confirmAction, setConfirmAction] = useState<"accept" | "decline" | "">(
     "",
   );
+  const agencyJobsBackTo = `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`;
 
   const jobInvitesQuery = useQuery({
     queryKey: ["agency", "job-invites"],
@@ -135,13 +136,27 @@ const AgencyJobInvitesView = () => {
       </div>
 
       <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="text-xl font-semibold text-gray-900">
+              Brand Offers
+            </div>
+            <div className="text-base font-semibold text-gray-800">
+              Job Invites
+            </div>
+          </div>
+          <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+            {jobInvites.length}
+          </Badge>
+        </div>
         {jobInvitesQuery.isLoading && (
           <p className="text-sm text-gray-500">Loading job invites...</p>
         )}
         {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
           <p className="text-sm text-gray-500">No job invites yet.</p>
         )}
-        {jobInvites.map((job: any) => {
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {jobInvites.map((job: any) => {
           const jobId = String(job?.id || "");
           const companyName = resolveJobCompanyName(job);
           const jobTitle = String(job?.job_title || "Job invite");
@@ -149,78 +164,95 @@ const AgencyJobInvitesView = () => {
           const isAccepted = (job?.accepted_agency_ids || []).includes(
             profile?.id || user?.id,
           );
+          const location = String(job?.location || "").replaceAll("_", " ");
+          const jobType = String(job?.job_type || "").replaceAll("_", " ");
+          const callType = String(job?.call_type || "creator").replaceAll(
+            "_",
+            " ",
+          );
 
           return (
             <div
               key={jobId}
-              className="border border-green-200 bg-green-50 rounded-lg p-4 space-y-3"
+              className="rounded-xl border border-slate-200 bg-white p-4 space-y-4"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-gray-900">{companyName}</p>
-                  <p className="text-xs text-gray-600">{jobTitle}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-2xl text-gray-900 truncate">
+                    {jobTitle}
+                  </p>
+                  <p className="text-sm text-gray-600 truncate">{companyName}</p>
                 </div>
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">
-                  Job Invite
+                <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                  {callType}
                 </Badge>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {!isAccepted ? (
-                  <>
-                    <Button
-                      size="sm"
-                      className="bg-white text-black border border-gray-200 hover:bg-gray-100"
-                      onClick={() => {
-                        navigate(
-                          `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}`,
-                        );
-                      }}
-                    >
-                      View job details
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                      disabled={isBusy}
-                      onClick={() => {
-                        setConfirmJobId(jobId);
-                        setConfirmAction("accept");
-                        setConfirmOpen(true);
-                      }}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-red-300 text-red-600 bg-white hover:bg-red-50"
-                      disabled={isBusy}
-                      onClick={() => {
-                        setConfirmJobId(jobId);
-                        setConfirmAction("decline");
-                        setConfirmOpen(true);
-                      }}
-                    >
-                      Decline
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="bg-black text-white hover:bg-gray-800"
-                    onClick={() =>
-                      navigate(
-                        `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}&apply=true`,
-                      )
-                    }
-                  >
-                    Apply
-                  </Button>
-                )}
+              <div className="space-y-1 text-sm text-gray-600">
+                {location || jobType ? (
+                  <p className="lowercase">
+                    {[location, jobType].filter(Boolean).join("   ")}
+                  </p>
+                ) : null}
               </div>
-            </div>
-          );
-        })}
+              <div className="flex flex-wrap gap-2">
+                  {!isAccepted ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-gray-300 bg-white hover:bg-gray-50"
+                        onClick={() => {
+                          navigate(
+                            `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}&backTo=${encodeURIComponent(agencyJobsBackTo)}`,
+                          );
+                        }}
+                      >
+                        View job details
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        disabled={isBusy}
+                        onClick={() => {
+                          setConfirmJobId(jobId);
+                          setConfirmAction("accept");
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300 text-red-600 bg-white hover:bg-red-50"
+                        disabled={isBusy}
+                        onClick={() => {
+                          setConfirmJobId(jobId);
+                          setConfirmAction("decline");
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        Decline
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-black text-white hover:bg-gray-800"
+                      onClick={() =>
+                        navigate(
+                          `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}&apply=true&backTo=${encodeURIComponent(agencyJobsBackTo)}`,
+                        )
+                      }
+                    >
+                      Apply
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Card>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

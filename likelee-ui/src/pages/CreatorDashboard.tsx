@@ -829,6 +829,9 @@ export default function CreatorDashboard() {
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
     "connections" | "requests" | "offers" | "deliverables"
   >("connections");
+  const [jobsSubTab, setJobsSubTab] = useState<"job_invites" | "job_board">(
+    "job_invites",
+  );
   const [agencyConnectionSubTab, setAgencyConnectionSubTab] = useState<
     "connections" | "asset_requests"
   >("connections");
@@ -2954,9 +2957,6 @@ export default function CreatorDashboard() {
       id: "jobs",
       label: "Jobs",
       icon: Briefcase,
-      onClick: () => {
-        navigate(createPageUrl("Jobs"));
-      },
     },
     {
       id: "approvals",
@@ -3035,6 +3035,197 @@ export default function CreatorDashboard() {
   }, [searchParams]);
 
   const [contentTab, setContentTab] = useState("brand_content");
+  const creatorJobsBackTo = `${createPageUrl("CreatorDashboard")}?section=jobs`;
+
+  const renderJobInvitesCards = () => (
+    <>
+      {loadingJobInvites && (
+        <p className="text-sm text-gray-600">Loading job invites...</p>
+      )}
+      {!loadingJobInvites && jobInvites.length === 0 && (
+        <p className="text-sm text-gray-600">No job invites yet.</p>
+      )}
+      {!loadingJobInvites && jobInvites.length > 0 && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {jobInvites.map((job: any) => (
+            <div
+              key={String(job?.id || "")}
+              className="rounded-xl border border-slate-200 bg-white p-4 space-y-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-2xl text-gray-900 truncate">
+                    {job?.job_title || "Job invite"}
+                  </div>
+                  <div className="text-sm text-gray-600 truncate mt-1">
+                    {resolveJobBrandName(job)}
+                  </div>
+                </div>
+                <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                  {(job?.call_type || "call").replace("_", " ")}
+                </Badge>
+              </div>
+              <div className="text-sm text-gray-600 lowercase">
+                {[
+                  job?.location ? String(job.location).replace("_", " ") : "",
+                  job?.job_type ? String(job.job_type).replace("_", " ") : "",
+                ]
+                  .filter(Boolean)
+                  .join("   ")}
+              </div>
+              <div className="flex items-center gap-2">
+                {!(job?.accepted_creator_ids || []).includes(user?.id) ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="border-gray-300"
+                      onClick={() =>
+                        navigate(
+                          `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                            String(job?.id || ""),
+                          )}&backTo=${encodeURIComponent(creatorJobsBackTo)}`,
+                        )
+                      }
+                    >
+                      View job details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
+                      onClick={() => {
+                        setJobInviteConfirmId(String(job?.id || ""));
+                        setJobInviteConfirmAction("accept");
+                        setJobInviteConfirmOpen(true);
+                      }}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        setJobInviteConfirmId(String(job?.id || ""));
+                        setJobInviteConfirmAction("decline");
+                        setJobInviteConfirmOpen(true);
+                      }}
+                    >
+                      Decline
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    className="bg-black text-white"
+                    onClick={() =>
+                      navigate(
+                        `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                          String(job?.id || ""),
+                        )}&apply=true&backTo=${encodeURIComponent(creatorJobsBackTo)}`,
+                      )
+                    }
+                  >
+                    Apply
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  const renderJobsSection = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900">Jobs</h2>
+        <p className="text-gray-600 mt-1">
+          Review invitations and explore open roles.
+        </p>
+      </div>
+
+      <Card className="p-6">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 pb-4">
+          <Button
+            variant={jobsSubTab === "job_invites" ? "default" : "outline"}
+            className={
+              jobsSubTab === "job_invites"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : ""
+            }
+            onClick={() => setJobsSubTab("job_invites")}
+          >
+            Job Invites
+            {jobInvites.length > 0 ? (
+              <Badge className="ml-2 bg-white/20 text-current border border-white/30">
+                {jobInvites.length}
+              </Badge>
+            ) : null}
+          </Button>
+          <Button
+            variant={jobsSubTab === "job_board" ? "default" : "outline"}
+            className={
+              jobsSubTab === "job_board"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : ""
+            }
+            onClick={() => {
+              setJobsSubTab("job_board");
+              navigate(
+                `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(creatorJobsBackTo)}`,
+              );
+            }}
+          >
+            Open Job Board
+          </Button>
+        </div>
+
+        <div className="mt-6">
+          {jobsSubTab === "job_invites" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    Job Invites
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Respond to direct job invitations from brands.
+                  </div>
+                </div>
+                <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+                  {jobInvites.length}
+                </Badge>
+              </div>
+              {renderJobInvitesCards()}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 flex flex-col gap-4">
+              <div>
+                <div className="text-lg font-semibold text-gray-900">
+                  Browse the full Jobs board
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Open the public jobs page to view all available opportunities
+                  and apply.
+                </div>
+              </div>
+              <div>
+                <Button
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                  onClick={() =>
+                    navigate(
+                      `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(creatorJobsBackTo)}`,
+                    )
+                  }
+                >
+                  Open Jobs Board
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
 
   const renderContent = () => {
     const showingExamples = contentItems.length === 0;
@@ -6766,116 +6957,6 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
                 Brand Offers
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-base font-semibold text-gray-800">
-                    Job Invites
-                  </div>
-                  <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
-                    {jobInvites.length}
-                  </Badge>
-                </div>
-                {loadingJobInvites && (
-                  <p className="text-sm text-gray-600">
-                    Loading job invites...
-                  </p>
-                )}
-                {!loadingJobInvites && jobInvites.length === 0 && (
-                  <p className="text-sm text-gray-600">No job invites yet.</p>
-                )}
-                {!loadingJobInvites && jobInvites.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {jobInvites.map((job: any) => (
-                      <div
-                        key={String(job?.id || "")}
-                        className="p-4 border border-slate-200 rounded-lg bg-white space-y-3"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              {job?.job_title || "Job invite"}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {resolveJobBrandName(job)}
-                            </div>
-                          </div>
-                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
-                            {(job?.call_type || "call").replace("_", " ")}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-gray-600 flex flex-wrap gap-2">
-                          {job?.location && (
-                            <span>
-                              {String(job.location).replace("_", " ")}
-                            </span>
-                          )}
-                          {job?.job_type && (
-                            <span>
-                              {String(job.job_type).replace("_", " ")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {!(job?.accepted_creator_ids || []).includes(
-                            user?.id,
-                          ) ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                className="border-gray-300"
-                                onClick={() =>
-                                  navigate(
-                                    `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                                      String(job?.id || ""),
-                                    )}`,
-                                  )
-                                }
-                              >
-                                View job details
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
-                                onClick={() => {
-                                  setJobInviteConfirmId(String(job?.id || ""));
-                                  setJobInviteConfirmAction("accept");
-                                  setJobInviteConfirmOpen(true);
-                                }}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="border-red-200 text-red-600 hover:bg-red-50"
-                                onClick={() => {
-                                  setJobInviteConfirmId(String(job?.id || ""));
-                                  setJobInviteConfirmAction("decline");
-                                  setJobInviteConfirmOpen(true);
-                                }}
-                              >
-                                Decline
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              className="bg-black text-white"
-                              onClick={() =>
-                                navigate(
-                                  `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                                    String(job?.id || ""),
-                                  )}&apply=true`,
-                                )
-                              }
-                            >
-                              Apply
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
@@ -10786,6 +10867,7 @@ export default function CreatorDashboard() {
           {activeSection === "likeness" && renderLikeness()}
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
+          {activeSection === "jobs" && renderJobsSection()}
           {activeSection === "approvals" && renderApprovals()}
           {activeSection === "archive" && renderCampaignArchive()}
           {activeSection === "contracts" && renderContracts()}

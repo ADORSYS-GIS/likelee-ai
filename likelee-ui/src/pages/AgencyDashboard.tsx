@@ -18514,7 +18514,11 @@ export default function AgencyDashboard() {
                           return;
                         }
                         if (item.id === "jobs" && subItem === "Open Job Board") {
-                          navigate(createPageUrl("Jobs"));
+                          navigate(
+                            `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                              `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                            )}`,
+                          );
                           setSidebarOpen(false);
                           return;
                         }

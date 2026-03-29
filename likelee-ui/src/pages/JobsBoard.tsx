@@ -40,6 +40,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { createPageUrl } from "@/utils";
 
 const PAGE_SIZE = 10;
 
@@ -71,6 +72,7 @@ export default function JobsBoard() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const backTo = searchParams.get("backTo");
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -462,7 +464,13 @@ export default function JobsBoard() {
             type="button"
             variant="ghost"
             className="w-fit px-0 text-gray-600 hover:bg-transparent hover:text-gray-900"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (backTo) {
+                navigate(backTo);
+                return;
+              }
+              navigate(-1);
+            }}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back
