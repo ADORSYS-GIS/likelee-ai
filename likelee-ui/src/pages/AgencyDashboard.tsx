@@ -18513,7 +18513,10 @@ export default function AgencyDashboard() {
                           setSidebarOpen(false);
                           return;
                         }
-                        if (item.id === "jobs" && subItem === "Open Job Board") {
+                        if (
+                          item.id === "jobs" &&
+                          subItem === "Open Job Board"
+                        ) {
                           navigate(
                             `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
                               `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,

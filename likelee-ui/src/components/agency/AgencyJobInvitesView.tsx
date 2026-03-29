@@ -46,7 +46,9 @@ const AgencyJobInvitesView = () => {
           ? job.accepted_agency_ids
           : [];
         const myId = user?.id;
-        return invitedAgencies.includes(myId) || acceptedAgencies.includes(myId);
+        return (
+          invitedAgencies.includes(myId) || acceptedAgencies.includes(myId)
+        );
       });
     },
   });
@@ -157,44 +159,46 @@ const AgencyJobInvitesView = () => {
         )}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {jobInvites.map((job: any) => {
-          const jobId = String(job?.id || "");
-          const companyName = resolveJobCompanyName(job);
-          const jobTitle = String(job?.job_title || "Job invite");
-          const isBusy = busyIds.has(jobId);
-          const isAccepted = (job?.accepted_agency_ids || []).includes(
-            profile?.id || user?.id,
-          );
-          const location = String(job?.location || "").replaceAll("_", " ");
-          const jobType = String(job?.job_type || "").replaceAll("_", " ");
-          const callType = String(job?.call_type || "creator").replaceAll(
-            "_",
-            " ",
-          );
+            const jobId = String(job?.id || "");
+            const companyName = resolveJobCompanyName(job);
+            const jobTitle = String(job?.job_title || "Job invite");
+            const isBusy = busyIds.has(jobId);
+            const isAccepted = (job?.accepted_agency_ids || []).includes(
+              profile?.id || user?.id,
+            );
+            const location = String(job?.location || "").replaceAll("_", " ");
+            const jobType = String(job?.job_type || "").replaceAll("_", " ");
+            const callType = String(job?.call_type || "creator").replaceAll(
+              "_",
+              " ",
+            );
 
-          return (
-            <div
-              key={jobId}
-              className="rounded-xl border border-slate-200 bg-white p-4 space-y-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold text-2xl text-gray-900 truncate">
-                    {jobTitle}
-                  </p>
-                  <p className="text-sm text-gray-600 truncate">{companyName}</p>
+            return (
+              <div
+                key={jobId}
+                className="rounded-xl border border-slate-200 bg-white p-4 space-y-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-2xl text-gray-900 truncate">
+                      {jobTitle}
+                    </p>
+                    <p className="text-sm text-gray-600 truncate">
+                      {companyName}
+                    </p>
+                  </div>
+                  <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                    {callType}
+                  </Badge>
                 </div>
-                <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                  {callType}
-                </Badge>
-              </div>
-              <div className="space-y-1 text-sm text-gray-600">
-                {location || jobType ? (
-                  <p className="lowercase">
-                    {[location, jobType].filter(Boolean).join("   ")}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-2">
+                <div className="space-y-1 text-sm text-gray-600">
+                  {location || jobType ? (
+                    <p className="lowercase">
+                      {[location, jobType].filter(Boolean).join("   ")}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
                   {!isAccepted ? (
                     <>
                       <Button

@@ -1135,12 +1135,14 @@ export function MarketplaceSection({
                         {selectedProfile?.profile_type === "creator" && (
                           <Badge
                             className={`h-5 px-2 rounded-md border text-[10px] font-semibold ${
-                              selectedProfile?.talent_ownership === "agency_owned"
+                              selectedProfile?.talent_ownership ===
+                              "agency_owned"
                                 ? "bg-violet-50 text-violet-700 border-violet-200"
                                 : "bg-slate-50 text-slate-700 border-slate-200"
                             }`}
                           >
-                            {selectedProfile?.talent_ownership === "agency_owned"
+                            {selectedProfile?.talent_ownership ===
+                            "agency_owned"
                               ? "Agency-Owned"
                               : "Regular"}
                           </Badge>
