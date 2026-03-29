@@ -338,7 +338,10 @@ export const TalentCommissionSettings: React.FC<{
                       <div className="flex justify-center">
                         <Badge
                           variant="outline"
-                          className={cn("text-[10px] font-bold", sourceBadgeClass)}
+                          className={cn(
+                            "text-[10px] font-bold",
+                            sourceBadgeClass,
+                          )}
                         >
                           {sourceBadgeLabel}
                         </Badge>

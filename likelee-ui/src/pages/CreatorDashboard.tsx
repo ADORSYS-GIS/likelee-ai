@@ -5799,8 +5799,13 @@ export default function CreatorDashboard() {
 
   const renderAgencyConnection = () => {
     const pending = agencyInvites.filter((i) => {
-      const contractStatus = String(i?.marketplace_contract?.status || "").toLowerCase();
-      return String(i?.status || "").toLowerCase() === "pending" && contractStatus !== "active";
+      const contractStatus = String(
+        i?.marketplace_contract?.status || "",
+      ).toLowerCase();
+      return (
+        String(i?.status || "").toLowerCase() === "pending" &&
+        contractStatus !== "active"
+      );
     });
     const isTalent =
       (profile as any)?.role === "talent" || agencyConnections.length > 0;

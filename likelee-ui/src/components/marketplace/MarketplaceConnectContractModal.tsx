@@ -224,202 +224,203 @@ export function MarketplaceConnectContractModal({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            Connect {profile?.display_name} with contract
-          </DialogTitle>
-          <DialogDescription>
-            Capture the locked commercial terms first, then send the generated
-            contract for signature.
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Connect {profile?.display_name} with contract
+            </DialogTitle>
+            <DialogDescription>
+              Capture the locked commercial terms first, then send the generated
+              contract for signature.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Contract template</Label>
-              <select
-                value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="" disabled>
-                  Select template
-                </option>
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.template_name}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Contract template</Label>
+                <select
+                  value={templateId}
+                  onChange={(e) => setTemplateId(e.target.value)}
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="" disabled>
+                    Select template
                   </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Commission rate (%)</Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={commissionRate}
-                onChange={(e) => setCommissionRate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Valid from</Label>
-              <Input
-                type="date"
-                value={validFrom}
-                onChange={(e) => setValidFrom(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Valid until</Label>
-              <Input
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-900">
-            Required placeholders: {REQUIRED_VARIABLES.join(", ")}
-          </div>
-
-          <ContractEditor
-            body={body}
-            format={format}
-            onChangeBody={setBody}
-            onChangeFormat={setFormat}
-            variables={REQUIRED_VARIABLES}
-            placeholder="Write or customize the connection contract..."
-          />
-
-          {validationError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {validationError}
-            </div>
-          ) : null}
-
-          {createMutation.error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {(createMutation.error as Error).message}
-            </div>
-          ) : null}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={async () => {
-              setValidationError("");
-              const missing = REQUIRED_VARIABLES.filter(
-                (placeholder) => !body.includes(placeholder),
-              );
-              if (missing.length > 0) {
-                setValidationError(
-                  `Missing required placeholders: ${missing.join(", ")}`,
-                );
-                return;
-              }
-              await createMutation.mutateAsync();
-            }}
-            disabled={createMutation.isPending || !profile?.id}
-          >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Preparing contract
-              </>
-            ) : (
-              <>
-                Continue to DocuSeal
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {draftContract ? (
-      <DocuSealBuilderModal
-        open={builderOpen}
-        onClose={() => setBuilderOpen(false)}
-        templateName={
-          draftContract.template_name || `${profile?.display_name || "Creator"} Contract`
-        }
-        docusealTemplateId={draftContract.docuseal_template_id || undefined}
-        externalId={`marketplace-contract-${draftContract.id}`}
-        contractBody={body}
-        builderRoles={["First Party", "Second Party"]}
-        onSave={() => {
-          // DocuSeal persists builder changes directly to the template.
-        }}
-        onSend={() => {
-          setValidationError("");
-          finalizeMutation.mutate();
-        }}
-        isSending={finalizeMutation.isPending}
-      />
-    ) : null}
-
-    <Dialog
-      open={agencySignOpen}
-      onOpenChange={(next) => {
-        if (!next) {
-          setAgencySignOpen(false);
-          onSuccess?.(draftContract || undefined);
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle>Agency Signature</DialogTitle>
-          <DialogDescription>
-            Complete your signature to release this contract to the creator.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-1 w-full bg-gray-50 overflow-hidden flex flex-col">
-          <div className="px-6 py-3 border-b border-gray-200 bg-white shadow-sm flex items-center justify-between shrink-0">
-            <div className="text-xs sm:text-sm text-gray-700 font-medium flex items-center gap-4">
-              <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
-                Party mapping:
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1 text-xs font-bold">
-                  First Party = Agency
-                </span>
-                <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold">
-                  Second Party = Creator
-                </span>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.template_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Commission rate (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Valid from</Label>
+                <Input
+                  type="date"
+                  value={validFrom}
+                  onChange={(e) => setValidFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Valid until</Label>
+                <Input
+                  type="date"
+                  value={validUntil}
+                  onChange={(e) => setValidUntil(e.target.value)}
+                />
               </div>
             </div>
+
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-900">
+              Required placeholders: {REQUIRED_VARIABLES.join(", ")}
+            </div>
+
+            <ContractEditor
+              body={body}
+              format={format}
+              onChangeBody={setBody}
+              onChangeFormat={setFormat}
+              variables={REQUIRED_VARIABLES}
+              placeholder="Write or customize the connection contract..."
+            />
+
+            {validationError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {validationError}
+              </div>
+            ) : null}
+
+            {createMutation.error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {(createMutation.error as Error).message}
+              </div>
+            ) : null}
           </div>
-          <div className="flex-1 overflow-auto">
-            {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                setValidationError("");
+                const missing = REQUIRED_VARIABLES.filter(
+                  (placeholder) => !body.includes(placeholder),
+                );
+                if (missing.length > 0) {
+                  setValidationError(
+                    `Missing required placeholders: ${missing.join(", ")}`,
+                  );
+                  return;
+                }
+                await createMutation.mutateAsync();
+              }}
+              disabled={createMutation.isPending || !profile?.id}
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Preparing contract
+                </>
+              ) : (
+                <>
+                  Continue to DocuSeal
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {draftContract ? (
+        <DocuSealBuilderModal
+          open={builderOpen}
+          onClose={() => setBuilderOpen(false)}
+          templateName={
+            draftContract.template_name ||
+            `${profile?.display_name || "Creator"} Contract`
+          }
+          docusealTemplateId={draftContract.docuseal_template_id || undefined}
+          externalId={`marketplace-contract-${draftContract.id}`}
+          contractBody={body}
+          builderRoles={["First Party", "Second Party"]}
+          onSave={() => {
+            // DocuSeal persists builder changes directly to the template.
+          }}
+          onSend={() => {
+            setValidationError("");
+            finalizeMutation.mutate();
+          }}
+          isSending={finalizeMutation.isPending}
+        />
+      ) : null}
+
+      <Dialog
+        open={agencySignOpen}
+        onOpenChange={(next) => {
+          if (!next) {
+            setAgencySignOpen(false);
+            onSuccess?.(draftContract || undefined);
+            onClose();
+          }
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Agency Signature</DialogTitle>
+            <DialogDescription>
+              Complete your signature to release this contract to the creator.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-hidden flex flex-col">
+            <div className="px-6 py-3 border-b border-gray-200 bg-white shadow-sm flex items-center justify-between shrink-0">
+              <div className="text-xs sm:text-sm text-gray-700 font-medium flex items-center gap-4">
+                <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                  Party mapping:
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1 text-xs font-bold">
+                    First Party = Agency
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold">
+                    Second Party = Creator
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+            </div>
           </div>
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => {
-              setAgencySignOpen(false);
-              onSuccess?.(draftContract || undefined);
-              onClose();
-            }}
-          >
-            Done
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="p-4 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setAgencySignOpen(false);
+                onSuccess?.(draftContract || undefined);
+                onClose();
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

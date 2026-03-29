@@ -866,8 +866,13 @@ export default function TalentPortal({
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
   const pendingAgencyInvitesCount = (agencyInvites as any[]).filter((i) => {
-    const contractStatus = String(i?.marketplace_contract?.status || "").toLowerCase();
-    return String(i?.status || "").toLowerCase() === "pending" && contractStatus !== "active";
+    const contractStatus = String(
+      i?.marketplace_contract?.status || "",
+    ).toLowerCase();
+    return (
+      String(i?.status || "").toLowerCase() === "pending" &&
+      contractStatus !== "active"
+    );
   }).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
@@ -2447,15 +2452,24 @@ export default function TalentPortal({
                 </div>
 
                 {(agencyInvites as any[]).filter((i) => {
-                  const contractStatus = String(i?.marketplace_contract?.status || "").toLowerCase();
-                  return String(i?.status || "").toLowerCase() === "pending" && contractStatus !== "active";
-                })
-                  .length > 0 ? (
+                  const contractStatus = String(
+                    i?.marketplace_contract?.status || "",
+                  ).toLowerCase();
+                  return (
+                    String(i?.status || "").toLowerCase() === "pending" &&
+                    contractStatus !== "active"
+                  );
+                }).length > 0 ? (
                   <div className="mt-6 space-y-3">
                     {(agencyInvites as any[])
                       .filter((i) => {
-                        const contractStatus = String(i?.marketplace_contract?.status || "").toLowerCase();
-                        return String(i?.status || "").toLowerCase() === "pending" && contractStatus !== "active";
+                        const contractStatus = String(
+                          i?.marketplace_contract?.status || "",
+                        ).toLowerCase();
+                        return (
+                          String(i?.status || "").toLowerCase() === "pending" &&
+                          contractStatus !== "active"
+                        );
                       })
                       .map((inv: any) => (
                         <div
