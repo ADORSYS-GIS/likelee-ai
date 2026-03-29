@@ -58,6 +58,7 @@ export type MarketplaceProfile = {
     | "declined"
     | "disconnected";
   updated_at?: string | null;
+  talent_ownership?: "agency_owned" | "regular" | null;
 };
 
 type MarketplaceProfileDetails = {
@@ -319,6 +320,11 @@ export function MarketplaceSection({
           ? row.connection_status
           : "none",
       updated_at: row?.updated_at ?? null,
+      talent_ownership:
+        row?.talent_ownership === "agency_owned" ||
+        row?.talent_ownership === "regular"
+          ? row.talent_ownership
+          : null,
     })) as MarketplaceProfile[];
 
     const creatorCategories = ["models", "actors", "influencers", "athletes"];
@@ -664,6 +670,17 @@ export function MarketplaceSection({
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const ownershipLabel =
+                profile.profile_type === "creator" &&
+                profile.talent_ownership === "agency_owned"
+                  ? "Agency-Owned"
+                  : profile.profile_type === "creator"
+                    ? "Regular"
+                    : null;
+              const ownershipBadgeClass =
+                profile.talent_ownership === "agency_owned"
+                  ? "bg-violet-50/95 text-violet-700 border-violet-200"
+                  : "bg-slate-50/95 text-slate-700 border-slate-200";
 
               return (
                 <Card
@@ -684,9 +701,18 @@ export function MarketplaceSection({
                       </div>
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
-                      <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
-                        {entityLabelTitle}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
+                          {entityLabelTitle}
+                        </Badge>
+                        {ownershipLabel && (
+                          <Badge
+                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold shadow-sm ${ownershipBadgeClass}`}
+                          >
+                            {ownershipLabel}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
@@ -1106,6 +1132,19 @@ export function MarketplaceSection({
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                           Verified
                         </Badge>
+                        {selectedProfile?.profile_type === "creator" && (
+                          <Badge
+                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold ${
+                              selectedProfile?.talent_ownership === "agency_owned"
+                                ? "bg-violet-50 text-violet-700 border-violet-200"
+                                : "bg-slate-50 text-slate-700 border-slate-200"
+                            }`}
+                          >
+                            {selectedProfile?.talent_ownership === "agency_owned"
+                              ? "Agency-Owned"
+                              : "Regular"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
                         {selectedProfile?.location || "Location not specified"}

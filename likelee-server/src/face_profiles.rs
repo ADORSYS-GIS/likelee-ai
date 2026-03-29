@@ -704,6 +704,15 @@ pub async fn search_marketplace_profiles(
                 "is_connected": connection_status == "connected",
                 "is_pending": connection_status == "waiting",
                 "connection_status": connection_status,
+                "talent_ownership": if agency_by_creator_id
+                    .get(creator_id)
+                    .map(|agency_id| agency_id == &effective_agency_id)
+                    .unwrap_or(false)
+                {
+                    serde_json::json!("agency_owned")
+                } else {
+                    serde_json::json!("regular")
+                },
                 "verification_source": "kyc",
                 "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
                 "base_weekly_price_cents": base_weekly_price_cents,
