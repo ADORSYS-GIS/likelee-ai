@@ -29,8 +29,6 @@ import {
   createTalentPortfolioItem,
   deleteTalentPortfolioItem,
   uploadTalentPortfolioItem,
-  approveTalentLicensingRequest,
-  declineTalentLicensingRequest,
   listTalentNotifications,
   markTalentNotificationRead,
   getTalentPortalSettings,
@@ -513,13 +511,6 @@ export default function TalentPortal({
       .length;
   }, [bookings, currentMonth]);
 
-  const pendingApprovals = React.useMemo(() => {
-    if (!Array.isArray(licensingRequests)) return [];
-    return licensingRequests.filter(
-      (r: any) => safeStr(r.status).toLowerCase() === "pending",
-    );
-  }, [licensingRequests]);
-
   const activeDeals = React.useMemo(() => {
     if (!Array.isArray(licensingRequests)) return [];
     return licensingRequests.filter((r: any) => {
@@ -913,25 +904,6 @@ export default function TalentPortal({
     },
   });
 
-  const approveRequestMutation = useMutation({
-    mutationFn: async (id: string) => await approveTalentLicensingRequest(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["talentLicensingRequests"],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["talentLicenses"] });
-    },
-  });
-
-  const declineRequestMutation = useMutation({
-    mutationFn: async (id: string) => await declineTalentLicensingRequest(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["talentLicensingRequests"],
-      });
-    },
-  });
-
   const [newPortfolioUrl, setNewPortfolioUrl] = React.useState("");
 
   const { data: portalSettings } = useQuery({
@@ -1095,12 +1067,6 @@ export default function TalentPortal({
                     label: "Active Campaigns",
                     icon: Briefcase,
                     badge: activeDeals.length,
-                  },
-                  {
-                    id: "approvals",
-                    label: "Approval Queue",
-                    icon: CheckCircle2,
-                    badge: pendingApprovals.length,
                   },
                   { id: "archive", label: "Archive", icon: FolderArchive },
                   {
@@ -2602,22 +2568,6 @@ export default function TalentPortal({
                     </div>
                   </div>
                 </Card>
-
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        Pending Approvals
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
-                        {pendingApprovals.length}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500" />
-                    </div>
-                  </div>
-                </Card>
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
@@ -2866,23 +2816,7 @@ export default function TalentPortal({
                 campaign performance in one place.
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-5 rounded-xl border-2 border-yellow-200 bg-yellow-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Pending Approval
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Requests awaiting your review
-                      </div>
-                    </div>
-                    <Badge className="bg-yellow-400 text-white border-0">
-                      {pendingApprovals.length}
-                    </Badge>
-                  </div>
-                </Card>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-5 rounded-xl border-2 border-green-200 bg-green-50/60 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
@@ -3123,136 +3057,6 @@ export default function TalentPortal({
               </Card>
             </div>
           )}
-
-          {tab === "approvals" && (
-            <div className="space-y-4">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Approval Queue
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Review and approve licensing requests from brands
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {pendingApprovals.length === 0 ? (
-                  <Card className="p-6 rounded-xl shadow-sm">
-                    <div className="text-sm text-gray-600">
-                      No pending approvals.
-                    </div>
-                  </Card>
-                ) : (
-                  pendingApprovals.map((r: any) => {
-                    const brandName = r.brand_name || "Brand";
-                    const subtitle =
-                      r.campaign_title || r.usage_scope || "Licensing request";
-                    const rate = (() => {
-                      const max =
-                        typeof r.budget_max === "number"
-                          ? r.budget_max
-                          : Number(r.budget_max || 0);
-                      const min =
-                        typeof r.budget_min === "number"
-                          ? r.budget_min
-                          : Number(r.budget_min || 0);
-                      const v = max || min || 0;
-                      if (!v) return "—";
-                      return `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo`;
-                    })();
-
-                    const term = (() => {
-                      const start = r.license_start_date;
-                      const end = r.license_end_date;
-                      if (!start || !end) return "—";
-                      const s = new Date(start);
-                      const e = new Date(end);
-                      if (isNaN(s.getTime()) || isNaN(e.getTime())) return "—";
-                      const months = Math.max(
-                        1,
-                        Math.round(
-                          (e.getTime() - s.getTime()) /
-                            (1000 * 60 * 60 * 24 * 30),
-                        ),
-                      );
-                      return `${months} month${months === 1 ? "" : "s"}`;
-                    })();
-
-                    const id = String(r.id);
-                    const busy =
-                      approveRequestMutation.isPending ||
-                      declineRequestMutation.isPending;
-
-                    return (
-                      <Card
-                        key={id}
-                        className="p-6 rounded-xl shadow-sm border-2 border-yellow-200 bg-yellow-50/50"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-white border flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-base font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-                          <Badge className="bg-yellow-400 text-white border-0">
-                            Pending
-                          </Badge>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="rounded-xl border bg-white p-3">
-                            <div className="text-[11px] text-gray-500">
-                              Proposed Rate
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {rate}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border bg-white p-3">
-                            <div className="text-[11px] text-gray-500">
-                              Term
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {term}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Button
-                            variant="outline"
-                            className="h-10"
-                            disabled={busy}
-                            onClick={() => declineRequestMutation.mutate(id)}
-                          >
-                            Decline
-                          </Button>
-                          <Button
-                            className="h-10 bg-green-600 hover:bg-green-700 text-white"
-                            disabled={busy}
-                            onClick={() => approveRequestMutation.mutate(id)}
-                          >
-                            Approve
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
           {tab === "archive" && (
             <Card className="p-6 rounded-xl shadow-sm">
               <div className="text-xl font-semibold text-gray-900">Archive</div>

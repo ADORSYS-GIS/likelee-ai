@@ -93,6 +93,14 @@ const ClientCRMView = () => {
           ? new Date(c.next_follow_up_date).toLocaleDateString()
           : "None",
         next_follow_up_date: c.next_follow_up_date,
+        email:
+          c.email ||
+          c.primary_contact_email ||
+          c.primary_contact?.email ||
+          c.primary_contact?.email_address ||
+          (Array.isArray(c.contacts)
+            ? c.contacts.find((contact: any) => contact?.email)?.email
+            : undefined),
         tags: c.tags || [],
         notes: c.notes || "",
         preferences: c.preferences || {

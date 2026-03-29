@@ -1,17 +1,13 @@
 import React from "react";
-import {
-  Building2,
-  Tag,
-  Globe,
-  Users,
-  Mail,
-  Phone,
-  Package,
-} from "lucide-react";
+import { Building2, Tag, Globe, Users, Mail, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
 import { Client } from "@/types/crm";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import * as crmApi from "@/api/crm";
 
 const ClientCard = ({
   client,
@@ -20,6 +16,24 @@ const ClientCard = ({
   client: Client;
   onViewProfile: () => void;
 }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const openEmailClient = (email: string) => {
+    const normalized = String(email || "").trim();
+    if (!normalized) return;
+    window.location.href = `mailto:${normalized}`;
+    window.setTimeout(() => {
+      if (document.hasFocus() && !document.hidden) {
+        toast({
+          title: "No mail app configured",
+          description:
+            "Set Thunderbird as your default mail app to open email.",
+        });
+      }
+    }, 800);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active Client":
@@ -134,6 +148,39 @@ const ClientCard = ({
           <Button
             variant="outline"
             className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
+            onClick={async () => {
+              const directEmail = String(client.email || "").trim();
+              if (directEmail) {
+                openEmailClient(directEmail);
+                return;
+              }
+              try {
+                const resp = await crmApi.listContacts(client.id);
+                const contacts = Array.isArray(resp) ? resp : [];
+                const primary = contacts.find(
+                  (contact: any) => contact?.is_primary && contact?.email,
+                );
+                const first = contacts.find((contact: any) => contact?.email);
+                const resolvedEmail = String(
+                  primary?.email || first?.email || "",
+                ).trim();
+                if (resolvedEmail) {
+                  openEmailClient(resolvedEmail);
+                  return;
+                }
+                toast({
+                  title: "No email on file",
+                  description: "Add a contact email to send an email.",
+                });
+              } catch (error: any) {
+                toast({
+                  title: "Unable to open email",
+                  description:
+                    error?.message || "No contact email found for this client.",
+                  variant: "destructive",
+                });
+              }
+            }}
           >
             <Mail className="w-3.5 h-3.5 mr-2" />
             Email
@@ -141,13 +188,11 @@ const ClientCard = ({
           <Button
             variant="outline"
             className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
-          >
-            <Phone className="w-3.5 h-3.5 mr-2" />
-            Call
-          </Button>
-          <Button
-            variant="outline"
-            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
+            onClick={() => {
+              navigate(
+                `${createPageUrl("AgencyDashboard")}?mode=IRL&tab=packages`,
+              );
+            }}
           >
             <Package className="w-3.5 h-3.5 mr-2" />
             Send Package
