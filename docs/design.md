@@ -847,6 +847,15 @@ Agencies can invite talent to join their roster:
    - Agency roster
    - Agency marketplace creator cards/details
 
+#### Commission Settings Alignment
+
+- Agency Settings commission screens must distinguish between:
+  - agency-managed/internal creator accounts
+  - marketplace-connected creator accounts
+- Marketplace-connected creator accounts use the active signed rate from `agency_creator_marketplace_contracts`.
+- Those rows are read-only in Settings and should be labeled as contract-controlled.
+- Agency-managed/internal creator accounts can still use `agency_creator_commissions` overrides, with tier defaults as the fallback.
+
 ### Implementation
 
 - **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`, `likelee-server/src/agency_marketplace_contracts.rs`
