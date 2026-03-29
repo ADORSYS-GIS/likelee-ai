@@ -147,6 +147,15 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
   - the agency talent relationship row to `active`
   - the associated `agency_users` talent row to `active`
 
+### Performance Tier Commission Precedence
+
+- `GET /api/agency/dashboard/performance-tiers` now returns commission-source metadata for each creator row.
+- Effective rate precedence is:
+  1. Active marketplace contract commission from `agency_creator_marketplace_contracts`
+  2. Agency settings override from `agency_creator_commissions`
+  3. Tier default commission
+- `POST /api/agency/dashboard/talent-commissions/bulk-update` rejects updates for creators whose rate is controlled by an active marketplace contract.
+
 ## Error Codes
 
 | HTTP Status | Description | Common Cause |
