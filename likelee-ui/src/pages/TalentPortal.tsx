@@ -64,6 +64,7 @@ import {
   LayoutGrid,
   Loader2,
   MessageSquare,
+  Search,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -181,6 +182,7 @@ export default function TalentPortal({
 
   const [selectedAgencyId, setSelectedAgencyId] = React.useState<string>("all");
   const [selectedBrandId, setSelectedBrandId] = React.useState<string>("all");
+  const [campaignSearch, setCampaignSearch] = React.useState("");
   React.useEffect(() => {
     setSelectedAgencyId("all");
   }, [baseConnectedAgencyIds.join(",")]);
@@ -845,6 +847,23 @@ export default function TalentPortal({
     });
   }, [activeCampaignRows, selectedBrandId, getBrandKey]);
 
+  const filteredActiveCampaignRowsBySearch = React.useMemo(() => {
+    const query = campaignSearch.trim().toLowerCase();
+    if (!query) return filteredActiveCampaignRows;
+    return filteredActiveCampaignRows.filter((it: any) => {
+      const row = it?.row || {};
+      const brand = getBrandName(row).toLowerCase();
+      const campaign =
+        row?.brand_campaigns?.name ||
+        row?.campaign_title ||
+        row?.usage_scope ||
+        "";
+      return (
+        brand.includes(query) || String(campaign).toLowerCase().includes(query)
+      );
+    });
+  }, [campaignSearch, filteredActiveCampaignRows, getBrandName]);
+
   const archiveRows = React.useMemo(() => {
     const rows: Array<{ kind: "offer"; row: any }> = [];
     (Array.isArray(fallbackArchivedCampaigns)
@@ -1219,6 +1238,17 @@ export default function TalentPortal({
     },
   });
 
+  const filteredNotifications = React.useMemo(() => {
+    if (!Array.isArray(talentNotifications)) return [];
+    if (selectedAgencyId === "all") return talentNotifications;
+    return (talentNotifications as any[]).filter((n: any) => {
+      const agencyId = String(
+        n?.agency_id || n?.agency?.id || n?.agencyId || "",
+      );
+      return agencyId === selectedAgencyId;
+    });
+  }, [talentNotifications, selectedAgencyId]);
+
   const photoUrls = Array.isArray(profileForm.photo_urls)
     ? profileForm.photo_urls
     : [];
@@ -1241,44 +1271,7 @@ export default function TalentPortal({
                 : "Manage your AI licensing deals and earnings"}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-[240px]">
-              <Select
-                value={selectedAgencyId}
-                onValueChange={setSelectedAgencyId}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All agencies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All agencies</SelectItem>
-                  {connectedAgencyIds.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      {agencyNameById.get(id) || id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-[240px]">
-              <Select
-                value={selectedBrandId}
-                onValueChange={setSelectedBrandId}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All brands" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All brands</SelectItem>
-                  {brandOptions.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <div />
           <button
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
             onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
@@ -1337,7 +1330,7 @@ export default function TalentPortal({
                     id: "campaigns",
                     label: "Active Campaigns",
                     icon: Briefcase,
-                    badge: filteredActiveCampaignRows.length,
+                    badge: activeCampaignRows.length,
                   },
                   { id: "archive", label: "Archive", icon: FolderArchive },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
@@ -2108,6 +2101,24 @@ export default function TalentPortal({
                   Your agency notifications inbox
                 </div>
               </div>
+              <div className="w-[240px]">
+                <Select
+                  value={selectedAgencyId}
+                  onValueChange={setSelectedAgencyId}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="All agencies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All agencies</SelectItem>
+                    {connectedAgencyIds.map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {agencyNameById.get(id) || id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
@@ -2118,9 +2129,8 @@ export default function TalentPortal({
                 </div>
 
                 <div className="mt-5 space-y-3">
-                  {Array.isArray(talentNotifications) &&
-                  talentNotifications.length > 0 ? (
-                    (talentNotifications as any[]).map((n: any) => {
+                  {filteredNotifications.length > 0 ? (
+                    filteredNotifications.map((n: any) => {
                       const id = String(n.id);
                       const from = n.from_label || agencyName || "Agency";
                       const subject = n.subject || "Notification";
@@ -3077,22 +3087,49 @@ export default function TalentPortal({
 
           {tab === "campaigns" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-5 rounded-xl border-2 border-green-200 bg-green-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Active
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Currently earning
-                      </div>
-                    </div>
-                    <Badge className="bg-green-600 text-white border-0">
-                      {filteredActiveCampaignRows.length}
-                    </Badge>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="w-[240px]">
+                  <Select
+                    value={selectedBrandId}
+                    onValueChange={setSelectedBrandId}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All brands" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All brands</SelectItem>
+                      {brandOptions.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1 min-w-[220px]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={campaignSearch}
+                      onChange={(e) => setCampaignSearch(e.target.value)}
+                      placeholder="Search by brand or campaign"
+                      className="pl-10 pr-12"
+                    />
+                    {campaignSearch.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setCampaignSearch("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
+                        aria-label="Clear search"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
-                </Card>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Active summary card removed */}
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
@@ -3100,14 +3137,16 @@ export default function TalentPortal({
                   Active Campaigns
                 </div>
                 <div className="mt-5 space-y-4">
-                  {filteredActiveCampaignRows.length === 0 ? (
+                  {filteredActiveCampaignRowsBySearch.length === 0 ? (
                     <div className="text-sm text-gray-600">
-                      {isLoadingCampaignOffers
-                        ? "Loading active campaigns..."
-                        : "No active campaigns yet."}
+                      {campaignSearch.trim()
+                        ? "No campaigns match your search."
+                        : isLoadingCampaignOffers
+                          ? "Loading active campaigns..."
+                          : "No active campaigns yet."}
                     </div>
                   ) : (
-                    filteredActiveCampaignRows.map((it: any) => {
+                    filteredActiveCampaignRowsBySearch.map((it: any) => {
                       const row = it.row || {};
                       const kind = it.kind || "license";
                       const brandId = getBrandKey(row);
@@ -3666,6 +3705,24 @@ export default function TalentPortal({
                   Your agency notifications inbox
                 </div>
               </div>
+              <div className="w-[240px]">
+                <Select
+                  value={selectedAgencyId}
+                  onValueChange={setSelectedAgencyId}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="All agencies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All agencies</SelectItem>
+                    {connectedAgencyIds.map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {agencyNameById.get(id) || id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
@@ -3676,9 +3733,8 @@ export default function TalentPortal({
                 </div>
 
                 <div className="mt-5 space-y-3">
-                  {Array.isArray(talentNotifications) &&
-                  talentNotifications.length > 0 ? (
-                    (talentNotifications as any[]).map((n: any) => {
+                  {filteredNotifications.length > 0 ? (
+                    filteredNotifications.map((n: any) => {
                       const id = String(n.id);
                       const from = n.from_label || agencyName || "Agency";
                       const subject = n.subject || "Notification";

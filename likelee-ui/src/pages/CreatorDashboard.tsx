@@ -63,6 +63,7 @@ import {
   Mic,
   Users,
   Eye,
+  Search,
   Image as ImageIcon,
   Video,
   AlertCircle,
@@ -556,6 +557,8 @@ export default function CreatorDashboard() {
   const [agencyConnectionSubTab, setAgencyConnectionSubTab] = useState<
     "connections" | "asset_requests"
   >("connections");
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [archiveSearch, setArchiveSearch] = useState("");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
   const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>(
@@ -8155,38 +8158,81 @@ export default function CreatorDashboard() {
     );
   };
   const renderCampaigns = () => {
-    const campaignsToShow = activeCampaigns;
+    const query = campaignSearch.trim().toLowerCase();
+    const campaignsToShow = query
+      ? activeCampaigns.filter((campaign) => {
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(query) || name.includes(query);
+        })
+      : activeCampaigns;
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.campaigns.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.campaigns.subtitle")}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("creatorDashboard.campaigns.title")}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {t("creatorDashboard.campaigns.subtitle")}
+              </p>
+            </div>
+            <Badge
+              className={`${
+                activeCampaigns.length === 0
+                  ? "bg-orange-100 text-orange-700 border border-orange-300"
+                  : "bg-green-100 text-green-700 border border-green-300"
+              } px-4 py-2 text-lg w-fit`}
+            >
+              {t("creatorDashboard.campaigns.activeCount", {
+                count: activeCampaigns.length,
+              })}
+            </Badge>
           </div>
-          <Badge
-            className={`${
-              activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
-            } px-4 py-2 text-lg`}
-          >
-            {t("creatorDashboard.campaigns.activeCount", {
-              count: activeCampaigns.length,
-            })}
-          </Badge>
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={campaignSearch}
+                onChange={(e) => setCampaignSearch(e.target.value)}
+                placeholder="Search by brand or campaign"
+                className="pl-12 pr-12 h-12"
+              />
+              {campaignSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setCampaignSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {campaignsToShow.length === 0 && (
           <Card className="p-6 bg-white border border-gray-200 text-center text-gray-600">
-            <p>Loading campaigns...</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Fetching your active campaigns and licenses.
-            </p>
+            {campaignSearch.trim() ? (
+              <>
+                <p>No campaigns match your search.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try a different brand or campaign name.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>Loading campaigns...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fetching your active campaigns and licenses.
+                </p>
+              </>
+            )}
           </Card>
         )}
 
@@ -8430,28 +8476,67 @@ export default function CreatorDashboard() {
   };
 
   const renderCampaignArchive = () => {
-    const campaignsToShow = archivedCampaigns;
+    const archiveQuery = archiveSearch.trim().toLowerCase();
+    const campaignsToShow = archiveQuery
+      ? archivedCampaigns.filter((campaign) => {
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(archiveQuery) || name.includes(archiveQuery);
+        })
+      : archivedCampaigns;
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.archive.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.archive.subtitle")}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("creatorDashboard.archive.title")}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {t("creatorDashboard.archive.subtitle")}
+              </p>
+            </div>
+            <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg w-fit">
+              {t("creatorDashboard.archive.completedCount", {
+                count: archivedCampaigns.length,
+              })}
+            </Badge>
           </div>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
-            {t("creatorDashboard.archive.completedCount", {
-              count: archivedCampaigns.length,
-            })}
-          </Badge>
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={archiveSearch}
+                onChange={(e) => setArchiveSearch(e.target.value)}
+                placeholder="Search by brand or campaign"
+                className="pl-12 pr-12 h-12"
+              />
+              {archiveSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setArchiveSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         {campaignsToShow.length === 0 ? (
           <Card className="p-6 rounded-xl shadow-sm text-center text-gray-600">
-            {loadingBrandOffers ? (
+            {archiveSearch.trim() ? (
+              <>
+                <p>No campaigns match your search.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try a different brand or campaign name.
+                </p>
+              </>
+            ) : loadingBrandOffers ? (
               <>
                 <p>Loading past campaigns...</p>
                 <p className="text-sm text-gray-500 mt-1">
