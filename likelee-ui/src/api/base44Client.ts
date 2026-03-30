@@ -107,6 +107,9 @@ function userFriendlyMessage(
   if (code === "23514" || lower.includes("violates check constraint")) {
     return "A validation error occurred. Please check your input and try again.";
   }
+  if (code === "PGRST204") {
+    return "Invalid data provided. Please check your input.";
+  }
   if (status === 409) {
     return "This action conflicts with an existing record. Please refresh and try again.";
   }

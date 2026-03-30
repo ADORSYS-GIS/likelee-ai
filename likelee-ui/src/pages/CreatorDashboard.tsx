@@ -3087,11 +3087,6 @@ export default function CreatorDashboard() {
       icon: WalletIcon,
     },
     {
-      id: "settings",
-      label: t("creatorDashboard.nav.settings"),
-      icon: Settings,
-    },
-    {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
@@ -3122,6 +3117,11 @@ export default function CreatorDashboard() {
       icon: LinkIcon,
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
+    },
+    {
+      id: "settings",
+      label: t("creatorDashboard.nav.settings"),
+      icon: Settings,
     },
   ];
 
