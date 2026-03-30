@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 // Temporary comment to trigger TypeScript re-evaluation
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,6 +206,7 @@ export default function OrganizationSignup() {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
   const [isPreSelected, setIsPreSelected] = useState(false);
@@ -362,9 +364,9 @@ export default function OrganizationSignup() {
             ) {
               console.log("Onboarding complete, redirecting to dashboard");
               if (isBrand) {
-                window.location.href = "/BrandDashboard";
+                navigate("/BrandDashboard", { replace: true });
               } else {
-                window.location.href = "/AgencyDashboard";
+                navigate("/AgencyDashboard", { replace: true });
               }
               return;
             }
@@ -446,9 +448,9 @@ export default function OrganizationSignup() {
             ) {
               console.log("Onboarding complete via fallback, redirecting");
               if (brandProfile) {
-                window.location.href = "/BrandDashboard";
+                navigate("/BrandDashboard", { replace: true });
               } else {
-                window.location.href = "/AgencyDashboard";
+                navigate("/AgencyDashboard", { replace: true });
               }
               return;
             }
@@ -689,11 +691,11 @@ export default function OrganizationSignup() {
     },
     onSuccess: () => {
       if (flow === "brand") {
-        window.location.href = "/BrandDashboard";
+        navigate("/BrandDashboard", { replace: true });
         return;
       }
       if (flow === "agency") {
-        window.location.href = "/AgencyDashboard";
+        navigate("/AgencyDashboard", { replace: true });
         return;
       }
       setSubmitted(true);
