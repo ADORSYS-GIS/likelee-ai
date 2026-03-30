@@ -18,6 +18,8 @@ import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
+import { parseBackendError } from "@/utils/errorParser";
+
 import {
   LayoutDashboard,
   Users,
@@ -118,6 +120,11 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
+  clearStoredKycSessionUrl,
+  loadStoredKycSessionUrl,
+  storeKycSessionUrl,
+} from "@/utils/kycSession";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -189,7 +196,6 @@ import {
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
-import { parseBackendError } from "@/utils/errorParser";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -17636,10 +17642,17 @@ export default function AgencyDashboard() {
   const [kycLoading, setKycLoading] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
+  const [savedKycSessionUrl, setSavedKycSessionUrl] = useState<string | null>(
+    null,
+  );
   const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
   const [agencyKycStatus, setAgencyKycStatus] = useState<string | null>(null);
+  const [agencyKycRejectionReason, setAgencyKycRejectionReason] = useState<
+    string | null
+  >(null);
   const [kycStatusRefreshing, setKycStatusRefreshing] = useState(false);
   const veriffFrameRef = React.useRef<any>(null);
+  const agencyUserId = user?.id ? String(user.id) : null;
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
@@ -17654,29 +17667,81 @@ export default function AgencyDashboard() {
     setSidebarOpen(false);
   };
 
-  const refreshAgencyKycStatus = async () => {
+  const openAgencyKycModal = (sessionUrl: string) => {
+    setShowKycModal(true);
+    setKycEmbedLoading(true);
+    setKycSessionUrl(sessionUrl);
+  };
+
+  useEffect(() => {
+    if (!agencyUserId) {
+      setSavedKycSessionUrl(null);
+      return;
+    }
+
+    setSavedKycSessionUrl(loadStoredKycSessionUrl("agency", agencyUserId));
+  }, [agencyUserId]);
+
+  useEffect(() => {
+    if (!agencyUserId) return;
+    const normalizedStatus = String(agencyKycStatus || "")
+      .trim()
+      .toLowerCase();
+
+    if (
+      normalizedStatus === "approved" ||
+      normalizedStatus === "rejected" ||
+      normalizedStatus === "declined"
+    ) {
+      clearStoredKycSessionUrl("agency", agencyUserId);
+      setSavedKycSessionUrl(null);
+    }
+  }, [agencyKycStatus, agencyUserId]);
+
+  const refreshAgencyKycStatus = async ({
+    manageLoading = true,
+  }: {
+    manageLoading?: boolean;
+  } = {}) => {
     if (!authenticated || !user?.id) return;
-    setKycStatusRefreshing(true);
+    if (manageLoading) setKycStatusRefreshing(true);
     try {
       const rows: any = await base44.get("/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       const status = row?.kyc_status;
-      if (typeof status === "string") setAgencyKycStatus(status);
+      if (typeof status === "string") {
+        const normalizedStatus = status.trim().toLowerCase();
+        setAgencyKycStatus(status);
+        setAgencyKycRejectionReason(row?.kyc_rejection_reason ?? null);
+        if (
+          normalizedStatus === "approved" ||
+          normalizedStatus === "rejected" ||
+          normalizedStatus === "declined"
+        ) {
+          if (agencyUserId) {
+            clearStoredKycSessionUrl("agency", agencyUserId);
+          }
+          setSavedKycSessionUrl(null);
+        }
+      }
     } catch {
       // ignore
     } finally {
-      setKycStatusRefreshing(false);
+      if (manageLoading) setKycStatusRefreshing(false);
     }
   };
 
   useEffect(() => {
-    const s = (profile as any)?.kyc_status as string | undefined;
-    if (typeof s === "string") setAgencyKycStatus(s);
-  }, [profile]);
+    const profileSource =
+      (agencyProfileQuery.data as any) || (profile as any) || null;
+    const status = profileSource?.kyc_status;
+    if (typeof status === "string") setAgencyKycStatus(status);
+    setAgencyKycRejectionReason(profileSource?.kyc_rejection_reason ?? null);
+  }, [agencyProfileQuery.data, profile]);
 
   // Sync verification status from backend on load
   useEffect(() => {
-    refreshAgencyKycStatus();
+    refreshAgencyKycStatus({ manageLoading: false });
   }, [authenticated, user?.id]);
 
   // Keep status fresh while pending (even if modal is closed)
@@ -17693,6 +17758,18 @@ export default function AgencyDashboard() {
           const status = row?.kyc_status;
           if (!active || typeof status !== "string") return;
           setAgencyKycStatus(status);
+          setAgencyKycRejectionReason(row?.kyc_rejection_reason ?? null);
+          const normalizedStatus = status.trim().toLowerCase();
+          if (
+            normalizedStatus === "approved" ||
+            normalizedStatus === "rejected" ||
+            normalizedStatus === "declined"
+          ) {
+            if (agencyUserId) {
+              clearStoredKycSessionUrl("agency", agencyUserId);
+            }
+            setSavedKycSessionUrl(null);
+          }
         } catch {
           // ignore
         }
@@ -17704,7 +17781,7 @@ export default function AgencyDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [agencyKycStatus, authenticated, user?.id]);
+  }, [agencyKycStatus, agencyUserId, authenticated, user?.id]);
 
   useEffect(() => {
     if (!kycSessionUrl) return;
@@ -17759,6 +17836,11 @@ export default function AgencyDashboard() {
           onEvent: (msg: any) => {
             if (msg === "SUBMITTED") {
               setAgencyKycStatus("pending");
+              setAgencyKycRejectionReason(null);
+              if (agencyUserId) {
+                clearStoredKycSessionUrl("agency", agencyUserId);
+              }
+              setSavedKycSessionUrl(null);
               setShowKycModal(false);
               setKycSessionUrl(null);
             }
@@ -17774,6 +17856,10 @@ export default function AgencyDashboard() {
             e?.message || "Failed to load verification. Please try again.",
           duration: 3000,
         });
+        if (agencyUserId) {
+          clearStoredKycSessionUrl("agency", agencyUserId);
+        }
+        setSavedKycSessionUrl(null);
         setKycEmbedLoading(false);
         setKycSessionUrl(null);
         setShowKycModal(false);
@@ -17791,7 +17877,7 @@ export default function AgencyDashboard() {
       const container = document.getElementById(rootElementId);
       if (container) container.innerHTML = "";
     };
-  }, [kycSessionUrl, toast]);
+  }, [agencyUserId, kycSessionUrl, toast]);
 
   useEffect(() => {
     if (!showKycModal) return;
@@ -17806,8 +17892,13 @@ export default function AgencyDashboard() {
         if (!active || !status) return;
 
         setAgencyKycStatus(status);
+        setAgencyKycRejectionReason(row?.kyc_rejection_reason ?? null);
 
         if (status === "approved") {
+          if (agencyUserId) {
+            clearStoredKycSessionUrl("agency", agencyUserId);
+          }
+          setSavedKycSessionUrl(null);
           toast({
             title: "Verification Complete",
             description: "Your verification is approved.",
@@ -17816,6 +17907,10 @@ export default function AgencyDashboard() {
           setShowKycModal(false);
           setKycSessionUrl(null);
         } else if (status === "declined") {
+          if (agencyUserId) {
+            clearStoredKycSessionUrl("agency", agencyUserId);
+          }
+          setSavedKycSessionUrl(null);
           toast({
             variant: "destructive",
             title: "Verification Complete",
@@ -17834,7 +17929,7 @@ export default function AgencyDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticated, showKycModal, toast, user?.id]);
+  }, [agencyUserId, authenticated, showKycModal, toast, user?.id]);
 
   // Load persisted bookings on mount
   useEffect(() => {
@@ -17928,8 +18023,14 @@ export default function AgencyDashboard() {
         toast({ title: "Email notification", description: msg });
       }
     } catch (e: any) {
+      const parsed = parseBackendError(e);
+      const body = e?.response?.data || e?.data;
+      const code =
+        body?.code || body?.error_code || body?.error?.code || e?.code || "";
       const msg =
-        typeof e === "string" ? e : e?.message || "Failed to create booking";
+        String(code).trim() === "PGRST204" || /\bPGRST204\b/i.test(parsed)
+          ? "There was an issue processing your booking. Please verify your details and try again."
+          : parsed || "Failed to create booking";
       if (/409/.test(msg) || /unavailable/i.test(msg)) {
         toast({
           title: `${isSportsAgency ? "Athlete" : "Talent"} unavailable`,
@@ -18112,14 +18213,15 @@ export default function AgencyDashboard() {
       return;
     }
 
-    if (agencyKycStatus === "pending") {
-      toast({
-        title: "Verification In Progress",
-        description: "Your KYC verification is already pending.",
-      });
+    const normalizedStatus = String(agencyKycStatus || "")
+      .trim()
+      .toLowerCase();
+
+    if (normalizedStatus === "pending" && savedKycSessionUrl) {
+      openAgencyKycModal(savedKycSessionUrl);
       return;
     }
-    if (agencyKycStatus === "approved") {
+    if (normalizedStatus === "approved") {
       toast({
         title: "Already Verified",
         description: "Your KYC verification is already approved.",
@@ -18128,8 +18230,7 @@ export default function AgencyDashboard() {
     }
 
     try {
-      setShowKycModal(true);
-      setKycEmbedLoading(true);
+      setAgencyKycRejectionReason(null);
       setAgencyKycStatus("pending");
       setKycLoading(true);
       toast({
@@ -18143,8 +18244,13 @@ export default function AgencyDashboard() {
       });
 
       if (data.session_url) {
+        const sessionUrl = String(data.session_url);
+        if (agencyUserId) {
+          storeKycSessionUrl("agency", agencyUserId, sessionUrl);
+        }
+        setSavedKycSessionUrl(sessionUrl);
         setAgencyKycStatus("pending");
-        setKycSessionUrl(String(data.session_url));
+        openAgencyKycModal(sessionUrl);
       } else {
         throw new Error("No session URL returned");
       }
@@ -18159,6 +18265,11 @@ export default function AgencyDashboard() {
       setShowKycModal(false);
       setKycSessionUrl(null);
       setAgencyKycStatus((profile as any)?.kyc_status || null);
+      setAgencyKycRejectionReason(
+        (agencyProfileQuery.data as any)?.kyc_rejection_reason ??
+          (profile as any)?.kyc_rejection_reason ??
+          null,
+      );
     } finally {
       setKycLoading(false);
     }
@@ -18269,12 +18380,6 @@ export default function AgencyDashboard() {
           { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-          {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
@@ -18282,6 +18387,12 @@ export default function AgencyDashboard() {
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
                 : undefined,
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
           },
         ]
       : [
@@ -18342,12 +18453,6 @@ export default function AgencyDashboard() {
           { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-          {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
@@ -18355,6 +18460,12 @@ export default function AgencyDashboard() {
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
                 : undefined,
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
           },
         ];
 
@@ -18933,9 +19044,15 @@ export default function AgencyDashboard() {
               licensingPipeline={licensingPipelineQuery.data}
               recentActivity={recentActivityQuery.data}
               kycStatus={agencyKycStatus}
+              kycRejectionReason={agencyKycRejectionReason}
               kycLoading={kycLoading}
               onRefreshStatus={refreshAgencyKycStatus}
               refreshLoading={kycStatusRefreshing}
+              canResumeKyc={
+                String(agencyKycStatus || "")
+                  .trim()
+                  .toLowerCase() === "pending" && !!savedKycSessionUrl
+              }
             />
           )}
           {activeTab === "roster" && isRosterPrimarySubTab && (
@@ -19256,9 +19373,7 @@ export default function AgencyDashboard() {
               {(kycEmbedLoading || !kycSessionUrl) && (
                 <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                  <p className="text-sm text-gray-700">
-                    Starting verification…
-                  </p>
+                  <p className="text-sm text-gray-700">Loading verification…</p>
                 </div>
               )}
               <div id="veriff-kyc-embedded-agency" className="w-full h-full" />

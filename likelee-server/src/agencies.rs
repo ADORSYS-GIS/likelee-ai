@@ -654,7 +654,7 @@ pub async fn get_profile(
         .from("agencies")
         .select("*")
         .eq("id", &user.id)
-        .single()
+        .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -667,9 +667,20 @@ pub async fn get_profile(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), txt));
     }
-    let v: serde_json::Value = serde_json::from_str(&txt)
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+    match rows.into_iter().next() {
+        Some(v) => Ok(Json(v)),
+        None => Err((
+            StatusCode::NOT_FOUND,
+            json!({
+                "error": "Agency profile not found.",
+                "code": "profile_not_found"
+            })
+            .to_string(),
+        )),
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]

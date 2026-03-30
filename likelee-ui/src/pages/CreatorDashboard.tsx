@@ -35,6 +35,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToastAction } from "@/components/ui/toast";
 import { getUserFriendlyError } from "@/utils";
+import {
+  clearStoredKycSessionUrl,
+  loadStoredKycSessionUrl,
+  storeKycSessionUrl,
+} from "@/utils/kycSession";
+import { formatKycReason } from "@/utils/kycDisplay";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -2146,6 +2152,7 @@ export default function CreatorDashboard() {
     royalty_percentage: 0,
     accept_negotiations: true,
     is_public_brands: resolvePublicBrandsVisibility(profile),
+    kyc_rejection_reason: profile?.kyc_rejection_reason || null,
   });
 
   useEffect(() => {
@@ -2174,6 +2181,8 @@ export default function CreatorDashboard() {
         email: profile.email || prev.email,
         profile_photo: profile.profile_photo_url || prev.profile_photo,
         kyc_status: profile.kyc_status || prev.kyc_status,
+        kyc_rejection_reason:
+          profile.kyc_rejection_reason ?? prev.kyc_rejection_reason ?? null,
         location: [profile.city, profile.state].filter(Boolean).join(", "),
         bio: profile.bio ?? prev.bio,
         birthday: profile.birthdate ?? prev.birthday,
@@ -2217,10 +2226,45 @@ export default function CreatorDashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [kycLoading, setKycLoading] = useState(false);
+  const [kycStatusRefreshing, setKycStatusRefreshing] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
+  const [savedKycSessionUrl, setSavedKycSessionUrl] = useState<string | null>(
+    null,
+  );
   const veriffFrameRef = useRef<any>(null);
   const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
+  const creatorUserId = user?.id ? String(user.id) : null;
+  const openCreatorKycModal = (sessionUrl: string) => {
+    setShowKycModal(true);
+    setKycEmbedLoading(true);
+    setKycSessionUrl(sessionUrl);
+  };
+
+  useEffect(() => {
+    if (!creatorUserId) {
+      setSavedKycSessionUrl(null);
+      return;
+    }
+
+    setSavedKycSessionUrl(loadStoredKycSessionUrl("creator", creatorUserId));
+  }, [creatorUserId]);
+
+  useEffect(() => {
+    if (!creatorUserId) return;
+    const normalizedStatus = String(creator?.kyc_status || "")
+      .trim()
+      .toLowerCase();
+
+    if (
+      normalizedStatus === "approved" ||
+      normalizedStatus === "rejected" ||
+      normalizedStatus === "declined"
+    ) {
+      clearStoredKycSessionUrl("creator", creatorUserId);
+      setSavedKycSessionUrl(null);
+    }
+  }, [creator?.kyc_status, creatorUserId]);
 
   useEffect(() => {
     if (!kycSessionUrl) return;
@@ -2274,10 +2318,18 @@ export default function CreatorDashboard() {
           },
           onEvent: (msg: any) => {
             if (msg === "SUBMITTED") {
-              setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
+              setCreator((prev: any) => ({
+                ...prev,
+                kyc_status: "pending",
+                kyc_rejection_reason: null,
+              }));
+              if (creatorUserId) {
+                clearStoredKycSessionUrl("creator", creatorUserId);
+              }
+              setSavedKycSessionUrl(null);
               setShowKycModal(false);
               setKycSessionUrl(null);
-              refreshVerificationFromDashboard();
+              refreshVerificationFromDashboard({ manageLoading: false });
             }
           },
         });
@@ -2290,6 +2342,10 @@ export default function CreatorDashboard() {
           description:
             e?.message || "Failed to load verification. Please try again.",
         });
+        if (creatorUserId) {
+          clearStoredKycSessionUrl("creator", creatorUserId);
+        }
+        setSavedKycSessionUrl(null);
         setKycEmbedLoading(false);
         setKycSessionUrl(null);
         setShowKycModal(false);
@@ -2321,7 +2377,18 @@ export default function CreatorDashboard() {
         const status = row?.kyc_status;
         if (!active || !status) return;
 
+        setCreator((prev: any) => ({
+          ...prev,
+          kyc_status: status,
+          verified_at: row?.verified_at ?? prev?.verified_at,
+          kyc_rejection_reason: row?.kyc_rejection_reason ?? null,
+        }));
+
         if (status === "approved") {
+          if (creatorUserId) {
+            clearStoredKycSessionUrl("creator", creatorUserId);
+          }
+          setSavedKycSessionUrl(null);
           toast({
             title: "Verification Complete",
             description: "Your verification is approved.",
@@ -2329,6 +2396,10 @@ export default function CreatorDashboard() {
           setShowKycModal(false);
           setKycSessionUrl(null);
         } else if (status === "declined") {
+          if (creatorUserId) {
+            clearStoredKycSessionUrl("creator", creatorUserId);
+          }
+          setSavedKycSessionUrl(null);
           toast({
             variant: "destructive",
             title: "Verification Complete",
@@ -2346,7 +2417,7 @@ export default function CreatorDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticated, showKycModal, user?.id]);
+  }, [authenticated, creatorUserId, showKycModal, user?.id]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [pendingApprovals, setPendingApprovals] =
@@ -2737,6 +2808,7 @@ export default function CreatorDashboard() {
           content_restrictions: profile.content_restrictions || [],
           brand_exclusivity: profile.brand_exclusivity || [],
           kyc_status: profile.kyc_status,
+          kyc_rejection_reason: profile.kyc_rejection_reason ?? null,
           verified_at: profile.verified_at,
           avatar_canonical_url: profile.avatar_canonical_url,
         }));
@@ -2779,7 +2851,7 @@ export default function CreatorDashboard() {
   // Sync verification status from backend on load
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
-    refreshVerificationFromDashboard();
+    refreshVerificationFromDashboard({ manageLoading: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, authenticated, user?.id]);
 
@@ -2790,7 +2862,7 @@ export default function CreatorDashboard() {
 
     const interval = window.setInterval(
       () => {
-        refreshVerificationFromDashboard();
+        refreshVerificationFromDashboard({ manageLoading: false });
       },
       10 * 60 * 1000,
     );
@@ -2810,14 +2882,15 @@ export default function CreatorDashboard() {
       return;
     }
 
-    if (creator?.kyc_status === "pending") {
-      toast({
-        title: "Verification In Progress",
-        description: "Your KYC verification is already pending.",
-      });
+    const normalizedStatus = String(creator?.kyc_status || "")
+      .trim()
+      .toLowerCase();
+
+    if (normalizedStatus === "pending" && savedKycSessionUrl) {
+      openCreatorKycModal(savedKycSessionUrl);
       return;
     }
-    if (creator?.kyc_status === "approved") {
+    if (normalizedStatus === "approved") {
       toast({
         title: "Already Verified",
         description: "Your KYC verification is already approved.",
@@ -2826,15 +2899,26 @@ export default function CreatorDashboard() {
     }
 
     try {
-      setShowKycModal(true);
-      setKycEmbedLoading(true);
       setKycLoading(true);
       const data: any = await base44.post("/kyc/session", {
         user_id: user.id,
       });
       // Optimistic UI: once a session is created, verification is in progress.
-      setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
-      if (data.session_url) setKycSessionUrl(String(data.session_url));
+      setCreator((prev: any) => ({
+        ...prev,
+        kyc_status: "pending",
+        kyc_rejection_reason: null,
+      }));
+      if (data.session_url) {
+        const sessionUrl = String(data.session_url);
+        if (creatorUserId) {
+          storeKycSessionUrl("creator", creatorUserId, sessionUrl);
+        }
+        setSavedKycSessionUrl(sessionUrl);
+        openCreatorKycModal(sessionUrl);
+      } else {
+        throw new Error("No verification session returned");
+      }
     } catch (e: any) {
       toast({
         variant: "destructive",
@@ -2848,23 +2932,41 @@ export default function CreatorDashboard() {
     }
   };
 
-  const refreshVerificationFromDashboard = async () => {
+  const refreshVerificationFromDashboard = async ({
+    manageLoading = true,
+  }: {
+    manageLoading?: boolean;
+  } = {}) => {
     if (!authenticated || !user?.id) return;
     try {
-      setKycLoading(true);
+      if (manageLoading) setKycStatusRefreshing(true);
       const rows = await base44.get("/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
+        const normalizedStatus = String(row.kyc_status || "")
+          .trim()
+          .toLowerCase();
         setCreator((prev: any) => ({
           ...prev,
           kyc_status: row.kyc_status,
           verified_at: row.verified_at,
+          kyc_rejection_reason: row.kyc_rejection_reason ?? null,
         }));
+        if (
+          normalizedStatus === "approved" ||
+          normalizedStatus === "rejected" ||
+          normalizedStatus === "declined"
+        ) {
+          if (creatorUserId) {
+            clearStoredKycSessionUrl("creator", creatorUserId);
+          }
+          setSavedKycSessionUrl(null);
+        }
       }
     } catch (e: any) {
       console.error("Failed to refresh verification status", e);
     } finally {
-      setKycLoading(false);
+      if (manageLoading) setKycStatusRefreshing(false);
     }
   };
 
@@ -2985,11 +3087,6 @@ export default function CreatorDashboard() {
       icon: WalletIcon,
     },
     {
-      id: "settings",
-      label: t("creatorDashboard.nav.settings"),
-      icon: Settings,
-    },
-    {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
@@ -3020,6 +3117,11 @@ export default function CreatorDashboard() {
       icon: LinkIcon,
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
+    },
+    {
+      id: "settings",
+      label: t("creatorDashboard.nav.settings"),
+      icon: Settings,
     },
   ];
 
@@ -4760,52 +4862,227 @@ export default function CreatorDashboard() {
     }
   };
 
+  const renderMarketplaceVerificationBar = () => {
+    const currentKycStatus = creator?.kyc_status ?? profile?.kyc_status;
+    const currentKycReason = formatKycReason(
+      creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
+    );
+    const normalizedStatus = String(currentKycStatus || "")
+      .trim()
+      .toLowerCase();
+    if (normalizedStatus === "approved") return null;
+
+    const isPending = normalizedStatus === "pending";
+    const isRejected =
+      normalizedStatus === "rejected" || normalizedStatus === "declined";
+    const hasPendingFollowUp = isPending && currentKycReason.length > 0;
+    const BannerIcon =
+      hasPendingFollowUp || isRejected
+        ? ShieldAlert
+        : isPending
+          ? Clock
+          : Sparkles;
+    const bannerClassName =
+      hasPendingFollowUp || isRejected
+        ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
+        : "rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
+
+    const title = hasPendingFollowUp
+      ? t(
+          "creatorDashboard.marketplaceVerification.followUpTitle",
+          "Continue verification to finish approval",
+        )
+      : isPending
+        ? t(
+            "creatorDashboard.marketplaceVerification.pendingTitle",
+            "Verification in review",
+          )
+        : isRejected
+          ? t(
+              "creatorDashboard.marketplaceVerification.rejectedTitle",
+              "Verification was not approved",
+            )
+          : t(
+              "creatorDashboard.marketplaceVerification.title",
+              "Verify to unlock marketplace visibility",
+            );
+    const description = hasPendingFollowUp
+      ? t(
+          "creatorDashboard.marketplaceVerification.followUpDescription",
+          "Veriff requested one more step before approval. Complete it below so your profile can appear to brands and agencies in marketplace discovery.",
+        )
+      : isPending
+        ? t(
+            "creatorDashboard.marketplaceVerification.pendingDescription",
+            savedKycSessionUrl
+              ? "Closed the verification window? Resume it anytime below. Once approved, your profile can appear to brands and agencies in marketplace discovery."
+              : "Your identity check is processing. If the last verification link expired, start a new session below. Once approved, your profile can appear to brands and agencies in marketplace discovery.",
+          )
+        : isRejected
+          ? t(
+              "creatorDashboard.marketplaceVerification.rejectedDescription",
+              "Your last verification was not approved. Review the reason below and retry so your profile can appear to brands and agencies in marketplace discovery.",
+            )
+          : t(
+              "creatorDashboard.marketplaceVerification.description",
+              "Complete identity verification so brands and agencies can discover your profile in the marketplace.",
+            );
+    const statusLabel = hasPendingFollowUp
+      ? t(
+          "creatorDashboard.marketplaceVerification.followUpBadge",
+          "Action needed",
+        )
+      : isPending
+        ? t("creatorDashboard.verificationStatus.pending", "Pending")
+        : isRejected
+          ? t("creatorDashboard.verificationStatus.rejected", "Rejected")
+          : t(
+              "creatorDashboard.marketplaceVerification.notVerified",
+              "Not verified",
+            );
+    const primaryButtonLabel = isPending
+      ? savedKycSessionUrl
+        ? t(
+            hasPendingFollowUp
+              ? "creatorDashboard.marketplaceVerification.continueCta"
+              : "creatorDashboard.marketplaceVerification.resumeCta",
+            hasPendingFollowUp
+              ? "Continue verification"
+              : "Resume verification",
+          )
+        : t(
+            "creatorDashboard.marketplaceVerification.restartCta",
+            "Start new verification",
+          )
+      : isRejected
+        ? t(
+            "creatorDashboard.marketplaceVerification.retryCta",
+            "Retry verification",
+          )
+        : t("creatorDashboard.marketplaceVerification.cta", "Verify now");
+
+    return (
+      <div className={bannerClassName}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5">
+              <BannerIcon
+                className={`h-5 w-5 ${
+                  hasPendingFollowUp || isRejected
+                    ? "text-rose-600"
+                    : isPending
+                      ? "text-amber-600"
+                      : "text-[#32C8D1]"
+                }`}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-gray-900">{title}</p>
+                <Badge className="rounded-full border-0 bg-white/90 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm">
+                  {statusLabel}
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-gray-600">
+                {description}
+              </p>
+              {(hasPendingFollowUp || isRejected) && currentKycReason && (
+                <div className="mt-2 max-w-2xl rounded-2xl bg-white/90 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-100">
+                  <span className="font-semibold">
+                    {hasPendingFollowUp
+                      ? t(
+                          "creatorDashboard.marketplaceVerification.followUpReasonLabel",
+                          "Veriff note:",
+                        )
+                      : t(
+                          "creatorDashboard.marketplaceVerification.rejectedReasonLabel",
+                          "Reason:",
+                        )}
+                  </span>{" "}
+                  {currentKycReason}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            {isPending && (
+              <Button
+                onClick={() => refreshVerificationFromDashboard()}
+                disabled={kycLoading || kycStatusRefreshing}
+                variant="outline"
+                className="h-10 rounded-full border-gray-200 bg-white/90 px-4 text-gray-700 shadow-sm hover:bg-white"
+              >
+                {kycStatusRefreshing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                {t(
+                  "creatorDashboard.marketplaceVerification.refreshCta",
+                  "Refresh status",
+                )}
+              </Button>
+            )}
+            <Button
+              onClick={startVerificationFromDashboard}
+              disabled={kycLoading || kycStatusRefreshing}
+              className="h-10 rounded-full bg-[#0F172A] px-4 text-white hover:bg-black"
+            >
+              {kycLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Shield className="mr-2 h-4 w-4" />
+              )}
+              {primaryButtonLabel}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderDashboard = () => {
     const imagesFilled = Object.values(referenceImages).filter(
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
+    const currentCreatorKycReason = formatKycReason(
+      creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
+    );
+    const normalizedCreatorStatus = String(creator?.kyc_status || "")
+      .trim()
+      .toLowerCase();
+    const isCreatorApproved = normalizedCreatorStatus === "approved";
+    const isCreatorPending = normalizedCreatorStatus === "pending";
+    const isCreatorRejected =
+      normalizedCreatorStatus === "rejected" ||
+      normalizedCreatorStatus === "declined";
+    const hasCreatorPendingFollowUp =
+      isCreatorPending && currentCreatorKycReason.length > 0;
+    const verificationButtonLabel = isCreatorPending
+      ? savedKycSessionUrl
+        ? t(
+            hasCreatorPendingFollowUp
+              ? "creatorDashboard.verificationStatus.continueVerification"
+              : "creatorDashboard.verificationStatus.resumeVerification",
+            hasCreatorPendingFollowUp
+              ? "Continue Verification"
+              : "Resume Verification",
+          )
+        : t(
+            "creatorDashboard.verificationStatus.restartVerification",
+            "Start New Verification",
+          )
+      : isCreatorRejected
+        ? t(
+            "creatorDashboard.verificationStatus.retryVerification",
+            "Retry Verification",
+          )
+        : t("creatorDashboard.verificationStatus.completeVerification");
 
     return (
       <div className="space-y-6">
-        {profile?.kyc_status !== "approved" && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-blue-700 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-blue-900">
-                  {t(
-                    "creatorDashboard.publicProfile.verifyBannerTitle",
-                    "Verify your account",
-                  )}
-                </p>
-                <p className="text-sm text-blue-900/80">
-                  {t(
-                    "creatorDashboard.publicProfile.verifyBannerDesc",
-                    "Complete identity verification to become visible to brands.",
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <Button
-              onClick={startVerificationFromDashboard}
-              disabled={kycLoading || creator?.kyc_status === "pending"}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {creator?.kyc_status === "pending"
-                ? t(
-                    "creatorDashboard.publicProfile.verifyBannerPending",
-                    "Verification pending",
-                  )
-                : t(
-                    "creatorDashboard.publicProfile.verifyBannerCta",
-                    "Verify now",
-                  )}
-            </Button>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
@@ -5467,16 +5744,16 @@ export default function CreatorDashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                {creator?.kyc_status === "approved" && (
+                {isCreatorApproved && (
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 )}
-                {creator?.kyc_status === "pending" && (
+                {isCreatorPending && (
                   <Clock className="w-5 h-5 text-yellow-600" />
                 )}
-                {creator?.kyc_status === "rejected" && (
+                {isCreatorRejected && (
                   <XCircle className="w-5 h-5 text-red-600" />
                 )}
-                {!creator?.kyc_status && (
+                {!normalizedCreatorStatus && (
                   <AlertCircle className="w-5 h-5 text-gray-500" />
                 )}
                 <span className="font-medium text-gray-900">
@@ -5489,35 +5766,46 @@ export default function CreatorDashboard() {
                 <Badge
                   variant="outline"
                   className={
-                    creator?.kyc_status === "approved"
+                    isCreatorApproved
                       ? "bg-green-100 text-green-700"
-                      : creator?.kyc_status === "pending"
+                      : isCreatorPending
                         ? "bg-yellow-100 text-yellow-700"
-                        : creator?.kyc_status === "rejected"
+                        : isCreatorRejected
                           ? "bg-red-100 text-red-700"
                           : "bg-gray-100 text-gray-700"
                   }
                 >
-                  {creator?.kyc_status
-                    ? t(
-                        `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                      )
+                  {normalizedCreatorStatus
+                    ? isCreatorRejected &&
+                      normalizedCreatorStatus === "declined"
+                      ? t(
+                          "creatorDashboard.verificationStatus.rejected",
+                          "Rejected",
+                        )
+                      : hasCreatorPendingFollowUp
+                        ? t(
+                            "creatorDashboard.verificationStatus.followUpNeeded",
+                            "Action Needed",
+                          )
+                        : t(
+                            `creatorDashboard.verificationStatus.${normalizedCreatorStatus}`,
+                          )
                     : t("creatorDashboard.verificationStatus.notStarted")}
                 </Badge>
-                {creator?.kyc_status !== "approved" && (
+                {!isCreatorApproved && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={refreshVerificationFromDashboard}
-                    disabled={kycLoading}
+                    onClick={() => refreshVerificationFromDashboard()}
+                    disabled={kycLoading || kycStatusRefreshing}
                     className="h-8 px-2"
                     title={t(
                       "creatorDashboard.verificationStatus.refreshStatus",
                     )}
                   >
                     <RefreshCw
-                      className={`w-4 h-4 ${kycLoading ? "animate-spin" : ""}`}
+                      className={`w-4 h-4 ${kycStatusRefreshing ? "animate-spin" : ""}`}
                     />
                   </Button>
                 )}
@@ -5538,9 +5826,7 @@ export default function CreatorDashboard() {
               <Button
                 onClick={startVerificationFromDashboard}
                 disabled={
-                  kycLoading ||
-                  creator?.kyc_status === "approved" ||
-                  creator?.kyc_status === "pending"
+                  kycLoading || kycStatusRefreshing || isCreatorApproved
                 }
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
@@ -5550,15 +5836,15 @@ export default function CreatorDashboard() {
                 ) : (
                   <Shield className="w-4 h-4 mr-2" />
                 )}
-                {t("creatorDashboard.verificationStatus.completeVerification")}
+                {verificationButtonLabel}
               </Button>
               <Button
-                onClick={refreshVerificationFromDashboard}
-                disabled={kycLoading}
+                onClick={() => refreshVerificationFromDashboard()}
+                disabled={kycLoading || kycStatusRefreshing}
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
               >
-                {kycLoading ? (
+                {kycStatusRefreshing ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
@@ -5566,6 +5852,42 @@ export default function CreatorDashboard() {
                 {t("creatorDashboard.verificationStatus.refreshStatus")}
               </Button>
             </div>
+            {(hasCreatorPendingFollowUp || isCreatorRejected) &&
+              currentCreatorKycReason && (
+                <div
+                  className={`rounded-lg border px-4 py-3 text-sm ${
+                    hasCreatorPendingFollowUp
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : "border-rose-200 bg-rose-50 text-rose-900"
+                  }`}
+                >
+                  <span className="font-semibold">
+                    {hasCreatorPendingFollowUp
+                      ? t(
+                          "creatorDashboard.verificationStatus.followUpReasonLabel",
+                          "Next step:",
+                        )
+                      : t(
+                          "creatorDashboard.verificationStatus.rejectedReasonLabel",
+                          "Reason:",
+                        )}
+                  </span>{" "}
+                  {currentCreatorKycReason}
+                </div>
+              )}
+            {isCreatorPending && !hasCreatorPendingFollowUp && (
+              <p className="text-sm text-gray-500">
+                {savedKycSessionUrl
+                  ? t(
+                      "creatorDashboard.verificationStatus.resumeHint",
+                      "Closed the verification window? Use Resume Verification to continue, or Refresh Status if you already finished.",
+                    )
+                  : t(
+                      "creatorDashboard.verificationStatus.restartHint",
+                      "If the last verification window was closed or expired, start a new verification session or refresh your status if you already finished.",
+                    )}
+              </p>
+            )}
           </div>
         </Card>
       </div>
@@ -10666,6 +10988,9 @@ export default function CreatorDashboard() {
         className={`flex-1 ${isSmallScreen ? "mt-16 pt-0" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
       >
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
+          {activeSection !== "settings" &&
+            activeSection !== "talent-portal" &&
+            renderMarketplaceVerificationBar()}
           {activeSection === "dashboard" && renderDashboard()}
           {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
@@ -12632,7 +12957,7 @@ export default function CreatorDashboard() {
             {(kycEmbedLoading || !kycSessionUrl) && (
               <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                <p className="text-sm text-gray-700">Starting verification…</p>
+                <p className="text-sm text-gray-700">Loading verification…</p>
               </div>
             )}
             <div id="veriff-kyc-embedded-creator" className="w-full h-full" />

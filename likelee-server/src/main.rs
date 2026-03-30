@@ -256,8 +256,6 @@ async fn main() {
         docuseal_master_template_id: cfg.docuseal_master_template_id.clone(),
         docuseal_master_template_name: cfg.docuseal_master_template_name.clone(),
 
-        kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
-
         frontend_url: cfg.frontend_url.clone(),
 
         // Studio Provider API Keys

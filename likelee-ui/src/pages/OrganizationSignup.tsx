@@ -21,6 +21,15 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
+  EmailOtpDialog,
+  type EmailOtpDialogTheme,
+} from "@/components/auth/EmailOtpDialog";
+import {
+  normalizeEmail,
+  resendSignupEmailOtp,
+  verifyEmailOtpCode,
+} from "@/lib/emailOtp";
+import {
   getOrganizationKycStatus,
   registerBrand,
   registerAgency,
@@ -187,8 +196,7 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, resendEmailConfirmation, ensureRole, refreshProfile } =
-    useAuth();
+  const { user, profile, ensureRole, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -235,8 +243,6 @@ export default function OrganizationSignup() {
 
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false); // New state for email verification
-  const [resendCooldownSec, setResendCooldownSec] = useState(0);
-  const [resendLoading, setResendLoading] = useState(false);
   const isAuthenticatedOnboarding = !!user;
   const accountRole = String(
     profile?.role ||
@@ -247,13 +253,58 @@ export default function OrganizationSignup() {
     .trim()
     .toLowerCase();
 
-  useEffect(() => {
-    if (resendCooldownSec <= 0) return;
-    const t = window.setInterval(() => {
-      setResendCooldownSec((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => window.clearInterval(t);
-  }, [resendCooldownSec]);
+  const requireSupabase = () => {
+    if (!supabase) {
+      throw new Error("Supabase not configured");
+    }
+
+    return supabase;
+  };
+
+  const handleOrganizationOtpVerify = async (code: string) => {
+    const client = requireSupabase();
+    await verifyEmailOtpCode(client, {
+      email: formData.email,
+      token: code,
+      purpose: "signup",
+    });
+    setEmailVerificationPending(false);
+    setStep(2);
+    toast({
+      title: "Email verified",
+      description:
+        "Your organization account is verified. Continue setup below.",
+    });
+  };
+
+  const handleOrganizationOtpResend = async (showToast = true) => {
+    const client = requireSupabase();
+    await resendSignupEmailOtp(client, formData.email);
+    if (showToast) {
+      toast({
+        title: "Code sent",
+        description: "We sent a fresh 6-digit code to your inbox.",
+      });
+    }
+  };
+
+  const isExistingOrganizationSignupError = (error: any) => {
+    const code = String(error?.data?.code || error?.code || "").toLowerCase();
+    const message = String(
+      error?.message ||
+        error?.data?.msg ||
+        error?.data?.message ||
+        error?.data?.error ||
+        "",
+    ).toLowerCase();
+
+    return (
+      code === "email_exists" ||
+      message.includes("already exists") ||
+      message.includes("already registered") ||
+      message.includes("already been registered")
+    );
+  };
 
   // Debug logging
   useEffect(() => {
@@ -411,7 +462,15 @@ export default function OrganizationSignup() {
           "Profile not in context or incomplete, falling back to API calls",
         );
         try {
-          const [brandProfile, agencyProfile] = await Promise.all([
+          const expectedFlow =
+            flow ||
+            (user.user_metadata?.role === "brand"
+              ? "brand"
+              : user.user_metadata?.role === "agency"
+                ? "agency"
+                : null);
+
+          const fetchBrandProfile = () =>
             getBrandProfile().catch((err) => {
               if (
                 err.name === "AbortError" ||
@@ -420,7 +479,9 @@ export default function OrganizationSignup() {
                 console.log("getBrandProfile aborted");
               }
               return null;
-            }),
+            });
+
+          const fetchAgencyProfile = () =>
             getAgencyProfile().catch((err) => {
               if (
                 err.name === "AbortError" ||
@@ -429,8 +490,21 @@ export default function OrganizationSignup() {
                 console.log("getAgencyProfile aborted");
               }
               return null;
-            }),
-          ]);
+            });
+
+          let brandProfile = null;
+          let agencyProfile = null;
+
+          if (expectedFlow === "brand") {
+            brandProfile = await fetchBrandProfile();
+          } else if (expectedFlow === "agency") {
+            agencyProfile = await fetchAgencyProfile();
+          } else {
+            [brandProfile, agencyProfile] = await Promise.all([
+              fetchBrandProfile(),
+              fetchAgencyProfile(),
+            ]);
+          }
 
           const orgProfile = brandProfile || agencyProfile;
 
@@ -482,7 +556,7 @@ export default function OrganizationSignup() {
     };
 
     handleVerifiedUser();
-  }, [user, profile, toast]); // Rerun when user or profile state changes
+  }, [flow, user, profile, toast]); // Rerun when user or profile state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -492,30 +566,87 @@ export default function OrganizationSignup() {
         primary: "from-[#F7B750] to-[#FAD54C]",
         button: "bg-[#F7B750] hover:bg-[#E6A640]",
         badge: "bg-amber-100 text-amber-700",
+        otpTheme: {
+          headerClassName:
+            "bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-slate-950",
+          headerTitleClassName: "text-slate-950",
+          headerDescriptionClassName: "text-slate-900/80",
+          iconWrapperClassName:
+            "border border-slate-950/10 bg-white/35 text-slate-950",
+          infoClassName: "border-amber-200 bg-amber-50 text-amber-950",
+          primaryButtonClassName: "bg-[#F7B750] text-white hover:bg-[#E6A640]",
+          activeSlotClassName: "border-[#F7B750] ring-[#F7B750]/30",
+          resendButtonClassName: "text-amber-700 hover:text-amber-800",
+        } satisfies EmailOtpDialogTheme,
       },
       marketing_agency: {
         gradient: "from-cyan-50 via-teal-50 to-blue-50",
         primary: "from-[#32C8D1] to-teal-500",
         button: "bg-[#32C8D1] hover:bg-[#2AB8C1]",
         badge: "bg-cyan-100 text-cyan-700",
+        otpTheme: {
+          headerClassName:
+            "bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white",
+          headerTitleClassName: "text-white",
+          headerDescriptionClassName: "text-white/80",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
+          infoClassName: "border-cyan-100 bg-cyan-50 text-cyan-950",
+          primaryButtonClassName: "bg-[#32C8D1] text-white hover:bg-[#2AB8C1]",
+          activeSlotClassName: "border-[#32C8D1] ring-[#32C8D1]/30",
+          resendButtonClassName: "text-cyan-700 hover:text-cyan-800",
+        } satisfies EmailOtpDialogTheme,
       },
       talent_agency: {
         gradient: "from-indigo-50 via-violet-50 to-purple-50",
         primary: "from-indigo-600 to-purple-600",
         button: "bg-indigo-600 hover:bg-indigo-700",
         badge: "bg-indigo-100 text-indigo-700",
+        otpTheme: {
+          headerClassName:
+            "bg-gradient-to-r from-indigo-600 to-purple-600 text-white",
+          headerTitleClassName: "text-white",
+          headerDescriptionClassName: "text-white/80",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
+          infoClassName: "border-indigo-100 bg-indigo-50 text-indigo-950",
+          primaryButtonClassName:
+            "bg-indigo-600 text-white hover:bg-indigo-700",
+          activeSlotClassName: "border-indigo-500 ring-indigo-500/30",
+          resendButtonClassName: "text-indigo-700 hover:text-indigo-800",
+        } satisfies EmailOtpDialogTheme,
       },
       production_studio: {
         gradient: "from-slate-50 via-gray-50 to-zinc-50",
         primary: "from-slate-700 to-gray-800",
         button: "bg-slate-700 hover:bg-slate-800",
         badge: "bg-slate-100 text-slate-700",
+        otpTheme: {
+          headerClassName:
+            "bg-gradient-to-r from-slate-700 to-gray-800 text-white",
+          headerTitleClassName: "text-white",
+          headerDescriptionClassName: "text-white/80",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
+          infoClassName: "border-slate-200 bg-slate-50 text-slate-950",
+          primaryButtonClassName: "bg-slate-700 text-white hover:bg-slate-800",
+          activeSlotClassName: "border-slate-500 ring-slate-500/30",
+          resendButtonClassName: "text-slate-700 hover:text-slate-800",
+        } satisfies EmailOtpDialogTheme,
       },
       sports_agency: {
         gradient: "from-blue-50 via-indigo-50 to-slate-50",
         primary: "from-[#0D1B3A] to-[#1E3A8A]",
         button: "bg-[#0D1B3A] hover:bg-[#1E3A8A]",
         badge: "bg-blue-100 text-blue-700",
+        otpTheme: {
+          headerClassName:
+            "bg-gradient-to-r from-[#0D1B3A] to-[#1E3A8A] text-white",
+          headerTitleClassName: "text-white",
+          headerDescriptionClassName: "text-white/80",
+          iconWrapperClassName: "border border-white/30 bg-white/15 text-white",
+          infoClassName: "border-blue-100 bg-blue-50 text-blue-950",
+          primaryButtonClassName: "bg-[#0D1B3A] text-white hover:bg-[#1E3A8A]",
+          activeSlotClassName: "border-[#1E3A8A] ring-[#1E3A8A]/30",
+          resendButtonClassName: "text-blue-700 hover:text-blue-800",
+        } satisfies EmailOtpDialogTheme,
       },
     };
     return schemes[orgType] || schemes.brand_company;
@@ -611,30 +742,47 @@ export default function OrganizationSignup() {
 
       // Postgrest usually returns an array of inserted rows; handle both array/object
       const created = Array.isArray(resp) ? resp[0] : resp;
-      const newId = created?.id || created?.user_id;
+      const newId = created?.user_id || created?.id;
       setProfileId(newId);
 
-      // Trigger email confirmation from frontend since backend admin API doesn't send it
+      // Trigger email confirmation from the client and keep verification in-app.
       try {
-        if (resendEmailConfirmation) {
-          await resendEmailConfirmation(
-            formData.email,
-            `${window.location.origin}/organization-signup`,
-          );
-        }
+        await handleOrganizationOtpResend(false);
       } catch (err) {
         console.error("Failed to send confirmation email:", err);
-        // Continue anyway to show the UI, user can click "Resend" if we add it later
+        toast({
+          title: "Code delivery failed",
+          description:
+            "We created the account, but could not send the verification code yet. Please try resending it.",
+          variant: "destructive",
+        });
       }
 
-      // Show email verification UI instead of auto-login
       setEmailVerificationPending(true);
       toast({
         title: "Account Created",
-        description: "Please check your email to verify your account.",
+        description: "Enter the 6-digit code from your email to continue.",
       });
     },
-    onError: (error) => {
+    onError: async (error) => {
+      if (isExistingOrganizationSignupError(error)) {
+        try {
+          await handleOrganizationOtpResend(false);
+          setEmailVerificationPending(true);
+          toast({
+            title: "Continue signup",
+            description:
+              "We found an existing signup for this email. Enter the 6-digit code from your email to continue.",
+          });
+          return;
+        } catch (resendError) {
+          console.error(
+            "Existing organization signup found, but resend failed:",
+            resendError,
+          );
+        }
+      }
+
       console.error("Error creating initial profile:", error);
       toast({
         title: t("common.error"),
@@ -759,6 +907,14 @@ export default function OrganizationSignup() {
         });
         return;
       }
+      if (!isAuthenticatedOnboarding && formData.password.length < 6) {
+        toast({
+          title: t("common.error"),
+          description: t("organizationSignup.errors.weakPassword"),
+          variant: "destructive",
+        });
+        return;
+      }
       // Create initial profile and move to step 2
       createInitialProfileMutation.mutate(formData);
       return; // Prevent further execution of handleNext
@@ -820,69 +976,6 @@ export default function OrganizationSignup() {
     queryFn: () => getOrganizationKycStatus(profileId!),
     enabled: !!profileId && submitted,
   });
-
-  // Render email verification message
-  if (emailVerificationPending) {
-    return (
-      <div
-        className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
-      >
-        <Card className="max-w-xl w-full p-12 bg-white border-2 border-black shadow-2xl rounded-none text-center">
-          <div
-            className={`w-20 h-20 bg-gradient-to-r ${colors.primary} border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8`}
-          >
-            <CheckCircle2 className="w-12 h-12 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Check Your Email
-          </h1>
-          <p className="text-lg text-gray-700 mb-6">
-            We've sent a verification link to <strong>{formData.email}</strong>.
-            Please verify your email to continue setting up your organization
-            profile.
-          </p>
-          <Button
-            onClick={async () => {
-              if (!resendEmailConfirmation) return;
-              if (resendLoading) return;
-              if (resendCooldownSec > 0) return;
-              try {
-                setResendLoading(true);
-                await resendEmailConfirmation(
-                  formData.email,
-                  `${window.location.origin}/organization-signup`,
-                );
-                toast({
-                  title: "Verification email resent",
-                  description: "Please check your inbox (and spam folder).",
-                });
-                setResendCooldownSec(60);
-              } catch (err: any) {
-                toast({
-                  title: t("common.error"),
-                  description: getTranslatedErrorMessage(err),
-                  variant: "destructive",
-                });
-              } finally {
-                setResendLoading(false);
-              }
-            }}
-            variant="link"
-            disabled={
-              !resendEmailConfirmation || resendLoading || resendCooldownSec > 0
-            }
-            className="p-0 h-auto underline underline-offset-4 text-gray-600 hover:text-gray-900"
-          >
-            {resendLoading
-              ? "Resending…"
-              : resendCooldownSec > 0
-                ? `Resend available in ${resendCooldownSec}s`
-                : "Resend verification email"}
-          </Button>
-        </Card>
-      </div>
-    );
-  }
 
   // Render success message if form was submitted successfully
   if (submitted) {
@@ -2522,6 +2615,18 @@ export default function OrganizationSignup() {
               </div>
             )}
         </Card>
+        <EmailOtpDialog
+          open={emailVerificationPending}
+          onOpenChange={setEmailVerificationPending}
+          email={normalizeEmail(formData.email)}
+          title="Verify your email"
+          description="Enter the 6-digit code from your inbox to keep setup on this tab."
+          helperText="Use resend if the email takes a moment to arrive."
+          verifyLabel="Continue"
+          onVerify={handleOrganizationOtpVerify}
+          onResend={handleOrganizationOtpResend}
+          theme={colors.otpTheme}
+        />
       </div>
     </div>
   );

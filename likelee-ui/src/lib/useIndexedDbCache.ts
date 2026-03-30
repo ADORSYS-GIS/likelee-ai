@@ -70,6 +70,8 @@ export function useIndexedDbQuery<T>(options: UseIndexedDbQueryOptions<T>) {
     ...queryOptions
   } = options;
 
+  const enabled = queryOptions.enabled ?? true;
+
   const queryClient = useQueryClient();
   const lastSyncRef = useRef<number>(0);
 
@@ -110,13 +112,14 @@ export function useIndexedDbQuery<T>(options: UseIndexedDbQueryOptions<T>) {
   // Background sync interval
   useEffect(() => {
     if (!syncInterval) return;
+    if (!enabled) return;
 
     const interval = setInterval(() => {
       query.refetch();
     }, syncInterval);
 
     return () => clearInterval(interval);
-  }, [syncInterval, query]);
+  }, [syncInterval, enabled, query]);
 
   // Sync status
   const getSyncStatus = useCallback(async () => {

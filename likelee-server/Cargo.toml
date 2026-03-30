@@ -58,5 +58,5 @@ parking_lot = "0.12"
 [patch.crates-io]
 postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }
 
-[audit]
-ignore = []
+[package.metadata]
+audit = { ignore = [] }

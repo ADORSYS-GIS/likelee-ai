@@ -7,6 +7,34 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+fn visibility_maps_to_public_profile(visibility: &str) -> bool {
+    matches!(
+        visibility.trim().to_lowercase().as_str(),
+        "public" | "brands" | "visible_to_brands" | "true"
+    )
+}
+
+fn sync_public_profile_visibility(body: &mut serde_json::Value) {
+    let explicit_public_visibility = body.get("public_profile_visible").and_then(|v| v.as_bool());
+    let explicit_visibility = body
+        .get("visibility")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty());
+
+    if let Some(is_public) = explicit_public_visibility {
+        body["public_profile_visible"] = serde_json::Value::Bool(is_public);
+        body["visibility"] =
+            serde_json::Value::String(if is_public { "brands" } else { "private" }.to_string());
+        return;
+    }
+
+    if let Some(visibility) = explicit_visibility {
+        body["public_profile_visible"] =
+            serde_json::Value::Bool(visibility_maps_to_public_profile(&visibility));
+    }
+}
+
 pub async fn upsert_profile(
     State(state): State<AppState>,
     user: AuthUser,
@@ -77,6 +105,7 @@ pub async fn upsert_profile(
     if body.get("updated_at").is_none() {
         body["updated_at"] = serde_json::Value::String(now.clone());
     }
+    sync_public_profile_visibility(&mut body);
     // Remove legacy field if present to avoid DB errors if strict
     if body.get("updated_date").is_some() {
         body.as_object_mut().unwrap().remove("updated_date");

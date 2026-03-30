@@ -329,7 +329,7 @@ pub async fn get_by_user(
         .from("brands")
         .select("*")
         .eq("id", &user.id)
-        .single()
+        .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -344,8 +344,17 @@ pub async fn get_by_user(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    let v: serde_json::Value = serde_json::from_str(&text)
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(v))
+    match rows.into_iter().next() {
+        Some(v) => Ok(Json(v)),
+        None => Err((
+            StatusCode::NOT_FOUND,
+            json!({
+                "error": "Brand profile not found.",
+                "code": "profile_not_found"
+            })
+            .to_string(),
+        )),
+    }
 }
