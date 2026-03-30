@@ -7,7 +7,10 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::entitlements::{get_agency_plan_tier, voice_clone_limit};
+use crate::entitlements::{
+    creator_has_voice_profiles, creator_voice_tone_limit, get_agency_plan_tier,
+    get_creator_plan_tier_for_user, voice_clone_limit,
+};
 
 async fn enforce_voice_clone_limit_for_agency(
     state: &AppState,
@@ -46,6 +49,42 @@ async fn enforce_voice_clone_limit_for_agency(
     Ok(())
 }
 
+async fn enforce_voice_access_for_creator(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, usize), (StatusCode, String)> {
+    let (creator_id, tier) = get_creator_plan_tier_for_user(state, user).await?;
+    if !creator_has_voice_profiles(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "voice_profiles_require_pro".to_string(),
+        ));
+    }
+    Ok((creator_id, creator_voice_tone_limit(tier)))
+}
+
+async fn count_creator_voice_recordings(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<usize, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("voice_recordings")
+        .select("id")
+        .eq("user_id", creator_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(rows.len())
+}
+
 #[derive(Deserialize)]
 pub struct UploadVoiceQuery {
     #[serde(default)]
@@ -70,6 +109,22 @@ pub async fn upload_voice_recording(
         return Err((StatusCode::BAD_REQUEST, "empty body".into()));
     }
 
+    let owner_id = if user.role == "agency" {
+        user.id.clone()
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let existing_count = count_creator_voice_recordings(&state, &creator_id).await?;
+        if existing_count >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        creator_id
+    } else {
+        user.id.clone()
+    };
+
     let ct = headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
@@ -78,7 +133,7 @@ pub async fn upload_voice_recording(
 
     // Private bucket
     let bucket = state.supabase_bucket_private.clone();
-    let owner = user.id.replace(
+    let owner = owner_id.replace(
         |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
         "_",
     );
@@ -127,7 +182,7 @@ pub async fn upload_voice_recording(
 
     // Persist row
     let payload = serde_json::json!({
-        "user_id": user.id,
+        "user_id": owner_id,
         "storage_bucket": bucket,
         "storage_path": path,
         "mime_type": ct,
@@ -180,8 +235,34 @@ pub async fn register_voice_model(
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let resp = state
+            .pg
+            .from("voice_models")
+            .select("id")
+            .eq("user_id", &creator_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        if !status.is_success() {
+            let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if rows.len() >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        input.user_id = creator_id;
     }
-    input.user_id = user.id;
+    if input.user_id.is_empty() {
+        input.user_id = user.id;
+    }
     let payload = serde_json::json!({
         "user_id": input.user_id,
         "provider": input.provider,
@@ -385,8 +466,34 @@ pub async fn create_clone_from_recording(
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let resp = state
+            .pg
+            .from("voice_models")
+            .select("id")
+            .eq("user_id", &creator_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        if !status.is_success() {
+            let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if rows.len() >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        input.user_id = creator_id;
     }
-    input.user_id = user.id;
+    if input.user_id.is_empty() {
+        input.user_id = user.id;
+    }
     if state.elevenlabs_api_key.is_empty() {
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
