@@ -4,7 +4,20 @@ use serde_json::json;
 use std::str::FromStr;
 use tracing::{info, warn};
 
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access,
+        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
+        creator_has_rules_access, creator_has_talent_portal_access,
+        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
+        creator_voice_tone_limit, get_creator_plan_tier_for_user, PlanTier,
+    },
+};
 
 fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     let raw = raw.trim();
@@ -222,6 +235,42 @@ pub struct AgencyCheckoutResponse {
     pub checkout_url: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CreatorCheckoutRequest {
+    pub plan: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreatorCheckoutResponse {
+    pub checkout_url: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreatorBillingStatusResponse {
+    pub creator_id: String,
+    pub plan_tier: String,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub plan_updated_at: Option<String>,
+    pub category_limit: Option<usize>,
+    pub can_use_kyc: bool,
+    pub can_use_likeness: bool,
+    pub can_use_agency_connection: bool,
+    pub can_use_brand_connection: bool,
+    pub can_use_payouts: bool,
+    pub can_use_cameo_uploads: bool,
+    pub can_use_unauthorized_monitoring: bool,
+    pub can_use_voice_profiles: bool,
+    pub voice_tone_limit: usize,
+    pub can_use_advanced_analytics: bool,
+    pub can_use_jobs: bool,
+    pub can_use_rules: bool,
+    pub can_use_talent_portal: bool,
+    pub can_use_campaign_archive: bool,
+    pub can_use_active_campaigns: bool,
+}
+
 fn plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
     match plan.trim().to_lowercase().as_str() {
         "basic" => Some(state.stripe_agency_basic_base_price_id.clone()),
@@ -234,6 +283,22 @@ fn plan_to_price_env_var(plan: &str) -> Option<&'static str> {
     match plan.trim().to_lowercase().as_str() {
         "basic" => Some("STRIPE_AGENCY_BASIC_BASE_PRICE_ID"),
         "pro" => Some("STRIPE_AGENCY_PRO_BASE_PRICE_ID"),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some(state.stripe_creator_basic_price_id.clone()),
+        "pro" => Some(state.stripe_creator_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_env_var(plan: &str) -> Option<&'static str> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
+        "pro" => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
         _ => None,
     }
 }
@@ -471,6 +536,155 @@ pub async fn create_agency_subscription_checkout(
 
     info!(agency_id = %user.id, plan = %payload.plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn create_creator_subscription_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreatorCheckoutRequest>,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    let plan = payload.plan.trim().to_lowercase();
+    if plan != "basic" && plan != "pro" {
+        return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
+    }
+
+    let price_id = creator_plan_to_price_id(&state, &plan).unwrap_or_default();
+    if price_id.trim().is_empty() {
+        let env_var = creator_plan_to_price_env_var(&plan).unwrap_or("creator");
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("{env_var}_not_configured"),
+        ));
+    }
+
+    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(state.stripe_creator_success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_creator_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.client_reference_id = Some(creator_id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(price_id),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("creator_id".to_string(), creator_id.clone());
+    md.insert("billing_domain".to_string(), "creator".to_string());
+    md.insert("plan_tier".to_string(), plan.clone());
+    cs_params.metadata = Some(md.clone());
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(md),
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    Ok(Json(CreatorCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn get_creator_billing_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<CreatorBillingStatusResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    let (creator_id, tier) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let resp = state
+        .pg
+        .from("creators")
+        .select("plan_tier,stripe_customer_id,stripe_subscription_id,plan_updated_at")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    Ok(Json(CreatorBillingStatusResponse {
+        creator_id,
+        plan_tier: row
+            .get("plan_tier")
+            .and_then(|v| v.as_str())
+            .unwrap_or("free")
+            .to_string(),
+        subscription_status: if matches!(
+            tier,
+            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise
+        ) {
+            "active".to_string()
+        } else {
+            "inactive".to_string()
+        },
+        stripe_customer_id: row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_subscription_id: row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        plan_updated_at: row
+            .get("plan_updated_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        category_limit: creator_category_limit(tier),
+        can_use_kyc: creator_has_kyc_access(tier),
+        can_use_likeness: creator_has_likeness_access(tier),
+        can_use_agency_connection: creator_has_agency_connection_access(tier),
+        can_use_brand_connection: creator_has_brand_connection_access(tier),
+        can_use_payouts: creator_has_payouts_access(tier),
+        can_use_cameo_uploads: creator_has_cameo_uploads(tier),
+        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(tier),
+        can_use_voice_profiles: creator_has_voice_profiles(tier),
+        voice_tone_limit: creator_voice_tone_limit(tier),
+        can_use_advanced_analytics: creator_has_advanced_analytics(tier),
+        can_use_jobs: creator_has_jobs_access(tier),
+        can_use_rules: creator_has_rules_access(tier),
+        can_use_talent_portal: creator_has_talent_portal_access(tier),
+        can_use_campaign_archive: creator_has_campaign_archive_access(tier),
+        can_use_active_campaigns: creator_has_active_campaigns_access(tier),
+    }))
 }
 
 #[derive(Debug, Serialize)]
