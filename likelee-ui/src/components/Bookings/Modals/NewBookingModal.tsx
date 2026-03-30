@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import {
   getAgencyTalents,
   getAgencyClients,
@@ -64,6 +65,33 @@ export const NewBookingModal = ({
   const { toast } = useToast();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+
+  const getBookingCreateErrorMessage = (err: any) => {
+    const body = err?.response?.data || err?.data;
+    const code =
+      body?.code ||
+      body?.error_code ||
+      body?.error?.code ||
+      err?.code ||
+      err?.error?.code;
+    if (String(code || "").trim() === "PGRST204") {
+      return "There was an issue processing your booking. Please verify your details and try again.";
+    }
+
+    const raw =
+      (typeof body === "string" && body) ||
+      (typeof err === "string" ? err : err?.message) ||
+      "";
+    if (/Error parsing multipart\/form-data request/i.test(String(raw))) {
+      return "We couldn't read the booking form upload. Please try again. If it keeps failing, remove attachments and retry.";
+    }
+
+    const parsed = parseBackendError(err);
+    if (parsed && /\bPGRST204\b/i.test(parsed)) {
+      return "There was an issue processing your booking. Please verify your details and try again.";
+    }
+    return parsed;
+  };
   const [talents, setTalents] = useState<any[]>([]);
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
@@ -312,6 +340,27 @@ export const NewBookingModal = ({
     Boolean(wrapTime) &&
     String(callTime) >= String(wrapTime);
 
+  const dateIssue = (() => {
+    const s = String(date || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return "Date must be in YYYY-MM-DD format";
+    }
+    const parsed = new Date(`${s}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      return "Please select a valid date";
+    }
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    if (mode !== "edit" && parsed.getTime() < todayStart.getTime()) {
+      return "Booking date can’t be in the past";
+    }
+    return "";
+  })();
+
   const missingInputs = (() => {
     const missing: string[] = [];
     if (selectedTalents.length === 0) missing.push(`${entitySingularTitle}`);
@@ -324,6 +373,9 @@ export const NewBookingModal = ({
     const issues: string[] = [];
     if (missingInputs.length > 0) {
       issues.push(`Select: ${missingInputs.join(", ")}`);
+    }
+    if (dateIssue) {
+      issues.push(dateIssue);
     }
     if (hasTimeMismatch) {
       issues.push("Wrap time must be after call time");
@@ -412,11 +464,7 @@ export const NewBookingModal = ({
       setTimeout(() => onOpenChange(false), 800);
     } catch (e: any) {
       const status = e?.status || e?.response?.status || e?.statusCode;
-      const body = e?.response?.data || e?.data || {};
-      const msg =
-        (typeof body === "string" && body) ||
-        (typeof e === "string" ? e : e?.message) ||
-        "Failed to create booking";
+      const msg = getBookingCreateErrorMessage(e) || "Failed to create booking";
       const isUnavailable =
         status === 409 ||
         /409/.test(String(msg)) ||
@@ -1141,11 +1189,6 @@ export const NewBookingModal = ({
               {validationIssues.length > 0 && !saving && (
                 <div className="text-xs text-rose-600 font-medium text-right">
                   {validationIssues.join(" • ")}
-                </div>
-              )}
-              {saving && (
-                <div className="text-xs text-gray-500 font-medium text-right">
-                  Saving...
                 </div>
               )}
               <Button

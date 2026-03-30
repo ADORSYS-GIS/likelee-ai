@@ -39,6 +39,8 @@ function extractErrorMessage(errorData: any): string {
       return (
         err?.error ||
         err?.message ||
+        err?.msg ||
+        err?.error_description ||
         err?.details ||
         "Something went wrong. Please try again."
       );
@@ -48,6 +50,8 @@ function extractErrorMessage(errorData: any): string {
   return (
     body?.error ||
     body?.message ||
+    body?.msg ||
+    body?.error_description ||
     body?.details ||
     "Something went wrong. Please try again."
   );
@@ -106,6 +110,9 @@ function userFriendlyMessage(
   }
   if (code === "23514" || lower.includes("violates check constraint")) {
     return "A validation error occurred. Please check your input and try again.";
+  }
+  if (code === "PGRST204") {
+    return "Invalid data provided. Please check your input.";
   }
   if (status === 409) {
     return "This action conflicts with an existing record. Please refresh and try again.";

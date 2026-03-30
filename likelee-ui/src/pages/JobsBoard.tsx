@@ -476,7 +476,22 @@ export default function JobsBoard() {
             Back
           </Button>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-3">
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2"
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate(createPageUrl("AgencyDashboard"));
+                  }
+                }}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to dashboard
+              </Button>
               <h1 className="text-3xl font-bold text-gray-900">Find Jobs</h1>
               <p className="text-gray-600">
                 Browse brand-posted opportunities and apply directly.

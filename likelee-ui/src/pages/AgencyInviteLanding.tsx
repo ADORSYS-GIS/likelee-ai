@@ -1,26 +1,29 @@
 import React from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import {
   acceptAgencyTalentInviteByToken,
   declineAgencyTalentInviteByToken,
   getAgencyTalentInviteByToken,
-  getAgencyTalentInviteMagicLinkByToken,
 } from "@/api/functions";
-
-const INVITE_INTENT_KEY = "likelee_invite_intent";
-const INVITE_INTENT_TOKEN_KEY = "likelee_invite_token";
-const INVITE_INTENT_TS_KEY = "likelee_invite_intent_ts";
-const INVITE_INTENT_ACCEPT = "accept";
-const INVITE_INTENT_TTL_MS = 1000 * 60 * 30;
+import type { EmailOtpPurpose } from "@/lib/emailOtp";
+import {
+  normalizeEmail,
+  resendSignupEmailOtp,
+  sendExistingUserEmailOtp,
+  verifyEmailOtpCode,
+} from "@/lib/emailOtp";
 
 export default function AgencyInviteLanding() {
   const { token } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { authenticated, profile, supabase } = useAuth();
 
@@ -29,21 +32,23 @@ export default function AgencyInviteLanding() {
   const [invite, setInvite] = React.useState<any>(null);
   const [requiresPasswordSetup, setRequiresPasswordSetup] =
     React.useState<boolean>(true);
-  const [hasAcceptIntent, setHasAcceptIntent] = React.useState(false);
-  const [autoFinalizeError, setAutoFinalizeError] = React.useState<
-    string | null
-  >(null);
-  const autoFinalizeRef = React.useRef(false);
+  const [otpDialogOpen, setOtpDialogOpen] = React.useState(false);
+  const [otpPurpose, setOtpPurpose] = React.useState<EmailOtpPurpose>("signin");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   const effectiveToken = String(token || "").trim();
 
   React.useEffect(() => {
     let active = true;
+
     (async () => {
       if (!effectiveToken) {
         setLoading(false);
         return;
       }
+
       try {
         setLoading(true);
         const res: any = await getAgencyTalentInviteByToken(effectiveToken);
@@ -51,7 +56,7 @@ export default function AgencyInviteLanding() {
         if (!active) return;
         setInvite(inv || null);
         setRequiresPasswordSetup(Boolean(res?.requires_password_setup));
-      } catch (e: any) {
+      } catch {
         if (!active) return;
         setInvite(null);
       } finally {
@@ -65,148 +70,185 @@ export default function AgencyInviteLanding() {
     };
   }, [effectiveToken]);
 
-  const email = String(invite?.email || "");
+  const email = normalizeEmail(String(invite?.email || ""));
   const agencyName =
     invite?.agencies?.agency_name || invite?.agency_name || "Agency";
   const agencyLogoUrl = invite?.agencies?.logo_url || invite?.agency_logo_url;
   const status = String(invite?.status || "");
-  const signedInEmail = String(profile?.email || "")
-    .trim()
-    .toLowerCase();
-  const inviteEmail = email.trim().toLowerCase();
-  const emailMatchesInvite = !!inviteEmail && signedInEmail === inviteEmail;
+  const signedInEmail = normalizeEmail(String(profile?.email || ""));
+  const emailMatchesInvite = !!email && signedInEmail === email;
   const effectiveRole = String(profile?.role || "").toLowerCase();
   const hasInviteRole =
     effectiveRole === "creator" || effectiveRole === "talent";
-
+  const canRespondDirectly =
+    authenticated && hasInviteRole && emailMatchesInvite;
   const isPending = status === "pending";
 
-  const readAcceptIntent = React.useCallback(() => {
-    const params = new URLSearchParams(location.search);
-    const urlIntent = params.get("intent");
-    if (urlIntent === INVITE_INTENT_ACCEPT) return true;
-    try {
-      const intent = localStorage.getItem(INVITE_INTENT_KEY) || "";
-      const storedToken = localStorage.getItem(INVITE_INTENT_TOKEN_KEY) || "";
-      const ts = Number(localStorage.getItem(INVITE_INTENT_TS_KEY) || "0");
-      const fresh = ts > 0 && Date.now() - ts < INVITE_INTENT_TTL_MS;
-      return (
-        fresh &&
-        intent === INVITE_INTENT_ACCEPT &&
-        storedToken === effectiveToken
-      );
-    } catch {
-      return false;
+  const requireSupabase = () => {
+    if (!supabase) {
+      throw new Error("Supabase not configured");
     }
-  }, [effectiveToken, location.search]);
 
-  const clearAcceptIntent = React.useCallback(() => {
-    try {
-      localStorage.removeItem(INVITE_INTENT_KEY);
-      localStorage.removeItem(INVITE_INTENT_TOKEN_KEY);
-      localStorage.removeItem(INVITE_INTENT_TS_KEY);
-    } catch {
-      // ignore
-    }
-    setHasAcceptIntent(false);
-  }, []);
+    return supabase;
+  };
 
-  const startMagicLinkFlow = async () => {
+  const completeInviteAcceptance = React.useCallback(async () => {
     if (!effectiveToken) return;
-    setActionLoading(true);
-    setAutoFinalizeError(null);
-    try {
-      try {
-        localStorage.setItem(
-          "likelee_invite_next",
-          `/invite/agency/${encodeURIComponent(effectiveToken)}?intent=accept`,
-        );
-        localStorage.setItem("likelee_invite_next_ts", String(Date.now()));
-        localStorage.setItem(INVITE_INTENT_KEY, INVITE_INTENT_ACCEPT);
-        localStorage.setItem(INVITE_INTENT_TOKEN_KEY, effectiveToken);
-        localStorage.setItem(INVITE_INTENT_TS_KEY, String(Date.now()));
-      } catch {
-        // ignore
-      }
-      setHasAcceptIntent(true);
 
-      const res: any =
-        await getAgencyTalentInviteMagicLinkByToken(effectiveToken);
-      const link = String(res?.action_link || "");
-      if (!link.startsWith("http")) {
-        throw new Error("Missing action link");
-      }
-      window.location.href = link;
+    setActionLoading(true);
+    setActionError(null);
+
+    try {
+      await acceptAgencyTalentInviteByToken(effectiveToken);
+      setOtpDialogOpen(false);
+      setPassword("");
+      setConfirmPassword("");
+      toast({
+        title: "Invitation accepted",
+        description: "Welcome! Redirecting you to the Talent Portal…",
+      });
+      navigate("/talentportal", { replace: true });
     } catch (e: any) {
+      const message = e?.message || String(e);
+      setActionError(message);
+      toast({
+        variant: "destructive",
+        title: "Could not complete invite acceptance",
+        description: message,
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  }, [effectiveToken, navigate]);
+
+  const handleInviteOtpVerify = async (code: string) => {
+    const client = requireSupabase();
+    await verifyEmailOtpCode(client, {
+      email,
+      token: code,
+      purpose: otpPurpose,
+    });
+    toast({
+      title: "Email verified",
+      description: "Finalizing your invitation on this tab…",
+    });
+    await completeInviteAcceptance();
+  };
+
+  const handleInviteOtpResend = async () => {
+    const client = requireSupabase();
+
+    if (otpPurpose === "signup") {
+      await resendSignupEmailOtp(client, email);
+    } else {
+      await sendExistingUserEmailOtp(client, email);
+    }
+
+    toast({
+      title: "Code sent",
+      description: "We sent a fresh 6-digit code to your email address.",
+    });
+  };
+
+  const startInviteOtpFlow = async () => {
+    if (!effectiveToken || !isPending) return;
+
+    setActionLoading(true);
+    setActionError(null);
+
+    try {
+      if (canRespondDirectly) {
+        await completeInviteAcceptance();
+        return;
+      }
+
+      const client = requireSupabase();
+
+      if (requiresPasswordSetup) {
+        if (!password) {
+          throw new Error("Create a password to continue.");
+        }
+        if (password.length < 6) {
+          throw new Error("Password should be at least 6 characters.");
+        }
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+
+        const displayName = String(invite?.invited_name || email || "Creator");
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: displayName,
+              role: "creator",
+            },
+          },
+        });
+
+        if (error) {
+          const message = String(error.message || "").toLowerCase();
+          if (
+            message.includes("already registered") ||
+            message.includes("already exists")
+          ) {
+            await sendExistingUserEmailOtp(client, email);
+            setRequiresPasswordSetup(false);
+            setOtpPurpose("signin");
+            setOtpDialogOpen(true);
+            toast({
+              title: "Code sent",
+              description:
+                "We found an existing account and sent a 6-digit sign-in code.",
+            });
+            return;
+          }
+
+          throw error;
+        }
+
+        setOtpPurpose("signup");
+        if (data.session) {
+          await completeInviteAcceptance();
+          return;
+        }
+
+        setOtpDialogOpen(true);
+        toast({
+          title: "Check your email",
+          description:
+            "Enter the 6-digit code to verify your invite without leaving this page.",
+        });
+        return;
+      }
+
+      await sendExistingUserEmailOtp(client, email);
+      setOtpPurpose("signin");
+      setOtpDialogOpen(true);
+      toast({
+        title: "Code sent",
+        description: "Enter the 6-digit code from your email to continue.",
+      });
+    } catch (e: any) {
+      const message = e?.message || String(e);
+      setActionError(message);
       toast({
         variant: "destructive",
         title: "Could not start invite",
-        description: e?.message || String(e),
+        description: message,
       });
     } finally {
       setActionLoading(false);
     }
   };
 
-  React.useEffect(() => {
-    setHasAcceptIntent(readAcceptIntent());
-  }, [readAcceptIntent, loading, authenticated]);
-
-  React.useEffect(() => {
-    if (!isPending && hasAcceptIntent) {
-      clearAcceptIntent();
-    }
-  }, [isPending, hasAcceptIntent, clearAcceptIntent]);
-
-  React.useEffect(() => {
-    if (
-      !authenticated ||
-      !isPending ||
-      !hasInviteRole ||
-      !emailMatchesInvite ||
-      !hasAcceptIntent
-    ) {
-      return;
-    }
-    if (autoFinalizeRef.current) return;
-    autoFinalizeRef.current = true;
-    setAutoFinalizeError(null);
-    setActionLoading(true);
-
-    (async () => {
-      try {
-        await acceptAgencyTalentInviteByToken(effectiveToken);
-        clearAcceptIntent();
-        toast({
-          title: "Invitation accepted",
-          description: "Welcome! Redirecting you to the Talent Portal…",
-        });
-        navigate("/talentportal", { replace: true });
-      } catch (e: any) {
-        setAutoFinalizeError(e?.message || String(e));
-        toast({
-          variant: "destructive",
-          title: "Could not complete invite acceptance",
-          description: e?.message || String(e),
-        });
-      } finally {
-        setActionLoading(false);
-      }
-    })();
-  }, [
-    authenticated,
-    isPending,
-    hasInviteRole,
-    emailMatchesInvite,
-    hasAcceptIntent,
-    effectiveToken,
-    navigate,
-    clearAcceptIntent,
-  ]);
-
   const declineInvite = async () => {
     if (!effectiveToken) return;
+
     setActionLoading(true);
+    setActionError(null);
+
     try {
       await declineAgencyTalentInviteByToken(effectiveToken);
       await supabase?.auth.signOut();
@@ -216,10 +258,12 @@ export default function AgencyInviteLanding() {
       });
       navigate("/", { replace: true });
     } catch (e: any) {
+      const message = e?.message || String(e);
+      setActionError(message);
       toast({
         variant: "destructive",
         title: "Could not decline",
-        description: e?.message || String(e),
+        description: message,
       });
     } finally {
       setActionLoading(false);
@@ -244,7 +288,7 @@ export default function AgencyInviteLanding() {
           <div className="text-lg font-semibold text-gray-900">
             Invalid invite
           </div>
-          <div className="text-sm text-gray-600 mt-1">
+          <div className="mt-1 text-sm text-gray-600">
             This invitation link is invalid or no longer available.
           </div>
           <Button className="mt-5" onClick={() => navigate("/")}>
@@ -259,12 +303,12 @@ export default function AgencyInviteLanding() {
     <div className="max-w-xl mx-auto px-6 py-16">
       <Card className="p-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
             {agencyLogoUrl ? (
               <img
                 src={agencyLogoUrl}
                 alt={agencyName}
-                className="w-full h-full object-contain"
+                className="h-full w-full object-contain"
               />
             ) : (
               <div className="text-sm font-bold text-gray-600">
@@ -273,116 +317,161 @@ export default function AgencyInviteLanding() {
             )}
           </div>
           <div className="min-w-0">
-            <div className="text-lg font-semibold text-gray-900 truncate">
+            <div className="truncate text-lg font-semibold text-gray-900">
               Join {agencyName}
             </div>
-            <div className="text-sm text-gray-600 truncate">
+            <div className="truncate text-sm text-gray-600">
               Invitation for {email || "your email"}
             </div>
           </div>
         </div>
 
         <div className="mt-6 text-sm text-gray-700">
-          Accept this invitation to continue to the Talent Portal.
+          Accept this invitation to continue to the Talent Portal without
+          leaving your current tab.
         </div>
 
-        {!authenticated ? (
-          <div className="mt-6">
-            <Button
-              className="w-full h-11"
-              disabled={!isPending || actionLoading}
-              onClick={async () => {
-                await startMagicLinkFlow();
-              }}
-            >
-              {actionLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Redirecting…
-                </span>
-              ) : (
-                "Accept & Continue"
-              )}
-            </Button>
-
-            <div className="mt-3 text-xs text-gray-500">
-              {requiresPasswordSetup
-                ? "You’ll be redirected to set your password first. After that, acceptance is completed automatically."
-                : "You’ll receive a secure sign-in link. After sign-in, acceptance is completed automatically."}
-            </div>
+        {actionError ? (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {actionError}
           </div>
-        ) : (
-          <div className="mt-6 space-y-3">
-            {hasAcceptIntent &&
-            isPending &&
-            hasInviteRole &&
-            emailMatchesInvite ? (
-              <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
-                <div className="inline-flex items-center gap-2 font-medium">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Finalizing your acceptance...
-                </div>
-                {autoFinalizeError && (
-                  <div className="mt-2 text-xs text-red-700">
-                    {autoFinalizeError}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <Button
-                  className="w-full h-11 bg-[#32C8D1] hover:bg-[#2AB8C1]"
-                  disabled={!isPending || actionLoading}
-                  onClick={startMagicLinkFlow}
-                >
-                  {actionLoading ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Redirecting…
-                    </span>
-                  ) : (
-                    "Accept & Continue"
-                  )}
-                </Button>
-                <div className="text-xs text-gray-500">
-                  {requiresPasswordSetup
-                    ? "You’ll be redirected to set your password first. After that, acceptance is completed automatically."
-                    : "You’ll receive a secure sign-in link. After sign-in, acceptance is completed automatically."}
-                </div>
-                {authenticated && (!hasInviteRole || !emailMatchesInvite) && (
-                  <div className="text-xs text-amber-700">
-                    Continue with the invited account ({email || "invite email"}
-                    ) to finish acceptance.
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  className="w-full h-11"
-                  disabled={
-                    !isPending ||
-                    actionLoading ||
-                    !hasInviteRole ||
-                    !emailMatchesInvite
-                  }
-                  onClick={declineInvite}
-                >
-                  Decline
-                </Button>
-              </>
-            )}
+        ) : null}
 
+        <div className="mt-6 space-y-4">
+          {!canRespondDirectly && requiresPasswordSetup ? (
+            <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="text-sm font-medium text-gray-900">
+                Create your password first
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-password">Password</Label>
+                <Input
+                  id="invite-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Choose a password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-confirm-password">
+                  Confirm password
+                </Label>
+                <Input
+                  id="invite-confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repeat your password"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {canRespondDirectly ? (
+            <>
+              <Button
+                className="h-11 w-full bg-[#32C8D1] hover:bg-[#2AB8C1]"
+                disabled={!isPending || actionLoading}
+                onClick={startInviteOtpFlow}
+              >
+                {actionLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Finalizing…
+                  </span>
+                ) : (
+                  "Accept & Continue"
+                )}
+              </Button>
+              <div className="text-xs text-gray-500">
+                You are already signed in with the invited account, so we can
+                finish acceptance immediately.
+              </div>
+              <Button
+                variant="outline"
+                className="h-11 w-full"
+                disabled={!isPending || actionLoading}
+                onClick={declineInvite}
+              >
+                Decline
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                className="h-11 w-full bg-[#32C8D1] hover:bg-[#2AB8C1]"
+                disabled={!isPending || actionLoading}
+                onClick={startInviteOtpFlow}
+              >
+                {actionLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending code…
+                  </span>
+                ) : requiresPasswordSetup ? (
+                  "Set password & send code"
+                ) : (
+                  "Send verification code"
+                )}
+              </Button>
+
+              <div className="text-xs text-gray-500">
+                {requiresPasswordSetup
+                  ? "Create your password first, then we’ll email a 6-digit code and keep you on this page while we verify it."
+                  : "We’ll email a 6-digit sign-in code and keep you on this page while we verify it."}
+              </div>
+
+              {authenticated ? (
+                <>
+                  <div className="text-xs text-amber-700">
+                    Signed in as {profile?.email || "another account"}. Verify{" "}
+                    {email || "the invited email"} to switch this tab and finish
+                    acceptance.
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full"
+                    disabled={
+                      !isPending ||
+                      actionLoading ||
+                      !hasInviteRole ||
+                      !emailMatchesInvite
+                    }
+                    onClick={declineInvite}
+                  >
+                    Decline
+                  </Button>
+                </>
+              ) : null}
+            </>
+          )}
+
+          {authenticated ? (
             <div className="text-xs text-gray-500">
               Signed in as {profile?.email || ""}
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
 
-        {!isPending && (
+        {!isPending ? (
           <div className="mt-6 text-sm text-gray-600">
             This invitation is {status || "not available"}.
           </div>
-        )}
+        ) : null}
       </Card>
+
+      <EmailOtpDialog
+        open={otpDialogOpen}
+        onOpenChange={setOtpDialogOpen}
+        email={email}
+        title="Verify your email"
+        description="Enter the 6-digit code from your inbox to finish joining this agency without leaving the page."
+        helperText="If the code does not arrive right away, resend it from this dialog."
+        verifyLabel="Verify & continue"
+        onVerify={handleInviteOtpVerify}
+        onResend={handleInviteOtpResend}
+      />
     </div>
   );
 }

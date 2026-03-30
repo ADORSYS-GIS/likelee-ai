@@ -10,4 +10,6 @@ export interface KycStatusResponse {
   kyc_provider: string;
   kyc_session_id: string;
   verified_at: string | null;
+  kyc_rejection_reason?: string | null;
+  kyc_rejection_code?: string | null;
 }

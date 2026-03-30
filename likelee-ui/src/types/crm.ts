@@ -10,6 +10,7 @@ export interface Client {
   lastBooking: string;
   nextFollowUp: string;
   next_follow_up_date?: string;
+  email?: string;
   tags: string[];
   notes?: string;
   preferences?: {
