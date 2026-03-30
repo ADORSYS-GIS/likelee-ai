@@ -123,8 +123,9 @@ export default function CreatorSubscribe() {
             </div>
             <div className="mt-8">
               <div className="mb-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
-                Basic is the trust unlock. Without Basic and approved KYC, a creator
-                cannot be visible in the marketplace or be managed by agencies and brands.
+                Basic is the trust unlock. Without Basic and approved KYC, a
+                creator cannot be visible in the marketplace or be managed by
+                agencies and brands.
               </div>
               <Button
                 className="w-full rounded-2xl font-black"
@@ -191,7 +192,10 @@ export default function CreatorSubscribe() {
         </div>
 
         <div className="mt-12 flex justify-center">
-          <Button variant="outline" onClick={() => navigate("/CreatorDashboard")}>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/CreatorDashboard")}
+          >
             Back to Dashboard
             <ArrowLeft className="w-4 h-4 ml-2" />
           </Button>

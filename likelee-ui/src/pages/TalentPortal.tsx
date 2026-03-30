@@ -198,8 +198,10 @@ export default function TalentPortal({
   const creatorEntitlements = ((baseMe as any)?.entitlements || {}) as any;
   const canUseVoiceProfiles = !!creatorEntitlements?.can_use_voice_profiles;
   const voiceToneLimit = Number(creatorEntitlements?.voice_tone_limit || 6);
-  const canUseAdvancedAnalytics = !!creatorEntitlements?.can_use_advanced_analytics;
-  const canUseMonitoring = !!creatorEntitlements?.can_use_unauthorized_monitoring;
+  const canUseAdvancedAnalytics =
+    !!creatorEntitlements?.can_use_advanced_analytics;
+  const canUseMonitoring =
+    !!creatorEntitlements?.can_use_unauthorized_monitoring;
   const canUseTalentPortal =
     typeof creatorEntitlements?.can_use_talent_portal === "boolean"
       ? !!creatorEntitlements.can_use_talent_portal
@@ -1054,7 +1056,10 @@ export default function TalentPortal({
               >
                 Upgrade plan
               </Button>
-              <Button variant="outline" onClick={() => navigate("/CreatorDashboard")}>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/CreatorDashboard")}
+              >
                 Back to Dashboard
               </Button>
             </div>
@@ -1062,788 +1067,1977 @@ export default function TalentPortal({
         </Card>
       ) : (
         <>
-      <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-2xl font-bold text-gray-900">
-              {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
-            </div>
-            <div className="text-sm text-gray-600 mt-1">
-              {mode === "irl"
-                ? "Track your bookings and earnings"
-                : "Manage your AI licensing deals and earnings"}
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge
-                className={creatorPlanBadgeClass}
-              >
-                <Crown className="mr-1 h-3.5 w-3.5" />
-                {creatorPlanLabel}
-              </Badge>
-              {creatorPlanTier !== "pro" && (
-                <Button
-                  size="sm"
-                  className="h-8 rounded-full bg-[#4B4AE6] hover:bg-[#3F3EE0]"
-                  onClick={() => navigate("/CreatorSubscribe")}
-                >
-                  Upgrade to Pro
-                </Button>
-              )}
-            </div>
-          </div>
-          {canSelectAgency && (
-            <div className="w-[240px]">
-              <Select
-                value={selectedAgencyId}
-                onValueChange={setSelectedAgencyId}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All agencies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All agencies</SelectItem>
-                  {connectedAgencyIds.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      {agencyNameById.get(id) || id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
-            onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
-          >
-            {mode === "irl" ? (
-              <>
-                <Briefcase className="h-5 w-5 text-blue-500" />
-                AI Mode
-              </>
-            ) : (
-              <>
-                <Briefcase className="h-5 w-5 text-blue-500" />
-                IRL Mode
-              </>
-            )}
-          </button>
-        </div>
-
-        <Card className="mb-6 border border-[#32C8D1]/20 bg-gradient-to-r from-[#0F172A] via-[#12243B] to-[#1E3A5F] text-white shadow-sm">
-          <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className={creatorPlanBadgeClass}>
-                  <Crown className="mr-1 h-3.5 w-3.5" />
-                  {creatorPlanLabel}
-                </Badge>
-                {creatorPlanTier !== "pro" && (
-                  <Badge className="border border-amber-300/40 bg-amber-400/15 text-amber-100">
-                    Upgrade available
-                  </Badge>
-                )}
-              </div>
+          <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold">
-                  {creatorPlanTier === "pro"
-                    ? "Your Pro creator plan is active."
-                    : "Upgrade to Pro to unlock premium creator tools."}
+                <div className="text-2xl font-bold text-gray-900">
+                  {mode === "irl"
+                    ? "IRL Bookings Portal"
+                    : "AI Licensing Portal"}
                 </div>
-                <div className="text-sm text-white/75">
-                  Pro adds unauthorized-use monitoring, voice tones, Cameo upload support, and advanced analytics.
+                <div className="text-sm text-gray-600 mt-1">
+                  {mode === "irl"
+                    ? "Track your bookings and earnings"
+                    : "Manage your AI licensing deals and earnings"}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge className={creatorPlanBadgeClass}>
+                    <Crown className="mr-1 h-3.5 w-3.5" />
+                    {creatorPlanLabel}
+                  </Badge>
+                  {creatorPlanTier !== "pro" && (
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-full bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                      onClick={() => navigate("/CreatorSubscribe")}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  )}
                 </div>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {creatorPlanTier !== "pro" && (
-                <Button
-                  className="rounded-full bg-[#32C8D1] px-5 text-[#0F172A] hover:bg-[#2bb6bf]"
-                  onClick={() => navigate("/CreatorSubscribe")}
-                >
-                  <Crown className="mr-2 h-4 w-4" />
-                  Upgrade plan
-                </Button>
+              {canSelectAgency && (
+                <div className="w-[240px]">
+                  <Select
+                    value={selectedAgencyId}
+                    onValueChange={setSelectedAgencyId}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="All agencies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All agencies</SelectItem>
+                      {connectedAgencyIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {agencyNameById.get(id) || id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
+              <button
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
+                onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
+              >
+                {mode === "irl" ? (
+                  <>
+                    <Briefcase className="h-5 w-5 text-blue-500" />
+                    AI Mode
+                  </>
+                ) : (
+                  <>
+                    <Briefcase className="h-5 w-5 text-blue-500" />
+                    IRL Mode
+                  </>
+                )}
+              </button>
             </div>
-          </div>
-        </Card>
 
-        <div className="border-b border-gray-200 overflow-x-auto">
-          <div className="flex items-center gap-6 min-w-max pb-3">
-            {(mode === "irl"
-              ? [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
-                  {
-                    id: "calendar",
-                    label: "Booking Calendar",
-                    icon: Calendar,
-                    badge: 0,
-                  },
-                  {
-                    id: "active_projects",
-                    label: "Active Projects",
-                    icon: Briefcase,
-                  },
-                  { id: "history", label: "Job History", icon: FileText },
-                  {
-                    id: "availability",
-                    label: "Availability",
-                    icon: CheckCircle2,
-                  },
-                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
-                  { id: "settings", label: "Settings", icon: Settings },
-                  {
-                    id: "agency_connection",
-                    label: "Agency Connection",
-                    icon: Building2,
-                    badge: pendingAgencyInvitesCount || undefined,
-                  },
-                ]
-              : [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
-                  { id: "likeness", label: "My Likeness", icon: Sparkles },
-                  {
-                    id: "campaigns",
-                    label: "Active Campaigns",
-                    icon: Briefcase,
-                    badge: activeDeals.length,
-                    premium: !canUseActiveCampaigns,
-                  },
-                  {
-                    id: "approvals",
-                    label: "Approval Queue",
-                    icon: CheckCircle2,
-                    badge: pendingApprovals.length,
-                  },
-                  { id: "archive", label: "Archive", icon: FolderArchive },
-                  {
-                    id: "licenses",
-                    label: "Licenses & Contracts",
-                    icon: ShieldCheck,
-                  },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
-                  {
-                    id: "analytics",
-                    label: "Analytics",
-                    icon: BarChart3,
-                    premium: !canUseAdvancedAnalytics,
-                  },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
-                  { id: "settings", label: "Settings", icon: Settings },
-                ]
-            ).map((item) => {
-              const Icon = item.icon as any;
-              const active = tab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  className={`inline-flex items-center gap-2 text-[14px] font-semibold pb-2 border-b-2 transition-colors ${
-                    active
-                      ? "text-[#32C8D1] border-[#32C8D1]"
-                      : "text-gray-600 border-transparent hover:text-gray-900"
-                  }`}
-                  onClick={() => setTab(item.id)}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="whitespace-nowrap">{item.label}</span>
-                  {(item as any).premium && (
-                    <Crown className="h-3.5 w-3.5 text-amber-500" />
-                  )}
-                  {typeof (item as any).badge === "number" && (
-                    <span
-                      className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${
-                        active
-                          ? "bg-[#32C8D1]/15 text-[#32C8D1]"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {(item as any).badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {mode === "irl" ? (
-        <>
-          {tab === "overview" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        Upcoming Bookings
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
-                        {upcomingBookings.length}
-                      </div>
+            <Card className="mb-6 border border-[#32C8D1]/20 bg-gradient-to-r from-[#0F172A] via-[#12243B] to-[#1E3A5F] text-white shadow-sm">
+              <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={creatorPlanBadgeClass}>
+                      <Crown className="mr-1 h-3.5 w-3.5" />
+                      {creatorPlanLabel}
+                    </Badge>
+                    {creatorPlanTier !== "pro" && (
+                      <Badge className="border border-amber-300/40 bg-amber-400/15 text-amber-100">
+                        Upgrade available
+                      </Badge>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold">
+                      {creatorPlanTier === "pro"
+                        ? "Your Pro creator plan is active."
+                        : "Upgrade to Pro to unlock premium creator tools."}
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-blue-500" />
+                    <div className="text-sm text-white/75">
+                      Pro adds unauthorized-use monitoring, voice tones, Cameo
+                      upload support, and advanced analytics.
                     </div>
                   </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {creatorPlanTier !== "pro" && (
+                    <Button
+                      className="rounded-full bg-[#32C8D1] px-5 text-[#0F172A] hover:bg-[#2bb6bf]"
+                      onClick={() => navigate("/CreatorSubscribe")}
+                    >
+                      <Crown className="mr-2 h-4 w-4" />
+                      Upgrade plan
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            <div className="border-b border-gray-200 overflow-x-auto">
+              <div className="flex items-center gap-6 min-w-max pb-3">
+                {(mode === "irl"
+                  ? [
+                      { id: "overview", label: "Overview", icon: LayoutGrid },
+                      {
+                        id: "calendar",
+                        label: "Booking Calendar",
+                        icon: Calendar,
+                        badge: 0,
+                      },
+                      {
+                        id: "active_projects",
+                        label: "Active Projects",
+                        icon: Briefcase,
+                      },
+                      { id: "history", label: "Job History", icon: FileText },
+                      {
+                        id: "availability",
+                        label: "Availability",
+                        icon: CheckCircle2,
+                      },
+                      {
+                        id: "portfolio",
+                        label: "Portfolio",
+                        icon: LucideImage,
+                      },
+                      { id: "earnings", label: "Earnings", icon: DollarSign },
+                      {
+                        id: "messages",
+                        label: "Messages",
+                        icon: MessageSquare,
+                      },
+                      { id: "settings", label: "Settings", icon: Settings },
+                      {
+                        id: "agency_connection",
+                        label: "Agency Connection",
+                        icon: Building2,
+                        badge: pendingAgencyInvitesCount || undefined,
+                      },
+                    ]
+                  : [
+                      { id: "overview", label: "Overview", icon: LayoutGrid },
+                      { id: "likeness", label: "My Likeness", icon: Sparkles },
+                      {
+                        id: "campaigns",
+                        label: "Active Campaigns",
+                        icon: Briefcase,
+                        badge: activeDeals.length,
+                        premium: !canUseActiveCampaigns,
+                      },
+                      {
+                        id: "approvals",
+                        label: "Approval Queue",
+                        icon: CheckCircle2,
+                        badge: pendingApprovals.length,
+                      },
+                      { id: "archive", label: "Archive", icon: FolderArchive },
+                      {
+                        id: "licenses",
+                        label: "Licenses & Contracts",
+                        icon: ShieldCheck,
+                      },
+                      { id: "earnings", label: "Earnings", icon: DollarSign },
+                      {
+                        id: "analytics",
+                        label: "Analytics",
+                        icon: BarChart3,
+                        premium: !canUseAdvancedAnalytics,
+                      },
+                      {
+                        id: "messages",
+                        label: "Messages",
+                        icon: MessageSquare,
+                      },
+                      { id: "settings", label: "Settings", icon: Settings },
+                    ]
+                ).map((item) => {
+                  const Icon = item.icon as any;
+                  const active = tab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      className={`inline-flex items-center gap-2 text-[14px] font-semibold pb-2 border-b-2 transition-colors ${
+                        active
+                          ? "text-[#32C8D1] border-[#32C8D1]"
+                          : "text-gray-600 border-transparent hover:text-gray-900"
+                      }`}
+                      onClick={() => setTab(item.id)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="whitespace-nowrap">{item.label}</span>
+                      {(item as any).premium && (
+                        <Crown className="h-3.5 w-3.5 text-amber-500" />
+                      )}
+                      {typeof (item as any).badge === "number" && (
+                        <span
+                          className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${
+                            active
+                              ? "bg-[#32C8D1]/15 text-[#32C8D1]"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {(item as any).badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {mode === "irl" ? (
+            <>
+              {tab === "overview" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Upcoming Bookings
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {upcomingBookings.length}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <Calendar className="h-5 w-5 text-blue-500" />
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Total Earnings
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {fmtCents(
+                              (irlEarningsSummary as any)?.total_paid_cents,
+                            )}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                          <DollarSign className="h-5 w-5 text-green-500" />
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Completed Jobs
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {completedBookingsCount}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                          <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            This Month
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {thisMonthBookingsCount}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <Sparkles className="h-5 w-5 text-purple-500" />
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Upcoming Bookings
+                    </div>
+                    <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                      {upcomingBookings.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                            <Calendar className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            No upcoming bookings
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {upcomingBookings.map((b: any) => (
+                            <div
+                              key={b.id || `${b.date}-${b.client_name}`}
+                              className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
+                            >
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {b.client_name || b.clientName || "Booking"}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {b.date}
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="capitalize">
+                                {safeStr(b.status || "pending").toLowerCase() ||
+                                  "pending"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Earnings by Agency
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {earningsByAgency.length === 0 ? (
+                        <div className="text-sm text-gray-600 py-6 text-center">
+                          No earnings by agency for this month yet.
+                        </div>
+                      ) : (
+                        earningsByAgency.slice(0, 10).map((it: any) => (
+                          <div
+                            key={String(it.agency_id || "")}
+                            className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
+                                {(
+                                  String(
+                                    it.agency_name || it.agency_id || "A",
+                                  ).trim()[0] || "A"
+                                ).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-gray-900 truncate">
+                                  {it.agency_name || it.agency_id || "Agency"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-sm font-semibold text-green-600">
+                              {fmtCents(it.monthly_cents)}/mo
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                          {agencyUser?.agency_logo_url ? (
+                            <img
+                              src={agencyUser.agency_logo_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Briefcase className="h-6 w-6 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold text-gray-900 truncate">
+                            {agencyName || "Your Agency"}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            Connected since {new Date().toLocaleDateString()}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
+                              Edit Profile
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
+                              Manage Campaigns
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
+                              View Earnings
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {tab === "calendar" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Booking Calendar
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      View and manage your upcoming bookings
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <BookingsView
+                      activeSubTab="Calendar & Schedule"
+                      bookings={
+                        Array.isArray(bookings) ? (bookings as any[]) : []
+                      }
+                      onAddBooking={() => {}}
+                      onUpdateBooking={() => {}}
+                      onCancelBooking={() => {}}
+                      bookOuts={
+                        Array.isArray(bookOuts) ? (bookOuts as any[]) : []
+                      }
+                      onAddBookOut={(bo: any) => {
+                        const payload: any = {
+                          start_date: bo.startDate || bo.start_date,
+                          end_date: bo.endDate || bo.end_date,
+                          reason: bo.reason,
+                          notes: bo.notes,
+                          notify_agency: !!bo.notifyAgency,
+                        };
+                        if (fixedTalent?.id) payload.agency_id = fixedTalent.id;
+                        addBookOutMutation.mutate(payload);
+                      }}
+                      onRemoveBookOut={(id: string) => {
+                        deleteBookOutMutation.mutate(id);
+                      }}
+                      fixedTalent={
+                        selectedAgencyId === "all"
+                          ? {
+                              id: "all",
+                              name: String(talentName || "My Profile"),
+                            }
+                          : fixedTalent
+                      }
+                      disableBookingEdits
+                    />
+                  </Card>
+                </div>
+              )}
+
+              {tab === "active_projects" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Active Projects
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Current ongoing projects and gigs
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="mt-2 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                      {activeProjects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                            <Briefcase className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            No Active Projects
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Confirmed bookings will appear here
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {activeProjects.map((b: any) => (
+                            <div
+                              key={b.id}
+                              className="rounded-xl border bg-white p-4"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">
+                                    {b.client_name || "Project"}
+                                  </div>
+                                  <div className="text-xs text-gray-600 mt-1 truncate">
+                                    {b.date}
+                                    {b.location ? ` • ${b.location}` : ""}
+                                  </div>
+                                  {b.notes && (
+                                    <div className="text-xs text-gray-500 mt-2 line-clamp-2">
+                                      {String(b.notes)}
+                                    </div>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className="capitalize">
+                                  {safeStr(
+                                    b.status || "pending",
+                                  ).toLowerCase() || "pending"}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "history" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Job History
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      View all completed bookings
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="mt-2 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                      {jobHistory.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                            <FileText className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            No Completed Jobs
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Completed bookings will appear here
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {jobHistory.map((b: any) => (
+                            <div
+                              key={b.id || `${b.date}-${b.client_name}`}
+                              className="flex items-start justify-between gap-4 rounded-xl border bg-white p-4"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-gray-900 truncate">
+                                  {b.client_name || "Job"}
+                                </div>
+                                <div className="text-xs text-gray-600 mt-1 truncate">
+                                  {b.date}
+                                  {b.location ? ` • ${b.location}` : ""}
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="capitalize">
+                                {safeStr(
+                                  b.status || "completed",
+                                ).toLowerCase() || "completed"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "availability" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Availability Settings
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Manage your booking availability and book-outs
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Book-Out Calendar
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Block dates when you're not available for bookings
+                    </div>
+
+                    <div className="mt-5">
+                      <BookingsView
+                        activeSubTab="Talent Availability"
+                        bookings={[]}
+                        onAddBooking={() => {}}
+                        onUpdateBooking={() => {}}
+                        onCancelBooking={() => {}}
+                        bookOuts={
+                          Array.isArray(bookOuts) ? (bookOuts as any[]) : []
+                        }
+                        onAddBookOut={(bo: any) => {
+                          if (
+                            !effectiveAgencyId &&
+                            connectedAgencyIds.length > 1
+                          ) {
+                            toast({
+                              variant: "destructive",
+                              title: "Select an agency",
+                              description:
+                                "Please choose the agency for this book-out using the Agency filter dropdown.",
+                            });
+                            return;
+                          }
+                          addBookOutMutation.mutate({
+                            start_date: bo.startDate || bo.start_date,
+                            end_date: bo.endDate || bo.end_date,
+                            reason: bo.reason,
+                            notes: bo.notes,
+                            notify_agency: !!bo.notifyAgency,
+                            ...(effectiveAgencyId
+                              ? { agency_id: effectiveAgencyId }
+                              : {}),
+                          });
+                        }}
+                        onRemoveBookOut={(id: string) =>
+                          deleteBookOutMutation.mutate(id)
+                        }
+                        fixedTalent={fixedTalent}
+                        disableBookingEdits
+                      />
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Booking Preferences
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Set preferences your agency can use when booking you
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Willing to Travel
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Accept bookings outside local area
+                          </div>
+                        </div>
+                        <Switch
+                          checked={
+                            !!(bookingPreferences as any)?.willing_to_travel
+                          }
+                          onCheckedChange={(checked: boolean) =>
+                            updateBookingPreferencesMutation.mutate({
+                              willing_to_travel: checked,
+                              ...(profileAgencyId
+                                ? { agency_id: profileAgencyId }
+                                : {}),
+                            } as any)
+                          }
+                          disabled={updateBookingPreferencesMutation.isPending}
+                        />
+                      </div>
+
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              Minimum Day Rate
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              Your minimum acceptable rate
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs font-semibold text-gray-600">
+                              USD
+                            </div>
+                            <Input
+                              className="w-28 bg-white"
+                              placeholder="500"
+                              defaultValue={
+                                (bookingPreferences as any)?.min_day_rate_cents
+                                  ? Math.round(
+                                      Number(
+                                        (bookingPreferences as any)
+                                          ?.min_day_rate_cents,
+                                      ) / 100,
+                                    )
+                                  : ""
+                              }
+                              onBlur={(e) => {
+                                const raw = String(e.target.value || "").trim();
+                                if (!raw) {
+                                  updateBookingPreferencesMutation.mutate({
+                                    min_day_rate_cents: null,
+                                    ...(profileAgencyId
+                                      ? { agency_id: profileAgencyId }
+                                      : {}),
+                                  } as any);
+                                  return;
+                                }
+                                const dollars = Number(raw);
+                                if (isNaN(dollars) || dollars < 0) return;
+                                updateBookingPreferencesMutation.mutate({
+                                  min_day_rate_cents: Math.round(dollars * 100),
+                                  ...(profileAgencyId
+                                    ? { agency_id: profileAgencyId }
+                                    : {}),
+                                } as any);
+                              }}
+                              disabled={
+                                updateBookingPreferencesMutation.isPending
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "portfolio" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Portfolio
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Showcase your work and past projects
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          Portfolio Images
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          Upload images to your IRL portfolio
+                        </div>
+                      </div>
+                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#32C8D1] text-white text-sm font-semibold cursor-pointer hover:bg-[#2AB8C1]">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            if (
+                              !effectiveAgencyId &&
+                              connectedAgencyIds.length > 1
+                            ) {
+                              toast({
+                                variant: "destructive",
+                                title: "Select an agency",
+                                description:
+                                  "Please choose the agency for this upload using the Agency filter dropdown.",
+                              });
+                              e.target.value = "";
+                              return;
+                            }
+                            uploadTalentPortfolioItem({
+                              file: f,
+                              ...(effectiveAgencyId
+                                ? { agency_id: effectiveAgencyId }
+                                : {}),
+                            })
+                              .then(() =>
+                                queryClient.invalidateQueries({
+                                  queryKey: ["talentPortfolioItems"],
+                                }),
+                              )
+                              .finally(() => {
+                                e.target.value = "";
+                              });
+                          }}
+                        />
+                        Add Images
+                      </label>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {(() => {
+                        const items = Array.isArray(portfolioItems)
+                          ? (portfolioItems as any[])
+                          : [];
+                        const real = items.slice(0, 12);
+                        const placeholders = Math.max(0, 4 - real.length);
+                        return (
+                          <>
+                            {real.map((it: any) => (
+                              <div
+                                key={it.id}
+                                className="group rounded-xl overflow-hidden border bg-white"
+                              >
+                                <div className="relative aspect-[4/3] bg-gray-100">
+                                  <img
+                                    src={it.media_url}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                  <button
+                                    className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
+                                    onClick={() =>
+                                      deletePortfolioMutation.mutate(
+                                        String(it.id),
+                                      )
+                                    }
+                                    disabled={deletePortfolioMutation.isPending}
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            {Array.from({ length: placeholders }).map(
+                              (_, idx) => (
+                                <div
+                                  key={`ph-${idx}`}
+                                  className="rounded-xl overflow-hidden border border-dashed bg-gray-50"
+                                >
+                                  <div className="aspect-[4/3] flex items-center justify-center">
+                                    <LucideImage className="h-8 w-8 text-gray-400" />
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Past Work Highlights
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Add standout projects, collaborations, or press mentions
+                    </div>
+
+                    <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                          <Briefcase className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Highlights coming soon
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Your agency can help curate portfolio highlights here
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "earnings" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Earnings
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Track your booking earnings
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
                         Total Earnings
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
                         {fmtCents(
                           (irlEarningsSummary as any)?.total_paid_cents,
                         )}
                       </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-500" />
-                    </div>
-                  </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
+                        Withdrawable
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {fmtCents(
+                          (irlEarningsSummary as any)?.withdrawable_cents,
+                        )}
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
                         Completed Jobs
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
                         {completedBookingsCount}
                       </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-orange-500" />
-                    </div>
+                    </Card>
                   </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        This Month
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
-                        {thisMonthBookingsCount}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                      <Sparkles className="h-5 w-5 text-purple-500" />
-                    </div>
-                  </div>
-                </Card>
-              </div>
 
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Upcoming Bookings
-                </div>
-                <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                  {upcomingBookings.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <Calendar className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        No upcoming bookings
-                      </div>
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Recent Payments
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {upcomingBookings.map((b: any) => (
-                        <div
-                          key={b.id || `${b.date}-${b.client_name}`}
-                          className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-                        >
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {b.client_name || b.clientName || "Booking"}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {b.date}
-                            </div>
-                          </div>
-                          <Badge variant="secondary" className="capitalize">
-                            {safeStr(b.status || "pending").toLowerCase() ||
-                              "pending"}
-                          </Badge>
+                    <div className="mt-4 space-y-2">
+                      {irlPayments.length === 0 ? (
+                        <div className="text-sm text-gray-600">
+                          No payments yet.
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Earnings by Agency
-                </div>
-                <div className="mt-4 space-y-2">
-                  {earningsByAgency.length === 0 ? (
-                    <div className="text-sm text-gray-600 py-6 text-center">
-                      No earnings by agency for this month yet.
-                    </div>
-                  ) : (
-                    earningsByAgency.slice(0, 10).map((it: any) => (
-                      <div
-                        key={String(it.agency_id || "")}
-                        className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
-                            {(
-                              String(
-                                it.agency_name || it.agency_id || "A",
-                              ).trim()[0] || "A"
-                            ).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">
-                              {it.agency_name || it.agency_id || "Agency"}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-sm font-semibold text-green-600">
-                          {fmtCents(it.monthly_cents)}/mo
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                      {agencyUser?.agency_logo_url ? (
-                        <img
-                          src={agencyUser.agency_logo_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
                       ) : (
-                        <Briefcase className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName || "Your Agency"}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate">
-                        Connected since {new Date().toLocaleDateString()}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          Edit Profile
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          Manage Campaigns
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          View Earnings
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </>
-          )}
-
-          {tab === "calendar" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Booking Calendar
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  View and manage your upcoming bookings
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <BookingsView
-                  activeSubTab="Calendar & Schedule"
-                  bookings={Array.isArray(bookings) ? (bookings as any[]) : []}
-                  onAddBooking={() => {}}
-                  onUpdateBooking={() => {}}
-                  onCancelBooking={() => {}}
-                  bookOuts={Array.isArray(bookOuts) ? (bookOuts as any[]) : []}
-                  onAddBookOut={(bo: any) => {
-                    const payload: any = {
-                      start_date: bo.startDate || bo.start_date,
-                      end_date: bo.endDate || bo.end_date,
-                      reason: bo.reason,
-                      notes: bo.notes,
-                      notify_agency: !!bo.notifyAgency,
-                    };
-                    if (fixedTalent?.id) payload.agency_id = fixedTalent.id;
-                    addBookOutMutation.mutate(payload);
-                  }}
-                  onRemoveBookOut={(id: string) => {
-                    deleteBookOutMutation.mutate(id);
-                  }}
-                  fixedTalent={
-                    selectedAgencyId === "all"
-                      ? { id: "all", name: String(talentName || "My Profile") }
-                      : fixedTalent
-                  }
-                  disableBookingEdits
-                />
-              </Card>
-            </div>
-          )}
-
-          {tab === "active_projects" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Active Projects
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Current ongoing projects and gigs
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="mt-2 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                  {activeProjects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <Briefcase className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        No Active Projects
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Confirmed bookings will appear here
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {activeProjects.map((b: any) => (
-                        <div
-                          key={b.id}
-                          className="rounded-xl border bg-white p-4"
-                        >
-                          <div className="flex items-start justify-between gap-4">
+                        (irlPayments as any[]).slice(0, 20).map((p: any) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                          >
                             <div className="min-w-0">
                               <div className="text-sm font-semibold text-gray-900 truncate">
-                                {b.client_name || "Project"}
+                                {p.source || "Payment"}
                               </div>
-                              <div className="text-xs text-gray-600 mt-1 truncate">
-                                {b.date}
-                                {b.location ? ` • ${b.location}` : ""}
+                              <div className="text-xs text-gray-600 mt-0.5">
+                                {p.paid_at
+                                  ? new Date(p.paid_at).toLocaleDateString()
+                                  : "—"}
+                                {p.status
+                                  ? ` • ${String(p.status).toLowerCase()}`
+                                  : ""}
                               </div>
-                              {b.notes && (
-                                <div className="text-xs text-gray-500 mt-2 line-clamp-2">
-                                  {String(b.notes)}
-                                </div>
-                              )}
                             </div>
-                            <Badge variant="outline" className="capitalize">
-                              {safeStr(b.status || "pending").toLowerCase() ||
-                                "pending"}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "history" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Job History
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  View all completed bookings
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="mt-2 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                  {jobHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <FileText className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        No Completed Jobs
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Completed bookings will appear here
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {jobHistory.map((b: any) => (
-                        <div
-                          key={b.id || `${b.date}-${b.client_name}`}
-                          className="flex items-start justify-between gap-4 rounded-xl border bg-white p-4"
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">
-                              {b.client_name || "Job"}
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1 truncate">
-                              {b.date}
-                              {b.location ? ` • ${b.location}` : ""}
+                            <div className="text-sm font-semibold text-gray-900">
+                              {fmtCents(p.amount_cents)}
                             </div>
                           </div>
-                          <Badge variant="secondary" className="capitalize">
-                            {safeStr(b.status || "completed").toLowerCase() ||
-                              "completed"}
-                          </Badge>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
+                  </Card>
 
-          {tab === "availability" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Availability Settings
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Manage your booking availability and book-outs
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Book-Out Calendar
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Block dates when you're not available for bookings
-                </div>
-
-                <div className="mt-5">
-                  <BookingsView
-                    activeSubTab="Talent Availability"
-                    bookings={[]}
-                    onAddBooking={() => {}}
-                    onUpdateBooking={() => {}}
-                    onCancelBooking={() => {}}
-                    bookOuts={
-                      Array.isArray(bookOuts) ? (bookOuts as any[]) : []
+                  <button
+                    className="w-full h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:hover:bg-green-600"
+                    disabled={
+                      createIrlPayoutRequestMutation.isPending ||
+                      !Number(
+                        (irlEarningsSummary as any)?.withdrawable_cents || 0,
+                      )
                     }
-                    onAddBookOut={(bo: any) => {
-                      if (!effectiveAgencyId && connectedAgencyIds.length > 1) {
-                        toast({
-                          variant: "destructive",
-                          title: "Select an agency",
-                          description:
-                            "Please choose the agency for this book-out using the Agency filter dropdown.",
-                        });
-                        return;
-                      }
-                      addBookOutMutation.mutate({
-                        start_date: bo.startDate || bo.start_date,
-                        end_date: bo.endDate || bo.end_date,
-                        reason: bo.reason,
-                        notes: bo.notes,
-                        notify_agency: !!bo.notifyAgency,
-                        ...(effectiveAgencyId
-                          ? { agency_id: effectiveAgencyId }
-                          : {}),
+                    onClick={() => {
+                      const amt = Number(
+                        (irlEarningsSummary as any)?.withdrawable_cents || 0,
+                      );
+                      if (!amt || amt <= 0) return;
+                      createIrlPayoutRequestMutation.mutate({
+                        amount_cents: amt,
                       });
                     }}
-                    onRemoveBookOut={(id: string) =>
-                      deleteBookOutMutation.mutate(id)
-                    }
-                    fixedTalent={fixedTalent}
-                    disableBookingEdits
-                  />
+                  >
+                    {createIrlPayoutRequestMutation.isPending
+                      ? "Requesting…"
+                      : "Cash Out Earnings"}
+                  </button>
                 </div>
-              </Card>
+              )}
 
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Booking Preferences
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Set preferences your agency can use when booking you
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Willing to Travel
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Accept bookings outside local area
-                      </div>
-                    </div>
-                    <Switch
-                      checked={!!(bookingPreferences as any)?.willing_to_travel}
-                      onCheckedChange={(checked: boolean) =>
-                        updateBookingPreferencesMutation.mutate({
-                          willing_to_travel: checked,
-                          ...(profileAgencyId
-                            ? { agency_id: profileAgencyId }
-                            : {}),
-                        } as any)
-                      }
-                      disabled={updateBookingPreferencesMutation.isPending}
-                    />
-                  </div>
-
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          Minimum Day Rate
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          Your minimum acceptable rate
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-xs font-semibold text-gray-600">
-                          USD
-                        </div>
-                        <Input
-                          className="w-28 bg-white"
-                          placeholder="500"
-                          defaultValue={
-                            (bookingPreferences as any)?.min_day_rate_cents
-                              ? Math.round(
-                                  Number(
-                                    (bookingPreferences as any)
-                                      ?.min_day_rate_cents,
-                                  ) / 100,
-                                )
-                              : ""
-                          }
-                          onBlur={(e) => {
-                            const raw = String(e.target.value || "").trim();
-                            if (!raw) {
-                              updateBookingPreferencesMutation.mutate({
-                                min_day_rate_cents: null,
-                                ...(profileAgencyId
-                                  ? { agency_id: profileAgencyId }
-                                  : {}),
-                              } as any);
-                              return;
-                            }
-                            const dollars = Number(raw);
-                            if (isNaN(dollars) || dollars < 0) return;
-                            updateBookingPreferencesMutation.mutate({
-                              min_day_rate_cents: Math.round(dollars * 100),
-                              ...(profileAgencyId
-                                ? { agency_id: profileAgencyId }
-                                : {}),
-                            } as any);
-                          }}
-                          disabled={updateBookingPreferencesMutation.isPending}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "portfolio" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Portfolio
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Showcase your work and past projects
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="flex items-start justify-between gap-4">
+              {tab === "messages" && (
+                <div className="space-y-6">
                   <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Messages
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Your agency notifications inbox
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
-                      Portfolio Images
+                      Communication Hub
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Upload images to your IRL portfolio
+                      Email notifications sent by your agency
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      {Array.isArray(talentNotifications) &&
+                      talentNotifications.length > 0 ? (
+                        (talentNotifications as any[]).map((n: any) => {
+                          const id = String(n.id);
+                          const from = n.from_label || agencyName || "Agency";
+                          const subject = n.subject || "Notification";
+                          const msg =
+                            typeof n.message === "string" ? n.message : "";
+                          const preview =
+                            msg.split("\n").filter(Boolean)[0] ||
+                            msg.slice(0, 80);
+                          const unread = !n.read_at;
+                          const ts = n.created_at
+                            ? new Date(n.created_at).toLocaleString()
+                            : "";
+
+                          return (
+                            <button
+                              key={id}
+                              className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                                unread
+                                  ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
+                                  : "bg-white border-gray-100 hover:bg-gray-50"
+                              }`}
+                              onClick={() => {
+                                if (unread && !markReadMutation.isPending) {
+                                  markReadMutation.mutate(id);
+                                }
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">
+                                    {from}
+                                  </div>
+                                  <div className="text-xs text-gray-600 truncate">
+                                    {subject}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {unread && (
+                                    <Badge className="bg-blue-600 text-white border-0">
+                                      New
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2 text-xs text-gray-600 truncate">
+                                {preview}
+                              </div>
+                              <div className="mt-2 text-[11px] text-gray-500">
+                                {ts}
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-sm text-gray-600">
+                          No messages yet.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "settings" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Portal Settings
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Configure your talent portal preferences
                     </div>
                   </div>
-                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#32C8D1] text-white text-sm font-semibold cursor-pointer hover:bg-[#2AB8C1]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        if (
-                          !effectiveAgencyId &&
-                          connectedAgencyIds.length > 1
-                        ) {
-                          toast({
-                            variant: "destructive",
-                            title: "Select an agency",
-                            description:
-                              "Please choose the agency for this upload using the Agency filter dropdown.",
-                          });
-                          e.target.value = "";
-                          return;
-                        }
-                        uploadTalentPortfolioItem({
-                          file: f,
-                          ...(effectiveAgencyId
-                            ? { agency_id: effectiveAgencyId }
-                            : {}),
-                        })
-                          .then(() =>
-                            queryClient.invalidateQueries({
-                              queryKey: ["talentPortfolioItems"],
-                            }),
-                          )
-                          .finally(() => {
-                            e.target.value = "";
-                          });
-                      }}
-                    />
-                    Add Images
-                  </label>
-                </div>
 
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {(() => {
-                    const items = Array.isArray(portfolioItems)
-                      ? (portfolioItems as any[])
-                      : [];
-                    const real = items.slice(0, 12);
-                    const placeholders = Math.max(0, 4 - real.length);
-                    return (
-                      <>
-                        {real.map((it: any) => (
+                  <div className="flex items-center gap-2 overflow-x-auto">
+                    {[
+                      { id: "profile", label: "Profile" },
+                      { id: "payments", label: "Payments" },
+                      { id: "privacy", label: "Privacy" },
+                    ].map((it) => {
+                      const active = settingsTab === it.id;
+                      return (
+                        <button
+                          key={it.id}
+                          className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors whitespace-nowrap ${
+                            active
+                              ? "bg-[#32C8D1] text-white border-[#32C8D1]"
+                              : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                          }`}
+                          onClick={() => setSettingsTab(it.id)}
+                        >
+                          {it.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {settingsTab === "profile" && (
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Profile
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            This profile is specific to the selected agency.
+                          </div>
+                        </div>
+                        {canSelectAgency && (
+                          <div className="w-[240px]">
+                            <Select
+                              value={selectedAgencyId}
+                              onValueChange={setSelectedAgencyId}
+                            >
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="All agencies" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  Default agency
+                                </SelectItem>
+                                {connectedAgencyIds.map((id) => (
+                                  <SelectItem key={id} value={id}>
+                                    {agencyNameById.get(id) || id}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Stage Name
+                          </div>
+                          <Input
+                            value={profileForm.stage_name || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                stage_name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Full Legal Name
+                          </div>
+                          <Input
+                            value={profileForm.full_legal_name || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                full_legal_name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Email
+                          </div>
+                          <Input
+                            value={profileForm.email || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                email: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Phone
+                          </div>
+                          <Input
+                            value={profileForm.phone_number || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                phone_number: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Date of Birth
+                          </div>
+                          <Input
+                            type="date"
+                            value={profileForm.date_of_birth || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                date_of_birth: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Role Type
+                          </div>
+                          <Input
+                            value={profileForm.role_type || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                role_type: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Status
+                          </div>
+                          <Input
+                            value={profileForm.status || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                status: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Skin Tone
+                          </div>
+                          <Input
+                            value={profileForm.skin_tone || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                skin_tone: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Instagram
+                          </div>
+                          <Input
+                            value={profileForm.instagram_handle || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                instagram_handle: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Instagram Followers
+                          </div>
+                          <Input
+                            value={String(
+                              profileForm.instagram_followers ?? "",
+                            )}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                instagram_followers: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Engagement Rate
+                          </div>
+                          <Input
+                            value={String(profileForm.engagement_rate ?? "")}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                engagement_rate: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">City</div>
+                          <Input
+                            value={profileForm.city || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                city: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            State / Province
+                          </div>
+                          <Input
+                            value={profileForm.state_province || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                state_province: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Country
+                          </div>
+                          <Input
+                            value={profileForm.country || ""}
+                            onChange={(e) =>
+                              setProfileForm((p: any) => ({
+                                ...p,
+                                country: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="text-xs text-gray-600 mb-1">Bio</div>
+                        <Textarea
+                          value={profileForm.bio_notes || ""}
+                          onChange={(e) =>
+                            setProfileForm((p: any) => ({
+                              ...p,
+                              bio_notes: e.target.value,
+                            }))
+                          }
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <Button
+                        className="mt-6 h-11 w-full bg-[#32C8D1] hover:bg-[#2AB8C1]"
+                        disabled={updateProfileMutation.isPending}
+                        onClick={saveProfile}
+                      >
+                        {updateProfileMutation.isPending
+                          ? "Saving..."
+                          : "Save profile"}
+                      </Button>
+                    </Card>
+                  )}
+
+                  {settingsTab !== "profile" && (
+                    <>
+                      <Card className="p-6 rounded-xl shadow-sm">
+                        <div className="text-sm font-semibold text-gray-900">
+                          Payment Preferences
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                          <div className="rounded-xl border border-gray-200 bg-white p-4">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                Tax Documentation
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                {(w9Doc as any)?.id &&
+                                (w9Doc as any)?.created_at
+                                  ? `W-9 on file • Updated ${new Date((w9Doc as any).created_at).toLocaleDateString()}`
+                                  : "No W-9 on file"}
+                              </div>
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              className="mt-4 w-full h-10"
+                              disabled={!(tax1099Doc as any)?.public_url}
+                              onClick={() => {
+                                const url = (tax1099Doc as any)?.public_url;
+                                if (url) window.open(url, "_blank");
+                              }}
+                            >
+                              Download 1099 ({taxYear})
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-6 rounded-xl shadow-sm">
+                        <div className="text-sm font-semibold text-gray-900">
+                          Privacy Controls
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                          <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                Data Usage for Training
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Allow anonymized data for AI model improvement
+                              </div>
+                            </div>
+                            <Switch
+                              checked={
+                                !!(portalSettings as any)?.allow_training
+                              }
+                              onCheckedChange={(checked: boolean) =>
+                                updatePortalSettingsMutation.mutate({
+                                  allow_training: checked,
+                                })
+                              }
+                              disabled={updatePortalSettingsMutation.isPending}
+                            />
+                          </div>
+
+                          <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                Public Profile Visibility
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Show in marketplace search results
+                              </div>
+                            </div>
+                            <Switch
+                              checked={
+                                (portalSettings as any)
+                                  ?.public_profile_visible === undefined
+                                  ? true
+                                  : !!(portalSettings as any)
+                                      ?.public_profile_visible
+                              }
+                              onCheckedChange={(checked: boolean) =>
+                                updatePortalSettingsMutation.mutate({
+                                  public_profile_visible: checked,
+                                })
+                              }
+                              disabled={updatePortalSettingsMutation.isPending}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {tab === "agency_connection" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Agency Connection
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Manage agency invitations and your connected agencies.
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          Connected Agencies
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {agencyConnections.length > 0
+                            ? "You can be connected to multiple agencies at once."
+                            : "You are not connected to any agencies yet."}
+                        </div>
+                      </div>
+                      {(agencyConnectionsLoading ||
+                        disconnectAgencyMutation.isPending) && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading
+                        </div>
+                      )}
+                    </div>
+
+                    {agencyConnections.length > 0 && (
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {agencyConnections.map((c: any) => (
+                          <div
+                            key={c.agency_id}
+                            className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+                                {c.agencies?.logo_url ? (
+                                  <img
+                                    src={c.agencies.logo_url}
+                                    alt={c.agencies.agency_name || "Agency"}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <Building2 className="w-5 h-5 text-gray-500" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 truncate">
+                                  {c.agencies?.agency_name || c.agency_id}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {c.agency_id}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              disabled={disconnectAgencyMutation.isPending}
+                              onClick={async () => {
+                                try {
+                                  const agencyLabel =
+                                    c.agencies?.agency_name ||
+                                    String(c.agency_id || "");
+                                  const ok = window.confirm(
+                                    `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
+                                  );
+                                  if (!ok) return;
+                                  await disconnectAgencyMutation.mutateAsync(
+                                    String(c.agency_id),
+                                  );
+                                  toast({
+                                    title: "Disconnected",
+                                    description:
+                                      "You have disconnected from the agency.",
+                                  });
+                                } catch (e: any) {
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Failed to disconnect",
+                                    description: e?.message || String(e),
+                                  });
+                                }
+                              }}
+                            >
+                              Disconnect
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          Invitations
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          Respond to pending invitations from agencies.
+                        </div>
+                      </div>
+                      {agencyInvitesLoading && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading
+                        </div>
+                      )}
+                    </div>
+
+                    {(agencyInvites as any[]).filter(
+                      (i) => i.status === "pending",
+                    ).length > 0 ? (
+                      <div className="mt-6 space-y-3">
+                        {(agencyInvites as any[])
+                          .filter((i) => i.status === "pending")
+                          .map((inv: any) => (
+                            <div
+                              key={inv.id}
+                              className="p-4 border border-gray-200 rounded-lg space-y-3"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="min-w-0 flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    {inv?.agencies?.logo_url ? (
+                                      <img
+                                        src={inv.agencies.logo_url}
+                                        alt={
+                                          inv?.agencies?.agency_name || "Agency"
+                                        }
+                                        className="w-full h-full object-contain"
+                                      />
+                                    ) : (
+                                      <Building2 className="w-5 h-5 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-semibold text-gray-900 truncate">
+                                      {inv?.agencies?.agency_name
+                                        ? `Invitation from ${inv.agencies.agency_name}`
+                                        : "Invitation from agency"}
+                                    </div>
+                                    <div className="text-xs text-gray-500 truncate mt-1">
+                                      {inv?.agencies?.email ||
+                                        inv?.agencies?.website ||
+                                        "Agency profile available on request"}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Button
+                                    variant="outline"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        const token = String(inv?.token || "");
+                                        if (token) {
+                                          navigate(
+                                            `/invite/agency/${encodeURIComponent(token)}`,
+                                          );
+                                          return;
+                                        }
+                                        toast({
+                                          title: "Missing invite token",
+                                          description:
+                                            "Open the invite link to respond.",
+                                          variant: "destructive" as any,
+                                        });
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to decline",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Decline
+                                  </Button>
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        await acceptCreatorAgencyInvite(
+                                          String(inv.id),
+                                        );
+                                        await Promise.all([
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["creatorAgencyInvites"],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: [
+                                              "creatorAgencyConnections",
+                                            ],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["talentMe"],
+                                          }),
+                                        ]);
+                                        toast({
+                                          title: "Invitation accepted",
+                                          description:
+                                            "You are now connected to the agency.",
+                                        });
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to accept",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Accept
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                                <span className="font-semibold">
+                                  Likelee notice:
+                                </span>{" "}
+                                This agency found your public profile in
+                                marketplace and sent a connection invitation.
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="mt-6 text-sm text-gray-500">
+                        No pending invitations.
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {tab === "overview" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Active Campaigns
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {activeDeals.length}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <Briefcase className="h-5 w-5 text-purple-500" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Monthly Revenue
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-2">
+                            {fmtCents((licensingRevenue as any)?.total_cents)}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                          <DollarSign className="h-5 w-5 text-green-500" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Pending Approvals
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mt-3">
+                            {pendingApprovals.length}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                          <CheckCircle2 className="h-5 w-5 text-amber-500" />
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900 mb-5">
+                      Latest Licensing Requests
+                    </div>
+                    <div className="space-y-3">
+                      {licensingRequests.length === 0 ? (
+                        <div className="text-sm text-gray-600 py-8 text-center">
+                          No licensing requests yet.
+                        </div>
+                      ) : (
+                        licensingRequests.slice(0, 8).map((r: any) => (
+                          <div
+                            key={r.id}
+                            className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-base font-semibold text-gray-900 truncate">
+                                {r.brand_name || "Brand"}
+                              </div>
+                              <div className="text-sm text-gray-500 truncate">
+                                {r.campaign_title || "Licensing request"}
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="capitalize">
+                              {safeStr(r.status || "pending") || "pending"}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {tab === "likeness" && (
+                <div className="space-y-6">
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Likeness Asset Library
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Manage your photos, videos, and voice samples used for AI
+                      content generation
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card className="p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500">
+                              Reference Photos
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 mt-2">
+                              {photoCount}/15
+                            </div>
+                          </div>
+                          <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                            <LucideImage className="h-5 w-5 text-[#32C8D1]" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gray-900 rounded-full"
+                              style={{
+                                width: `${Math.min(100, (photoCount / 15) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500">
+                              Voice Samples
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 mt-2">
+                              {canUseVoiceProfiles
+                                ? `${voiceCount}/${voiceToneLimit}`
+                                : "Pro only"}
+                            </div>
+                          </div>
+                          <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                            <MessageSquare className="h-5 w-5 text-purple-500" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gray-900 rounded-full"
+                              style={{
+                                width: canUseVoiceProfiles
+                                  ? `${Math.min(100, (voiceCount / Math.max(1, voiceToneLimit)) * 100)}%`
+                                  : "0%",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Button
+                        className="h-12 rounded-xl bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        onClick={() =>
+                          navigate({
+                            pathname: "/CreatorDashboard",
+                            search: "?section=likeness",
+                          })
+                        }
+                      >
+                        <LucideImage className="h-4 w-4 mr-2" />
+                        Manage Photos
+                      </Button>
+                      <Button
+                        className="h-12 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
+                        onClick={() =>
+                          canUseVoiceProfiles
+                            ? navigate({
+                                pathname: "/CreatorDashboard",
+                                search: "?section=voice",
+                              })
+                            : navigate("/CreatorSubscribe")
+                        }
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        {canUseVoiceProfiles ? "Manage Voice" : "Unlock Voice"}
+                      </Button>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Asset Usage Rights
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Photos: Approved
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Your photos can be used for AI image generation by
+                            licensed brands
+                          </div>
+                        </div>
+                        <Badge className="bg-green-600 text-white border-0">
+                          All Brands
+                        </Badge>
+                      </div>
+                      <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Voice: {canUseVoiceProfiles ? "Approved" : "Locked"}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            {canUseVoiceProfiles
+                              ? "Voice cloning enabled for approved emotions"
+                              : "Upgrade to Pro to create ElevenLabs voice tones."}
+                          </div>
+                        </div>
+                        <Badge className="bg-purple-600 text-white border-0">
+                          {canUseVoiceProfiles ? "Limited Use" : "Pro"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Portfolio Showcase
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Approved AI-generated content featuring your likeness
+                    </div>
+
+                    <div className="mt-4 flex gap-2">
+                      <Input
+                        value={newPortfolioUrl}
+                        onChange={(e) => setNewPortfolioUrl(e.target.value)}
+                        placeholder="Paste image/video URL"
+                      />
+                      <Button
+                        className="shrink-0"
+                        onClick={() => {
+                          const u = newPortfolioUrl.trim();
+                          if (!u) return;
+                          createPortfolioMutation.mutate({ media_url: u });
+                          setNewPortfolioUrl("");
+                        }}
+                        disabled={
+                          !newPortfolioUrl.trim() ||
+                          createPortfolioMutation.isPending
+                        }
+                      >
+                        Add
+                      </Button>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {Array.isArray(portfolioItems) &&
+                      portfolioItems.length > 0 ? (
+                        (portfolioItems as any[]).slice(0, 9).map((it: any) => (
                           <div
                             key={it.id}
                             className="group rounded-xl overflow-hidden border bg-white"
                           >
-                            <div className="relative aspect-[4/3] bg-gray-100">
+                            <div className="relative aspect-[16/9] bg-gray-100">
                               <img
                                 src={it.media_url}
                                 alt=""
                                 className="h-full w-full object-cover"
                               />
+                              <div className="absolute top-2 right-2">
+                                <Badge className="bg-green-500 text-white border-0 text-[10px] h-5">
+                                  Live
+                                </Badge>
+                              </div>
                               <button
                                 className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
                                 onClick={() =>
@@ -1854,513 +3048,1119 @@ export default function TalentPortal({
                                 Remove
                               </button>
                             </div>
-                          </div>
-                        ))}
-                        {Array.from({ length: placeholders }).map((_, idx) => (
-                          <div
-                            key={`ph-${idx}`}
-                            className="rounded-xl overflow-hidden border border-dashed bg-gray-50"
-                          >
-                            <div className="aspect-[4/3] flex items-center justify-center">
-                              <LucideImage className="h-8 w-8 text-gray-400" />
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Past Work Highlights
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Add standout projects, collaborations, or press mentions
-                </div>
-
-                <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <Briefcase className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Highlights coming soon
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Your agency can help curate portfolio highlights here
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "earnings" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Earnings</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Track your booking earnings
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Total Earnings
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents((irlEarningsSummary as any)?.total_paid_cents)}
-                  </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Withdrawable
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents((irlEarningsSummary as any)?.withdrawable_cents)}
-                  </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Completed Jobs
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {completedBookingsCount}
-                  </div>
-                </Card>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Recent Payments
-                </div>
-                <div className="mt-4 space-y-2">
-                  {irlPayments.length === 0 ? (
-                    <div className="text-sm text-gray-600">
-                      No payments yet.
-                    </div>
-                  ) : (
-                    (irlPayments as any[]).slice(0, 20).map((p: any) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-gray-900 truncate">
-                            {p.source || "Payment"}
-                          </div>
-                          <div className="text-xs text-gray-600 mt-0.5">
-                            {p.paid_at
-                              ? new Date(p.paid_at).toLocaleDateString()
-                              : "—"}
-                            {p.status
-                              ? ` • ${String(p.status).toLowerCase()}`
-                              : ""}
-                          </div>
-                        </div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          {fmtCents(p.amount_cents)}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </Card>
-
-              <button
-                className="w-full h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:hover:bg-green-600"
-                disabled={
-                  createIrlPayoutRequestMutation.isPending ||
-                  !Number((irlEarningsSummary as any)?.withdrawable_cents || 0)
-                }
-                onClick={() => {
-                  const amt = Number(
-                    (irlEarningsSummary as any)?.withdrawable_cents || 0,
-                  );
-                  if (!amt || amt <= 0) return;
-                  createIrlPayoutRequestMutation.mutate({ amount_cents: amt });
-                }}
-              >
-                {createIrlPayoutRequestMutation.isPending
-                  ? "Requesting…"
-                  : "Cash Out Earnings"}
-              </button>
-            </div>
-          )}
-
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {Array.isArray(talentNotifications) &&
-                  talentNotifications.length > 0 ? (
-                    (talentNotifications as any[]).map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
+                            <div className="p-4">
                               <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
+                                {it.title || "Portfolio Item"}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-600">
+                          No portfolio items yet.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "campaigns" && (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                    Track all your licensing agreements, project details, and
+                    campaign performance in one place.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-5 rounded-xl border-2 border-yellow-200 bg-yellow-50/60 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Pending Approval
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Requests awaiting your review
+                          </div>
+                        </div>
+                        <Badge className="bg-yellow-400 text-white border-0">
+                          {pendingApprovals.length}
+                        </Badge>
+                      </div>
+                    </Card>
+
+                    <Card className="p-5 rounded-xl border-2 border-green-200 bg-green-50/60 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Active
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Currently earning
+                          </div>
+                        </div>
+                        <Badge className="bg-green-600 text-white border-0">
+                          {activeCampaignRows.length}
+                        </Badge>
+                      </div>
+                    </Card>
+
+                    <Card className="p-5 rounded-xl border-2 border-gray-200 bg-gray-50/60 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            Completed
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Finished campaigns
+                          </div>
+                        </div>
+                        <Badge className="bg-gray-700 text-white border-0">
+                          {completedLicenses.length}
+                        </Badge>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Active Campaigns
+                    </div>
+                    <div className="mt-5 space-y-4">
+                      {activeCampaignRows.length === 0 ? (
+                        <div className="text-sm text-gray-600">
+                          No active campaigns yet.
+                        </div>
+                      ) : (
+                        activeCampaignRows.map((it: any) => {
+                          const row = it.row || {};
+                          const brandId = safeStr(
+                            row.brand_id ||
+                              row.brand_org_id ||
+                              row.brand_org ||
+                              row.brand,
+                          );
+                          const brandName = row.brand_name || "Brand";
+                          const subtitle =
+                            row.type ||
+                            row.campaign_title ||
+                            row.usage_scope ||
+                            "Campaign";
+
+                          const endRaw = safeStr(
+                            row.end_at || row.deadline || row.license_expiry,
+                          );
+                          const endDate = endRaw ? new Date(endRaw) : null;
+                          const activeUntil =
+                            endDate && !isNaN(endDate.getTime())
+                              ? endDate.toLocaleDateString()
+                              : "—";
+
+                          const regions = Array.isArray(row.regions)
+                            ? row.regions.join(", ")
+                            : safeStr(row.regions) || "—";
+
+                          const impressionsWk = fmtCompact(
+                            viewsByBrandId[brandId] || 0,
+                          );
+                          const monthlyCents = earningsByBrandId[brandId] || 0;
+
+                          return (
+                            <div
+                              key={row.id || `${brandId}-${brandName}`}
+                              className="rounded-2xl border-2 border-green-200 bg-green-50/40 p-5"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="h-10 w-10 rounded-lg bg-white border flex items-center justify-center text-sm font-bold text-gray-700">
+                                    {(
+                                      String(brandName).trim()[0] || "B"
+                                    ).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-base font-semibold text-gray-900 truncate">
+                                      {brandName}
+                                    </div>
+                                    <div className="text-xs text-gray-600 truncate">
+                                      {subtitle}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Badge className="bg-green-600 text-white border-0">
+                                  Active
                                 </Badge>
-                              )}
+                              </div>
+
+                              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div className="rounded-xl border bg-white p-3">
+                                  <div className="text-[11px] text-gray-500">
+                                    Monthly Rate
+                                  </div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {fmtDollars(monthlyCents)}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl border bg-white p-3">
+                                  <div className="text-[11px] text-gray-500">
+                                    Active Until
+                                  </div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {activeUntil}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl border bg-white p-3">
+                                  <div className="text-[11px] text-gray-500">
+                                    Regions
+                                  </div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {regions}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl border bg-white p-3">
+                                  <div className="text-[11px] text-gray-500">
+                                    Impressions/wk
+                                  </div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {impressionsWk}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-lg font-semibold text-gray-900">
+                      Contract Terms & Compensation
+                    </div>
+                    <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {activeCampaignRows.slice(0, 2).map((it: any) => {
+                        const row = it.row || {};
+                        const brandId = safeStr(
+                          row.brand_id ||
+                            row.brand_org_id ||
+                            row.brand_org ||
+                            row.brand,
+                        );
+                        const brandName = row.brand_name || "Brand";
+                        const subtitle =
+                          row.type || row.campaign_title || "Campaign";
+                        const monthlyCents = earningsByBrandId[brandId] || 0;
+                        const earnedCents = earningsByBrandId[brandId] || 0;
+                        const endRaw = safeStr(
+                          row.end_at || row.deadline || row.license_expiry,
+                        );
+                        const endDate = endRaw ? new Date(endRaw) : null;
+                        const daysLeft =
+                          endDate && !isNaN(endDate.getTime())
+                            ? Math.max(
+                                0,
+                                Math.ceil(
+                                  (endDate.getTime() - Date.now()) /
+                                    (1000 * 60 * 60 * 24),
+                                ),
+                              )
+                            : null;
+
+                        return (
+                          <div
+                            key={row.id || `${brandId}-${brandName}-terms`}
+                            className="rounded-2xl border bg-white p-5"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                                  {(
+                                    String(brandName).trim()[0] || "B"
+                                  ).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">
+                                    {brandName}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {subtitle}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs text-gray-500">
+                                  Monthly:
+                                </div>
+                                <div className="text-sm font-semibold text-green-600">
+                                  {fmtDollars(monthlyCents)}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Monthly
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {fmtDollars(monthlyCents)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Earned
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {fmtDollars(earnedCents)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Days Left
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {daysLeft === null ? "—" : daysLeft}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
+                        );
+                      })}
                     </div>
-                  )}
+                  </Card>
                 </div>
-              </Card>
-            </div>
-          )}
+              )}
 
-          {tab === "settings" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Portal Settings
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Configure your talent portal preferences
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {[
-                  { id: "profile", label: "Profile" },
-                  { id: "payments", label: "Payments" },
-                  { id: "privacy", label: "Privacy" },
-                ].map((it) => {
-                  const active = settingsTab === it.id;
-                  return (
-                    <button
-                      key={it.id}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors whitespace-nowrap ${
-                        active
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1]"
-                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
-                      onClick={() => setSettingsTab(it.id)}
-                    >
-                      {it.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {settingsTab === "profile" && (
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Profile
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        This profile is specific to the selected agency.
-                      </div>
+              {tab === "approvals" && (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Approval Queue
                     </div>
-                    {canSelectAgency && (
-                      <div className="w-[240px]">
-                        <Select
-                          value={selectedAgencyId}
-                          onValueChange={setSelectedAgencyId}
-                        >
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="All agencies" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Default agency</SelectItem>
-                            {connectedAgencyIds.map((id) => (
-                              <SelectItem key={id} value={id}>
-                                {agencyNameById.get(id) || id}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Review and approve licensing requests from brands
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {pendingApprovals.length === 0 ? (
+                      <Card className="p-6 rounded-xl shadow-sm">
+                        <div className="text-sm text-gray-600">
+                          No pending approvals.
+                        </div>
+                      </Card>
+                    ) : (
+                      pendingApprovals.map((r: any) => {
+                        const brandName = r.brand_name || "Brand";
+                        const subtitle =
+                          r.campaign_title ||
+                          r.usage_scope ||
+                          "Licensing request";
+                        const rate = (() => {
+                          const max =
+                            typeof r.budget_max === "number"
+                              ? r.budget_max
+                              : Number(r.budget_max || 0);
+                          const min =
+                            typeof r.budget_min === "number"
+                              ? r.budget_min
+                              : Number(r.budget_min || 0);
+                          const v = max || min || 0;
+                          if (!v) return "—";
+                          return `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo`;
+                        })();
+
+                        const term = (() => {
+                          const start = r.license_start_date;
+                          const end = r.license_end_date;
+                          if (!start || !end) return "—";
+                          const s = new Date(start);
+                          const e = new Date(end);
+                          if (isNaN(s.getTime()) || isNaN(e.getTime()))
+                            return "—";
+                          const months = Math.max(
+                            1,
+                            Math.round(
+                              (e.getTime() - s.getTime()) /
+                                (1000 * 60 * 60 * 24 * 30),
+                            ),
+                          );
+                          return `${months} month${months === 1 ? "" : "s"}`;
+                        })();
+
+                        const id = String(r.id);
+                        const busy =
+                          approveRequestMutation.isPending ||
+                          declineRequestMutation.isPending;
+
+                        return (
+                          <Card
+                            key={id}
+                            className="p-6 rounded-xl shadow-sm border-2 border-yellow-200 bg-yellow-50/50"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 rounded-lg bg-white border flex items-center justify-center text-sm font-bold text-gray-700">
+                                  {(
+                                    String(brandName).trim()[0] || "B"
+                                  ).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-base font-semibold text-gray-900 truncate">
+                                    {brandName}
+                                  </div>
+                                  <div className="text-xs text-gray-600 truncate">
+                                    {subtitle}
+                                  </div>
+                                </div>
+                              </div>
+                              <Badge className="bg-yellow-400 text-white border-0">
+                                Pending
+                              </Badge>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="rounded-xl border bg-white p-3">
+                                <div className="text-[11px] text-gray-500">
+                                  Proposed Rate
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {rate}
+                                </div>
+                              </div>
+                              <div className="rounded-xl border bg-white p-3">
+                                <div className="text-[11px] text-gray-500">
+                                  Term
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {term}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <Button
+                                variant="outline"
+                                className="h-10"
+                                disabled={busy}
+                                onClick={() =>
+                                  declineRequestMutation.mutate(id)
+                                }
+                              >
+                                Decline
+                              </Button>
+                              <Button
+                                className="h-10 bg-green-600 hover:bg-green-700 text-white"
+                                disabled={busy}
+                                onClick={() =>
+                                  approveRequestMutation.mutate(id)
+                                }
+                              >
+                                Approve
+                              </Button>
+                            </div>
+                          </Card>
+                        );
+                      })
                     )}
                   </div>
+                </div>
+              )}
 
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Stage Name
-                      </div>
-                      <Input
-                        value={profileForm.stage_name || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            stage_name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Full Legal Name
-                      </div>
-                      <Input
-                        value={profileForm.full_legal_name || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            full_legal_name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">Email</div>
-                      <Input
-                        value={profileForm.email || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            email: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">Phone</div>
-                      <Input
-                        value={profileForm.phone_number || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            phone_number: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Date of Birth
-                      </div>
-                      <Input
-                        type="date"
-                        value={profileForm.date_of_birth || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            date_of_birth: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Role Type
-                      </div>
-                      <Input
-                        value={profileForm.role_type || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            role_type: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">Status</div>
-                      <Input
-                        value={profileForm.status || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            status: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Skin Tone
-                      </div>
-                      <Input
-                        value={profileForm.skin_tone || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            skin_tone: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Instagram
-                      </div>
-                      <Input
-                        value={profileForm.instagram_handle || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            instagram_handle: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Instagram Followers
-                      </div>
-                      <Input
-                        value={String(profileForm.instagram_followers ?? "")}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            instagram_followers: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Engagement Rate
-                      </div>
-                      <Input
-                        value={String(profileForm.engagement_rate ?? "")}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            engagement_rate: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">City</div>
-                      <Input
-                        value={profileForm.city || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            city: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        State / Province
-                      </div>
-                      <Input
-                        value={profileForm.state_province || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            state_province: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">Country</div>
-                      <Input
-                        value={profileForm.country || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            country: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
+              {tab === "archive" && (
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="text-xl font-semibold text-gray-900">
+                    Archive
                   </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Rejected or past requests
+                  </div>
+                  <div className="mt-6 space-y-3">
+                    {(() => {
+                      const archivedRequests = (
+                        Array.isArray(licensingRequests)
+                          ? licensingRequests
+                          : []
+                      ).filter((r: any) => {
+                        const s = safeStr(r?.status).toLowerCase();
+                        return s === "rejected" || s === "declined";
+                      });
 
-                  <div className="mt-4">
-                    <div className="text-xs text-gray-600 mb-1">Bio</div>
-                    <Textarea
-                      value={profileForm.bio_notes || ""}
-                      onChange={(e) =>
-                        setProfileForm((p: any) => ({
-                          ...p,
-                          bio_notes: e.target.value,
-                        }))
+                      const archivedLicenses = Array.isArray(completedLicenses)
+                        ? completedLicenses
+                        : [];
+
+                      const items: Array<{
+                        key: string;
+                        brandName: string;
+                        subtitle: string;
+                        badge: string;
+                        badgeVariant?: "secondary" | "outline";
+                      }> = [];
+
+                      for (const l of archivedLicenses as any[]) {
+                        items.push({
+                          key: `license-${l.id}`,
+                          brandName: l.brand_name || "Brand",
+                          subtitle: l.type || "License",
+                          badge:
+                            safeStr(l.status || "completed").toLowerCase() ||
+                            "completed",
+                          badgeVariant: "secondary",
+                        });
                       }
-                      className="min-h-[120px]"
-                    />
-                  </div>
 
-                  <Button
-                    className="mt-6 h-11 w-full bg-[#32C8D1] hover:bg-[#2AB8C1]"
-                    disabled={updateProfileMutation.isPending}
-                    onClick={saveProfile}
-                  >
-                    {updateProfileMutation.isPending
-                      ? "Saving..."
-                      : "Save profile"}
-                  </Button>
+                      for (const r of archivedRequests as any[]) {
+                        items.push({
+                          key: `request-${r.id}`,
+                          brandName: r.brand_name || "Brand",
+                          subtitle:
+                            r.campaign_title ||
+                            r.usage_scope ||
+                            "Licensing request",
+                          badge:
+                            safeStr(r.status || "declined").toLowerCase() ||
+                            "declined",
+                          badgeVariant: "secondary",
+                        });
+                      }
+
+                      if (items.length === 0) {
+                        return (
+                          <div className="text-sm text-gray-600">
+                            Nothing in archive yet.
+                          </div>
+                        );
+                      }
+
+                      return items.map((it) => (
+                        <div
+                          key={it.key}
+                          className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">
+                              {it.brandName}
+                            </div>
+                            <div className="text-sm text-gray-500 truncate">
+                              {it.subtitle}
+                            </div>
+                          </div>
+                          <Badge
+                            variant={it.badgeVariant || "secondary"}
+                            className="capitalize"
+                          >
+                            {it.badge}
+                          </Badge>
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </Card>
               )}
 
-              {settingsTab !== "profile" && (
-                <>
+              {tab === "licenses" && (
+                <div className="space-y-5">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Licenses & Contracts
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Track all your licensing agreements
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {licenses.length === 0 ? (
+                      <Card className="p-6 rounded-xl shadow-sm">
+                        <div className="text-sm text-gray-600">
+                          No licenses found yet.
+                        </div>
+                      </Card>
+                    ) : (
+                      licenses.map((l: any) => {
+                        const brandId = safeStr(l.brand_org_id || l.brand_id);
+                        const brandName = l.brand_name || "Brand";
+                        const subtitle = l.type || "License";
+
+                        const endRaw = safeStr(l.end_at);
+                        const endDate = endRaw ? new Date(endRaw) : null;
+                        const daysLeft =
+                          endDate && !isNaN(endDate.getTime())
+                            ? Math.max(
+                                0,
+                                Math.ceil(
+                                  (endDate.getTime() - Date.now()) /
+                                    (1000 * 60 * 60 * 24),
+                                ),
+                              )
+                            : null;
+
+                        const monthlyCents = earningsByBrandId[brandId] || 0;
+                        const earnedCents =
+                          earningsAllTimeByBrandId[brandId] || 0;
+
+                        const status =
+                          safeStr(l.status || "active").toLowerCase() ||
+                          "active";
+
+                        return (
+                          <Card key={l.id} className="p-5 rounded-xl shadow-sm">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                                  {(
+                                    String(brandName).trim()[0] || "B"
+                                  ).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">
+                                    {brandName}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {subtitle}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <Badge className="bg-green-100 text-green-800 border-0 capitalize">
+                                {status}
+                              </Badge>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Monthly
+                                </div>
+                                <div className="text-sm font-semibold text-green-600">
+                                  {fmtDollars(monthlyCents)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Earned
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {fmtDollars(earnedCents)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] text-gray-500">
+                                  Days Left
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {daysLeft === null ? "—" : daysLeft}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {tab === "earnings" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Earnings
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Track your licensing revenue
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
+                        Monthly Recurring
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {fmtCents((licensingRevenue as any)?.total_cents)}
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
+                        Annual Run Rate
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {fmtCents(
+                          ((licensingRevenue as any)?.total_cents || 0) * 12,
+                        )}
+                      </div>
+                    </Card>
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="text-xs font-medium text-gray-500">
+                        Active Campaigns
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {activeDeals.length}
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Earnings by Campaign
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {earningsByCampaign.length === 0 ? (
+                        <div className="text-sm text-gray-600 py-6 text-center">
+                          No earnings for this month yet.
+                        </div>
+                      ) : (
+                        earningsByCampaign.slice(0, 10).map((it: any) => (
+                          <div
+                            key={it.brand_id}
+                            className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
+                                {(
+                                  String(it.brand_name || "B").trim()[0] || "B"
+                                ).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-gray-900 truncate">
+                                  {it.brand_name || "Brand"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-sm font-semibold text-green-600">
+                              {fmtCents(it.monthly_cents)}/mo
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                          {agencyUser?.agency_logo_url ? (
+                            <img
+                              src={agencyUser.agency_logo_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Briefcase className="h-6 w-6 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold text-gray-900 truncate">
+                            {agencyName || "Your Agency"}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            Connected since {new Date().toLocaleDateString()}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
+                              Edit Profile
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
+                              Manage Campaigns
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
+                              View Earnings
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="h-10 px-4 rounded-lg"
+                      >
+                        Manage
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "analytics" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Analytics
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Performance metrics across all campaigns
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-gray-500">
+                            Total Views
+                          </div>
+                          <div className="text-3xl font-bold text-gray-900 mt-2">
+                            {(() => {
+                              const v =
+                                (analytics as any)?.kpis?.total_views ?? 0;
+                              if (v >= 1_000_000)
+                                return `${(v / 1_000_000).toFixed(1)}M`;
+                              if (v >= 1_000)
+                                return `${Math.round(v / 1_000)}K`;
+                              return String(v);
+                            })()}
+                          </div>
+                          <div className="text-xs text-green-600 mt-1">
+                            {(() => {
+                              const pct = Number(
+                                (analytics as any)?.kpis?.views_change_pct ?? 0,
+                              );
+                              const sign = pct >= 0 ? "+" : "";
+                              return `${sign}${pct.toFixed(0)}% this month`;
+                            })()}
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <BarChart3 className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6 rounded-xl shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-gray-500">
+                            Total Revenue
+                          </div>
+                          <div className="text-3xl font-bold text-gray-900 mt-2">
+                            {fmtCents(
+                              (analytics as any)?.kpis?.total_revenue_cents,
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Monthly recurring
+                          </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Campaign Performance
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {Array.isArray((analytics as any)?.campaigns) &&
+                      (analytics as any).campaigns.length > 0 ? (
+                        (analytics as any).campaigns
+                          .slice(0, 8)
+                          .map((c: any) => (
+                            <div
+                              key={c.brand_id}
+                              className="rounded-xl border border-gray-100 bg-white p-4"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                                    {(
+                                      String(c.brand_name || "B").trim()[0] ||
+                                      "B"
+                                    ).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-gray-900 truncate">
+                                      {c.brand_name || "Brand"}
+                                    </div>
+                                    <div className="text-xs text-gray-500 truncate">
+                                      AI Licensing
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-10">
+                                  <div>
+                                    <div className="text-[11px] text-gray-500">
+                                      Views/Week
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-900">
+                                      {Number(
+                                        c.views_week || 0,
+                                      ).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-[11px] text-gray-500">
+                                      Revenue
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-600">
+                                      {fmtCents(c.revenue_cents)}/mo
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                      ) : (
+                        <div className="text-sm text-gray-600 py-8 text-center">
+                          No analytics metrics yet. Ask your agency to add
+                          weekly view metrics.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm border border-cyan-200 bg-cyan-50/30">
+                    <div className="text-sm font-semibold text-gray-900">
+                      ROI: Traditional UGC vs AI Licensing
+                    </div>
+                    {!canUseAdvancedAnalytics ? (
+                      <div className="mt-4 rounded-xl border border-[#C7B8FF] bg-white p-5">
+                        <div className="text-base font-semibold text-gray-900">
+                          Pro feature
+                        </div>
+                        <div className="text-sm text-gray-600 mt-2">
+                          Upgrade to Pro to unlock advanced earnings analytics,
+                          ROI comparisons, and premium insights.
+                        </div>
+                        <Button
+                          className="mt-4 bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                          onClick={() => navigate("/CreatorSubscribe")}
+                        >
+                          Upgrade to Pro
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <Card className="p-5 rounded-xl shadow-sm">
+                            <div className="text-sm font-semibold text-gray-900">
+                              Traditional UGC Model
+                            </div>
+                            <div className="mt-4 space-y-2 text-sm">
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">Per Post:</div>
+                                <div className="font-semibold text-gray-900">
+                                  {fmtCents(
+                                    (analytics as any)?.roi?.traditional
+                                      ?.per_post_cents,
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">
+                                  Time Investment:
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {(analytics as any)?.roi?.traditional
+                                    ?.time_investment || "4-6 hours"}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">
+                                  Posts/Month:
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {(analytics as any)?.roi?.traditional
+                                    ?.posts_per_month || "5-8"}
+                                </div>
+                              </div>
+                              <div className="pt-3 mt-3 border-t flex items-center justify-between">
+                                <div className="text-gray-600 font-semibold">
+                                  Monthly Earnings:
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {(analytics as any)?.roi?.traditional
+                                    ?.monthly_earnings_range || "$2,500-$4,000"}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+
+                          <Card className="p-5 rounded-xl shadow-sm border border-green-200 bg-green-50/40">
+                            <div className="text-sm font-semibold text-gray-900">
+                              AI Licensing Model (You)
+                            </div>
+                            <div className="mt-4 space-y-2 text-sm">
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">
+                                  Per Campaign:
+                                </div>
+                                <div className="font-semibold text-green-700">
+                                  {fmtCents(
+                                    (analytics as any)?.roi?.ai
+                                      ?.per_campaign_cents,
+                                  )}
+                                  /mo
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">
+                                  Time Investment:
+                                </div>
+                                <div className="font-semibold text-green-700">
+                                  {(analytics as any)?.roi?.ai
+                                    ?.time_investment || "0 hours/month"}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-gray-600">
+                                  Active Campaigns:
+                                </div>
+                                <div className="font-semibold text-green-700">
+                                  {(analytics as any)?.roi?.ai
+                                    ?.active_campaigns ??
+                                    (analytics as any)?.kpis
+                                      ?.active_campaigns ??
+                                    0}
+                                </div>
+                              </div>
+                              <div className="pt-3 mt-3 border-t flex items-center justify-between">
+                                <div className="text-gray-600 font-semibold">
+                                  Monthly Earnings:
+                                </div>
+                                <div className="font-semibold text-green-700">
+                                  {fmtCents(
+                                    (analytics as any)?.roi?.ai
+                                      ?.monthly_earnings_cents,
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+
+                        <div className="mt-4 rounded-lg bg-white border border-cyan-200 px-4 py-3 text-sm text-gray-700">
+                          {(analytics as any)?.roi?.message ||
+                            "Your earnings comparison will appear here."}
+                        </div>
+                      </>
+                    )}
+                  </Card>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Unauthorized-use monitoring
+                    </div>
+                    <div className="mt-2 text-sm text-gray-600">
+                      {canUseMonitoring
+                        ? "Monitoring is enabled for your profile. No detections yet."
+                        : "Upgrade to Pro to access social-platform unauthorized-use monitoring."}
+                    </div>
+                    {!canUseMonitoring && (
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => navigate("/CreatorSubscribe")}
+                      >
+                        Upgrade to Pro
+                      </Button>
+                    )}
+                  </Card>
+                </div>
+              )}
+
+              {tab === "messages" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Messages
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Your agency notifications inbox
+                    </div>
+                  </div>
+
+                  <Card className="p-6 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">
+                      Communication Hub
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Email notifications sent by your agency
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      {Array.isArray(talentNotifications) &&
+                      talentNotifications.length > 0 ? (
+                        (talentNotifications as any[]).map((n: any) => {
+                          const id = String(n.id);
+                          const from = n.from_label || agencyName || "Agency";
+                          const subject = n.subject || "Notification";
+                          const msg =
+                            typeof n.message === "string" ? n.message : "";
+                          const preview =
+                            msg.split("\n").filter(Boolean)[0] ||
+                            msg.slice(0, 80);
+                          const unread = !n.read_at;
+                          const ts = n.created_at
+                            ? new Date(n.created_at).toLocaleString()
+                            : "";
+
+                          return (
+                            <button
+                              key={id}
+                              className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                                unread
+                                  ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
+                                  : "bg-white border-gray-100 hover:bg-gray-50"
+                              }`}
+                              onClick={() => {
+                                if (unread && !markReadMutation.isPending) {
+                                  markReadMutation.mutate(id);
+                                }
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">
+                                    {from}
+                                  </div>
+                                  <div className="text-xs text-gray-600 truncate">
+                                    {subject}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {unread && (
+                                    <Badge className="bg-blue-600 text-white border-0">
+                                      New
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-2 text-xs text-gray-600 truncate">
+                                {preview}
+                              </div>
+                              <div className="mt-2 text-[11px] text-gray-500">
+                                {ts}
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-sm text-gray-600">
+                          No messages yet.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "settings" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      Portal Settings
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Configure your talent portal preferences
+                    </div>
+                  </div>
+
                   <Card className="p-6 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
                       Payment Preferences
@@ -2447,1690 +4247,10 @@ export default function TalentPortal({
                       </div>
                     </div>
                   </Card>
-                </>
+                </div>
               )}
-            </div>
-          )}
-
-          {tab === "agency_connection" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Agency Connection
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Manage agency invitations and your connected agencies.
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">
-                      Connected Agencies
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {agencyConnections.length > 0
-                        ? "You can be connected to multiple agencies at once."
-                        : "You are not connected to any agencies yet."}
-                    </div>
-                  </div>
-                  {(agencyConnectionsLoading ||
-                    disconnectAgencyMutation.isPending) && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
-                    </div>
-                  )}
-                </div>
-
-                {agencyConnections.length > 0 && (
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {agencyConnections.map((c: any) => (
-                      <div
-                        key={c.agency_id}
-                        className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
-                            {c.agencies?.logo_url ? (
-                              <img
-                                src={c.agencies.logo_url}
-                                alt={c.agencies.agency_name || "Agency"}
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <Building2 className="w-5 h-5 text-gray-500" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              {c.agencies?.agency_name || c.agency_id}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate">
-                              {c.agency_id}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          disabled={disconnectAgencyMutation.isPending}
-                          onClick={async () => {
-                            try {
-                              const agencyLabel =
-                                c.agencies?.agency_name ||
-                                String(c.agency_id || "");
-                              const ok = window.confirm(
-                                `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
-                              );
-                              if (!ok) return;
-                              await disconnectAgencyMutation.mutateAsync(
-                                String(c.agency_id),
-                              );
-                              toast({
-                                title: "Disconnected",
-                                description:
-                                  "You have disconnected from the agency.",
-                              });
-                            } catch (e: any) {
-                              toast({
-                                variant: "destructive",
-                                title: "Failed to disconnect",
-                                description: e?.message || String(e),
-                              });
-                            }
-                          }}
-                        >
-                          Disconnect
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">
-                      Invitations
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      Respond to pending invitations from agencies.
-                    </div>
-                  </div>
-                  {agencyInvitesLoading && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
-                    </div>
-                  )}
-                </div>
-
-                {(agencyInvites as any[]).filter((i) => i.status === "pending")
-                  .length > 0 ? (
-                  <div className="mt-6 space-y-3">
-                    {(agencyInvites as any[])
-                      .filter((i) => i.status === "pending")
-                      .map((inv: any) => (
-                        <div
-                          key={inv.id}
-                          className="p-4 border border-gray-200 rounded-lg space-y-3"
-                        >
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="min-w-0 flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {inv?.agencies?.logo_url ? (
-                                  <img
-                                    src={inv.agencies.logo_url}
-                                    alt={inv?.agencies?.agency_name || "Agency"}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <Building2 className="w-5 h-5 text-gray-500" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-gray-900 truncate">
-                                  {inv?.agencies?.agency_name
-                                    ? `Invitation from ${inv.agencies.agency_name}`
-                                    : "Invitation from agency"}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate mt-1">
-                                  {inv?.agencies?.email ||
-                                    inv?.agencies?.website ||
-                                    "Agency profile available on request"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <Button
-                                variant="outline"
-                                disabled={disconnectAgencyMutation.isPending}
-                                onClick={async () => {
-                                  try {
-                                    const token = String(inv?.token || "");
-                                    if (token) {
-                                      navigate(
-                                        `/invite/agency/${encodeURIComponent(token)}`,
-                                      );
-                                      return;
-                                    }
-                                    toast({
-                                      title: "Missing invite token",
-                                      description:
-                                        "Open the invite link to respond.",
-                                      variant: "destructive" as any,
-                                    });
-                                  } catch (e: any) {
-                                    toast({
-                                      variant: "destructive",
-                                      title: "Failed to decline",
-                                      description: e?.message || String(e),
-                                    });
-                                  }
-                                }}
-                              >
-                                Decline
-                              </Button>
-                              <Button
-                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                                disabled={disconnectAgencyMutation.isPending}
-                                onClick={async () => {
-                                  try {
-                                    await acceptCreatorAgencyInvite(
-                                      String(inv.id),
-                                    );
-                                    await Promise.all([
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["creatorAgencyInvites"],
-                                      }),
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["creatorAgencyConnections"],
-                                      }),
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["talentMe"],
-                                      }),
-                                    ]);
-                                    toast({
-                                      title: "Invitation accepted",
-                                      description:
-                                        "You are now connected to the agency.",
-                                    });
-                                  } catch (e: any) {
-                                    toast({
-                                      variant: "destructive",
-                                      title: "Failed to accept",
-                                      description: e?.message || String(e),
-                                    });
-                                  }
-                                }}
-                              >
-                                Accept
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
-                            <span className="font-semibold">
-                              Likelee notice:
-                            </span>{" "}
-                            This agency found your public profile in marketplace
-                            and sent a connection invitation.
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="mt-6 text-sm text-gray-500">
-                    No pending invitations.
-                  </div>
-                )}
-              </Card>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          {tab === "overview" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        Active Campaigns
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
-                        {activeDeals.length}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                      <Briefcase className="h-5 w-5 text-purple-500" />
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        Monthly Revenue
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-2">
-                        {fmtCents((licensingRevenue as any)?.total_cents)}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-500" />
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500">
-                        Pending Approvals
-                      </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
-                        {pendingApprovals.length}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500" />
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900 mb-5">
-                  Latest Licensing Requests
-                </div>
-                <div className="space-y-3">
-                  {licensingRequests.length === 0 ? (
-                    <div className="text-sm text-gray-600 py-8 text-center">
-                      No licensing requests yet.
-                    </div>
-                  ) : (
-                    licensingRequests.slice(0, 8).map((r: any) => (
-                      <div
-                        key={r.id}
-                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-base font-semibold text-gray-900 truncate">
-                            {r.brand_name || "Brand"}
-                          </div>
-                          <div className="text-sm text-gray-500 truncate">
-                            {r.campaign_title || "Licensing request"}
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="capitalize">
-                          {safeStr(r.status || "pending") || "pending"}
-                        </Badge>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </Card>
             </>
           )}
-
-          {tab === "likeness" && (
-            <div className="space-y-6">
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Likeness Asset Library
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Manage your photos, videos, and voice samples used for AI
-                  content generation
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-xs font-semibold text-gray-500">
-                          Reference Photos
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 mt-2">
-                          {photoCount}/15
-                        </div>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                        <LucideImage className="h-5 w-5 text-[#32C8D1]" />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gray-900 rounded-full"
-                          style={{
-                            width: `${Math.min(100, (photoCount / 15) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-xs font-semibold text-gray-500">
-                          Voice Samples
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 mt-2">
-                          {canUseVoiceProfiles ? `${voiceCount}/${voiceToneLimit}` : "Pro only"}
-                        </div>
-                      </div>
-                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                        <MessageSquare className="h-5 w-5 text-purple-500" />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gray-900 rounded-full"
-                          style={{
-                            width: canUseVoiceProfiles
-                              ? `${Math.min(100, (voiceCount / Math.max(1, voiceToneLimit)) * 100)}%`
-                              : "0%",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button
-                    className="h-12 rounded-xl bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                    onClick={() =>
-                      navigate({
-                        pathname: "/CreatorDashboard",
-                        search: "?section=likeness",
-                      })
-                    }
-                  >
-                    <LucideImage className="h-4 w-4 mr-2" />
-                    Manage Photos
-                  </Button>
-                  <Button
-                    className="h-12 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
-                    onClick={() =>
-                      canUseVoiceProfiles
-                        ? navigate({
-                            pathname: "/CreatorDashboard",
-                            search: "?section=voice",
-                          })
-                        : navigate("/CreatorSubscribe")
-                    }
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {canUseVoiceProfiles ? "Manage Voice" : "Unlock Voice"}
-                  </Button>
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Asset Usage Rights
-                </div>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Photos: Approved
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Your photos can be used for AI image generation by
-                        licensed brands
-                      </div>
-                    </div>
-                    <Badge className="bg-green-600 text-white border-0">
-                      All Brands
-                    </Badge>
-                  </div>
-                  <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Voice: {canUseVoiceProfiles ? "Approved" : "Locked"}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        {canUseVoiceProfiles
-                          ? "Voice cloning enabled for approved emotions"
-                          : "Upgrade to Pro to create ElevenLabs voice tones."}
-                      </div>
-                    </div>
-                    <Badge className="bg-purple-600 text-white border-0">
-                      {canUseVoiceProfiles ? "Limited Use" : "Pro"}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Portfolio Showcase
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Approved AI-generated content featuring your likeness
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <Input
-                    value={newPortfolioUrl}
-                    onChange={(e) => setNewPortfolioUrl(e.target.value)}
-                    placeholder="Paste image/video URL"
-                  />
-                  <Button
-                    className="shrink-0"
-                    onClick={() => {
-                      const u = newPortfolioUrl.trim();
-                      if (!u) return;
-                      createPortfolioMutation.mutate({ media_url: u });
-                      setNewPortfolioUrl("");
-                    }}
-                    disabled={
-                      !newPortfolioUrl.trim() ||
-                      createPortfolioMutation.isPending
-                    }
-                  >
-                    Add
-                  </Button>
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {Array.isArray(portfolioItems) &&
-                  portfolioItems.length > 0 ? (
-                    (portfolioItems as any[]).slice(0, 9).map((it: any) => (
-                      <div
-                        key={it.id}
-                        className="group rounded-xl overflow-hidden border bg-white"
-                      >
-                        <div className="relative aspect-[16/9] bg-gray-100">
-                          <img
-                            src={it.media_url}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                          <div className="absolute top-2 right-2">
-                            <Badge className="bg-green-500 text-white border-0 text-[10px] h-5">
-                              Live
-                            </Badge>
-                          </div>
-                          <button
-                            className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
-                            onClick={() =>
-                              deletePortfolioMutation.mutate(String(it.id))
-                            }
-                            disabled={deletePortfolioMutation.isPending}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <div className="p-4">
-                          <div className="text-sm font-semibold text-gray-900 truncate">
-                            {it.title || "Portfolio Item"}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No portfolio items yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "campaigns" && (
-            <div className="space-y-6">
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-                Track all your licensing agreements, project details, and
-                campaign performance in one place.
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-5 rounded-xl border-2 border-yellow-200 bg-yellow-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Pending Approval
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Requests awaiting your review
-                      </div>
-                    </div>
-                    <Badge className="bg-yellow-400 text-white border-0">
-                      {pendingApprovals.length}
-                    </Badge>
-                  </div>
-                </Card>
-
-                <Card className="p-5 rounded-xl border-2 border-green-200 bg-green-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Active
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Currently earning
-                      </div>
-                    </div>
-                    <Badge className="bg-green-600 text-white border-0">
-                      {activeCampaignRows.length}
-                    </Badge>
-                  </div>
-                </Card>
-
-                <Card className="p-5 rounded-xl border-2 border-gray-200 bg-gray-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Completed
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Finished campaigns
-                      </div>
-                    </div>
-                    <Badge className="bg-gray-700 text-white border-0">
-                      {completedLicenses.length}
-                    </Badge>
-                  </div>
-                </Card>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Active Campaigns
-                </div>
-                <div className="mt-5 space-y-4">
-                  {activeCampaignRows.length === 0 ? (
-                    <div className="text-sm text-gray-600">
-                      No active campaigns yet.
-                    </div>
-                  ) : (
-                    activeCampaignRows.map((it: any) => {
-                      const row = it.row || {};
-                      const brandId = safeStr(
-                        row.brand_id ||
-                          row.brand_org_id ||
-                          row.brand_org ||
-                          row.brand,
-                      );
-                      const brandName = row.brand_name || "Brand";
-                      const subtitle =
-                        row.type ||
-                        row.campaign_title ||
-                        row.usage_scope ||
-                        "Campaign";
-
-                      const endRaw = safeStr(
-                        row.end_at || row.deadline || row.license_expiry,
-                      );
-                      const endDate = endRaw ? new Date(endRaw) : null;
-                      const activeUntil =
-                        endDate && !isNaN(endDate.getTime())
-                          ? endDate.toLocaleDateString()
-                          : "—";
-
-                      const regions = Array.isArray(row.regions)
-                        ? row.regions.join(", ")
-                        : safeStr(row.regions) || "—";
-
-                      const impressionsWk = fmtCompact(
-                        viewsByBrandId[brandId] || 0,
-                      );
-                      const monthlyCents = earningsByBrandId[brandId] || 0;
-
-                      return (
-                        <div
-                          key={row.id || `${brandId}-${brandName}`}
-                          className="rounded-2xl border-2 border-green-200 bg-green-50/40 p-5"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="h-10 w-10 rounded-lg bg-white border flex items-center justify-center text-sm font-bold text-gray-700">
-                                {(
-                                  String(brandName).trim()[0] || "B"
-                                ).toUpperCase()}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-base font-semibold text-gray-900 truncate">
-                                  {brandName}
-                                </div>
-                                <div className="text-xs text-gray-600 truncate">
-                                  {subtitle}
-                                </div>
-                              </div>
-                            </div>
-                            <Badge className="bg-green-600 text-white border-0">
-                              Active
-                            </Badge>
-                          </div>
-
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div className="rounded-xl border bg-white p-3">
-                              <div className="text-[11px] text-gray-500">
-                                Monthly Rate
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {fmtDollars(monthlyCents)}
-                              </div>
-                            </div>
-                            <div className="rounded-xl border bg-white p-3">
-                              <div className="text-[11px] text-gray-500">
-                                Active Until
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {activeUntil}
-                              </div>
-                            </div>
-                            <div className="rounded-xl border bg-white p-3">
-                              <div className="text-[11px] text-gray-500">
-                                Regions
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {regions}
-                              </div>
-                            </div>
-                            <div className="rounded-xl border bg-white p-3">
-                              <div className="text-[11px] text-gray-500">
-                                Impressions/wk
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {impressionsWk}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Contract Terms & Compensation
-                </div>
-                <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {activeCampaignRows.slice(0, 2).map((it: any) => {
-                    const row = it.row || {};
-                    const brandId = safeStr(
-                      row.brand_id ||
-                        row.brand_org_id ||
-                        row.brand_org ||
-                        row.brand,
-                    );
-                    const brandName = row.brand_name || "Brand";
-                    const subtitle =
-                      row.type || row.campaign_title || "Campaign";
-                    const monthlyCents = earningsByBrandId[brandId] || 0;
-                    const earnedCents = earningsByBrandId[brandId] || 0;
-                    const endRaw = safeStr(
-                      row.end_at || row.deadline || row.license_expiry,
-                    );
-                    const endDate = endRaw ? new Date(endRaw) : null;
-                    const daysLeft =
-                      endDate && !isNaN(endDate.getTime())
-                        ? Math.max(
-                            0,
-                            Math.ceil(
-                              (endDate.getTime() - Date.now()) /
-                                (1000 * 60 * 60 * 24),
-                            ),
-                          )
-                        : null;
-
-                    return (
-                      <div
-                        key={row.id || `${brandId}-${brandName}-terms`}
-                        className="rounded-2xl border bg-white p-5"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">
-                              Monthly:
-                            </div>
-                            <div className="text-sm font-semibold text-green-600">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Monthly
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Earned
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {fmtDollars(earnedCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Days Left
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {daysLeft === null ? "—" : daysLeft}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "approvals" && (
-            <div className="space-y-4">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Approval Queue
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Review and approve licensing requests from brands
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {pendingApprovals.length === 0 ? (
-                  <Card className="p-6 rounded-xl shadow-sm">
-                    <div className="text-sm text-gray-600">
-                      No pending approvals.
-                    </div>
-                  </Card>
-                ) : (
-                  pendingApprovals.map((r: any) => {
-                    const brandName = r.brand_name || "Brand";
-                    const subtitle =
-                      r.campaign_title || r.usage_scope || "Licensing request";
-                    const rate = (() => {
-                      const max =
-                        typeof r.budget_max === "number"
-                          ? r.budget_max
-                          : Number(r.budget_max || 0);
-                      const min =
-                        typeof r.budget_min === "number"
-                          ? r.budget_min
-                          : Number(r.budget_min || 0);
-                      const v = max || min || 0;
-                      if (!v) return "—";
-                      return `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo`;
-                    })();
-
-                    const term = (() => {
-                      const start = r.license_start_date;
-                      const end = r.license_end_date;
-                      if (!start || !end) return "—";
-                      const s = new Date(start);
-                      const e = new Date(end);
-                      if (isNaN(s.getTime()) || isNaN(e.getTime())) return "—";
-                      const months = Math.max(
-                        1,
-                        Math.round(
-                          (e.getTime() - s.getTime()) /
-                            (1000 * 60 * 60 * 24 * 30),
-                        ),
-                      );
-                      return `${months} month${months === 1 ? "" : "s"}`;
-                    })();
-
-                    const id = String(r.id);
-                    const busy =
-                      approveRequestMutation.isPending ||
-                      declineRequestMutation.isPending;
-
-                    return (
-                      <Card
-                        key={id}
-                        className="p-6 rounded-xl shadow-sm border-2 border-yellow-200 bg-yellow-50/50"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-white border flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-base font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-                          <Badge className="bg-yellow-400 text-white border-0">
-                            Pending
-                          </Badge>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="rounded-xl border bg-white p-3">
-                            <div className="text-[11px] text-gray-500">
-                              Proposed Rate
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {rate}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border bg-white p-3">
-                            <div className="text-[11px] text-gray-500">
-                              Term
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {term}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Button
-                            variant="outline"
-                            className="h-10"
-                            disabled={busy}
-                            onClick={() => declineRequestMutation.mutate(id)}
-                          >
-                            Decline
-                          </Button>
-                          <Button
-                            className="h-10 bg-green-600 hover:bg-green-700 text-white"
-                            disabled={busy}
-                            onClick={() => approveRequestMutation.mutate(id)}
-                          >
-                            Approve
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {tab === "archive" && (
-            <Card className="p-6 rounded-xl shadow-sm">
-              <div className="text-xl font-semibold text-gray-900">Archive</div>
-              <div className="text-sm text-gray-600 mt-1">
-                Rejected or past requests
-              </div>
-              <div className="mt-6 space-y-3">
-                {(() => {
-                  const archivedRequests = (
-                    Array.isArray(licensingRequests) ? licensingRequests : []
-                  ).filter((r: any) => {
-                    const s = safeStr(r?.status).toLowerCase();
-                    return s === "rejected" || s === "declined";
-                  });
-
-                  const archivedLicenses = Array.isArray(completedLicenses)
-                    ? completedLicenses
-                    : [];
-
-                  const items: Array<{
-                    key: string;
-                    brandName: string;
-                    subtitle: string;
-                    badge: string;
-                    badgeVariant?: "secondary" | "outline";
-                  }> = [];
-
-                  for (const l of archivedLicenses as any[]) {
-                    items.push({
-                      key: `license-${l.id}`,
-                      brandName: l.brand_name || "Brand",
-                      subtitle: l.type || "License",
-                      badge:
-                        safeStr(l.status || "completed").toLowerCase() ||
-                        "completed",
-                      badgeVariant: "secondary",
-                    });
-                  }
-
-                  for (const r of archivedRequests as any[]) {
-                    items.push({
-                      key: `request-${r.id}`,
-                      brandName: r.brand_name || "Brand",
-                      subtitle:
-                        r.campaign_title ||
-                        r.usage_scope ||
-                        "Licensing request",
-                      badge:
-                        safeStr(r.status || "declined").toLowerCase() ||
-                        "declined",
-                      badgeVariant: "secondary",
-                    });
-                  }
-
-                  if (items.length === 0) {
-                    return (
-                      <div className="text-sm text-gray-600">
-                        Nothing in archive yet.
-                      </div>
-                    );
-                  }
-
-                  return items.map((it) => (
-                    <div
-                      key={it.key}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-base font-semibold text-gray-900 truncate">
-                          {it.brandName}
-                        </div>
-                        <div className="text-sm text-gray-500 truncate">
-                          {it.subtitle}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={it.badgeVariant || "secondary"}
-                        className="capitalize"
-                      >
-                        {it.badge}
-                      </Badge>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </Card>
-          )}
-
-          {tab === "licenses" && (
-            <div className="space-y-5">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Licenses & Contracts
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Track all your licensing agreements
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {licenses.length === 0 ? (
-                  <Card className="p-6 rounded-xl shadow-sm">
-                    <div className="text-sm text-gray-600">
-                      No licenses found yet.
-                    </div>
-                  </Card>
-                ) : (
-                  licenses.map((l: any) => {
-                    const brandId = safeStr(l.brand_org_id || l.brand_id);
-                    const brandName = l.brand_name || "Brand";
-                    const subtitle = l.type || "License";
-
-                    const endRaw = safeStr(l.end_at);
-                    const endDate = endRaw ? new Date(endRaw) : null;
-                    const daysLeft =
-                      endDate && !isNaN(endDate.getTime())
-                        ? Math.max(
-                            0,
-                            Math.ceil(
-                              (endDate.getTime() - Date.now()) /
-                                (1000 * 60 * 60 * 24),
-                            ),
-                          )
-                        : null;
-
-                    const monthlyCents = earningsByBrandId[brandId] || 0;
-                    const earnedCents = earningsAllTimeByBrandId[brandId] || 0;
-
-                    const status =
-                      safeStr(l.status || "active").toLowerCase() || "active";
-
-                    return (
-                      <Card key={l.id} className="p-5 rounded-xl shadow-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-
-                          <Badge className="bg-green-100 text-green-800 border-0 capitalize">
-                            {status}
-                          </Badge>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Monthly
-                            </div>
-                            <div className="text-sm font-semibold text-green-600">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Earned
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {fmtDollars(earnedCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Days Left
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {daysLeft === null ? "—" : daysLeft}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {tab === "earnings" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Earnings</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Track your licensing revenue
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Monthly Recurring
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents((licensingRevenue as any)?.total_cents)}
-                  </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Annual Run Rate
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents(
-                      ((licensingRevenue as any)?.total_cents || 0) * 12,
-                    )}
-                  </div>
-                </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Active Campaigns
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {activeDeals.length}
-                  </div>
-                </Card>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Earnings by Campaign
-                </div>
-                <div className="mt-4 space-y-2">
-                  {earningsByCampaign.length === 0 ? (
-                    <div className="text-sm text-gray-600 py-6 text-center">
-                      No earnings for this month yet.
-                    </div>
-                  ) : (
-                    earningsByCampaign.slice(0, 10).map((it: any) => (
-                      <div
-                        key={it.brand_id}
-                        className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
-                            {(
-                              String(it.brand_name || "B").trim()[0] || "B"
-                            ).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">
-                              {it.brand_name || "Brand"}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-sm font-semibold text-green-600">
-                          {fmtCents(it.monthly_cents)}/mo
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                      {agencyUser?.agency_logo_url ? (
-                        <img
-                          src={agencyUser.agency_logo_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Briefcase className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName || "Your Agency"}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate">
-                        Connected since {new Date().toLocaleDateString()}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          Edit Profile
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          Manage Campaigns
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          View Earnings
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="h-10 px-4 rounded-lg">
-                    Manage
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "analytics" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Analytics
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Performance metrics across all campaigns
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-xs font-medium text-gray-500">
-                        Total Views
-                      </div>
-                      <div className="text-3xl font-bold text-gray-900 mt-2">
-                        {(() => {
-                          const v = (analytics as any)?.kpis?.total_views ?? 0;
-                          if (v >= 1_000_000)
-                            return `${(v / 1_000_000).toFixed(1)}M`;
-                          if (v >= 1_000) return `${Math.round(v / 1_000)}K`;
-                          return String(v);
-                        })()}
-                      </div>
-                      <div className="text-xs text-green-600 mt-1">
-                        {(() => {
-                          const pct = Number(
-                            (analytics as any)?.kpis?.views_change_pct ?? 0,
-                          );
-                          const sign = pct >= 0 ? "+" : "";
-                          return `${sign}${pct.toFixed(0)}% this month`;
-                        })()}
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                      <BarChart3 className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-xs font-medium text-gray-500">
-                        Total Revenue
-                      </div>
-                      <div className="text-3xl font-bold text-gray-900 mt-2">
-                        {fmtCents(
-                          (analytics as any)?.kpis?.total_revenue_cents,
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Monthly recurring
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Campaign Performance
-                </div>
-                <div className="mt-4 space-y-3">
-                  {Array.isArray((analytics as any)?.campaigns) &&
-                  (analytics as any).campaigns.length > 0 ? (
-                    (analytics as any).campaigns.slice(0, 8).map((c: any) => (
-                      <div
-                        key={c.brand_id}
-                        className="rounded-xl border border-gray-100 bg-white p-4"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(c.brand_name || "B").trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {c.brand_name || "Brand"}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                AI Licensing
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-10">
-                            <div>
-                              <div className="text-[11px] text-gray-500">
-                                Views/Week
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {Number(c.views_week || 0).toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-[11px] text-gray-500">
-                                Revenue
-                              </div>
-                              <div className="text-sm font-semibold text-green-600">
-                                {fmtCents(c.revenue_cents)}/mo
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-600 py-8 text-center">
-                      No analytics metrics yet. Ask your agency to add weekly
-                      view metrics.
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm border border-cyan-200 bg-cyan-50/30">
-                <div className="text-sm font-semibold text-gray-900">
-                  ROI: Traditional UGC vs AI Licensing
-                </div>
-                {!canUseAdvancedAnalytics ? (
-                  <div className="mt-4 rounded-xl border border-[#C7B8FF] bg-white p-5">
-                    <div className="text-base font-semibold text-gray-900">
-                      Pro feature
-                    </div>
-                    <div className="text-sm text-gray-600 mt-2">
-                      Upgrade to Pro to unlock advanced earnings analytics,
-                      ROI comparisons, and premium insights.
-                    </div>
-                    <Button
-                      className="mt-4 bg-[#4B4AE6] hover:bg-[#3F3EE0]"
-                      onClick={() => navigate("/CreatorSubscribe")}
-                    >
-                      Upgrade to Pro
-                    </Button>
-                  </div>
-                ) : (
-                <>
-                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="p-5 rounded-xl shadow-sm">
-                    <div className="text-sm font-semibold text-gray-900">
-                      Traditional UGC Model
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Post:</div>
-                        <div className="font-semibold text-gray-900">
-                          {fmtCents(
-                            (analytics as any)?.roi?.traditional
-                              ?.per_post_cents,
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.time_investment || "4-6 hours"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Posts/Month:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.posts_per_month || "5-8"}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.monthly_earnings_range || "$2,500-$4,000"}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-5 rounded-xl shadow-sm border border-green-200 bg-green-50/40">
-                    <div className="text-sm font-semibold text-gray-900">
-                      AI Licensing Model (You)
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Campaign:</div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.per_campaign_cents,
-                          )}
-                          /mo
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.time_investment ||
-                            "0 hours/month"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Active Campaigns:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.active_campaigns ??
-                            (analytics as any)?.kpis?.active_campaigns ??
-                            0}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.monthly_earnings_cents,
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="mt-4 rounded-lg bg-white border border-cyan-200 px-4 py-3 text-sm text-gray-700">
-                  {(analytics as any)?.roi?.message ||
-                    "Your earnings comparison will appear here."}
-                </div>
-                </>
-                )}
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Unauthorized-use monitoring
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  {canUseMonitoring
-                    ? "Monitoring is enabled for your profile. No detections yet."
-                    : "Upgrade to Pro to access social-platform unauthorized-use monitoring."}
-                </div>
-                {!canUseMonitoring && (
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => navigate("/CreatorSubscribe")}
-                  >
-                    Upgrade to Pro
-                  </Button>
-                )}
-              </Card>
-            </div>
-          )}
-
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {Array.isArray(talentNotifications) &&
-                  talentNotifications.length > 0 ? (
-                    (talentNotifications as any[]).map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {tab === "settings" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Portal Settings
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Configure your talent portal preferences
-                </div>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Payment Preferences
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Tax Documentation
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        {(w9Doc as any)?.id && (w9Doc as any)?.created_at
-                          ? `W-9 on file • Updated ${new Date((w9Doc as any).created_at).toLocaleDateString()}`
-                          : "No W-9 on file"}
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="mt-4 w-full h-10"
-                      disabled={!(tax1099Doc as any)?.public_url}
-                      onClick={() => {
-                        const url = (tax1099Doc as any)?.public_url;
-                        if (url) window.open(url, "_blank");
-                      }}
-                    >
-                      Download 1099 ({taxYear})
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Privacy Controls
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Data Usage for Training
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Allow anonymized data for AI model improvement
-                      </div>
-                    </div>
-                    <Switch
-                      checked={!!(portalSettings as any)?.allow_training}
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          allow_training: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Public Profile Visibility
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Show in marketplace search results
-                      </div>
-                    </div>
-                    <Switch
-                      checked={
-                        (portalSettings as any)?.public_profile_visible ===
-                        undefined
-                          ? true
-                          : !!(portalSettings as any)?.public_profile_visible
-                      }
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          public_profile_visible: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-        </>
-      )}
         </>
       )}
     </>
@@ -4146,7 +4266,7 @@ export default function TalentPortal({
         <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             <aside className="w-[280px] flex-shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen">
-            {/* Sidebar Header */}
+              {/* Sidebar Header */}
               <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
                   <img
@@ -4210,7 +4330,9 @@ export default function TalentPortal({
               <div className="flex-1" />
             </aside>
 
-            <main className="flex-1 min-w-0 p-8 space-y-8">{portalContent}</main>
+            <main className="flex-1 min-w-0 p-8 space-y-8">
+              {portalContent}
+            </main>
           </div>
         </div>
       </div>
