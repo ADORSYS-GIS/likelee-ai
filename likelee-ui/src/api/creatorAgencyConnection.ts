@@ -58,7 +58,10 @@ export type CreatorAgencyConnection = {
   agencies?: {
     agency_name?: string;
     logo_url?: string;
+    email?: string;
+    website?: string;
   };
+  marketplace_contract?: MarketplaceContractSummary | null;
 };
 
 export async function listCreatorAgencyConnections(): Promise<
@@ -73,8 +76,39 @@ export async function listCreatorAgencyConnections(): Promise<
 
 export async function disconnectCreatorAgencyConnection(
   agencyId: string,
-): Promise<void> {
-  await base44.post<{ status: string }>(
+  reason?: string,
+): Promise<{ status: string }> {
+  return await base44.post<{ status: string }>(
     `/api/creator/agency-connections/${encodeURIComponent(agencyId)}/disconnect`,
+    reason ? { reason } : {},
+  );
+}
+
+export async function approveAgencyCreatorDisconnectRequest(
+  creatorId: string,
+): Promise<{ status: string }> {
+  return await base44.post(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/disconnect/approve`,
+    {},
+  );
+}
+
+export async function rejectAgencyCreatorDisconnectRequest(
+  creatorId: string,
+): Promise<{ status: string }> {
+  return await base44.post(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/disconnect/reject`,
+    {},
+  );
+}
+
+export async function getAgencyCreatorContractSummary(
+  creatorId: string,
+): Promise<{
+  status: string;
+  contract?: MarketplaceContractSummary | null;
+}> {
+  return await base44.get(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/contract`,
   );
 }
