@@ -1613,9 +1613,7 @@ export function MarketplaceSection({
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={
-                isDisconnectBusy ||
-                !selectedProfile?.id ||
-                !disconnectDecision
+                isDisconnectBusy || !selectedProfile?.id || !disconnectDecision
               }
               onClick={async () => {
                 const creatorId = String(selectedProfile?.id || "").trim();

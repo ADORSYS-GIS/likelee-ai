@@ -2,15 +2,15 @@
 
 ## Naming Standards
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Variables | `snake_case` | `user_id`, `payout_amount` |
-| Functions | `snake_case` | `get_wallet_balance`, `submit_generation` |
-| Structs/Enums | `PascalCase` | `ServerConfig`, `AppState`, `Provider` |
-| Constants | `SCREAMING_SNAKE_CASE` | `MAX_UPLOAD_SIZE`, `DEFAULT_PORT` |
-| Module files | `snake_case.rs` | `payouts.rs`, `studio_wallet.rs` |
-| Database tables | `snake_case` (plural) | `studio_wallets`, `agency_payouts` |
-| API endpoints | `kebab-case` | `/api/studio/generate`, `/api/talent/book-outs` |
+| Element         | Convention             | Example                                         |
+| --------------- | ---------------------- | ----------------------------------------------- |
+| Variables       | `snake_case`           | `user_id`, `payout_amount`                      |
+| Functions       | `snake_case`           | `get_wallet_balance`, `submit_generation`       |
+| Structs/Enums   | `PascalCase`           | `ServerConfig`, `AppState`, `Provider`          |
+| Constants       | `SCREAMING_SNAKE_CASE` | `MAX_UPLOAD_SIZE`, `DEFAULT_PORT`               |
+| Module files    | `snake_case.rs`        | `payouts.rs`, `studio_wallet.rs`                |
+| Database tables | `snake_case` (plural)  | `studio_wallets`, `agency_payouts`              |
+| API endpoints   | `kebab-case`           | `/api/studio/generate`, `/api/talent/book-outs` |
 
 ## File Organization
 
@@ -60,6 +60,7 @@ likelee-server/
 - **Brace style**: Same line for functions and structs
 
 Run formatting:
+
 ```bash
 cargo fmt
 ```
@@ -74,6 +75,7 @@ Imports are grouped and ordered as follows:
 4. **Relative imports** (`super::`, `self::`)
 
 Example:
+
 ```rust
 use std::sync::Arc;
 
@@ -94,9 +96,10 @@ use crate::studio::wallet;
 - **Deprecated code**: Use `#[deprecated]` attribute with note
 
 Example:
+
 ```rust
 /// Deducts credits from a user's wallet for a generation job.
-/// 
+///
 /// Returns an error if the user has insufficient balance.
 pub async fn deduct_credits(
     pg: &Postgrest,
@@ -144,6 +147,7 @@ type(scope): description
 **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 **Examples**:
+
 - `feat(studio): add silent failure detection for generation jobs`
 - `fix(payouts): correct fee calculation for instant payouts`
 - `docs(config): document LIVENESS_ENABLED environment variable`
