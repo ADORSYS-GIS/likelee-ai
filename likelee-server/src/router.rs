@@ -1048,6 +1048,18 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::creator_agency_connection::disconnect_agency),
         )
         .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/approve",
+            post(crate::creator_agency_connection::approve_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/reject",
+            post(crate::creator_agency_connection::reject_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/contract",
+            get(crate::creator_agency_connection::get_agency_contract_summary),
+        )
+        .route(
             "/api/marketplace/contracts/:id/sync",
             post(crate::agency_marketplace_contracts::sync_contract_endpoint),
         )
