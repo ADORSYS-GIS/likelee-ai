@@ -72,6 +72,7 @@ import {
   Star,
   Upload,
   User,
+  Crown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -193,7 +194,32 @@ export default function TalentPortal({
 
   const connectedAgencies = baseConnectedAgencies;
   const connectedAgencyIds = baseConnectedAgencyIds;
-
+  const creatorPlanTier = String((baseMe as any)?.plan_tier || "free");
+  const creatorEntitlements = ((baseMe as any)?.entitlements || {}) as any;
+  const canUseVoiceProfiles = !!creatorEntitlements?.can_use_voice_profiles;
+  const voiceToneLimit = Number(creatorEntitlements?.voice_tone_limit || 6);
+  const canUseAdvancedAnalytics = !!creatorEntitlements?.can_use_advanced_analytics;
+  const canUseMonitoring = !!creatorEntitlements?.can_use_unauthorized_monitoring;
+  const canUseTalentPortal =
+    typeof creatorEntitlements?.can_use_talent_portal === "boolean"
+      ? !!creatorEntitlements.can_use_talent_portal
+      : creatorPlanTier === "pro";
+  const canUseActiveCampaigns =
+    typeof creatorEntitlements?.can_use_active_campaigns === "boolean"
+      ? !!creatorEntitlements.can_use_active_campaigns
+      : creatorPlanTier === "pro";
+  const creatorPlanLabel =
+    creatorPlanTier === "pro"
+      ? "Pro Creator"
+      : creatorPlanTier === "basic"
+        ? "Basic Creator"
+        : "Free Creator";
+  const creatorPlanBadgeClass =
+    creatorPlanTier === "pro"
+      ? "bg-[#4B4AE6] text-white border-0"
+      : creatorPlanTier === "basic"
+        ? "bg-cyan-100 text-cyan-800 border border-cyan-200"
+        : "bg-gray-100 text-gray-700 border border-gray-200";
   const agencyNameById = React.useMemo(() => {
     const map = new Map<string, string>();
     for (const r of connectedAgencies) {
@@ -820,7 +846,7 @@ export default function TalentPortal({
       const rows = await listVoiceRecordings();
       return Array.isArray(rows) ? rows : [];
     },
-    enabled: authenticated,
+    enabled: authenticated && canUseVoiceProfiles,
     staleTime: 60 * 1000, // 1 minute
     refetchOnWindowFocus: false,
   });
@@ -998,12 +1024,44 @@ export default function TalentPortal({
     ? profileForm.photo_urls
     : [];
   const photoCount = photoUrls.length;
-  const voiceCount = Array.isArray(voiceRecordings)
-    ? voiceRecordings.length
-    : 0;
+  const voiceCount =
+    canUseVoiceProfiles && Array.isArray(voiceRecordings)
+      ? voiceRecordings.length
+      : 0;
 
   const portalContent = (
     <>
+      {!canUseTalentPortal ? (
+        <Card className="border border-[#C7B8FF] bg-[#F7F5FF] p-8">
+          <div className="max-w-2xl space-y-4">
+            <Badge className={creatorPlanBadgeClass}>
+              <Crown className="mr-1 h-3.5 w-3.5" />
+              {creatorPlanLabel}
+            </Badge>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Talent Portal is available on Pro
+            </h2>
+            <p className="text-gray-600">
+              Upgrade to Pro to unlock Talent Portal, Jobs, Voice, Campaign
+              Archives, and Active Campaigns. Upgrade to Basic first if you
+              still need KYC, agency and brand connections, My Likeness, and
+              payouts.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                className="bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                onClick={() => navigate("/CreatorSubscribe")}
+              >
+                Upgrade plan
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/CreatorDashboard")}>
+                Back to Dashboard
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <>
       <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -1014,6 +1072,23 @@ export default function TalentPortal({
               {mode === "irl"
                 ? "Track your bookings and earnings"
                 : "Manage your AI licensing deals and earnings"}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge
+                className={creatorPlanBadgeClass}
+              >
+                <Crown className="mr-1 h-3.5 w-3.5" />
+                {creatorPlanLabel}
+              </Badge>
+              {creatorPlanTier !== "pro" && (
+                <Button
+                  size="sm"
+                  className="h-8 rounded-full bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                  onClick={() => navigate("/CreatorSubscribe")}
+                >
+                  Upgrade to Pro
+                </Button>
+              )}
             </div>
           </div>
           {canSelectAgency && (
@@ -1053,6 +1128,45 @@ export default function TalentPortal({
             )}
           </button>
         </div>
+
+        <Card className="mb-6 border border-[#32C8D1]/20 bg-gradient-to-r from-[#0F172A] via-[#12243B] to-[#1E3A5F] text-white shadow-sm">
+          <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={creatorPlanBadgeClass}>
+                  <Crown className="mr-1 h-3.5 w-3.5" />
+                  {creatorPlanLabel}
+                </Badge>
+                {creatorPlanTier !== "pro" && (
+                  <Badge className="border border-amber-300/40 bg-amber-400/15 text-amber-100">
+                    Upgrade available
+                  </Badge>
+                )}
+              </div>
+              <div>
+                <div className="text-lg font-semibold">
+                  {creatorPlanTier === "pro"
+                    ? "Your Pro creator plan is active."
+                    : "Upgrade to Pro to unlock premium creator tools."}
+                </div>
+                <div className="text-sm text-white/75">
+                  Pro adds unauthorized-use monitoring, voice tones, Cameo upload support, and advanced analytics.
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {creatorPlanTier !== "pro" && (
+                <Button
+                  className="rounded-full bg-[#32C8D1] px-5 text-[#0F172A] hover:bg-[#2bb6bf]"
+                  onClick={() => navigate("/CreatorSubscribe")}
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  Upgrade plan
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
 
         <div className="border-b border-gray-200 overflow-x-auto">
           <div className="flex items-center gap-6 min-w-max pb-3">
@@ -1095,6 +1209,7 @@ export default function TalentPortal({
                     label: "Active Campaigns",
                     icon: Briefcase,
                     badge: activeDeals.length,
+                    premium: !canUseActiveCampaigns,
                   },
                   {
                     id: "approvals",
@@ -1109,7 +1224,12 @@ export default function TalentPortal({
                     icon: ShieldCheck,
                   },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "analytics", label: "Analytics", icon: BarChart3 },
+                  {
+                    id: "analytics",
+                    label: "Analytics",
+                    icon: BarChart3,
+                    premium: !canUseAdvancedAnalytics,
+                  },
                   { id: "messages", label: "Messages", icon: MessageSquare },
                   { id: "settings", label: "Settings", icon: Settings },
                 ]
@@ -1128,6 +1248,9 @@ export default function TalentPortal({
                 >
                   <Icon className="h-4 w-4" />
                   <span className="whitespace-nowrap">{item.label}</span>
+                  {(item as any).premium && (
+                    <Crown className="h-3.5 w-3.5 text-amber-500" />
+                  )}
                   {typeof (item as any).badge === "number" && (
                     <span
                       className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${
@@ -2699,7 +2822,7 @@ export default function TalentPortal({
                           Voice Samples
                         </div>
                         <div className="text-2xl font-bold text-gray-900 mt-2">
-                          {voiceCount}/6
+                          {canUseVoiceProfiles ? `${voiceCount}/${voiceToneLimit}` : "Pro only"}
                         </div>
                       </div>
                       <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
@@ -2711,7 +2834,9 @@ export default function TalentPortal({
                         <div
                           className="h-full bg-gray-900 rounded-full"
                           style={{
-                            width: `${Math.min(100, (voiceCount / 6) * 100)}%`,
+                            width: canUseVoiceProfiles
+                              ? `${Math.min(100, (voiceCount / Math.max(1, voiceToneLimit)) * 100)}%`
+                              : "0%",
                           }}
                         />
                       </div>
@@ -2735,14 +2860,16 @@ export default function TalentPortal({
                   <Button
                     className="h-12 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
                     onClick={() =>
-                      navigate({
-                        pathname: "/CreatorDashboard",
-                        search: "?section=voice",
-                      })
+                      canUseVoiceProfiles
+                        ? navigate({
+                            pathname: "/CreatorDashboard",
+                            search: "?section=voice",
+                          })
+                        : navigate("/CreatorSubscribe")
                     }
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Manage Voice
+                    {canUseVoiceProfiles ? "Manage Voice" : "Unlock Voice"}
                   </Button>
                 </div>
               </Card>
@@ -2769,14 +2896,16 @@ export default function TalentPortal({
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        Voice: Approved
+                        Voice: {canUseVoiceProfiles ? "Approved" : "Locked"}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        Voice cloning enabled for approved emotions
+                        {canUseVoiceProfiles
+                          ? "Voice cloning enabled for approved emotions"
+                          : "Upgrade to Pro to create ElevenLabs voice tones."}
                       </div>
                     </div>
                     <Badge className="bg-purple-600 text-white border-0">
-                      Limited Use
+                      {canUseVoiceProfiles ? "Limited Use" : "Pro"}
                     </Badge>
                   </div>
                 </div>
@@ -3686,6 +3815,24 @@ export default function TalentPortal({
                 <div className="text-sm font-semibold text-gray-900">
                   ROI: Traditional UGC vs AI Licensing
                 </div>
+                {!canUseAdvancedAnalytics ? (
+                  <div className="mt-4 rounded-xl border border-[#C7B8FF] bg-white p-5">
+                    <div className="text-base font-semibold text-gray-900">
+                      Pro feature
+                    </div>
+                    <div className="text-sm text-gray-600 mt-2">
+                      Upgrade to Pro to unlock advanced earnings analytics,
+                      ROI comparisons, and premium insights.
+                    </div>
+                    <Button
+                      className="mt-4 bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                      onClick={() => navigate("/CreatorSubscribe")}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                ) : (
+                <>
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Card className="p-5 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
@@ -3774,6 +3921,28 @@ export default function TalentPortal({
                   {(analytics as any)?.roi?.message ||
                     "Your earnings comparison will appear here."}
                 </div>
+                </>
+                )}
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">
+                  Unauthorized-use monitoring
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  {canUseMonitoring
+                    ? "Monitoring is enabled for your profile. No detections yet."
+                    : "Upgrade to Pro to access social-platform unauthorized-use monitoring."}
+                </div>
+                {!canUseMonitoring && (
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => navigate("/CreatorSubscribe")}
+                  >
+                    Upgrade to Pro
+                  </Button>
+                )}
               </Card>
             </div>
           )}
@@ -3962,6 +4131,8 @@ export default function TalentPortal({
           )}
         </>
       )}
+        </>
+      )}
     </>
   );
 
@@ -3970,77 +4141,79 @@ export default function TalentPortal({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-          <aside className="w-[280px] flex-shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen">
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+            <aside className="w-[280px] flex-shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen">
             {/* Sidebar Header */}
-            <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
-                  alt="Likelee Logo"
-                  className="h-6 w-auto"
-                />
-                <span className="text-[17px] font-bold text-[#1A1C1E]">
-                  Talent Portal
-                </span>
-              </div>
-              <button
-                className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group"
-                onClick={() => navigate("/CreatorDashboard")}
-                aria-label="Back to Dashboard"
-                title="Back to Dashboard"
-              >
-                <svg
-                  className="h-4 w-4 text-gray-400 group-hover:text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M15 19l-7-7 7-7"
+              <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+                    alt="Likelee Logo"
+                    className="h-6 w-auto"
                   />
-                </svg>
-              </button>
-            </div>
-
-            {/* Profile Section */}
-            <div className="p-6 border-b border-gray-50">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0">
-                  <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-                    {profilePhotoUrl ? (
-                      <img
-                        src={profilePhotoUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-7 w-7 text-gray-400" />
-                    )}
-                  </div>
+                  <span className="text-[17px] font-bold text-[#1A1C1E]">
+                    Talent Portal
+                  </span>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-[17px] font-bold text-[#1A1C1E] truncate leading-tight">
-                    {talentName}
+                <button
+                  className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group"
+                  onClick={() => navigate("/CreatorDashboard")}
+                  aria-label="Back to Dashboard"
+                  title="Back to Dashboard"
+                >
+                  <svg
+                    className="h-4 w-4 text-gray-400 group-hover:text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Profile Section */}
+              <div className="p-6 border-b border-gray-50">
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0">
+                    <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                      {profilePhotoUrl ? (
+                        <img
+                          src={profilePhotoUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-7 w-7 text-gray-400" />
+                      )}
+                    </div>
                   </div>
-                  <div className="text-[14px] text-gray-500 truncate mt-0.5">
-                    {email || ""}
+                  <div className="min-w-0">
+                    <div className="text-[17px] font-bold text-[#1A1C1E] truncate leading-tight">
+                      {talentName}
+                    </div>
+                    <div className="text-[14px] text-gray-500 truncate mt-0.5">
+                      {email || ""}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex-1" />
-          </aside>
+              <div className="flex-1" />
+            </aside>
 
-          <main className="flex-1 min-w-0 p-8 space-y-8">{portalContent}</main>
+            <main className="flex-1 min-w-0 p-8 space-y-8">{portalContent}</main>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
