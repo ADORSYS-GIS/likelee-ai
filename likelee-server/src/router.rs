@@ -1124,6 +1124,14 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_agency_subscription_checkout),
         )
         .route(
+            "/api/creator/billing/checkout",
+            post(crate::billing::create_creator_subscription_checkout),
+        )
+        .route(
+            "/api/creator/billing/status",
+            get(crate::billing::get_creator_billing_status),
+        )
+        .route(
             "/api/licenses/activated",
             post(crate::licenses::activated_stub),
         )
