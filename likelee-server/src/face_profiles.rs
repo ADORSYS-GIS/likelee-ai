@@ -1485,9 +1485,7 @@ pub async fn get_marketplace_profile_details(
                         &creator_id,
                     )
                     .await
-                    .map(|summary| {
-                        serde_json::to_value(summary).unwrap_or(serde_json::Value::Null)
-                    })
+                    .map(|summary| serde_json::to_value(summary).unwrap_or(serde_json::Value::Null))
                     .unwrap_or(serde_json::Value::Null);
 
                 let connected_resp = state
