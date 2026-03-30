@@ -860,6 +860,11 @@ export default function CreatorDashboard() {
   const [jobInviteConfirmAction, setJobInviteConfirmAction] = useState<
     "accept" | "decline" | ""
   >("");
+  const [agencyContractDetailOpen, setAgencyContractDetailOpen] =
+    useState(false);
+  const [selectedAgencyConnection, setSelectedAgencyConnection] =
+    useState<CreatorAgencyConnection | null>(null);
+  const [disconnectReason, setDisconnectReason] = useState("");
   const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
   const [loadingAssetRequests, setLoadingAssetRequests] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
@@ -895,6 +900,7 @@ export default function CreatorDashboard() {
   const [disconnectTarget, setDisconnectTarget] = useState<{
     agency_id: string;
     agency_name?: string;
+    marketplace_contract?: CreatorAgencyConnection["marketplace_contract"];
   } | null>(null);
   const IMAGE_SECTIONS = getImageSections(t);
 
@@ -6008,23 +6014,44 @@ export default function CreatorDashboard() {
       disconnectTarget?.agency_name ||
       disconnectTarget?.agency_id ||
       "this agency";
+    const disconnectContract = disconnectTarget?.marketplace_contract;
+    const disconnectRequiresApproval =
+      String(disconnectContract?.status || "").toLowerCase() === "active";
+    const disconnectPending =
+      String(disconnectContract?.disconnect_status || "").toLowerCase() ===
+      "pending";
 
     const doDisconnect = async () => {
       if (!disconnectTarget?.agency_id) return;
       try {
         setAgencyConnectionLoading(true);
-        await disconnectCreatorAgencyConnection(
+        const result = await disconnectCreatorAgencyConnection(
           String(disconnectTarget.agency_id),
+          disconnectRequiresApproval ? disconnectReason : undefined,
         );
 
         const { connections, invites } = await loadAgencyConnectionData();
 
         setAgencyConnections(connections);
         setAgencyInvites(invites);
-        toast({
-          title: "Disconnected",
-          description: "You have disconnected from the agency.",
-        });
+        if (result?.status === "disconnect_requested") {
+          toast({
+            title: "Disconnect requested",
+            description:
+              "Your agency has been notified. The connection will remain active until they approve or the contract expires.",
+          });
+        } else if (result?.status === "disconnect_pending") {
+          toast({
+            title: "Request already pending",
+            description:
+              "This disconnect request is already awaiting agency approval.",
+          });
+        } else {
+          toast({
+            title: "Disconnected",
+            description: "You have disconnected from the agency.",
+          });
+        }
       } catch (e: any) {
         toast({
           variant: "destructive",
@@ -6033,6 +6060,7 @@ export default function CreatorDashboard() {
         });
       } finally {
         setAgencyConnectionLoading(false);
+        setDisconnectReason("");
       }
     };
 
@@ -6045,17 +6073,21 @@ export default function CreatorDashboard() {
             if (!open) {
               setDisconnectConfirmChecked(false);
               setDisconnectTarget(null);
+              setDisconnectReason("");
             }
           }}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Disconnect from {disconnectLabel}?
+                {disconnectRequiresApproval
+                  ? `Request disconnect from ${disconnectLabel}?`
+                  : `Disconnect from ${disconnectLabel}?`}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This may remove access to bookings, earnings, and portal data
-                for that agency.
+                {disconnectRequiresApproval
+                  ? "This contract is still active, so the agency must approve your disconnect request unless the contract expires first."
+                  : "This may remove access to bookings, earnings, and portal data for that agency."}
               </AlertDialogDescription>
             </AlertDialogHeader>
 
@@ -6066,24 +6098,172 @@ export default function CreatorDashboard() {
                 id="confirm-disconnect"
               />
               <Label htmlFor="confirm-disconnect" className="text-sm leading-5">
-                I understand this action is hard to undo.
+                {disconnectRequiresApproval
+                  ? "I understand the connection stays active until the agency approves this request."
+                  : "I understand this action is hard to undo."}
               </Label>
             </div>
+
+            {disconnectRequiresApproval && (
+              <div className="space-y-2">
+                <Label htmlFor="disconnect-reason">Reason for request</Label>
+                <Textarea
+                  id="disconnect-reason"
+                  value={disconnectReason}
+                  onChange={(e) => setDisconnectReason(e.target.value)}
+                  placeholder="Tell the agency why you want to terminate the active contract early."
+                  rows={4}
+                />
+                {disconnectPending ? (
+                  <p className="text-xs text-amber-700">
+                    A disconnect request is already pending for this contract.
+                  </p>
+                ) : null}
+              </div>
+            )}
 
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={!disconnectConfirmChecked || agencyConnectionLoading}
+                disabled={
+                  !disconnectConfirmChecked ||
+                  agencyConnectionLoading ||
+                  disconnectPending
+                }
                 onClick={async () => {
                   await doDisconnect();
                 }}
               >
-                Disconnect
+                {disconnectRequiresApproval ? "Request disconnect" : "Disconnect"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog
+          open={agencyContractDetailOpen}
+          onOpenChange={(open) => {
+            setAgencyContractDetailOpen(open);
+            if (!open) {
+              setSelectedAgencyConnection(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedAgencyConnection?.agencies?.agency_name || "Agency"} contract
+              </DialogTitle>
+              <DialogDescription>
+                Review the key terms of your active agency contract and signed document.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedAgencyConnection?.marketplace_contract ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="p-4">
+                    <div className="text-xs text-gray-500">Status</div>
+                    <div className="mt-1 font-semibold text-gray-900 capitalize">
+                      {String(
+                        selectedAgencyConnection.marketplace_contract.status ||
+                          "unknown",
+                      ).replaceAll("_", " ")}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-xs text-gray-500">Commission</div>
+                    <div className="mt-1 font-semibold text-gray-900">
+                      {Number(
+                        selectedAgencyConnection.marketplace_contract
+                          .commission_rate || 0,
+                      ).toFixed(2)}
+                      %
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-xs text-gray-500">Start date</div>
+                    <div className="mt-1 font-semibold text-gray-900">
+                      {selectedAgencyConnection.marketplace_contract.valid_from ||
+                        "—"}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-xs text-gray-500">End date</div>
+                    <div className="mt-1 font-semibold text-gray-900">
+                      {selectedAgencyConnection.marketplace_contract.valid_until ||
+                        "—"}
+                    </div>
+                  </Card>
+                </div>
+
+                {selectedAgencyConnection.marketplace_contract
+                  .disconnect_status &&
+                selectedAgencyConnection.marketplace_contract
+                  .disconnect_status !== "none" ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <div className="font-semibold">
+                      Disconnect status:{" "}
+                      {String(
+                        selectedAgencyConnection.marketplace_contract
+                          .disconnect_status,
+                      ).replaceAll("_", " ")}
+                    </div>
+                    {selectedAgencyConnection.marketplace_contract
+                      .disconnect_reason ? (
+                      <div className="mt-1">
+                        Reason:{" "}
+                        {
+                          selectedAgencyConnection.marketplace_contract
+                            .disconnect_reason
+                        }
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                  {selectedAgencyConnection.marketplace_contract
+                    .signed_document_url ? (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        window.open(
+                          selectedAgencyConnection.marketplace_contract
+                            ?.signed_document_url || "",
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View signed contract
+                    </Button>
+                  ) : null}
+                  {selectedAgencyConnection.agencies?.website ? (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        window.open(
+                          selectedAgencyConnection.agencies?.website || "",
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      Agency website
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">
+                No active marketplace contract details are available for this agency.
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
@@ -6159,7 +6339,14 @@ export default function CreatorDashboard() {
                       key={c.agency_id}
                       className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        type="button"
+                        className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                        onClick={() => {
+                          setSelectedAgencyConnection(c);
+                          setAgencyContractDetailOpen(true);
+                        }}
+                      >
                         <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {c.agencies?.logo_url ? (
                             <img
@@ -6176,28 +6363,45 @@ export default function CreatorDashboard() {
                             {c.agencies?.agency_name || c.agency_id}
                           </div>
                           <div className="text-xs text-gray-500 truncate">
-                            Connected agency
+                            {String(
+                              c.marketplace_contract?.disconnect_status || "",
+                            ).toLowerCase() === "pending"
+                              ? "Disconnect request pending"
+                              : "Connected agency"}
                           </div>
                         </div>
-                      </div>
+                      </button>
 
                       {((profile as any)?.role === "talent" ||
                         agencyConnections.length > 0) && (
                         <Button
-                          variant="destructive"
-                          size="icon"
+                          variant={
+                            String(
+                              c.marketplace_contract?.disconnect_status || "",
+                            ).toLowerCase() === "pending"
+                              ? "outline"
+                              : "destructive"
+                          }
+                          size="sm"
                           disabled={agencyConnectionLoading}
                           onClick={() => {
                             setDisconnectTarget({
                               agency_id: String(c.agency_id),
                               agency_name: c.agencies?.agency_name || undefined,
+                              marketplace_contract:
+                                c.marketplace_contract || undefined,
                             });
                             setDisconnectConfirmChecked(false);
                             setDisconnectDialogOpen(true);
                           }}
                           aria-label="Disconnect from agency"
                         >
-                          <Link2Off className="h-4 w-4" />
+                          <Link2Off className="h-4 w-4 mr-2" />
+                          {String(
+                            c.marketplace_contract?.status || "",
+                          ).toLowerCase() === "active"
+                            ? "Request disconnect"
+                            : "Disconnect"}
                         </Button>
                       )}
                     </div>
