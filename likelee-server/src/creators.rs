@@ -1,4 +1,11 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
+        get_creator_plan_tier, PlanTier,
+    },
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -33,6 +40,19 @@ fn sync_public_profile_visibility(body: &mut serde_json::Value) {
         body["public_profile_visible"] =
             serde_json::Value::Bool(visibility_maps_to_public_profile(&visibility));
     }
+}
+
+fn normalized_string_array(values: Option<&serde_json::Value>) -> Vec<String> {
+    values
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
 }
 
 pub async fn upsert_profile(
@@ -96,6 +116,42 @@ pub async fn upsert_profile(
         body["updated_at"] = serde_json::Value::String(now.clone());
     }
     sync_public_profile_visibility(&mut body);
+
+    let tier = get_creator_plan_tier(&state, &user.id)
+        .await
+        .unwrap_or(PlanTier::Free);
+    if !creator_has_likeness_access(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "basic_plan_required_for_creator_profile".to_string(),
+        ));
+    }
+    if !creator_has_cameo_uploads(tier)
+        && body
+            .get("cameo_front_url")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false)
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "cameo_uploads_require_pro".to_string(),
+        ));
+    }
+
+    if let Some(limit) = creator_category_limit(tier) {
+        let mut combined = normalized_string_array(body.get("content_types"));
+        combined.extend(normalized_string_array(body.get("industries")));
+        combined.sort();
+        combined.dedup();
+        if combined.len() > limit {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Basic plan allows up to {limit} combined categories"),
+            ));
+        }
+    }
+
     // Remove legacy field if present to avoid DB errors if strict
     if body.get("updated_date").is_some() {
         body.as_object_mut().unwrap().remove("updated_date");
