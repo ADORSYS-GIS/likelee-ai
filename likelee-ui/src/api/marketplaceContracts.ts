@@ -12,6 +12,11 @@ export type MarketplaceContractSummary = {
   creator_sign_url?: string | null;
   agency_sign_url?: string | null;
   signed_document_url?: string | null;
+  disconnect_status?: string | null;
+  disconnect_requested_by?: string | null;
+  disconnect_requested_at?: string | null;
+  disconnect_reason?: string | null;
+  disconnect_reviewed_at?: string | null;
 };
 
 export type CreateMarketplaceCreatorContractRequest = {
