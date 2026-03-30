@@ -6,6 +6,7 @@ use axum::{
 };
 use hmac::{Hmac, Mac};
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::Sha256;
@@ -15,7 +16,106 @@ use crate::auth::AuthUser;
 use crate::config::AppState;
 use uuid::Uuid;
 
-// get_calendly_url removed
+/// GET /api/booking/calendly-url
+/// Returns the public Calendly booking URL used by the marketing-site demo CTA.
+pub async fn get_calendly_booking_url(
+    State(state): State<AppState>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let booking_url = state.calendly_booking_url.trim();
+
+    if booking_url.is_empty() {
+        return (
+            StatusCode::PRECONDITION_FAILED,
+            Json(json!({
+                "status": "error",
+                "error": "not_configured",
+                "message": "Calendly booking URL is not configured."
+            })),
+        );
+    }
+
+    let (normalized_booking_url, warning_message) =
+        normalize_public_calendly_booking_url(booking_url);
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "status": "success",
+            "data": {
+                "booking_url": normalized_booking_url,
+                "warning": warning_message
+            },
+        })),
+    )
+}
+
+fn normalize_public_calendly_booking_url(booking_url: &str) -> (String, Option<String>) {
+    let Ok(mut parsed_url) = Url::parse(booking_url) else {
+        return (booking_url.to_string(), None);
+    };
+
+    let host = parsed_url
+        .host_str()
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_default();
+
+    if !host.ends_with("calendly.com") {
+        return (booking_url.to_string(), None);
+    }
+
+    let path_segments: Vec<String> = parsed_url
+        .path_segments()
+        .map(|segments| {
+            segments
+                .filter(|segment| !segment.is_empty())
+                .map(|segment| segment.to_string())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if path_segments.len() < 2 {
+        return (booking_url.to_string(), None);
+    }
+
+    let suspicious_terminal_segments = [
+        "confirmed",
+        "default",
+        "casting",
+        "option",
+        "test-shoot",
+        "test_shoot",
+        "fitting",
+        "rehearsal",
+        "agency_discovery",
+        "talent_interview",
+        "photo_shoot",
+        "photo-shoot",
+        "scheduled",
+        "completed",
+        "cancelled",
+        "canceled",
+    ];
+
+    let final_segment = path_segments
+        .last()
+        .map(|segment| segment.to_ascii_lowercase())
+        .unwrap_or_default();
+
+    if !suspicious_terminal_segments.contains(&final_segment.as_str()) {
+        return (booking_url.to_string(), None);
+    }
+
+    let sanitized_path = format!("/{}", path_segments[..path_segments.len() - 1].join("/"));
+    parsed_url.set_path(&sanitized_path);
+
+    (
+        parsed_url.to_string(),
+        Some(format!(
+            "Configured Calendly URL ended with '{}', which looks like an internal booking type. Falling back to the public Likelee scheduling page.",
+            final_segment
+        )),
+    )
+}
 
 // --- Calendly Webhook Types ---
 

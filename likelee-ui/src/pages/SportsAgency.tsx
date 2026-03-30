@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function SportsAgency() {
   const { t } = useTranslation();
@@ -55,7 +56,7 @@ export default function SportsAgency() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("sports_agency_hero"))}
               className="h-14 px-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white rounded-none transition-all border-2 border-green-600"
             >
               {t("bookDemo")}
@@ -160,7 +161,7 @@ export default function SportsAgency() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("sports_agency_cta"))}
               className="h-14 px-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white rounded-none transition-all border-2 border-green-600"
             >
               {t("bookADemo")}
