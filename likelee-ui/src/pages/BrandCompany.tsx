@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function BrandCompany() {
   const { t } = useTranslation();
@@ -138,7 +139,7 @@ export default function BrandCompany() {
               Get Started
             </Button>
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("brand_company_hero"))}
               className="h-14 px-12 font-bold bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-900 rounded-none text-lg"
             >
               Book a Demo
@@ -242,7 +243,7 @@ export default function BrandCompany() {
               Get Started
             </Button>
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("brand_company_cta"))}
               className="h-14 px-12 font-bold border-2 border-white text-white hover:bg-white/10 rounded-none text-lg bg-transparent"
             >
               Book a Demo

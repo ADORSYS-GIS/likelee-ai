@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function TalentAgency() {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ export default function TalentAgency() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("talent_agency_hero"))}
               className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
             >
               {t("talentAgency.hero.cta")}
@@ -265,7 +266,7 @@ export default function TalentAgency() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() => navigate(createBookDemoUrl("talent_agency_cta"))}
               className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
             >
               {t("talentAgency.cta.bookDemo")}

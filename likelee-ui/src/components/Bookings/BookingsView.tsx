@@ -3,7 +3,6 @@ import { Calendar } from "lucide-react";
 
 import { CalendarScheduleTab } from "./Tabs/CalendarScheduleTab";
 import { BookingRequestsTab } from "./Tabs/BookingRequestsTab";
-import { ClientDatabaseTab } from "./Tabs/ClientDatabaseTab";
 import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
 import { NotificationsTab } from "./Tabs/NotificationsTab";
@@ -70,8 +69,6 @@ export const BookingsView = ({
     );
   } else if (activeSubTab === "Booking Requests") {
     content = <BookingRequestsTab />;
-  } else if (activeSubTab === "Client Database") {
-    content = <ClientDatabaseTab />;
   } else if (
     activeSubTab === "Talent Availability" ||
     activeSubTab === "Athlete Availability" ||

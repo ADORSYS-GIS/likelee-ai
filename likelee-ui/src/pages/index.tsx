@@ -50,6 +50,8 @@ import TestFalAPI from "./TestFalAPI";
 
 import SalesInquiry from "./SalesInquiry";
 import Contact from "./Contact";
+import BookDemo from "./BookDemo";
+import BookDemoThanks from "./BookDemoThanks";
 
 import MarketingAgency from "./MarketingAgency";
 import AgencySelection from "./AgencySelection";
@@ -187,6 +189,10 @@ const PAGES = {
 
   Contact: Contact,
 
+  BookDemo: BookDemo,
+
+  BookDemoThanks: BookDemoThanks,
+
   MarketingAgency: MarketingAgency,
 
   TalentAgency: TalentAgency,
@@ -248,6 +254,14 @@ const PAGES = {
 };
 
 function _getCurrentPage(url) {
+  const loweredUrl = url.toLowerCase();
+  if (loweredUrl === "/book-demo" || loweredUrl === "/bookdemo") {
+    return "BookDemo";
+  }
+  if (loweredUrl === "/bookdemothanks" || loweredUrl === "/book-demo/thanks") {
+    return "BookDemoThanks";
+  }
+
   if (url.endsWith("/")) {
     url = url.slice(0, -1);
   }
@@ -330,6 +344,12 @@ function AppRoutes() {
       <Route path="/TestFalAPI" element={<TestFalAPI />} />
 
       <Route path="/SalesInquiry" element={<SalesInquiry />} />
+      <Route path="/BookDemo" element={<BookDemo />} />
+      <Route path="/bookdemo" element={<BookDemo />} />
+      <Route path="/book-demo" element={<BookDemo />} />
+      <Route path="/BookDemoThanks" element={<BookDemoThanks />} />
+      <Route path="/bookdemothanks" element={<BookDemoThanks />} />
+      <Route path="/book-demo/thanks" element={<BookDemoThanks />} />
 
       <Route path="/Contact" element={<Contact />} />
 

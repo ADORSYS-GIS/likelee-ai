@@ -18414,7 +18414,6 @@ export default function AgencyDashboard() {
             subItems: [
               "Calendar & Schedule",
               "Booking Requests",
-              "Client Database",
               availabilitySubTab,
               "Notifications",
               "Management & Analytics",
