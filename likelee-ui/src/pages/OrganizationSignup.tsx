@@ -39,8 +39,6 @@ import {
 } from "@/lib/emailOtp";
 import {
   getOrganizationKycStatus,
-  registerOrganization,
-  updateOrganizationProfile,
   registerBrand,
   registerAgency,
   updateBrandProfile,
@@ -595,8 +593,6 @@ export default function OrganizationSignup() {
           password: data.password,
           agency_name: data.organization_name,
           agency_type: orgType,
-          contact_name: data.contact_name || undefined,
-          contact_title: data.contact_title || undefined,
           website: data.website || undefined,
           phone_number: data.phone_number || undefined,
         };
@@ -696,6 +692,10 @@ export default function OrganizationSignup() {
         window.location.href = "/BrandDashboard";
         return;
       }
+      if (flow === "agency") {
+        window.location.href = "/AgencyDashboard";
+        return;
+      }
       setSubmitted(true);
     },
     onError: (error) => {
@@ -731,8 +731,7 @@ export default function OrganizationSignup() {
         !formData.email ||
         !formData.password ||
         !formData.confirmPassword ||
-        !formData.organization_name ||
-        (flow === "agency" && !formData.contact_name)
+        !formData.organization_name
       ) {
         toast({
           title: t("organizationSignup.missingFieldsTitle"),
@@ -769,7 +768,86 @@ export default function OrganizationSignup() {
     if (step > 1) setStep(step - 1);
   };
 
+  const agencyStep2MissingFields = () => {
+    if (flow !== "agency" || step !== 2) return [] as string[];
+
+    if (orgType === "marketing_agency") {
+      const missing: string[] = [];
+      if (!String(formData.client_count || "").trim())
+        missing.push("client_count");
+      if (!String(formData.campaign_budget || "").trim())
+        missing.push("campaign_budget");
+      if (
+        !Array.isArray(formData.services_offered) ||
+        formData.services_offered.length === 0
+      )
+        missing.push("services_offered");
+      if (!String(formData.provide_creators || "").trim())
+        missing.push("provide_creators");
+      if (!String(formData.handle_contracts || "").trim())
+        missing.push("handle_contracts");
+      return missing;
+    }
+
+    if (orgType === "talent_agency") {
+      const missing: string[] = [];
+      if (!String(formData.talent_count || "").trim())
+        missing.push("talent_count");
+      if (!String(formData.licenses_likeness || "").trim())
+        missing.push("licenses_likeness");
+      if (
+        !Array.isArray(formData.open_to_ai) ||
+        formData.open_to_ai.length === 0
+      )
+        missing.push("open_to_ai");
+      if (
+        !Array.isArray(formData.campaign_types) ||
+        formData.campaign_types.length === 0
+      )
+        missing.push("campaign_types");
+      if (!String(formData.bulk_onboard || "").trim())
+        missing.push("bulk_onboard");
+      return missing;
+    }
+
+    if (orgType === "sports_agency") {
+      const missing: string[] = [];
+      if (!String(formData.talent_count || "").trim())
+        missing.push("talent_count");
+      if (!String(formData.licenses_likeness || "").trim())
+        missing.push("licenses_likeness");
+      if (
+        !Array.isArray(formData.open_to_ai) ||
+        formData.open_to_ai.length === 0
+      )
+        missing.push("open_to_ai");
+      if (
+        !Array.isArray(formData.campaign_types) ||
+        formData.campaign_types.length === 0
+      )
+        missing.push("campaign_types");
+      if (!String(formData.bulk_onboard || "").trim())
+        missing.push("bulk_onboard");
+      return missing;
+    }
+
+    return [] as string[];
+  };
+
+  const canSubmitAgencyStep2 = agencyStep2MissingFields().length === 0;
+
   const handleSubmit = () => {
+    if (flow === "agency" && step === 2) {
+      const missing = agencyStep2MissingFields();
+      if (missing.length > 0) {
+        toast({
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     // Submit the full formData to update the profile
     updateProfileMutation.mutate(formData);
   };
@@ -1126,54 +1204,6 @@ export default function OrganizationSignup() {
                     }
                   />
                 </div>
-
-                {flow === "agency" && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label
-                        htmlFor="contact_name"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        {t("organizationSignup.agentName")} *
-                      </Label>
-                      <Input
-                        id="contact_name"
-                        value={formData.contact_name}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contact_name: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.johnDoe")}
-                      />
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="contact_title"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        {t("organizationSignup.agentTitle")}
-                      </Label>
-                      <Input
-                        id="contact_title"
-                        value={formData.contact_title}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contact_title: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t(
-                          "organizationSignup.contactTitlePlaceholder",
-                        )}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 <div>
                   <Label
@@ -1630,7 +1660,9 @@ export default function OrganizationSignup() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  disabled={
+                    updateProfileMutation.isPending || !canSubmitAgencyStep2
+                  } // Disable while submitting
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
@@ -1877,7 +1909,9 @@ export default function OrganizationSignup() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  disabled={
+                    updateProfileMutation.isPending || !canSubmitAgencyStep2
+                  } // Disable while submitting
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
@@ -2130,7 +2164,9 @@ export default function OrganizationSignup() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  disabled={
+                    updateProfileMutation.isPending || !canSubmitAgencyStep2
+                  } // Disable while submitting
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
@@ -2356,12 +2392,14 @@ export default function OrganizationSignup() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  disabled={
+                    updateProfileMutation.isPending || !canSubmitAgencyStep2
+                  } // Disable while submitting
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}{" "}
+                    ? t("organizationSignup.submitting")
+                    : t("organizationSignup.completeSignUp")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
