@@ -49,6 +49,12 @@ import { formatKycReason } from "@/utils/kycDisplay";
 
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import {
+  normalizeEmail,
+  resendSignupEmailOtp,
+  verifyEmailOtpCode,
+} from "@/lib/emailOtp";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -794,26 +800,44 @@ export default function ReserveProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          toast({
-            title: t("reserveProfile.toasts.emailRegisteredTitle"),
-            description: t("reserveProfile.toasts.emailRegisteredDesc"),
-            className: "bg-cyan-50 border-2 border-cyan-400",
-          });
-          return;
+          try {
+            await handleCreatorOtpResend();
+            setSignupOtpOpen(true);
+            return;
+          } catch {
+            toast({
+              title: t("reserveProfile.toasts.emailRegisteredTitle"),
+              description: t("reserveProfile.toasts.emailRegisteredDesc"),
+              className: "bg-cyan-50 border-2 border-cyan-400",
+            });
+            return;
+          }
         }
-        // Create Supabase auth user so login works
+        // Create Supabase auth user and keep verification on the current page.
         const displayName =
           creatorType === "model_actor"
             ? formData.stage_name || formData.full_name
             : formData.full_name;
-        const { session } = await register(
-          formData.email,
-          formData.password,
-          displayName,
-        );
-        if (!session) {
+        const client = requireSupabase();
+        const { data: signUpData, error } = await client.auth.signUp({
+          email: normalizeEmail(formData.email),
+          password: formData.password,
+          options: {
+            data: {
+              full_name: displayName || null,
+              role: "creator",
+            },
+          },
+        });
+        if (error) throw error;
+        if (!signUpData.session) {
+          setSignupOtpOpen(true);
           toast({
-            description: t("reserveProfile.toasts.verifyEmailDesc"),
+            title: t("reserveProfile.otp.title", "Verify your email"),
+            description: t(
+              "reserveProfile.otp.description",
+              "Enter the 6-digit code we emailed you to continue onboarding without leaving this page.",
+            ),
           });
           return;
         }
@@ -2729,6 +2753,23 @@ export default function ReserveProfile() {
             </div>
           )}
         </Card>
+        <EmailOtpDialog
+          open={signupOtpOpen}
+          onOpenChange={setSignupOtpOpen}
+          email={normalizeEmail(formData.email)}
+          title={t("reserveProfile.otp.title", "Verify your email")}
+          description={t(
+            "reserveProfile.otp.dialogDescription",
+            "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
+          )}
+          helperText={t(
+            "reserveProfile.otp.helperText",
+            "If the code does not arrive right away, use resend and check your spam folder.",
+          )}
+          verifyLabel={t("reserveProfile.otp.verifyLabel", "Continue")}
+          onVerify={handleCreatorOtpVerify}
+          onResend={handleCreatorOtpResend}
+        />
       </div>
     </div>
   );
