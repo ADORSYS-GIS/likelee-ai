@@ -17351,10 +17351,6 @@ export default function AgencyDashboard() {
     return pending.length;
   }, [licensingRequestsCountQuery.data]);
 
-  const isBrandConnectionsActive =
-    activeTab === "brand-connections" ||
-    (activeTab === "licensing" && activeSubTab === "Brand Connections");
-
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency-brand-connection-requests", user?.id],
     queryFn: async () => {
@@ -17364,7 +17360,7 @@ export default function AgencyDashboard() {
       }>("/api/agency/brand-connection-requests");
       return Array.isArray(resp?.requests) ? resp.requests : [];
     },
-    enabled: !!user?.id && isBrandConnectionsActive,
+    enabled: !!user?.id,
     refetchOnWindowFocus: false,
     staleTime: 30 * 1000,
     refetchInterval: 15 * 1000,
@@ -17383,7 +17379,7 @@ export default function AgencyDashboard() {
     maxAge: 60 * 1000,
     syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!user?.id && isBrandConnectionsActive,
+    enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
@@ -17408,7 +17404,7 @@ export default function AgencyDashboard() {
     maxAge: 60 * 1000,
     syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!user?.id && isBrandConnectionsActive,
+    enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 

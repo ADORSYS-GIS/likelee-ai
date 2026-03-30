@@ -83,7 +83,7 @@ export const NewBookingModal = ({
       (typeof err === "string" ? err : err?.message) ||
       "";
     if (/Error parsing multipart\/form-data request/i.test(String(raw))) {
-      return "Please select a valid booking date (YYYY-MM-DD) and try again.";
+      return "We couldn't read the booking form upload. Please try again. If it keeps failing, remove attachments and retry.";
     }
 
     const parsed = parseBackendError(err);
@@ -355,7 +355,7 @@ export const NewBookingModal = ({
       today.getMonth(),
       today.getDate(),
     );
-    if (parsed.getTime() < todayStart.getTime()) {
+    if (mode !== "edit" && parsed.getTime() < todayStart.getTime()) {
       return "Booking date can’t be in the past";
     }
     return "";
