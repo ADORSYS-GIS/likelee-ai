@@ -42,6 +42,7 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 | POST | `/api/talent/payouts/onboarding-link` | Get onboarding link |
 | GET | `/api/talent/payouts/balance` | Available balance |
 | POST | `/api/talent/payouts/request` | Request payout |
+| GET | `/api/talent/analytics` | Creator analytics with plan-aware advanced fields |
 
 ### Agency Dashboard
 
@@ -122,6 +123,8 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 |--------|------|-------------|
 | POST | `/api/stripe/create-checkout-session` | Create Stripe checkout |
 | POST | `/api/agency/billing/checkout` | Agency subscription checkout |
+| POST | `/api/creator/billing/checkout` | Creator subscription checkout |
+| GET | `/api/creator/billing/status` | Creator billing state and entitlements |
 
 ## Webhooks
 
@@ -176,3 +179,16 @@ No server-side rate limiting implemented. Rate limits are enforced by:
 - Supabase (database queries)
 - Stripe (API calls)
 - External providers (Fal, Veriff, etc.)
+
+## Creator Billing Notes
+
+- Creator plan source of truth lives on `public.creators.plan_tier`.
+- Supported values are `free`, `basic`, and `pro`.
+- `GET /api/creator/billing/status` returns entitlement metadata used by the creator dashboard and talent portal:
+  - `category_limit`
+  - `can_use_cameo_uploads`
+  - `can_use_unauthorized_monitoring`
+  - `can_use_voice_profiles`
+  - `voice_tone_limit`
+  - `can_use_advanced_analytics`
+- Voice creation and Cameo uploads are enforced server-side; UI gating is only a convenience layer.
