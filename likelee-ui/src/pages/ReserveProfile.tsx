@@ -270,7 +270,7 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register, refreshProfile } = useAuth();
+  const { login, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -354,6 +354,51 @@ export default function ReserveProfile() {
     const { password, confirmPassword, ...safeData } = formData;
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
+
+  const [signupOtpOpen, setSignupOtpOpen] = useState(false);
+
+  const requireSupabase = () => {
+    if (!supabase) {
+      throw new Error("Supabase not configured");
+    }
+
+    return supabase;
+  };
+
+  const handleCreatorOtpVerify = async (code: string) => {
+    const client = requireSupabase();
+    const data = await verifyEmailOtpCode(client, {
+      email: formData.email,
+      token: code,
+      purpose: "signup",
+    });
+
+    setProfileId(data.user?.id || null);
+    setSignupOtpOpen(false);
+    setStep(2);
+    toast({
+      title: t("reserveProfile.otp.title", "Verify your email"),
+      description: t(
+        "reserveProfile.otp.successDescription",
+        "Email verified. Continue your profile setup below.",
+      ),
+    });
+  };
+
+  const handleCreatorOtpResend = async (showToast = true) => {
+    const client = requireSupabase();
+    await resendSignupEmailOtp(client, formData.email);
+
+    if (showToast) {
+      toast({
+        title: t("reserveProfile.otp.codeSentTitle", "Code sent"),
+        description: t(
+          "reserveProfile.otp.codeSentDescription",
+          "We sent a fresh 6-digit code to your inbox.",
+        ),
+      });
+    }
+  };
 
   const startVerification = async ({
     forceNewSession = false,
@@ -841,7 +886,7 @@ export default function ReserveProfile() {
           });
           return;
         }
-        setProfileId(session.user?.id || null);
+        setProfileId(signUpData.user?.id || null);
         setStep(2);
       } catch (e: any) {
         toast({
