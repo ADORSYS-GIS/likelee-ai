@@ -204,7 +204,7 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -657,9 +657,6 @@ export default function OrganizationSignup() {
   // Updated mutation for profile updates (Step 2)
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof formData) => {
-      if (!profileId) {
-        throw new Error("Profile ID not found for update."); // Modified error message
-      }
       if (flow === "brand") {
         return updateBrandProfile({
           industry: data.industry,
@@ -671,6 +668,7 @@ export default function OrganizationSignup() {
           uses_ai: data.uses_ai,
           roles_needed: data.roles_needed,
           status: "waitlist",
+          onboarding_step: "complete",
         });
       } else {
         return updateAgencyProfile({
@@ -686,10 +684,16 @@ export default function OrganizationSignup() {
           campaign_types: data.campaign_types,
           bulk_onboard: data.bulk_onboard,
           status: "waitlist",
+          onboarding_step: "complete",
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      try {
+        await refreshProfile();
+      } catch (e) {
+        console.warn("Failed to refresh profile after onboarding completion", e);
+      }
       if (flow === "brand") {
         navigate("/BrandDashboard", { replace: true });
         return;
