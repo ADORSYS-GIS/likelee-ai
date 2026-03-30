@@ -147,6 +147,21 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
   - the agency talent relationship row to `active`
   - the associated `agency_users` talent row to `active`
 
+### Marketplace Contract Disconnect Workflow
+
+- `POST /api/creator/agency-connections/:agency_id/disconnect`
+  - immediate disconnect only when no active marketplace contract controls the relationship
+  - otherwise records a creator disconnect request on the marketplace contract row
+- `POST /api/agency/creator-connections/:creator_id/disconnect/approve`
+  - approves a pending creator disconnect request
+  - marks the contract terminated and removes the live agency-creator relationship
+- `POST /api/agency/creator-connections/:creator_id/disconnect/reject`
+  - rejects a pending creator disconnect request while keeping the live relationship active
+- `GET /api/agency/creator-connections/:creator_id/contract`
+  - returns the latest marketplace contract summary for agency review UI
+- Active marketplace contracts retain their legal row for history even after the live `agency_talent_relationships` row is removed.
+- Contract expiry also removes the live relationship automatically.
+
 ### Performance Tier Commission Precedence
 
 - `GET /api/agency/dashboard/performance-tiers` now returns commission-source metadata for each creator row.
