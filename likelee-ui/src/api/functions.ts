@@ -147,6 +147,13 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createCreatorSubscriptionCheckout = (data: {
+  plan: "basic" | "pro";
+}) => base44Client.post(`/creator/billing/checkout`, data);
+
+export const getCreatorBillingStatus = () =>
+  base44Client.get(`/creator/billing/status`);
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 
