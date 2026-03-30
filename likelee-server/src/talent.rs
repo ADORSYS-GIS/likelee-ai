@@ -1,5 +1,19 @@
 use crate::errors::sanitize_db_error;
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
+use crate::{
+    auth::AuthUser,
+    auth::RoleGuard,
+    config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access,
+        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
+        creator_has_rules_access, creator_has_talent_portal_access,
+        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
+        creator_voice_tone_limit, get_creator_plan_tier_for_user,
+    },
+};
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::StatusCode,
@@ -805,6 +819,29 @@ pub struct TalentMeResponse {
     pub agency_user: serde_json::Value,
     pub connected_agencies: Vec<serde_json::Value>,
     pub connected_agency_ids: Vec<String>,
+    pub plan_tier: String,
+    pub entitlements: CreatorEntitlementsResponse,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CreatorEntitlementsResponse {
+    pub plan_tier: String,
+    pub category_limit: Option<usize>,
+    pub can_use_kyc: bool,
+    pub can_use_likeness: bool,
+    pub can_use_agency_connection: bool,
+    pub can_use_brand_connection: bool,
+    pub can_use_payouts: bool,
+    pub can_use_cameo_uploads: bool,
+    pub can_use_unauthorized_monitoring: bool,
+    pub can_use_voice_profiles: bool,
+    pub voice_tone_limit: usize,
+    pub can_use_advanced_analytics: bool,
+    pub can_use_jobs: bool,
+    pub can_use_rules: bool,
+    pub can_use_talent_portal: bool,
+    pub can_use_campaign_archive: bool,
+    pub can_use_active_campaigns: bool,
 }
 
 #[derive(Clone)]
@@ -856,6 +893,31 @@ fn connected_agency_ids_from_connections(connections: &[serde_json::Value]) -> V
     out.sort();
     out.dedup();
     out
+}
+
+fn creator_entitlements_response(
+    plan_tier: &str,
+    tier: crate::entitlements::PlanTier,
+) -> CreatorEntitlementsResponse {
+    CreatorEntitlementsResponse {
+        plan_tier: plan_tier.to_string(),
+        category_limit: creator_category_limit(tier),
+        can_use_kyc: creator_has_kyc_access(tier),
+        can_use_likeness: creator_has_likeness_access(tier),
+        can_use_agency_connection: creator_has_agency_connection_access(tier),
+        can_use_brand_connection: creator_has_brand_connection_access(tier),
+        can_use_payouts: creator_has_payouts_access(tier),
+        can_use_cameo_uploads: creator_has_cameo_uploads(tier),
+        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(tier),
+        can_use_voice_profiles: creator_has_voice_profiles(tier),
+        voice_tone_limit: creator_voice_tone_limit(tier),
+        can_use_advanced_analytics: creator_has_advanced_analytics(tier),
+        can_use_jobs: creator_has_jobs_access(tier),
+        can_use_rules: creator_has_rules_access(tier),
+        can_use_talent_portal: creator_has_talent_portal_access(tier),
+        can_use_campaign_archive: creator_has_campaign_archive_access(tier),
+        can_use_active_campaigns: creator_has_active_campaigns_access(tier),
+    }
 }
 
 async fn resolve_talent_for_agency(
@@ -952,6 +1014,13 @@ pub async fn talent_me(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentMeResponse>, (StatusCode, String)> {
+    let (_, creator_tier) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let plan_tier = match creator_tier {
+        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Basic => "basic",
+        crate::entitlements::PlanTier::Pro => "pro",
+        crate::entitlements::PlanTier::Enterprise => "enterprise",
+    };
     let connections = list_active_talent_connections(&state, &user).await?;
     let connected_agency_ids: Vec<String> = connections
         .iter()
@@ -979,6 +1048,8 @@ pub async fn talent_me(
         agency_user: row,
         connected_agencies: connections,
         connected_agency_ids,
+        plan_tier: plan_tier.to_string(),
+        entitlements: creator_entitlements_response(plan_tier, creator_tier),
     }))
 }
 
@@ -1428,6 +1499,8 @@ pub struct TalentAnalyticsResponse {
     pub kpis: TalentAnalyticsKpis,
     pub campaigns: Vec<TalentAnalyticsCampaignItem>,
     pub roi: TalentAnalyticsRoi,
+    pub plan_tier: String,
+    pub advanced_analytics_enabled: bool,
 }
 
 fn parse_month_bounds_date(month: &str) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
@@ -1864,6 +1937,15 @@ pub async fn get_analytics(
     user: AuthUser,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentAnalyticsResponse>, (StatusCode, String)> {
+    let (_, creator_tier) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let advanced_analytics_enabled = creator_has_advanced_analytics(creator_tier);
+    let plan_tier = match creator_tier {
+        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Basic => "basic",
+        crate::entitlements::PlanTier::Pro => "pro",
+        crate::entitlements::PlanTier::Enterprise => "enterprise",
+    }
+    .to_string();
     let connections = list_active_talent_connections(&state, &user).await?;
     let requested_aid = params.get("agency_id").map(|s| s.as_str());
 
@@ -2234,6 +2316,26 @@ pub async fn get_analytics(
         "Your earnings comparison will appear here.".to_string()
     };
 
+    let roi = TalentAnalyticsRoi {
+        traditional: TalentAnalyticsRoiTraditional {
+            per_post_cents: 50_000,
+            time_investment: "4-6 hours".to_string(),
+            posts_per_month: "5-8".to_string(),
+            monthly_earnings_range: "$2,500-$4,000".to_string(),
+        },
+        ai: TalentAnalyticsRoiAi {
+            per_campaign_cents: per_campaign,
+            time_investment: "0 hours/month".to_string(),
+            active_campaigns,
+            monthly_earnings_cents: ai_monthly,
+        },
+        message: if advanced_analytics_enabled {
+            message
+        } else {
+            "Upgrade to Pro to unlock advanced earnings analytics.".to_string()
+        },
+    };
+
     Ok(Json(TalentAnalyticsResponse {
         month: month.clone(),
         kpis: TalentAnalyticsKpis {
@@ -2243,21 +2345,9 @@ pub async fn get_analytics(
             active_campaigns,
         },
         campaigns,
-        roi: TalentAnalyticsRoi {
-            traditional: TalentAnalyticsRoiTraditional {
-                per_post_cents: 50_000,
-                time_investment: "4-6 hours".to_string(),
-                posts_per_month: "5-8".to_string(),
-                monthly_earnings_range: "$2,500-$4,000".to_string(),
-            },
-            ai: TalentAnalyticsRoiAi {
-                per_campaign_cents: per_campaign,
-                time_investment: "0 hours/month".to_string(),
-                active_campaigns,
-                monthly_earnings_cents: ai_monthly,
-            },
-            message,
-        },
+        roi,
+        plan_tier,
+        advanced_analytics_enabled,
     }))
 }
 
