@@ -157,6 +157,7 @@ const TalentSideModal = ({
     };
   }, [open, talent?.id]);
 
+
   const formatCampaignAmount = (v: any) => {
     if (v === null || v === undefined || v === "") return "—";
     const n = typeof v === "number" ? v : Number(v);
@@ -260,6 +261,7 @@ const TalentSideModal = ({
       setIsSaving(false);
     }
   };
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
