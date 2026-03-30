@@ -585,8 +585,6 @@ export default function OrganizationSignup() {
           email: data.email,
           password: data.password,
           company_name: data.organization_name,
-          contact_name: data.contact_name || undefined,
-          contact_title: data.contact_title || undefined,
           website: data.website || undefined,
           phone_number: data.phone_number || undefined,
         };
@@ -669,7 +667,6 @@ export default function OrganizationSignup() {
           industry: data.industry,
           primary_goal: data.primary_goal,
           geographic_target: data.geographic_target,
-          provide_creators: data.provide_creators,
           production_type: data.production_type,
           budget_range: data.budget_range,
           creates_for: data.creates_for,
@@ -695,7 +692,10 @@ export default function OrganizationSignup() {
       }
     },
     onSuccess: () => {
-      // Move to Success Page
+      if (flow === "brand") {
+        window.location.href = "/BrandDashboard";
+        return;
+      }
       setSubmitted(true);
     },
     onError: (error) => {
@@ -732,7 +732,7 @@ export default function OrganizationSignup() {
         !formData.password ||
         !formData.confirmPassword ||
         !formData.organization_name ||
-        !formData.contact_name
+        (flow === "agency" && !formData.contact_name)
       ) {
         toast({
           title: t("organizationSignup.missingFieldsTitle"),
@@ -1127,56 +1127,53 @@ export default function OrganizationSignup() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="contact_name"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      {flow === "agency"
-                        ? t("organizationSignup.agentName")
-                        : t("organizationSignup.contactName")}{" "}
-                      *
-                    </Label>
-                    <Input
-                      id="contact_name"
-                      value={formData.contact_name}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          contact_name: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder={t("common.johnDoe")}
-                    />
-                  </div>
+                {flow === "agency" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="contact_name"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("organizationSignup.agentName")} *
+                      </Label>
+                      <Input
+                        id="contact_name"
+                        value={formData.contact_name}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            contact_name: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t("common.johnDoe")}
+                      />
+                    </div>
 
-                  <div>
-                    <Label
-                      htmlFor="contact_title"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      {flow === "agency"
-                        ? t("organizationSignup.agentTitle")
-                        : t("organizationSignup.contactTitle")}
-                    </Label>
-                    <Input
-                      id="contact_title"
-                      value={formData.contact_title}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          contact_title: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder={t(
-                        "organizationSignup.contactTitlePlaceholder",
-                      )}
-                    />
+                    <div>
+                      <Label
+                        htmlFor="contact_title"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("organizationSignup.agentTitle")}
+                      </Label>
+                      <Input
+                        id="contact_title"
+                        value={formData.contact_title}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            contact_title: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t(
+                          "organizationSignup.contactTitlePlaceholder",
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <Label
@@ -1344,49 +1341,6 @@ export default function OrganizationSignup() {
                       "organizationSignup.brandDetails.geographicTargetPlaceholder",
                     )}
                   />
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t(
-                      "organizationSignup.brandDetails.provideCreatorsQuestion",
-                    )}
-                  </Label>
-                  <RadioGroup
-                    value={formData.provide_creators}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, provide_creators: value })
-                    }
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="provide"
-                          id="provide"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="provide"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("organizationSignup.brandDetails.provideCreators")}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="upload"
-                          id="upload"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="upload"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("organizationSignup.brandDetails.uploadOwnAssets")}
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
                 </div>
               </div>
 

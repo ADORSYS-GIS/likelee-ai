@@ -135,10 +135,20 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
+const getBrandInitials = (name: string) => {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "B";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
 // Mock data
 const mockBrand = {
   name: "Urban Apparel Co.",
-  logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200",
+  logo: "",
   industry: "Retail & E-commerce",
   website: "www.urbanapparel.com",
   contact_email: "team@urbanapparel.com",
@@ -1166,7 +1176,7 @@ export default function BrandDashboard() {
           industry: profile?.industry || prev.industry,
           website: profile?.website || prev.website,
           contact_email: profile?.email || prev.contact_email,
-          logo: profile?.logo_url || prev.logo,
+          logo: profile?.logo_url || "",
         }));
       } catch {
         // Keep mock fallback on failure.
@@ -8443,11 +8453,12 @@ export default function BrandDashboard() {
         <h3 className="text-xl font-bold text-gray-900 mb-4">Company Logo</h3>
         <div className="flex items-center gap-6">
           <div className="relative">
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="w-32 h-32 object-cover border-2 border-gray-200 rounded-lg"
-            />
+            <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-lg">
+              <AvatarImage src={brand.logo} alt={brand.name} />
+              <AvatarFallback className="text-2xl font-bold text-gray-700">
+                {getBrandInitials(brand.name)}
+              </AvatarFallback>
+            </Avatar>
             <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
               <Edit className="w-4 h-4 text-gray-600" />
               <input
@@ -10790,22 +10801,24 @@ export default function BrandDashboard() {
         <div className="p-6 border-b border-gray-200">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
-              <img
-                src={brand.logo}
-                alt={brand.name}
-                className="w-12 h-12 object-cover border-2 border-gray-200 rounded-lg"
-              />
+              <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
+                <AvatarImage src={brand.logo} alt={brand.name} />
+                <AvatarFallback className="font-bold text-gray-700">
+                  {getBrandInitials(brand.name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{brand.name}</p>
                 <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
               </div>
             </div>
           ) : (
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="w-12 h-12 object-cover border-2 border-gray-200 rounded-lg mx-auto"
-            />
+            <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
+              <AvatarImage src={brand.logo} alt={brand.name} />
+              <AvatarFallback className="font-bold text-gray-700">
+                {getBrandInitials(brand.name)}
+              </AvatarFallback>
+            </Avatar>
           )}
         </div>
 
