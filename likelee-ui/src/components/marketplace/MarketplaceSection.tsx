@@ -281,8 +281,8 @@ export function MarketplaceSection({
         detailsEndpointBuilder(selectedProfileType, selectedProfileId),
       );
     },
-    maxAge: 30 * 1000, // 30 seconds
-    syncInterval: 30 * 1000,
+    maxAge: 5 * 60 * 1000, // 5 minutes
+    syncInterval: 5 * 60 * 1000,
     staleWhileRevalidate: true,
     enabled: canFetchDetails,
   });
@@ -1267,137 +1267,138 @@ export function MarketplaceSection({
                           marketplaceContract?.disconnect_status || "",
                         ).toLowerCase() === "pending";
 
-                      return enableAgencyContractConnect && marketplaceContract ? (
-                      <Card
-                        className={`p-4 rounded-xl ${
-                          pendingDisconnect
-                            ? "border-rose-200 bg-rose-50/60"
-                            : "border-gray-200"
-                        }`}
-                      >
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h4 className="text-sm font-bold text-gray-900">
-                                Marketplace contract
-                              </h4>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Contract terms for this agency-creator
-                                connection.
-                              </p>
+                      return enableAgencyContractConnect &&
+                        marketplaceContract ? (
+                        <Card
+                          className={`p-4 rounded-xl ${
+                            pendingDisconnect
+                              ? "border-rose-200 bg-rose-50/60"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-900">
+                                  Marketplace contract
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Contract terms for this agency-creator
+                                  connection.
+                                </p>
+                              </div>
+                              {pendingDisconnect ? (
+                                <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
+                                  Creator requested disconnect
+                                </Badge>
+                              ) : null}
                             </div>
-                            {pendingDisconnect ? (
-                              <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                                Creator requested disconnect
-                              </Badge>
-                            ) : null}
-                          </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <Percent className="w-3 h-3" />
-                                Commission
-                              </div>
-                              <p className="font-semibold text-gray-900 mt-1">
-                                {Number(
-                                  marketplaceContract?.commission_rate || 0,
-                                ).toFixed(2)}
-                                %
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <div className="text-gray-500">Status</div>
-                              <p className="font-semibold text-gray-900 mt-1 capitalize">
-                                {String(
-                                  marketplaceContract?.status || "unknown",
-                                ).replaceAll("_", " ")}
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <CalendarDays className="w-3 h-3" />
-                                Start date
-                              </div>
-                              <p className="font-semibold text-gray-900 mt-1">
-                                {marketplaceContract?.valid_from || "—"}
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <CalendarDays className="w-3 h-3" />
-                                End date
-                              </div>
-                              <p className="font-semibold text-gray-900 mt-1">
-                                {marketplaceContract?.valid_until || "—"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {pendingDisconnect ? (
-                            <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
-                              <div className="font-semibold">
-                                Creator is requesting disconnect
-                              </div>
-                              {marketplaceContract?.disconnect_reason ? (
-                                <div className="mt-2 whitespace-pre-wrap">
-                                  {marketplaceContract.disconnect_reason}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <Percent className="w-3 h-3" />
+                                  Commission
                                 </div>
-                              ) : (
-                                <div className="mt-2">
-                                  No reason was provided.
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {Number(
+                                    marketplaceContract?.commission_rate || 0,
+                                  ).toFixed(2)}
+                                  %
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="text-gray-500">Status</div>
+                                <p className="font-semibold text-gray-900 mt-1 capitalize">
+                                  {String(
+                                    marketplaceContract?.status || "unknown",
+                                  ).replaceAll("_", " ")}
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <CalendarDays className="w-3 h-3" />
+                                  Start date
                                 </div>
-                              )}
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {marketplaceContract?.valid_from || "—"}
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <CalendarDays className="w-3 h-3" />
+                                  End date
+                                </div>
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {marketplaceContract?.valid_until || "—"}
+                                </p>
+                              </div>
                             </div>
-                          ) : null}
 
-                          <div className="flex flex-wrap gap-2">
-                            {marketplaceContract?.signed_document_url ? (
-                              <Button
-                                variant="outline"
-                                onClick={() =>
-                                  window.open(
-                                    marketplaceContract.signed_document_url ||
-                                      "",
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  )
-                                }
-                              >
-                                <ExternalLink className="w-4 h-4 mr-2" />
-                                View signed contract
-                              </Button>
-                            ) : null}
                             {pendingDisconnect ? (
-                              <>
-                                <Button
-                                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                                  disabled={disconnectActionLoading !== null}
-                                  onClick={() =>
-                                    setDisconnectDecision("approve")
-                                  }
-                                >
-                                  Approve disconnect
-                                </Button>
+                              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                                <div className="font-semibold">
+                                  Creator is requesting disconnect
+                                </div>
+                                {marketplaceContract?.disconnect_reason ? (
+                                  <div className="mt-2 whitespace-pre-wrap">
+                                    {marketplaceContract.disconnect_reason}
+                                  </div>
+                                ) : (
+                                  <div className="mt-2">
+                                    No reason was provided.
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+
+                            <div className="flex flex-wrap gap-2">
+                              {marketplaceContract?.signed_document_url ? (
                                 <Button
                                   variant="outline"
-                                  className="border-rose-200 text-rose-700"
-                                  disabled={disconnectActionLoading !== null}
                                   onClick={() =>
-                                    setDisconnectDecision("reject")
+                                    window.open(
+                                      marketplaceContract.signed_document_url ||
+                                        "",
+                                      "_blank",
+                                      "noopener,noreferrer",
+                                    )
                                   }
                                 >
-                                  Reject request
+                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                  View signed contract
                                 </Button>
-                              </>
-                            ) : null}
+                              ) : null}
+                              {pendingDisconnect ? (
+                                <>
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    disabled={disconnectActionLoading !== null}
+                                    onClick={() =>
+                                      setDisconnectDecision("approve")
+                                    }
+                                  >
+                                    Approve disconnect
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="border-rose-200 text-rose-700"
+                                    disabled={disconnectActionLoading !== null}
+                                    onClick={() =>
+                                      setDisconnectDecision("reject")
+                                    }
+                                  >
+                                    Reject request
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                      </Card>
+                        </Card>
                       ) : null;
                     })()}
 
-                  <Card className="p-4 border border-gray-200 rounded-xl">
+                    <Card className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">
                         Availability & Rates
                       </h4>

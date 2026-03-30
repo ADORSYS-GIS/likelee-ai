@@ -1478,11 +1478,6 @@ pub async fn get_marketplace_profile_details(
                     }
                 }
             } else {
-                crate::agency_marketplace_contracts::sync_open_contracts_for_agency(
-                    &state,
-                    &effective_agency_id,
-                )
-                .await?;
                 response["marketplace_contract"] =
                     crate::agency_marketplace_contracts::get_latest_contract_for_pair(
                         &state,
