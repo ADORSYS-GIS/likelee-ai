@@ -1281,6 +1281,10 @@ pub async fn sync_contract_for_row(
         .get("valid_until")
         .and_then(|v| v.as_str())
         .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+    let existing_signed_at = row
+        .get("signed_at")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     if next_status == "active" && valid_until.map(|d| d < today).unwrap_or(false) {
         next_status = "expired".to_string();
     }
@@ -1290,7 +1294,13 @@ pub async fn sync_contract_for_row(
         "status": next_status,
         "docuseal_status": live_status,
         "signed_document_url": signed_document_url,
-        "signed_at": if next_status == "active" { json!(chrono::Utc::now().to_rfc3339()) } else { Value::Null },
+        "signed_at": if next_status == "active" {
+            existing_signed_at
+                .map(Value::String)
+                .unwrap_or_else(|| json!(chrono::Utc::now().to_rfc3339()))
+        } else {
+            Value::Null
+        },
         "last_synced_at": chrono::Utc::now().to_rfc3339(),
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
@@ -1380,6 +1390,10 @@ async fn apply_webhook_status_to_contract_row(
         .get("valid_until")
         .and_then(|v| v.as_str())
         .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+    let existing_signed_at = row
+        .get("signed_at")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     if next_status == "active" && valid_until.map(|d| d < today).unwrap_or(false) {
         next_status = "expired".to_string();
     }
@@ -1401,7 +1415,13 @@ async fn apply_webhook_status_to_contract_row(
         "status": next_status,
         "docuseal_status": live_status,
         "signed_document_url": signed_document_url,
-        "signed_at": if next_status == "active" { json!(chrono::Utc::now().to_rfc3339()) } else { Value::Null },
+        "signed_at": if next_status == "active" {
+            existing_signed_at
+                .map(Value::String)
+                .unwrap_or_else(|| json!(chrono::Utc::now().to_rfc3339()))
+        } else {
+            Value::Null
+        },
         "last_synced_at": chrono::Utc::now().to_rfc3339(),
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
@@ -1486,7 +1506,12 @@ pub async fn sync_contract_endpoint(
 
     let agency_id = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("");
     let creator_id = row.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
-    let authorized = auth_user.id == agency_id || auth_user.id == creator_id;
+    let effective_creator_id = if auth_user.role == "creator" || auth_user.role == "talent" {
+        crate::face_profiles::resolve_effective_creator_id(&state, &auth_user).await?
+    } else {
+        auth_user.id.clone()
+    };
+    let authorized = auth_user.id == agency_id || effective_creator_id == creator_id;
     if !authorized {
         return Err((StatusCode::FORBIDDEN, "not authorized".to_string()));
     }

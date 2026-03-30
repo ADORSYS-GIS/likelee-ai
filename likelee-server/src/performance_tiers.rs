@@ -108,6 +108,10 @@ struct ActiveMarketplaceContractRow {
     commission_rate: f64,
 }
 
+fn today_iso() -> String {
+    chrono::Utc::now().date_naive().to_string()
+}
+
 #[derive(Serialize)]
 pub struct CommissionBreakdown {
     pub id: String,
@@ -234,6 +238,7 @@ pub async fn get_performance_tiers(
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
     let agency_id = &auth_user.id;
+    let today = today_iso();
 
     // Parallelize calls
     let (
@@ -298,6 +303,8 @@ pub async fn get_performance_tiers(
             .select("id,creator_id,commission_rate")
             .eq("agency_id", agency_id)
             .eq("status", "active")
+            .lte("valid_from", &today)
+            .gte("valid_until", &today)
             .execute()
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -779,6 +786,7 @@ pub async fn update_talent_commission(
             actual_creator_id = cid.to_string();
         }
     }
+    let today = today_iso();
 
     let contract_guard_resp = state
         .pg
@@ -787,6 +795,8 @@ pub async fn update_talent_commission(
         .eq("agency_id", agency_id)
         .eq("creator_id", &actual_creator_id)
         .eq("status", "active")
+        .lte("valid_from", &today)
+        .gte("valid_until", &today)
         .limit(1)
         .execute()
         .await
@@ -986,6 +996,7 @@ pub async fn bulk_update_talent_commissions(
                 actual_creator_id = cid.to_string();
             }
         }
+        let today = today_iso();
 
         let contract_guard_resp = state
             .pg
@@ -994,6 +1005,8 @@ pub async fn bulk_update_talent_commissions(
             .eq("agency_id", agency_id)
             .eq("creator_id", &actual_creator_id)
             .eq("status", "active")
+            .lte("valid_from", &today)
+            .gte("valid_until", &today)
             .limit(1)
             .execute()
             .await
