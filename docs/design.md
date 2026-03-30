@@ -685,6 +685,12 @@ Face liveness detection prevents spoofing during identity verification using AWS
 
 Voice recording and cloning capabilities for talent profiles.
 
+### Creator Tier Gating
+
+- `free` and `basic` creators cannot create ElevenLabs voice profiles.
+- `pro` creators can create up to 6 creator voice tones/profiles.
+- Agency voice limits remain governed by agency entitlements and are not changed by creator plan logic.
+
 ### Data Model
 
 #### `voice_recordings`
@@ -720,6 +726,83 @@ Voice recording and cloning capabilities for talent profiles.
 
 - **Backend Logic**: `likelee-server/src/voice.rs`
 - **TTS Provider**: ElevenLabs (`ELEVENLABS_API_KEY`)
+
+---
+
+## Creator Billing & Entitlements
+
+Creator subscriptions are backed by Stripe and persisted directly on the creator profile.
+
+### Plans
+
+- `free`
+  - fallback state when no active paid creator subscription exists
+  - capped at 15 combined public categories
+- `basic` (`$25/mo`)
+  - likeness profile
+  - KYC
+  - agency connection
+  - up to 15 combined `content_types` + `industries`
+- `pro` (`$50/mo`)
+  - everything in Basic
+  - Cameo uploads
+  - unauthorized-use monitoring access
+  - ElevenLabs voice profile creation for up to 6 tones
+  - advanced earnings analytics
+
+### Data Model
+
+#### `creators`
+
+- `plan_tier` (text, default `free`)
+- `stripe_customer_id` (text, nullable)
+- `stripe_subscription_id` (text, nullable)
+- `plan_updated_at` (timestamptz, nullable)
+
+#### `creator_subscription_events`
+
+- `id` (uuid, PK)
+- `creator_id` (uuid, FK to `creators`)
+- `provider` (text, default `stripe`)
+- `stripe_customer_id` (text, nullable)
+- `stripe_subscription_id` (text, nullable)
+- `event_type` (text)
+- `plan_tier` (text)
+- `subscription_status` (text)
+- `payload_json` (jsonb)
+- `created_at` (timestamptz)
+
+### Entitlement Rules
+
+- category cap is enforced at creator profile save time using the combined distinct count of:
+  - `content_types`
+  - `industries`
+- creator plan checks must resolve the effective creator id for both `creator` and `talent` users
+- entitlement enforcement is backend-first; UI only mirrors the locked/unlocked state
+
+### API Endpoints
+
+- `POST /api/creator/billing/checkout`
+  - Creates Stripe checkout for `basic` or `pro`
+- `GET /api/creator/billing/status`
+  - Returns creator plan and derived entitlements
+- `GET /api/talent/me`
+  - Returns `plan_tier` and creator entitlement metadata for dashboard bootstrapping
+- `GET /api/talent/analytics`
+  - Returns stable analytics payload plus `advanced_analytics_enabled`
+
+### UI Behavior
+
+- Basic onboarding should still expose core creator flows:
+  - likeness profile
+  - KYC
+  - agency connection
+- Pro-only features should not appear as dead-end actions.
+- Locked surfaces should route creators toward upgrade instead of failing late:
+  - voice profile creation
+  - advanced analytics
+  - unauthorized-use monitoring
+  - Cameo upload workflows
 
 ---
 
