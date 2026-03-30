@@ -2671,37 +2671,6 @@ export default function CreatorDashboard() {
     return getTranslatedVibes()[index];
   };
 
-  // Creator profile state (declare before any hooks that reference `creator`)
-  const [creator, setCreator] = useState<any>({
-    name: profile?.full_name || user?.user_metadata?.full_name || "",
-    email: profile?.email || user?.email || "",
-    profile_photo: profile?.profile_photo_url || "",
-    location: "",
-    bio: "",
-    birthday: "",
-    gender: "",
-    ethnicity: "",
-    creator_type: "",
-    race: "",
-    hair_color: "",
-    eye_color: "",
-    height_cm: "",
-    instagram_handle: "",
-    tiktok_handle: "",
-    portfolio_url: "",
-    instagram_connected: false,
-    content_types: [] as string[],
-    industries: [] as string[],
-    vibes: [] as string[],
-    content_restrictions: [] as string[],
-    brand_exclusivity: [] as string[],
-    price_per_month: 0,
-    royalty_percentage: 0,
-    accept_negotiations: true,
-    is_public_brands: resolvePublicBrandsVisibility(profile),
-    kyc_rejection_reason: profile?.kyc_rejection_reason || null,
-  });
-
   useEffect(() => {
     const handleResize = () => {
       const small = window.innerWidth < 1024;
