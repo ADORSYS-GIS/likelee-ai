@@ -13,6 +13,7 @@ import {
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
 import {
+  getCreatorBillingStatus,
   listTalentAgencyInvites,
   listTalentAssetRequests,
   listTalentBookings,
@@ -120,6 +121,7 @@ import {
   BadgeCheck,
   Sparkles,
   ChevronDown,
+  Crown,
 } from "lucide-react";
 import {
   LineChart,
@@ -806,7 +808,8 @@ export default function CreatorDashboard() {
     return new URL(normalizedPath, normalizedBase).toString();
   };
   const [activeSection, setActiveSection] = useState("dashboard");
-  const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
+  const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
+  const [creatorBilling, setCreatorBilling] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -1701,7 +1704,10 @@ export default function CreatorDashboard() {
       });
       return { bookings: items, campaigns: Array.from(campaignMap.values()) };
     } catch (e) {
-      console.error("Failed to load bookings", e);
+      const message = e instanceof Error ? e.message : String(e || "");
+      if (!message.toLowerCase().includes("talent profile not found")) {
+        console.error("Failed to load bookings", e);
+      }
       return { bookings: [], campaigns: [] };
     }
   };
@@ -2873,6 +2879,10 @@ export default function CreatorDashboard() {
 
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
+    if (!creatorCanUseKyc) {
+      navigate("/CreatorSubscribe");
+      return;
+    }
     if (!authenticated || !user?.id) {
       toast({
         variant: "destructive",
@@ -3020,6 +3030,176 @@ export default function CreatorDashboard() {
     }
   }, [activeSection, brandConnectionRequests, directBrandOffers]);
 
+  // Initialize active section from query string if provided
+  useEffect(() => {
+    const s = searchParams.get("section");
+    if (!s) return;
+    const validIds = navigationItems.map((n) => n.id);
+    if (validIds.includes(s)) {
+      setActiveSection(s);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextSettings = searchParams.get("settings");
+    if (!nextSettings) return;
+    if (nextSettings === "profile" || nextSettings === "rules" || nextSettings === "billing") {
+      setSettingsTab(nextSettings);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBilling() {
+      try {
+        const resp = await getCreatorBillingStatus();
+        if (!cancelled) {
+          setCreatorBilling(resp);
+        }
+      } catch (error) {
+        console.error("Failed to load creator billing status", error);
+      }
+    }
+    void loadBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
+  const creatorCategoryLimit =
+    typeof creatorBilling?.category_limit === "number"
+      ? creatorBilling.category_limit
+      : 15;
+  const creatorVoiceLimit =
+    typeof creatorBilling?.voice_tone_limit === "number"
+      ? creatorBilling.voice_tone_limit
+      : 0;
+  const creatorCanUseKyc =
+    typeof creatorBilling?.can_use_kyc === "boolean"
+      ? creatorBilling.can_use_kyc
+      : creatorPlanTier !== "free";
+  const creatorCanUseLikeness =
+    typeof creatorBilling?.can_use_likeness === "boolean"
+      ? creatorBilling.can_use_likeness
+      : creatorPlanTier !== "free";
+  const creatorCanUseAgencyConnection =
+    typeof creatorBilling?.can_use_agency_connection === "boolean"
+      ? creatorBilling.can_use_agency_connection
+      : creatorPlanTier !== "free";
+  const creatorCanUseBrandConnection =
+    typeof creatorBilling?.can_use_brand_connection === "boolean"
+      ? creatorBilling.can_use_brand_connection
+      : creatorPlanTier !== "free";
+  const creatorCanUsePayouts =
+    typeof creatorBilling?.can_use_payouts === "boolean"
+      ? creatorBilling.can_use_payouts
+      : creatorPlanTier !== "free";
+  const creatorCanUseVoice = !!creatorBilling?.can_use_voice_profiles;
+  const creatorCanUseMonitoring = !!creatorBilling?.can_use_unauthorized_monitoring;
+  const creatorCanUseAdvancedAnalytics = !!creatorBilling?.can_use_advanced_analytics;
+  const creatorCanUseJobs =
+    typeof creatorBilling?.can_use_jobs === "boolean"
+      ? creatorBilling.can_use_jobs
+      : creatorPlanTier === "pro";
+  const creatorCanUseRules =
+    typeof creatorBilling?.can_use_rules === "boolean"
+      ? creatorBilling.can_use_rules
+      : creatorPlanTier === "pro";
+  const creatorCanUseTalentPortal =
+    typeof creatorBilling?.can_use_talent_portal === "boolean"
+      ? creatorBilling.can_use_talent_portal
+      : creatorPlanTier === "pro";
+  const creatorCanUseCampaignArchive =
+    typeof creatorBilling?.can_use_campaign_archive === "boolean"
+      ? creatorBilling.can_use_campaign_archive
+      : creatorPlanTier === "pro";
+  const creatorCanUseActiveCampaigns =
+    typeof creatorBilling?.can_use_active_campaigns === "boolean"
+      ? creatorBilling.can_use_active_campaigns
+      : creatorPlanTier === "pro";
+  const creatorPlanLabel =
+    creatorPlanTier === "pro"
+      ? "Pro Creator"
+      : creatorPlanTier === "basic"
+        ? "Basic Creator"
+        : "Free Creator";
+  const creatorPlanBadgeClass =
+    creatorPlanTier === "pro"
+      ? "bg-[#1A2140] text-white border-[#1A2140]"
+      : creatorPlanTier === "basic"
+        ? "bg-[#ECFAFC] text-[#136B86] border-[#BFEAF0]"
+        : "bg-white text-[#5B667A] border-[#E2E8F0]";
+  const currentCreatorKycReason = formatKycReason(
+    creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
+  );
+  const normalizedCreatorStatus = String(creator?.kyc_status || "")
+    .trim()
+    .toLowerCase();
+  const isCreatorApproved = normalizedCreatorStatus === "approved";
+  const isCreatorPending = normalizedCreatorStatus === "pending";
+  const isCreatorRejected =
+    normalizedCreatorStatus === "rejected" ||
+    normalizedCreatorStatus === "declined";
+  const hasCreatorPendingFollowUp =
+    isCreatorPending && currentCreatorKycReason.length > 0;
+  const verificationButtonLabel = isCreatorPending
+    ? savedKycSessionUrl
+      ? t(
+          hasCreatorPendingFollowUp
+            ? "creatorDashboard.verificationStatus.continueVerification"
+            : "creatorDashboard.verificationStatus.resumeVerification",
+          hasCreatorPendingFollowUp
+            ? "Continue Verification"
+            : "Resume Verification",
+        )
+      : t(
+          "creatorDashboard.verificationStatus.restartVerification",
+          "Start New Verification",
+        )
+    : isCreatorRejected
+      ? t(
+          "creatorDashboard.verificationStatus.retryVerification",
+          "Retry Verification",
+        )
+      : t("creatorDashboard.verificationStatus.completeVerification");
+
+  useEffect(() => {
+    const lockedFallback = creatorPlanTier === "free" ? "content" : "dashboard";
+    const inaccessible =
+      (activeSection === "dashboard" && creatorPlanTier === "free") ||
+      (activeSection === "likeness" && !creatorCanUseLikeness) ||
+      (activeSection === "voice" && !creatorCanUseVoice) ||
+      (activeSection === "campaigns" && !creatorCanUseActiveCampaigns) ||
+      (activeSection === "archive" && !creatorCanUseCampaignArchive) ||
+      (activeSection === "earnings" && !creatorCanUsePayouts) ||
+      (activeSection === "agency-connection" && !creatorCanUseAgencyConnection) ||
+      (activeSection === "brand-connection" && !creatorCanUseBrandConnection) ||
+      (activeSection === "talent-portal" &&
+        (!creatorCanUseTalentPortal || !talentPortalEnabled));
+    if (inaccessible) {
+      setActiveSection(lockedFallback);
+    }
+  }, [
+    activeSection,
+    creatorCanUseActiveCampaigns,
+    creatorCanUseAgencyConnection,
+    creatorCanUseBrandConnection,
+    creatorCanUseCampaignArchive,
+    creatorCanUseLikeness,
+    creatorCanUsePayouts,
+    creatorCanUseTalentPortal,
+    creatorCanUseVoice,
+    creatorPlanTier,
+    talentPortalEnabled,
+  ]);
+
+  useEffect(() => {
+    if (settingsTab === "rules" && !creatorCanUseRules) {
+      setSettingsTab("billing");
+    }
+  }, [creatorCanUseRules, settingsTab]);
+
   const navigationItems: Array<{
     id: string;
     label: string;
@@ -3027,12 +3207,18 @@ export default function CreatorDashboard() {
     badge?: number;
     urgent?: boolean;
     disabled?: boolean;
+    locked?: boolean;
+    requiredPlan?: "basic" | "pro";
+    premiumFeature?: string;
     onClick?: () => void;
   }> = [
     {
       id: "dashboard",
       label: t("creatorDashboard.nav.dashboard"),
       icon: LayoutDashboard,
+      locked: creatorPlanTier === "free",
+      requiredPlan: "basic",
+      premiumFeature: "Basic creator access",
     },
     {
       id: "content",
@@ -3043,18 +3229,34 @@ export default function CreatorDashboard() {
       id: "likeness",
       label: t("creatorDashboard.nav.likeness"),
       icon: ImageIcon,
+      locked: !creatorCanUseLikeness,
+      requiredPlan: "basic",
+      premiumFeature: "My Likeness",
     },
-    { id: "voice", label: t("creatorDashboard.nav.voice"), icon: Mic },
+    {
+      id: "voice",
+      label: t("creatorDashboard.nav.voice"),
+      icon: Mic,
+      locked: !creatorCanUseVoice,
+      requiredPlan: "pro",
+      premiumFeature: "ElevenLabs voice profiles",
+    },
     {
       id: "campaigns",
       label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
+      locked: !creatorCanUseActiveCampaigns,
+      requiredPlan: "pro",
+      premiumFeature: "Active Campaigns",
       badge: activeCampaigns.length,
     },
     {
       id: "jobs",
       label: "Jobs",
       icon: Briefcase,
+      locked: !creatorCanUseJobs,
+      requiredPlan: "pro",
+      premiumFeature: "Jobs",
       onClick: () => {
         navigate(createPageUrl("Jobs"));
       },
@@ -3063,6 +3265,9 @@ export default function CreatorDashboard() {
       id: "approvals",
       label: t("creatorDashboard.nav.approvals"),
       icon: CheckSquare,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Brand workflow approvals",
       badge: pendingCount,
       urgent: pendingCount > 0,
     },
@@ -3070,12 +3275,18 @@ export default function CreatorDashboard() {
       id: "archive",
       label: t("creatorDashboard.nav.archive"),
       icon: Archive,
+      locked: !creatorCanUseCampaignArchive,
+      requiredPlan: "pro",
+      premiumFeature: "Campaign Archives",
       badge: undefined,
     },
     {
       id: "contracts",
       label: t("creatorDashboard.nav.contracts"),
       icon: FileText,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Licenses & Contracts",
       badge:
         contracts.filter((c) => c.status === "expiring_soon").length > 0
           ? contracts.filter((c) => c.status === "expiring_soon").length
@@ -3085,6 +3296,9 @@ export default function CreatorDashboard() {
       id: "earnings",
       label: t("creatorDashboard.nav.payouts"),
       icon: WalletIcon,
+      locked: !creatorCanUsePayouts,
+      requiredPlan: "basic",
+      premiumFeature: "Payouts",
     },
     {
       id: "settings",
@@ -3095,8 +3309,14 @@ export default function CreatorDashboard() {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
-      disabled: !talentPortalEnabled,
+      locked: !creatorCanUseTalentPortal,
+      requiredPlan: "pro",
+      disabled: creatorCanUseTalentPortal && !talentPortalEnabled,
       onClick: () => {
+        if (!creatorCanUseTalentPortal) {
+          navigate("/CreatorSubscribe");
+          return;
+        }
         if (!talentPortalEnabled) {
           toast({
             title: "Talent Portal",
@@ -3111,6 +3331,9 @@ export default function CreatorDashboard() {
       id: "agency-connection",
       label: "Agency Connection",
       icon: LinkIcon,
+      locked: !creatorCanUseAgencyConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Agency Connection",
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
@@ -3120,22 +3343,72 @@ export default function CreatorDashboard() {
       id: "brand-connection",
       label: "Brand Connection",
       icon: LinkIcon,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Brand Connection",
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
   ];
 
-  // Initialize active section from query string if provided
-  useEffect(() => {
-    const s = searchParams.get("section");
-    if (!s) return;
-    const validIds = navigationItems.map((n) => n.id);
-    if (validIds.includes(s)) {
-      setActiveSection(s);
-    }
-  }, [searchParams]);
-
   const [contentTab, setContentTab] = useState("brand_content");
+
+  const renderCreatorPlanBanner = () => (
+    <Card className="border border-[#0C1630] bg-gradient-to-r from-[#050B18] via-[#0D1B34] to-[#17345A] text-white shadow-[0_18px_50px_rgba(5,11,24,0.28)]">
+      <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={`border ${creatorPlanBadgeClass}`}>
+              <Crown className="mr-1 h-3.5 w-3.5" />
+              {creatorPlanLabel}
+            </Badge>
+            {creatorPlanTier !== "pro" && (
+              <Badge className="border border-[#F2D59C] bg-[#FFF7E6] text-[#9A6A08]">
+                Upgrade recommended
+              </Badge>
+            )}
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">
+              {creatorPlanTier === "pro"
+                ? "Your Pro creator plan is active."
+                : creatorPlanTier === "basic"
+                  ? "You’re on Basic. Complete KYC to become visible to brands and agencies."
+                  : "You’re on Free. Upgrade to Basic to unlock creator visibility and monetization."}
+            </h3>
+            <p className="text-sm text-white/75">
+              {creatorPlanTier === "pro"
+                ? "Cameo uploads, jobs, voice, Talent Portal, campaign archives, and Active Campaigns are available."
+                : creatorPlanTier === "basic"
+                  ? "Basic unlocks KYC, My Likeness, agency and brand connections, and payouts. Pro adds jobs, voice, Talent Portal, campaign archives, and Active Campaigns."
+                  : "Without Basic and approved KYC, you cannot be visible in the marketplace or managed by brands and agencies."}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {creatorPlanTier !== "pro" && (
+            <Button
+              onClick={() => navigate("/CreatorSubscribe")}
+              className="rounded-full bg-[#16324F] px-5 text-white hover:bg-[#10263D]"
+            >
+              <Crown className="mr-2 h-4 w-4" />
+              Upgrade plan
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              setActiveSection("settings");
+              setSettingsTab("billing");
+            }}
+            className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+          >
+            Manage billing
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
 
   const renderContent = () => {
     const showingExamples = contentItems.length === 0;
@@ -4647,6 +4920,20 @@ export default function CreatorDashboard() {
         content_types: cleaned_current.filter((t) => t !== type),
       });
     } else {
+      const combinedCount =
+        new Set([...(cleaned_current || []), ...(creator.industries || [])]).size;
+      if (
+        creatorPlanTier !== "pro" &&
+        creatorPlanTier !== "enterprise" &&
+        combinedCount >= creatorCategoryLimit
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Category limit reached",
+          description: `Basic creators can select up to ${creatorCategoryLimit} combined categories.`,
+        });
+        return;
+      }
       setCreator({ ...creator, content_types: [...cleaned_current, type] });
     }
   };
@@ -4659,6 +4946,20 @@ export default function CreatorDashboard() {
         industries: current.filter((i) => i !== industry),
       });
     } else {
+      const combinedCount =
+        new Set([...(creator.content_types || []), ...(current || [])]).size;
+      if (
+        creatorPlanTier !== "pro" &&
+        creatorPlanTier !== "enterprise" &&
+        combinedCount >= creatorCategoryLimit
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Category limit reached",
+          description: `Basic creators can select up to ${creatorCategoryLimit} combined categories.`,
+        });
+        return;
+      }
       setCreator({ ...creator, industries: [...current, industry] });
     }
   };
@@ -4863,6 +5164,42 @@ export default function CreatorDashboard() {
   };
 
   const renderMarketplaceVerificationBar = () => {
+    if (!creatorCanUseKyc) {
+      return (
+        <div className="rounded-2xl bg-gradient-to-r from-[#F7FBFF] via-[#EFF7FF] to-[#FFF8EF] px-4 py-3 shadow-sm ring-1 ring-[#D9E7F5] sm:px-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5">
+                <ShieldAlert className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    Upgrade to Basic to start KYC
+                  </p>
+                  <Badge className="rounded-full border-0 bg-white/90 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm">
+                    Basic required
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm leading-6 text-gray-600">
+                  Without Basic and approved KYC, your creator profile cannot
+                  be visible in the marketplace or managed by brands and
+                  agencies.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/CreatorSubscribe")}
+              className="h-10 rounded-full bg-[#0F172A] px-4 text-white hover:bg-black"
+            >
+              <Crown className="mr-2 h-4 w-4" />
+              Upgrade plan
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     const currentKycStatus = creator?.kyc_status ?? profile?.kyc_status;
     const currentKycReason = formatKycReason(
       creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
@@ -5047,40 +5384,6 @@ export default function CreatorDashboard() {
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
-    const currentCreatorKycReason = formatKycReason(
-      creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
-    );
-    const normalizedCreatorStatus = String(creator?.kyc_status || "")
-      .trim()
-      .toLowerCase();
-    const isCreatorApproved = normalizedCreatorStatus === "approved";
-    const isCreatorPending = normalizedCreatorStatus === "pending";
-    const isCreatorRejected =
-      normalizedCreatorStatus === "rejected" ||
-      normalizedCreatorStatus === "declined";
-    const hasCreatorPendingFollowUp =
-      isCreatorPending && currentCreatorKycReason.length > 0;
-    const verificationButtonLabel = isCreatorPending
-      ? savedKycSessionUrl
-        ? t(
-            hasCreatorPendingFollowUp
-              ? "creatorDashboard.verificationStatus.continueVerification"
-              : "creatorDashboard.verificationStatus.resumeVerification",
-            hasCreatorPendingFollowUp
-              ? "Continue Verification"
-              : "Resume Verification",
-          )
-        : t(
-            "creatorDashboard.verificationStatus.restartVerification",
-            "Start New Verification",
-          )
-      : isCreatorRejected
-        ? t(
-            "creatorDashboard.verificationStatus.retryVerification",
-            "Retry Verification",
-          )
-        : t("creatorDashboard.verificationStatus.completeVerification");
-
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -5165,14 +5468,20 @@ export default function CreatorDashboard() {
           </Card>
           <Card
             className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-            onClick={() => setActiveSection("voice")}
+            onClick={() =>
+              creatorCanUseVoice
+                ? setActiveSection("voice")
+                : navigate("/CreatorSubscribe")
+            }
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Mic className="w-6 h-6 text-purple-600" />
               </div>
               <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                {voiceLibrary.length}/6
+                {creatorCanUseVoice
+                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
+                  : "Pro"}
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -5263,10 +5572,20 @@ export default function CreatorDashboard() {
                 <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
-                {voiceLibrary.length}/6
+                {creatorCanUseVoice
+                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
+                  : "Pro only"}
               </div>
               <Progress
-                value={Math.min(voiceLibrary.length * (100 / 6), 100)}
+                value={
+                  creatorCanUseVoice
+                    ? Math.min(
+                        voiceLibrary.length *
+                          (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))),
+                        100,
+                      )
+                    : 0
+                }
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -5896,6 +6215,26 @@ export default function CreatorDashboard() {
 
   const renderVoice = () => (
     <div className="space-y-6">
+      {!creatorCanUseVoice ? (
+        <Card className="p-8 bg-white border border-[#C7B8FF]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Voice Profiles</h2>
+              <p className="text-gray-600 mt-2">
+                Upgrade to Pro to unlock ElevenLabs voice profile creation for up to{" "}
+                {Math.max(creatorVoiceLimit, 6)} tones.
+              </p>
+            </div>
+            <Button
+              className="bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+              onClick={() => navigate("/CreatorSubscribe")}
+            >
+              Upgrade to Pro
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
@@ -6115,6 +6454,8 @@ export default function CreatorDashboard() {
           {t("creatorDashboard.voice.tips.message")}
         </p>
       </div>
+        </>
+      )}
     </div>
   );
 
@@ -9786,29 +10127,19 @@ export default function CreatorDashboard() {
         },
       );
 
-      // Persist category selections to profiles table as well
-      const profileStatus = await supabase
-        .from("creators")
-        .update({
-          content_types:
-            showRatesModal === "content"
-              ? tempContentTypes
-              : creator.content_types,
-          industries:
-            showRatesModal === "industry" ? tempIndustries : creator.industries,
-        })
-        .eq("id", user.id);
-
-      if (profileStatus.error) {
-        throw new Error(
-          `Profile update failed: ${profileStatus.error.message}`,
-        );
-      }
-
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Failed to save rates: ${errorText}`);
       }
+
+      await handleSaveRules(undefined, {
+        content_types:
+          showRatesModal === "content"
+            ? tempContentTypes
+            : creator.content_types,
+        industries:
+          showRatesModal === "industry" ? tempIndustries : creator.industries,
+      });
 
       // Update local state immediately to ensure UI is snappy
       setCustomRates(finalRates);
@@ -9882,14 +10213,29 @@ export default function CreatorDashboard() {
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
         <button
-          onClick={() => setSettingsTab("rules")}
+          onClick={() =>
+            creatorCanUseRules ? setSettingsTab("rules") : navigate("/CreatorSubscribe")
+          }
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
             settingsTab === "rules"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
         >
-          {t("creatorDashboard.settingsView.tabs.rules")}
+          <span className="inline-flex items-center gap-2">
+            {t("creatorDashboard.settingsView.tabs.rules")}
+            {!creatorCanUseRules && <Crown className="h-4 w-4 text-amber-500" />}
+          </span>
+        </button>
+        <button
+          onClick={() => setSettingsTab("billing")}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "billing"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Billing
         </button>
       </div>
 
@@ -10302,6 +10648,11 @@ export default function CreatorDashboard() {
             </div>
 
             <div className="p-6 pt-2 space-y-8">
+              <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+                {creatorPlanTier === "pro"
+                  ? "Pro creators have unlimited category selection."
+                  : `You are on the ${creatorPlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
+              </div>
               {/* Content I'm Open To */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -10552,6 +10903,202 @@ export default function CreatorDashboard() {
                     }}
                     className="data-[state=checked]:bg-[#32C8D1]"
                   />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {settingsTab === "billing" && (
+        <div className="space-y-6">
+          <Card className="overflow-hidden border border-[#DDE5EF] bg-white shadow-sm">
+            <div className="border-b border-[#E7EDF5] bg-gradient-to-r from-[#F9FBFE] to-[#F5F8FC] px-6 py-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-[#142033]">
+                      Creator subscription
+                    </h3>
+                    <Badge
+                      className={
+                        creatorPlanTier === "pro"
+                          ? "border-0 bg-[#1A2140] text-white"
+                          : creatorPlanTier === "basic"
+                            ? "border border-[#BFEAF0] bg-[#ECFAFC] text-[#136B86]"
+                            : "border border-[#E2E8F0] bg-white text-[#5B667A]"
+                      }
+                    >
+                      {creatorPlanTier === "pro"
+                        ? "Pro"
+                        : creatorPlanTier === "basic"
+                          ? "Basic"
+                          : "Free"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-[#5A6880]">
+                    Manage your creator plan, see what is currently unlocked,
+                    and upgrade when you’re ready for more workflow tools.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/CreatorSubscribe")}
+                  className="rounded-full border-[#D5DEEA] bg-white text-[#21314D] hover:bg-[#F6F9FC]"
+                >
+                  {creatorPlanTier === "pro" ? "Manage subscription" : "View plans"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-6 p-6 lg:grid-cols-[1.25fr_0.95fr]">
+              <div className="rounded-3xl border border-[#E3EAF3] bg-[#FCFDFE] p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
+                      Current access
+                    </div>
+                    <div className="mt-1 text-2xl font-bold text-[#142033]">
+                      {creatorPlanTier === "pro"
+                        ? "Pro creator access"
+                        : creatorPlanTier === "basic"
+                          ? "Basic creator access"
+                          : "Free creator access"}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-[#DCE6F2] bg-white px-4 py-3 text-right shadow-sm">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7A889F]">
+                      Plan
+                    </div>
+                    <div className="mt-1 text-3xl font-black text-[#142033]">
+                      {creatorPlanTier === "pro"
+                        ? "Pro"
+                        : creatorPlanTier === "basic"
+                          ? "Basic"
+                          : "Free"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  {[
+                    {
+                      label: "Content",
+                      value: "Included for all creators",
+                      included: true,
+                    },
+                    {
+                      label: "KYC access",
+                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
+                      included: creatorCanUseKyc,
+                    },
+                    {
+                      label: "My Likeness",
+                      value: creatorCanUseLikeness ? "Included" : "Upgrade to Basic",
+                      included: creatorCanUseLikeness,
+                    },
+                    {
+                      label: "Payouts",
+                      value: creatorCanUsePayouts ? "Included" : "Upgrade to Basic",
+                      included: creatorCanUsePayouts,
+                    },
+                    {
+                      label: "My Rules",
+                      value: creatorCanUseRules ? "Included" : "Pro only",
+                      included: creatorCanUseRules,
+                    },
+                    {
+                      label: "Voice",
+                      value: creatorCanUseVoice
+                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
+                        : "Pro only",
+                      included: creatorCanUseVoice,
+                    },
+                    {
+                      label: "Jobs",
+                      value: creatorCanUseJobs ? "Included" : "Pro only",
+                      included: creatorCanUseJobs,
+                    },
+                    {
+                      label: "Active Campaigns",
+                      value: creatorCanUseActiveCampaigns ? "Included" : "Pro only",
+                      included: creatorCanUseActiveCampaigns,
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-2xl border border-[#E6EDF5] bg-white px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
+                            item.included
+                              ? "bg-[#E8F7FB] text-[#1683A3]"
+                              : item.value === "Pro only"
+                                ? "bg-[#FFF4DA] text-[#B7791F]"
+                                : "bg-[#F1F5F9] text-[#718096]"
+                          }`}
+                        >
+                          {item.included ? (
+                            <Check className="h-4 w-4" />
+                          ) : item.value === "Pro only" ? (
+                            <Crown className="h-4 w-4" />
+                          ) : (
+                            <Shield className="h-4 w-4" />
+                          )}
+                        </span>
+                        <div>
+                          <div className="text-sm font-semibold text-[#142033]">
+                            {item.label}
+                          </div>
+                          <div className="text-sm text-[#5A6880]">{item.value}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
+                  <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
+                    Recommended next step
+                  </div>
+                  <div className="mt-2 text-2xl font-bold text-[#142033]">
+                    {creatorPlanTier === "free"
+                      ? "Move to Basic"
+                      : creatorPlanTier === "basic"
+                        ? "Move to Pro"
+                        : "You’re fully unlocked"}
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#5A6880]">
+                    {creatorPlanTier === "free"
+                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
+                      : creatorPlanTier === "basic"
+                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
+                        : "Your current plan includes the full creator workflow toolset."}
+                  </p>
+                  {creatorPlanTier !== "pro" && (
+                    <Button
+                      className="mt-5 rounded-full bg-[#16324F] px-5 text-white hover:bg-[#10263D]"
+                      onClick={() => navigate("/CreatorSubscribe")}
+                    >
+                      {creatorPlanTier === "free" ? "Upgrade to Basic" : "Upgrade to Pro"}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="rounded-3xl border border-[#F1E4BA] bg-[#FFFBEF] p-6">
+                  <div className="flex items-center gap-2 text-[#8A6410]">
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-semibold uppercase tracking-[0.16em]">
+                      Visibility reminder
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#6F5A23]">
+                    Without Basic and approved KYC, a creator cannot be visible
+                    in the marketplace or be managed by agencies and brands.
+                  </p>
                 </div>
               </div>
             </div>
@@ -10842,6 +11389,10 @@ export default function CreatorDashboard() {
                   key={item.id}
                   onClick={() => {
                     if (item.disabled) return;
+                    if (item.locked) {
+                      navigate("/CreatorSubscribe");
+                      return;
+                    }
                     if (item.onClick) {
                       item.onClick();
                       return;
@@ -10863,6 +11414,17 @@ export default function CreatorDashboard() {
                       <span className="flex-1 text-left font-medium">
                         {item.label}
                       </span>
+                      {item.locked && (
+                        item.requiredPlan === "pro" ? (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF4DA] text-[#B7791F]">
+                            <Crown className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E8F7FB] text-[#1683A3]">
+                            <Shield className="h-3.5 w-3.5" />
+                          </span>
+                        )
+                      )}
                       {item.badge !== undefined && item.badge > 0 && (
                         <Badge
                           className={`${item.urgent ? "bg-red-500" : "bg-gray-500"} text-white`}
@@ -10991,6 +11553,9 @@ export default function CreatorDashboard() {
           {activeSection !== "settings" &&
             activeSection !== "talent-portal" &&
             renderMarketplaceVerificationBar()}
+          {activeSection !== "talent-portal" && (
+            <div className="mb-6">{renderCreatorPlanBanner()}</div>
+          )}
           {activeSection === "dashboard" && renderDashboard()}
           {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
