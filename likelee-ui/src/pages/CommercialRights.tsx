@@ -115,7 +115,9 @@ export default function CommercialRights() {
               Get Started
             </Button>
             <Button
-              onClick={() => navigate(createBookDemoUrl("commercial_rights_hero"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("commercial_rights_hero"))
+              }
               variant="outline"
               className="h-16 px-12 text-lg font-medium border-2 border-black rounded-none"
             >
@@ -232,7 +234,9 @@ export default function CommercialRights() {
               Get Started
             </Button>
             <Button
-              onClick={() => navigate(createBookDemoUrl("commercial_rights_cta"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("commercial_rights_cta"))
+              }
               variant="outline"
               className="h-16 px-12 text-lg font-medium bg-transparent hover:bg-white/10 text-white border-2 border-white rounded-none"
             >

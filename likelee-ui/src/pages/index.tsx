@@ -258,10 +258,7 @@ function _getCurrentPage(url) {
   if (loweredUrl === "/book-demo" || loweredUrl === "/bookdemo") {
     return "BookDemo";
   }
-  if (
-    loweredUrl === "/bookdemothanks" ||
-    loweredUrl === "/book-demo/thanks"
-  ) {
+  if (loweredUrl === "/bookdemothanks" || loweredUrl === "/book-demo/thanks") {
     return "BookDemoThanks";
   }
 

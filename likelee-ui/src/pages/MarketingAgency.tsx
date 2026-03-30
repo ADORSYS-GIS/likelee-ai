@@ -56,7 +56,9 @@ export default function MarketingAgency() {
           </h1>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createBookDemoUrl("marketing_agency_hero"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("marketing_agency_hero"))
+              }
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
               {t("bookDemo")}
@@ -315,7 +317,9 @@ export default function MarketingAgency() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createBookDemoUrl("marketing_agency_cta"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("marketing_agency_cta"))
+              }
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
               {t("bookADemo")}

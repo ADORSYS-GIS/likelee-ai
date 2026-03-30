@@ -104,7 +104,9 @@ export default function BrandsStudios() {
                 Browse Creator Marketplace
               </Button>
               <Button
-                onClick={() => navigate(createBookDemoUrl("brands_studios_hero"))}
+                onClick={() =>
+                  navigate(createBookDemoUrl("brands_studios_hero"))
+                }
                 variant="outline"
                 className="h-14 px-10 text-base font-medium border-2 border-black rounded-none"
               >

@@ -100,7 +100,9 @@ export function extractDemoBookingContext(
     typeof inviteeData.name === "string" && inviteeData.name.trim().length > 0
       ? inviteeData.name.trim()
       : [inviteeData.first_name, inviteeData.last_name]
-          .filter((value) => typeof value === "string" && value.trim().length > 0)
+          .filter(
+            (value) => typeof value === "string" && value.trim().length > 0,
+          )
           .join(" ");
 
   return {
@@ -110,7 +112,9 @@ export function extractDemoBookingContext(
     eventTypeUuid:
       typeof eventData.uuid === "string" ? eventData.uuid : undefined,
     eventStartTime:
-      typeof eventData.start_time === "string" ? eventData.start_time : undefined,
+      typeof eventData.start_time === "string"
+        ? eventData.start_time
+        : undefined,
     eventEndTime:
       typeof eventData.end_time === "string" ? eventData.end_time : undefined,
     inviteeUuid:
