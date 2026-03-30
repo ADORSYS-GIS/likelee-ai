@@ -2404,18 +2404,54 @@ export default function TalentPortal({
                               const agencyLabel =
                                 c.agencies?.agency_name ||
                                 String(c.agency_id || "");
+                              const requiresApproval =
+                                String(
+                                  c?.marketplace_contract?.status || "",
+                                ).toLowerCase() === "active";
+                              const pendingDisconnect =
+                                String(
+                                  c?.marketplace_contract?.disconnect_status ||
+                                    "",
+                                ).toLowerCase() === "pending";
+                              if (pendingDisconnect) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                                return;
+                              }
                               const ok = window.confirm(
-                                `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
+                                requiresApproval
+                                  ? `Request disconnect from ${agencyLabel}? The connection will stay active until the agency approves or the contract expires.`
+                                  : `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
                               );
                               if (!ok) return;
-                              await disconnectAgencyMutation.mutateAsync(
+                              const result =
+                                await disconnectAgencyMutation.mutateAsync(
                                 String(c.agency_id),
                               );
-                              toast({
-                                title: "Disconnected",
-                                description:
-                                  "You have disconnected from the agency.",
-                              });
+                              if (result?.status === "disconnect_requested") {
+                                toast({
+                                  title: "Disconnect requested",
+                                  description:
+                                    "The agency has been notified. The connection stays active until they approve or the contract expires.",
+                                });
+                              } else if (
+                                result?.status === "disconnect_pending"
+                              ) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                              } else {
+                                toast({
+                                  title: "Disconnected",
+                                  description:
+                                    "You have disconnected from the agency.",
+                                });
+                              }
                             } catch (e: any) {
                               toast({
                                 variant: "destructive",
@@ -2425,7 +2461,11 @@ export default function TalentPortal({
                             }
                           }}
                         >
-                          Disconnect
+                          {String(
+                            c?.marketplace_contract?.status || "",
+                          ).toLowerCase() === "active"
+                            ? "Request disconnect"
+                            : "Disconnect"}
                         </Button>
                       </div>
                     ))}
