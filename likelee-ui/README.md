@@ -35,6 +35,9 @@ The agency dashboard marketplace `Connect` action for creator profiles now opens
 - Creators review/sign the contract from their invite experience in Creator Dashboard and Talent Portal via the `Review contract` action.
 - After the creator signs, the DocuSeal marketplace webhook activates the connection automatically; the dashboards also do a best-effort sync on normal reads as a fallback.
 - For marketplace-connected creators, payout commission now comes from the active signed contract instead of agency settings overrides.
+- Creator-side connected agency cards now expose key contract details such as commission, start date, end date, and the signed document link.
+- Creator-side disconnect for active marketplace contracts is now a request flow, not an instant removal.
+- Agency roster talent panels can review marketplace contract details and approve or reject pending early disconnect requests.
 
 ### UI State After Signature
 
@@ -43,5 +46,11 @@ The agency dashboard marketplace `Connect` action for creator profiles now opens
 - The creator should appear under connected agencies in Creator Dashboard and Talent Portal.
 - The agency marketplace card and agency roster should switch from `Waiting` to `Connected`.
 - The underlying connection source of truth is the `agency_talent_relationships` row created or activated after contract completion.
+
+### Disconnect Rules
+
+- Active marketplace contracts require agency approval before a creator can disconnect early.
+- Expired marketplace contracts automatically remove the live agency-creator connection.
+- The legal contract row is preserved for history even after the live relationship is removed.
 
 For more information and support, please contact Base44 support at app@base44.com.
