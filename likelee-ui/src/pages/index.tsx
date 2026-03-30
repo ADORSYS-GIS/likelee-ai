@@ -76,6 +76,7 @@ import UploadProject from "./UploadProject";
 import DemoTalentDashboard from "./DemoTalentDashboard";
 
 import CreatorDashboard from "./CreatorDashboard";
+import CreatorSubscribe from "./CreatorSubscribe";
 
 import AgencyDashboard from "./AgencyDashboard";
 
@@ -209,6 +210,7 @@ const PAGES = {
   DemoTalentDashboard: DemoTalentDashboard,
 
   CreatorDashboard: CreatorDashboard,
+  CreatorSubscribe: CreatorSubscribe,
 
   AgencyDashboard: AgencyDashboard,
 
@@ -314,6 +316,7 @@ function AppRoutes() {
       <Route path="/AdminCredits" element={<AdminCredits />} />
 
       <Route path="/StudioSubscribe" element={<StudioSubscribe />} />
+      <Route path="/CreatorSubscribe" element={<CreatorSubscribe />} />
 
       <Route path="/StudioVideoOptions" element={<StudioVideoOptions />} />
 
