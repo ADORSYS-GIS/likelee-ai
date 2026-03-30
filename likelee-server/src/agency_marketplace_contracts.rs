@@ -1299,7 +1299,7 @@ pub async fn sync_contract_for_row(
                 .map(Value::String)
                 .unwrap_or_else(|| json!(chrono::Utc::now().to_rfc3339()))
         } else {
-            Value::Null
+            existing_signed_at.map(Value::String).unwrap_or(Value::Null)
         },
         "last_synced_at": chrono::Utc::now().to_rfc3339(),
         "updated_at": chrono::Utc::now().to_rfc3339(),
@@ -1420,7 +1420,7 @@ async fn apply_webhook_status_to_contract_row(
                 .map(Value::String)
                 .unwrap_or_else(|| json!(chrono::Utc::now().to_rfc3339()))
         } else {
-            Value::Null
+            existing_signed_at.map(Value::String).unwrap_or(Value::Null)
         },
         "last_synced_at": chrono::Utc::now().to_rfc3339(),
         "updated_at": chrono::Utc::now().to_rfc3339(),

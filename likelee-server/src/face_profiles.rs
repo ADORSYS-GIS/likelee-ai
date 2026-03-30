@@ -1134,6 +1134,39 @@ pub(crate) async fn resolve_effective_creator_id(
         return Ok(user.id.clone());
     }
 
+    let agency_user_resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .or(format!("id.eq.{},user_id.eq.{}", user.id, user.id))
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_user_status = agency_user_resp.status();
+    let agency_user_text = agency_user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !agency_user_status.is_success() {
+        return Err(sanitize_db_error(
+            agency_user_status.as_u16(),
+            agency_user_text,
+        ));
+    }
+    let agency_user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_user_text).unwrap_or_default();
+    if let Some(mapped_creator_id) = agency_user_rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(mapped_creator_id);
+    }
+
     let by_id_resp = state
         .pg
         .from("creators")
