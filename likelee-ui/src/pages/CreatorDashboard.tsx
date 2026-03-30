@@ -3167,7 +3167,6 @@ export default function CreatorDashboard() {
   useEffect(() => {
     const lockedFallback = creatorPlanTier === "free" ? "content" : "dashboard";
     const inaccessible =
-      (activeSection === "dashboard" && creatorPlanTier === "free") ||
       (activeSection === "likeness" && !creatorCanUseLikeness) ||
       (activeSection === "voice" && !creatorCanUseVoice) ||
       (activeSection === "campaigns" && !creatorCanUseActiveCampaigns) ||
@@ -3216,9 +3215,6 @@ export default function CreatorDashboard() {
       id: "dashboard",
       label: t("creatorDashboard.nav.dashboard"),
       icon: LayoutDashboard,
-      locked: creatorPlanTier === "free",
-      requiredPlan: "basic",
-      premiumFeature: "Basic creator access",
     },
     {
       id: "content",
