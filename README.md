@@ -21,6 +21,9 @@ Agency-to-creator connections started from the agency dashboard marketplace are 
 - The DocuSeal webhook endpoint for this flow is `POST /webhooks/docuseal/marketplace-contracts`.
 - When DocuSeal posts a completed signing event, the marketplace contract row is updated immediately and the creator-agency connection is activated automatically.
 - The creator dashboard, talent portal, and agency roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
+- Active marketplace contracts cannot be disconnected instantly by the creator.
+- Early creator disconnects now create a pending request that the agency must approve.
+- If the marketplace contract expires, the live agency-creator connection is removed automatically while the contract record is retained for history.
 
 ### State Ownership
 
@@ -47,3 +50,16 @@ Agency-to-creator connections started from the agency dashboard marketplace are 
   - `agency_users.status -> active` for the agency/creator pair
   - `agency_talent_relationships.status -> active`
 - Marketplace cards, Creator Dashboard, Talent Portal, and the Agency Roster should all treat the creator as connected once `agency_talent_relationships` is active.
+
+### Disconnect Workflow
+
+- Creator direct disconnect is blocked while a marketplace contract is still `active`.
+- The creator may request disconnect early, which updates the contract row with:
+  - `disconnect_status = pending`
+  - `disconnect_requested_by = creator`
+  - `disconnect_requested_at`
+  - `disconnect_reason`
+- The agency reviews that request and can approve or reject it.
+- Approval updates the contract row to `terminated`, records review metadata, and removes the live `agency_talent_relationships` row.
+- Rejection keeps the contract active and records the review metadata on the contract.
+- On natural expiry, the live relationship is automatically removed and the contract is moved out of the active connection set.
