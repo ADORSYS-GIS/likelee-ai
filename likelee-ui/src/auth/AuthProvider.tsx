@@ -38,6 +38,8 @@ export interface Profile {
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
+  kyc_rejection_reason?: string | null;
+  kyc_rejection_code?: string | null;
   onboarding_step?: string;
   [key: string]: any;
 }

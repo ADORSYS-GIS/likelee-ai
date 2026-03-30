@@ -214,9 +214,6 @@ pub struct ServerConfig {
     #[envconfig(from = "DOCUSEAL_MASTER_TEMPLATE_NAME", default = "")]
     pub docuseal_master_template_name: String,
 
-    #[envconfig(from = "KYC_BYPASS_VERIFF_LIMIT", default = "false")]
-    pub kyc_bypass_veriff_limit: bool,
-
     #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
     pub frontend_url: String,
 
@@ -337,7 +334,6 @@ pub struct AppState {
     pub docuseal_master_template_id: String,
     pub docuseal_master_template_name: String,
 
-    pub kyc_bypass_veriff_limit: bool,
     pub frontend_url: String,
 
     // Studio Provider API Keys
