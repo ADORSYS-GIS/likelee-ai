@@ -6135,7 +6135,9 @@ export default function CreatorDashboard() {
                   await doDisconnect();
                 }}
               >
-                {disconnectRequiresApproval ? "Request disconnect" : "Disconnect"}
+                {disconnectRequiresApproval
+                  ? "Request disconnect"
+                  : "Disconnect"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -6153,10 +6155,12 @@ export default function CreatorDashboard() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {selectedAgencyConnection?.agencies?.agency_name || "Agency"} contract
+                {selectedAgencyConnection?.agencies?.agency_name || "Agency"}{" "}
+                contract
               </DialogTitle>
               <DialogDescription>
-                Review the key terms of your active agency contract and signed document.
+                Review the key terms of your active agency contract and signed
+                document.
               </DialogDescription>
             </DialogHeader>
             {selectedAgencyConnection?.marketplace_contract ? (
@@ -6184,15 +6188,15 @@ export default function CreatorDashboard() {
                   <Card className="p-4">
                     <div className="text-xs text-gray-500">Start date</div>
                     <div className="mt-1 font-semibold text-gray-900">
-                      {selectedAgencyConnection.marketplace_contract.valid_from ||
-                        "—"}
+                      {selectedAgencyConnection.marketplace_contract
+                        .valid_from || "—"}
                     </div>
                   </Card>
                   <Card className="p-4">
                     <div className="text-xs text-gray-500">End date</div>
                     <div className="mt-1 font-semibold text-gray-900">
-                      {selectedAgencyConnection.marketplace_contract.valid_until ||
-                        "—"}
+                      {selectedAgencyConnection.marketplace_contract
+                        .valid_until || "—"}
                     </div>
                   </Card>
                 </div>
@@ -6259,7 +6263,8 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="text-sm text-gray-600">
-                No active marketplace contract details are available for this agency.
+                No active marketplace contract details are available for this
+                agency.
               </div>
             )}
           </DialogContent>

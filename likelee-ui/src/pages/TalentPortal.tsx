@@ -2429,8 +2429,8 @@ export default function TalentPortal({
                               if (!ok) return;
                               const result =
                                 await disconnectAgencyMutation.mutateAsync(
-                                String(c.agency_id),
-                              );
+                                  String(c.agency_id),
+                                );
                               if (result?.status === "disconnect_requested") {
                                 toast({
                                   title: "Disconnect requested",

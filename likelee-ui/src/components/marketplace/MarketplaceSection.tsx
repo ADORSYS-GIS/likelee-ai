@@ -353,7 +353,8 @@ export function MarketplaceSection({
           ? row.talent_ownership
           : null,
       marketplace_contract:
-        row?.marketplace_contract && typeof row.marketplace_contract === "object"
+        row?.marketplace_contract &&
+        typeof row.marketplace_contract === "object"
           ? row.marketplace_contract
           : null,
     })) as MarketplaceProfile[];
@@ -1274,7 +1275,8 @@ export function MarketplaceSection({
                                 Marketplace contract
                               </h4>
                               <p className="text-xs text-gray-500 mt-1">
-                                Contract terms for this agency-creator connection.
+                                Contract terms for this agency-creator
+                                connection.
                               </p>
                             </div>
                             {pendingDisconnect ? (
@@ -1348,7 +1350,8 @@ export function MarketplaceSection({
                                 variant="outline"
                                 onClick={() =>
                                   window.open(
-                                    marketplaceContract.signed_document_url || "",
+                                    marketplaceContract.signed_document_url ||
+                                      "",
                                     "_blank",
                                     "noopener,noreferrer",
                                   )
@@ -1363,7 +1366,9 @@ export function MarketplaceSection({
                                 <Button
                                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                                   disabled={disconnectActionLoading !== null}
-                                  onClick={() => setDisconnectDecision("approve")}
+                                  onClick={() =>
+                                    setDisconnectDecision("approve")
+                                  }
                                 >
                                   Approve disconnect
                                 </Button>
@@ -1371,7 +1376,9 @@ export function MarketplaceSection({
                                   variant="outline"
                                   className="border-rose-200 text-rose-700"
                                   disabled={disconnectActionLoading !== null}
-                                  onClick={() => setDisconnectDecision("reject")}
+                                  onClick={() =>
+                                    setDisconnectDecision("reject")
+                                  }
                                 >
                                   Reject request
                                 </Button>
@@ -1382,55 +1389,56 @@ export function MarketplaceSection({
                       </Card>
                     ) : null}
 
-                  <Card className="p-4 border border-gray-200 rounded-xl">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Availability & Rates
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-gray-500">Willing to Travel</p>
-                        <p className="font-semibold text-gray-900 mt-1">
-                          {typeof detailsQuery.data?.availability
-                            ?.willing_to_travel === "boolean"
-                            ? detailsQuery.data?.availability?.willing_to_travel
-                              ? "Yes"
-                              : "No"
-                            : "Not specified"}
-                        </p>
+                    <Card className="p-4 border border-gray-200 rounded-xl">
+                      <h4 className="text-sm font-bold text-gray-900 mb-3">
+                        Availability & Rates
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                          <p className="text-gray-500">Willing to Travel</p>
+                          <p className="font-semibold text-gray-900 mt-1">
+                            {typeof detailsQuery.data?.availability
+                              ?.willing_to_travel === "boolean"
+                              ? detailsQuery.data?.availability
+                                  ?.willing_to_travel
+                                ? "Yes"
+                                : "No"
+                              : "Not specified"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                          <p className="text-gray-500">Connection Status</p>
+                          <p className="font-semibold text-gray-900 mt-1 capitalize">
+                            {detailsQuery.data?.connection_status || "none"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-gray-500">Connection Status</p>
-                        <p className="font-semibold text-gray-900 mt-1 capitalize">
-                          {detailsQuery.data?.connection_status || "none"}
-                        </p>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {(detailsQuery.data?.rates || [])
+                          .slice(0, 6)
+                          .map((r, i) => (
+                            <div
+                              key={`${r?.label || r?.rate_name || "rate"}-${i}`}
+                              className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
+                            >
+                              <p className="text-indigo-700 font-semibold">
+                                {String(r?.label || r?.rate_name || "Rate")}
+                              </p>
+                              <p className="text-gray-900 font-bold mt-1">
+                                {formatMoney(
+                                  r?.amount_cents ?? r?.price_per_month_cents,
+                                  r?.currency || "USD",
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        {(detailsQuery.data?.rates || []).length === 0 && (
+                          <p className="text-sm text-gray-500">
+                            No rates published yet.
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(detailsQuery.data?.rates || [])
-                        .slice(0, 6)
-                        .map((r, i) => (
-                          <div
-                            key={`${r?.label || r?.rate_name || "rate"}-${i}`}
-                            className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
-                          >
-                            <p className="text-indigo-700 font-semibold">
-                              {String(r?.label || r?.rate_name || "Rate")}
-                            </p>
-                            <p className="text-gray-900 font-bold mt-1">
-                              {formatMoney(
-                                r?.amount_cents ?? r?.price_per_month_cents,
-                                r?.currency || "USD",
-                              )}
-                            </p>
-                          </div>
-                        ))}
-                      {(detailsQuery.data?.rates || []).length === 0 && (
-                        <p className="text-sm text-gray-500">
-                          No rates published yet.
-                        </p>
-                      )}
-                    </div>
-                  </Card>
+                    </Card>
                   </>
                 )}
 
@@ -1594,14 +1602,18 @@ export function MarketplaceSection({
                 try {
                   setDisconnectActionLoading(disconnectDecision);
                   if (disconnectDecision === "approve") {
-                    await approveAgencyCreatorDisconnectRequest(selectedProfileId);
+                    await approveAgencyCreatorDisconnectRequest(
+                      selectedProfileId,
+                    );
                     toast({
                       title: "Disconnect approved",
                       description:
                         "The creator connection has been removed for this agency.",
                     });
                   } else {
-                    await rejectAgencyCreatorDisconnectRequest(selectedProfileId);
+                    await rejectAgencyCreatorDisconnectRequest(
+                      selectedProfileId,
+                    );
                     toast({
                       title: "Disconnect rejected",
                       description:
