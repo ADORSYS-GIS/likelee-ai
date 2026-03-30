@@ -19,10 +19,23 @@ const ClientCard = ({
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const extractEmail = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const candidates = raw
+      .split(/[,\s;]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    const preferred = candidates.find((entry) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry),
+    );
+    return preferred || raw;
+  };
+
   const openEmailClient = (email: string) => {
-    const normalized = String(email || "").trim();
+    const normalized = extractEmail(email);
     if (!normalized) return;
-    window.location.href = `mailto:${normalized}`;
+    window.location.href = `mailto:${encodeURIComponent(normalized)}`;
     window.setTimeout(() => {
       if (document.hasFocus() && !document.hidden) {
         toast({
@@ -149,7 +162,7 @@ const ClientCard = ({
             variant="outline"
             className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
             onClick={async () => {
-              const directEmail = String(client.email || "").trim();
+              const directEmail = extractEmail(client.email);
               if (directEmail) {
                 openEmailClient(directEmail);
                 return;
@@ -158,12 +171,27 @@ const ClientCard = ({
                 const resp = await crmApi.listContacts(client.id);
                 const contacts = Array.isArray(resp) ? resp : [];
                 const primary = contacts.find(
-                  (contact: any) => contact?.is_primary && contact?.email,
+                  (contact: any) =>
+                    contact?.is_primary &&
+                    (contact?.email ||
+                      contact?.primary_email ||
+                      contact?.contact_email),
                 );
-                const first = contacts.find((contact: any) => contact?.email);
-                const resolvedEmail = String(
-                  primary?.email || first?.email || "",
-                ).trim();
+                const first = contacts.find(
+                  (contact: any) =>
+                    contact?.email ||
+                    contact?.primary_email ||
+                    contact?.contact_email,
+                );
+                const resolvedEmail = extractEmail(
+                  primary?.email ||
+                    primary?.primary_email ||
+                    primary?.contact_email ||
+                    first?.email ||
+                    first?.primary_email ||
+                    first?.contact_email ||
+                    "",
+                );
                 if (resolvedEmail) {
                   openEmailClient(resolvedEmail);
                   return;
