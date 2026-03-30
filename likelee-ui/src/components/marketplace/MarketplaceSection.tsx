@@ -300,19 +300,6 @@ export function MarketplaceSection({
     });
   }, [marketplaceQuery.error, toast, entityLabel]);
 
-  useEffect(() => {
-    if (!detailsQuery.error) return;
-    toast({
-      title: "Failed to load profile details",
-      description: parseApiErrorMessage(
-        detailsQuery.error,
-        "Please try again.",
-        entityLabel,
-      ),
-      variant: "destructive" as any,
-    });
-  }, [detailsQuery.error, toast, entityLabel]);
-
   const profiles = useMemo(() => {
     const rows = Array.isArray(marketplaceQuery.data)
       ? marketplaceQuery.data
@@ -738,9 +725,6 @@ export function MarketplaceSection({
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
-                          {entityLabelTitle}
-                        </Badge>
                         {ownershipLabel && (
                           <Badge
                             className={`h-5 px-2 rounded-md border text-[10px] font-semibold shadow-sm ${ownershipBadgeClass}`}
@@ -1013,6 +997,19 @@ export function MarketplaceSection({
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading profile details...
               </div>
+            ) : detailsQuery.error ? (
+              <Card className="p-4 border border-rose-200 bg-rose-50 rounded-xl">
+                <div className="text-sm font-semibold text-rose-900">
+                  Failed to load profile details
+                </div>
+                <div className="text-sm text-rose-800 mt-1">
+                  {parseApiErrorMessage(
+                    detailsQuery.error,
+                    "Please try again.",
+                    entityLabel,
+                  )}
+                </div>
+              </Card>
             ) : (
               <>
                 {(() => {
@@ -1260,7 +1257,17 @@ export function MarketplaceSection({
 
                 {selectedProfile?.profile_type === "creator" && (
                   <>
-                    {enableAgencyContractConnect && marketplaceContract ? (
+                    {(() => {
+                      const marketplaceContract =
+                        detailsQuery.data?.marketplace_contract ||
+                        selectedProfile?.marketplace_contract ||
+                        null;
+                      const pendingDisconnect =
+                        String(
+                          marketplaceContract?.disconnect_status || "",
+                        ).toLowerCase() === "pending";
+
+                      return enableAgencyContractConnect && marketplaceContract ? (
                       <Card
                         className={`p-4 rounded-xl ${
                           pendingDisconnect
@@ -1387,9 +1394,10 @@ export function MarketplaceSection({
                           </div>
                         </div>
                       </Card>
-                    ) : null}
+                      ) : null;
+                    })()}
 
-                    <Card className="p-4 border border-gray-200 rounded-xl">
+                  <Card className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">
                         Availability & Rates
                       </h4>
