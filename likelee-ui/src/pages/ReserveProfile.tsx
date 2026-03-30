@@ -25,6 +25,7 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  RefreshCw,
   Eye,
   EyeOff,
   Info,
@@ -33,13 +34,18 @@ import {
   Alert as UIAlert,
   AlertDescription as UIAlertDescription,
 } from "@/components/ui/alert";
-import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import {
+  clearStoredKycSessionUrl,
+  loadStoredKycSessionUrl,
+  storeKycSessionUrl,
+} from "@/utils/kycSession";
+import { formatKycReason } from "@/utils/kycDisplay";
 
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -258,7 +264,7 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -343,9 +349,13 @@ export default function ReserveProfile() {
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
 
-  const startVerification = async () => {
-    const targetId = user?.id || profileId;
-    if (!targetId) {
+  const startVerification = async ({
+    forceNewSession = false,
+  }: {
+    forceNewSession?: boolean;
+  } = {}) => {
+    const session = (await supabase.auth.getSession())?.data?.session;
+    if (!session?.access_token) {
       toast({
         title: t("reserveProfile.toasts.kycErrorTitle"),
         description:
@@ -354,27 +364,49 @@ export default function ReserveProfile() {
       });
       return;
     }
+    const normalizedStatus = String(kycStatus || "")
+      .trim()
+      .toLowerCase();
+    if (
+      !forceNewSession &&
+      normalizedStatus === "pending" &&
+      savedKycSessionUrl
+    ) {
+      setKycSessionUrl(savedKycSessionUrl);
+      window.open(savedKycSessionUrl, "_blank");
+      return;
+    }
     try {
       setKycLoading(true);
+      setKycRejectionReason(null);
+      await saveCreatorProfile();
       const u = new URL(window.location.href);
       u.searchParams.set("step", "4");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
-      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
+        body: JSON.stringify({ return_url: returnUrl }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setKycProvider(data.provider || "veriff");
-      setKycSessionUrl(data.session_url);
+      if (!data.session_url) {
+        throw new Error("No verification session returned");
+      }
+      const sessionUrl = String(data.session_url);
+      const kycStorageUserId = profileId || session.user.id;
+      if (kycStorageUserId) {
+        storeKycSessionUrl("reserve-profile", kycStorageUserId, sessionUrl);
+      }
+      setSavedKycSessionUrl(sessionUrl);
+      setKycSessionUrl(sessionUrl);
       setKycStatus("pending");
-      if (data.session_url) window.open(data.session_url, "_blank");
+      window.open(sessionUrl, "_blank");
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.verificationFailed"),
@@ -386,26 +418,38 @@ export default function ReserveProfile() {
     }
   };
 
-  const refreshVerificationStatus = async () => {
-    const targetId = user?.id || profileId;
-    if (!targetId) return;
+  const refreshVerificationStatus = async ({
+    manageLoading = true,
+  }: {
+    manageLoading?: boolean;
+  } = {}) => {
+    const session = (await supabase.auth.getSession())?.data?.session;
+    if (!session?.access_token) return;
     try {
-      setKycLoading(true);
-      const session = (await supabase.auth.getSession())?.data?.session;
-      const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(targetId)}`),
-        {
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-          },
+      if (manageLoading) setKycLoading(true);
+      const res = await fetch(api(`/api/kyc/status`), {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+      });
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row) {
         if (row.kyc_status) setKycStatus(row.kyc_status);
         if (row.kyc_provider) setKycProvider(row.kyc_provider);
+        setKycRejectionReason(row.kyc_rejection_reason ?? null);
+        const normalizedStatus = String(row.kyc_status || "")
+          .trim()
+          .toLowerCase();
+        if (
+          normalizedStatus === "approved" ||
+          normalizedStatus === "rejected" ||
+          normalizedStatus === "declined"
+        ) {
+          clearStoredKycSessionUrl("reserve-profile", profileId);
+          setSavedKycSessionUrl(null);
+        }
         if (row.kyc_status === "approved") {
           toast({
             title: t("reserveProfile.toasts.identityVerified"),
@@ -422,21 +466,62 @@ export default function ReserveProfile() {
       });
       return null;
     } finally {
-      setKycLoading(false);
+      if (manageLoading) setKycLoading(false);
     }
+  };
+
+  const handleManualVerificationRefresh = async () => {
+    try {
+      setKycRefreshLoading(true);
+      await refreshVerificationStatus({ manageLoading: false });
+    } finally {
+      setKycRefreshLoading(false);
+    }
+  };
+
+  const startNewVerificationSession = async () => {
+    clearStoredKycSessionUrl("reserve-profile", profileId);
+    setSavedKycSessionUrl(null);
+    setKycSessionUrl(null);
+    setKycRejectionReason(null);
+    await startVerification({ forceNewSession: true });
   };
 
   const verifyAndContinue = async () => {
     try {
       setKycLoading(true);
-      const row = await refreshVerificationStatus();
+      const row = await refreshVerificationStatus({ manageLoading: false });
       const kyc = row?.kyc_status || kycStatus;
-      if (kyc === "approved") {
+      const normalizedKyc = String(kyc || "not_started")
+        .trim()
+        .toLowerCase();
+      const reason = formatKycReason(
+        row?.kyc_rejection_reason ?? kycRejectionReason,
+      );
+      if (normalizedKyc === "approved") {
         setStep(5);
         return;
       }
+      if (normalizedKyc === "rejected" || normalizedKyc === "declined") {
+        toast({
+          title: "Verification was not approved",
+          description:
+            reason ||
+            "Please review the verification note and start a new verification session.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (normalizedKyc === "pending" && reason) {
+        toast({
+          title: "Additional verification required",
+          description: reason,
+          className: "bg-amber-50 border-2 border-amber-400",
+        });
+        return;
+      }
       // If user hasn't started verification, kick it off automatically
-      if ((kyc || "not_started") === "not_started") {
+      if (normalizedKyc === "not_started") {
         await startVerification();
         return;
       }
@@ -460,13 +545,27 @@ export default function ReserveProfile() {
   const progress = (step / totalSteps) * 100;
 
   // Verification state
-  const { initialized, authenticated, user } = useAuth();
   const [kycStatus, setKycStatus] = useState<
     "not_started" | "pending" | "approved" | "rejected"
   >("not_started");
   const [kycProvider, setKycProvider] = useState<string | null>(null);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
+  const [savedKycSessionUrl, setSavedKycSessionUrl] = useState<string | null>(
+    null,
+  );
+  const [kycRejectionReason, setKycRejectionReason] = useState<string | null>(
+    null,
+  );
   const [kycLoading, setKycLoading] = useState(false);
+  const [kycRefreshLoading, setKycRefreshLoading] = useState(false);
+  const normalizedKycStatus = String(kycStatus || "")
+    .trim()
+    .toLowerCase();
+  const currentKycReason = formatKycReason(kycRejectionReason);
+  const hasKycFollowUp =
+    normalizedKycStatus === "pending" && currentKycReason.length > 0;
+  const isKycRejected =
+    normalizedKycStatus === "rejected" || normalizedKycStatus === "declined";
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
@@ -479,6 +578,34 @@ export default function ReserveProfile() {
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
+  const [profileSaveLoading, setProfileSaveLoading] = useState(false);
+
+  useEffect(() => {
+    if (!profileId) {
+      setSavedKycSessionUrl(null);
+      return;
+    }
+
+    setSavedKycSessionUrl(
+      loadStoredKycSessionUrl("reserve-profile", profileId),
+    );
+  }, [profileId]);
+
+  useEffect(() => {
+    const normalizedStatus = String(kycStatus || "")
+      .trim()
+      .toLowerCase();
+
+    if (
+      profileId &&
+      (normalizedStatus === "approved" ||
+        normalizedStatus === "rejected" ||
+        normalizedStatus === "declined")
+    ) {
+      clearStoredKycSessionUrl("reserve-profile", profileId);
+      setSavedKycSessionUrl(null);
+    }
+  }, [kycStatus, profileId]);
 
   const getStepTitle = () => {
     if (step === 1) return t("reserveProfile.stepTitles.step1");
@@ -513,145 +640,92 @@ export default function ReserveProfile() {
     }
   }, [step]);
 
-  // Initial profile creation (Step 1)
-  const createInitialProfileMutation = useMutation<any, Error, any>({
-    mutationFn: async (data) => {
-      if (!user) throw new Error("Not authenticated");
-      try {
-        const payload: any = {
-          id: user.id,
-          email: data.email,
-          full_name:
-            data.creator_type === "model_actor"
-              ? data.stage_name || data.full_name
-              : data.full_name,
-          creator_type: data.creator_type,
-          content_types: [],
-          content_other: null,
-          industries: [],
-          primary_platform: null,
-          platform_handle: null,
-          work_types: [],
-          representation_status: null,
-          headshot_url: null,
-          sport: null,
-          athlete_type: null,
-          school_name: null,
-          age: null,
-          languages: null,
-          instagram_handle: null,
-          twitter_handle: null,
-          brand_categories: [],
-          bio: null,
-          city: data.city || null,
-          state: data.state || null,
-          birthdate: data.birthdate || null,
-          ethnicity: [],
-          gender: data.gender || null,
-          vibes: [],
-          visibility: "private",
-          status: "waitlist",
-          is_sample: false,
-        };
-        const { data: upserted, error } = await supabase
-          .from("creators")
-          .upsert(payload, { onConflict: "id" })
-          .select();
-        if (error) throw error;
-        return Array.isArray(upserted) ? upserted[0] : upserted;
-      } catch (error) {
-        console.error("Detailed error:", error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      setProfileId(data.id);
-      setStep(2);
-    },
-    onError: (error) => {
-      console.error("Error creating initial profile:", error);
-      const errorMessage =
-        (error as any)?.response?.data?.message ||
-        (error as any)?.message ||
-        "Unknown error occurred";
-      toast({
-        title: t("reserveProfile.toasts.profileCreationFailed"),
-        description: getUserFriendlyError(error, t),
-        variant: "destructive",
-      });
-    },
-  });
+  const visibilityEnablesPublicProfile = (visibility?: string) => {
+    const normalized = String(visibility || "")
+      .trim()
+      .toLowerCase();
+    return (
+      normalized === "public" ||
+      normalized === "brands" ||
+      normalized === "visible_to_brands" ||
+      normalized === "true"
+    );
+  };
 
-  // Profile update (Step 3)
-  const updateProfileMutation = useMutation<any, Error, any>({
-    mutationFn: async (data) => {
-      if (!user) throw new Error("Not authenticated");
-      try {
-        const updateData: any = {
-          id: user.id,
-          email: data.email,
-          full_name:
-            data.creator_type === "model_actor"
-              ? data.stage_name || data.full_name
-              : data.full_name,
-          creator_type: data.creator_type,
-          content_types: data.content_types || [],
-          content_other: data.content_other || null,
-          industries: data.industries || [],
-          primary_platform: data.primary_platform || null,
-          platform_handle: data.platform_handle || null,
-          work_types: data.work_types || [],
-          representation_status: data.representation_status || "",
-          headshot_url: data.headshot_url || "",
-          sport: data.sport || null,
-          athlete_type: data.athlete_type || null,
-          school_name: data.school_name || null,
-          age: data.age || null,
-          languages: data.languages || null,
-          instagram_handle: data.instagram_handle || null,
-          twitter_handle: data.twitter_handle || null,
-          brand_categories: data.brand_categories || [],
-          bio: data.bio || null,
-          city: data.city || "",
-          state: data.state || "",
-          birthdate: data.birthdate || "",
-          ethnicity: data.ethnicity || [],
-          gender: data.gender || "",
-          vibes: data.vibes || [],
-          visibility: data.visibility || "private",
-          status: "waitlist",
-        };
+  const buildCreatorPayload = (data: typeof formData) => {
+    const monthlyPriceUsd = Number(data.base_monthly_price_usd);
+    const hasMonthlyPrice =
+      Number.isFinite(monthlyPriceUsd) && monthlyPriceUsd > 0;
+    return {
+      email: data.email,
+      full_name:
+        data.creator_type === "model_actor"
+          ? data.stage_name || data.full_name
+          : data.full_name,
+      creator_type: data.creator_type,
+      content_types: data.content_types || [],
+      content_other: data.content_other || null,
+      industries: data.industries || [],
+      primary_platform: data.primary_platform || null,
+      platform_handle: data.platform_handle || null,
+      work_types: data.work_types || [],
+      representation_status: data.representation_status || "",
+      headshot_url: data.headshot_url || "",
+      sport: data.sport || null,
+      athlete_type: data.athlete_type || null,
+      school_name: data.school_name || null,
+      age: data.age || null,
+      languages: data.languages || null,
+      instagram_handle: data.instagram_handle || null,
+      twitter_handle: data.twitter_handle || null,
+      brand_categories: data.brand_categories || [],
+      bio: data.bio || null,
+      city: data.city || "",
+      state: data.state || "",
+      birthdate: data.birthdate || "",
+      ethnicity: data.ethnicity || [],
+      gender: data.gender || "",
+      vibes: data.vibes || [],
+      visibility: data.visibility || "private",
+      public_profile_visible: visibilityEnablesPublicProfile(data.visibility),
+      base_monthly_price_cents: hasMonthlyPrice
+        ? Math.round(monthlyPriceUsd * 100)
+        : undefined,
+      currency_code: hasMonthlyPrice ? "USD" : undefined,
+      status: "waitlist",
+    };
+  };
 
-        console.log("Upserting profile with data:", updateData);
-        const { data: updated, error } = await supabase
-          .from("creators")
-          .upsert(updateData, { onConflict: "id" })
-          .select();
-        if (error) throw error;
-        return Array.isArray(updated) ? updated[0] : updated;
-      } catch (error) {
-        console.error("Detailed update error:", error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      // Proceed to verification step
-      setProfileId(data.id);
-      setStep(4);
-    },
-    onError: (error) => {
-      console.error("Error updating profile:", error);
-      const errorMessage =
-        (error as any)?.response?.data?.message ||
-        (error as any)?.message ||
-        "Unknown error occurred";
-      toast({
-        title: t("reserveProfile.toasts.profileUpdateFailed"),
-        description: getUserFriendlyError(error, t),
-        variant: "destructive",
-      });
-    },
-  });
+  const saveCreatorProfile = async (data: typeof formData = formData) => {
+    const session = (await supabase.auth.getSession())?.data?.session;
+    if (!session?.access_token || !session.user?.id) {
+      throw new Error("Not authenticated");
+    }
+
+    const res = await fetch(
+      api(`/api/profile?user_id=${encodeURIComponent(session.user.id)}`),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(buildCreatorPayload(data)),
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
+
+    const responseData = await res.json();
+    const savedProfile =
+      Array.isArray(responseData) && responseData.length
+        ? responseData[0]
+        : responseData;
+    setProfileId(savedProfile?.id || session.user.id);
+    return savedProfile ?? { id: session.user.id };
+  };
 
   const handleFirstContinue = () => {
     if (!formData.email) {
@@ -743,7 +817,7 @@ export default function ReserveProfile() {
           });
           return;
         }
-        // Move to next step; profile will be saved at the end (step 5)
+        setProfileId(session.user?.id || null);
         setStep(2);
       } catch (e: any) {
         toast({
@@ -764,7 +838,7 @@ export default function ReserveProfile() {
         } else {
           toast({
             title: "Sign-up Failed",
-            description: getUserFriendlyError(e),
+            description: getUserFriendlyError(e, t),
             variant: "destructive",
           });
         }
@@ -893,61 +967,27 @@ export default function ReserveProfile() {
         return;
       }
     }
-    console.log("Collected step 3 data (no write yet):", formData);
-    setStep(4);
+    try {
+      setProfileSaveLoading(true);
+      await saveCreatorProfile();
+      await refreshProfile();
+      setStep(4);
+    } catch (e: any) {
+      toast({
+        title: t("reserveProfile.toasts.profileUpdateFailed"),
+        description: getUserFriendlyError(e, t),
+        variant: "destructive",
+      });
+    } finally {
+      setProfileSaveLoading(false);
+    }
   };
 
   const finalizeProfile = async () => {
-    if (!user) {
-      toast({
-        title: t("reserveProfile.toasts.notSignedInTitle"),
-        description: t("reserveProfile.toasts.notSignedInDesc"),
-        variant: "destructive",
-      });
-      return;
-    }
     try {
-      // Construct payload from formData
-      const payload: any = {
-        id: user.id,
-        email: formData.email,
-        full_name:
-          formData.creator_type === "model_actor"
-            ? formData.stage_name || formData.full_name
-            : formData.full_name,
-        creator_type: formData.creator_type,
-        content_types: formData.content_types || [],
-        content_other: formData.content_other || null,
-        industries: formData.industries || [],
-        primary_platform: formData.primary_platform || null,
-        platform_handle: formData.platform_handle || null,
-        work_types: formData.work_types || [],
-        representation_status: formData.representation_status || "",
-        headshot_url: formData.headshot_url || "",
-        sport: formData.sport || null,
-        athlete_type: formData.athlete_type || null,
-        school_name: formData.school_name || null,
-        age: formData.age || null,
-        languages: formData.languages || null,
-        instagram_handle: formData.instagram_handle || null,
-        twitter_handle: formData.twitter_handle || null,
-        brand_categories: formData.brand_categories || [],
-        bio: formData.bio || null,
-        city: formData.city || "",
-        state: formData.state || "",
-        birthdate: formData.birthdate || "",
-        ethnicity: formData.ethnicity || [],
-        gender: formData.gender || "",
-        vibes: formData.vibes || [],
-        visibility: formData.visibility || "private",
-        status: "waitlist",
-      };
-
-      const { error } = await supabase
-        .from("creators")
-        .upsert(payload, { onConflict: "id" });
-      if (error) throw error;
-      setProfileId(user.id);
+      setProfileSaveLoading(true);
+      await saveCreatorProfile();
+      await refreshProfile();
       setSubmitted(true);
       // Clear persisted state on success
       localStorage.removeItem("reserve_formData");
@@ -959,6 +999,8 @@ export default function ReserveProfile() {
         description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
+    } finally {
+      setProfileSaveLoading(false);
     }
   };
 
@@ -1187,17 +1229,12 @@ export default function ReserveProfile() {
                   </div>
                   <Button
                     onClick={handleFirstContinue}
-                    disabled={
-                      createInitialProfileMutation.isPending ||
-                      firstContinueLoading
-                    }
+                    disabled={firstContinueLoading}
                     className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                   >
                     {firstContinueLoading
                       ? t("common.checking", "Checking...")
-                      : createInitialProfileMutation.isPending
-                        ? t("common.saving", "Saving...")
-                        : t("common.continue", "Continue")}
+                      : t("common.continue", "Continue")}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
@@ -2310,10 +2347,10 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending}
+                  disabled={profileSaveLoading}
                   className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {updateProfileMutation.isPending
+                  {profileSaveLoading
                     ? t("common.saving", "Saving...")
                     : t("reserveProfile.actions.saveAndVerify")}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
@@ -2374,7 +2411,7 @@ export default function ReserveProfile() {
               <div className="space-y-3">
                 <Button
                   onClick={startVerification}
-                  disabled={kycLoading}
+                  disabled={kycLoading || kycRefreshLoading}
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
                   {kycLoading
@@ -2382,26 +2419,154 @@ export default function ReserveProfile() {
                         "reserveProfile.actions.startingVerification",
                         "Starting…",
                       )
-                    : t(
-                        "reserveProfile.actions.verifyIdentity",
-                        "Verify Identity Now",
-                      )}
+                    : normalizedKycStatus === "pending"
+                      ? savedKycSessionUrl
+                        ? t(
+                            hasKycFollowUp
+                              ? "reserveProfile.actions.continueVerification"
+                              : "reserveProfile.actions.resumeVerification",
+                            hasKycFollowUp
+                              ? "Continue Verification"
+                              : "Resume Verification",
+                          )
+                        : t(
+                            "reserveProfile.actions.restartVerification",
+                            "Start New Verification",
+                          )
+                      : isKycRejected
+                        ? t(
+                            "reserveProfile.actions.retryVerification",
+                            "Retry Verification",
+                          )
+                        : t(
+                            "reserveProfile.actions.verifyIdentity",
+                            "Verify Identity Now",
+                          )}
                 </Button>
-                <div className="text-sm text-gray-700 flex items-center justify-between">
+                {normalizedKycStatus === "pending" && savedKycSessionUrl && (
+                  <Button
+                    onClick={startNewVerificationSession}
+                    variant="outline"
+                    disabled={kycLoading || kycRefreshLoading}
+                    className="w-full h-12 border-2 border-black rounded-none"
+                  >
+                    {t(
+                      "reserveProfile.actions.startNewVerification",
+                      "Start New Verification",
+                    )}
+                  </Button>
+                )}
+                <div className="text-sm text-gray-700 flex items-center justify-between gap-3">
                   <span>
                     KYC:{" "}
-                    <strong className="capitalize">
+                    <strong
+                      className={
+                        hasKycFollowUp
+                          ? "capitalize text-amber-700"
+                          : isKycRejected
+                            ? "capitalize text-red-700"
+                            : "capitalize"
+                      }
+                    >
                       {kycStatus === "not_started"
                         ? t("reserveProfile.verification.status.notStarted")
                         : kycStatus === "approved"
                           ? t("reserveProfile.verification.status.approved")
-                          : kycStatus === "rejected"
-                            ? t("reserveProfile.verification.status.rejected")
-                            : t("reserveProfile.verification.status.verifying")}
+                          : hasKycFollowUp
+                            ? t(
+                                "reserveProfile.verification.status.actionNeeded",
+                                "Action needed",
+                              )
+                            : kycStatus === "rejected"
+                              ? t("reserveProfile.verification.status.rejected")
+                              : t(
+                                  "reserveProfile.verification.status.verifying",
+                                )}
                     </strong>
                   </span>
-                  <span />
+                  <Button
+                    onClick={handleManualVerificationRefresh}
+                    variant="outline"
+                    disabled={kycLoading || kycRefreshLoading}
+                    className="h-9 px-3 border-2 border-black rounded-none shrink-0"
+                  >
+                    {kycRefreshLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    {t(
+                      "reserveProfile.actions.refreshVerificationStatus",
+                      "Refresh Status",
+                    )}
+                  </Button>
                 </div>
+                {(hasKycFollowUp || isKycRejected) && currentKycReason && (
+                  <Alert
+                    className={
+                      hasKycFollowUp
+                        ? "border-2 border-amber-300 bg-amber-50"
+                        : "border-2 border-red-300 bg-red-50"
+                    }
+                  >
+                    <div className="flex items-start gap-3">
+                      {hasKycFollowUp ? (
+                        <AlertCircle className="mt-0.5 h-4 w-4 text-amber-700" />
+                      ) : (
+                        <XCircle className="mt-0.5 h-4 w-4 text-red-700" />
+                      )}
+                      <AlertDescription
+                        className={
+                          hasKycFollowUp ? "text-amber-900" : "text-red-900"
+                        }
+                      >
+                        <span className="font-semibold">
+                          {hasKycFollowUp
+                            ? t(
+                                "reserveProfile.verification.followUpLabel",
+                                "Additional action required:",
+                              )
+                            : t(
+                                "reserveProfile.verification.rejectionLabel",
+                                "Verification note:",
+                              )}
+                        </span>{" "}
+                        {currentKycReason}
+                      </AlertDescription>
+                    </div>
+                  </Alert>
+                )}
+                <p className="text-xs text-gray-500">
+                  {hasKycFollowUp
+                    ? savedKycSessionUrl
+                      ? t(
+                          "reserveProfile.verification.followUpResumeHint",
+                          "Veriff requested another step. Use Continue Verification to finish approval, or start a new verification session if the earlier link no longer works.",
+                        )
+                      : t(
+                          "reserveProfile.verification.followUpRestartHint",
+                          "Veriff requested another step. Start a new verification session if the earlier link is no longer available, or use Refresh Status if you already finished it.",
+                        )
+                    : isKycRejected
+                      ? t(
+                          "reserveProfile.verification.rejectedHint",
+                          "Your last verification was not approved. Review the note above and retry with a new verification session.",
+                        )
+                      : normalizedKycStatus === "pending"
+                        ? savedKycSessionUrl
+                          ? t(
+                              "reserveProfile.verification.resumeHint",
+                              "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
+                            )
+                          : t(
+                              "reserveProfile.verification.restartHint",
+                              "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
+                            )
+                        : t(
+                            "reserveProfile.verification.refreshHint",
+                            "If the status does not update automatically a few seconds after verification, use Refresh Status.",
+                          )}
+                </p>
                 <div className="w-full">
                   <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">
                     <Button
@@ -2421,7 +2586,7 @@ export default function ReserveProfile() {
                     </Button>
                     <Button
                       onClick={verifyAndContinue}
-                      disabled={kycLoading}
+                      disabled={kycLoading || kycRefreshLoading}
                       className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                     >
                       {kycLoading
@@ -2550,13 +2715,15 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={finalizeProfile}
-                  disabled={!agreedToTerms}
+                  disabled={!agreedToTerms || profileSaveLoading}
                   className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t(
-                    "reserveProfile.terms.completeRegistration",
-                    "Complete Registration",
-                  )}
+                  {profileSaveLoading
+                    ? t("common.saving", "Saving...")
+                    : t(
+                        "reserveProfile.terms.completeRegistration",
+                        "Complete Registration",
+                      )}
                 </Button>
               </div>
             </div>
