@@ -965,16 +965,6 @@ export default function ReserveProfile() {
           return;
         }
       }
-      // Pricing required in onboarding step (applies to all creator types)
-      const monthly = Number(formData.base_monthly_price_usd);
-      if (!isFinite(monthly) || monthly < 150) {
-        toast({
-          title: t("reserveProfile.toasts.pricingRequiredTitle"),
-          description: t("reserveProfile.toasts.pricingRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
     }
     if (step < totalSteps) setStep(step + 1);
   };
@@ -1707,49 +1697,6 @@ export default function ReserveProfile() {
                   </div>
                 )}
               </div>
-
-              {/* Pricing (USD-only) */}
-              <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  {t("reserveProfile.form.licensingPricing")}
-                </h4>
-                <div className="w-full flex justify-center">
-                  <div className="w-full max-w-sm">
-                    <Label
-                      htmlFor="base_monthly_price"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      {t("reserveProfile.form.basePrice")}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">$</span>
-                      <Input
-                        id="base_monthly_price"
-                        type="number"
-                        min={150}
-                        step={1}
-                        value={formData.base_monthly_price_usd}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9.]/g, "");
-                          setFormData({
-                            ...formData,
-                            base_monthly_price_usd: v,
-                          });
-                        }}
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t(
-                          "reserveProfile.form.placeholders.price",
-                        )}
-                      />
-                      <span className="text-sm text-gray-600">
-                        {t("reserveProfile.form.perMonth", "/month")}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("reserveProfile.form.basePriceHint")}
-                    </p>
-                  </div>
-                </div>
               </div>
 
               <div className="flex gap-4">

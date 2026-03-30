@@ -692,7 +692,10 @@ export default function OrganizationSignup() {
       try {
         await refreshProfile();
       } catch (e) {
-        console.warn("Failed to refresh profile after onboarding completion", e);
+        console.warn(
+          "Failed to refresh profile after onboarding completion",
+          e,
+        );
       }
       if (flow === "brand") {
         navigate("/BrandDashboard", { replace: true });
