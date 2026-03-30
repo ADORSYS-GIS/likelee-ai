@@ -146,22 +146,46 @@ export default function TalentPortal({
   )
     ? ((baseMe as any)?.connected_agencies as any[])
     : [];
+  const { data: creatorAgencyConnections = [] } = useQuery({
+    queryKey: ["creatorAgencyConnections", "talentPortal"],
+    queryFn: async () => await listCreatorAgencyConnections(),
+    enabled: initialized && authenticated,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const mergedConnectedAgencies = React.useMemo(() => {
+    const out: any[] = [];
+    const seen = new Set<string>();
+    const add = (row: any) => {
+      const id = String(row?.agency_id || row?.id || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      out.push(row);
+    };
+    baseConnectedAgencies.forEach(add);
+    (Array.isArray(creatorAgencyConnections)
+      ? creatorAgencyConnections
+      : []
+    ).forEach(add);
+    return out;
+  }, [baseConnectedAgencies, creatorAgencyConnections]);
   const baseConnectedAgencyIds = Array.isArray(
     (baseMe as any)?.connected_agency_ids,
   )
     ? ((baseMe as any)?.connected_agency_ids as string[])
-    : baseConnectedAgencies
-        .map((r: any) => String(r?.agency_id || ""))
+    : mergedConnectedAgencies
+        .map((r: any) => String(r?.agency_id || r?.id || ""))
         .filter((s: string) => !!s);
 
   const defaultAgencyId = baseConnectedAgencyIds[0];
 
   const [selectedAgencyId, setSelectedAgencyId] = React.useState<string>("all");
+  const [selectedBrandId, setSelectedBrandId] = React.useState<string>("all");
   React.useEffect(() => {
     setSelectedAgencyId("all");
   }, [baseConnectedAgencyIds.join(",")]);
 
-  const canSelectAgency = baseConnectedAgencyIds.length > 1;
+  const canSelectAgency = baseConnectedAgencyIds.length > 0;
   const effectiveAgencyId =
     selectedAgencyId === "all" ? undefined : selectedAgencyId;
   const profileAgencyId = effectiveAgencyId || defaultAgencyId;
@@ -189,16 +213,18 @@ export default function TalentPortal({
     profile?.full_name ||
     profile?.email;
 
-  const connectedAgencies = baseConnectedAgencies;
+  const connectedAgencies = mergedConnectedAgencies;
   const connectedAgencyIds = baseConnectedAgencyIds;
 
   const agencyNameById = React.useMemo(() => {
     const map = new Map<string, string>();
     for (const r of connectedAgencies) {
-      const id = String(r?.agency_id || "");
+      const id = String(r?.agency_id || r?.id || "").trim();
       const name =
         (r?.agencies && (r.agencies as any)?.agency_name) ||
+        r?.agency?.agency_name ||
         r?.agency_name ||
+        r?.name ||
         undefined;
       if (id) map.set(id, name || id);
     }
@@ -431,6 +457,61 @@ export default function TalentPortal({
   };
 
   const safeStr = (v: any) => (typeof v === "string" ? v : "");
+  const getBrandKey = React.useCallback(
+    (row: any) => {
+      const id = safeStr(
+        row?.brand_id ||
+          row?.brand_org_id ||
+          row?.brand_org ||
+          row?.brand_company_id ||
+          row?.brand_org_uuid ||
+          row?.brand_uuid ||
+          row?.brand?.id ||
+          row?.brands?.id ||
+          row?.brand_campaigns?.brand_id ||
+          row?.brand_campaigns?.brand_org_id ||
+          row?.brand,
+      );
+      const name = safeStr(
+        row?.brand_name ||
+          row?.brand_company_name ||
+          row?.company_name ||
+          row?.organization_name ||
+          row?.business_name ||
+          row?.brands?.company_name ||
+          row?.brands?.name ||
+          row?.brand_campaigns?.brand_name ||
+          row?.brand_campaigns?.brand ||
+          row?.brand?.company_name ||
+          row?.brand?.name ||
+          row?.brand,
+      );
+      return id || name;
+    },
+    [safeStr],
+  );
+
+  const getBrandName = React.useCallback(
+    (row: any) => {
+      return (
+        safeStr(
+          row?.brand_name ||
+            row?.brand_company_name ||
+            row?.company_name ||
+            row?.organization_name ||
+            row?.business_name ||
+            row?.brands?.company_name ||
+            row?.brands?.name ||
+            row?.brand_campaigns?.brand_name ||
+            row?.brand_campaigns?.brand ||
+            row?.brand?.company_name ||
+            row?.brand?.name ||
+            row?.brand,
+        ) || "Brand"
+      );
+    },
+    [safeStr],
+  );
 
   const todayStr = React.useMemo(() => {
     const d = new Date();
@@ -451,15 +532,16 @@ export default function TalentPortal({
       .slice(0, 6);
   }, [bookings, todayStr]);
 
-  const { data: myCampaignOffersData } = useQuery({
-    queryKey: ["myCampaignOffers"],
-    queryFn: async () => {
-      const r = await listMyCampaignOffers();
-      return r?.offers || [];
-    },
-    staleTime: 60 * 1000, // 1 minute
-    refetchOnWindowFocus: false,
-  });
+  const { data: myCampaignOffersData, isLoading: isLoadingCampaignOffers } =
+    useQuery({
+      queryKey: ["myCampaignOffers"],
+      queryFn: async () => {
+        const r = await listMyCampaignOffers();
+        return r?.offers || [];
+      },
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
+    });
 
   const activeProjects = React.useMemo(() => {
     if (!Array.isArray(bookings)) return [];
@@ -472,19 +554,126 @@ export default function TalentPortal({
       .sort((a: any, b: any) => safeStr(a.date).localeCompare(safeStr(b.date)));
   }, [bookings, todayStr]);
 
+  const fullySignedOfferStatuses = React.useMemo(
+    () =>
+      new Set([
+        "contract_fully_signed",
+        "fully_signed",
+        "contract_signed",
+        "signed",
+        "accepted",
+        "active",
+        "in_progress",
+        "in_execution",
+        "deliverables_submitted",
+        "in_review",
+        "changes_requested",
+        "approved",
+        "completed",
+      ]),
+    [],
+  );
+
   const activeCampaignOffers = React.useMemo(() => {
     if (!Array.isArray(myCampaignOffersData)) return [];
-    return myCampaignOffersData.filter((b: any) => {
-      const s = safeStr(b.status).toLowerCase();
-      // Assume "accepted", "approved", "confirmed" mean active.
-      return (
-        s === "accepted" ||
-        s === "approved" ||
-        s === "confirmed" ||
-        s === "pending"
-      );
+    const now = new Date();
+    return myCampaignOffersData.filter((offer: any) => {
+      const status = safeStr(offer?.status).toLowerCase();
+      if (!fullySignedOfferStatuses.has(status)) return false;
+      const campaign = offer?.brand_campaigns || {};
+      const startRaw =
+        safeStr(campaign?.start_date) ||
+        safeStr(offer?.start_date) ||
+        safeStr(campaign?.start_at) ||
+        safeStr(offer?.start_at);
+      const endRaw =
+        safeStr(campaign?.end_date) ||
+        safeStr(offer?.end_date) ||
+        safeStr(campaign?.end_at) ||
+        safeStr(offer?.end_at);
+      const startDate = startRaw ? new Date(startRaw) : null;
+      const endDate = endRaw ? new Date(endRaw) : null;
+      const startOk =
+        !startDate || isNaN(startDate.getTime()) ? true : startDate <= now;
+      const endOk =
+        !endDate || isNaN(endDate.getTime()) ? true : endDate >= now;
+      return startOk && endOk;
     });
-  }, [myCampaignOffersData]);
+  }, [myCampaignOffersData, fullySignedOfferStatuses, safeStr]);
+
+  const offerIsActive = React.useCallback(
+    (offer: any) => {
+      const campaign = offer?.brand_campaigns || {};
+      const startRaw =
+        safeStr(campaign?.start_date) ||
+        safeStr(offer?.start_date) ||
+        safeStr(campaign?.start_at) ||
+        safeStr(offer?.start_at);
+      const endRaw =
+        safeStr(campaign?.end_date) ||
+        safeStr(offer?.end_date) ||
+        safeStr(campaign?.end_at) ||
+        safeStr(offer?.end_at);
+      const startDate = startRaw ? new Date(startRaw) : null;
+      const endDate = endRaw ? new Date(endRaw) : null;
+      const now = new Date();
+      const startOk =
+        !startDate || isNaN(startDate.getTime()) ? true : startDate <= now;
+      const endOk =
+        !endDate || isNaN(endDate.getTime()) ? true : endDate >= now;
+      return startOk && endOk;
+    },
+    [safeStr],
+  );
+
+  const deriveEndDate = React.useCallback(
+    (
+      startDate: Date | null,
+      endDate: Date | null,
+      durationDays?: number,
+      durationMonths?: number,
+    ) => {
+      if (endDate && !isNaN(endDate.getTime())) return endDate;
+      if (!startDate || isNaN(startDate.getTime())) return null;
+      if (typeof durationDays === "number" && durationDays > 0) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + durationDays);
+        return d;
+      }
+      if (typeof durationMonths === "number" && durationMonths > 0) {
+        const d = new Date(startDate);
+        d.setMonth(d.getMonth() + durationMonths);
+        return d;
+      }
+      return null;
+    },
+    [],
+  );
+
+  const fallbackActiveCampaignRows = React.useMemo(() => {
+    if (!Array.isArray(activeCampaignOffers)) return [];
+    return activeCampaignOffers
+      .filter((offer: any) => offerIsActive(offer))
+      .map((offer: any) => ({ kind: "offer", row: offer }));
+  }, [activeCampaignOffers, offerIsActive]);
+
+  const fallbackArchivedCampaigns = React.useMemo(() => {
+    if (!Array.isArray(myCampaignOffersData)) return [];
+    const now = new Date();
+    return myCampaignOffersData.filter((offer: any) => {
+      const status = safeStr(offer?.status).toLowerCase();
+      if (!fullySignedOfferStatuses.has(status)) return false;
+      const campaign = offer?.brand_campaigns || {};
+      const endRaw =
+        safeStr(campaign?.end_date) ||
+        safeStr(offer?.end_date) ||
+        safeStr(campaign?.end_at) ||
+        safeStr(offer?.end_at);
+      const endDate = endRaw ? new Date(endRaw) : null;
+      if (!endDate || isNaN(endDate.getTime())) return false;
+      return endDate < now;
+    });
+  }, [myCampaignOffersData, fullySignedOfferStatuses, safeStr]);
 
   const jobHistory = React.useMemo(() => {
     if (!Array.isArray(bookings)) return [];
@@ -602,12 +791,76 @@ export default function TalentPortal({
     return out;
   }, [earningsByCampaignAllTime]);
 
+  const talentApiAvailable = !error;
+
   const activeCampaignRows = React.useMemo(() => {
+    if (fallbackActiveCampaignRows.length > 0) {
+      return fallbackActiveCampaignRows;
+    }
+    if (!talentApiAvailable) {
+      return [];
+    }
     if (activeLicenses.length > 0) {
       return activeLicenses.map((l: any) => ({ kind: "license", row: l }));
     }
     return activeDeals.map((r: any) => ({ kind: "request", row: r }));
-  }, [activeLicenses, activeDeals]);
+  }, [
+    activeLicenses,
+    activeDeals,
+    fallbackActiveCampaignRows,
+    talentApiAvailable,
+  ]);
+
+  const brandOptions = React.useMemo(() => {
+    const map = new Map<string, string>();
+    const add = (row: any) => {
+      const key = getBrandKey(row);
+      const name = getBrandName(row);
+      if (!key || !name || name.toLowerCase() === "brand") return;
+      if (!map.has(key)) map.set(key, name);
+    };
+    (Array.isArray(licenses) ? licenses : []).forEach(add);
+    (Array.isArray(licensingRequests) ? licensingRequests : []).forEach(add);
+    (Array.isArray(myCampaignOffersData) ? myCampaignOffersData : []).forEach(
+      add,
+    );
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [
+    licenses,
+    licensingRequests,
+    myCampaignOffersData,
+    getBrandKey,
+    getBrandName,
+  ]);
+
+  React.useEffect(() => {
+    setSelectedBrandId("all");
+  }, [brandOptions.map((b) => b.id).join("|")]);
+
+  const filteredActiveCampaignRows = React.useMemo(() => {
+    if (selectedBrandId === "all") return activeCampaignRows;
+    return activeCampaignRows.filter((it: any) => {
+      const row = it?.row || {};
+      return getBrandKey(row) === selectedBrandId;
+    });
+  }, [activeCampaignRows, selectedBrandId, getBrandKey]);
+
+  const archiveRows = React.useMemo(() => {
+    const rows: Array<{ kind: "offer"; row: any }> = [];
+    (Array.isArray(fallbackArchivedCampaigns)
+      ? fallbackArchivedCampaigns
+      : []
+    ).forEach((o: any) => rows.push({ kind: "offer", row: o }));
+    return rows;
+  }, [fallbackArchivedCampaigns]);
+
+  const filteredArchiveRows = React.useMemo(() => {
+    if (selectedBrandId === "all") return archiveRows;
+    return archiveRows.filter((it: any) => {
+      const row = it?.row || {};
+      return getBrandKey(row) === selectedBrandId;
+    });
+  }, [archiveRows, selectedBrandId, getBrandKey]);
 
   const setMode = (next: "ai" | "irl") => {
     if (embedded) {
@@ -988,7 +1241,7 @@ export default function TalentPortal({
                 : "Manage your AI licensing deals and earnings"}
             </div>
           </div>
-          {canSelectAgency && (
+          <div className="flex items-center gap-3">
             <div className="w-[240px]">
               <Select
                 value={selectedAgencyId}
@@ -1007,7 +1260,25 @@ export default function TalentPortal({
                 </SelectContent>
               </Select>
             </div>
-          )}
+            <div className="w-[240px]">
+              <Select
+                value={selectedBrandId}
+                onValueChange={setSelectedBrandId}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All brands" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All brands</SelectItem>
+                  {brandOptions.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <button
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
             onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
@@ -1066,14 +1337,9 @@ export default function TalentPortal({
                     id: "campaigns",
                     label: "Active Campaigns",
                     icon: Briefcase,
-                    badge: activeDeals.length,
+                    badge: filteredActiveCampaignRows.length,
                   },
                   { id: "archive", label: "Archive", icon: FolderArchive },
-                  {
-                    id: "licenses",
-                    label: "Licenses & Contracts",
-                    icon: ShieldCheck,
-                  },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "analytics", label: "Analytics", icon: BarChart3 },
                   { id: "messages", label: "Messages", icon: MessageSquare },
@@ -2811,11 +3077,6 @@ export default function TalentPortal({
 
           {tab === "campaigns" && (
             <div className="space-y-6">
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-                Track all your licensing agreements, project details, and
-                campaign performance in one place.
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-5 rounded-xl border-2 border-green-200 bg-green-50/60 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -2828,23 +3089,7 @@ export default function TalentPortal({
                       </div>
                     </div>
                     <Badge className="bg-green-600 text-white border-0">
-                      {activeCampaignRows.length}
-                    </Badge>
-                  </div>
-                </Card>
-
-                <Card className="p-5 rounded-xl border-2 border-gray-200 bg-gray-50/60 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Completed
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Finished campaigns
-                      </div>
-                    </div>
-                    <Badge className="bg-gray-700 text-white border-0">
-                      {completedLicenses.length}
+                      {filteredActiveCampaignRows.length}
                     </Badge>
                   </div>
                 </Card>
@@ -2855,42 +3100,92 @@ export default function TalentPortal({
                   Active Campaigns
                 </div>
                 <div className="mt-5 space-y-4">
-                  {activeCampaignRows.length === 0 ? (
+                  {filteredActiveCampaignRows.length === 0 ? (
                     <div className="text-sm text-gray-600">
-                      No active campaigns yet.
+                      {isLoadingCampaignOffers
+                        ? "Loading active campaigns..."
+                        : "No active campaigns yet."}
                     </div>
                   ) : (
-                    activeCampaignRows.map((it: any) => {
+                    filteredActiveCampaignRows.map((it: any) => {
                       const row = it.row || {};
-                      const brandId = safeStr(
-                        row.brand_id ||
-                          row.brand_org_id ||
-                          row.brand_org ||
-                          row.brand,
-                      );
-                      const brandName = row.brand_name || "Brand";
+                      const kind = it.kind || "license";
+                      const brandId = getBrandKey(row);
+                      const brandName = getBrandName(row);
+                      const campaign = row?.brand_campaigns || {};
                       const subtitle =
-                        row.type ||
-                        row.campaign_title ||
-                        row.usage_scope ||
-                        "Campaign";
+                        kind === "offer"
+                          ? campaign?.name || row?.campaign_title || "Campaign"
+                          : row.type ||
+                            row.campaign_title ||
+                            row.usage_scope ||
+                            "Campaign";
 
-                      const endRaw = safeStr(
-                        row.end_at || row.deadline || row.license_expiry,
-                      );
+                      const startRaw =
+                        kind === "offer"
+                          ? safeStr(
+                              campaign?.start_date ||
+                                campaign?.start_at ||
+                                row?.start_date ||
+                                row?.start_at,
+                            )
+                          : safeStr(row?.start_at || row?.start_date);
+                      const endRaw =
+                        kind === "offer"
+                          ? safeStr(
+                              campaign?.end_date ||
+                                campaign?.end_at ||
+                                row?.end_date ||
+                                row?.end_at,
+                            )
+                          : safeStr(
+                              row.end_at || row.deadline || row.license_expiry,
+                            );
+                      const startDate = startRaw ? new Date(startRaw) : null;
                       const endDate = endRaw ? new Date(endRaw) : null;
+                      const derivedEnd =
+                        kind === "offer"
+                          ? deriveEndDate(
+                              startDate,
+                              endDate,
+                              campaign?.duration_days ??
+                                row?.duration_days ??
+                                row?.duration_in_days,
+                              campaign?.duration_months ??
+                                row?.duration_months ??
+                                row?.duration_in_months,
+                            )
+                          : deriveEndDate(
+                              startDate,
+                              endDate,
+                              row?.duration_days,
+                              row?.duration_months,
+                            );
                       const activeUntil =
-                        endDate && !isNaN(endDate.getTime())
-                          ? endDate.toLocaleDateString()
+                        derivedEnd && !isNaN(derivedEnd.getTime())
+                          ? derivedEnd.toLocaleDateString()
                           : "—";
 
-                      const regions = Array.isArray(row.regions)
-                        ? row.regions.join(", ")
-                        : safeStr(row.regions) || "—";
+                      const regions =
+                        kind === "offer"
+                          ? Array.isArray(campaign?.territory)
+                            ? campaign.territory.join(", ")
+                            : safeStr(campaign?.territory) || "—"
+                          : Array.isArray(row.regions)
+                            ? row.regions.join(", ")
+                            : safeStr(row.regions) || "—";
 
                       const impressionsWk = fmtCompact(
                         viewsByBrandId[brandId] || 0,
                       );
+                      const briefSnapshot =
+                        row?.campaign_brief_snapshot || row?.brief_snapshot;
+                      const amountRaw =
+                        briefSnapshot?.budget_creator_payment ??
+                        briefSnapshot?.budget_creator_payment_cents ??
+                        0;
+                      const amountValue = Number(amountRaw) || 0;
+                      const amountDisplay = `$${amountValue.toLocaleString()}`;
                       const monthlyCents = earningsByBrandId[brandId] || 0;
 
                       return (
@@ -2922,10 +3217,12 @@ export default function TalentPortal({
                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div className="rounded-xl border bg-white p-3">
                               <div className="text-[11px] text-gray-500">
-                                Monthly Rate
+                                Amount
                               </div>
                               <div className="text-sm font-semibold text-gray-900">
-                                {fmtDollars(monthlyCents)}
+                                {kind === "offer"
+                                  ? amountDisplay
+                                  : fmtDollars(monthlyCents)}
                               </div>
                             </div>
                             <div className="rounded-xl border bg-white p-3">
@@ -2944,115 +3241,11 @@ export default function TalentPortal({
                                 {regions}
                               </div>
                             </div>
-                            <div className="rounded-xl border bg-white p-3">
-                              <div className="text-[11px] text-gray-500">
-                                Impressions/wk
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {impressionsWk}
-                              </div>
-                            </div>
                           </div>
                         </div>
                       );
                     })
                   )}
-                </div>
-              </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
-                  Contract Terms & Compensation
-                </div>
-                <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {activeCampaignRows.slice(0, 2).map((it: any) => {
-                    const row = it.row || {};
-                    const brandId = safeStr(
-                      row.brand_id ||
-                        row.brand_org_id ||
-                        row.brand_org ||
-                        row.brand,
-                    );
-                    const brandName = row.brand_name || "Brand";
-                    const subtitle =
-                      row.type || row.campaign_title || "Campaign";
-                    const monthlyCents = earningsByBrandId[brandId] || 0;
-                    const earnedCents = earningsByBrandId[brandId] || 0;
-                    const endRaw = safeStr(
-                      row.end_at || row.deadline || row.license_expiry,
-                    );
-                    const endDate = endRaw ? new Date(endRaw) : null;
-                    const daysLeft =
-                      endDate && !isNaN(endDate.getTime())
-                        ? Math.max(
-                            0,
-                            Math.ceil(
-                              (endDate.getTime() - Date.now()) /
-                                (1000 * 60 * 60 * 24),
-                            ),
-                          )
-                        : null;
-
-                    return (
-                      <div
-                        key={row.id || `${brandId}-${brandName}-terms`}
-                        className="rounded-2xl border bg-white p-5"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">
-                              Monthly:
-                            </div>
-                            <div className="text-sm font-semibold text-green-600">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Monthly
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Earned
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {fmtDollars(earnedCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Days Left
-                            </div>
-                            <div className="font-semibold text-gray-900">
-                              {daysLeft === null ? "—" : daysLeft}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               </Card>
             </div>
@@ -3061,19 +3254,12 @@ export default function TalentPortal({
             <Card className="p-6 rounded-xl shadow-sm">
               <div className="text-xl font-semibold text-gray-900">Archive</div>
               <div className="text-sm text-gray-600 mt-1">
-                Rejected or past requests
+                Past campaigns (expired)
               </div>
               <div className="mt-6 space-y-3">
                 {(() => {
-                  const archivedRequests = (
-                    Array.isArray(licensingRequests) ? licensingRequests : []
-                  ).filter((r: any) => {
-                    const s = safeStr(r?.status).toLowerCase();
-                    return s === "rejected" || s === "declined";
-                  });
-
-                  const archivedLicenses = Array.isArray(completedLicenses)
-                    ? completedLicenses
+                  const archivedLicenses = Array.isArray(filteredArchiveRows)
+                    ? filteredArchiveRows
                     : [];
 
                   const items: Array<{
@@ -3084,29 +3270,18 @@ export default function TalentPortal({
                     badgeVariant?: "secondary" | "outline";
                   }> = [];
 
-                  for (const l of archivedLicenses as any[]) {
+                  for (const entry of archivedLicenses as any[]) {
+                    const row = entry?.row || entry;
+                    const kind = entry?.kind || "offer";
+                    const status = "completed";
                     items.push({
-                      key: `license-${l.id}`,
-                      brandName: l.brand_name || "Brand",
-                      subtitle: l.type || "License",
-                      badge:
-                        safeStr(l.status || "completed").toLowerCase() ||
-                        "completed",
-                      badgeVariant: "secondary",
-                    });
-                  }
-
-                  for (const r of archivedRequests as any[]) {
-                    items.push({
-                      key: `request-${r.id}`,
-                      brandName: r.brand_name || "Brand",
+                      key: `${kind}-${row?.id || row?.campaign_offer_id || row?.offer_id || Math.random()}`,
+                      brandName: getBrandName(row),
                       subtitle:
-                        r.campaign_title ||
-                        r.usage_scope ||
-                        "Licensing request",
-                      badge:
-                        safeStr(r.status || "declined").toLowerCase() ||
-                        "declined",
+                        row?.brand_campaigns?.name ||
+                        row?.campaign_title ||
+                        "Campaign",
+                      badge: status,
                       badgeVariant: "secondary",
                     });
                   }
@@ -3114,7 +3289,9 @@ export default function TalentPortal({
                   if (items.length === 0) {
                     return (
                       <div className="text-sm text-gray-600">
-                        Nothing in archive yet.
+                        {isLoadingCampaignOffers
+                          ? "Loading past campaigns..."
+                          : "No past campaigns yet"}
                       </div>
                     );
                   }
@@ -3143,107 +3320,6 @@ export default function TalentPortal({
                 })()}
               </div>
             </Card>
-          )}
-
-          {tab === "licenses" && (
-            <div className="space-y-5">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  Licenses & Contracts
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Track all your licensing agreements
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {licenses.length === 0 ? (
-                  <Card className="p-6 rounded-xl shadow-sm">
-                    <div className="text-sm text-gray-600">
-                      No licenses found yet.
-                    </div>
-                  </Card>
-                ) : (
-                  licenses.map((l: any) => {
-                    const brandId = safeStr(l.brand_org_id || l.brand_id);
-                    const brandName = l.brand_name || "Brand";
-                    const subtitle = l.type || "License";
-
-                    const endRaw = safeStr(l.end_at);
-                    const endDate = endRaw ? new Date(endRaw) : null;
-                    const daysLeft =
-                      endDate && !isNaN(endDate.getTime())
-                        ? Math.max(
-                            0,
-                            Math.ceil(
-                              (endDate.getTime() - Date.now()) /
-                                (1000 * 60 * 60 * 24),
-                            ),
-                          )
-                        : null;
-
-                    const monthlyCents = earningsByBrandId[brandId] || 0;
-                    const earnedCents = earningsAllTimeByBrandId[brandId] || 0;
-
-                    const status =
-                      safeStr(l.status || "active").toLowerCase() || "active";
-
-                    return (
-                      <Card key={l.id} className="p-5 rounded-xl shadow-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                              {(
-                                String(brandName).trim()[0] || "B"
-                              ).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {brandName}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {subtitle}
-                              </div>
-                            </div>
-                          </div>
-
-                          <Badge className="bg-green-100 text-green-800 border-0 capitalize">
-                            {status}
-                          </Badge>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Monthly
-                            </div>
-                            <div className="text-sm font-semibold text-green-600">
-                              {fmtDollars(monthlyCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Earned
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {fmtDollars(earnedCents)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-gray-500">
-                              Days Left
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {daysLeft === null ? "—" : daysLeft}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
           )}
 
           {tab === "earnings" && (
