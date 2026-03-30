@@ -813,6 +813,7 @@ Agencies can invite talent to join their roster:
 - The agency then uses the embedded DocuSeal builder to place signature fields and finalize the send.
 - After the creator signs, `POST /webhooks/docuseal/marketplace-contracts` updates the marketplace contract row and activates the creator-agency connection automatically.
 - Creator Dashboard, Talent Portal, and Agency Roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
+- Creator-side connected agency cards should expose contract reminders such as commission rate, start date, end date, disconnect status, and the signed contract link.
 
 #### State Transitions and Table Ownership
 
@@ -846,6 +847,26 @@ Agencies can invite talent to join their roster:
    - Talent Portal agency connections
    - Agency roster
    - Agency marketplace creator cards/details
+
+#### Disconnect Constraints
+
+- Active marketplace contracts are not immediately disconnectable by the creator.
+- `POST /api/creator/agency-connections/:agency_id/disconnect`
+  - if no active marketplace contract exists, it can remove the live relationship immediately
+  - if an active marketplace contract exists, it creates a disconnect request instead of removing the connection
+- The disconnect request is stored on `agency_creator_marketplace_contracts` using:
+  - `disconnect_status`
+  - `disconnect_requested_by`
+  - `disconnect_requested_at`
+  - `disconnect_reason`
+  - `disconnect_reviewed_by`
+  - `disconnect_reviewed_at`
+- Agency reviewers handle pending requests from roster / creator contract details and can approve or reject them.
+- Agency reviewers now handle pending marketplace disconnect requests from the agency marketplace creator side sheet, keeping the review isolated to the relevant agency-creator pair.
+- Approval terminates the live relationship by removing the `agency_talent_relationships` row and marking the corresponding `agency_users` row inactive.
+- Rejection leaves the live relationship active while preserving the request history on the contract record.
+- When the contract passes `valid_until`, the live relationship is removed automatically without requiring approval.
+- Contract rows are retained for audit/history even after the active relationship is removed.
 
 #### Commission Settings Alignment
 
