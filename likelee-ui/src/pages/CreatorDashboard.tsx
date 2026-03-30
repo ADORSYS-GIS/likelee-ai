@@ -8451,10 +8451,21 @@ export default function CreatorDashboard() {
         </div>
         {campaignsToShow.length === 0 ? (
           <Card className="p-6 rounded-xl shadow-sm text-center text-gray-600">
-            <p>Loading past campaigns...</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Fetching your completed campaigns and expired licenses.
-            </p>
+            {loadingBrandOffers ? (
+              <>
+                <p>Loading past campaigns...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fetching your completed campaigns.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>No past campaigns yet.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Completed campaigns will appear here.
+                </p>
+              </>
+            )}
           </Card>
         ) : (
           <div className="space-y-6">
