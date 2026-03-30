@@ -186,6 +186,19 @@ const RESTRICTIONS = [
   "Health/Medical Claims",
 ];
 
+const VIBES = [
+  "Streetwear",
+  "Glam",
+  "Natural",
+  "Classic",
+  "Edgy",
+  "Athletic",
+  "Runway",
+  "Editorial",
+  "Commercial",
+  "Casual",
+];
+
 // Voice recording scripts for different emotions
 const getVoiceScripts = (t: any) => ({
   happy: t("creatorDashboard.voiceScripts.happy"),
@@ -2106,6 +2119,9 @@ export default function CreatorDashboard() {
     t("creatorDashboard.restrictions.healthMedicalClaims"),
   ];
 
+  const getTranslatedVibes = () =>
+    VIBES.map((vibe) => resolveTranslation(`content.vibes.${vibe}`, vibe));
+
   // Mapping functions to translate stored English values to localized display text
   const translateContentType = (englishType: string): string => {
     const index = CONTENT_TYPES.indexOf(englishType);
@@ -2123,6 +2139,12 @@ export default function CreatorDashboard() {
     const index = RESTRICTIONS.indexOf(englishRestriction);
     if (index === -1) return englishRestriction;
     return getTranslatedRestrictions()[index];
+  };
+
+  const translateVibe = (englishVibe: string): string => {
+    const index = VIBES.indexOf(englishVibe);
+    if (index === -1) return englishVibe;
+    return getTranslatedVibes()[index];
   };
 
   // Creator profile state (declare before any hooks that reference `creator`)
@@ -2146,6 +2168,7 @@ export default function CreatorDashboard() {
     instagram_connected: false,
     content_types: [] as string[],
     industries: [] as string[],
+    vibes: [] as string[],
     content_restrictions: [] as string[],
     brand_exclusivity: [] as string[],
     price_per_month: 0,
@@ -2198,6 +2221,7 @@ export default function CreatorDashboard() {
             : prev.height_cm,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+        vibes: profile.vibes ?? prev.vibes,
         is_public_brands: resolvePublicBrandsVisibility(profile),
       }));
     }
@@ -4663,6 +4687,18 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handleToggleVibe = (vibe) => {
+    const current = creator.vibes || [];
+    if (current.includes(vibe)) {
+      setCreator({
+        ...creator,
+        vibes: current.filter((v) => v !== vibe),
+      });
+    } else {
+      setCreator({ ...creator, vibes: [...current, vibe] });
+    }
+  };
+
   const handleSaveRules = async (
     customToast?: any,
     overrides?: Partial<typeof creator>,
@@ -4763,6 +4799,7 @@ export default function CreatorDashboard() {
           : "private",
       content_types: overrides?.content_types ?? creator.content_types,
       industries: overrides?.industries ?? creator.industries,
+      vibes: overrides?.vibes ?? creator.vibes,
     };
 
     try {
@@ -4810,6 +4847,7 @@ export default function CreatorDashboard() {
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
+          vibes: savedProfile.vibes ?? prev.vibes,
           content_restrictions:
             savedProfile.content_restrictions ?? prev.content_restrictions,
           brand_exclusivity:
@@ -10129,6 +10167,32 @@ export default function CreatorDashboard() {
                     "creatorDashboard.settingsView.profile.placeholders.bio",
                   )}
                 />
+              </div>
+
+              <div className="pt-2">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  {t("reserveProfile.form.vibes")}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {VIBES.map((vibe) => {
+                    const isSelected = creator.vibes?.includes(vibe);
+                    return (
+                      <button
+                        key={vibe}
+                        type="button"
+                        onClick={() => handleToggleVibe(vibe)}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 rounded-lg flex items-center gap-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-4 h-4" />}
+                        {translateVibe(vibe)}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <Button

@@ -1697,7 +1697,6 @@ export default function ReserveProfile() {
                   </div>
                 )}
               </div>
-              </div>
 
               <div className="flex gap-4">
                 <Button
