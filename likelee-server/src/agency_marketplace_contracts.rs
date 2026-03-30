@@ -29,6 +29,11 @@ pub struct MarketplaceContractSummary {
     pub creator_sign_url: Option<String>,
     pub agency_sign_url: Option<String>,
     pub signed_document_url: Option<String>,
+    pub disconnect_status: Option<String>,
+    pub disconnect_requested_by: Option<String>,
+    pub disconnect_requested_at: Option<String>,
+    pub disconnect_reason: Option<String>,
+    pub disconnect_reviewed_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -81,7 +86,7 @@ fn required_placeholders_present(body: &str) -> bool {
     REQUIRED_PLACEHOLDERS.iter().all(|p| body.contains(p))
 }
 
-fn parse_contract_summary(row: &Value) -> MarketplaceContractSummary {
+pub fn parse_contract_summary(row: &Value) -> MarketplaceContractSummary {
     MarketplaceContractSummary {
         id: row
             .get("id")
@@ -124,6 +129,26 @@ fn parse_contract_summary(row: &Value) -> MarketplaceContractSummary {
             .map(|slug| format!("https://docuseal.co/s/{}", slug)),
         signed_document_url: row
             .get("signed_document_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        disconnect_status: row
+            .get("disconnect_status")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        disconnect_requested_by: row
+            .get("disconnect_requested_by")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        disconnect_requested_at: row
+            .get("disconnect_requested_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        disconnect_reason: row
+            .get("disconnect_reason")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        disconnect_reviewed_at: row
+            .get("disconnect_reviewed_at")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
     }
@@ -277,7 +302,7 @@ async fn resolve_creator_identity(
     Ok((creator_name, creator_email))
 }
 
-async fn resolve_agency_identity(
+pub async fn resolve_agency_identity(
     state: &AppState,
     agency_id: &str,
 ) -> Result<(String, String), (StatusCode, String)> {
@@ -655,7 +680,7 @@ async fn activate_connection_from_contract_row(
     Ok(())
 }
 
-async fn deactivate_connection_for_contract_row(state: &AppState, row: &Value) {
+pub async fn remove_live_connection_for_contract_row(state: &AppState, row: &Value) {
     let agency_id = row
         .get("agency_id")
         .and_then(|v| v.as_str())
@@ -676,6 +701,15 @@ async fn deactivate_connection_for_contract_row(state: &AppState, row: &Value) {
         .from("agency_talent_relationships")
         .eq("agency_id", &agency_id)
         .eq("creator_id", &creator_id)
+        .delete()
+        .execute()
+        .await;
+    let _ = state
+        .pg
+        .from("agency_users")
+        .eq("agency_id", &agency_id)
+        .eq("creator_id", &creator_id)
+        .eq("role", "talent")
         .update(
             json!({
                 "status": "inactive",
@@ -1071,6 +1105,18 @@ pub async fn get_latest_contract_for_pair(
     agency_id: &str,
     creator_id: &str,
 ) -> Option<MarketplaceContractSummary> {
+    let row = get_latest_contract_row_for_pair(state, agency_id, creator_id)
+        .await
+        .ok()
+        .flatten()?;
+    Some(parse_contract_summary(&row))
+}
+
+pub async fn get_latest_contract_row_for_pair(
+    state: &AppState,
+    agency_id: &str,
+    creator_id: &str,
+) -> Result<Option<Value>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("agency_creator_marketplace_contracts")
@@ -1081,13 +1127,38 @@ pub async fn get_latest_contract_for_pair(
         .limit(1)
         .execute()
         .await
-        .ok()?;
-    if !resp.status().is_success() {
-        return None;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let text = resp.text().await.ok()?;
     let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
-    rows.first().map(parse_contract_summary)
+    Ok(rows.first().cloned())
+}
+
+pub async fn get_latest_live_contract_for_pair(
+    state: &AppState,
+    agency_id: &str,
+    creator_id: &str,
+) -> Option<MarketplaceContractSummary> {
+    let row = get_latest_contract_row_for_pair(state, agency_id, creator_id)
+        .await
+        .ok()
+        .flatten()?;
+    let status = row
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft");
+    if matches!(status, "draft" | "pending_signature" | "active") {
+        if let Ok(summary) = sync_contract_for_row(state, &row).await {
+            return Some(summary);
+        }
+    }
+    Some(parse_contract_summary(&row))
 }
 
 pub async fn sync_open_contracts_for_creator(
@@ -1103,7 +1174,7 @@ pub async fn sync_open_contracts_for_creator(
         .from("agency_creator_marketplace_contracts")
         .select("*")
         .eq("creator_id", creator_id)
-        .in_("status", vec!["draft", "pending_signature"])
+        .in_("status", vec!["draft", "pending_signature", "active"])
         .order("created_at.desc")
         .limit(50)
         .execute()
@@ -1138,7 +1209,7 @@ pub async fn sync_open_contracts_for_agency(
         .from("agency_creator_marketplace_contracts")
         .select("*")
         .eq("agency_id", agency_id)
-        .in_("status", vec!["draft", "pending_signature"])
+        .in_("status", vec!["draft", "pending_signature", "active"])
         .order("created_at.desc")
         .limit(100)
         .execute()
@@ -1246,8 +1317,8 @@ pub async fn sync_contract_for_row(
         "active" => {
             activate_connection_from_contract_row(state, &updated).await?;
         }
-        "expired" => {
-            deactivate_connection_for_contract_row(state, &updated).await;
+        "expired" | "terminated" => {
+            remove_live_connection_for_contract_row(state, &updated).await;
         }
         "declined" | "voided" => {
             if let Some(invite_id) = updated.get("invite_id").and_then(|v| v.as_str()) {
@@ -1357,8 +1428,8 @@ async fn apply_webhook_status_to_contract_row(
         "active" => {
             activate_connection_from_contract_row(state, &updated).await?;
         }
-        "expired" => {
-            deactivate_connection_for_contract_row(state, &updated).await;
+        "expired" | "terminated" => {
+            remove_live_connection_for_contract_row(state, &updated).await;
         }
         "declined" | "voided" => {
             if let Some(invite_id) = updated.get("invite_id").and_then(|v| v.as_str()) {
