@@ -258,9 +258,37 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register } = useAuth();
+  const {
+    initialized,
+    authenticated,
+    user,
+    profile,
+    login,
+    register,
+    ensureRole,
+    refreshProfile,
+  } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const accountRole = String(
+    profile?.role ||
+      user?.user_metadata?.role ||
+      user?.app_metadata?.role ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+  const creatorAccessConflict =
+    !!accountRole && accountRole !== "creator" && accountRole !== "talent";
+  const defaultDashboardPath =
+    accountRole === "brand"
+      ? "/BrandDashboard"
+      : accountRole === "agency"
+        ? "/AgencyDashboard"
+        : "/CreatorDashboard";
+  const creatorRoleConflictMessage = `This account is already registered as ${
+    accountRole === "talent" ? "creator/talent" : accountRole || "another"
+  }. Use a separate account for creator access.`;
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("reserve_step");
@@ -460,7 +488,6 @@ export default function ReserveProfile() {
   const progress = (step / totalSteps) * 100;
 
   // Verification state
-  const { initialized, authenticated, user } = useAuth();
   const [kycStatus, setKycStatus] = useState<
     "not_started" | "pending" | "approved" | "rejected"
   >("not_started");
@@ -501,6 +528,28 @@ export default function ReserveProfile() {
     if (step === 5) return "Terms & Agreements";
     return "";
   };
+
+  useEffect(() => {
+    if (!initialized || !authenticated || !user || !creatorAccessConflict) {
+      return;
+    }
+
+    toast({
+      title: t("common.error"),
+      description: creatorRoleConflictMessage,
+      variant: "destructive",
+    });
+    navigate(defaultDashboardPath, { replace: true });
+  }, [
+    initialized,
+    authenticated,
+    user,
+    creatorAccessConflict,
+    creatorRoleConflictMessage,
+    defaultDashboardPath,
+    navigate,
+    t,
+  ]);
 
   useEffect(() => {
     if (step !== 4) return;
@@ -654,6 +703,16 @@ export default function ReserveProfile() {
   });
 
   const handleFirstContinue = () => {
+    if (creatorAccessConflict) {
+      toast({
+        title: t("common.error"),
+        description: creatorRoleConflictMessage,
+        variant: "destructive",
+      });
+      navigate(defaultDashboardPath, { replace: true });
+      return;
+    }
+
     if (!formData.email) {
       toast({
         title: t("reserveProfile.toasts.emailRequiredTitle"),
@@ -898,6 +957,16 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
+    if (creatorAccessConflict) {
+      toast({
+        title: t("common.error"),
+        description: creatorRoleConflictMessage,
+        variant: "destructive",
+      });
+      navigate(defaultDashboardPath, { replace: true });
+      return;
+    }
+
     if (!user) {
       toast({
         title: t("reserveProfile.toasts.notSignedInTitle"),
@@ -947,6 +1016,8 @@ export default function ReserveProfile() {
         .from("creators")
         .upsert(payload, { onConflict: "id" });
       if (error) throw error;
+      await ensureRole("creator");
+      await refreshProfile();
       setProfileId(user.id);
       setSubmitted(true);
       // Clear persisted state on success

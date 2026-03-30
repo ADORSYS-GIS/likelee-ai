@@ -3,7 +3,15 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/components/ui/use-toast";
-import { Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import {
+  clearAuthIntent,
+  getOrganizationSignupPath,
+  getSignupPathForRole,
+  isOrganizationOnboardingIncomplete,
+  readAuthIntent,
+  saveAuthIntent,
+} from "@/auth/onboarding";
 
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import { Button } from "@/components/ui/button";
@@ -39,6 +47,8 @@ export default function Login() {
     loginWithProvider,
     initialized,
     authenticated,
+    profileResolved,
+    user,
     profile,
     logout,
   } = useAuth();
@@ -47,8 +57,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [userType, setUserType] = React.useState("creator");
-  const [loginAttempted, setLoginAttempted] = React.useState(false);
+  const [userType, setUserType] = React.useState(
+    () => readAuthIntent()?.role || "creator",
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -66,16 +77,47 @@ export default function Login() {
     // Reset accessDenied once we are fully logged out
     if (!authenticated) {
       setAccessDenied(false);
+      setIsRedirecting(false);
+      return;
+    }
+
+    if (!initialized) return;
+    if (accessDenied) return;
+
+    const authIntent = readAuthIntent();
+    const normalizedUserType = (userType || "").toLowerCase().trim();
+    const creatorSignupPath = getSignupPathForRole(
+      "creator",
+      authIntent?.creatorType || creatorType,
+    );
+    const authUserRole = String(
+      user?.user_metadata?.role || user?.app_metadata?.role || "",
+    )
+      .trim()
+      .toLowerCase();
+
+    if (!profile) {
+      if (!profileResolved) return;
+
+      if (authIntent?.role && !authUserRole) {
+        setIsRedirecting(true);
+        navigate(
+          getSignupPathForRole(
+            authIntent.role,
+            authIntent.creatorType || creatorType,
+          ),
+          {
+            replace: true,
+          },
+        );
+      }
       return;
     }
 
     if (initialized && authenticated && profile) {
       // If we already detected a mismatch, don't do anything until logout finishes
-      if (accessDenied) return;
-
       // Enforce role-based login
       const normalizedRole = (profile.role || "").toLowerCase().trim();
-      const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
@@ -92,17 +134,34 @@ export default function Login() {
         setError("Account does not exist under this tab, try another");
         setAccessDenied(true);
         logout();
+        clearAuthIntent();
         return;
       }
 
       // Set redirecting state to hide content during navigation
       setIsRedirecting(true);
 
+      const needsCreatorOnboarding =
+        normalizedRole === "creator" &&
+        !String(profile.creator_type || "").trim();
+
+      if (authIntent?.role === "creator" && needsCreatorOnboarding) {
+        navigate(creatorSignupPath, { replace: true });
+        return;
+      }
+
+      if (isOrganizationOnboardingIncomplete(profile)) {
+        clearAuthIntent();
+        navigate(getOrganizationSignupPath(profile), { replace: true });
+        return;
+      }
+
       if (creatorType) {
         navigate(
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
           { replace: true },
         );
+        clearAuthIntent();
       } else {
         const dashboard =
           profile.role === "brand"
@@ -111,15 +170,18 @@ export default function Login() {
               ? "/AgencyDashboard"
               : "/CreatorDashboard";
         navigate(dashboard, { replace: true });
+        clearAuthIntent();
       }
     }
   }, [
     initialized,
     authenticated,
     profile,
+    profileResolved,
     navigate,
     creatorType,
     userType,
+    user,
     logout,
     accessDenied,
   ]);
@@ -150,7 +212,7 @@ export default function Login() {
   const getSignupLink = () => {
     if (userType === "creator") return "/CreatorSignupOptions";
     if (userType === "brand") return "/OrganizationSignup?type=brand_company";
-    if (userType === "agency") return "/AgencySelection";
+    if (userType === "agency") return "/AgencySelection?mode=signup";
     return "/Register";
   };
 
@@ -207,6 +269,7 @@ export default function Login() {
               onValueChange={(value) => {
                 setUserType(value);
                 setError(null);
+                setAccessDenied(false);
               }}
             >
               <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-gray-100 rounded-xl">
@@ -238,8 +301,13 @@ export default function Login() {
                     className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
                     onClick={async () => {
                       try {
+                        saveAuthIntent({
+                          role: userType as "creator" | "brand" | "agency",
+                          creatorType,
+                        });
                         await loginWithProvider("google");
                       } catch (err: any) {
+                        clearAuthIntent();
                         toast({
                           title: t("auth.login.googleSignInFailed"),
                           description: getFriendlyErrorMessage(err, t),

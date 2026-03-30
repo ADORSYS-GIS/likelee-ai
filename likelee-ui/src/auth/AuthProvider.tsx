@@ -8,17 +8,36 @@ import React, {
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { clearAuthIntent, readAuthIntent } from "./onboarding";
+
+const normalizeRole = (value?: unknown) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const getUserRoleHint = (
+  authUser?: Pick<User, "user_metadata" | "app_metadata"> | null,
+) =>
+  normalizeRole(authUser?.user_metadata?.role || authUser?.app_metadata?.role);
+
+const resolveProfileRole = (table: string, row: any) => {
+  if (table === "agencies") return "agency";
+  if (table === "brands") return "brand";
+  return normalizeRole(row?.role) || "creator";
+};
 
 interface AuthContextValue {
   supabase: SupabaseClient;
   initialized: boolean;
   authenticated: boolean;
+  profileResolved: boolean;
   token?: string | undefined;
   user?: User | null;
   profile?: Profile | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithProvider: (provider: "google") => Promise<void>;
   logout: () => Promise<void>;
+  ensureRole: (role: "creator" | "brand" | "agency") => Promise<void>;
   register: (
     email: string,
     password: string,
@@ -50,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileResolved, setProfileResolved] = useState(false);
   const userRef = React.useRef<User | null>(null);
   const profileRef = React.useRef<Profile | null>(null);
 
@@ -84,7 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role?: string,
   ) => {
     try {
-      const roleHint = (role || "").trim();
+      setProfileResolved(false);
+      const roleHint = normalizeRole(role || readAuthIntent()?.role);
       const roleToTable: Record<string, string> = {
         creator: "creators",
         brand: "brands",
@@ -108,6 +129,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const resp = await tryFetch(table);
         data = resp.data;
         error = resp.error;
+
+        if (!data && !error) {
+          for (const candidate of ["agencies", "brands", "creators"]) {
+            if (candidate === table) continue;
+            const fallbackResp = await tryFetch(candidate);
+            if (fallbackResp.error) {
+              error = fallbackResp.error;
+              continue;
+            }
+            if (fallbackResp.data) {
+              data = fallbackResp.data;
+              table = candidate;
+              error = null;
+              break;
+            }
+          }
+        }
       } else {
         for (const candidate of ["agencies", "brands", "creators"]) {
           const resp = await tryFetch(candidate);
@@ -133,22 +171,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           `Error fetching profile from ${table}:`,
           JSON.stringify(error, null, 2),
         );
+        setProfileResolved(true);
         return;
       }
 
       if (data) {
-        // Add role to profile object for convenience
-        let resolvedRole = roleHint;
-        if (!resolvedRole) {
-          if (table === "agencies") resolvedRole = "agency";
-          else if (table === "brands") resolvedRole = "brand";
-          else resolvedRole = String((data as any)?.role || "creator");
-        }
+        let resolvedRole = resolveProfileRole(table, data);
 
         // Role override: if this authenticated user is linked via agency_users,
         // treat them as a talent for routing/dashboard purposes.
         // This allows talents to log in via the Creator tab.
-        if (!resolvedRole || resolvedRole === "creator") {
+        if (table === "creators" && resolvedRole === "creator") {
           const { data: agencyUser } = await supabase
             .from("agency_users")
             .select("id")
@@ -162,47 +195,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
-      } else if (userEmail && (table === "creators" || !table)) {
-        // Profile missing in profiles table, create it (only for creators)
-        console.log("Profile missing, creating new profile for:", userId);
-        const { data: newProfile, error: insertError } = await supabase
-          .from("creators")
-          .upsert(
-            {
-              id: userId,
-              email: userEmail,
-              full_name: userFullName,
-              role: roleHint || "creator",
-            },
-            { onConflict: "id" },
-          )
-          .select()
-          .single();
-
-        if (insertError) {
-          if (
-            insertError.code === "23505" ||
-            insertError.message.includes("duplicate key")
-          ) {
-            const { data: existingProfile } = await supabase
-              .from("creators")
-              .select("*")
-              .eq("id", userId)
-              .maybeSingle();
-            if (existingProfile)
-              setProfile({
-                ...existingProfile,
-                role: roleHint || existingProfile.role,
-              });
-          } else {
-            console.error("Error creating profile:", insertError);
-          }
-        } else if (newProfile) {
-          setProfile({ ...newProfile, role: roleHint || newProfile.role });
-        }
+      } else {
+        setProfile(null);
       }
+      setProfileResolved(true);
     } catch (err) {
       console.error("Error fetching/creating profile:", err);
+      setProfileResolved(true);
     }
   };
 
@@ -216,6 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
+      setProfileResolved(true);
       setInitialized(true);
       return;
     }
@@ -230,6 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         profileRef.current = null;
         queryClient.clear();
+        setProfileResolved(!nextUser);
       }
 
       setUser(nextUser);
@@ -252,12 +253,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               currentUser.id,
               currentUser.email,
               currentUser.user_metadata?.full_name,
-              currentUser.user_metadata?.role,
+              getUserRoleHint(currentUser),
             );
           }
         } else {
           setProfile(null);
           profileRef.current = null;
+          setProfileResolved(true);
         }
         setInitialized(true);
       },
@@ -279,11 +281,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           currentUser.id,
           currentUser.email,
           currentUser.user_metadata?.full_name,
-          currentUser.user_metadata?.role,
+          getUserRoleHint(currentUser),
         );
       } else if (!currentUser) {
         setProfile(null);
         profileRef.current = null;
+        setProfileResolved(true);
       }
 
       setInitialized(true);
@@ -300,6 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase,
       initialized,
       authenticated: !!user,
+      profileResolved,
       user,
       profile,
       token: session?.access_token,
@@ -313,7 +317,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       loginWithProvider: async (provider: "google") => {
         if (!supabase) throw new Error("Supabase not configured");
-        const redirectTo = window.location.href; // return to current page so existing logic can route accordingly
+        const redirectTo = `${window.location.origin}/login?oauth=1`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
           options: { redirectTo },
@@ -324,6 +328,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!supabase) return;
         await supabase.auth.signOut();
         queryClient.clear();
+        clearAuthIntent();
+      },
+      ensureRole: async (role) => {
+        if (!supabase || !user) return;
+        const currentRole = getUserRoleHint(user);
+        if (currentRole === role) return;
+        if (currentRole && currentRole !== role) {
+          throw new Error(
+            `This account is already registered as ${currentRole}. Use a separate account for ${role} access.`,
+          );
+        }
+
+        const nextMetadata = {
+          ...(user.user_metadata || {}),
+          role,
+        };
+        const { data, error } = await supabase.auth.updateUser({
+          data: nextMetadata,
+        });
+        if (error) throw error;
+
+        if (data.user) {
+          setUser(data.user);
+          userRef.current = data.user;
+        }
+
+        await supabase.auth.refreshSession();
+        const effectiveUser = data.user || user;
+        await fetchProfile(
+          effectiveUser.id,
+          effectiveUser.email,
+          effectiveUser.user_metadata?.full_name,
+          role,
+        );
       },
       register: async (email, password, displayName) => {
         if (!supabase) throw new Error("Supabase not configured");
@@ -342,11 +380,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (error) throw error;
-
-        // Profile creation is now handled immediately after signup to capture full_name.
-        if (data.user) {
-          await fetchProfile(data.user.id, data.user.email, displayName);
-        }
 
         return { user: data.user, session: data.session };
       },
@@ -368,17 +401,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.refreshSession();
       },
       refreshProfile: async () => {
-        if (user) {
+        if (supabase) {
+          const { data } = await supabase.auth.getUser();
+          const currentUser = data.user || user;
+          if (currentUser) {
+            await fetchProfile(
+              currentUser.id,
+              currentUser.email,
+              currentUser.user_metadata?.full_name,
+              getUserRoleHint(currentUser) || readAuthIntent()?.role,
+            );
+          }
+        } else if (user) {
           await fetchProfile(
             user.id,
             user.email,
             user.user_metadata?.full_name,
-            user.user_metadata?.role,
+            getUserRoleHint(user),
           );
         }
       },
     }),
-    [initialized, user, profile],
+    [initialized, user, profile, profileResolved],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
