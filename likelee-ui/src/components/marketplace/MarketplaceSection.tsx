@@ -230,6 +230,7 @@ export function MarketplaceSection({
   const selectedProfileId = String(selectedProfile?.id || "").trim();
   const selectedProfileType = selectedProfile?.profile_type || entityType;
   const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
+  const isDisconnectBusy = disconnectActionLoading !== null;
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -977,10 +978,19 @@ export function MarketplaceSection({
       <Sheet
         open={detailsOpen}
         onOpenChange={(open) => {
+          if (isDisconnectBusy) return;
           if (!open) setSelectedProfile(null);
         }}
       >
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          {isDisconnectBusy ? (
+            <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-sm font-medium text-slate-700">
+                <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
+                Processing disconnect request...
+              </div>
+            </div>
+          ) : null}
           <SheetHeader>
             <SheetTitle>
               {selectedProfile?.display_name || "Marketplace Profile"}
@@ -1356,6 +1366,7 @@ export function MarketplaceSection({
                               {marketplaceContract?.signed_document_url ? (
                                 <Button
                                   variant="outline"
+                                  disabled={isDisconnectBusy}
                                   onClick={() =>
                                     window.open(
                                       marketplaceContract.signed_document_url ||
@@ -1373,7 +1384,7 @@ export function MarketplaceSection({
                                 <>
                                   <Button
                                     className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                                    disabled={disconnectActionLoading !== null}
+                                    disabled={isDisconnectBusy}
                                     onClick={() =>
                                       setDisconnectDecision("approve")
                                     }
@@ -1383,7 +1394,7 @@ export function MarketplaceSection({
                                   <Button
                                     variant="outline"
                                     className="border-rose-200 text-rose-700"
-                                    disabled={disconnectActionLoading !== null}
+                                    disabled={isDisconnectBusy}
                                     onClick={() =>
                                       setDisconnectDecision("reject")
                                     }
@@ -1597,32 +1608,29 @@ export function MarketplaceSection({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={disconnectActionLoading !== null}>
+            <AlertDialogCancel disabled={isDisconnectBusy}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={
-                disconnectActionLoading !== null ||
-                !selectedProfileId ||
+                isDisconnectBusy ||
+                !selectedProfile?.id ||
                 !disconnectDecision
               }
               onClick={async () => {
-                if (!disconnectDecision || !selectedProfileId) return;
+                const creatorId = String(selectedProfile?.id || "").trim();
+                if (!disconnectDecision || !creatorId) return;
                 try {
                   setDisconnectActionLoading(disconnectDecision);
                   if (disconnectDecision === "approve") {
-                    await approveAgencyCreatorDisconnectRequest(
-                      selectedProfileId,
-                    );
+                    await approveAgencyCreatorDisconnectRequest(creatorId);
                     toast({
                       title: "Disconnect approved",
                       description:
                         "The creator connection has been removed for this agency.",
                     });
                   } else {
-                    await rejectAgencyCreatorDisconnectRequest(
-                      selectedProfileId,
-                    );
+                    await rejectAgencyCreatorDisconnectRequest(creatorId);
                     toast({
                       title: "Disconnect rejected",
                       description:
@@ -1635,10 +1643,11 @@ export function MarketplaceSection({
                       queryKey: [
                         `${queryScope}-details`,
                         selectedProfileType,
-                        selectedProfileId,
+                        creatorId,
                       ],
                     }),
                   ]);
+                  setSelectedProfile(null);
                 } catch (error: any) {
                   toast({
                     title: `Failed to ${disconnectDecision} request`,
@@ -1655,8 +1664,12 @@ export function MarketplaceSection({
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
               {disconnectDecision === "approve"
-                ? "Approve disconnect"
-                : "Reject request"}
+                ? disconnectActionLoading === "approve"
+                  ? "Approving..."
+                  : "Approve disconnect"
+                : disconnectActionLoading === "reject"
+                  ? "Rejecting..."
+                  : "Reject request"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
