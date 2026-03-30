@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function BrandsStudios() {
   const navigate = useNavigate();
@@ -103,7 +104,9 @@ export default function BrandsStudios() {
                 Browse Creator Marketplace
               </Button>
               <Button
-                onClick={() => navigate(createPageUrl("SalesInquiry"))}
+                onClick={() =>
+                  navigate(createBookDemoUrl("brands_studios_hero"))
+                }
                 variant="outline"
                 className="h-14 px-10 text-base font-medium border-2 border-black rounded-none"
               >

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function ProductionStudio() {
   const navigate = useNavigate();
@@ -419,7 +420,9 @@ export default function ProductionStudio() {
           </p>
           <div className="flex gap-4 justify-center mt-10">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("production_studio_cta"))
+              }
               className="h-16 px-12 text-lg font-medium bg-white hover:bg-gray-100 text-slate-700 border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
             >
               Book a Demo
