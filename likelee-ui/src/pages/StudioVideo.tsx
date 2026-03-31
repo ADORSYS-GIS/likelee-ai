@@ -658,7 +658,8 @@ const StudioVideo = () => {
         height: "100vh",
         overflow: "hidden",
         color: "#fff",
-        fontFamily: "'Inter', system-ui, sans-serif",
+        fontFamily:
+          '"Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial',
         display: "flex",
         flexDirection: "column",
       }}
@@ -710,6 +711,7 @@ const StudioVideo = () => {
                   fontWeight: 800,
                   color: "#fff",
                   letterSpacing: "-0.02em",
+                  fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
                 StudioVideo
@@ -831,6 +833,7 @@ const StudioVideo = () => {
                   color: "#fff",
                   marginBottom: 6,
                   letterSpacing: "-0.02em",
+                  fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
                 Configuration
@@ -1597,6 +1600,7 @@ const StudioVideo = () => {
                 fontWeight: 700,
                 color: "#fff",
                 margin: 0,
+                fontFamily: '"Fraunces", ui-serif, Georgia, serif',
               }}
             >
               Preview Output
@@ -1864,6 +1868,7 @@ const StudioVideo = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
+                    fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                   }}
                 >
                   <Sparkles size={18} color="#8B5CF6" />
