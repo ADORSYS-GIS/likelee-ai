@@ -163,7 +163,9 @@ export default function AgencySubscribe() {
       window.location.href = url;
     } catch (e: any) {
       const msg = String(e?.message || e || "");
-      const contactSales = msg.match(/enterprise_contact_sales_roster_limit(?::(\d+))?/);
+      const contactSales = msg.match(
+        /enterprise_contact_sales_roster_limit(?::(\d+))?/,
+      );
       if (contactSales) {
         const rosterOverLimit = Number.parseInt(contactSales[1] || "", 10);
         if (Number.isFinite(rosterOverLimit) && rosterOverLimit > 0) {
@@ -179,7 +181,9 @@ export default function AgencySubscribe() {
         onContact();
         return;
       }
-      const rosterMismatch = msg.match(/roster_models_below_current_roster:(\d+)/);
+      const rosterMismatch = msg.match(
+        /roster_models_below_current_roster:(\d+)/,
+      );
       if (rosterMismatch) {
         const currentRoster = Math.max(
           minimumRosterModels,
@@ -190,8 +194,7 @@ export default function AgencySubscribe() {
         setRosterInput(String(currentRoster));
         toast({
           title: "Roster updated",
-          description:
-            `Your current roster is ${formatNumber(currentRoster)} models. Pricing has been updated to match.`,
+          description: `Your current roster is ${formatNumber(currentRoster)} models. Pricing has been updated to match.`,
         });
         return;
       }
@@ -258,8 +261,8 @@ export default function AgencySubscribe() {
                   {requiresContactSales
                     ? `Self-serve supports 2 to 200 models. Your current setup is ${formatNumber(rosterModels)}, so pricing goes through Sales.`
                     : minimumRosterModels > MIN_ROSTER_MODELS
-                    ? `Minimum ${formatNumber(minimumRosterModels)} based on your active roster.`
-                    : "Choose a self-serve roster size between 2 and 200."}
+                      ? `Minimum ${formatNumber(minimumRosterModels)} based on your active roster.`
+                      : "Choose a self-serve roster size between 2 and 200."}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -403,8 +406,10 @@ export default function AgencySubscribe() {
                     <Check className="w-5 h-5" />
                     Current Plan
                   </span>
+                ) : requiresContactSales ? (
+                  "Contact Sales"
                 ) : (
-                  requiresContactSales ? "Contact Sales" : "Checkout Basic"
+                  "Checkout Basic"
                 )}
               </Button>
             </div>
@@ -494,8 +499,10 @@ export default function AgencySubscribe() {
                     <Check className="w-5 h-5" />
                     Current Plan
                   </span>
+                ) : requiresContactSales ? (
+                  "Contact Sales"
                 ) : (
-                  requiresContactSales ? "Contact Sales" : "Checkout Pro"
+                  "Checkout Pro"
                 )}
               </Button>
             </div>
@@ -621,9 +628,9 @@ export default function AgencySubscribe() {
               {requiresContactSales
                 ? "Contact Sales"
                 : (plan === "basic" && currentPlanTier === "basic") ||
-              (plan === "pro" && currentPlanTier === "pro")
-                ? "Already Subscribed"
-                : "Get Started"}
+                    (plan === "pro" && currentPlanTier === "pro")
+                  ? "Already Subscribed"
+                  : "Get Started"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -638,7 +645,8 @@ export default function AgencySubscribe() {
                 </div>
                 <div className="text-gray-500 mt-1">
                   Custom storage, security, SLAs, onboarding, integrations, and
-                  bespoke billing support for agencies with more than 200 models.
+                  bespoke billing support for agencies with more than 200
+                  models.
                 </div>
               </div>
               <Button

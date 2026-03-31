@@ -335,13 +335,8 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    let (
-        _plan_name,
-        base_plan_price_id,
-        headcount_price_id,
-        base_plan_env_var,
-        headcount_env_var,
-    ) = agency_plan_price_ids(&state, &normalized_plan)
+    let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
+        agency_plan_price_ids(&state, &normalized_plan)
             .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
     if base_plan_price_id.trim().is_empty() {
         return Err((
@@ -503,7 +498,10 @@ pub async fn create_agency_subscription_checkout(
     md.insert("agency_id".to_string(), user.id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
     md.insert("plan".to_string(), normalized_plan.clone());
-    md.insert("roster_models".to_string(), payload.roster_models.to_string());
+    md.insert(
+        "roster_models".to_string(),
+        payload.roster_models.to_string(),
+    );
     md.insert(
         "addon_irl_booking".to_string(),
         if payload.addons.irl_booking {
