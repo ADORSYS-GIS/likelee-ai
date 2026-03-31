@@ -10,7 +10,7 @@ use std::collections::HashSet;
 
 use crate::entitlements::{
     creator_has_voice_profiles, creator_voice_tone_limit, get_agency_plan_tier,
-    get_creator_plan_tier_for_user, voice_clone_limit,
+    get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, voice_clone_limit,
 };
 
 async fn enforce_voice_clone_limit_for_agency(
@@ -54,14 +54,15 @@ async fn enforce_voice_access_for_creator(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<(String, usize), (StatusCode, String)> {
-    let (creator_id, tier) = get_creator_plan_tier_for_user(state, user).await?;
-    if !creator_has_voice_profiles(tier) {
+    let (creator_id, _billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(state, user).await?;
+    if !creator_has_voice_profiles(entitlement_tier) {
         return Err((
             StatusCode::FORBIDDEN,
             "voice_profiles_require_pro".to_string(),
         ));
     }
-    Ok((creator_id, creator_voice_tone_limit(tier)))
+    Ok((creator_id, creator_voice_tone_limit(entitlement_tier)))
 }
 
 async fn count_creator_voice_recordings(

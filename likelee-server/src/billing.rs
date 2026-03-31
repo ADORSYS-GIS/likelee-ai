@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, Json};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
@@ -8,13 +9,13 @@ use crate::{
     auth::AuthUser,
     config::AppState,
     entitlements::{
-        creator_category_limit, creator_has_active_campaigns_access,
-        creator_has_advanced_analytics, creator_has_agency_connection_access,
-        creator_has_brand_connection_access, creator_has_cameo_uploads,
-        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
-        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
-        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
-        creator_has_voice_profiles, creator_voice_tone_limit, get_creator_plan_tier_for_user,
+        creator_category_limit, creator_has_active_campaigns_access, creator_has_advanced_analytics,
+        creator_has_agency_connection_access, creator_has_brand_connection_access,
+        creator_has_campaign_archive_access, creator_has_cameo_uploads, creator_has_jobs_access,
+        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
+        creator_has_rules_access, creator_has_talent_portal_access,
+        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
+        creator_voice_tone_limit, get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user,
         PlanTier,
     },
 };
@@ -243,22 +244,19 @@ pub struct CreatorCheckoutRequest {
 }
 
 #[derive(Debug, Serialize)]
-pub struct CreatorCheckoutResponse {
-    pub checkout_url: String,
-}
-
-#[derive(Debug, Serialize)]
 pub struct CreatorBillingStatusResponse {
     pub creator_id: String,
     pub plan_tier: String,
+    pub plan_interval: String,
     pub subscription_status: String,
     pub stripe_customer_id: Option<String>,
     pub stripe_subscription_id: Option<String>,
     pub plan_updated_at: Option<String>,
-    pub plan_interval: String,
     pub stripe_current_period_end: Option<String>,
     pub stripe_cancel_at_period_end: bool,
-    pub category_limit: Option<usize>,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+    pub trial_start_at: Option<String>,
     pub can_use_kyc: bool,
     pub can_use_likeness: bool,
     pub can_use_agency_connection: bool,
@@ -268,12 +266,18 @@ pub struct CreatorBillingStatusResponse {
     pub can_use_unauthorized_monitoring: bool,
     pub can_use_voice_profiles: bool,
     pub voice_tone_limit: usize,
+    pub category_limit: Option<usize>,
     pub can_use_advanced_analytics: bool,
     pub can_use_jobs: bool,
     pub can_use_rules: bool,
     pub can_use_talent_portal: bool,
     pub can_use_campaign_archive: bool,
     pub can_use_active_campaigns: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreatorCheckoutResponse {
+    pub checkout_url: String,
 }
 
 fn plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
@@ -835,6 +839,7 @@ pub async fn create_creator_subscription_checkout(
         .map(|u| u.to_string())
         .unwrap_or_default();
     if url.is_empty() {
+        warn!("stripe checkout session missing url");
         return Err((
             StatusCode::BAD_GATEWAY,
             "stripe_checkout_missing_url".to_string(),
@@ -852,11 +857,12 @@ pub async fn get_creator_billing_status(
         return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
     }
 
-    let (creator_id, tier) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let (creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
     let resp = state
         .pg
         .from("creators")
-        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end")
+        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at")
         .eq("id", &creator_id)
         .limit(1)
         .execute()
@@ -875,6 +881,39 @@ pub async fn get_creator_billing_status(
         .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
         .unwrap_or(json!({}));
 
+    fn parse_db_date(s: &str) -> Option<DateTime<Utc>> {
+        // Try RFC3339 (T delimiter)
+        DateTime::parse_from_rfc3339(s)
+            .map(|dt| dt.with_timezone(&Utc))
+            .ok()
+            .or_else(|| {
+                // Try format with space instead of T
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+            .or_else(|| {
+                // Fallback for space without TZ offset
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+    }
+
+    let created_at_str = row.get("created_at").and_then(|v| v.as_str());
+    let trial_start_at = created_at_str.and_then(parse_db_date);
+
+    let trial_ends_at_dt = if billed_tier == PlanTier::Free {
+        trial_start_at.map(|dt| dt + Duration::days(14))
+    } else {
+        None
+    };
+
+    let trial_ends_at = trial_ends_at_dt.map(|dt| dt.to_rfc3339());
+    let trial_active = trial_ends_at_dt
+        .map(|dt| dt > Utc::now())
+        .unwrap_or(false);
+
     Ok(Json(CreatorBillingStatusResponse {
         creator_id,
         plan_tier: row
@@ -882,8 +921,11 @@ pub async fn get_creator_billing_status(
             .and_then(|v| v.as_str())
             .unwrap_or("free")
             .to_string(),
+        trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
+        trial_active,
+        trial_ends_at,
         subscription_status: if matches!(
-            tier,
+            billed_tier,
             PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise
         ) {
             "active".to_string()
@@ -915,22 +957,22 @@ pub async fn get_creator_billing_status(
             .get("stripe_cancel_at_period_end")
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
-        category_limit: creator_category_limit(tier),
-        can_use_kyc: creator_has_kyc_access(tier),
-        can_use_likeness: creator_has_likeness_access(tier),
-        can_use_agency_connection: creator_has_agency_connection_access(tier),
-        can_use_brand_connection: creator_has_brand_connection_access(tier),
-        can_use_payouts: creator_has_payouts_access(tier),
-        can_use_cameo_uploads: creator_has_cameo_uploads(tier),
-        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(tier),
-        can_use_voice_profiles: creator_has_voice_profiles(tier),
-        voice_tone_limit: creator_voice_tone_limit(tier),
-        can_use_advanced_analytics: creator_has_advanced_analytics(tier),
-        can_use_jobs: creator_has_jobs_access(tier),
-        can_use_rules: creator_has_rules_access(tier),
-        can_use_talent_portal: creator_has_talent_portal_access(tier),
-        can_use_campaign_archive: creator_has_campaign_archive_access(tier),
-        can_use_active_campaigns: creator_has_active_campaigns_access(tier),
+        category_limit: creator_category_limit(entitlement_tier),
+        can_use_kyc: creator_has_kyc_access(entitlement_tier),
+        can_use_likeness: creator_has_likeness_access(entitlement_tier),
+        can_use_agency_connection: creator_has_agency_connection_access(entitlement_tier),
+        can_use_brand_connection: creator_has_brand_connection_access(entitlement_tier),
+        can_use_payouts: creator_has_payouts_access(entitlement_tier),
+        can_use_cameo_uploads: creator_has_cameo_uploads(entitlement_tier),
+        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(entitlement_tier),
+        can_use_voice_profiles: creator_has_voice_profiles(entitlement_tier),
+        voice_tone_limit: creator_voice_tone_limit(entitlement_tier),
+        can_use_advanced_analytics: creator_has_advanced_analytics(entitlement_tier),
+        can_use_jobs: creator_has_jobs_access(entitlement_tier),
+        can_use_rules: creator_has_rules_access(entitlement_tier),
+        can_use_talent_portal: creator_has_talent_portal_access(entitlement_tier),
+        can_use_campaign_archive: creator_has_campaign_archive_access(entitlement_tier),
+        can_use_active_campaigns: creator_has_active_campaigns_access(entitlement_tier),
     }))
 }
 

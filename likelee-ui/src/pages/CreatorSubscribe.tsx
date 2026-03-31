@@ -25,6 +25,12 @@ export default function CreatorSubscribe() {
     plan_interval?: string;
   }>({});
 
+  const [trialInfo, setTrialInfo] = React.useState<{
+    active: boolean;
+    endsAt?: string;
+  }>({ active: false });
+  const [trialCountdown, setTrialCountdown] = React.useState<string>("");
+
   const [billingInterval, setBillingInterval] = React.useState<
     "month" | "year"
   >("month");
@@ -113,12 +119,19 @@ export default function CreatorSubscribe() {
         const tier = String((resp as any)?.plan_tier || "free");
         const interval = String((resp as any)?.plan_interval || "month");
 
+        const trialActive = !!(resp as any)?.trial_active;
+        const trialEndsAt = (resp as any)?.trial_ends_at
+          ? String((resp as any)?.trial_ends_at)
+          : undefined;
+
         setCurrentPlanTier(tier);
         setBillingInfo({
           current_period_end: (resp as any)?.stripe_current_period_end,
           cancel_at_period_end: (resp as any)?.stripe_cancel_at_period_end,
           plan_interval: (resp as any)?.plan_interval,
         });
+
+        setTrialInfo({ active: trialActive, endsAt: trialEndsAt });
 
         // If they have an active plan, sync the toggle to their current interval
         if (tier !== "free") {
@@ -130,6 +143,32 @@ export default function CreatorSubscribe() {
     }
     void loadStatus();
   }, []);
+
+  React.useEffect(() => {
+    if (currentPlanTier !== "free" || !trialInfo.active || !trialInfo.endsAt) {
+      setTrialCountdown("");
+      return;
+    }
+
+    const compute = () => {
+      const end = new Date(trialInfo.endsAt as string).getTime();
+      const now = Date.now();
+      const ms = Math.max(0, end - now);
+
+      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+
+      if (ms <= 0) {
+        setTrialCountdown("Trial ended");
+        return;
+      }
+
+      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"} left`);
+    };
+
+    compute();
+    const id = window.setInterval(compute, 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [currentPlanTier, trialInfo.active, trialInfo.endsAt]);
 
   React.useEffect(() => {
     const key = "creator_billing_interval";
@@ -215,6 +254,16 @@ export default function CreatorSubscribe() {
             access.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+            {currentPlanTier === "free" && trialInfo.active && trialInfo.endsAt && (
+              <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+                <Badge className="border border-amber-200 bg-amber-100 text-amber-800 shadow-none">
+                  14-day trial
+                </Badge>
+                <span className="font-semibold">
+                  Full access • {trialCountdown || "Calculating..."}
+                </span>
+              </div>
+            )}
             <Badge variant="outline" className="bg-white/80">
               Plans are billed{" "}
               {billingInterval === "year" ? "annually" : "monthly"}

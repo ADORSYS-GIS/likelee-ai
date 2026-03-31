@@ -766,6 +766,21 @@ Voice recording and cloning capabilities for talent profiles.
 
 Creator subscriptions are backed by Stripe and persisted directly on the creator profile.
 
+### Free Plan Trial (Full Access)
+
+- Free creators receive full Pro-level access for the first 14 days after `creators.created_at`.
+- After 14 days, creators on the free plan fall back to the standard free entitlements.
+- The backend treats this as an entitlement override only:
+  - `plan_tier` remains `free` unless the user subscribes.
+  ### Plan Visibility & Management
+
+### Plan Visibility & Management
+
+- **Dashboard Banner**: The standalone large navy banner has been removed.
+- **Top Utility Bar**: Current plan status and 14-day trial countdown are integrated into a professional, sleek "Plan Status Bar" at the very top of the dashboard main content area.
+- **Simplification**: The trial countdown displays only the number of days remaining (e.g., "14 days") for a cleaner, more professional interface.
+- **Billing Redirection**: The Plan Status Bar includes a "Manage Subscription" action that redirects the user directly to the **Billing** sub-tab within the **Settings** section.
+
 ### Plans
 
 - `free`

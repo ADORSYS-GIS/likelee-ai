@@ -4,13 +4,13 @@ use crate::{
     auth::RoleGuard,
     config::AppState,
     entitlements::{
-        creator_category_limit, creator_has_active_campaigns_access,
-        creator_has_advanced_analytics, creator_has_agency_connection_access,
-        creator_has_brand_connection_access, creator_has_cameo_uploads,
-        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
-        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
-        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
-        creator_has_voice_profiles, creator_voice_tone_limit, get_creator_plan_tier_for_user,
+        creator_category_limit, creator_has_active_campaigns_access, creator_has_advanced_analytics,
+        creator_has_agency_connection_access, creator_has_brand_connection_access,
+        creator_has_campaign_archive_access, creator_has_cameo_uploads, creator_has_jobs_access,
+        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
+        creator_has_rules_access, creator_has_talent_portal_access,
+        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
+        creator_voice_tone_limit, get_creator_entitlement_tier_for_user,
     },
 };
 use axum::{
@@ -1013,8 +1013,9 @@ pub async fn talent_me(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentMeResponse>, (StatusCode, String)> {
-    let (_, creator_tier) = get_creator_plan_tier_for_user(&state, &user).await?;
-    let plan_tier = match creator_tier {
+    let (_creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
+    let plan_tier = match billed_tier {
         crate::entitlements::PlanTier::Free => "free",
         crate::entitlements::PlanTier::Basic => "basic",
         crate::entitlements::PlanTier::Pro => "pro",
@@ -1048,7 +1049,7 @@ pub async fn talent_me(
         connected_agencies: connections,
         connected_agency_ids,
         plan_tier: plan_tier.to_string(),
-        entitlements: creator_entitlements_response(plan_tier, creator_tier),
+        entitlements: creator_entitlements_response(plan_tier, entitlement_tier),
     }))
 }
 
@@ -1936,9 +1937,10 @@ pub async fn get_analytics(
     user: AuthUser,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentAnalyticsResponse>, (StatusCode, String)> {
-    let (_, creator_tier) = get_creator_plan_tier_for_user(&state, &user).await?;
-    let advanced_analytics_enabled = creator_has_advanced_analytics(creator_tier);
-    let plan_tier = match creator_tier {
+    let (_creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
+    let advanced_analytics_enabled = creator_has_advanced_analytics(entitlement_tier);
+    let plan_tier = match billed_tier {
         crate::entitlements::PlanTier::Free => "free",
         crate::entitlements::PlanTier::Basic => "basic",
         crate::entitlements::PlanTier::Pro => "pro",

@@ -1,7 +1,10 @@
 use axum::http::StatusCode;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde_json::json;
 
 use crate::{auth::AuthUser, config::AppState, face_profiles::resolve_effective_creator_id};
+
+const CREATOR_FULL_ACCESS_TRIAL_DAYS: i64 = 14;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanTier {
@@ -123,6 +126,83 @@ pub async fn get_creator_plan_tier_for_user(
     let creator_id = resolve_effective_creator_id(state, user).await?;
     let tier = get_creator_plan_tier(state, &creator_id).await?;
     Ok((creator_id, tier))
+}
+
+async fn get_creator_created_at(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<Option<DateTime<Utc>>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("created_at")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    let dt = row.get("created_at").and_then(|v| v.as_str()).and_then(|s| {
+        DateTime::parse_from_rfc3339(s)
+            .map(|dt| dt.with_timezone(&Utc))
+            .ok()
+            .or_else(|| {
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+            .or_else(|| {
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+    });
+
+    Ok(dt)
+}
+
+pub async fn get_creator_entitlement_tier(
+    state: &AppState,
+    creator_id: &str,
+    billed_tier: PlanTier,
+) -> Result<PlanTier, (StatusCode, String)> {
+    if billed_tier != PlanTier::Free {
+        return Ok(billed_tier);
+    }
+
+    let created_at = get_creator_created_at(state, creator_id).await?;
+    let Some(created_at) = created_at else {
+        return Ok(PlanTier::Free);
+    };
+
+    if Utc::now() - created_at < Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS) {
+        Ok(PlanTier::Pro)
+    } else {
+        Ok(PlanTier::Free)
+    }
+}
+
+pub async fn get_creator_entitlement_tier_for_user(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, PlanTier, PlanTier), (StatusCode, String)> {
+    let (creator_id, billed_tier) = get_creator_plan_tier_for_user(state, user).await?;
+    let entitlement_tier = get_creator_entitlement_tier(state, &creator_id, billed_tier).await?;
+    Ok((creator_id, billed_tier, entitlement_tier))
 }
 
 pub fn creator_category_limit(tier: PlanTier) -> Option<usize> {
