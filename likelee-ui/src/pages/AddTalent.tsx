@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Upload,
   Instagram,
@@ -777,19 +778,28 @@ export default function AddTalent() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.accept_negotiations}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          accept_negotiations: e.target.checked,
-                        })
-                      }
-                    />
-                    Open to negotiations
-                  </label>
+                  <div className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <Label className="text-sm font-medium text-gray-900">
+                          Open to negotiations
+                        </Label>
+                        <p className="mt-0.5 text-xs text-gray-600">
+                          Allow brands to propose custom rates for this {entityLower}.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!!formData.accept_negotiations}
+                        onCheckedChange={(checked: boolean) =>
+                          setFormData({
+                            ...formData,
+                            accept_negotiations: checked,
+                          })
+                        }
+                        aria-label="Open to negotiations"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
