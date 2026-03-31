@@ -2454,7 +2454,12 @@ export default function CreatorDashboard() {
     return () => {
       active = false;
     };
-  }, [initialized, authenticated, creatorPlanTierForLoad, creatorBillingLoaded]);
+  }, [
+    initialized,
+    authenticated,
+    creatorPlanTierForLoad,
+    creatorBillingLoaded,
+  ]);
   useEffect(() => {
     if (assetRequestsInitialized) return;
     if (assetRequests.length === 0) return;
@@ -2958,7 +2963,13 @@ export default function CreatorDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticated, creatorCanUseKycForLoad, creatorUserId, showKycModal, user?.id]);
+  }, [
+    authenticated,
+    creatorCanUseKycForLoad,
+    creatorUserId,
+    showKycModal,
+    user?.id,
+  ]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [editingRules, setEditingRules] = useState(false);
