@@ -50,6 +50,7 @@ import { formatKycReason } from "@/utils/kycDisplay";
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import { DobInput } from "@/components/ui/DobInput";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -1466,14 +1467,13 @@ export default function ReserveProfile() {
                       placeholder={t("reserveProfile.form.placeholders.age")}
                     />
                   ) : (
-                    <Input
-                      id="birthdate"
-                      type="date"
+                    <DobInput
                       value={formData.birthdate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birthdate: e.target.value })
+                      onChange={(iso) =>
+                        setFormData({ ...formData, birthdate: iso })
                       }
-                      className="border-2 border-gray-300 rounded-none"
+                      variant="sharp"
+                      minAge={18}
                     />
                   )}
                 </div>
