@@ -5127,6 +5127,9 @@ const FinancialReportsView = () => {
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700;900&family=Sora:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <title>${title}</title>
     <style>
       body { font-family: "Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 24px; color:#111827; }
