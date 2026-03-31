@@ -145,7 +145,7 @@ export default function AgencySubscribe() {
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
       <div className="max-w-6xl mx-auto px-6 pt-16 pb-24">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-black tracking-tight font-display">
             Simple, transparent pricing
           </h1>
           <p className="text-gray-500 mt-4 text-lg">
@@ -173,20 +173,20 @@ export default function AgencySubscribe() {
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <div className="text-2xl font-black">
+                <div className="text-2xl font-black font-display">
                   How many models on your roster?
                 </div>
                 <div className="text-gray-500 mt-1">Fixed at 186 models.</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="border border-gray-200 rounded-2xl px-4 py-3 text-3xl font-black bg-white">
+                <div className="border border-gray-200 rounded-2xl px-4 py-3 text-3xl font-black bg-white font-display">
                   {rosterModels}
                 </div>
                 <div className="text-gray-400">models</div>
               </div>
             </div>
 
-            <div className="text-center text-[#4B4AE6] font-black mt-6">
+            <div className="text-center text-[#4B4AE6] font-black mt-6 font-display">
               {rosterModels} models × ${rosterRate}/mo = ${rosterCost}/mo
               (headcount)
             </div>
@@ -197,7 +197,7 @@ export default function AgencySubscribe() {
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-3xl font-black">Basic</div>
+                <div className="text-3xl font-black font-display">Basic</div>
                 <div className="text-gray-500 mt-1">
                   Get started with licensing
                 </div>
@@ -207,7 +207,9 @@ export default function AgencySubscribe() {
               </Badge>
             </div>
             <div className="mt-6 flex items-end gap-2">
-              <div className="text-6xl font-black">${totalMonthlyBasic}</div>
+              <div className="text-6xl font-black font-display">
+                ${totalMonthlyBasic}
+              </div>
               <div className="text-gray-500 font-bold">/mo</div>
             </div>
             <div className="mt-6 text-gray-500 font-medium">
@@ -287,7 +289,7 @@ export default function AgencySubscribe() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-black">Pro</div>
+                  <div className="text-3xl font-black font-display">Pro</div>
                   <Badge className="bg-[#4B4AE6] text-white border border-[#4B4AE6]">
                     Most Popular
                   </Badge>
@@ -299,7 +301,9 @@ export default function AgencySubscribe() {
               </Badge>
             </div>
             <div className="mt-6 flex items-end gap-2">
-              <div className="text-6xl font-black">${totalMonthlyPro}</div>
+              <div className="text-6xl font-black font-display">
+                ${totalMonthlyPro}
+              </div>
               <div className="text-white/60 font-bold">/mo</div>
             </div>
             <div className="mt-6 text-white/70 font-medium">
@@ -372,7 +376,9 @@ export default function AgencySubscribe() {
         </div>
 
         <div className="mt-12">
-          <div className="text-center text-3xl font-black">Add-Ons</div>
+          <div className="text-center text-3xl font-black font-display">
+            Add-Ons
+          </div>
           <div className="text-center text-gray-500 mt-2">
             Already have booking software? No problem — Likelee works as a
             standalone licensing platform. Add what you need.
@@ -382,7 +388,7 @@ export default function AgencySubscribe() {
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">
+                  <div className="text-2xl font-black font-display">
                     IRL AI-Powered Booking Software
                   </div>
                   <div className="text-gray-500 mt-1">
@@ -391,7 +397,7 @@ export default function AgencySubscribe() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-xl font-black text-gray-900">
+                  <div className="text-xl font-black text-gray-900 font-display">
                     +${489}
                     <span className="text-gray-400 text-sm">/mo</span>
                   </div>
@@ -408,7 +414,7 @@ export default function AgencySubscribe() {
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">
+                  <div className="text-2xl font-black font-display">
                     Deepfake Detection & Protection
                   </div>
                   <div className="text-gray-500 mt-1">
@@ -427,7 +433,7 @@ export default function AgencySubscribe() {
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">
+                  <div className="text-2xl font-black font-display">
                     Additional Team Members
                   </div>
                   <div className="text-gray-500 mt-1">
@@ -457,7 +463,7 @@ export default function AgencySubscribe() {
         <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <div className="text-gray-500 font-bold">Estimated total</div>
-            <div className="text-4xl font-black">
+            <div className="text-4xl font-black font-display">
               ${plan === "basic" ? totalMonthlyBasic : totalMonthlyPro}/mo
             </div>
           </div>
@@ -487,7 +493,9 @@ export default function AgencySubscribe() {
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex items-center justify-between gap-6 flex-wrap">
               <div>
-                <div className="text-2xl font-black">Enterprise</div>
+                <div className="text-2xl font-black font-display">
+                  Enterprise
+                </div>
                 <div className="text-gray-500 mt-1">
                   Custom storage, security, SLAs, onboarding, integrations — and
                   required for agencies with more than 186 models on roster.

@@ -63,7 +63,7 @@ export default function StudioTemplates() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090F] text-[#F0F0FF] font-sans pb-20">
+    <div className="min-h-screen bg-[#09090F] text-[#F0F0FF] font-body pb-20">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-purple-500/20 bg-black/40">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">

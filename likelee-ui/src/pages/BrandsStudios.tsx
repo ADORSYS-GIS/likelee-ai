@@ -742,7 +742,9 @@ export default function BrandsStudios() {
                   Fixed 7-, 15-, or 30-sec asset
                 </p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$350</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $350
+                  </span>
                   <span className="text-gray-600 ml-2">per 15 seconds</span>
                 </div>
               </div>
@@ -763,7 +765,9 @@ export default function BrandsStudios() {
                   Performance-driven campaigns
                 </p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$12</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $12
+                  </span>
                   <span className="text-gray-600 ml-2">CPM</span>
                 </div>
               </div>
@@ -777,7 +781,9 @@ export default function BrandsStudios() {
                 </h3>
                 <p className="text-gray-600 mb-4">TV, OOH, or paid social</p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$600</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $600
+                  </span>
                   <span className="text-gray-600 ml-2">/ 30-day region</span>
                 </div>
               </div>

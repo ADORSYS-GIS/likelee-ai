@@ -87,13 +87,6 @@ export default function Layout({ children, currentPageName }) {
     `;
     document.head.appendChild(script2);
 
-    // Load Ubuntu font
-    const fontLink = document.createElement("link");
-    fontLink.rel = "stylesheet";
-    fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap";
-    document.head.appendChild(fontLink);
-
     // Add meta tags for SEO
     const updateMetaTags = () => {
       // Set title
@@ -181,10 +174,7 @@ export default function Layout({ children, currentPageName }) {
   // If we're on a Studio page, don't render the layout navigation
   if (isStudioPage) {
     return (
-      <div
-        className="min-h-screen bg-white"
-        style={{ fontFamily: "'Ubuntu', sans-serif" }}
-      >
+      <div className="min-h-screen bg-white">
         <noscript>
           <div
             style={{
@@ -281,14 +271,6 @@ export default function Layout({ children, currentPageName }) {
             --brands-primary: #F7B750;
             --brands-secondary: #FAD54C;
           }
-          
-          * {
-            font-family: 'Ubuntu', sans-serif;
-          }
-          
-          body {
-            font-family: 'Ubuntu', sans-serif;
-          }
         `}</style>
         <main>{children}</main>
       </div>
@@ -296,10 +278,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{ fontFamily: "'Ubuntu', sans-serif" }}
-    >
+    <div className="min-h-screen bg-white">
       <noscript>
         <div
           style={{
@@ -519,14 +498,6 @@ export default function Layout({ children, currentPageName }) {
           --brands-primary: #F7B750;
           --brands-secondary: #FAD54C;
         }
-        
-        * {
-          font-family: 'Ubuntu', sans-serif;
-        }
-        
-        body {
-          font-family: 'Ubuntu', sans-serif;
-        }
       `}</style>
 
       {/* Navigation */}
@@ -545,7 +516,7 @@ export default function Layout({ children, currentPageName }) {
                   height="40"
                   className="h-10 w-auto transform transition-transform group-hover:scale-105"
                 />
-                <span className="text-xl font-bold text-gray-900 tracking-tight">
+                <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
                   Likelee
                 </span>
               </Link>
@@ -577,7 +548,7 @@ export default function Layout({ children, currentPageName }) {
                     height="40"
                     className="h-10 w-auto transform transition-transform group-hover:scale-105"
                   />
-                  <span className="text-xl font-bold text-gray-900 tracking-tight">
+                  <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
                     Likelee
                   </span>
                 </Link>
@@ -769,7 +740,7 @@ export default function Layout({ children, currentPageName }) {
                     height="40"
                     className="h-10 w-auto"
                   />
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-xl font-bold text-gray-900 font-display">
                     Likelee
                   </span>
                 </Link>

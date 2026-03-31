@@ -5128,14 +5128,17 @@ const FinancialReportsView = () => {
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700;900&family=Sora:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <title>${title}</title>
     <style>
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; color:#111827; }
-      h1 { font-size: 18px; margin: 0 0 6px; }
+      body { font-family: "Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 24px; color:#111827; }
+      h1 { font-family: "Fraunces", ui-serif, Georgia, serif; font-size: 18px; margin: 0 0 6px; }
       .meta { color:#6b7280; font-size: 12px; margin-bottom: 18px; }
-      h2 { font-size: 14px; margin: 18px 0 8px; }
+      h2 { font-family: "Fraunces", ui-serif, Georgia, serif; font-size: 14px; margin: 18px 0 8px; }
       table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      th { text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
+      th { font-family: "Fraunces", ui-serif, Georgia, serif; text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
     </style>
   </head>
   <body>
@@ -15625,7 +15628,7 @@ const ComplianceHubView = () => {
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-xs text-gray-700 font-medium font-sans">
+            <tbody className="divide-y divide-gray-100 text-xs text-gray-700 font-medium font-body">
               {DOCS_CHECKLIST.map((row, idx) => (
                 <tr key={idx} className="hover:bg-gray-50/30">
                   <td className="px-6 py-4">
@@ -16357,7 +16360,7 @@ const RoyaltiesPayoutsView = ({
                       {historyData?.length || 0} RECORDS
                     </Badge>
                   </div>
-                  <div className="divide-y divide-gray-100 font-sans max-h-[500px] overflow-y-auto">
+                  <div className="divide-y divide-gray-100 font-body max-h-[500px] overflow-y-auto">
                     {historyData && historyData.length > 0 ? (
                       historyData.map((item, i) => (
                         <div
@@ -16515,7 +16518,7 @@ const RoyaltiesPayoutsView = ({
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 font-sans">
+                    <tbody className="divide-y divide-gray-50 font-body">
                       {filteredTalent.map((talent) => (
                         <tr
                           key={talent.id}
@@ -17025,7 +17028,7 @@ const RoyaltiesPayoutsView = ({
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
                         Total Gross
                       </p>
-                      <p className="text-2xl font-black font-sans tracking-tight">
+                      <p className="text-2xl font-black font-display tracking-tight">
                         {currencyFormatter.format(deal.total_value)}
                       </p>
                     </div>
@@ -18500,7 +18503,7 @@ export default function AgencyDashboard() {
   }, [activeTab, activeSubTab, sidebarItems]);
 
   return (
-    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-sans text-slate-800">
+    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
