@@ -679,6 +679,55 @@ pub async fn create_creator_subscription_checkout(
                     })?;
                     let mut portal_params = stripe_sdk::CreateBillingPortalSession::new(customer);
                     portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+                    let current_price_id = subscription
+                        .items
+                        .data
+                        .first()
+                        .and_then(|item| item.price.as_ref())
+                        .map(|price| price.id.to_string())
+                        .unwrap_or_default();
+                    if current_price_id != price_id {
+                        let subscription_item = subscription
+                            .items
+                            .data
+                            .first()
+                            .map(|item| item.id.to_string())
+                            .ok_or((
+                                StatusCode::BAD_GATEWAY,
+                                "creator_subscription_missing_items".to_string(),
+                            ))?;
+                        portal_params.flow_data =
+                            Some(stripe_sdk::CreateBillingPortalSessionFlowData {
+                                after_completion: Some(
+                                    stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletion {
+                                        redirect: Some(
+                                            stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletionRedirect {
+                                                return_url: state
+                                                    .stripe_creator_success_url
+                                                    .clone(),
+                                            },
+                                        ),
+                                        type_: stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletionType::Redirect,
+                                        ..Default::default()
+                                    },
+                                ),
+                                subscription_update_confirm: Some(
+                                    stripe_sdk::CreateBillingPortalSessionFlowDataSubscriptionUpdateConfirm {
+                                        subscription: existing_subscription.clone(),
+                                        items: vec![
+                                            stripe_sdk::CreateBillingPortalSessionFlowDataSubscriptionUpdateConfirmItems {
+                                                id: subscription_item,
+                                                price: Some(price_id.clone()),
+                                                quantity: Some(1),
+                                            },
+                                        ],
+                                        ..Default::default()
+                                    },
+                                ),
+                                type_: stripe_sdk::CreateBillingPortalSessionFlowDataType::SubscriptionUpdateConfirm,
+                                ..Default::default()
+                            });
+                    }
                     let portal = stripe_sdk::BillingPortalSession::create(&client, portal_params)
                         .await
                         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
