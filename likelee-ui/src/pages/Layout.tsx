@@ -87,13 +87,6 @@ export default function Layout({ children, currentPageName }) {
     `;
     document.head.appendChild(script2);
 
-    // Load Ubuntu font
-    const fontLink = document.createElement("link");
-    fontLink.rel = "stylesheet";
-    fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap";
-    document.head.appendChild(fontLink);
-
     // Add meta tags for SEO
     const updateMetaTags = () => {
       // Set title
@@ -181,10 +174,7 @@ export default function Layout({ children, currentPageName }) {
   // If we're on a Studio page, don't render the layout navigation
   if (isStudioPage) {
     return (
-      <div
-        className="min-h-screen bg-white"
-        style={{ fontFamily: "'Ubuntu', sans-serif" }}
-      >
+      <div className="min-h-screen bg-white">
         <noscript>
           <div
             style={{
@@ -281,14 +271,6 @@ export default function Layout({ children, currentPageName }) {
             --brands-primary: #F7B750;
             --brands-secondary: #FAD54C;
           }
-          
-          * {
-            font-family: 'Ubuntu', sans-serif;
-          }
-          
-          body {
-            font-family: 'Ubuntu', sans-serif;
-          }
         `}</style>
         <main>{children}</main>
       </div>
@@ -296,10 +278,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{ fontFamily: "'Ubuntu', sans-serif" }}
-    >
+    <div className="min-h-screen bg-white">
       <noscript>
         <div
           style={{
@@ -518,14 +497,6 @@ export default function Layout({ children, currentPageName }) {
           --creators-primary: #F18B6A;
           --brands-primary: #F7B750;
           --brands-secondary: #FAD54C;
-        }
-        
-        * {
-          font-family: 'Ubuntu', sans-serif;
-        }
-        
-        body {
-          font-family: 'Ubuntu', sans-serif;
         }
       `}</style>
 

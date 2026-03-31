@@ -194,7 +194,9 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-4xl font-bold text-gray-900">$199</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $199
+                  </span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
               </div>
@@ -268,7 +270,9 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-4xl font-bold text-gray-900">$449</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $449
+                  </span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
               </div>
@@ -344,7 +348,7 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-gray-900 font-display">
                     Custom Pricing
                   </span>
                 </div>

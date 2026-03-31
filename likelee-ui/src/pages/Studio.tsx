@@ -1324,7 +1324,7 @@ export default function Studio() {
       <section id="pricing" className="px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 font-display">
               Simple Monthly Plans
             </h2>
             <p className="text-xl text-gray-400">
@@ -1336,11 +1336,13 @@ export default function Studio() {
             {/* Lite Plan */}
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">
+                <h3 className="text-2xl font-bold text-white mb-2 font-display">
                   Lite Plan
                 </h3>
                 <div className="flex items-baseline mb-2">
-                  <span className="text-5xl font-bold text-white">$15</span>
+                  <span className="text-5xl font-bold text-white font-display">
+                    $15
+                  </span>
                   <span className="text-gray-400 ml-2">/ month</span>
                 </div>
                 <p className="text-gray-400">60 credits</p>
@@ -1418,11 +1420,11 @@ export default function Studio() {
             {/* Pro Plan */}
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">
+                <h3 className="text-2xl font-bold text-white mb-2 font-display">
                   Pro Plan — Flexible Credits
                 </h3>
                 <div className="flex items-baseline mb-2">
-                  <span className="text-5xl font-bold text-white">
+                  <span className="text-5xl font-bold text-white font-display">
                     ${selectedTier.price}
                   </span>
                   <span className="text-gray-400 ml-2">/ month</span>
@@ -1471,7 +1473,7 @@ export default function Studio() {
                 <div className="mt-6 pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Monthly total:</span>
-                    <span className="text-3xl font-bold text-white">
+                    <span className="text-3xl font-bold text-white font-display">
                       ${selectedTier.price}
                     </span>
                   </div>
