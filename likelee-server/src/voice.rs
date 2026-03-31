@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 use crate::entitlements::{
     creator_has_voice_profiles, creator_voice_tone_limit, get_agency_plan_tier,
@@ -83,6 +84,62 @@ async fn count_creator_voice_recordings(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(rows.len())
+}
+
+async fn resolve_voice_owner_ids(
+    state: &AppState,
+    user: &AuthUser,
+    talent_id: Option<&str>,
+) -> Result<Vec<String>, (StatusCode, String)> {
+    let mut owner_ids = HashSet::new();
+
+    match user.role.as_str() {
+        "agency" => {
+            if let Some(tid) = talent_id {
+                let resp = state
+                    .pg
+                    .from("agency_users")
+                    .select("id,creator_id")
+                    .eq("agency_id", &user.id)
+                    .eq("id", tid)
+                    .limit(1)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let text = resp.text().await.unwrap_or_default();
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                let row = rows.first().ok_or((
+                    StatusCode::FORBIDDEN,
+                    "Not authorized to access this talent".to_string(),
+                ))?;
+                owner_ids.insert(tid.to_string());
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    if !creator_id.is_empty() {
+                        owner_ids.insert(creator_id.to_string());
+                    }
+                }
+            } else {
+                owner_ids.insert(user.id.clone());
+            }
+        }
+        "creator" | "talent" => {
+            let (creator_id, _) = get_creator_plan_tier_for_user(state, user).await?;
+            owner_ids.insert(creator_id);
+            owner_ids.insert(user.id.clone());
+        }
+        "admin" => {
+            if let Some(tid) = talent_id {
+                owner_ids.insert(tid.to_string());
+            } else {
+                owner_ids.insert(user.id.clone());
+            }
+        }
+        _ => {
+            owner_ids.insert(user.id.clone());
+        }
+    }
+
+    Ok(owner_ids.into_iter().collect())
 }
 
 #[derive(Deserialize)]
@@ -337,7 +394,9 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    let mut has_access = owner_id == user.id;
+    let allowed_owner_ids = resolve_voice_owner_ids(&state, &user, None).await?;
+    let allowed_owner_refs: Vec<&str> = allowed_owner_ids.iter().map(|s| s.as_str()).collect();
+    let mut has_access = allowed_owner_ids.iter().any(|allowed| allowed == owner_id);
 
     if !has_access && user.role == "admin" {
         has_access = true;
@@ -421,7 +480,7 @@ pub async fn signed_url_for_recording(
                 .from("voice_recordings")
                 .update("{\"accessible\": false}")
                 .eq("id", &q.recording_id)
-                .eq("user_id", &user.id)
+                .in_("user_id", allowed_owner_refs)
                 .execute()
                 .await;
 
@@ -643,44 +702,8 @@ pub async fn list_voice_recordings(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // We will query recordings where user_id is IN this list
-    let mut target_user_ids = vec![user.id.clone()];
-
-    // If a talent_id is provided and the user is an agency, check management access
-    if let Some(tid) = params.get("talent_id") {
-        if user.role == "agency" {
-            let resp = state
-                .pg
-                .from("agency_users")
-                .select("id, creator_id")
-                .eq("agency_id", &user.id)
-                .eq("id", tid)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            let text = resp.text().await.unwrap_or_default();
-            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-
-            if let Some(row) = rows.first() {
-                target_user_ids.clear();
-                // 1. push the agency_users.id itself (where agency uploads might go)
-                target_user_ids.push(tid.clone());
-                // 2. push the creator_id (where talent's own recordings go)
-                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
-                    if !creator_id.is_empty() {
-                        target_user_ids.push(creator_id.to_string());
-                    }
-                }
-            } else {
-                return Err((
-                    StatusCode::FORBIDDEN,
-                    "Not authorized to access this talent".into(),
-                ));
-            }
-        } else if user.role == "admin" {
-            target_user_ids = vec![tid.clone()];
-        }
-    }
+    let target_user_ids =
+        resolve_voice_owner_ids(&state, &user, params.get("talent_id").map(String::as_str)).await?;
 
     let t_refs: Vec<&str> = target_user_ids.iter().map(|s| s.as_str()).collect();
 
@@ -765,7 +788,9 @@ pub async fn delete_voice_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    if owner_id != user.id {
+    let allowed_owner_ids = resolve_voice_owner_ids(&state, &user, None).await?;
+    let allowed_owner_refs: Vec<&str> = allowed_owner_ids.iter().map(|s| s.as_str()).collect();
+    if !allowed_owner_ids.iter().any(|allowed| allowed == owner_id) {
         return Err((
             StatusCode::FORBIDDEN,
             "You do not have permission to delete this recording".to_string(),
@@ -814,7 +839,7 @@ pub async fn delete_voice_recording(
         .from("voice_models")
         .update("{\"source_recording_id\": null}")
         .eq("source_recording_id", &id)
-        .eq("user_id", &user.id)
+        .in_("user_id", allowed_owner_refs.clone())
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
@@ -859,7 +884,7 @@ pub async fn delete_voice_recording(
         .from("voice_recordings")
         .select("id")
         .eq("id", &id)
-        .eq("user_id", &user.id)
+        .in_("user_id", allowed_owner_refs)
         .limit(1)
         .execute()
         .await

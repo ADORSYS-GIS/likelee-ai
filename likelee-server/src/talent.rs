@@ -2335,14 +2335,47 @@ pub async fn get_analytics(
         },
     };
 
+    let (kpis, campaigns, roi) = if advanced_analytics_enabled {
+        (
+            TalentAnalyticsKpis {
+                total_views: total_views_this_month,
+                views_change_pct,
+                total_revenue_cents,
+                active_campaigns,
+            },
+            campaigns,
+            roi,
+        )
+    } else {
+        (
+            TalentAnalyticsKpis {
+                total_views: 0,
+                views_change_pct: 0.0,
+                total_revenue_cents: 0,
+                active_campaigns: 0,
+            },
+            Vec::new(),
+            TalentAnalyticsRoi {
+                traditional: TalentAnalyticsRoiTraditional {
+                    per_post_cents: 50_000,
+                    time_investment: "4-6 hours".to_string(),
+                    posts_per_month: "5-8".to_string(),
+                    monthly_earnings_range: "$2,500-$4,000".to_string(),
+                },
+                ai: TalentAnalyticsRoiAi {
+                    per_campaign_cents: 0,
+                    time_investment: "0 hours/month".to_string(),
+                    active_campaigns: 0,
+                    monthly_earnings_cents: 0,
+                },
+                message: "Upgrade to Pro to unlock advanced earnings analytics.".to_string(),
+            },
+        )
+    };
+
     Ok(Json(TalentAnalyticsResponse {
         month: month.clone(),
-        kpis: TalentAnalyticsKpis {
-            total_views: total_views_this_month,
-            views_change_pct,
-            total_revenue_cents,
-            active_campaigns,
-        },
+        kpis,
         campaigns,
         roi,
         plan_tier,

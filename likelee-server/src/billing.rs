@@ -568,13 +568,147 @@ pub async fn create_creator_subscription_checkout(
         ));
     }
 
-    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
-
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let creator_resp = state
+        .pg
+        .from("creators")
+        .select("id,email,full_name,stripe_customer_id,stripe_subscription_id")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let creator_status = creator_resp.status();
+    let creator_text = creator_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !creator_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            creator_status.as_u16(),
+            creator_text,
+        ));
+    }
+
+    let creator_row = serde_json::from_str::<serde_json::Value>(&creator_text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "creator_profile_not_found".to_string(),
+        ))?;
+
+    let existing_customer = creator_row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let customer_id = if !existing_customer.is_empty() {
+        existing_customer
+    } else {
+        let mut params = stripe_sdk::CreateCustomer::new();
+        if let Some(email) = creator_row
+            .get("email")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            params.email = Some(email);
+        }
+        params.name = Some(
+            creator_row
+                .get("full_name")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .unwrap_or("Creator"),
+        );
+        params.metadata = Some(std::collections::HashMap::from([(
+            "creator_id".to_string(),
+            creator_id.clone(),
+        )]));
+
+        let customer = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let cust_id = customer.id.to_string();
+        let _ = state
+            .pg
+            .from("creators")
+            .eq("id", &creator_id)
+            .update(json!({ "stripe_customer_id": cust_id }).to_string())
+            .execute()
+            .await;
+        cust_id
+    };
+
+    let existing_subscription = creator_row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if !existing_subscription.is_empty() {
+        let parsed_subscription = existing_subscription
+            .parse::<stripe_sdk::SubscriptionId>()
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "invalid_creator_subscription_id".to_string(),
+                )
+            })?;
+        match stripe_sdk::Subscription::retrieve(&client, &parsed_subscription, &[]).await {
+            Ok(subscription) => {
+                let live_subscription = matches!(
+                    subscription.status,
+                    stripe_sdk::SubscriptionStatus::Active
+                        | stripe_sdk::SubscriptionStatus::Trialing
+                        | stripe_sdk::SubscriptionStatus::PastDue
+                        | stripe_sdk::SubscriptionStatus::Incomplete
+                        | stripe_sdk::SubscriptionStatus::Paused
+                        | stripe_sdk::SubscriptionStatus::Unpaid
+                );
+                if live_subscription {
+                    let customer = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "invalid_stripe_customer_id".to_string(),
+                        )
+                    })?;
+                    let mut portal_params = stripe_sdk::CreateBillingPortalSession::new(customer);
+                    portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+                    let portal = stripe_sdk::BillingPortalSession::create(&client, portal_params)
+                        .await
+                        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+                    return Ok(Json(CreatorCheckoutResponse {
+                        checkout_url: portal.url,
+                    }));
+                }
+            }
+            Err(error) => {
+                let message = error.to_string();
+                let not_found = message.contains("No such subscription")
+                    || message.contains("resource_missing")
+                    || message.contains("invalid_request_error");
+                if !not_found {
+                    return Err((StatusCode::BAD_GATEWAY, message));
+                }
+            }
+        }
+    }
+
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
     cs_params.success_url = Some(state.stripe_creator_success_url.as_str());
     cs_params.cancel_url = Some(state.stripe_creator_cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
     cs_params.client_reference_id = Some(creator_id.as_str());
     cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
         price: Some(price_id),
