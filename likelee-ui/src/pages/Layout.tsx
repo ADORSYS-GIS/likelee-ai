@@ -516,7 +516,7 @@ export default function Layout({ children, currentPageName }) {
                   height="40"
                   className="h-10 w-auto transform transition-transform group-hover:scale-105"
                 />
-                <span className="text-xl font-bold text-gray-900 tracking-tight">
+                <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
                   Likelee
                 </span>
               </Link>
@@ -548,7 +548,7 @@ export default function Layout({ children, currentPageName }) {
                     height="40"
                     className="h-10 w-auto transform transition-transform group-hover:scale-105"
                   />
-                  <span className="text-xl font-bold text-gray-900 tracking-tight">
+                  <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
                     Likelee
                   </span>
                 </Link>
@@ -740,7 +740,7 @@ export default function Layout({ children, currentPageName }) {
                     height="40"
                     className="h-10 w-auto"
                   />
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-xl font-bold text-gray-900 font-display">
                     Likelee
                   </span>
                 </Link>

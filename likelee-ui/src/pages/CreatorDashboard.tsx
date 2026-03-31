@@ -10354,7 +10354,7 @@ export default function CreatorDashboard() {
               alt="Likelee Logo"
               className="w-8 h-8"
             />
-            <span className="font-bold text-xl">Likelee</span>
+            <span className="font-bold text-xl font-display">Likelee</span>
           </div>
         )}
 
@@ -11047,7 +11047,7 @@ export default function CreatorDashboard() {
                     alt="Likelee Logo"
                     className="w-10 h-10"
                   />
-                  <span className="font-bold text-lg">Likelee</span>
+                  <span className="font-bold text-lg font-display">Likelee</span>
                 </div>
                 <p className="text-sm text-gray-600">
                   The Verified Talent Ecosystem for AI-powered Media.

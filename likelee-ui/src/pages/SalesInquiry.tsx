@@ -27,7 +27,6 @@ export default function SalesInquiry() {
     email: "",
     phone: "",
     company_size: "",
-    use_case: "",
     message: "",
   });
 
@@ -48,7 +47,6 @@ Contact: ${data.contact_name}
 Email: ${data.email}
 Phone: ${data.phone}
 Company Size: ${data.company_size}
-Primary Use Case: ${data.use_case}
 
 Message:
 ${data.message}
@@ -222,43 +220,6 @@ ${data.message}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                {t("salesInquiry.contactInfo.primaryUseCase")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <Select
-                required
-                value={formData.use_case}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, use_case: value })
-                }
-              >
-                <SelectTrigger className="h-12 border-gray-300 rounded-md">
-                  <SelectValue
-                    placeholder={t("salesInquiry.placeholders.selectUseCase")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ecommerce">
-                    {t("salesInquiry.options.useCase_ecommerce")}
-                  </SelectItem>
-                  <SelectItem value="advertising">
-                    {t("salesInquiry.options.useCase_advertising")}
-                  </SelectItem>
-                  <SelectItem value="social">
-                    {t("salesInquiry.options.useCase_social")}
-                  </SelectItem>
-                  <SelectItem value="video">
-                    {t("salesInquiry.options.useCase_video")}
-                  </SelectItem>
-                  <SelectItem value="other">
-                    {t("salesInquiry.options.useCase_other")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div>
