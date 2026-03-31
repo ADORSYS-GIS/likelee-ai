@@ -72,6 +72,7 @@ export default function JobsBoard() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const backTo = searchParams.get("backTo");
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -459,6 +460,21 @@ export default function JobsBoard() {
     <>
       <div className="min-h-screen bg-gray-50 px-6 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-fit px-0 text-gray-600 hover:bg-transparent hover:text-gray-900"
+            onClick={() => {
+              if (backTo) {
+                navigate(backTo);
+                return;
+              }
+              navigate(-1);
+            }}
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
           <div className="flex items-center justify-between">
             <div className="space-y-3">
               <Button

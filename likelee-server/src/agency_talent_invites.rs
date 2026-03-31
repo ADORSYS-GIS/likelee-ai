@@ -135,16 +135,59 @@ async fn upsert_agency_talent_connection(
         "status": status,
         "updated_at": now_rfc3339(),
     });
+
+    if let Some(creator_id) = creator_id.filter(|id| !id.trim().is_empty()) {
+        let existing_resp = state
+            .pg
+            .from("agency_talent_relationships")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .eq("creator_id", creator_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let existing_status = existing_resp.status();
+        let existing_text = existing_resp.text().await.unwrap_or_default();
+        if !existing_status.is_success() {
+            return Err(sanitize_db_error(existing_status.as_u16(), existing_text));
+        }
+        let existing_rows: Vec<Value> = serde_json::from_str(&existing_text).unwrap_or_default();
+        if let Some(existing_id) = existing_rows
+            .first()
+            .and_then(|row| row.get("id"))
+            .and_then(|v| v.as_str())
+            .filter(|id| !id.trim().is_empty())
+        {
+            let resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .eq("id", existing_id)
+                .update(payload.to_string())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let resp_status = resp.status();
+            if !resp_status.is_success() {
+                let txt = resp.text().await.unwrap_or_default();
+                return Err(sanitize_db_error(resp_status.as_u16(), txt));
+            }
+            return Ok(());
+        }
+    }
+
     let resp = state
         .pg
         .from("agency_talent_relationships")
         .upsert(payload.to_string())
+        .on_conflict("agency_id,talent_id")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
+    let resp_status = resp.status();
+    if !resp_status.is_success() {
         let txt = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, txt));
+        return Err(sanitize_db_error(resp_status.as_u16(), txt));
     }
     Ok(())
 }

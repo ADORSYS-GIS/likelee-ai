@@ -1977,14 +1977,14 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-            {/* Per-Talent Custom Commissions */}
+            {/* Talent Commission Rules */}
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
-                  {`Per-${entitySingularTitle} Custom Commissions`}
+                  {`${entitySingularTitle} Commission Rules`}
                 </h3>
                 <p className="text-sm text-gray-500 font-medium tracking-tight">
-                  {`Set specific commission rates for individual ${entityPluralLower}. These overrides take precedence over the default agency and division rates.`}
+                  {`Agency-managed ${entityPluralLower} can use settings-based overrides here. Marketplace-connected ${entityPluralLower} follow the active signed contract rate and are read-only on this screen.`}
                 </p>
               </div>
 

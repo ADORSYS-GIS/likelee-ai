@@ -256,6 +256,7 @@ pub async fn get_roster(
     user: AuthUser,
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, &agency_id).await?;
     // Fetch all talents linked to this agency
     let resp = state
         .pg
