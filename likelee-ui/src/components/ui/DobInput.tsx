@@ -21,7 +21,7 @@ interface DobInputProps {
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
-const MIN_YEAR = CURRENT_YEAR - 100; // oldest selectable year
+const MIN_YEAR = CURRENT_YEAR - 120; // oldest selectable year
 
 function padTwo(n: string | number) {
   return String(n).padStart(2, "0");
@@ -220,6 +220,7 @@ export function DobInput({
           ref={mmRef}
           type="text"
           inputMode="numeric"
+          pattern="[0-9]*"
           maxLength={2}
           placeholder="MM"
           value={mm}
@@ -235,6 +236,7 @@ export function DobInput({
           ref={ddRef}
           type="text"
           inputMode="numeric"
+          pattern="[0-9]*"
           maxLength={2}
           placeholder="DD"
           value={dd}
@@ -251,6 +253,7 @@ export function DobInput({
             ref={yyyyRef}
             type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
             maxLength={4}
             placeholder="YYYY"
             value={yyyy}
