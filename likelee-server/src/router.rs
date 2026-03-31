@@ -1148,6 +1148,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::email::send_email),
         )
         .route(
+            "/api/integrations/core/send-sales-inquiry",
+            post(crate::email::send_sales_inquiry),
+        )
+        .route(
             "/api/agency/billing/checkout",
             post(crate::billing::create_agency_subscription_checkout),
         )

@@ -14,7 +14,7 @@ import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from "react-i18next";
-import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
+import { SALES_EMAIL, SALES_EMAIL_MAILTO } from "@/config/public";
 import { toast } from "@/components/ui/use-toast";
 
 export default function SalesInquiry() {
@@ -32,26 +32,7 @@ export default function SalesInquiry() {
 
   const submitInquiry = useMutation({
     mutationFn: (data: typeof formData) => {
-      // In a real app this would call an API endpoint
-      // For now we'll simulate a successful submission logging
-      console.log("Sales Inquiry Submitted:", data);
-
-      return base44.post("/integrations/core/send-email", {
-        to: CONTACT_EMAIL,
-        subject: `Sales Inquiry from ${data.company_name}`,
-        body: `
-New Sales Inquiry:
-
-Company: ${data.company_name}
-Contact: ${data.contact_name}
-Email: ${data.email}
-Phone: ${data.phone}
-Company Size: ${data.company_size}
-
-Message:
-${data.message}
-        `,
-      });
+      return base44.post("/integrations/core/send-sales-inquiry", data);
     },
     onSuccess: () => {
       setSubmitted(true);
@@ -73,6 +54,13 @@ ${data.message}
   const handleSubmit = (e) => {
     e.preventDefault();
     if (sending) return;
+    if (!formData.company_size) {
+      toast({
+        title: "Company size required",
+        description: "Select your company size before sending your inquiry.",
+      });
+      return;
+    }
     setSending(true);
     submitInquiry.mutate(formData);
   };
@@ -249,10 +237,10 @@ ${data.message}
         <p className="text-center text-sm text-gray-600 mt-6">
           {t("salesInquiry.assistance")}{" "}
           <a
-            href={CONTACT_EMAIL_MAILTO}
+            href={SALES_EMAIL_MAILTO}
             className="text-[#F7B750] hover:text-[#FAD54C] font-medium"
           >
-            {CONTACT_EMAIL}
+            {SALES_EMAIL}
           </a>
         </p>
       </div>

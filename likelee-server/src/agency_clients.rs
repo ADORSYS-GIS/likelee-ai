@@ -216,6 +216,7 @@ pub async fn share_comp_card(
                 true,
                 None,
                 Some(&from_name),
+                None,
             )
             .await
             {

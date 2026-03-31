@@ -4,6 +4,7 @@ declare const __API_BASE_URL__: string;
 
 interface ImportMetaEnv {
   readonly VITE_CONTACT_EMAIL?: string;
+  readonly VITE_SALES_EMAIL?: string;
 }
 
 interface ImportMeta {

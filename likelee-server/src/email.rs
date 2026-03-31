@@ -18,6 +18,16 @@ pub struct SendEmailRequest {
 }
 
 #[derive(Deserialize)]
+pub struct SendSalesInquiryRequest {
+    pub company_name: String,
+    pub contact_name: String,
+    pub email: String,
+    pub phone: Option<String>,
+    pub company_size: String,
+    pub message: Option<String>,
+}
+
+#[derive(Deserialize)]
 pub struct EmailAttachment {
     pub filename: String,
     pub content_type: String,
@@ -63,6 +73,7 @@ pub async fn send_email_core_with_from_name(
     is_html: bool,
     attachments: Option<&[EmailAttachment]>,
     from_name: Option<&str>,
+    reply_to: Option<&str>,
 ) -> Result<(), (StatusCode, String)> {
     if to.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
@@ -92,6 +103,7 @@ pub async fn send_email_core_with_from_name(
     let to_addr: Mailbox = to
         .parse::<Mailbox>()
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+    let reply_to_addr = parse_optional_reply_to(reply_to)?;
 
     let part = if is_html {
         SinglePart::html(body.to_string())
@@ -119,29 +131,33 @@ pub async fn send_email_core_with_from_name(
             multipart =
                 multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
         }
-        Message::builder()
+        let mut builder = Message::builder()
             .from(from_addr)
             .to(to_addr)
-            .subject(subject.to_string())
-            .multipart(multipart)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "build_message_failed".to_string(),
-                )
-            })?
+            .subject(subject.to_string());
+        if let Some(reply_to_addr) = reply_to_addr {
+            builder = builder.reply_to(reply_to_addr);
+        }
+        builder.multipart(multipart).map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "build_message_failed".to_string(),
+            )
+        })?
     } else {
-        Message::builder()
+        let mut builder = Message::builder()
             .from(from_addr)
             .to(to_addr)
-            .subject(subject.to_string())
-            .singlepart(part)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "build_message_failed".to_string(),
-                )
-            })?
+            .subject(subject.to_string());
+        if let Some(reply_to_addr) = reply_to_addr {
+            builder = builder.reply_to(reply_to_addr);
+        }
+        builder.singlepart(part).map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "build_message_failed".to_string(),
+            )
+        })?
     };
 
     let creds = lettre::transport::smtp::authentication::Credentials::new(
@@ -193,8 +209,26 @@ fn send_sales_plain_text_email(
     to: &str,
     subject: &str,
     body: &str,
+    reply_to: Option<&str>,
 ) -> Result<(), (StatusCode, String)> {
-    send_email_smtp_internal_sales(state, to, subject, body)
+    send_email_smtp_internal_sales(state, to, subject, body, reply_to)
+}
+
+fn parse_optional_reply_to(
+    reply_to: Option<&str>,
+) -> Result<Option<Mailbox>, (StatusCode, String)> {
+    let Some(reply_to) = reply_to.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(None);
+    };
+
+    let mailbox = reply_to.parse::<Mailbox>().map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "invalid_reply_to_address".to_string(),
+        )
+    })?;
+
+    Ok(Some(mailbox))
 }
 
 fn send_email_smtp_internal(
@@ -274,6 +308,7 @@ fn send_email_smtp_internal_sales(
     to: &str,
     subject: &str,
     body: &str,
+    reply_to: Option<&str>,
 ) -> Result<(), (StatusCode, String)> {
     if state.smtp_sales_host.is_empty() || state.smtp_sales_user.is_empty() {
         return Err((
@@ -292,11 +327,17 @@ fn send_email_smtp_internal_sales(
     let to_addr = to
         .parse()
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+    let reply_to_addr = parse_optional_reply_to(reply_to)?;
 
-    let email = Message::builder()
+    let mut builder = Message::builder()
         .from(from_addr)
         .to(to_addr)
-        .subject(subject.to_string())
+        .subject(subject.to_string());
+    if let Some(reply_to_addr) = reply_to_addr {
+        builder = builder.reply_to(reply_to_addr);
+    }
+
+    let email = builder
         .singlepart(SinglePart::plain(body.to_string()))
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -358,7 +399,7 @@ pub async fn send_email(
     }
 
     let res = if is_sales {
-        match send_sales_plain_text_email(&state, &to, &payload.subject, &payload.body) {
+        match send_sales_plain_text_email(&state, &to, &payload.subject, &payload.body, None) {
             Ok(_) => Ok(()),
             Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
                 send_email_core(&state, &to, &payload.subject, &payload.body, false, None).await
@@ -383,6 +424,82 @@ pub async fn send_email(
     }
 }
 
+pub async fn send_sales_inquiry(
+    State(state): State<AppState>,
+    Json(payload): Json<SendSalesInquiryRequest>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let company_name = payload.company_name.trim();
+    let contact_name = payload.contact_name.trim();
+    let email = payload.email.trim();
+    let phone = payload.phone.as_deref().unwrap_or("").trim();
+    let company_size = payload.company_size.trim();
+    let message = payload.message.as_deref().unwrap_or("").trim();
+
+    if company_name.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"missing_company_name"})),
+        );
+    }
+    if contact_name.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"missing_contact_name"})),
+        );
+    }
+    if email.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"missing_email"})),
+        );
+    }
+    if company_size.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"missing_company_size"})),
+        );
+    }
+
+    let to = state.email_sales_to.trim();
+    if to.is_empty() {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status":"error","error":"email_sales_to_not_configured"})),
+        );
+    }
+
+    let subject_company = company_name.replace(['\r', '\n'], " ");
+    let subject = format!("Sales Inquiry from {subject_company}");
+    let body = format!(
+        "New Sales Inquiry:\n\nCompany: {company_name}\nContact: {contact_name}\nEmail: {email}\nPhone: {phone}\nCompany Size: {company_size}\n\nMessage:\n{message}",
+        phone = if phone.is_empty() { "-" } else { phone },
+        message = if message.is_empty() { "-" } else { message },
+    );
+
+    let res = match send_sales_plain_text_email(&state, to, &subject, &body, Some(email)) {
+        Ok(()) => Ok(()),
+        Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
+            send_email_core_with_from_name(
+                &state,
+                to,
+                &subject,
+                &body,
+                false,
+                None,
+                None,
+                Some(email),
+            )
+            .await
+        }
+        Err(err) => Err(err),
+    };
+
+    match res {
+        Ok(()) => (StatusCode::OK, Json(json!({"status":"ok"}))),
+        Err((code, msg)) => (code, Json(json!({"status":"error", "error": msg}))),
+    }
+}
+
 pub async fn send_email_core(
     state: &AppState,
     to: &str,
@@ -391,5 +508,5 @@ pub async fn send_email_core(
     is_html: bool,
     attachments: Option<&[EmailAttachment]>,
 ) -> Result<(), (StatusCode, String)> {
-    send_email_core_with_from_name(state, to, subject, body, is_html, attachments, None).await
+    send_email_core_with_from_name(state, to, subject, body, is_html, attachments, None, None).await
 }
