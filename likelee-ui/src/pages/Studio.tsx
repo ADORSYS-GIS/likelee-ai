@@ -355,7 +355,7 @@ export default function Studio() {
                 className="h-8 w-auto"
               />
               <div>
-                <span className="text-lg font-bold text-white">
+                <span className="text-lg font-bold text-white font-display">
                   likelee.studio
                 </span>
                 <Badge className="ml-2 bg-white/10 text-white border-white/20 text-xs">
