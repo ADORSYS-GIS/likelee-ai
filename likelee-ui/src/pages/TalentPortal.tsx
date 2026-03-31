@@ -83,6 +83,7 @@ import {
   declineCreatorAgencyInvite,
   disconnectCreatorAgencyConnection,
   listCreatorAgencyConnections,
+  syncCreatorAgencyMarketplaceContract,
 } from "@/api/creatorAgencyConnection";
 
 function useQueryParams() {
@@ -892,9 +893,15 @@ export default function TalentPortal({
   );
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
-  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter(
-    (i) => String(i?.status || "").toLowerCase() === "pending",
-  ).length;
+  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter((i) => {
+    const contractStatus = String(
+      i?.marketplace_contract?.status || "",
+    ).toLowerCase();
+    return (
+      String(i?.status || "").toLowerCase() === "pending" &&
+      contractStatus !== "active"
+    );
+  }).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
     useQuery({
@@ -2512,11 +2519,82 @@ export default function TalentPortal({
                             />
                           </div>
                         </div>
-                      </Card>
-                    </>
-                  )}
-                </div>
-              )}
+                        <Button
+                          variant="outline"
+                          disabled={disconnectAgencyMutation.isPending}
+                          onClick={async () => {
+                            try {
+                              const agencyLabel =
+                                c.agencies?.agency_name ||
+                                String(c.agency_id || "");
+                              const requiresApproval =
+                                String(
+                                  c?.marketplace_contract?.status || "",
+                                ).toLowerCase() === "active";
+                              const pendingDisconnect =
+                                String(
+                                  c?.marketplace_contract?.disconnect_status ||
+                                    "",
+                                ).toLowerCase() === "pending";
+                              if (pendingDisconnect) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                                return;
+                              }
+                              const ok = window.confirm(
+                                requiresApproval
+                                  ? `Request disconnect from ${agencyLabel}? The connection will stay active until the agency approves or the contract expires.`
+                                  : `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
+                              );
+                              if (!ok) return;
+                              const result =
+                                await disconnectAgencyMutation.mutateAsync(
+                                  String(c.agency_id),
+                                );
+                              if (result?.status === "disconnect_requested") {
+                                toast({
+                                  title: "Disconnect requested",
+                                  description:
+                                    "The agency has been notified. The connection stays active until they approve or the contract expires.",
+                                });
+                              } else if (
+                                result?.status === "disconnect_pending"
+                              ) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                              } else {
+                                toast({
+                                  title: "Disconnected",
+                                  description:
+                                    "You have disconnected from the agency.",
+                                });
+                              }
+                            } catch (e: any) {
+                              toast({
+                                variant: "destructive",
+                                title: "Failed to disconnect",
+                                description: e?.message || String(e),
+                              });
+                            }
+                          }}
+                        >
+                          {String(
+                            c?.marketplace_contract?.status || "",
+                          ).toLowerCase() === "active"
+                            ? "Request disconnect"
+                            : "Disconnect"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
 
               {tab === "agency_connection" && (
                 <div className="space-y-6">
@@ -2550,16 +2628,35 @@ export default function TalentPortal({
                       )}
                     </div>
 
-                    {agencyConnections.length > 0 && (
-                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {agencyConnections.map((c: any) => (
-                          <div
-                            key={c.agency_id}
-                            className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
-                                {c.agencies?.logo_url ? (
+                {(agencyInvites as any[]).filter((i) => {
+                  const contractStatus = String(
+                    i?.marketplace_contract?.status || "",
+                  ).toLowerCase();
+                  return (
+                    String(i?.status || "").toLowerCase() === "pending" &&
+                    contractStatus !== "active"
+                  );
+                }).length > 0 ? (
+                  <div className="mt-6 space-y-3">
+                    {(agencyInvites as any[])
+                      .filter((i) => {
+                        const contractStatus = String(
+                          i?.marketplace_contract?.status || "",
+                        ).toLowerCase();
+                        return (
+                          String(i?.status || "").toLowerCase() === "pending" &&
+                          contractStatus !== "active"
+                        );
+                      })
+                      .map((inv: any) => (
+                        <div
+                          key={inv.id}
+                          className="p-4 border border-gray-200 rounded-lg space-y-3"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {inv?.agencies?.logo_url ? (
                                   <img
                                     src={c.agencies.logo_url}
                                     alt={c.agencies.agency_name || "Agency"}
@@ -2578,37 +2675,199 @@ export default function TalentPortal({
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              variant="outline"
-                              disabled={disconnectAgencyMutation.isPending}
-                              onClick={async () => {
-                                try {
-                                  const agencyLabel =
-                                    c.agencies?.agency_name ||
-                                    String(c.agency_id || "");
-                                  const ok = window.confirm(
-                                    `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
-                                  );
-                                  if (!ok) return;
-                                  await disconnectAgencyMutation.mutateAsync(
-                                    String(c.agency_id),
-                                  );
-                                  toast({
-                                    title: "Disconnected",
-                                    description:
-                                      "You have disconnected from the agency.",
-                                  });
-                                } catch (e: any) {
-                                  toast({
-                                    variant: "destructive",
-                                    title: "Failed to disconnect",
-                                    description: e?.message || String(e),
-                                  });
-                                }
-                              }}
-                            >
-                              Disconnect
-                            </Button>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                disabled={disconnectAgencyMutation.isPending}
+                                onClick={async () => {
+                                  try {
+                                    const token = String(inv?.token || "");
+                                    if (token) {
+                                      navigate(
+                                        `/invite/agency/${encodeURIComponent(token)}`,
+                                      );
+                                      return;
+                                    }
+                                    toast({
+                                      title: "Missing invite token",
+                                      description:
+                                        "Open the invite link to respond.",
+                                      variant: "destructive" as any,
+                                    });
+                                  } catch (e: any) {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Failed to decline",
+                                      description: e?.message || String(e),
+                                    });
+                                  }
+                                }}
+                              >
+                                Decline
+                              </Button>
+                              {inv?.marketplace_contract ? (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        const signUrl =
+                                          inv.marketplace_contract
+                                            ?.creator_sign_url;
+                                        if (!signUrl) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Contract link unavailable",
+                                            description:
+                                              "The signing link is not ready yet. Try syncing again in a moment.",
+                                          });
+                                          return;
+                                        }
+                                        window.open(
+                                          signUrl,
+                                          "_blank",
+                                          "noopener,noreferrer",
+                                        );
+                                        await syncCreatorAgencyMarketplaceContract(
+                                          String(
+                                            inv.marketplace_contract.id || "",
+                                          ),
+                                        );
+                                        await Promise.all([
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["creatorAgencyInvites"],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: [
+                                              "creatorAgencyConnections",
+                                            ],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["talentMe"],
+                                          }),
+                                        ]);
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to open contract",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Review contract
+                                  </Button>
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        await syncCreatorAgencyMarketplaceContract(
+                                          String(
+                                            inv.marketplace_contract?.id || "",
+                                          ),
+                                        );
+                                        await Promise.all([
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["creatorAgencyInvites"],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: [
+                                              "creatorAgencyConnections",
+                                            ],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["talentMe"],
+                                          }),
+                                        ]);
+                                        toast({
+                                          title: "Contract synced",
+                                          description:
+                                            "Invitation status has been refreshed.",
+                                        });
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to sync",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Sync
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                  disabled={disconnectAgencyMutation.isPending}
+                                  onClick={async () => {
+                                    try {
+                                      await acceptCreatorAgencyInvite(
+                                        String(inv.id),
+                                      );
+                                      await Promise.all([
+                                        queryClient.invalidateQueries({
+                                          queryKey: ["creatorAgencyInvites"],
+                                        }),
+                                        queryClient.invalidateQueries({
+                                          queryKey: [
+                                            "creatorAgencyConnections",
+                                          ],
+                                        }),
+                                        queryClient.invalidateQueries({
+                                          queryKey: ["talentMe"],
+                                        }),
+                                      ]);
+                                      toast({
+                                        title: "Invitation accepted",
+                                        description:
+                                          "You are now connected to the agency.",
+                                      });
+                                    } catch (e: any) {
+                                      toast({
+                                        variant: "destructive",
+                                        title: "Failed to accept",
+                                        description: e?.message || String(e),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Accept
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          {inv?.marketplace_contract ? (
+                            <div className="rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                              <div className="font-semibold">
+                                Contract status:{" "}
+                                {String(
+                                  inv.marketplace_contract.status || "pending",
+                                ).replaceAll("_", " ")}
+                              </div>
+                              <div className="mt-1">
+                                Commission:{" "}
+                                {Number(
+                                  inv.marketplace_contract.commission_rate || 0,
+                                ).toFixed(2)}
+                                % • Valid until{" "}
+                                {inv.marketplace_contract.valid_until ||
+                                  "not set"}
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                            <span className="font-semibold">
+                              Likelee notice:
+                            </span>{" "}
+                            This agency found your public profile in marketplace
+                            and sent a connection invitation.
                           </div>
                         ))}
                       </div>

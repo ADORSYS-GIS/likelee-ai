@@ -69,6 +69,12 @@ pub struct MarketplaceConnectPayload {
     pub profile_type: String, // creator | agency
     pub target_id: String,
     pub message: Option<String>,
+    pub contract_template_id: Option<String>,
+    pub contract_body: Option<String>,
+    pub contract_body_format: Option<String>,
+    pub commission_rate: Option<f64>,
+    pub valid_from: Option<String>,
+    pub valid_until: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -282,6 +288,7 @@ pub async fn search_marketplace_profiles(
         let mut invite_status_by_creator_id: HashMap<String, String> = HashMap::new();
         let mut followers_by_creator_id: HashMap<String, i64> = HashMap::new();
         let mut engagement_by_creator_id: HashMap<String, f64> = HashMap::new();
+        let mut contract_by_creator_id: HashMap<String, serde_json::Value> = HashMap::new();
         let mut effective_agency_id = user.id.clone();
 
         if user.role == "agency" {
@@ -403,6 +410,45 @@ pub async fn search_marketplace_profiles(
         }
 
         if user.role == "agency" {
+            crate::agency_marketplace_contracts::sync_open_contracts_for_agency(
+                &state,
+                &effective_agency_id,
+            )
+            .await?;
+
+            let contract_resp = state
+                .pg
+                .from("agency_creator_marketplace_contracts")
+                .select("*")
+                .eq("agency_id", &effective_agency_id)
+                .order("created_at.desc")
+                .limit(400)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let contract_status = contract_resp.status();
+            let contract_text = contract_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !contract_status.is_success() {
+                return Err(sanitize_db_error(contract_status.as_u16(), contract_text));
+            }
+            let contract_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&contract_text).unwrap_or_default();
+            for row in contract_rows {
+                let creator_id = row
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if creator_id.is_empty() || contract_by_creator_id.contains_key(&creator_id) {
+                    continue;
+                }
+                contract_by_creator_id.insert(creator_id, row);
+            }
+
             let resp = state
                 .pg
                 .from("agency_talent_relationships")
@@ -674,6 +720,11 @@ pub async fn search_marketplace_profiles(
                 row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
                 row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
             );
+            let marketplace_contract = contract_by_creator_id
+                .get(creator_id)
+                .map(crate::agency_marketplace_contracts::parse_contract_summary)
+                .map(|summary| serde_json::to_value(summary).unwrap_or(serde_json::Value::Null))
+                .unwrap_or(serde_json::Value::Null);
 
             results.push(serde_json::json!({
                 "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
@@ -701,6 +752,16 @@ pub async fn search_marketplace_profiles(
                 "is_connected": connection_status == "connected",
                 "is_pending": connection_status == "waiting",
                 "connection_status": connection_status,
+                "marketplace_contract": marketplace_contract,
+                "talent_ownership": if agency_by_creator_id
+                    .get(creator_id)
+                    .map(|agency_id| agency_id == &effective_agency_id)
+                    .unwrap_or(false)
+                {
+                    serde_json::json!("agency_owned")
+                } else {
+                    serde_json::json!("regular")
+                },
                 "verification_source": "kyc",
                 "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
                 "base_weekly_price_cents": base_weekly_price_cents,
@@ -1082,6 +1143,39 @@ pub(crate) async fn resolve_effective_creator_id(
         return Ok(user.id.clone());
     }
 
+    let agency_user_resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .or(format!("id.eq.{},user_id.eq.{}", user.id, user.id))
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_user_status = agency_user_resp.status();
+    let agency_user_text = agency_user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !agency_user_status.is_success() {
+        return Err(sanitize_db_error(
+            agency_user_status.as_u16(),
+            agency_user_text,
+        ));
+    }
+    let agency_user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_user_text).unwrap_or_default();
+    if let Some(mapped_creator_id) = agency_user_rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(mapped_creator_id);
+    }
+
     let by_id_resp = state
         .pg
         .from("creators")
@@ -1191,6 +1285,7 @@ pub async fn get_marketplace_profile_details(
         "portfolio": serde_json::json!([]),
         "campaigns": serde_json::json!([]),
         "connection_status": "none",
+        "marketplace_contract": serde_json::Value::Null,
     });
 
     if profile_type == "creator" {
@@ -1436,6 +1531,16 @@ pub async fn get_marketplace_profile_details(
                     }
                 }
             } else {
+                response["marketplace_contract"] =
+                    crate::agency_marketplace_contracts::get_latest_contract_for_pair(
+                        &state,
+                        &effective_agency_id,
+                        &creator_id,
+                    )
+                    .await
+                    .map(|summary| serde_json::to_value(summary).unwrap_or(serde_json::Value::Null))
+                    .unwrap_or(serde_json::Value::Null);
+
                 let connected_resp = state
                     .pg
                     .from("agency_users")
@@ -1931,46 +2036,19 @@ pub async fn create_marketplace_connection_request(
                         reactivate_text,
                     ));
                 }
-
-                return Ok(Json(serde_json::json!({"status":"pending"})));
             }
-            return Ok(Json(serde_json::json!({"status":"pending"})));
         }
 
-        let insert_payload = serde_json::json!({
-            "agency_id": effective_agency_id,
-            "creator_id": creator_id,
-            "status": "pending",
-        });
+        let contract_response =
+            crate::agency_marketplace_contracts::create_marketplace_connect_contract(
+                &state,
+                &effective_agency_id,
+                &creator_id,
+                &payload,
+            )
+            .await?;
 
-        let create_resp = state
-            .pg
-            .from("creator_agency_invites")
-            .insert(insert_payload.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let create_status = create_resp.status();
-        let create_text = create_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !create_status.is_success() {
-            if create_status.as_u16() == StatusCode::CONFLICT.as_u16() {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&create_text) {
-                    if v.get("code")
-                        .and_then(|c| c.as_str())
-                        .map(|c| c == "23505")
-                        .unwrap_or(false)
-                    {
-                        return Ok(Json(serde_json::json!({"status":"pending"})));
-                    }
-                }
-            }
-            return Err(sanitize_db_error(create_status.as_u16(), create_text));
-        }
-
-        return Ok(Json(serde_json::json!({"status":"pending"})));
+        return Ok(Json(contract_response));
     }
 
     if profile_type != "agency" {

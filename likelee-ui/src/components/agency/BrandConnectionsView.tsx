@@ -45,8 +45,6 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
-import { useAuth } from "@/auth/AuthProvider";
-import { createPageUrl } from "@/utils";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -57,7 +55,6 @@ import { Textarea } from "@/components/ui/textarea";
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<
     | "connections"
@@ -75,11 +72,6 @@ const BrandConnectionsView = () => {
     setActiveTab("connections");
   }, [activeTab, navigate]);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
-  const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
-  const [jobInviteConfirmAction, setJobInviteConfirmAction] = useState<
-    "accept" | "decline" | ""
-  >("");
   const [selectedOfferId, setSelectedOfferId] = useState<string>("");
   const [packageDraftByOffer, setPackageDraftByOffer] = useState<
     Record<string, { title: string; message: string; packageId?: string }>
@@ -132,21 +124,6 @@ const BrandConnectionsView = () => {
     { label: string; onClick: () => void; variant?: "default" | "outline" }[]
   >([]);
 
-  const isConfidentialBrandPlaceholder = (value: unknown) =>
-    String(value || "")
-      .trim()
-      .toLowerCase() === "confidential brand";
-
-  const resolveJobCompanyName = (job: any) => {
-    const brandName = String(job?.brands?.company_name || "").trim();
-    const companyName = String(job?.company_name || "").trim();
-    if (brandName && !isConfidentialBrandPlaceholder(brandName))
-      return brandName;
-    if (companyName && !isConfidentialBrandPlaceholder(companyName))
-      return companyName;
-    return brandName || companyName || "Brand";
-  };
-
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
     if (document.getElementById("docuseal-builder-script")) return;
@@ -194,28 +171,6 @@ const BrandConnectionsView = () => {
         },
       );
       return Array.isArray(resp?.offers) ? resp.offers : [];
-    },
-  });
-
-  const jobInvitesQuery = useQuery({
-    queryKey: ["agency", "job-invites"],
-    queryFn: async () => {
-      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
-        params: { limit: 100 },
-      });
-      const jobs = Array.isArray(resp?.jobs) ? resp.jobs : [];
-      return jobs.filter((job) => {
-        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
-          ? job.invited_agency_ids
-          : [];
-        const acceptedAgencies = Array.isArray(job?.accepted_agency_ids)
-          ? job.accepted_agency_ids
-          : [];
-        const myId = user?.id;
-        return (
-          invitedAgencies.includes(myId) || acceptedAgencies.includes(myId)
-        );
-      });
     },
   });
 
@@ -326,10 +281,6 @@ const BrandConnectionsView = () => {
     if (!Array.isArray(offersQuery.data)) return [];
     return offersQuery.data;
   }, [offersQuery.data]);
-  const jobInvites = useMemo(() => {
-    if (!Array.isArray(jobInvitesQuery.data)) return [];
-    return jobInvitesQuery.data;
-  }, [jobInvitesQuery.data]);
   const roster = useMemo(() => {
     if (!Array.isArray(rosterQuery.data)) return [];
     return rosterQuery.data;
@@ -1101,63 +1052,10 @@ const BrandConnectionsView = () => {
     }
   };
 
-  const declineJobInvite = async (jobId: string) => {
-    try {
-      setBusyIds((prev) => new Set(prev).add(jobId));
-      await base44.post(`/api/jobs/${jobId}/decline`);
-      toast({ title: "Job invite declined" });
-      jobInvitesQuery.refetch();
-    } catch (err: any) {
-      toast({
-        title: "Error declining job invite",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setBusyIds((prev) => {
-        const next = new Set(prev);
-        next.delete(jobId);
-        return next;
-      });
-      setJobInviteConfirmOpen(false);
-    }
-  };
-
-  const acceptJobInvite = async (jobId: string) => {
-    try {
-      setBusyIds((prev) => new Set(prev).add(jobId));
-      await base44.post(`/api/jobs/${jobId}/accept`);
-      toast({ title: "Job invite accepted" });
-      jobInvitesQuery.refetch();
-    } catch (err: any) {
-      toast({
-        title: "Error accepting job invite",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setBusyIds((prev) => {
-        const next = new Set(prev);
-        next.delete(jobId);
-        return next;
-      });
-      setJobInviteConfirmOpen(false);
-    }
-  };
-
-  const confirmJobInviteAction = () => {
-    if (!jobInviteConfirmId || !jobInviteConfirmAction) return;
-    if (jobInviteConfirmAction === "accept") {
-      acceptJobInvite(jobInviteConfirmId);
-    } else {
-      declineJobInvite(jobInviteConfirmId);
-    }
-  };
-
   const pendingRequests = requests.length;
-  const pendingOffers =
-    jobInvites.length +
-    offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
+  const pendingOffers = offers.filter((o) =>
+    ["sent", "viewed"].includes(o.status),
+  ).length;
   const pendingFeedback = feedbackItems.length;
 
   React.useEffect(() => {
@@ -1435,97 +1333,6 @@ const BrandConnectionsView = () => {
 
       {activeTab === "offers" && (
         <>
-          <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Job Invites</h3>
-            {jobInvitesQuery.isLoading && (
-              <p className="text-sm text-gray-500">Loading job invites...</p>
-            )}
-            {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
-              <p className="text-sm text-gray-500">No job invites yet.</p>
-            )}
-            {jobInvites.map((job: any) => {
-              const jobId = String(job?.id || "");
-              const companyName = resolveJobCompanyName(job);
-              const jobTitle = String(job?.job_title || "Job invite");
-              const isBusy = busyIds.has(jobId);
-              return (
-                <div
-                  key={jobId}
-                  className="border border-green-200 bg-green-50 rounded-lg p-4 space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {companyName}
-                      </p>
-                      <p className="text-xs text-gray-600">{jobTitle}</p>
-                    </div>
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">
-                      Job Invite
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {!(job?.accepted_agency_ids || []).includes(
-                      profile?.id || user?.id,
-                    ) ? (
-                      <>
-                        <Button
-                          size="sm"
-                          className="bg-white text-black border border-gray-200 hover:bg-gray-100"
-                          onClick={() => {
-                            navigate(
-                              `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}`,
-                            );
-                          }}
-                        >
-                          View job details
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                          disabled={isBusy}
-                          onClick={() => {
-                            setJobInviteConfirmId(jobId);
-                            setJobInviteConfirmAction("accept");
-                            setJobInviteConfirmOpen(true);
-                          }}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-red-300 text-red-600 bg-white hover:bg-red-50"
-                          disabled={isBusy}
-                          onClick={() => {
-                            setJobInviteConfirmId(jobId);
-                            setJobInviteConfirmAction("decline");
-                            setJobInviteConfirmOpen(true);
-                          }}
-                        >
-                          Decline
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="bg-black text-white hover:bg-gray-800"
-                        onClick={() =>
-                          navigate(
-                            `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                              jobId,
-                            )}&apply=true`,
-                          )
-                        }
-                      >
-                        Apply
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
           <Card className="p-6 border border-gray-200 rounded-xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -2910,46 +2717,6 @@ const BrandConnectionsView = () => {
           })}
         </Card>
       )}
-
-      <Dialog
-        open={jobInviteConfirmOpen}
-        onOpenChange={setJobInviteConfirmOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Confirm{" "}
-              {jobInviteConfirmAction === "accept" ? "Acceptance" : "Decline"}
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to {jobInviteConfirmAction} this job invite?
-              This action cannot be undone. Please ensure you have viewed the
-              job details first.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setJobInviteConfirmOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className={
-                jobInviteConfirmAction === "accept"
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-              }
-              onClick={confirmJobInviteAction}
-              disabled={busyIds.has(jobInviteConfirmId)}
-            >
-              {busyIds.has(jobInviteConfirmId)
-                ? "Processing..."
-                : `Yes, ${jobInviteConfirmAction}`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={assignDialog.open}

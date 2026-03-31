@@ -2380,6 +2380,44 @@ async fn handle_licensing_requests_checkout_session_completed(
         }
     }
 
+    let mut contract_by_creator: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_id_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        let today = chrono::Utc::now().date_naive().to_string();
+        let contract_resp = state
+            .pg
+            .from("agency_creator_marketplace_contracts")
+            .select("creator_id,commission_rate,status,valid_from,valid_until")
+            .eq("agency_id", &agency_id)
+            .eq("status", "active")
+            .lte("valid_from", &today)
+            .gte("valid_until", &today)
+            .in_("creator_id", creator_id_refs)
+            .execute()
+            .await;
+        if let Ok(contract_resp) = contract_resp {
+            if contract_resp.status().is_success() {
+                let contract_text = contract_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let contract_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&contract_text).unwrap_or_default();
+                for row in contract_rows {
+                    let cid = row
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    if let Some(rate) = row.get("commission_rate").and_then(|v| v.as_f64()) {
+                        contract_by_creator.insert(cid.to_string(), rate.clamp(0.0, 100.0));
+                    }
+                }
+            }
+        }
+    }
+
     let (resp_talent_tiers, resp_creator_tiers) = tokio::try_join!(
         async {
             state
@@ -2537,7 +2575,8 @@ async fn handle_licensing_requests_checkout_session_completed(
         let gross_cents = alloc_floor_by_lr.get(lrid).copied().unwrap_or(0).max(0);
         let creator_id = creator_id_by_talent.get(&talent_id);
         let talent_rate = creator_id
-            .and_then(|cid| custom_by_creator.get(cid).copied())
+            .and_then(|cid| contract_by_creator.get(cid).copied())
+            .or_else(|| creator_id.and_then(|cid| custom_by_creator.get(cid).copied()))
             .unwrap_or_else(|| {
                 default_rate_by_talent
                     .get(&talent_id)
@@ -4857,6 +4896,40 @@ async fn handle_campaign_offer_agency_distribution(
         }
     }
 
+    let mut contract_by_creator: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    let today = chrono::Utc::now().date_naive().to_string();
+    let contract_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("creator_id,commission_rate")
+        .eq("agency_id", agency_id)
+        .eq("status", "active")
+        .lte("valid_from", &today)
+        .gte("valid_until", &today)
+        .in_("creator_id", creator_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if contract_resp.status().is_success() {
+        let contract_text = contract_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let contract_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&contract_text).unwrap_or_default();
+        for r in contract_rows {
+            let cid = r
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            if cid.is_empty() {
+                continue;
+            }
+            if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                contract_by_creator.insert(cid.to_string(), rate.clamp(0.0, 100.0));
+            }
+        }
+    }
+
     let mut default_rate_by_creator: std::collections::HashMap<String, f64> =
         std::collections::HashMap::new();
     for cid in &creator_ids {
@@ -4969,9 +5042,10 @@ async fn handle_campaign_offer_agency_distribution(
         if creator_id.is_empty() {
             continue;
         }
-        let talent_rate = custom_by_creator
+        let talent_rate = contract_by_creator
             .get(&creator_id)
             .copied()
+            .or_else(|| custom_by_creator.get(&creator_id).copied())
             .unwrap_or_else(|| {
                 default_rate_by_creator
                     .get(&creator_id)

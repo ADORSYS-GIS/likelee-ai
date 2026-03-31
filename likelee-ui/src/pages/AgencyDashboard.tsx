@@ -153,6 +153,7 @@ import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
 import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
 import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
 import BrandConnectionsView from "@/components/agency/BrandConnectionsView";
+import AgencyJobInvitesView from "@/components/agency/AgencyJobInvitesView";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
@@ -10394,6 +10395,7 @@ const MarketplaceTab = () => (
     subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
+    enableAgencyContractConnect
   />
 );
 
@@ -17172,6 +17174,8 @@ export default function AgencyDashboard() {
         return "All Talent";
       case "licensing":
         return "Licensing Requests";
+      case "jobs":
+        return "Job Invites";
       case "protection":
         return "Protect & Usage";
       case "analytics":
@@ -18339,7 +18343,12 @@ export default function AgencyDashboard() {
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
-          { id: "jobs", label: "Jobs", icon: Briefcase },
+          {
+            id: "jobs",
+            label: "Jobs",
+            icon: Briefcase,
+            subItems: ["Job Invites", "Open Job Board"],
+          },
           {
             id: "roster",
             label: "Roster",
@@ -18398,7 +18407,12 @@ export default function AgencyDashboard() {
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
-          { id: "jobs", label: "Jobs", icon: Briefcase },
+          {
+            id: "jobs",
+            label: "Jobs",
+            icon: Briefcase,
+            subItems: ["Job Invites", "Open Job Board"],
+          },
           {
             id: "roster",
             label: "Roster",
@@ -18549,11 +18563,6 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                     return;
                   }
-                  if (item.id === "jobs") {
-                    navigate(createPageUrl("Jobs"));
-                    setSidebarOpen(false);
-                    return;
-                  }
                   if (item.subItems) {
                     toggleExpanded(item.id);
                     const preferredSubTab = item.subItems.includes(activeSubTab)
@@ -18611,6 +18620,18 @@ export default function AgencyDashboard() {
                           item.disabledSubItems[subItem]
                         ) {
                           navigate("/AgencySubscribe");
+                          setSidebarOpen(false);
+                          return;
+                        }
+                        if (
+                          item.id === "jobs" &&
+                          subItem === "Open Job Board"
+                        ) {
+                          navigate(
+                            `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                              `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                            )}`,
+                          );
                           setSidebarOpen(false);
                           return;
                         }
@@ -19084,6 +19105,9 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
             <PerformanceTiers isSportsAgency={isSportsAgency} />
+          )}
+          {activeTab === "jobs" && activeSubTab === "Job Invites" && (
+            <AgencyJobInvitesView />
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && (
