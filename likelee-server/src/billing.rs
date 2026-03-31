@@ -324,10 +324,7 @@ fn creator_plan_to_price_id_with_interval(
     }
 }
 
-fn creator_plan_to_price_env_var_with_interval(
-    plan: &str,
-    interval: &str,
-) -> Option<&'static str> {
+fn creator_plan_to_price_env_var_with_interval(plan: &str, interval: &str) -> Option<&'static str> {
     let plan = plan.trim().to_lowercase();
     let interval = interval.trim().to_lowercase();
     match (plan.as_str(), interval.as_str()) {
@@ -602,7 +599,10 @@ pub async fn create_creator_subscription_checkout(
         .trim()
         .to_lowercase();
     if interval != "month" && interval != "year" {
-        return Err((StatusCode::BAD_REQUEST, "invalid_creator_interval".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_creator_interval".to_string(),
+        ));
     }
 
     let price_id = creator_plan_to_price_id_with_interval(&state, &plan, &interval)
