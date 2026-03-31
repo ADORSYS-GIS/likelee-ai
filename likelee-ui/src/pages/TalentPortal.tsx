@@ -2520,10 +2520,8 @@ export default function TalentPortal({
                           </div>
                         </div>
                       </Card>
-
                     </>
                   )}
-
                 </div>
               )}
 
@@ -2601,7 +2599,8 @@ export default function TalentPortal({
                                   </div>
                                   <div className="min-w-0">
                                     <div className="font-semibold text-gray-900 truncate">
-                                      {inv.agencies?.agency_name || inv.agency_id}
+                                      {inv.agencies?.agency_name ||
+                                        inv.agency_id}
                                     </div>
                                     <div className="text-xs text-gray-500 truncate">
                                       {inv.agency_id}
@@ -2611,7 +2610,9 @@ export default function TalentPortal({
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <Button
                                     variant="outline"
-                                    disabled={disconnectAgencyMutation.isPending}
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
                                     onClick={async () => {
                                       try {
                                         const token = String(inv?.token || "");
@@ -2803,8 +2804,8 @@ export default function TalentPortal({
                                   <div className="mt-1">
                                     Commission:{" "}
                                     {Number(
-                                      inv.marketplace_contract.commission_rate ||
-                                        0,
+                                      inv.marketplace_contract
+                                        .commission_rate || 0,
                                     ).toFixed(2)}
                                     % • Valid until{" "}
                                     {inv.marketplace_contract.valid_until ||
@@ -4363,7 +4364,7 @@ export default function TalentPortal({
                   </Card>
                 </div>
               )}
-        </>
+            </>
           )}
         </>
       )}

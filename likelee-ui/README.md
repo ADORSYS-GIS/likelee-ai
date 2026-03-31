@@ -31,6 +31,7 @@ The creator dashboard and talent portal are now plan-aware.
 - voice profile creation routes to the creator subscription screen when locked
 - analytics and monitoring surfaces expose Pro upgrade cards for Basic and Free creators
 - creator billing is managed from `/CreatorSubscribe` and surfaced in dashboard settings
+
 ## Marketplace Contract Connect Flow
 
 The agency dashboard marketplace `Connect` action for creator profiles now opens a contract-first workflow.
