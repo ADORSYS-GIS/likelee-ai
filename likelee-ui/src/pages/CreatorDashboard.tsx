@@ -2189,6 +2189,12 @@ export default function CreatorDashboard() {
     }
   };
 
+  const isTalentProfileMissingError = (error: unknown) => {
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    return message.toLowerCase().includes("talent profile not found");
+  };
+
   const loadBookings = async () => {
     try {
       const resp = await listTalentBookings();
@@ -2202,13 +2208,20 @@ export default function CreatorDashboard() {
           campaignMap.set(campaignId, { id: campaignId, name: campaignName });
         }
       });
-      return { bookings: items, campaigns: Array.from(campaignMap.values()) };
+      return {
+        bookings: items,
+        campaigns: Array.from(campaignMap.values()),
+        hasTalentProfile: true,
+      };
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e || "");
-      if (!message.toLowerCase().includes("talent profile not found")) {
+      if (!isTalentProfileMissingError(e)) {
         console.error("Failed to load bookings", e);
       }
-      return { bookings: [], campaigns: [] };
+      return {
+        bookings: [],
+        campaigns: [],
+        hasTalentProfile: !isTalentProfileMissingError(e),
+      };
     }
   };
 
@@ -2309,6 +2322,8 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         setAgencyConnectionLoading(true);
+        const canLoadTalentCommerceData =
+          String(creatorBilling?.plan_tier || "free") !== "free";
         const [
           { connections, invites },
           { requests, connections: brandConnected },
@@ -2316,18 +2331,37 @@ export default function CreatorDashboard() {
           jobInvitesRes,
           assetRequestsResp,
           bookingsData,
-          licensesResp,
-          licensingRequestsResp,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
           loadJobInvites().catch(() => []),
           loadAssetRequests().catch(() => []),
-          loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
-          listTalentLicenses().catch(() => []),
-          listTalentLicensingRequests().catch(() => []),
+          canLoadTalentCommerceData
+            ? loadBookings().catch(() => ({
+                bookings: [],
+                campaigns: [],
+                hasTalentProfile: false,
+              }))
+            : Promise.resolve({
+                bookings: [],
+                campaigns: [],
+                hasTalentProfile: false,
+              }),
         ]);
+        const [licensesResp, licensingRequestsResp] =
+          bookingsData.hasTalentProfile
+            ? await Promise.all([
+                listTalentLicenses().catch((e) => {
+                  if (!isTalentProfileMissingError(e)) throw e;
+                  return [];
+                }),
+                listTalentLicensingRequests().catch((e) => {
+                  if (!isTalentProfileMissingError(e)) throw e;
+                  return [];
+                }),
+              ])
+            : [[], []];
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -2414,7 +2448,7 @@ export default function CreatorDashboard() {
     return () => {
       active = false;
     };
-  }, [initialized, authenticated]);
+  }, [initialized, authenticated, creatorBilling?.plan_tier]);
   useEffect(() => {
     if (assetRequestsInitialized) return;
     if (assetRequests.length === 0) return;
