@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import DobInput from "@/components/ui/DobInput";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ import {
 import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
+import { isAtLeastAge } from "@/lib/dob";
 
 const ethnicities = [
   "Asian",
@@ -241,22 +243,7 @@ export default function AddTalent() {
     });
   };
 
-  const getAgeYears = (dob: string) => {
-    if (!dob) return null;
-    const d = new Date(dob);
-    if (Number.isNaN(d.getTime())) return null;
-    const now = new Date();
-    let age = now.getFullYear() - d.getFullYear();
-    const m = now.getMonth() - d.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
-    return age;
-  };
-
-  const isAtLeast18 = (dob: string) => {
-    const age = getAgeYears(dob);
-    if (age === null) return false;
-    return age >= 18;
-  };
+  const isAtLeast18 = (dob: string) => isAtLeastAge(dob, 18);
 
   const handleConnectInstagram = () => {
     // Demo mode - simulate connection
@@ -644,14 +631,15 @@ export default function AddTalent() {
                 >
                   Date of Birth <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <DobInput
                   id="birthdate"
-                  type="date"
                   value={formData.birthdate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthdate: e.target.value })
+                  onChange={(value) =>
+                    setFormData({ ...formData, birthdate: value })
                   }
-                  className="border-2 border-gray-300"
+                  minAge={18}
+                  required
+                  inputClassName="border-2 border-gray-300"
                 />
                 {formData.birthdate && !isAtLeast18(formData.birthdate) && (
                   <p className="text-sm text-red-600 mt-2 font-medium">

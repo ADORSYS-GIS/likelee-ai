@@ -48,6 +48,7 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import DobInput from "@/components/ui/DobInput";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -139,6 +140,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { isAtLeastAge } from "@/lib/dob";
 import { DocusealForm } from "@docuseal/react";
 
 import { useTranslation } from "react-i18next";
@@ -4922,6 +4924,19 @@ export default function CreatorDashboard() {
       const value = Number.parseFloat(text);
       return Number.isFinite(value) ? value : undefined;
     };
+
+    if (
+      typeof creator.birthday === "string" &&
+      creator.birthday.trim().length > 0 &&
+      !isAtLeastAge(creator.birthday.trim(), 18)
+    ) {
+      toast({
+        title: "Invalid date of birth",
+        description: "Creator must be at least 18 years old.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -9765,16 +9780,16 @@ export default function CreatorDashboard() {
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
                       Date of Birth
                     </Label>
-                    <Input
-                      type="date"
+                    <DobInput
                       value={creator.birthday || ""}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setCreator({
                           ...creator,
-                          birthday: e.target.value,
+                          birthday: value,
                         })
                       }
-                      className="border-2 border-gray-300"
+                      minAge={18}
+                      inputClassName="border-2 border-gray-300"
                     />
                   </div>
 

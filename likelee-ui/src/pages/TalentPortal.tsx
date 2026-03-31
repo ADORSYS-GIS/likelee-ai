@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import DobInput from "@/components/ui/DobInput";
 import {
   Select,
   SelectContent,
@@ -50,6 +51,7 @@ import {
   listOfferDeliverables,
   uploadOfferDeliverable,
 } from "@/api/functions";
+import { isAtLeastAge } from "@/lib/dob";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import {
   BarChart3,
@@ -991,6 +993,18 @@ export default function TalentPortal({
   });
 
   const saveProfile = () => {
+    if (
+      typeof profileForm.date_of_birth === "string" &&
+      profileForm.date_of_birth.trim().length > 0 &&
+      !isAtLeastAge(profileForm.date_of_birth.trim(), 18)
+    ) {
+      toast({
+        title: "Invalid date of birth",
+        description: "Talent must be at least 18 years old.",
+        variant: "destructive",
+      });
+      return;
+    }
     const payload: any = {
       agency_id: profileAgencyId || undefined,
       stage_name: profileForm.stage_name || undefined,
@@ -2318,15 +2332,15 @@ export default function TalentPortal({
                       <div className="text-xs text-gray-600 mb-1">
                         Date of Birth
                       </div>
-                      <Input
-                        type="date"
+                      <DobInput
                         value={profileForm.date_of_birth || ""}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           setProfileForm((p: any) => ({
                             ...p,
-                            date_of_birth: e.target.value,
+                            date_of_birth: value,
                           }))
                         }
+                        minAge={18}
                       />
                     </div>
                     <div>

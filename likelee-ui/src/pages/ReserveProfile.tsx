@@ -50,6 +50,8 @@ import { formatKycReason } from "@/utils/kycDisplay";
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import DobInput from "@/components/ui/DobInput";
+import { isAtLeastAge } from "@/lib/dob";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -947,17 +949,7 @@ export default function ReserveProfile() {
           return;
         }
         // 18+ check
-        const birth = new Date(formData.birthdate);
-        const today = new Date();
-        const age =
-          today.getFullYear() -
-          birth.getFullYear() -
-          (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
-            ? 1
-            : 0);
-        if (isFinite(age) && age < 18) {
+        if (!isAtLeastAge(formData.birthdate, 18)) {
           toast({
             title: t("reserveProfile.toasts.ageRestrictionTitle"),
             description: t("reserveProfile.toasts.ageRestrictionDesc"),
@@ -1466,14 +1458,15 @@ export default function ReserveProfile() {
                       placeholder={t("reserveProfile.form.placeholders.age")}
                     />
                   ) : (
-                    <Input
+                    <DobInput
                       id="birthdate"
-                      type="date"
                       value={formData.birthdate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birthdate: e.target.value })
+                      onChange={(value) =>
+                        setFormData({ ...formData, birthdate: value })
                       }
-                      className="border-2 border-gray-300 rounded-none"
+                      minAge={18}
+                      required
+                      inputClassName="border-2 border-gray-300 rounded-none"
                     />
                   )}
                 </div>
