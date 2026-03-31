@@ -16,6 +16,16 @@ BEGIN
     ALTER TABLE public.agency_talent_relationships
       RENAME COLUMN licensing_rate_weekly_cents TO licensing_rate_monthly_cents;
 
+  ELSIF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_talent_relationships'
+      AND column_name = 'licensing_rate_monthly_cents'
+  ) THEN
+    ALTER TABLE public.agency_talent_relationships
+      ADD COLUMN licensing_rate_monthly_cents bigint;
+
     ALTER TABLE public.agency_talent_relationships
       DROP CONSTRAINT IF EXISTS agency_talent_relationships_licensing_rate_non_negative;
     ALTER TABLE public.agency_talent_relationships
