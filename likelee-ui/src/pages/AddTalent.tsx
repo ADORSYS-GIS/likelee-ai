@@ -785,7 +785,8 @@ export default function AddTalent() {
                           Open to negotiations
                         </Label>
                         <p className="mt-0.5 text-xs text-gray-600">
-                          Allow brands to propose custom rates for this {entityLower}.
+                          Allow brands to propose custom rates for this{" "}
+                          {entityLower}.
                         </p>
                       </div>
                       <Switch
