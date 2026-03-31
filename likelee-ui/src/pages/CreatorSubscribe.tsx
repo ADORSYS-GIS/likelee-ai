@@ -254,16 +254,18 @@ export default function CreatorSubscribe() {
             access.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-            {currentPlanTier === "free" && trialInfo.active && trialInfo.endsAt && (
-              <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-                <Badge className="border border-amber-200 bg-amber-100 text-amber-800 shadow-none">
-                  14-day trial
-                </Badge>
-                <span className="font-semibold">
-                  Full access • {trialCountdown || "Calculating..."}
-                </span>
-              </div>
-            )}
+            {currentPlanTier === "free" &&
+              trialInfo.active &&
+              trialInfo.endsAt && (
+                <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+                  <Badge className="border border-amber-200 bg-amber-100 text-amber-800 shadow-none">
+                    14-day trial
+                  </Badge>
+                  <span className="font-semibold">
+                    Full access • {trialCountdown || "Calculating..."}
+                  </span>
+                </div>
+              )}
             <Badge variant="outline" className="bg-white/80">
               Plans are billed{" "}
               {billingInterval === "year" ? "annually" : "monthly"}

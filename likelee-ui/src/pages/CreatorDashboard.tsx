@@ -950,18 +950,18 @@ export default function CreatorDashboard() {
         const startDate =
           parseDate(
             campaign?.start_date ||
-            offer?.start_date ||
-            campaign?.start_at ||
-            offer?.start_at ||
-            offer?.license_start_date,
+              offer?.start_date ||
+              campaign?.start_at ||
+              offer?.start_at ||
+              offer?.license_start_date,
           ) || new Date();
         const endDate = parseDate(
           campaign?.end_date ||
-          offer?.end_date ||
-          campaign?.end_at ||
-          offer?.end_at ||
-          offer?.license_end_date ||
-          campaign?.license_end_date,
+            offer?.end_date ||
+            campaign?.end_at ||
+            offer?.end_at ||
+            offer?.license_end_date ||
+            campaign?.license_end_date,
         );
         const durationDays =
           campaign?.duration_days ||
@@ -1030,9 +1030,9 @@ export default function CreatorDashboard() {
           regions: Array.isArray(campaign?.territory)
             ? campaign.territory
             : String(campaign?.territory || "")
-              .split(",")
-              .map((r) => r.trim())
-              .filter(Boolean),
+                .split(",")
+                .map((r) => r.trim())
+                .filter(Boolean),
           impressions_week: toFiniteNumber(campaign?.impressions_week) ?? 0,
         };
       })
@@ -1050,8 +1050,8 @@ export default function CreatorDashboard() {
         const startDate =
           parseDate(
             license?.start_at ||
-            license?.start_date ||
-            license?.license_start_date,
+              license?.start_date ||
+              license?.license_start_date,
           ) || new Date();
         const endDate = parseDate(
           license?.end_at || license?.end_date || license?.license_end_date,
@@ -1129,9 +1129,9 @@ export default function CreatorDashboard() {
           regions: Array.isArray(license?.territory)
             ? license.territory
             : String(license?.territory || "")
-              .split(",")
-              .map((r) => r.trim())
-              .filter(Boolean),
+                .split(",")
+                .map((r) => r.trim())
+                .filter(Boolean),
           impressions_week: toFiniteNumber(license?.impressions_week) ?? 0,
           license_status: String(license?.status || ""),
           total_earned: centsToDollars(license?.total_earned_cents) || 0,
@@ -1164,17 +1164,17 @@ export default function CreatorDashboard() {
       const startDate =
         parseDate(
           contract?.effective_date ||
-          contract?.start_date ||
-          contract?.start_at ||
-          campaign?.start_date ||
-          offer?.start_date,
+            contract?.start_date ||
+            contract?.start_at ||
+            campaign?.start_date ||
+            offer?.start_date,
         ) || new Date();
       const endDate = parseDate(
         contract?.expiration_date ||
-        contract?.end_date ||
-        contract?.end_at ||
-        campaign?.end_date ||
-        offer?.end_date,
+          contract?.end_date ||
+          contract?.end_at ||
+          campaign?.end_date ||
+          offer?.end_date,
       );
       const durationDays =
         contract?.duration_days ||
@@ -1233,11 +1233,11 @@ export default function CreatorDashboard() {
         ),
         days_remaining: derivedEndDate
           ? Math.max(
-            0,
-            Math.ceil(
-              (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-            ),
-          )
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
           : 0,
         deliverables:
           contract?.deliverables ||
@@ -1265,8 +1265,8 @@ export default function CreatorDashboard() {
       const startDate =
         parseDate(
           license?.start_at ||
-          license?.start_date ||
-          license?.license_start_date,
+            license?.start_date ||
+            license?.license_start_date,
         ) || new Date();
       const endDate = parseDate(
         license?.end_at || license?.end_date || license?.license_end_date,
@@ -1327,11 +1327,11 @@ export default function CreatorDashboard() {
         ),
         days_remaining: derivedEndDate
           ? Math.max(
-            0,
-            Math.ceil(
-              (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-            ),
-          )
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
           : 0,
         deliverables: license?.usage_scope || "License usage",
         territory: license?.territory || "Global",
@@ -1392,11 +1392,11 @@ export default function CreatorDashboard() {
         ),
         days_remaining: derivedEndDate
           ? Math.max(
-            0,
-            Math.ceil(
-              (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-            ),
-          )
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
           : 0,
         deliverables: req?.usage_scope || "License usage",
         territory: req?.regions || req?.region || "Global",
@@ -1775,11 +1775,11 @@ export default function CreatorDashboard() {
   const briefItemUrl = (item: any): string =>
     resolveStoredUrl(
       item?.url ||
-      item?.public_url ||
-      item?.file_url ||
-      item?.asset_url ||
-      item?.path ||
-      item,
+        item?.public_url ||
+        item?.file_url ||
+        item?.asset_url ||
+        item?.path ||
+        item,
     );
 
   const downloadBriefFile = async (url: string, fileName: string) => {
@@ -1904,8 +1904,8 @@ export default function CreatorDashboard() {
     const contract = selectedOfferContracts[0];
     const creatorSigningUrl = String(
       contract?.meta?.creator_signing_url ||
-      contract?.meta?.docuseal_signing_url ||
-      "",
+        contract?.meta?.docuseal_signing_url ||
+        "",
     ).trim();
     const fileUrl = String(contract?.file_url || "").trim();
     const rawSlug = String(contract?.docuseal_slug || "").trim();
@@ -2320,8 +2320,8 @@ export default function CreatorDashboard() {
               offer_id: offerId,
               campaign_name: String(
                 offer?.brand_campaigns?.name ||
-                offer?.offer_title ||
-                "Campaign offer",
+                  offer?.offer_title ||
+                  "Campaign offer",
               ),
             }));
           } catch {
@@ -2355,28 +2355,28 @@ export default function CreatorDashboard() {
           loadAssetRequests().catch(() => []),
           canLoadTalentCommerceData
             ? loadBookings().catch(() => ({
-              bookings: [],
-              campaigns: [],
-              hasTalentProfile: false,
-            }))
+                bookings: [],
+                campaigns: [],
+                hasTalentProfile: false,
+              }))
             : Promise.resolve({
-              bookings: [],
-              campaigns: [],
-              hasTalentProfile: false,
-            }),
+                bookings: [],
+                campaigns: [],
+                hasTalentProfile: false,
+              }),
         ]);
         const [licensesResp, licensingRequestsResp] =
           bookingsData.hasTalentProfile
             ? await Promise.all([
-              listTalentLicenses().catch((e) => {
-                if (!isTalentProfileMissingError(e)) throw e;
-                return [];
-              }),
-              listTalentLicensingRequests().catch((e) => {
-                if (!isTalentProfileMissingError(e)) throw e;
-                return [];
-              }),
-            ])
+                listTalentLicenses().catch((e) => {
+                  if (!isTalentProfileMissingError(e)) throw e;
+                  return [];
+                }),
+                listTalentLicensingRequests().catch((e) => {
+                  if (!isTalentProfileMissingError(e)) throw e;
+                  return [];
+                }),
+              ])
             : [[], []];
         if (!active) return;
         setAgencyConnections(connections);
@@ -3735,22 +3735,22 @@ export default function CreatorDashboard() {
   const verificationButtonLabel = isCreatorPending
     ? savedKycSessionUrl
       ? t(
-        hasCreatorPendingFollowUp
-          ? "creatorDashboard.verificationStatus.continueVerification"
-          : "creatorDashboard.verificationStatus.resumeVerification",
-        hasCreatorPendingFollowUp
-          ? "Continue Verification"
-          : "Resume Verification",
-      )
+          hasCreatorPendingFollowUp
+            ? "creatorDashboard.verificationStatus.continueVerification"
+            : "creatorDashboard.verificationStatus.resumeVerification",
+          hasCreatorPendingFollowUp
+            ? "Continue Verification"
+            : "Resume Verification",
+        )
       : t(
-        "creatorDashboard.verificationStatus.restartVerification",
-        "Start New Verification",
-      )
+          "creatorDashboard.verificationStatus.restartVerification",
+          "Start New Verification",
+        )
     : isCreatorRejected
       ? t(
-        "creatorDashboard.verificationStatus.retryVerification",
-        "Retry Verification",
-      )
+          "creatorDashboard.verificationStatus.retryVerification",
+          "Retry Verification",
+        )
       : t("creatorDashboard.verificationStatus.completeVerification");
 
   useEffect(() => {
@@ -3801,141 +3801,141 @@ export default function CreatorDashboard() {
     premiumFeature?: string;
     onClick?: () => void;
   }> = [
-      {
-        id: "dashboard",
-        label: t("creatorDashboard.nav.dashboard"),
-        icon: LayoutDashboard,
+    {
+      id: "dashboard",
+      label: t("creatorDashboard.nav.dashboard"),
+      icon: LayoutDashboard,
+    },
+    {
+      id: "content",
+      label: t("creatorDashboard.nav.content"),
+      icon: PlayCircle,
+    },
+    {
+      id: "likeness",
+      label: t("creatorDashboard.nav.likeness"),
+      icon: ImageIcon,
+      locked: !creatorCanUseLikeness,
+      requiredPlan: "basic",
+      premiumFeature: "My Likeness",
+    },
+    {
+      id: "voice",
+      label: t("creatorDashboard.nav.voice"),
+      icon: Mic,
+      locked: !creatorCanUseVoice,
+      requiredPlan: "pro",
+      premiumFeature: "ElevenLabs voice profiles",
+    },
+    {
+      id: "campaigns",
+      label: t("creatorDashboard.nav.campaigns"),
+      icon: Target,
+      locked: !creatorCanUseActiveCampaigns,
+      requiredPlan: "pro",
+      premiumFeature: "Active Campaigns",
+      badge: activeCampaigns.length,
+    },
+    {
+      id: "jobs",
+      label: "Jobs",
+      icon: Briefcase,
+      locked: !creatorCanUseJobs,
+      requiredPlan: "pro",
+      premiumFeature: "Jobs",
+      onClick: () => {
+        navigate(createPageUrl("Jobs"));
       },
-      {
-        id: "content",
-        label: t("creatorDashboard.nav.content"),
-        icon: PlayCircle,
+    },
+    {
+      id: "approvals",
+      label: t("creatorDashboard.nav.approvals"),
+      icon: CheckSquare,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Brand workflow approvals",
+      badge: pendingCount,
+      urgent: pendingCount > 0,
+    },
+    {
+      id: "archive",
+      label: t("creatorDashboard.nav.archive"),
+      icon: Archive,
+      locked: !creatorCanUseCampaignArchive,
+      requiredPlan: "pro",
+      premiumFeature: "Campaign Archives",
+      badge: undefined,
+    },
+    {
+      id: "contracts",
+      label: t("creatorDashboard.nav.contracts"),
+      icon: FileText,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Licenses & Contracts",
+      badge:
+        contracts.filter((c) => c.status === "expiring_soon").length > 0
+          ? contracts.filter((c) => c.status === "expiring_soon").length
+          : undefined,
+    },
+    {
+      id: "earnings",
+      label: t("creatorDashboard.nav.payouts"),
+      icon: WalletIcon,
+      locked: !creatorCanUsePayouts,
+      requiredPlan: "basic",
+      premiumFeature: "Payouts",
+    },
+    {
+      id: "talent-portal",
+      label: "Talent Portal",
+      icon: Briefcase,
+      locked: !creatorCanUseTalentPortal,
+      requiredPlan: "pro",
+      disabled: creatorCanUseTalentPortal && !talentPortalEnabled,
+      onClick: () => {
+        if (!creatorCanUseTalentPortal) {
+          navigate("/CreatorSubscribe");
+          return;
+        }
+        if (!talentPortalEnabled) {
+          toast({
+            title: "Talent Portal",
+            description: "Connect to an agency to access Talent Portal.",
+          });
+          return;
+        }
+        setActiveSection("talent-portal");
       },
-      {
-        id: "likeness",
-        label: t("creatorDashboard.nav.likeness"),
-        icon: ImageIcon,
-        locked: !creatorCanUseLikeness,
-        requiredPlan: "basic",
-        premiumFeature: "My Likeness",
-      },
-      {
-        id: "voice",
-        label: t("creatorDashboard.nav.voice"),
-        icon: Mic,
-        locked: !creatorCanUseVoice,
-        requiredPlan: "pro",
-        premiumFeature: "ElevenLabs voice profiles",
-      },
-      {
-        id: "campaigns",
-        label: t("creatorDashboard.nav.campaigns"),
-        icon: Target,
-        locked: !creatorCanUseActiveCampaigns,
-        requiredPlan: "pro",
-        premiumFeature: "Active Campaigns",
-        badge: activeCampaigns.length,
-      },
-      {
-        id: "jobs",
-        label: "Jobs",
-        icon: Briefcase,
-        locked: !creatorCanUseJobs,
-        requiredPlan: "pro",
-        premiumFeature: "Jobs",
-        onClick: () => {
-          navigate(createPageUrl("Jobs"));
-        },
-      },
-      {
-        id: "approvals",
-        label: t("creatorDashboard.nav.approvals"),
-        icon: CheckSquare,
-        locked: !creatorCanUseBrandConnection,
-        requiredPlan: "basic",
-        premiumFeature: "Brand workflow approvals",
-        badge: pendingCount,
-        urgent: pendingCount > 0,
-      },
-      {
-        id: "archive",
-        label: t("creatorDashboard.nav.archive"),
-        icon: Archive,
-        locked: !creatorCanUseCampaignArchive,
-        requiredPlan: "pro",
-        premiumFeature: "Campaign Archives",
-        badge: undefined,
-      },
-      {
-        id: "contracts",
-        label: t("creatorDashboard.nav.contracts"),
-        icon: FileText,
-        locked: !creatorCanUseBrandConnection,
-        requiredPlan: "basic",
-        premiumFeature: "Licenses & Contracts",
-        badge:
-          contracts.filter((c) => c.status === "expiring_soon").length > 0
-            ? contracts.filter((c) => c.status === "expiring_soon").length
-            : undefined,
-      },
-      {
-        id: "earnings",
-        label: t("creatorDashboard.nav.payouts"),
-        icon: WalletIcon,
-        locked: !creatorCanUsePayouts,
-        requiredPlan: "basic",
-        premiumFeature: "Payouts",
-      },
-      {
-        id: "talent-portal",
-        label: "Talent Portal",
-        icon: Briefcase,
-        locked: !creatorCanUseTalentPortal,
-        requiredPlan: "pro",
-        disabled: creatorCanUseTalentPortal && !talentPortalEnabled,
-        onClick: () => {
-          if (!creatorCanUseTalentPortal) {
-            navigate("/CreatorSubscribe");
-            return;
-          }
-          if (!talentPortalEnabled) {
-            toast({
-              title: "Talent Portal",
-              description: "Connect to an agency to access Talent Portal.",
-            });
-            return;
-          }
-          setActiveSection("talent-portal");
-        },
-      },
-      {
-        id: "agency-connection",
-        label: "Agency Connection",
-        icon: LinkIcon,
-        locked: !creatorCanUseAgencyConnection,
-        requiredPlan: "basic",
-        premiumFeature: "Agency Connection",
-        badge:
-          agencyInvites.filter((i) => i.status === "pending").length > 0
-            ? agencyInvites.filter((i) => i.status === "pending").length
-            : undefined,
-      },
-      {
-        id: "brand-connection",
-        label: "Brand Connection",
-        icon: LinkIcon,
-        locked: !creatorCanUseBrandConnection,
-        requiredPlan: "basic",
-        premiumFeature: "Brand Connection",
-        badge:
-          totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
-      },
-      {
-        id: "settings",
-        label: t("creatorDashboard.nav.settings"),
-        icon: Settings,
-      },
-    ];
+    },
+    {
+      id: "agency-connection",
+      label: "Agency Connection",
+      icon: LinkIcon,
+      locked: !creatorCanUseAgencyConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Agency Connection",
+      badge:
+        agencyInvites.filter((i) => i.status === "pending").length > 0
+          ? agencyInvites.filter((i) => i.status === "pending").length
+          : undefined,
+    },
+    {
+      id: "brand-connection",
+      label: "Brand Connection",
+      icon: LinkIcon,
+      locked: !creatorCanUseBrandConnection,
+      requiredPlan: "basic",
+      premiumFeature: "Brand Connection",
+      badge:
+        totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
+    },
+    {
+      id: "settings",
+      label: t("creatorDashboard.nav.settings"),
+      icon: Settings,
+    },
+  ];
 
   const [contentTab, setContentTab] = useState("brand_content");
   const creatorJobsBackTo = `${createPageUrl("CreatorDashboard")}?section=jobs`;
@@ -4130,8 +4130,6 @@ export default function CreatorDashboard() {
     </div>
   );
 
-
-
   const renderContent = () => {
     const showingExamples = contentItems.length === 0;
     const itemsToShow = showingExamples ? exampleContentItems : contentItems;
@@ -4164,10 +4162,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
                   ? "border-[#32C8D1] text-[#32C8D1]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              }`}
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -4221,8 +4220,8 @@ export default function CreatorDashboard() {
                           <p className="text-sm text-gray-500">
                             {(item as any).titleKey
                               ? t(
-                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                              )
+                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
+                                )
                               : item.title}
                           </p>
                         </div>
@@ -4975,12 +4974,12 @@ export default function CreatorDashboard() {
               prev.map((r) =>
                 r.id === tempId
                   ? {
-                    ...r,
-                    id: serverId,
-                    server_recording_id: serverId,
-                    url: signed?.url || r.url,
-                    blob: null,
-                  }
+                      ...r,
+                      id: serverId,
+                      server_recording_id: serverId,
+                      url: signed?.url || r.url,
+                      blob: null,
+                    }
                   : r,
               ),
             );
@@ -5156,9 +5155,9 @@ export default function CreatorDashboard() {
               typeof err?.message === "string"
                 ? err.message
                 : t(
-                  "creatorDashboard.voice.deleteFailedDesc",
-                  "Failed to delete recording.",
-                );
+                    "creatorDashboard.voice.deleteFailedDesc",
+                    "Failed to delete recording.",
+                  );
             toast({
               title: t(
                 "creatorDashboard.voice.deleteFailedTitle",
@@ -5272,11 +5271,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -5322,12 +5321,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
                   ? "text-[#32C8D1] font-bold scale-110"
                   : index < currentWord
                     ? "text-gray-400"
                     : "text-gray-700"
-                }`}
+              }`}
             >
               {word}
             </span>
@@ -5507,7 +5507,7 @@ export default function CreatorDashboard() {
           : undefined,
       creator_type:
         typeof creator.creator_type === "string" &&
-          creator.creator_type.trim().length
+        creator.creator_type.trim().length
           ? creator.creator_type.trim()
           : undefined,
       race:
@@ -5516,7 +5516,7 @@ export default function CreatorDashboard() {
           : undefined,
       hair_color:
         typeof creator.hair_color === "string" &&
-          creator.hair_color.trim().length
+        creator.hair_color.trim().length
           ? creator.hair_color.trim()
           : undefined,
       eye_color:
@@ -5600,8 +5600,8 @@ export default function CreatorDashboard() {
               ? Math.round(savedProfile.base_weekly_price_cents / 100)
               : savedProfile.base_monthly_price_cents
                 ? Math.round(
-                  savedProfile.base_monthly_price_cents / 100 / 4.345,
-                )
+                    savedProfile.base_monthly_price_cents / 100 / 4.345,
+                  )
                 : prev.price_per_month,
         }));
       }
@@ -5702,76 +5702,76 @@ export default function CreatorDashboard() {
 
     const title = hasPendingFollowUp
       ? t(
-        "creatorDashboard.marketplaceVerification.followUpTitle",
-        "Continue verification to finish approval",
-      )
+          "creatorDashboard.marketplaceVerification.followUpTitle",
+          "Continue verification to finish approval",
+        )
       : isPending
         ? t(
-          "creatorDashboard.marketplaceVerification.pendingTitle",
-          "Verification in review",
-        )
+            "creatorDashboard.marketplaceVerification.pendingTitle",
+            "Verification in review",
+          )
         : isRejected
           ? t(
-            "creatorDashboard.marketplaceVerification.rejectedTitle",
-            "Verification was not approved",
-          )
+              "creatorDashboard.marketplaceVerification.rejectedTitle",
+              "Verification was not approved",
+            )
           : t(
-            "creatorDashboard.marketplaceVerification.title",
-            "Verify to unlock marketplace visibility",
-          );
+              "creatorDashboard.marketplaceVerification.title",
+              "Verify to unlock marketplace visibility",
+            );
     const description = hasPendingFollowUp
       ? t(
-        "creatorDashboard.marketplaceVerification.followUpDescription",
-        "Veriff requested one more step before approval. Complete it below so your profile can appear to brands and agencies in marketplace discovery.",
-      )
+          "creatorDashboard.marketplaceVerification.followUpDescription",
+          "Veriff requested one more step before approval. Complete it below so your profile can appear to brands and agencies in marketplace discovery.",
+        )
       : isPending
         ? t(
-          "creatorDashboard.marketplaceVerification.pendingDescription",
-          savedKycSessionUrl
-            ? "Closed the verification window? Resume it anytime below. Once approved, your profile can appear to brands and agencies in marketplace discovery."
-            : "Your identity check is processing. If the last verification link expired, start a new session below. Once approved, your profile can appear to brands and agencies in marketplace discovery.",
-        )
+            "creatorDashboard.marketplaceVerification.pendingDescription",
+            savedKycSessionUrl
+              ? "Closed the verification window? Resume it anytime below. Once approved, your profile can appear to brands and agencies in marketplace discovery."
+              : "Your identity check is processing. If the last verification link expired, start a new session below. Once approved, your profile can appear to brands and agencies in marketplace discovery.",
+          )
         : isRejected
           ? t(
-            "creatorDashboard.marketplaceVerification.rejectedDescription",
-            "Your last verification was not approved. Review the reason below and retry so your profile can appear to brands and agencies in marketplace discovery.",
-          )
+              "creatorDashboard.marketplaceVerification.rejectedDescription",
+              "Your last verification was not approved. Review the reason below and retry so your profile can appear to brands and agencies in marketplace discovery.",
+            )
           : t(
-            "creatorDashboard.marketplaceVerification.description",
-            "Complete identity verification so brands and agencies can discover your profile in the marketplace.",
-          );
+              "creatorDashboard.marketplaceVerification.description",
+              "Complete identity verification so brands and agencies can discover your profile in the marketplace.",
+            );
     const statusLabel = hasPendingFollowUp
       ? t(
-        "creatorDashboard.marketplaceVerification.followUpBadge",
-        "Action needed",
-      )
+          "creatorDashboard.marketplaceVerification.followUpBadge",
+          "Action needed",
+        )
       : isPending
         ? t("creatorDashboard.verificationStatus.pending", "Pending")
         : isRejected
           ? t("creatorDashboard.verificationStatus.rejected", "Rejected")
           : t(
-            "creatorDashboard.marketplaceVerification.notVerified",
-            "Not verified",
-          );
+              "creatorDashboard.marketplaceVerification.notVerified",
+              "Not verified",
+            );
     const primaryButtonLabel = isPending
       ? savedKycSessionUrl
         ? t(
-          hasPendingFollowUp
-            ? "creatorDashboard.marketplaceVerification.continueCta"
-            : "creatorDashboard.marketplaceVerification.resumeCta",
-          hasPendingFollowUp
-            ? "Continue verification"
-            : "Resume verification",
-        )
+            hasPendingFollowUp
+              ? "creatorDashboard.marketplaceVerification.continueCta"
+              : "creatorDashboard.marketplaceVerification.resumeCta",
+            hasPendingFollowUp
+              ? "Continue verification"
+              : "Resume verification",
+          )
         : t(
-          "creatorDashboard.marketplaceVerification.restartCta",
-          "Start new verification",
-        )
+            "creatorDashboard.marketplaceVerification.restartCta",
+            "Start new verification",
+          )
       : isRejected
         ? t(
-          "creatorDashboard.marketplaceVerification.retryCta",
-          "Retry verification",
-        )
+            "creatorDashboard.marketplaceVerification.retryCta",
+            "Retry verification",
+          )
         : t("creatorDashboard.marketplaceVerification.cta", "Verify now");
 
     return (
@@ -5780,12 +5780,13 @@ export default function CreatorDashboard() {
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5">
               <BannerIcon
-                className={`h-5 w-5 ${hasPendingFollowUp || isRejected
+                className={`h-5 w-5 ${
+                  hasPendingFollowUp || isRejected
                     ? "text-rose-600"
                     : isPending
                       ? "text-amber-600"
                       : "text-[#32C8D1]"
-                  }`}
+                }`}
               />
             </div>
             <div className="min-w-0">
@@ -5803,13 +5804,13 @@ export default function CreatorDashboard() {
                   <span className="font-semibold">
                     {hasPendingFollowUp
                       ? t(
-                        "creatorDashboard.marketplaceVerification.followUpReasonLabel",
-                        "Veriff note:",
-                      )
+                          "creatorDashboard.marketplaceVerification.followUpReasonLabel",
+                          "Veriff note:",
+                        )
                       : t(
-                        "creatorDashboard.marketplaceVerification.rejectedReasonLabel",
-                        "Reason:",
-                      )}
+                          "creatorDashboard.marketplaceVerification.rejectedReasonLabel",
+                          "Reason:",
+                        )}
                   </span>{" "}
                   {currentKycReason}
                 </div>
@@ -6108,10 +6109,10 @@ export default function CreatorDashboard() {
                 value={
                   creatorCanUseVoice
                     ? Math.min(
-                      voiceLibrary.length *
-                      (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))),
-                      100,
-                    )
+                        voiceLibrary.length *
+                          (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))),
+                        100,
+                      )
                     : 0
                 }
                 className="h-2 mt-3 bg-gray-200"
@@ -6431,11 +6432,11 @@ export default function CreatorDashboard() {
                           >
                             {hasImage
                               ? t(
-                                "creatorDashboard.myLikenessSection.imageStatus.uploaded",
-                              )
+                                  "creatorDashboard.myLikenessSection.imageStatus.uploaded",
+                                )
                               : t(
-                                "creatorDashboard.myLikenessSection.imageStatus.missing",
-                              )}
+                                  "creatorDashboard.myLikenessSection.imageStatus.missing",
+                                )}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -6626,17 +6627,17 @@ export default function CreatorDashboard() {
                     ? isCreatorRejected &&
                       normalizedCreatorStatus === "declined"
                       ? t(
-                        "creatorDashboard.verificationStatus.rejected",
-                        "Rejected",
-                      )
+                          "creatorDashboard.verificationStatus.rejected",
+                          "Rejected",
+                        )
                       : hasCreatorPendingFollowUp
                         ? t(
-                          "creatorDashboard.verificationStatus.followUpNeeded",
-                          "Action Needed",
-                        )
+                            "creatorDashboard.verificationStatus.followUpNeeded",
+                            "Action Needed",
+                          )
                         : t(
-                          `creatorDashboard.verificationStatus.${normalizedCreatorStatus}`,
-                        )
+                            `creatorDashboard.verificationStatus.${normalizedCreatorStatus}`,
+                          )
                     : t("creatorDashboard.verificationStatus.notStarted")}
                 </Badge>
                 {!isCreatorApproved && (
@@ -6702,21 +6703,22 @@ export default function CreatorDashboard() {
             {(hasCreatorPendingFollowUp || isCreatorRejected) &&
               currentCreatorKycReason && (
                 <div
-                  className={`rounded-lg border px-4 py-3 text-sm ${hasCreatorPendingFollowUp
+                  className={`rounded-lg border px-4 py-3 text-sm ${
+                    hasCreatorPendingFollowUp
                       ? "border-amber-200 bg-amber-50 text-amber-900"
                       : "border-rose-200 bg-rose-50 text-rose-900"
-                    }`}
+                  }`}
                 >
                   <span className="font-semibold">
                     {hasCreatorPendingFollowUp
                       ? t(
-                        "creatorDashboard.verificationStatus.followUpReasonLabel",
-                        "Next step:",
-                      )
+                          "creatorDashboard.verificationStatus.followUpReasonLabel",
+                          "Next step:",
+                        )
                       : t(
-                        "creatorDashboard.verificationStatus.rejectedReasonLabel",
-                        "Reason:",
-                      )}
+                          "creatorDashboard.verificationStatus.rejectedReasonLabel",
+                          "Reason:",
+                        )}
                   </span>{" "}
                   {currentCreatorKycReason}
                 </div>
@@ -6725,13 +6727,13 @@ export default function CreatorDashboard() {
               <p className="text-sm text-gray-500">
                 {savedKycSessionUrl
                   ? t(
-                    "creatorDashboard.verificationStatus.resumeHint",
-                    "Closed the verification window? Use Resume Verification to continue, or Refresh Status if you already finished.",
-                  )
+                      "creatorDashboard.verificationStatus.resumeHint",
+                      "Closed the verification window? Use Resume Verification to continue, or Refresh Status if you already finished.",
+                    )
                   : t(
-                    "creatorDashboard.verificationStatus.restartHint",
-                    "If the last verification window was closed or expired, start a new verification session or refresh your status if you already finished.",
-                  )}
+                      "creatorDashboard.verificationStatus.restartHint",
+                      "If the last verification window was closed or expired, start a new verification session or refresh your status if you already finished.",
+                    )}
               </p>
             )}
           </div>
@@ -6841,16 +6843,18 @@ export default function CreatorDashboard() {
                 return (
                   <Card
                     key={emotion}
-                    className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
+                    className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                      hasRecording
                         ? "border-green-300 bg-green-50"
                         : "border-gray-200 hover:border-[#32C8D1]"
-                      }`}
+                    }`}
                     onClick={() => handleEmotionSelect(emotion)}
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                          }`}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                        }`}
                       >
                         <Mic className="w-6 h-6 text-white" />
                       </div>
@@ -6890,10 +6894,11 @@ export default function CreatorDashboard() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible
+                          className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                            recording.accessible
                               ? "bg-green-500"
                               : "bg-gray-400"
-                            }`}
+                          }`}
                         >
                           <Mic className="w-7 h-7 text-white" />
                         </div>
@@ -6960,12 +6965,12 @@ export default function CreatorDashboard() {
                         disabled={
                           generatingVoiceId !== null &&
                           generatingVoiceId !==
-                          (recording?.server_recording_id ?? recording?.id)
+                            (recording?.server_recording_id ?? recording?.id)
                         }
                         className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                       >
                         {generatingVoiceId ===
-                          (recording?.server_recording_id ?? recording?.id) ? (
+                        (recording?.server_recording_id ?? recording?.id) ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             {t(
@@ -7175,7 +7180,7 @@ export default function CreatorDashboard() {
                     <div className="mt-1 font-semibold text-gray-900 capitalize">
                       {String(
                         selectedAgencyConnection.marketplace_contract.status ||
-                        "unknown",
+                          "unknown",
                       ).replaceAll("_", " ")}
                     </div>
                   </Card>
@@ -7207,8 +7212,8 @@ export default function CreatorDashboard() {
 
                 {selectedAgencyConnection.marketplace_contract
                   .disconnect_status &&
-                  selectedAgencyConnection.marketplace_contract
-                    .disconnect_status !== "none" ? (
+                selectedAgencyConnection.marketplace_contract
+                  .disconnect_status !== "none" ? (
                   <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <div className="font-semibold">
                       Disconnect status:{" "}
@@ -7383,36 +7388,36 @@ export default function CreatorDashboard() {
 
                       {((profile as any)?.role === "talent" ||
                         agencyConnections.length > 0) && (
-                          <Button
-                            variant={
-                              String(
-                                c.marketplace_contract?.disconnect_status || "",
-                              ).toLowerCase() === "pending"
-                                ? "outline"
-                                : "destructive"
-                            }
-                            size="sm"
-                            disabled={agencyConnectionLoading}
-                            onClick={() => {
-                              setDisconnectTarget({
-                                agency_id: String(c.agency_id),
-                                agency_name: c.agencies?.agency_name || undefined,
-                                marketplace_contract:
-                                  c.marketplace_contract || undefined,
-                              });
-                              setDisconnectConfirmChecked(false);
-                              setDisconnectDialogOpen(true);
-                            }}
-                            aria-label="Disconnect from agency"
-                          >
-                            <Link2Off className="h-4 w-4 mr-2" />
-                            {String(
-                              c.marketplace_contract?.status || "",
-                            ).toLowerCase() === "active"
-                              ? "Request disconnect"
-                              : "Disconnect"}
-                          </Button>
-                        )}
+                        <Button
+                          variant={
+                            String(
+                              c.marketplace_contract?.disconnect_status || "",
+                            ).toLowerCase() === "pending"
+                              ? "outline"
+                              : "destructive"
+                          }
+                          size="sm"
+                          disabled={agencyConnectionLoading}
+                          onClick={() => {
+                            setDisconnectTarget({
+                              agency_id: String(c.agency_id),
+                              agency_name: c.agencies?.agency_name || undefined,
+                              marketplace_contract:
+                                c.marketplace_contract || undefined,
+                            });
+                            setDisconnectConfirmChecked(false);
+                            setDisconnectDialogOpen(true);
+                          }}
+                          aria-label="Disconnect from agency"
+                        >
+                          <Link2Off className="h-4 w-4 mr-2" />
+                          {String(
+                            c.marketplace_contract?.status || "",
+                          ).toLowerCase() === "active"
+                            ? "Request disconnect"
+                            : "Disconnect"}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -7693,10 +7698,10 @@ export default function CreatorDashboard() {
                 const offer = req?.campaign_offers || {};
                 const offerId = String(
                   req?.offer_id ||
-                  req?.campaign_offer_id ||
-                  req?.campaign_offers?.id ||
-                  offer?.id ||
-                  "",
+                    req?.campaign_offer_id ||
+                    req?.campaign_offers?.id ||
+                    offer?.id ||
+                    "",
                 );
                 const reqId = String(req?.id || "");
                 const agencyName = req?.agencies?.agency_name || "Agency";
@@ -7755,8 +7760,9 @@ export default function CreatorDashboard() {
                           {String(req?.status || "sent").replace(/_/g, " ")}
                         </Badge>
                         <ChevronDown
-                          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""
-                            }`}
+                          className={`w-4 h-4 text-gray-400 transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
                         />
                       </div>
                     </button>
@@ -7819,7 +7825,7 @@ export default function CreatorDashboard() {
                                     String(req?.id || ""),
                                   );
                                 }
-                              } catch { }
+                              } catch {}
                             }}
                           >
                             Upload Deliverables
@@ -7886,9 +7892,9 @@ export default function CreatorDashboard() {
                                         ).toLowerCase() === "brand_approved"
                                           ? "approved"
                                           : String(
-                                            deliverable?.status ||
-                                            "submitted",
-                                          )}
+                                              deliverable?.status ||
+                                                "submitted",
+                                            )}
                                       </Badge>
                                     </div>
                                   </div>
@@ -8991,15 +8997,15 @@ export default function CreatorDashboard() {
                                   ).toLowerCase() === "brand_approved"
                                     ? "Approved"
                                     : formatStatus(
-                                      deliverable?.status || "submitted",
-                                    )}
+                                        deliverable?.status || "submitted",
+                                      )}
                                 </Badge>
                               </div>
                               <div className="mt-1 text-[11px] text-gray-600">
                                 {String(
                                   deliverable?.caption ||
-                                  deliverable?.meta?.original_name ||
-                                  "Deliverable image",
+                                    deliverable?.meta?.original_name ||
+                                    "Deliverable image",
                                 )}
                               </div>
                               {deliverable?.asset_url && (
@@ -9009,8 +9015,8 @@ export default function CreatorDashboard() {
                                       src={String(deliverable.asset_url)}
                                       alt={String(
                                         deliverable?.caption ||
-                                        deliverable?.meta?.original_name ||
-                                        "Deliverable image",
+                                          deliverable?.meta?.original_name ||
+                                          "Deliverable image",
                                       )}
                                       className="h-28 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
                                     />
@@ -9138,12 +9144,12 @@ export default function CreatorDashboard() {
     const query = campaignSearch.trim().toLowerCase();
     const campaignsToShow = query
       ? activeCampaigns.filter((campaign) => {
-        const brand = String(campaign.brand || "").toLowerCase();
-        const name = String(
-          campaign.raw_campaign_name || campaign.campaign || "",
-        ).toLowerCase();
-        return brand.includes(query) || name.includes(query);
-      })
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(query) || name.includes(query);
+        })
       : activeCampaigns;
 
     return (
@@ -9159,10 +9165,11 @@ export default function CreatorDashboard() {
               </p>
             </div>
             <Badge
-              className={`${activeCampaigns.length === 0
+              className={`${
+                activeCampaigns.length === 0
                   ? "bg-orange-100 text-orange-700 border border-orange-300"
                   : "bg-green-100 text-green-700 border border-green-300"
-                } px-4 py-2 text-lg w-fit`}
+              } px-4 py-2 text-lg w-fit`}
             >
               {t("creatorDashboard.campaigns.activeCount", {
                 count: activeCampaigns.length,
@@ -9301,19 +9308,20 @@ export default function CreatorDashboard() {
                       </td>
                       <td className="py-4 px-4">
                         <Badge
-                          className={`${campaign.status === "active"
+                          className={`${
+                            campaign.status === "active"
                               ? "bg-green-100 text-green-700 border border-green-300"
                               : campaign.status === "expiring_soon"
                                 ? "bg-orange-100 text-orange-700 border border-orange-300"
                                 : "bg-gray-100 text-gray-700 border border-gray-300"
-                            }`}
+                          }`}
                         >
                           {campaign.status === "active"
                             ? t("creatorDashboard.campaigns.status.active")
                             : campaign.status === "expiring_soon"
                               ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
+                                  "creatorDashboard.campaigns.status.expiringSoon",
+                                )
                               : campaign.status}
                         </Badge>
                       </td>
@@ -9368,8 +9376,9 @@ export default function CreatorDashboard() {
                       </div>
                     </div>
                     <ChevronRight
-                      className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
-                        }`}
+                      className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                        isExpanded ? "rotate-90" : ""
+                      }`}
                     />
                   </button>
 
@@ -9419,19 +9428,20 @@ export default function CreatorDashboard() {
                           {t("creatorDashboard.campaigns.statusLabel")}
                         </span>
                         <Badge
-                          className={`${campaign.status === "active"
+                          className={`${
+                            campaign.status === "active"
                               ? "bg-green-100 text-green-700 border border-green-300"
                               : campaign.status === "expiring_soon"
                                 ? "bg-orange-100 text-orange-700 border border-orange-300"
                                 : "bg-gray-100 text-gray-700 border border-gray-300"
-                            }`}
+                          }`}
                         >
                           {campaign.status === "active"
                             ? t("creatorDashboard.campaigns.status.active")
                             : campaign.status === "expiring_soon"
                               ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
+                                  "creatorDashboard.campaigns.status.expiringSoon",
+                                )
                               : campaign.status}
                         </Badge>
                       </div>
@@ -9452,12 +9462,12 @@ export default function CreatorDashboard() {
     const archiveQuery = archiveSearch.trim().toLowerCase();
     const campaignsToShow = archiveQuery
       ? archivedCampaigns.filter((campaign) => {
-        const brand = String(campaign.brand || "").toLowerCase();
-        const name = String(
-          campaign.raw_campaign_name || campaign.campaign || "",
-        ).toLowerCase();
-        return brand.includes(archiveQuery) || name.includes(archiveQuery);
-      })
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(archiveQuery) || name.includes(archiveQuery);
+        })
       : archivedCampaigns;
 
     return (
@@ -9909,10 +9919,11 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
                 ? "border-[#32C8D1] text-[#32C8D1]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             {t("creatorDashboard.contracts.activeTab", {
               count: activeContracts.length,
@@ -9920,10 +9931,11 @@ export default function CreatorDashboard() {
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
                 ? "border-[#32C8D1] text-[#32C8D1]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             {t("creatorDashboard.contracts.expiredTab", {
               count: expiredContracts.length,
@@ -9937,10 +9949,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
                     ? "border-orange-300"
                     : "border-gray-200"
-                  }`}
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -10151,10 +10164,11 @@ export default function CreatorDashboard() {
                   setShowPayoutSettings(true);
                 }
               }}
-              className={`h-11 px-6 font-bold shadow-md transition-all duration-500 scale-100 transform ${showShoutOut
+              className={`h-11 px-6 font-bold shadow-md transition-all duration-500 scale-100 transform ${
+                showShoutOut
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-twinkle animate-shine scale-110"
                   : "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                }`}
+              }`}
               disabled={isLoadingPayout}
             >
               {isLoadingPayout ? (
@@ -10166,7 +10180,7 @@ export default function CreatorDashboard() {
                 <>
                   <WalletIcon className="w-5 h-5 mr-2" />
                   {payoutAccountStatus?.payouts_enabled ||
-                    payoutAccountStatus?.details_submitted
+                  payoutAccountStatus?.details_submitted
                     ? t("creatorDashboard.earnings.actions.cashOut")
                     : "Setup Payouts"}
                 </>
@@ -10407,7 +10421,7 @@ export default function CreatorDashboard() {
                             item.status === "paid" || item.status === "approved"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                               : item.status === "failed" ||
-                                item.status === "cancelled"
+                                  item.status === "cancelled"
                                 ? "bg-rose-50 text-rose-700 border-rose-100"
                                 : "bg-blue-50 text-blue-700 border-blue-100"
                           }
@@ -10595,10 +10609,11 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
@@ -10608,10 +10623,11 @@ export default function CreatorDashboard() {
               ? setSettingsTab("rules")
               : navigate("/CreatorSubscribe")
           }
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           <span className="inline-flex items-center gap-2">
             {t("creatorDashboard.settingsView.tabs.rules")}
@@ -10622,10 +10638,11 @@ export default function CreatorDashboard() {
         </button>
         <button
           onClick={() => setSettingsTab("billing")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "billing"
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "billing"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Billing
         </button>
@@ -11072,10 +11089,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
                             : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {translateContentType(type)}
@@ -11111,10 +11129,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
                             : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {translateIndustry(industry)}
@@ -11144,7 +11163,7 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {creator.content_restrictions &&
-                    creator.content_restrictions.length > 0 ? (
+                  creator.content_restrictions.length > 0 ? (
                     creator.content_restrictions.map((restriction) => (
                       <Badge
                         key={restriction}
@@ -11174,7 +11193,7 @@ export default function CreatorDashboard() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
-                      creator.brand_exclusivity.length > 0 ? (
+                    creator.brand_exclusivity.length > 0 ? (
                       creator.brand_exclusivity.map((brand) => (
                         <Badge
                           key={brand}
@@ -11251,10 +11270,11 @@ export default function CreatorDashboard() {
                         })
                       }
                       disabled={!editingRules}
-                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${!editingRules
+                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${
+                        !editingRules
                           ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200"
                           : "bg-white"
-                        }`}
+                      }`}
                     />
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
@@ -11428,12 +11448,13 @@ export default function CreatorDashboard() {
                     >
                       <div className="flex items-start gap-3">
                         <span
-                          className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${item.included
+                          className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
+                            item.included
                               ? "bg-[#E8F7FB] text-[#1683A3]"
                               : item.value === "Pro only"
                                 ? "bg-[#FFF4DA] text-[#B7791F]"
                                 : "bg-[#F1F5F9] text-[#718096]"
-                            }`}
+                          }`}
                         >
                           {item.included ? (
                             <Check className="h-4 w-4" />
@@ -11520,14 +11541,15 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${isSmallScreen
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${
+          isSmallScreen
             ? sidebarOpen
               ? "w-64 h-screen top-0"
               : "-translate-x-full w-64 h-screen top-0"
             : sidebarOpen
               ? "w-64 h-[calc(100vh-5rem)] top-20"
               : "w-20 h-[calc(100vh-5rem)] top-20"
-          }`}
+        }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -11759,7 +11781,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -11798,12 +11820,13 @@ export default function CreatorDashboard() {
                     }
                     setActiveSection(item.id);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${item.disabled
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    item.disabled
                       ? "text-gray-400 cursor-not-allowed opacity-60"
                       : isActive
                         ? "bg-[#32C8D1] text-white"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  }`}
                   aria-disabled={item.disabled ? "true" : undefined}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
@@ -12182,8 +12205,8 @@ export default function CreatorDashboard() {
                         >
                           {String(
                             offer?.brand_campaigns?.name ||
-                            offer?.offer_title ||
-                            "Campaign offer",
+                              offer?.offer_title ||
+                              "Campaign offer",
                           )}
                         </option>
                       ))}
@@ -12965,10 +12988,11 @@ export default function CreatorDashboard() {
                             : [...prev, originalType],
                         );
                       }}
-                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${isSelected
+                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
+                        isSelected
                           ? "bg-[#32C8D1] border-[#32C8D1] text-white"
                           : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">{type}</span>
@@ -13033,8 +13057,8 @@ export default function CreatorDashboard() {
                               defaultValue={
                                 existing
                                   ? (
-                                    existing.price_per_month_cents / 100
-                                  ).toString()
+                                      existing.price_per_month_cents / 100
+                                    ).toString()
                                   : (creator.price_per_month || 0).toString()
                               }
                               className="w-24 h-9 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
@@ -13120,10 +13144,11 @@ export default function CreatorDashboard() {
                             : [...prev, originalIndustry],
                         );
                       }}
-                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${isSelected
+                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
+                        isSelected
                           ? "bg-[#32C8D1] border-[#32C8D1] text-white"
                           : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">{industry}</span>
@@ -13191,7 +13216,7 @@ export default function CreatorDashboard() {
               </h4>
               <div className="flex flex-wrap gap-2">
                 {creator.content_restrictions &&
-                  creator.content_restrictions.length > 0 ? (
+                creator.content_restrictions.length > 0 ? (
                   creator.content_restrictions.map((restriction) => (
                     <Badge
                       key={restriction}
@@ -13333,7 +13358,7 @@ export default function CreatorDashboard() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {!creator.brand_exclusivity ||
-                  creator.brand_exclusivity.length === 0 ? (
+                creator.brand_exclusivity.length === 0 ? (
                   <p className="text-sm text-gray-400 font-normal italic">
                     {t(
                       "creatorDashboard.settingsView.rules.noBrandExclusivity",
@@ -13453,17 +13478,19 @@ export default function CreatorDashboard() {
               {/* Stripe Connect */}
               <div
                 onClick={() => setPayoutMethod("stripe")}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${payoutMethod === "stripe"
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "stripe"
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-gray-200 hover:border-gray-300"
-                  }`}
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${payoutMethod === "stripe"
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "stripe"
                         ? "border-emerald-500"
                         : "border-gray-300"
-                      }`}
+                    }`}
                   >
                     {payoutMethod === "stripe" && (
                       <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -13834,9 +13861,9 @@ export default function CreatorDashboard() {
                 !requestPayoutAmount ||
                 parseFloat(requestPayoutAmount) <= 0 ||
                 parseFloat(requestPayoutAmount) >
-                (stripeBalances.find((b) => b.currency === "USD")
-                  ?.available_cents || 0) /
-                100 ||
+                  (stripeBalances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) /
+                    100 ||
                 isLoadingPayout
               }
               onClick={async () => {
