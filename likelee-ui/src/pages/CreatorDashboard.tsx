@@ -688,6 +688,7 @@ export default function CreatorDashboard() {
     () => brandConnectionRequests.filter((i) => i.status === "pending"),
     [brandConnectionRequests],
   );
+  const pendingCount = pending.length;
   const directOfferIds = new Set(
     directBrandOffers.map((offer: any) => String(offer?.id || "")),
   );
