@@ -36,6 +36,7 @@ import {
 import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
+import { DobInput } from "@/components/ui/DobInput";
 
 const ethnicities = [
   "Asian",
@@ -644,20 +645,14 @@ export default function AddTalent() {
                 >
                   Date of Birth <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="birthdate"
-                  type="date"
+                <DobInput
                   value={formData.birthdate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthdate: e.target.value })
+                  onChange={(iso) =>
+                    setFormData({ ...formData, birthdate: iso })
                   }
-                  className="border-2 border-gray-300"
+                  variant="sharp"
+                  minAge={18}
                 />
-                {formData.birthdate && !isAtLeast18(formData.birthdate) && (
-                  <p className="text-sm text-red-600 mt-2 font-medium">
-                    {`${entityTitle} must be at least 18 years old.`}
-                  </p>
-                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

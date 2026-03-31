@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { DobInput } from "@/components/ui/DobInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -10316,16 +10317,16 @@ export default function CreatorDashboard() {
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
                       Date of Birth
                     </Label>
-                    <Input
-                      type="date"
+                    <DobInput
                       value={creator.birthday || ""}
-                      onChange={(e) =>
+                      onChange={(iso) =>
                         setCreator({
                           ...creator,
-                          birthday: e.target.value,
+                          birthday: iso,
                         })
                       }
-                      className="border-2 border-gray-300"
+                      variant="rounded"
+                      minAge={18}
                     />
                   </div>
 
