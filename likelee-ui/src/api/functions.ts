@@ -147,6 +147,16 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createBrandSubscriptionCheckout = (data: {
+  plan: "basic" | "pro" | "enterprise";
+  billing_cycle?: "monthly" | "annual";
+  start_trial?: boolean;
+  next_path?: string;
+}) => base44Client.post(`/brand/billing/checkout`, data);
+
+export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
+  base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 

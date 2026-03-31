@@ -16,6 +16,22 @@ import {
   listOfferDeliverables,
   reviewOfferDeliverable,
 } from "@/api/functions";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  BRAND_STUDIO_ADDON_PRICE,
+  BrandPlanTier,
+  brandAllowsCampaignCollaboration,
+  brandCanPurchaseStudioAddon,
+  brandIncludesStudioAccess,
+  brandPlanCampaignLimit,
+  brandPlanPrice,
+  brandPlanSeatLimit,
+  formatBrandPlanLabel,
+  formatBrandStudioAddonStatus,
+  formatBrandSubscriptionStatus,
+  hasBrandStudioAccess,
+  normalizeBrandPlanTier,
+} from "@/lib/brandBilling";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Button } from "@/components/ui/button";
@@ -135,6 +151,108 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
+const formatBillingDate = (value: unknown) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const brandPlanSummaryTheme = (
+  tier: BrandPlanTier,
+): {
+  eyebrow: string;
+  containerClass: string;
+  bandClass: string;
+  badgeClass: string;
+  headingClass: string;
+  bodyClass: string;
+  statCardClass: string;
+  statLabelClass: string;
+  statValueClass: string;
+  statMetaClass: string;
+  buttonClass: string;
+  actionLabel: string;
+  actionPath: string;
+} => {
+  switch (tier) {
+    case "basic":
+      return {
+        eyebrow: "Starter",
+        containerClass: "border-[#D7E6ED] bg-white",
+        bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
+        badgeClass:
+          "border border-[#D7F0EB] bg-[#EEF9F7] text-[#18A7A5] hover:bg-[#EEF9F7]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#70839B]",
+        statCardClass: "border border-[#D7F0EB] bg-[#F5FCFA]",
+        statLabelClass: "text-[#5F7C86]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#6F8F99]",
+        buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
+        actionLabel: "Upgrade to Pro",
+        actionPath: "/brandpricing",
+      };
+    case "pro":
+      return {
+        eyebrow: "Most popular",
+        containerClass: "border-[#2B4B8A] bg-[#17315E]",
+        bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
+        badgeClass:
+          "border border-[#225F85] bg-[#1A4E74] text-[#7FECFF] hover:bg-[#1A4E74]",
+        headingClass: "text-white",
+        bodyClass: "text-[#B8C8E5]",
+        statCardClass: "border border-[#29456F] bg-[#1C3B6C]",
+        statLabelClass: "text-[#A9BBDA]",
+        statValueClass: "text-white",
+        statMetaClass: "text-[#9CB1D5]",
+        buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
+        actionLabel: "Talk to Sales",
+        actionPath: "/SalesInquiry",
+      };
+    case "enterprise":
+      return {
+        eyebrow: "Full suite",
+        containerClass: "border-[#D9E4FF] bg-white",
+        bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
+        badgeClass:
+          "border border-[#DCE5FF] bg-[#F3F6FF] text-[#4978FF] hover:bg-[#F3F6FF]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#7C88A5]",
+        statCardClass: "border border-[#DCE5FF] bg-[#F7F9FF]",
+        statLabelClass: "text-[#7083A9]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#7C88A5]",
+        buttonClass:
+          "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
+        actionLabel: "Contact Sales",
+        actionPath: "/SalesInquiry",
+      };
+    default:
+      return {
+        eyebrow: "Free",
+        containerClass: "border-slate-200 bg-white",
+        bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
+        badgeClass:
+          "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50",
+        headingClass: "text-slate-900",
+        bodyClass: "text-slate-600",
+        statCardClass: "border border-slate-200 bg-slate-50",
+        statLabelClass: "text-slate-600",
+        statValueClass: "text-slate-900",
+        statMetaClass: "text-slate-500",
+        buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
+        actionLabel: "View Plans",
+        actionPath: "/brandpricing",
+      };
+  }
+};
+
 // Mock data
 const mockBrand = {
   name: "Urban Apparel Co.",
@@ -142,7 +260,7 @@ const mockBrand = {
   industry: "Retail & E-commerce",
   website: "www.urbanapparel.com",
   contact_email: "team@urbanapparel.com",
-  plan: "Pro Studio",
+  plan: "Free",
   team_seats: 3,
 };
 
@@ -643,6 +761,7 @@ const mockContracts = [
 ];
 
 export default function BrandDashboard() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -746,6 +865,44 @@ export default function BrandDashboard() {
     navigateToSection("campaigns-hub", {
       campaignHubTab: "active",
       replace: false,
+    });
+  };
+
+  const handleAgencyCollaborationEntry = () => {
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    goToCampaignsSection();
+  };
+
+  const handleCompanySeatEntry = () => {
+    if ((brandSeatLimit ?? 0) === 0) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    if (brandSeatLimitReached) {
+      toast({
+        title: "Seat limit reached",
+        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    toast({
+      title: "Company seats coming soon",
+      description:
+        "The invite flow is not live yet, but your plan entitlement is now checked before a seat can be added.",
     });
   };
 
@@ -923,6 +1080,47 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
+  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
+  const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
+  const brandHasStudioAddon = hasBrandStudioAccess(profile);
+  const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
+  const brandStudioStatus = formatBrandStudioAddonStatus(profile);
+  const brandBasePrice = brandPlanPrice(brandPlanTier);
+  const brandSeatLimit = brandPlanSeatLimit(brandPlanTier);
+  const brandCampaignLimit = brandPlanCampaignLimit(brandPlanTier);
+  const brandCanUseCampaignCollaboration =
+    brandAllowsCampaignCollaboration(profile);
+  const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
+  const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
+  const brandTrialEndsAt = formatBillingDate(profile?.subscription_trial_end);
+  const brandCurrentPeriodEnd = formatBillingDate(
+    profile?.subscription_current_period_end,
+  );
+  const brandStudioCurrentPeriodEnd = formatBillingDate(
+    profile?.studio_addon_current_period_end,
+  );
+  const brandNextInvoiceDate =
+    brandTrialEndsAt || brandCurrentPeriodEnd || brandStudioCurrentPeriodEnd;
+  const brandRecurringAmount =
+    brandPlanTier === "enterprise"
+      ? null
+      : (brandBasePrice || 0) +
+        (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
+  const brandSeatLimitLabel =
+    brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
+  const brandCampaignLimitLabel =
+    brandCampaignLimit == null ? "Unlimited" : String(brandCampaignLimit);
+  const brandCampaignSlotsUsed =
+    campaignMetrics.active_projects_count +
+    campaignMetrics.pending_approvals_count;
+  const brandCampaignLimitReached =
+    brandCampaignLimit != null && brandCampaignSlotsUsed >= brandCampaignLimit;
+  const brandTeamSeatsUsed = Number.isFinite(Number(profile?.team_seats))
+    ? Number(profile?.team_seats)
+    : 0;
+  const brandSeatLimitReached =
+    brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit;
 
   const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
@@ -1843,8 +2041,25 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
+  const getBrandTalentEntitlementMessage = (error: unknown) => {
+    const message = String((error as any)?.message || error || "").trim();
+    if (message.includes("brand_talent_browsing_requires_pro_plan")) {
+      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
+    }
+    return message || "Please try again.";
+  };
+
   const handleOpenLicenseRequest = (creator: MarketplaceProfile | null) => {
     if (!creator) return;
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
     setSelectedLicenseCreator(creator);
     setLicenseRequestForm((prev) => ({
       ...prev,
@@ -1941,7 +2156,7 @@ export default function BrandDashboard() {
     } catch (e: any) {
       toast({
         title: "Failed to create request",
-        description: e?.message || "Please try again.",
+        description: getBrandTalentEntitlementMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -2372,7 +2587,7 @@ export default function BrandDashboard() {
               <span className="font-semibold">Start New Project</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace")}
+              onClick={() => navigateToSection("marketplace")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Search className="w-6 h-6" />
@@ -2388,16 +2603,14 @@ export default function BrandDashboard() {
               <span>View Active Campaigns</span>
             </Button>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
+              onClick={handleAgencyCollaborationEntry}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace-agencies")}
+              onClick={() => navigateToSection("marketplace-agencies")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
@@ -3467,17 +3680,42 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderAgencyMarketplace = () => (
-    <MarketplaceSection
-      entityType="agency"
-      title="Agency Marketplace"
-      subtitle="Verified agencies only"
-      verifiedBadgeLabel=""
-      searchPlaceholder="Search by agency name, type, service, or location..."
-      resultLimit={60}
-      queryScope="brand-agency-marketplace"
-    />
-  );
+  const renderCreatorMarketplace = () => {
+    return (
+      <MarketplaceSection
+        title="Likelee Marketplace"
+        subtitle="Verified creators only"
+        verifiedBadgeLabel=""
+        queryScope="brand-creator-marketplace"
+        showRequestLicense
+        onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
+
+  const renderAgencyMarketplace = () => {
+    return (
+      <MarketplaceSection
+        entityType="agency"
+        title="Agency Marketplace"
+        subtitle="Verified agencies only"
+        verifiedBadgeLabel=""
+        searchPlaceholder="Search by agency name, type, service, or location..."
+        resultLimit={60}
+        queryScope="brand-agency-marketplace"
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
@@ -6185,12 +6423,12 @@ export default function BrandDashboard() {
               Collaborate with Agency
             </h3>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
+              onClick={handleAgencyCollaborationEntry}
               className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
-              Invite Agency
+              {brandCanUseCampaignCollaboration
+                ? "Invite Agency"
+                : "Upgrade to Pro"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
@@ -6204,23 +6442,40 @@ export default function BrandDashboard() {
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
-              disabled
-              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
+              onClick={handleCompanySeatEntry}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
-              Coming Soon
+              {(brandSeatLimit ?? 0) === 0
+                ? "Upgrade to Basic"
+                : brandSeatLimitReached
+                  ? "Seat limit reached"
+                  : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
-              Enable Add-On
+            <Button
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+              onClick={() =>
+                navigate(
+                  brandHasStudioAddon
+                    ? createPageUrl("Studio")
+                    : "/brandpricing?focus=studio",
+                )
+              }
+            >
+              {brandHasStudioAddon
+                ? "Open Studio"
+                : brandCanSelfServeStudioAddon
+                  ? "Enable Add-On"
+                  : "Upgrade to Pro"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
@@ -8220,40 +8475,137 @@ export default function BrandDashboard() {
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
-          <p className="text-2xl font-bold text-gray-900">Mar 1</p>
-          <p className="text-xs text-gray-500 mt-1">$299 subscription</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {brandNextInvoiceDate || "Not set"}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {brandPlanTier === "enterprise"
+              ? "Custom enterprise contract"
+              : (brandRecurringAmount || 0) > 0
+                ? `$${brandRecurringAmount}/mo recurring`
+                : "No active subscription"}
+          </p>
         </Card>
       </div>
 
       {/* Current Plan */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Current Plan: {brand.plan}
-            </h3>
-            <p className="text-gray-600">Renews on March 1, 2025</p>
+      <Card
+        className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
+      >
+        <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
+        <div className="p-6">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div>
+              <Badge className={brandSummaryTheme.badgeClass}>
+                {brandSummaryTheme.eyebrow}
+              </Badge>
+              <h3
+                className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
+              >
+                Current Plan: {brandPlanLabel}
+              </h3>
+              <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
+                {brandTrialEndsAt
+                  ? `Free trial ends on ${brandTrialEndsAt}`
+                  : brandCurrentPeriodEnd
+                    ? `Renews on ${brandCurrentPeriodEnd}`
+                    : brandSubscriptionStatus}
+              </p>
+            </div>
+            <Button
+              className={`font-semibold ${brandSummaryTheme.buttonClass}`}
+              onClick={() => navigate(brandSummaryTheme.actionPath)}
+            >
+              {brandSummaryTheme.actionLabel}
+            </Button>
           </div>
-          <Button className="bg-[#F7B750] hover:bg-[#E6A640] text-white">
-            Upgrade Plan
-          </Button>
-        </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Subscription</p>
-            <p className="text-2xl font-bold text-gray-900">$299</p>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div
+              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+            >
+              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                Base Subscription
+              </p>
+              <p
+                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+              >
+                {brandBasePrice == null
+                  ? brandPlanTier === "enterprise"
+                    ? "Custom"
+                    : "$0"
+                  : `$${brandBasePrice}`}
+              </p>
+              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                {brandSubscriptionStatus}
+              </p>
+            </div>
+            <div
+              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+            >
+              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                AI Studio Add-On
+              </p>
+              <p
+                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+              >
+                {brandHasIncludedStudio
+                  ? "Included"
+                  : brandHasStudioAddon
+                    ? `$${BRAND_STUDIO_ADDON_PRICE}`
+                    : "Inactive"}
+              </p>
+              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
+                  ? `Renews on ${brandStudioCurrentPeriodEnd}`
+                  : brandStudioStatus}
+              </p>
+            </div>
+            <div
+              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+            >
+              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                Campaign Slots
+              </p>
+              <p
+                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+              >
+                {brandCampaignLimit == null
+                  ? "Unlimited"
+                  : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
+              </p>
+              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                {campaignMetrics.active_projects_count} active,{" "}
+                {campaignMetrics.pending_approvals_count} pending approval
+              </p>
+            </div>
+            <div
+              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+            >
+              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                Team Seats
+              </p>
+              <p
+                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+              >
+                {brandTeamSeatsUsed} / {brandSeatLimitLabel}
+              </p>
+            </div>
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Campaign Slots</p>
-            <p className="text-2xl font-bold text-gray-900">3 / 20</p>
-          </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Team Seats</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {brand.team_seats} / 5
-            </p>
-          </div>
+
+          {(brandCampaignLimitReached || brandSeatLimitReached) && (
+            <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
+              <AlertDescription>
+                {brandCampaignLimitReached
+                  ? brandCampaignLimit === 0
+                    ? "Upgrade to a paid brand plan to launch campaigns."
+                    : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
+                  : brandSeatLimit === 0
+                    ? "Upgrade to Basic or above to unlock company seats."
+                    : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </Card>
 
@@ -8534,7 +8886,8 @@ export default function BrandDashboard() {
           Team Management
         </h3>
         <p className="text-gray-600 mb-4">
-          Manage your team ({brand.team_seats} / 5 seats used)
+          Manage your team ({brandTeamSeatsUsed} / {brandSeatLimitLabel} seats
+          used)
         </p>
 
         <div className="space-y-3 mb-6">
@@ -10797,7 +11150,9 @@ export default function BrandDashboard() {
               />
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-                <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
+                <p className="text-xs text-gray-600 truncate">
+                  {brandPlanLabel}
+                </p>
               </div>
             </div>
           ) : (
@@ -11023,16 +11378,7 @@ export default function BrandDashboard() {
       >
         <div className="p-8">
           {activeSection === "home" && renderHome()}
-          {activeSection === "marketplace" && (
-            <MarketplaceSection
-              title="Likelee Marketplace"
-              subtitle="Verified creators only"
-              verifiedBadgeLabel=""
-              queryScope="brand-creator-marketplace"
-              showRequestLicense
-              onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
-            />
-          )}
+          {activeSection === "marketplace" && renderCreatorMarketplace()}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
           {activeSection === "campaigns-hub" &&

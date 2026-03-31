@@ -82,6 +82,7 @@ import CreatorDashboard from "./CreatorDashboard";
 import AgencyDashboard from "./AgencyDashboard";
 
 import AgencySubscribe from "./AgencySubscribe";
+import BrandSubscribe from "./BrandSubscribe";
 
 import StripeConnectReturn from "./StripeConnectReturn";
 import StripeConnectRefresh from "./StripeConnectRefresh";
@@ -124,6 +125,7 @@ import {
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const __pagesQueryClient = new QueryClient();
+import BrandStudioAddonRoute from "@/auth/BrandStudioAddonRoute";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import Login from "./Login";
 import Register from "./Register";
@@ -220,6 +222,8 @@ const PAGES = {
 
   AgencySubscribe: AgencySubscribe,
 
+  BrandSubscribe: BrandSubscribe,
+
   AddTalent: AddTalent,
 
   BrandDashboard: BrandDashboard,
@@ -261,6 +265,13 @@ function _getCurrentPage(url) {
   if (loweredUrl === "/bookdemothanks" || loweredUrl === "/book-demo/thanks") {
     return "BookDemoThanks";
   }
+  if (
+    loweredUrl === "/brandpricing" ||
+    loweredUrl === "/brand-pricing" ||
+    loweredUrl === "/brandsubscribe"
+  ) {
+    return "BrandSubscribe";
+  }
 
   if (url.endsWith("/")) {
     url = url.slice(0, -1);
@@ -274,6 +285,21 @@ function _getCurrentPage(url) {
     (page) => page.toLowerCase() === urlLastPart.toLowerCase(),
   );
   return pageName || Object.keys(PAGES)[0];
+}
+
+function BrandPricingRedirect() {
+  const location = useLocation();
+
+  return (
+    <Navigate
+      to={{
+        pathname: "/brandpricing",
+        search: location.search,
+        hash: location.hash,
+      }}
+      replace
+    />
+  );
 }
 
 // Create a wrapper component that uses useLocation inside the Router context
@@ -319,27 +345,104 @@ function AppRoutes() {
 
       <Route path="/GetAccess" element={<GetAccess />} />
 
-      <Route path="/Studio" element={<Studio />} />
+      <Route
+        path="/Studio"
+        element={
+          <BrandStudioAddonRoute>
+            <Studio />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioVideo" element={<StudioVideo />} />
+      <Route
+        path="/StudioVideo"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioVideo />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioImage" element={<StudioImage />} />
+      <Route
+        path="/StudioImage"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImage />
+          </BrandStudioAddonRoute>
+        }
+      />
 
       <Route path="/AdminCredits" element={<AdminCredits />} />
 
-      <Route path="/StudioSubscribe" element={<StudioSubscribe />} />
+      <Route
+        path="/StudioSubscribe"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioSubscribe />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioVideoOptions" element={<StudioVideoOptions />} />
+      <Route
+        path="/StudioVideoOptions"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioVideoOptions />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioImageOptions" element={<StudioImageOptions />} />
+      <Route
+        path="/StudioImageOptions"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImageOptions />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/studiotemplates" element={<StudioTemplates />} />
-      <Route path="/StudioTemplates" element={<StudioTemplates />} />
+      <Route
+        path="/studiotemplates"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioTemplates />
+          </BrandStudioAddonRoute>
+        }
+      />
+      <Route
+        path="/StudioTemplates"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioTemplates />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/studiopresets" element={<StudioPresets />} />
-      <Route path="/StudioPresets" element={<StudioPresets />} />
+      <Route
+        path="/studiopresets"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioPresets />
+          </BrandStudioAddonRoute>
+        }
+      />
+      <Route
+        path="/StudioPresets"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioPresets />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioImageToVideo" element={<StudioImageToVideo />} />
+      <Route
+        path="/StudioImageToVideo"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImageToVideo />
+          </BrandStudioAddonRoute>
+        }
+      />
 
       <Route path="/TestFalAPI" element={<TestFalAPI />} />
 
@@ -454,6 +557,11 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/brandpricing" element={<BrandSubscribe />} />
+      <Route path="/BrandSubscribe" element={<BrandPricingRedirect />} />
+      <Route path="/brandsubscribe" element={<BrandPricingRedirect />} />
+      <Route path="/brand-pricing" element={<BrandPricingRedirect />} />
 
       <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
       <Route

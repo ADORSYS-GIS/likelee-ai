@@ -1,6 +1,9 @@
 use crate::{
     auth::AuthUser,
     config::AppState,
+    entitlements::{
+        brand_allows_campaign_collaboration, brand_campaign_limit, get_brand_plan_tier, PlanTier,
+    },
     errors::sanitize_db_error,
     services::docuseal::{DocuSealClient, Submitter},
 };
@@ -362,6 +365,136 @@ fn trim_non_empty(value: &str, field: &str) -> Result<String, (StatusCode, Strin
 
 fn is_creator_like(role: &str) -> bool {
     role == "creator" || role == "talent"
+}
+
+fn offer_status_counts_toward_campaign_slot(status: &str) -> bool {
+    !matches!(
+        status.trim().to_lowercase().as_str(),
+        "cancelled" | "declined" | "expired" | "completed"
+    )
+}
+
+fn campaign_is_past_end(campaign: &serde_json::Value) -> bool {
+    if campaign
+        .get("completed_at")
+        .and_then(|v| v.as_str())
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
+        return true;
+    }
+
+    let start_date = campaign
+        .get("start_date")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if start_date.is_empty() {
+        return false;
+    }
+
+    let Ok(start) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") else {
+        return false;
+    };
+    let duration_days = campaign
+        .get("duration_days")
+        .and_then(|v| v.as_i64())
+        .filter(|value| *value > 0)
+        .unwrap_or(30);
+    let end = start + chrono::Duration::days(duration_days.saturating_sub(1));
+    chrono::Utc::now().date_naive() > end
+}
+
+async fn active_brand_campaign_slot_ids(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<std::collections::HashSet<String>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("campaign_offers")
+        .select("brand_campaign_id,status,brand_campaigns(start_date,duration_days,completed_at)")
+        .eq("brand_id", brand_id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut ids = std::collections::HashSet::new();
+    for row in rows {
+        let campaign_id = row
+            .get("brand_campaign_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if campaign_id.is_empty() {
+            continue;
+        }
+
+        let status = row.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if !offer_status_counts_toward_campaign_slot(status) {
+            continue;
+        }
+
+        let campaign = row
+            .get("brand_campaigns")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null);
+        if campaign_is_past_end(&campaign) {
+            continue;
+        }
+
+        ids.insert(campaign_id.to_string());
+    }
+
+    Ok(ids)
+}
+
+async fn ensure_brand_campaign_collaboration_access(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let tier = get_brand_plan_tier(state, brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_campaign_collaboration_requires_pro_plan".to_string(),
+        ));
+    }
+    Ok(tier)
+}
+
+async fn enforce_brand_campaign_limit(
+    state: &AppState,
+    brand_id: &str,
+    campaign_id: &str,
+    tier: PlanTier,
+) -> Result<(), (StatusCode, String)> {
+    let Some(limit) = brand_campaign_limit(tier) else {
+        return Ok(());
+    };
+
+    let active_campaign_ids = active_brand_campaign_slot_ids(state, brand_id).await?;
+    if active_campaign_ids.contains(campaign_id) {
+        return Ok(());
+    }
+
+    if active_campaign_ids.len() >= limit {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!("brand_campaign_limit_reached:{limit}"),
+        ));
+    }
+
+    Ok(())
 }
 
 async fn resolve_agency_talent(
@@ -1868,6 +2001,7 @@ pub async fn list_offer_options(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let _tier = ensure_brand_campaign_collaboration_access(&state, &user.id).await?;
     let _campaign = ensure_brand_campaign_ownership(&state, &user.id, &campaign_id).await?;
     let target_type = q
         .target_type
@@ -2049,6 +2183,7 @@ pub async fn create_campaign_offers(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let tier = ensure_brand_campaign_collaboration_access(&state, &user.id).await?;
     if payload.target_ids.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -2056,6 +2191,7 @@ pub async fn create_campaign_offers(
         ));
     }
     let campaign = ensure_brand_campaign_ownership(&state, &user.id, &campaign_id).await?;
+    enforce_brand_campaign_limit(&state, &user.id, &campaign_id, tier).await?;
     let target_type = payload.target_type.trim().to_lowercase();
     if !["creator", "agency"].contains(&target_type.as_str()) {
         return Err((

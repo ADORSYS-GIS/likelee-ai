@@ -137,6 +137,21 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
 
+    #[envconfig(from = "STRIPE_BRAND_BASIC_PRICE_ID", default = "")]
+    pub stripe_brand_basic_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_BASIC_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_brand_basic_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_PRO_PRICE_ID", default = "")]
+    pub stripe_brand_pro_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_PRO_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_brand_pro_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_STUDIO_ADDON_PRICE_ID", default = "")]
+    pub stripe_brand_studio_addon_price_id: String,
+
     #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
     pub stripe_checkout_success_url: String,
 
@@ -287,6 +302,11 @@ pub struct AppState {
 
     pub stripe_agency_basic_base_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
+    pub stripe_brand_basic_price_id: String,
+    pub stripe_brand_basic_annual_price_id: String,
+    pub stripe_brand_pro_price_id: String,
+    pub stripe_brand_pro_annual_price_id: String,
+    pub stripe_brand_studio_addon_price_id: String,
     pub stripe_checkout_success_url: String,
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,

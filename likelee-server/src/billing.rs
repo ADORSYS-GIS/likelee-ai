@@ -1,10 +1,14 @@
 use axum::{extract::State, http::StatusCode, Json};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
 use tracing::{info, warn};
 
 use crate::{auth::AuthUser, config::AppState};
+
+pub const BRAND_STUDIO_ADDON_STUDIO_PLAN: &str = "pro";
+pub const BRAND_STUDIO_ADDON_STUDIO_CREDITS: i64 = 2000;
 
 fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     let raw = raw.trim();
@@ -236,6 +240,156 @@ fn plan_to_price_env_var(plan: &str) -> Option<&'static str> {
         "pro" => Some("STRIPE_AGENCY_PRO_BASE_PRICE_ID"),
         _ => None,
     }
+}
+
+fn normalize_brand_billing_cycle(value: Option<&str>) -> &'static str {
+    match value.unwrap_or("monthly").trim().to_lowercase().as_str() {
+        "annual" => "annual",
+        _ => "monthly",
+    }
+}
+
+fn brand_plan_to_price_id_for_billing_cycle(
+    state: &AppState,
+    plan: &str,
+    billing_cycle: &str,
+) -> Option<String> {
+    match (
+        plan.trim().to_lowercase().as_str(),
+        normalize_brand_billing_cycle(Some(billing_cycle)),
+    ) {
+        ("basic", "annual") => Some(state.stripe_brand_basic_annual_price_id.clone()),
+        ("basic", _) => Some(state.stripe_brand_basic_price_id.clone()),
+        ("pro", "annual") => Some(state.stripe_brand_pro_annual_price_id.clone()),
+        ("pro", _) => Some(state.stripe_brand_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn brand_plan_to_price_env_var_for_billing_cycle(
+    plan: &str,
+    billing_cycle: &str,
+) -> Option<&'static str> {
+    match (
+        plan.trim().to_lowercase().as_str(),
+        normalize_brand_billing_cycle(Some(billing_cycle)),
+    ) {
+        ("basic", "annual") => Some("STRIPE_BRAND_BASIC_ANNUAL_PRICE_ID"),
+        ("basic", _) => Some("STRIPE_BRAND_BASIC_PRICE_ID"),
+        ("pro", "annual") => Some("STRIPE_BRAND_PRO_ANNUAL_PRICE_ID"),
+        ("pro", _) => Some("STRIPE_BRAND_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
+
+fn sanitize_next_path(next_path: Option<&str>) -> Option<String> {
+    let candidate = next_path?.trim();
+    if candidate.is_empty() || !candidate.starts_with('/') || candidate.starts_with("//") {
+        return None;
+    }
+    Some(candidate.to_string())
+}
+
+fn brand_billing_frontend_url(
+    state: &AppState,
+    params: Vec<(&str, String)>,
+) -> Result<String, (StatusCode, String)> {
+    let base = state.frontend_url.trim();
+    if base.is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "frontend_url_not_configured".to_string(),
+        ));
+    }
+
+    let mut url = Url::parse(base).map_err(|e| {
+        (
+            StatusCode::PRECONDITION_FAILED,
+            format!("invalid_frontend_url:{e}"),
+        )
+    })?;
+    url.set_path("/brandpricing");
+    url.set_query(None);
+
+    {
+        let mut query = url.query_pairs_mut();
+        for (key, value) in params {
+            if !value.trim().is_empty() {
+                query.append_pair(key, value.as_str());
+            }
+        }
+    }
+
+    Ok(url.to_string())
+}
+
+async fn get_brand_checkout_row(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<serde_json::Value, (StatusCode, String)> {
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select(
+            "id,email,company_name,stripe_customer_id,plan_tier,subscription_status,studio_addon_active",
+        )
+        .eq("id", brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = brand_resp.status();
+    let text = brand_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    rows.first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "brand_profile_not_found".to_string()))
+}
+
+async fn ensure_brand_customer(
+    state: &AppState,
+    brand_id: &str,
+    email: &str,
+    company_name: &str,
+    existing_customer: &str,
+) -> Result<String, (StatusCode, String)> {
+    if !existing_customer.trim().is_empty() {
+        return Ok(existing_customer.to_string());
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut params = stripe_sdk::CreateCustomer::new();
+    if !email.trim().is_empty() {
+        params.email = Some(email);
+    }
+    params.name = Some(company_name);
+    params.metadata = Some(std::collections::HashMap::from([(
+        "brand_id".to_string(),
+        brand_id.to_string(),
+    )]));
+
+    let customer = stripe_sdk::Customer::create(&client, params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let customer_id = customer.id.to_string();
+    let _ = state
+        .pg
+        .from("brands")
+        .eq("id", brand_id)
+        .update(json!({ "stripe_customer_id": customer_id }).to_string())
+        .execute()
+        .await;
+
+    Ok(customer.id.to_string())
 }
 
 pub async fn create_agency_subscription_checkout(
@@ -470,6 +624,356 @@ pub async fn create_agency_subscription_checkout(
     }
 
     info!(agency_id = %user.id, plan = %payload.plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
+    Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BrandCheckoutRequest {
+    pub plan: String,
+    #[serde(default)]
+    pub billing_cycle: Option<String>,
+    #[serde(default)]
+    pub start_trial: bool,
+    pub next_path: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct BrandStudioAddonCheckoutRequest {
+    pub next_path: Option<String>,
+}
+
+pub async fn create_brand_subscription_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandCheckoutRequest>,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if payload.plan.trim().eq_ignore_ascii_case("enterprise") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "enterprise_contact_sales".to_string(),
+        ));
+    }
+
+    let billing_cycle = normalize_brand_billing_cycle(payload.billing_cycle.as_deref());
+
+    let base_price_id =
+        brand_plan_to_price_id_for_billing_cycle(&state, &payload.plan, billing_cycle)
+            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    if base_price_id.trim().is_empty() {
+        let ev = brand_plan_to_price_env_var_for_billing_cycle(&payload.plan, billing_cycle)
+            .unwrap_or("STRIPE_BRAND_*_PRICE_ID");
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_price_not_configured:{ev}"),
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let company_name = row
+        .get("company_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Brand")
+        .to_string();
+    let existing_customer = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let current_plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let current_subscription_status = row
+        .get("subscription_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let has_active_base_subscription =
+        current_subscription_status == "active" || current_subscription_status == "trialing";
+    let target_plan = payload.plan.trim().to_lowercase();
+
+    if has_active_base_subscription {
+        if current_plan_tier == target_plan {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "brand_subscription_already_active".to_string(),
+            ));
+        }
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "brand_plan_change_not_supported_in_checkout".to_string(),
+        ));
+    }
+
+    let customer_id =
+        ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
+
+    let next_path = sanitize_next_path(payload.next_path.as_deref());
+    let success_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("success", "1".to_string()),
+            ("plan", target_plan.clone()),
+            ("billing", billing_cycle.to_string()),
+            ("next", next_path.clone().unwrap_or_default()),
+        ],
+    )?;
+    let cancel_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("canceled", "1".to_string()),
+            ("plan", target_plan.clone()),
+            ("billing", billing_cycle.to_string()),
+            ("next", next_path.unwrap_or_default()),
+        ],
+    )?;
+
+    let should_start_trial =
+        payload.start_trial && target_plan == "pro" && current_plan_tier == "free";
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(base_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("brand_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "brand".to_string());
+    md.insert("billing_target".to_string(), "base".to_string());
+    md.insert("plan".to_string(), target_plan.clone());
+    md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+    cs_params.metadata = Some(md);
+
+    let mut sub_md = std::collections::HashMap::new();
+    sub_md.insert("brand_id".to_string(), user.id.clone());
+    sub_md.insert("billing_domain".to_string(), "brand".to_string());
+    sub_md.insert("billing_target".to_string(), "base".to_string());
+    sub_md.insert("plan".to_string(), target_plan.clone());
+    sub_md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(sub_md),
+        trial_period_days: if should_start_trial { Some(14) } else { None },
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(
+        brand_id = %user.id,
+        plan = %target_plan,
+        billing_cycle = %billing_cycle,
+        start_trial = should_start_trial,
+        "created brand subscription checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn create_brand_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandStudioAddonCheckoutRequest>,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if state.stripe_brand_studio_addon_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured:STRIPE_BRAND_STUDIO_ADDON_PRICE_ID".to_string(),
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let company_name = row
+        .get("company_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Brand")
+        .to_string();
+    let existing_customer = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let current_plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let studio_addon_active = row
+        .get("studio_addon_active")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if current_plan_tier == "enterprise" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "studio_addon_included_with_enterprise".to_string(),
+        ));
+    }
+
+    if current_plan_tier != "pro" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "studio_addon_requires_pro_plan".to_string(),
+        ));
+    }
+
+    if studio_addon_active {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "studio_addon_already_active".to_string(),
+        ));
+    }
+
+    let customer_id =
+        ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
+
+    let next_path = sanitize_next_path(payload.next_path.as_deref());
+    let success_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("success", "1".to_string()),
+            ("focus", "studio".to_string()),
+            ("next", next_path.clone().unwrap_or_default()),
+        ],
+    )?;
+    let cancel_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("canceled", "1".to_string()),
+            ("focus", "studio".to_string()),
+            ("next", next_path.unwrap_or_default()),
+        ],
+    )?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(state.stripe_brand_studio_addon_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("brand_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "brand".to_string());
+    md.insert("billing_target".to_string(), "studio_addon".to_string());
+    md.insert(
+        "studio_plan".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
+    );
+    md.insert(
+        "studio_credits".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
+    );
+    cs_params.metadata = Some(md);
+
+    let mut sub_md = std::collections::HashMap::new();
+    sub_md.insert("brand_id".to_string(), user.id.clone());
+    sub_md.insert("billing_domain".to_string(), "brand".to_string());
+    sub_md.insert("billing_target".to_string(), "studio_addon".to_string());
+    sub_md.insert(
+        "studio_plan".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
+    );
+    sub_md.insert(
+        "studio_credits".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
+    );
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(sub_md),
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(brand_id = %user.id, "created brand studio add-on checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
 }
 

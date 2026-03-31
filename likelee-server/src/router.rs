@@ -752,6 +752,14 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/brand-profile", post(crate::brands::update))
         .route("/api/brand-profile/user", get(crate::brands::get_by_user))
         .route(
+            "/api/brand/billing/checkout",
+            post(crate::billing::create_brand_subscription_checkout),
+        )
+        .route(
+            "/api/brand/billing/studio-addon/checkout",
+            post(crate::billing::create_brand_studio_addon_checkout),
+        )
+        .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
                 .get(crate::brand_campaigns::list_campaigns),

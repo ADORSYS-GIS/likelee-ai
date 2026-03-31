@@ -2,6 +2,7 @@ use crate::brand_campaigns::{
     log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
 };
 use crate::config::AppState;
+use crate::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier};
 use crate::errors::sanitize_db_error;
 use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
@@ -1065,6 +1066,26 @@ pub(crate) async fn resolve_effective_brand_id(
     Ok(user.id.clone())
 }
 
+async fn ensure_brand_talent_marketplace_access(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(), (StatusCode, String)> {
+    if user.role != "brand" {
+        return Ok(());
+    }
+
+    let effective_brand_id = resolve_effective_brand_id(state, user).await?;
+    let tier = get_brand_plan_tier(state, &effective_brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
+        ));
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn resolve_effective_creator_id(
     state: &AppState,
     user: &AuthUser,
@@ -1571,6 +1592,7 @@ pub async fn create_marketplace_connection_request(
     Json(payload): Json<MarketplaceConnectPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency", "brand"]).check(&user.role)?;
+    ensure_brand_talent_marketplace_access(&state, &user).await?;
     let profile_type = payload.profile_type.trim().to_lowercase();
     let target_id = payload.target_id.trim();
     if target_id.is_empty() {
@@ -3024,6 +3046,7 @@ pub async fn create_brand_licensing_request(
     Json(payload): Json<BrandLicensingRequestPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["brand"]).check(&user.role)?;
+    ensure_brand_talent_marketplace_access(&state, &user).await?;
 
     let agency_id = payload
         .agency_id

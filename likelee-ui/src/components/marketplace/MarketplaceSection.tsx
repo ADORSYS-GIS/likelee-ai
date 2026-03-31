@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowRight,
   Search,
   Filter,
   X,
   Loader2,
   Globe,
   ShieldCheck,
+  Lock,
   User,
   Image as ImageIcon,
 } from "lucide-react";
@@ -94,6 +96,11 @@ type MarketplaceSectionProps = {
     profile: MarketplaceProfile,
     details?: MarketplaceProfileDetails,
   ) => void;
+  actionsLocked?: boolean;
+  lockedTitle?: string;
+  lockedDescription?: string;
+  lockedCtaLabel?: string;
+  onLockedAction?: () => void;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -162,6 +169,11 @@ export function MarketplaceSection({
   queryScope = "scouting-marketplace",
   showRequestLicense = false,
   onRequestLicense,
+  actionsLocked = false,
+  lockedTitle = "Preview only",
+  lockedDescription = "Upgrade to unlock connections and licensing actions.",
+  lockedCtaLabel = "Upgrade",
+  onLockedAction,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -194,6 +206,18 @@ export function MarketplaceSection({
     "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
   const debouncedSearch = useDebounce(searchInput, 300);
   const detailsOpen = !!selectedProfile;
+  const lockedHighlights =
+    entityType === "agency"
+      ? [
+          "Connect with agencies",
+          "Unlock collaborator workflows",
+          "Launch full campaign handoff",
+        ]
+      : [
+          "Connect with creators",
+          "Request licenses",
+          "Unlock collaborator workflows",
+        ];
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -388,6 +412,55 @@ export function MarketplaceSection({
       </div>
 
       <div className="flex flex-col gap-6">
+        {actionsLocked && (
+          <div className="relative overflow-hidden rounded-[28px] border border-[#F3C46B] bg-[linear-gradient(135deg,#FFF8E6_0%,#FFF2D8_40%,#FFE2B3_100%)] px-5 py-5 shadow-[0_22px_55px_rgba(247,183,80,0.18)] ring-1 ring-[#FFE7BA]">
+            <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#F7B750]/20 blur-3xl" />
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[#F7B750] via-[#F5A623] to-[#F2994A]" />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="mt-1 inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white text-[#C46A00] shadow-sm">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <div>
+                  <Badge className="border border-[#F5D497] bg-white/80 text-[#B86B05] hover:bg-white/80">
+                    Preview mode
+                  </Badge>
+                  <p className="mt-3 text-lg font-bold tracking-tight text-[#7A3D00]">
+                    {lockedTitle}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[#9A5608]">
+                    {lockedDescription}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {lockedHighlights.map((item) => (
+                      <Badge
+                        key={item}
+                        className="border border-[#F4D29B] bg-white/75 text-[#A56310] hover:bg-white/75"
+                      >
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 lg:min-w-[220px]">
+                <Button
+                  className="h-11 rounded-2xl bg-[#F7B750] text-white shadow-[0_12px_24px_rgba(247,183,80,0.28)] hover:bg-[#E6A640] disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => onLockedAction?.()}
+                  disabled={!onLockedAction}
+                >
+                  {lockedCtaLabel}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <p className="text-center text-xs font-semibold text-[#B16B12]">
+                  Visible in preview. Pro makes every action live.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2 w-full">
           <div className="relative w-full md:max-w-4xl">
             <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -780,15 +853,27 @@ export function MarketplaceSection({
                       <div className="mt-2.5 flex items-center gap-2">
                         <Button
                           className={`h-6 px-2 text-xs rounded-md ${
-                            connectionStatus === "waiting" ||
-                            connectionStatus === "pending"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
-                              : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                            actionsLocked
+                              ? "bg-slate-900 hover:bg-slate-800 text-white"
+                              : connectionStatus === "waiting" ||
+                                  connectionStatus === "pending"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
+                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
                           }`}
-                          disabled={disableConnectAction}
+                          disabled={
+                            actionsLocked
+                              ? !onLockedAction ||
+                                connectionStatus === "waiting" ||
+                                connectionStatus === "pending"
+                              : disableConnectAction
+                          }
                           onClick={async (e) => {
                             // Prevent card click from opening details when pressing connect.
                             e.stopPropagation();
+                            if (actionsLocked) {
+                              onLockedAction?.();
+                              return;
+                            }
                             if (isRequestingConnect) return;
                             setRequestingConnectKeys((prev) =>
                               new Set(prev).add(profileKey),
@@ -868,12 +953,17 @@ export function MarketplaceSection({
                             }
                           }}
                         >
-                          {isRequestingConnect
-                            ? "Sending..."
-                            : connectionStatus === "pending" ||
-                                connectionStatus === "waiting"
+                          {actionsLocked
+                            ? connectionStatus === "pending" ||
+                              connectionStatus === "waiting"
                               ? `Waiting for ${entityLabel} response`
-                              : "Connect"}
+                              : "Upgrade to Connect"
+                            : isRequestingConnect
+                              ? "Sending..."
+                              : connectionStatus === "pending" ||
+                                  connectionStatus === "waiting"
+                                ? `Waiting for ${entityLabel} response`
+                                : "Connect"}
                         </Button>
                       </div>
                     )}
@@ -1290,14 +1380,21 @@ export function MarketplaceSection({
                         <Button
                           className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
                           onClick={() => {
+                            if (actionsLocked) {
+                              onLockedAction?.();
+                              return;
+                            }
                             if (!selectedProfile) return;
                             onRequestLicense?.(
                               selectedProfile,
                               detailsQuery.data || undefined,
                             );
                           }}
+                          disabled={actionsLocked && !onLockedAction}
                         >
-                          Request License
+                          {actionsLocked
+                            ? "Upgrade to Request License"
+                            : "Request License"}
                         </Button>
                       </div>
                     </Card>

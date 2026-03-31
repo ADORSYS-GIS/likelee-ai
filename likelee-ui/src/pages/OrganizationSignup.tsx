@@ -338,6 +338,35 @@ export default function OrganizationSignup() {
     return null;
   }, [orgType]);
 
+  const getPostSignupDestination = React.useCallback(
+    (targetFlow: "brand" | "agency" | null) => {
+      if (targetFlow !== "brand") {
+        return "/AgencyDashboard";
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const plan = String(urlParams.get("plan") || "")
+        .trim()
+        .toLowerCase();
+      const autoStartCheckout = urlParams.get("autostart") === "1";
+      if (!autoStartCheckout || (plan !== "basic" && plan !== "pro")) {
+        return "/BrandDashboard";
+      }
+
+      const params = new URLSearchParams({
+        plan,
+        autostart: "1",
+      });
+      if (urlParams.get("trial") === "1") params.set("trial", "1");
+      if (urlParams.get("focus") === "studio") params.set("focus", "studio");
+      if (urlParams.get("billing") === "annual")
+        params.set("billing", "annual");
+
+      return `/brandpricing?${params.toString()}`;
+    },
+    [],
+  );
+
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
   useEffect(() => {
@@ -364,9 +393,9 @@ export default function OrganizationSignup() {
             ) {
               console.log("Onboarding complete, redirecting to dashboard");
               if (isBrand) {
-                window.location.href = "/BrandDashboard";
+                window.location.href = getPostSignupDestination("brand");
               } else {
-                window.location.href = "/AgencyDashboard";
+                window.location.href = getPostSignupDestination("agency");
               }
               return;
             }
@@ -448,9 +477,9 @@ export default function OrganizationSignup() {
             ) {
               console.log("Onboarding complete via fallback, redirecting");
               if (brandProfile) {
-                window.location.href = "/BrandDashboard";
+                window.location.href = getPostSignupDestination("brand");
               } else {
-                window.location.href = "/AgencyDashboard";
+                window.location.href = getPostSignupDestination("agency");
               }
               return;
             }
@@ -479,7 +508,7 @@ export default function OrganizationSignup() {
     };
 
     handleVerifiedUser();
-  }, [flow, user, profile, toast]); // Rerun when user or profile state changes
+  }, [flow, getPostSignupDestination, user, profile, toast]); // Rerun when user or profile state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -902,11 +931,7 @@ export default function OrganizationSignup() {
               {/* Added Go to Dashboard button */}
               <Button
                 onClick={() => {
-                  if (flow === "brand") {
-                    window.location.href = "/BrandDashboard";
-                  } else {
-                    window.location.href = "/AgencyDashboard";
-                  }
+                  window.location.href = getPostSignupDestination(flow);
                 }}
                 variant="outline"
                 className="mt-4 w-full h-12 border-2 border-black rounded-none font-bold hover:bg-gray-100"

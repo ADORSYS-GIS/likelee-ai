@@ -215,6 +215,36 @@ pub async fn set_current_plan(pg: &Postgrest, user_id: &str, plan: Option<&str>)
     Ok(())
 }
 
+pub async fn has_stripe_credit_transaction(
+    pg: &Postgrest,
+    stripe_reference_id: &str,
+) -> Result<bool> {
+    let stripe_reference_id = stripe_reference_id.trim();
+    if stripe_reference_id.is_empty() {
+        return Ok(false);
+    }
+
+    let resp = pg
+        .from("studio_credit_transactions")
+        .select("id")
+        .eq("stripe_session_id", stripe_reference_id)
+        .limit(1)
+        .execute()
+        .await?;
+
+    if !resp.status().is_success() {
+        let error_text = resp.text().await?;
+        return Err(anyhow!(
+            "failed to check stripe credit transaction: {}",
+            error_text
+        ));
+    }
+
+    let body = resp.text().await?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&body)?;
+    Ok(!rows.is_empty())
+}
+
 /// Refund credits to wallet (e.g., on generation failure) atomically.
 /// Uses PostgreSQL RPC to ensure atomicity: both balance update and transaction
 /// record succeed together or roll back together.
@@ -251,17 +281,20 @@ pub async fn add_credits(
     amount: i64,
     stripe_session_id: Option<&str>,
 ) -> Result<i64> {
+    add_credits_with_reason(pg, user_id, amount, "purchase", stripe_session_id).await
+}
+
+pub async fn add_credits_with_reason(
+    pg: &Postgrest,
+    user_id: &str,
+    amount: i64,
+    reason: &str,
+    stripe_session_id: Option<&str>,
+) -> Result<i64> {
     // Use atomic RPC: positive delta for credit addition
-    let (_, balance_after) = call_adjust_wallet_credits(
-        pg,
-        user_id,
-        amount,
-        "purchase",
-        None,
-        None,
-        stripe_session_id,
-    )
-    .await?;
+    let (_, balance_after) =
+        call_adjust_wallet_credits(pg, user_id, amount, reason, None, None, stripe_session_id)
+            .await?;
 
     Ok(balance_after)
 }

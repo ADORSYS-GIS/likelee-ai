@@ -3,7 +3,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
+    errors::sanitize_db_error,
+};
 
 #[derive(Deserialize)]
 pub struct CreateBrandLicenseRequest {
@@ -45,6 +50,16 @@ pub async fn create(
         return Err((
             StatusCode::BAD_REQUEST,
             "creator_id and campaign_title are required".to_string(),
+        ));
+    }
+
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
         ));
     }
 
@@ -173,9 +188,6 @@ pub async fn create(
                 .to_string(),
         ));
     }
-
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
     tracing::info!(
         "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",

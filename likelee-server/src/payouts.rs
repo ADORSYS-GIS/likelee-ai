@@ -1573,6 +1573,44 @@ pub async fn stripe_webhook(
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
+            if billing_domain == "brand" {
+                let brand_id = obj
+                    .get("client_reference_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| {
+                        obj.get("metadata")
+                            .and_then(|m| m.get("brand_id"))
+                            .and_then(|v| v.as_str())
+                    })
+                    .unwrap_or("")
+                    .to_string();
+                let subscription_id = obj
+                    .get("subscription")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let customer_id = obj
+                    .get("customer")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !brand_id.is_empty() && !subscription_id.is_empty() {
+                    let _ = sync_brand_subscription_from_stripe(
+                        &state,
+                        &brand_id,
+                        &subscription_id,
+                        if customer_id.is_empty() {
+                            None
+                        } else {
+                            Some(customer_id.as_str())
+                        },
+                    )
+                    .await;
+                }
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             // Check if this is a payment link checkout
             let md = obj.get("metadata").cloned().unwrap_or(json!({}));
             let agency_id_from_meta = md
@@ -1664,6 +1702,36 @@ pub async fn stripe_webhook(
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
+            if billing_domain == "brand" {
+                let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                let customer_id = obj
+                    .get("customer")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let brand_id = obj
+                    .get("metadata")
+                    .and_then(|m| m.get("brand_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !brand_id.is_empty() && !subscription_id.trim().is_empty() {
+                    let _ = sync_brand_subscription_from_stripe(
+                        &state,
+                        &brand_id,
+                        subscription_id,
+                        if customer_id.is_empty() {
+                            None
+                        } else {
+                            Some(customer_id.as_str())
+                        },
+                    )
+                    .await;
+                }
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
             let customer_id = obj
                 .get("customer")
@@ -1698,6 +1766,11 @@ pub async fn stripe_webhook(
                 .cloned()
                 .unwrap_or(json!({}));
 
+            let invoice_id = obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             let subscription_id = obj
                 .get("subscription")
                 .and_then(|v| v.as_str())
@@ -1718,6 +1791,21 @@ pub async fn stripe_webhook(
                         None
                     } else {
                         Some(customer_id.as_str())
+                    },
+                )
+                .await;
+                let _ = handle_brand_invoice_paid(
+                    &state,
+                    &subscription_id,
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
+                    if invoice_id.is_empty() {
+                        None
+                    } else {
+                        Some(invoice_id.as_str())
                     },
                 )
                 .await;
@@ -1860,21 +1948,11 @@ async fn handle_studio_checkout_session_completed(
     }
 
     // Idempotency: if we've already recorded a purchase for this session, do nothing.
-    let existing_resp = state
-        .pg
-        .from("studio_credit_transactions")
-        .select("id")
-        .eq("stripe_session_id", &session_id)
-        .limit(1)
-        .execute()
+    if crate::studio::wallet::has_stripe_credit_transaction(&state.pg, &session_id)
         .await
-        .map_err(|e| e.to_string())?;
-    if existing_resp.status().is_success() {
-        let text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-        if !rows.is_empty() {
-            return Ok(());
-        }
+        .map_err(|e| e.to_string())?
+    {
+        return Ok(());
     }
 
     crate::studio::wallet::add_credits(&state.pg, &user_id, credits, Some(&session_id))
@@ -3530,6 +3608,315 @@ async fn sync_agency_subscription_from_stripe(
 
     info!(agency_id = %agency_id, plan_tier = %plan_tier, subscription_id = %subscription_id, "synced agency plan tier from stripe subscription");
     Ok(())
+}
+
+fn brand_subscription_to_plan_tier_from_price_id(
+    state: &AppState,
+    price_id: &str,
+) -> Option<&'static str> {
+    if (!state.stripe_brand_pro_price_id.trim().is_empty()
+        && price_id == state.stripe_brand_pro_price_id)
+        || (!state.stripe_brand_pro_annual_price_id.trim().is_empty()
+            && price_id == state.stripe_brand_pro_annual_price_id)
+    {
+        return Some("pro");
+    }
+    if (!state.stripe_brand_basic_price_id.trim().is_empty()
+        && price_id == state.stripe_brand_basic_price_id)
+        || (!state.stripe_brand_basic_annual_price_id.trim().is_empty()
+            && price_id == state.stripe_brand_basic_annual_price_id)
+    {
+        return Some("basic");
+    }
+    None
+}
+
+fn brand_subscription_to_plan_tier(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> Option<&'static str> {
+    for item in sub.items.data.iter() {
+        let price_id = item
+            .price
+            .as_ref()
+            .map(|p| p.id.to_string())
+            .unwrap_or_default();
+        if price_id.trim().is_empty() {
+            continue;
+        }
+        if let Some(tier) = brand_subscription_to_plan_tier_from_price_id(state, price_id.trim()) {
+            return Some(tier);
+        }
+    }
+    None
+}
+
+fn brand_subscription_has_studio_addon(state: &AppState, sub: &stripe_sdk::Subscription) -> bool {
+    if state.stripe_brand_studio_addon_price_id.trim().is_empty() {
+        return false;
+    }
+
+    sub.items.data.iter().any(|item| {
+        item.price
+            .as_ref()
+            .map(|price| price.id.to_string() == state.stripe_brand_studio_addon_price_id)
+            .unwrap_or(false)
+    })
+}
+
+fn brand_subscription_target(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> Option<&'static str> {
+    match sub.metadata.get("billing_target").map(|s| s.trim()) {
+        Some("base") => return Some("base"),
+        Some("studio_addon") => return Some("studio_addon"),
+        _ => {}
+    }
+
+    if brand_subscription_to_plan_tier(state, sub).is_some() {
+        return Some("base");
+    }
+    if brand_subscription_has_studio_addon(state, sub) {
+        return Some("studio_addon");
+    }
+    None
+}
+
+fn brand_subscription_studio_plan(sub: &stripe_sdk::Subscription) -> String {
+    let plan = sub
+        .metadata
+        .get("studio_plan")
+        .map(|value| value.trim().to_lowercase())
+        .filter(|value| value == "lite" || value == "pro");
+
+    plan.unwrap_or_else(|| crate::billing::BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string())
+}
+
+fn brand_subscription_studio_credits(sub: &stripe_sdk::Subscription) -> i64 {
+    sub.metadata
+        .get("studio_credits")
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|credits| *credits > 0)
+        .unwrap_or(crate::billing::BRAND_STUDIO_ADDON_STUDIO_CREDITS)
+}
+
+async fn sync_brand_subscription_from_subscription(
+    state: &AppState,
+    brand_id: &str,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+    sub: &stripe_sdk::Subscription,
+) -> Result<(), String> {
+    let Some(target) = brand_subscription_target(state, sub) else {
+        return Ok(());
+    };
+
+    let price_id = sub
+        .items
+        .data
+        .first()
+        .and_then(|i| i.price.as_ref())
+        .map(|p| p.id.to_string())
+        .unwrap_or_default();
+    let status = sub.status.to_string();
+    let cancel_at_period_end = sub.cancel_at_period_end;
+    let current_period_end =
+        chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
+            .map(|dt| dt.to_rfc3339());
+    let trial_end = sub
+        .trial_end
+        .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
+        .map(|dt| dt.to_rfc3339());
+
+    let mut update = serde_json::Map::new();
+    if let Some(cust) = customer_id {
+        if !cust.trim().is_empty() {
+            update.insert("stripe_customer_id".into(), json!(cust));
+        }
+    }
+
+    if target == "base" {
+        let tier = brand_subscription_to_plan_tier(state, sub);
+        let plan_tier = match (tier, status.as_str()) {
+            (Some(t), "active") | (Some(t), "trialing") => t,
+            _ => "free",
+        };
+
+        update.insert("plan_tier".into(), json!(plan_tier));
+        update.insert("stripe_subscription_id".into(), json!(subscription_id));
+        update.insert("subscription_status".into(), json!(status));
+        update.insert(
+            "subscription_current_period_end".into(),
+            current_period_end
+                .map(|dt| json!(dt))
+                .unwrap_or(serde_json::Value::Null),
+        );
+        update.insert(
+            "subscription_cancel_at_period_end".into(),
+            json!(cancel_at_period_end),
+        );
+        update.insert(
+            "subscription_trial_end".into(),
+            trial_end
+                .map(|dt| json!(dt))
+                .unwrap_or(serde_json::Value::Null),
+        );
+        update.insert(
+            "plan_updated_at".into(),
+            json!(chrono::Utc::now().to_rfc3339()),
+        );
+
+        let _ = state
+            .pg
+            .from("brands")
+            .eq("id", brand_id)
+            .update(serde_json::Value::Object(update).to_string())
+            .execute()
+            .await;
+
+        info!(
+            brand_id = %brand_id,
+            plan_tier = %plan_tier,
+            subscription_id = %subscription_id,
+            "synced brand base subscription from stripe subscription"
+        );
+        return Ok(());
+    }
+
+    let studio_addon_active = matches!(status.as_str(), "active" | "trialing");
+    update.insert("studio_addon_active".into(), json!(studio_addon_active));
+    update.insert(
+        "studio_addon_subscription_id".into(),
+        json!(subscription_id),
+    );
+    update.insert("studio_addon_status".into(), json!(status));
+    update.insert(
+        "studio_addon_current_period_end".into(),
+        current_period_end
+            .map(|dt| json!(dt))
+            .unwrap_or(serde_json::Value::Null),
+    );
+    update.insert(
+        "studio_addon_cancel_at_period_end".into(),
+        json!(cancel_at_period_end),
+    );
+    update.insert(
+        "studio_addon_updated_at".into(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+
+    let _ = state
+        .pg
+        .from("brands")
+        .eq("id", brand_id)
+        .update(serde_json::Value::Object(update).to_string())
+        .execute()
+        .await;
+
+    info!(
+        brand_id = %brand_id,
+        subscription_id = %subscription_id,
+        price_id = %price_id,
+        active = studio_addon_active,
+        "synced brand studio add-on from stripe subscription"
+    );
+    Ok(())
+}
+
+async fn sync_brand_subscription_from_stripe(
+    state: &AppState,
+    brand_id: &str,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+    sync_brand_subscription_from_subscription(state, brand_id, subscription_id, customer_id, &sub)
+        .await
+}
+
+async fn provision_brand_studio_addon_from_invoice(
+    state: &AppState,
+    brand_id: &str,
+    invoice_id: &str,
+    sub: &stripe_sdk::Subscription,
+) -> Result<(), String> {
+    if brand_subscription_target(state, sub) != Some("studio_addon") {
+        return Ok(());
+    }
+
+    if !matches!(sub.status.to_string().as_str(), "active" | "trialing") {
+        return Ok(());
+    }
+
+    let invoice_id = invoice_id.trim();
+    if invoice_id.is_empty() {
+        return Ok(());
+    }
+
+    if crate::studio::wallet::has_stripe_credit_transaction(&state.pg, invoice_id)
+        .await
+        .map_err(|e| e.to_string())?
+    {
+        return Ok(());
+    }
+
+    let credits = brand_subscription_studio_credits(sub);
+    if credits <= 0 {
+        return Ok(());
+    }
+    let plan = brand_subscription_studio_plan(sub);
+
+    crate::studio::wallet::add_credits_with_reason(
+        &state.pg,
+        brand_id,
+        credits,
+        "brand_studio_addon",
+        Some(invoice_id),
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let _ = crate::studio::wallet::set_current_plan(&state.pg, brand_id, Some(plan.as_str())).await;
+
+    info!(
+        brand_id = %brand_id,
+        invoice_id = %invoice_id,
+        credits = credits,
+        plan = %plan,
+        "provisioned brand studio add-on studio plan from invoice"
+    );
+    Ok(())
+}
+
+async fn handle_brand_invoice_paid(
+    state: &AppState,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+    invoice_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+    let brand_id = sub.metadata.get("brand_id").cloned().unwrap_or_default();
+    if brand_id.trim().is_empty() {
+        return Ok(());
+    }
+
+    sync_brand_subscription_from_subscription(
+        state,
+        brand_id.trim(),
+        subscription_id,
+        customer_id,
+        &sub,
+    )
+    .await?;
+
+    provision_brand_studio_addon_from_invoice(
+        state,
+        brand_id.trim(),
+        invoice_id.unwrap_or(""),
+        &sub,
+    )
+    .await
 }
 
 #[derive(Deserialize)]

@@ -157,6 +157,11 @@ async fn main() {
         stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+        stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
+        stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
+        stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
+        stripe_brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
+        stripe_brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
