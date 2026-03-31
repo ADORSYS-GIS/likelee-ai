@@ -3,6 +3,106 @@
 
 BEGIN;
 
+-- Rename weekly licensing rate columns to monthly
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_talent_relationships'
+      AND column_name = 'licensing_rate_weekly_cents'
+  ) THEN
+    ALTER TABLE public.agency_talent_relationships
+      RENAME COLUMN licensing_rate_weekly_cents TO licensing_rate_monthly_cents;
+
+    ALTER TABLE public.agency_talent_relationships
+      DROP CONSTRAINT IF EXISTS agency_talent_relationships_licensing_rate_non_negative;
+    ALTER TABLE public.agency_talent_relationships
+      ADD CONSTRAINT agency_talent_relationships_licensing_rate_non_negative
+      CHECK (
+        licensing_rate_monthly_cents IS NULL
+        OR licensing_rate_monthly_cents >= 0
+      );
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_users'
+      AND column_name = 'licensing_rate_weekly_cents'
+  ) THEN
+    ALTER TABLE public.agency_users
+      RENAME COLUMN licensing_rate_weekly_cents TO licensing_rate_monthly_cents;
+
+  ELSIF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_users'
+      AND column_name = 'licensing_rate_monthly_cents'
+  ) THEN
+    ALTER TABLE public.agency_users
+      ADD COLUMN licensing_rate_monthly_cents bigint;
+
+    ALTER TABLE public.agency_users
+      DROP CONSTRAINT IF EXISTS agency_users_licensing_rate_weekly_cents_non_negative;
+    ALTER TABLE public.agency_users
+      DROP CONSTRAINT IF EXISTS agency_users_licensing_rate_monthly_cents_non_negative;
+    ALTER TABLE public.agency_users
+      ADD CONSTRAINT agency_users_licensing_rate_monthly_cents_non_negative
+      CHECK (
+        licensing_rate_monthly_cents IS NULL
+        OR licensing_rate_monthly_cents >= 0
+      );
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'base_rate_weekly_cents'
+  ) THEN
+    ALTER TABLE public.licensing_requests
+      RENAME COLUMN base_rate_weekly_cents TO base_rate_monthly_cents;
+
+    ALTER TABLE public.licensing_requests
+      DROP CONSTRAINT IF EXISTS licensing_requests_base_rate_weekly_cents_non_negative;
+    ALTER TABLE public.licensing_requests
+      DROP CONSTRAINT IF EXISTS licensing_requests_base_rate_monthly_cents_non_negative;
+    ALTER TABLE public.licensing_requests
+      ADD CONSTRAINT licensing_requests_base_rate_monthly_cents_non_negative
+      CHECK (
+        base_rate_monthly_cents IS NULL
+        OR base_rate_monthly_cents >= 0
+      );
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'licensing_requests'
+      AND column_name = 'offered_rate_weekly_cents'
+  ) THEN
+    ALTER TABLE public.licensing_requests
+      RENAME COLUMN offered_rate_weekly_cents TO offered_rate_monthly_cents;
+
+    ALTER TABLE public.licensing_requests
+      DROP CONSTRAINT IF EXISTS licensing_requests_offered_rate_weekly_cents_non_negative;
+    ALTER TABLE public.licensing_requests
+      DROP CONSTRAINT IF EXISTS licensing_requests_offered_rate_monthly_cents_non_negative;
+    ALTER TABLE public.licensing_requests
+      ADD CONSTRAINT licensing_requests_offered_rate_monthly_cents_non_negative
+      CHECK (
+        offered_rate_monthly_cents IS NULL
+        OR offered_rate_monthly_cents >= 0
+      );
+  END IF;
+END $$;
+
 -- Drop the partial index that prevents standard ON CONFLICT targeting
 DROP INDEX IF EXISTS public.uq_agency_talent_relationships_agency_talent;
 

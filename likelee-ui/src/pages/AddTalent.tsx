@@ -114,13 +114,12 @@ export default function AddTalent() {
     voice_sample: null,
 
     // Social
-    instagram_connected: false,
     instagram_handle: "",
 
     // Notes
     bio: "",
     special_skills: "",
-    licensing_rate_weekly_usd: "",
+    licensing_rate_monthly_usd: "",
     accept_negotiations: true,
   });
 
@@ -164,8 +163,8 @@ export default function AddTalent() {
   const photoInputRef = useRef(null);
   const voiceInputRef = useRef(null);
 
-  const handleHeroUpload = (e) => {
-    const file = e.target.files[0];
+  const handleHeroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files?.[0] as File | undefined) ?? undefined;
     if (file) {
       setUploading(true);
       setTimeout(() => {
@@ -182,16 +181,16 @@ export default function AddTalent() {
     }
   };
 
-  const handlePhotosUpload = (e) => {
+  const handlePhotosUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e?.target;
-    const files = Array.from((input?.files || []) as any);
+    const files = Array.from(input?.files || []) as File[];
     if (input) {
       input.value = "";
     }
     if (files.length > 0) {
       setUploading(true);
       setTimeout(() => {
-        const newPhotos = files.map((file) => ({
+        const newPhotos = files.map((file: File) => ({
           url: URL.createObjectURL(file),
           name: file.name,
           file,
@@ -209,8 +208,8 @@ export default function AddTalent() {
     }
   };
 
-  const handleVoiceUpload = (e) => {
-    const file = e.target.files[0];
+  const handleVoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files?.[0] as File | undefined) ?? undefined;
     if (file) {
       setUploadingVoice(true);
       setTimeout(() => {
@@ -259,29 +258,18 @@ export default function AddTalent() {
     return age >= 18;
   };
 
-  const handleConnectInstagram = () => {
-    // Demo mode - simulate connection
-    setFormData({
-      ...formData,
-      instagram_connected: true,
-      instagram_handle: "@talent_handle",
-    });
-    toast({ title: "Info", description: "Instagram connected! (Demo mode)" });
-  };
-
   const toggleEthnicity = (ethnicity) => {
-    const current = formData.ethnicity;
-    if (current.includes(ethnicity)) {
-      setFormData({
-        ...formData,
-        ethnicity: current.filter((e) => e !== ethnicity),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        ethnicity: [...current, ethnicity],
-      });
-    }
+    setFormData((prev) => {
+      const exists = prev.ethnicity.includes(ethnicity);
+      if (exists) {
+        return {
+          ...prev,
+          ethnicity: prev.ethnicity.filter((e) => e !== ethnicity),
+        };
+      } else {
+        return { ...prev, ethnicity: [...prev.ethnicity, ethnicity] };
+      }
+    });
   };
 
   const toggleRoleCategory = (category) => {
@@ -420,8 +408,8 @@ export default function AddTalent() {
         country: formData.country,
         organization: formData.organization,
         sports: formData.sports,
-        licensing_rate_weekly_cents: Math.round(
-          Number(formData.licensing_rate_weekly_usd || 0) * 100,
+        licensing_rate_monthly_cents: Math.round(
+          Number(formData.licensing_rate_monthly_usd || 0) * 100,
         ),
         accept_negotiations: !!formData.accept_negotiations,
         rate_currency: "USD",
@@ -469,7 +457,7 @@ export default function AddTalent() {
     formData.email &&
     formData.birthdate &&
     isAtLeast18(formData.birthdate) &&
-    Number(formData.licensing_rate_weekly_usd || 0) > 0;
+    Number(formData.licensing_rate_monthly_usd || 0) > 0;
   const canProceedStep2 =
     formData.gender &&
     formData.ethnicity.length > 0 &&
@@ -766,22 +754,22 @@ export default function AddTalent() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label
-                    htmlFor="licensing_rate_weekly_usd"
+                    htmlFor="licensing_rate_monthly_usd"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Licensing Rate (USD/week){" "}
+                    Licensing Rate (USD/month){" "}
                     <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id="licensing_rate_weekly_usd"
+                    id="licensing_rate_monthly_usd"
                     type="number"
                     min="1"
                     step="1"
-                    value={formData.licensing_rate_weekly_usd}
+                    value={formData.licensing_rate_monthly_usd}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        licensing_rate_weekly_usd: e.target.value,
+                        licensing_rate_monthly_usd: e.target.value,
                       })
                     }
                     className="border-2 border-gray-300"
@@ -1433,28 +1421,20 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Instagram Account
                 </Label>
-                {!formData.instagram_connected ? (
-                  <Button
-                    onClick={handleConnectInstagram}
-                    className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white"
-                  >
-                    <Instagram className="w-5 h-5 mr-2" />
-                    Connect Instagram
-                  </Button>
-                ) : (
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Instagram className="w-6 h-6 text-purple-600" />
-                      <div>
-                        <p className="font-bold text-gray-900">
-                          {formData.instagram_handle}
-                        </p>
-                        <p className="text-sm text-gray-600">Connected</p>
-                      </div>
-                    </div>
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  </div>
-                )}
+                <div className="relative">
+                  <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    value={formData.instagram_handle}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        instagram_handle: e.target.value,
+                      })
+                    }
+                    placeholder="@handle"
+                    className="pl-10 h-12"
+                  />
+                </div>
               </div>
 
               <Alert className="bg-blue-50 border-2 border-blue-200">

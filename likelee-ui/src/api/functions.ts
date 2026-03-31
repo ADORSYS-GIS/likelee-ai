@@ -155,7 +155,7 @@ export const createBrandCampaignLicenseRequest = (
   data: {
     collaborator_type: "agency" | "creator";
     target_id: string;
-    offered_rate_weekly_cents?: number;
+    offered_rate_monthly_cents?: number;
     rate_currency?: string;
     campaign_title?: string;
     usage_scope?: string;
