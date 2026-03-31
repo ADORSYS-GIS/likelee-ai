@@ -159,6 +159,8 @@ async fn main() {
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
         stripe_creator_basic_price_id: cfg.stripe_creator_basic_price_id.clone(),
         stripe_creator_pro_price_id: cfg.stripe_creator_pro_price_id.clone(),
+        stripe_creator_basic_annual_price_id: cfg.stripe_creator_basic_annual_price_id.clone(),
+        stripe_creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",

@@ -238,6 +238,8 @@ pub struct AgencyCheckoutResponse {
 #[derive(Debug, Deserialize)]
 pub struct CreatorCheckoutRequest {
     pub plan: String,
+    #[serde(default)]
+    pub interval: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -253,6 +255,9 @@ pub struct CreatorBillingStatusResponse {
     pub stripe_customer_id: Option<String>,
     pub stripe_subscription_id: Option<String>,
     pub plan_updated_at: Option<String>,
+    pub plan_interval: String,
+    pub stripe_current_period_end: Option<String>,
+    pub stripe_cancel_at_period_end: bool,
     pub category_limit: Option<usize>,
     pub can_use_kyc: bool,
     pub can_use_likeness: bool,
@@ -299,6 +304,37 @@ fn creator_plan_to_price_env_var(plan: &str) -> Option<&'static str> {
     match plan.trim().to_lowercase().as_str() {
         "basic" => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
         "pro" => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_id_with_interval(
+    state: &AppState,
+    plan: &str,
+    interval: &str,
+) -> Option<String> {
+    let plan = plan.trim().to_lowercase();
+    let interval = interval.trim().to_lowercase();
+    match (plan.as_str(), interval.as_str()) {
+        ("basic", "year") => Some(state.stripe_creator_basic_annual_price_id.clone()),
+        ("pro", "year") => Some(state.stripe_creator_pro_annual_price_id.clone()),
+        ("basic", "month") => Some(state.stripe_creator_basic_price_id.clone()),
+        ("pro", "month") => Some(state.stripe_creator_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_env_var_with_interval(
+    plan: &str,
+    interval: &str,
+) -> Option<&'static str> {
+    let plan = plan.trim().to_lowercase();
+    let interval = interval.trim().to_lowercase();
+    match (plan.as_str(), interval.as_str()) {
+        ("basic", "year") => Some("STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID"),
+        ("pro", "year") => Some("STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID"),
+        ("basic", "month") => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
+        ("pro", "month") => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
         _ => None,
     }
 }
@@ -559,9 +595,23 @@ pub async fn create_creator_subscription_checkout(
         return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
     }
 
-    let price_id = creator_plan_to_price_id(&state, &plan).unwrap_or_default();
+    let interval = payload
+        .interval
+        .as_deref()
+        .unwrap_or("month")
+        .trim()
+        .to_lowercase();
+    if interval != "month" && interval != "year" {
+        return Err((StatusCode::BAD_REQUEST, "invalid_creator_interval".to_string()));
+    }
+
+    let price_id = creator_plan_to_price_id_with_interval(&state, &plan, &interval)
+        .or_else(|| creator_plan_to_price_id(&state, &plan))
+        .unwrap_or_default();
     if price_id.trim().is_empty() {
-        let env_var = creator_plan_to_price_env_var(&plan).unwrap_or("creator");
+        let env_var = creator_plan_to_price_env_var_with_interval(&plan, &interval)
+            .or_else(|| creator_plan_to_price_env_var(&plan))
+            .unwrap_or("creator");
         return Err((
             StatusCode::PRECONDITION_FAILED,
             format!("{env_var}_not_configured"),
@@ -769,6 +819,7 @@ pub async fn create_creator_subscription_checkout(
     md.insert("creator_id".to_string(), creator_id.clone());
     md.insert("billing_domain".to_string(), "creator".to_string());
     md.insert("plan_tier".to_string(), plan.clone());
+    md.insert("interval".to_string(), interval.clone());
     cs_params.metadata = Some(md.clone());
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
         metadata: Some(md),
@@ -805,7 +856,7 @@ pub async fn get_creator_billing_status(
     let resp = state
         .pg
         .from("creators")
-        .select("plan_tier,stripe_customer_id,stripe_subscription_id,plan_updated_at")
+        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end")
         .eq("id", &creator_id)
         .limit(1)
         .execute()
@@ -851,6 +902,19 @@ pub async fn get_creator_billing_status(
             .get("plan_updated_at")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
+        plan_interval: row
+            .get("plan_interval")
+            .and_then(|v| v.as_str())
+            .unwrap_or("month")
+            .to_string(),
+        stripe_current_period_end: row
+            .get("stripe_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_cancel_at_period_end: row
+            .get("stripe_cancel_at_period_end")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
         category_limit: creator_category_limit(tier),
         can_use_kyc: creator_has_kyc_access(tier),
         can_use_likeness: creator_has_likeness_access(tier),

@@ -339,6 +339,21 @@ Configuration variables:
 - `STRIPE_CHECKOUT_CANCEL_URL`
   - URL Stripe redirects to after checkout is canceled.
 
+### Stripe Subscriptions (Creator Billing)
+
+- `STRIPE_CREATOR_BASIC_PRICE_ID`
+  - Stripe Price ID for Creator Basic monthly plan.
+- `STRIPE_CREATOR_PRO_PRICE_ID`
+  - Stripe Price ID for Creator Pro monthly plan.
+- `STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID`
+  - Stripe Price ID for Creator Basic annual plan (recurring interval = year).
+- `STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID`
+  - Stripe Price ID for Creator Pro annual plan (recurring interval = year).
+- `STRIPE_CREATOR_SUCCESS_URL`
+  - URL Stripe redirects to after successful creator checkout.
+- `STRIPE_CREATOR_CANCEL_URL`
+  - URL Stripe redirects to after canceled creator checkout.
+
 ### Stripe (Studio credit packs)
 
 - `STRIPE_STUDIO_SUCCESS_URL`

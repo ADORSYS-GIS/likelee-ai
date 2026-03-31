@@ -16,8 +16,29 @@ export default function CreatorSubscribe() {
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
+  const billingParam = String(searchParams.get("billing") || "").trim();
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string>("free");
   const [checkingOut, setCheckingOut] = React.useState(false);
+  const [billingInfo, setBillingInfo] = React.useState<{
+    current_period_end?: string;
+    cancel_at_period_end?: boolean;
+    plan_interval?: string;
+  }>({});
+
+  const [billingInterval, setBillingInterval] = React.useState<"month" | "year">(
+    "month",
+  );
+
+  const pricing = {
+    basic: {
+      month: 25,
+      year: 20, // $240/yr
+    },
+    pro: {
+      month: 50,
+      year: 40, // $480/yr
+    },
+  };
 
   const canSelectBasic = !checkingOut && currentPlanTier !== "basic";
   const canSelectPro = !checkingOut && currentPlanTier !== "pro";
@@ -101,13 +122,60 @@ export default function CreatorSubscribe() {
     async function loadStatus() {
       try {
         const resp = await getCreatorBillingStatus();
-        setCurrentPlanTier(String((resp as any)?.plan_tier || "free"));
+        const tier = String((resp as any)?.plan_tier || "free");
+        const interval = String((resp as any)?.plan_interval || "month");
+        
+        setCurrentPlanTier(tier);
+        setBillingInfo({
+          current_period_end: (resp as any)?.stripe_current_period_end,
+          cancel_at_period_end: (resp as any)?.stripe_cancel_at_period_end,
+          plan_interval: (resp as any)?.plan_interval,
+        });
+        
+        // If they have an active plan, sync the toggle to their current interval
+        if (tier !== "free") {
+          setBillingInterval(interval === "year" ? "year" : "month");
+        }
       } catch (error) {
         console.error("Failed to load creator billing status", error);
       }
     }
     void loadStatus();
   }, []);
+
+  React.useEffect(() => {
+    const key = "creator_billing_interval";
+    const fromUrl = billingParam.toLowerCase();
+    if (fromUrl === "monthly") {
+      setBillingInterval("month");
+      try {
+        window.localStorage.setItem(key, "month");
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    if (fromUrl === "annual") {
+      setBillingInterval("year");
+      try {
+        window.localStorage.setItem(key, "year");
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      const stored = String(window.localStorage.getItem(key) || "").trim();
+      if (stored === "year") {
+        setBillingInterval("year");
+      } else {
+        setBillingInterval("month");
+      }
+    } catch {
+      setBillingInterval("month");
+    }
+  }, [billingParam]);
 
   React.useEffect(() => {
     if (success) {
@@ -120,7 +188,10 @@ export default function CreatorSubscribe() {
   const onCheckout = async (plan: "basic" | "pro") => {
     setCheckingOut(true);
     try {
-      const resp = await createCreatorSubscriptionCheckout({ plan });
+      const resp = await createCreatorSubscriptionCheckout({
+        plan,
+        interval: billingInterval,
+      });
       const url = String((resp as any)?.checkout_url || "");
       if (!url) {
         throw new Error("No checkout URL returned.");
@@ -157,8 +228,97 @@ export default function CreatorSubscribe() {
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             <Badge variant="outline" className="bg-white/80">
-              Plans are billed monthly
+              Plans are billed {billingInterval === "year" ? "annually" : "monthly"}
             </Badge>
+            <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
+              <button
+                type="button"
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  billingInterval === "month"
+                    ? "bg-[#E9FBFB] text-[#0B9DA2]"
+                    : "text-[#6D7F97] hover:text-[#17315F]"
+                }`}
+                onClick={() => {
+                  const next = "month" as const;
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem("creator_billing_interval", next);
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                Monthly
+              </button>
+              <div
+                className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors ${
+                  billingInterval === "year" ? "bg-[#0B9DA2]/15" : "bg-[#F5F7FA]"
+                }`}
+                role="switch"
+                aria-checked={billingInterval === "year"}
+                tabIndex={0}
+                onClick={() => {
+                  const next = billingInterval === "year" ? "month" : "year";
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem("creator_billing_interval", next);
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", next === "year" ? "annual" : "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  const next = billingInterval === "year" ? "month" : "year";
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem("creator_billing_interval", next);
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", next === "year" ? "annual" : "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                <div
+                  className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    billingInterval === "year" ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </div>
+              <button
+                type="button"
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  billingInterval === "year"
+                    ? "bg-[#E9FBFB] text-[#0B9DA2]"
+                    : "text-[#6D7F97] hover:text-[#17315F]"
+                }`}
+                onClick={() => {
+                  const next = "year" as const;
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem("creator_billing_interval", next);
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", "annual");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                Annual
+              </button>
+              <Badge className="ml-1 border border-emerald-200 bg-emerald-100 text-emerald-700">
+                SAVE 20%
+              </Badge>
+            </div>
             {success && (
               <Badge className="border border-emerald-200 bg-emerald-100 text-emerald-700">
                 Subscription started
@@ -170,6 +330,21 @@ export default function CreatorSubscribe() {
               </Badge>
             )}
           </div>
+          {currentPlanTier !== "free" && billingInfo.current_period_end && (
+            <div className="mt-8 flex flex-col items-center gap-2">
+              <div className="text-sm font-medium text-[#56708F]">
+                Current Plan: <span className="font-bold text-[#17315F] uppercase">{currentPlanTier}</span> ({billingInfo.plan_interval === "year" ? "Annual" : "Monthly"})
+              </div>
+              <Badge variant="secondary" className="bg-[#F0F4F8] text-[#56708F] border-[#D9E4F1]">
+                {billingInfo.cancel_at_period_end ? "Expires on " : "Renews on "}
+                {new Date(billingInfo.current_period_end).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Badge>
+            </div>
+          )}
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -210,10 +385,10 @@ export default function CreatorSubscribe() {
               <div className="min-w-[98px] pt-3 text-left">
                 <div className="text-[20px] leading-none text-[#526A8A]">$</div>
                 <div className="-mt-1 text-[58px] font-black leading-none tracking-[-0.06em] text-[#17315F]">
-                  25
+                  {pricing.basic[billingInterval]}
                 </div>
                 <div className="mt-1 text-[15px] leading-6 text-[#A9B6C8]">
-                  per month
+                  per month {billingInterval === "year" ? "(billed annually)" : ""}
                 </div>
               </div>
             </div>
@@ -322,10 +497,10 @@ export default function CreatorSubscribe() {
               <div className="min-w-[98px] pt-3 text-left">
                 <div className="text-[20px] leading-none text-[#B7C8DD]">$</div>
                 <div className="-mt-1 text-[58px] font-black leading-none tracking-[-0.06em] text-white">
-                  50
+                  {pricing.pro[billingInterval]}
                 </div>
                 <div className="mt-1 text-[15px] leading-6 text-[#9EB2CA]">
-                  per month
+                  per month {billingInterval === "year" ? "(billed annually)" : ""}
                 </div>
               </div>
             </div>
@@ -383,9 +558,11 @@ export default function CreatorSubscribe() {
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-[#89A0B9]">
                     Feature
                   </th>
-                  <th className="px-6 py-4 text-sm font-bold">Basic — $25/mo</th>
+                  <th className="px-6 py-4 text-sm font-bold">
+                    Basic — ${pricing.basic[billingInterval]}/mo
+                  </th>
                   <th className="bg-[#173562] px-6 py-4 text-sm font-bold text-white">
-                    Pro — $50/mo
+                    Pro — ${pricing.pro[billingInterval]}/mo
                   </th>
                 </tr>
               </thead>

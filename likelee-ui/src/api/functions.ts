@@ -149,6 +149,7 @@ export const createAgencySubscriptionCheckout = (data: {
 
 export const createCreatorSubscriptionCheckout = (data: {
   plan: "basic" | "pro";
+  interval?: "month" | "year";
 }) => base44Client.post(`/creator/billing/checkout`, data);
 
 export const getCreatorBillingStatus = () =>

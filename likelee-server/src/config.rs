@@ -143,6 +143,12 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_CREATOR_PRO_PRICE_ID", default = "")]
     pub stripe_creator_pro_price_id: String,
 
+    #[envconfig(from = "STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_basic_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_pro_annual_price_id: String,
+
     #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
     pub stripe_checkout_success_url: String,
 
@@ -301,6 +307,8 @@ pub struct AppState {
     pub stripe_agency_pro_base_price_id: String,
     pub stripe_creator_basic_price_id: String,
     pub stripe_creator_pro_price_id: String,
+    pub stripe_creator_basic_annual_price_id: String,
+    pub stripe_creator_pro_annual_price_id: String,
     pub stripe_checkout_success_url: String,
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,

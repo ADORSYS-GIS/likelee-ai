@@ -3430,13 +3430,13 @@ fn stripe_subscription_to_plan_tier_from_price_id(
     state: &AppState,
     price_id: &str,
 ) -> Option<&'static str> {
-    if !state.stripe_creator_pro_price_id.trim().is_empty()
-        && price_id == state.stripe_creator_pro_price_id
+    if (!state.stripe_creator_pro_price_id.trim().is_empty() && price_id == state.stripe_creator_pro_price_id)
+        || (!state.stripe_creator_pro_annual_price_id.trim().is_empty() && price_id == state.stripe_creator_pro_annual_price_id)
     {
         return Some("pro");
     }
-    if !state.stripe_creator_basic_price_id.trim().is_empty()
-        && price_id == state.stripe_creator_basic_price_id
+    if (!state.stripe_creator_basic_price_id.trim().is_empty() && price_id == state.stripe_creator_basic_price_id)
+        || (!state.stripe_creator_basic_annual_price_id.trim().is_empty() && price_id == state.stripe_creator_basic_annual_price_id)
     {
         return Some("basic");
     }
@@ -3461,6 +3461,18 @@ fn stripe_subscription_to_plan_tier_from_price_id(
         return Some("basic");
     }
     None
+}
+
+fn stripe_subscription_to_interval_from_price_id(
+    state: &AppState,
+    price_id: &str,
+) -> &'static str {
+    if (!state.stripe_creator_pro_annual_price_id.trim().is_empty() && price_id == state.stripe_creator_pro_annual_price_id)
+        || (!state.stripe_creator_basic_annual_price_id.trim().is_empty() && price_id == state.stripe_creator_basic_annual_price_id)
+    {
+        return "year";
+    }
+    "month"
 }
 
 fn stripe_subscription_to_plan_tier(
@@ -3650,16 +3662,35 @@ async fn sync_creator_subscription_from_stripe(
         .map(|p| p.id.to_string())
         .unwrap_or_default();
     let status = sub.status.to_string();
-    let plan_tier = match (
+    let (plan_tier, plan_interval) = match (
         stripe_subscription_to_plan_tier(state, &sub),
         status.as_str(),
     ) {
-        (Some(t), "active") | (Some(t), "trialing") => t,
-        _ => "free",
+        (Some(t), "active") | (Some(t), "trialing") => {
+            let interval = sub
+                .items
+                .data
+                .first()
+                .and_then(|i| i.price.as_ref())
+                .map(|p| stripe_subscription_to_interval_from_price_id(state, p.id.as_str()))
+                .unwrap_or("month");
+            (t, interval)
+        }
+        _ => ("free", "month"),
     };
+
+    let cancel_at_period_end = sub.cancel_at_period_end;
+    let current_period_end =
+        chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
+            .map(|dt| dt.to_rfc3339());
 
     let mut update = serde_json::Map::new();
     update.insert("plan_tier".into(), json!(plan_tier));
+    update.insert("plan_interval".into(), json!(plan_interval));
+    update.insert("stripe_cancel_at_period_end".into(), json!(cancel_at_period_end));
+    if let Some(cpe) = current_period_end {
+        update.insert("stripe_current_period_end".into(), json!(cpe));
+    }
     update.insert("stripe_subscription_id".into(), json!(subscription_id));
     update.insert(
         "plan_updated_at".into(),
