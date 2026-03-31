@@ -4,13 +4,14 @@ use crate::{
     auth::RoleGuard,
     config::AppState,
     entitlements::{
-        creator_category_limit, creator_has_active_campaigns_access, creator_has_advanced_analytics,
-        creator_has_agency_connection_access, creator_has_brand_connection_access,
-        creator_has_campaign_archive_access, creator_has_cameo_uploads, creator_has_jobs_access,
-        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
-        creator_has_rules_access, creator_has_talent_portal_access,
-        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
-        creator_voice_tone_limit, get_creator_entitlement_tier_for_user,
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
+        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
+        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
+        creator_has_voice_profiles, creator_voice_tone_limit,
+        get_creator_entitlement_tier_for_user,
     },
 };
 use axum::{

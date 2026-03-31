@@ -9,14 +9,14 @@ use crate::{
     auth::AuthUser,
     config::AppState,
     entitlements::{
-        creator_category_limit, creator_has_active_campaigns_access, creator_has_advanced_analytics,
-        creator_has_agency_connection_access, creator_has_brand_connection_access,
-        creator_has_campaign_archive_access, creator_has_cameo_uploads, creator_has_jobs_access,
-        creator_has_kyc_access, creator_has_likeness_access, creator_has_payouts_access,
-        creator_has_rules_access, creator_has_talent_portal_access,
-        creator_has_unauthorized_use_monitoring, creator_has_voice_profiles,
-        creator_voice_tone_limit, get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user,
-        PlanTier,
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
+        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
+        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
+        creator_has_voice_profiles, creator_voice_tone_limit,
+        get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, PlanTier,
     },
 };
 
@@ -910,9 +910,7 @@ pub async fn get_creator_billing_status(
     };
 
     let trial_ends_at = trial_ends_at_dt.map(|dt| dt.to_rfc3339());
-    let trial_active = trial_ends_at_dt
-        .map(|dt| dt > Utc::now())
-        .unwrap_or(false);
+    let trial_active = trial_ends_at_dt.map(|dt| dt > Utc::now()).unwrap_or(false);
 
     Ok(Json(CreatorBillingStatusResponse {
         creator_id,

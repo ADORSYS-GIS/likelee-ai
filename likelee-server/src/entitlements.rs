@@ -156,21 +156,24 @@ async fn get_creator_created_at(
         .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
         .unwrap_or(json!({}));
 
-    let dt = row.get("created_at").and_then(|v| v.as_str()).and_then(|s| {
-        DateTime::parse_from_rfc3339(s)
-            .map(|dt| dt.with_timezone(&Utc))
-            .ok()
-            .or_else(|| {
-                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
-                    .ok()
-                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
-            })
-            .or_else(|| {
-                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
-                    .ok()
-                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
-            })
-    });
+    let dt = row
+        .get("created_at")
+        .and_then(|v| v.as_str())
+        .and_then(|s| {
+            DateTime::parse_from_rfc3339(s)
+                .map(|dt| dt.with_timezone(&Utc))
+                .ok()
+                .or_else(|| {
+                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                        .ok()
+                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                })
+                .or_else(|| {
+                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                        .ok()
+                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                })
+        });
 
     Ok(dt)
 }
