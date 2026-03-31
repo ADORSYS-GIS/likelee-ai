@@ -222,20 +222,89 @@ pub struct AgencyCheckoutResponse {
     pub checkout_url: String,
 }
 
-fn plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
+const AGENCY_MIN_SELF_SERVE_ROSTER_MODELS: u32 = 2;
+const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 200;
+
+fn agency_plan_price_ids<'a>(
+    state: &'a AppState,
+    plan: &str,
+) -> Option<(&'static str, &'a str, &'a str, &'static str, &'static str)> {
     match plan.trim().to_lowercase().as_str() {
-        "basic" => Some(state.stripe_agency_basic_base_price_id.clone()),
-        "pro" => Some(state.stripe_agency_pro_base_price_id.clone()),
+        "basic" => Some((
+            "Agency Basic",
+            state.stripe_agency_basic_base_price_id.as_str(),
+            state.stripe_agency_basic_headcount_price_id.as_str(),
+            "STRIPE_AGENCY_BASIC_BASE_PRICE_ID",
+            "STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID",
+        )),
+        "pro" => Some((
+            "Agency Pro",
+            state.stripe_agency_pro_base_price_id.as_str(),
+            state.stripe_agency_pro_headcount_price_id.as_str(),
+            "STRIPE_AGENCY_PRO_BASE_PRICE_ID",
+            "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID",
+        )),
         _ => None,
     }
 }
 
-fn plan_to_price_env_var(plan: &str) -> Option<&'static str> {
-    match plan.trim().to_lowercase().as_str() {
-        "basic" => Some("STRIPE_AGENCY_BASIC_BASE_PRICE_ID"),
-        "pro" => Some("STRIPE_AGENCY_PRO_BASE_PRICE_ID"),
-        _ => None,
+fn recurring_price_line_item(
+    price_id: &str,
+    quantity: u32,
+) -> stripe_sdk::CreateCheckoutSessionLineItems {
+    stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(price_id.to_string()),
+        quantity: Some(u64::from(quantity)),
+        ..Default::default()
     }
+}
+
+async fn agency_roster_count(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<u32, (StatusCode, String)> {
+    let rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rel_status = rel_resp.status();
+    let rel_text = rel_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !rel_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
+    }
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    if !rel_rows.is_empty() {
+        return Ok(rel_rows.len() as u32);
+    }
+
+    let legacy_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let legacy_status = legacy_resp.status();
+    let legacy_text = legacy_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !legacy_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, legacy_text));
+    }
+    let legacy_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&legacy_text).unwrap_or_default();
+    Ok(legacy_rows.len() as u32)
 }
 
 pub async fn create_agency_subscription_checkout(
@@ -247,35 +316,6 @@ pub async fn create_agency_subscription_checkout(
         return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
     }
 
-    // Enforce Enterprise/contact-sales when agency roster exceeds the supported self-serve limit.
-    // Roster size is derived from the agency's actual talent roster, not the UI slider.
-    let roster_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", &user.id)
-        .eq("role", "talent")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !roster_resp.status().is_success() {
-        let err = roster_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-    let roster_text = roster_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let roster_rows: serde_json::Value =
-        serde_json::from_str(&roster_text).unwrap_or(serde_json::json!([]));
-    let roster_count = roster_rows.as_array().map(|a| a.len()).unwrap_or(0) as u32;
-    if roster_count > 186 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "enterprise_contact_sales_roster_limit".to_string(),
-        ));
-    }
-
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
@@ -283,24 +323,68 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    if payload.plan.trim().eq_ignore_ascii_case("enterprise") {
+    if payload.roster_models < AGENCY_MIN_SELF_SERVE_ROSTER_MODELS {
+        return Err((StatusCode::BAD_REQUEST, "invalid_roster_models".to_string()));
+    }
+
+    let normalized_plan = payload.plan.trim().to_lowercase();
+    if normalized_plan == "enterprise" {
         return Err((
             StatusCode::BAD_REQUEST,
             "enterprise_contact_sales".to_string(),
         ));
     }
 
-    let base_price_id = plan_to_price_id(&state, &payload.plan)
-        .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
-    if base_price_id.trim().is_empty() {
-        let ev = plan_to_price_env_var(&payload.plan).unwrap_or("STRIPE_AGENCY_*_BASE_PRICE_ID");
+    let (
+        _plan_name,
+        base_plan_price_id,
+        headcount_price_id,
+        base_plan_env_var,
+        headcount_env_var,
+    ) = agency_plan_price_ids(&state, &normalized_plan)
+            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    if base_plan_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{}", ev),
+            format!("stripe_price_not_configured:{base_plan_env_var}"),
+        ));
+    }
+    if headcount_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_price_not_configured:{headcount_env_var}"),
+        ));
+    }
+    if payload.addons.irl_booking && state.stripe_agency_irl_booking_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
         ));
     }
 
-    // Note: roster_models / addons are currently accepted for backwards compatibility.
+    let roster_count = agency_roster_count(&state, &user.id).await?;
+    if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("enterprise_contact_sales_roster_limit:{roster_count}"),
+        ));
+    }
+    if payload.roster_models > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "enterprise_contact_sales_roster_limit:{}",
+                payload.roster_models
+            ),
+        ));
+    }
+    if payload.roster_models < roster_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("roster_models_below_current_roster:{roster_count}"),
+        ));
+    }
+
     if state.stripe_checkout_success_url.trim().is_empty()
         || state.stripe_checkout_cancel_url.trim().is_empty()
     {
@@ -399,12 +483,16 @@ pub async fn create_agency_subscription_checkout(
         )
     })?);
 
-    let line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> =
-        vec![stripe_sdk::CreateCheckoutSessionLineItems {
-            price: Some(base_price_id.clone()),
-            quantity: Some(1),
-            ..Default::default()
-        }];
+    let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> = vec![
+        recurring_price_line_item(base_plan_price_id, 1),
+        recurring_price_line_item(headcount_price_id, payload.roster_models),
+    ];
+    if payload.addons.irl_booking {
+        line_items.push(recurring_price_line_item(
+            state.stripe_agency_irl_booking_price_id.as_str(),
+            1,
+        ));
+    }
 
     cs_params.line_items = Some(line_items);
 
@@ -414,7 +502,16 @@ pub async fn create_agency_subscription_checkout(
     let mut md = std::collections::HashMap::new();
     md.insert("agency_id".to_string(), user.id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
-    md.insert("plan".to_string(), payload.plan.trim().to_lowercase());
+    md.insert("plan".to_string(), normalized_plan.clone());
+    md.insert("roster_models".to_string(), payload.roster_models.to_string());
+    md.insert(
+        "addon_irl_booking".to_string(),
+        if payload.addons.irl_booking {
+            "1".to_string()
+        } else {
+            "0".to_string()
+        },
+    );
     cs_params.metadata = Some(md);
 
     // Propagate agency_id onto the Subscription itself so subscription.* webhooks can be correlated.
@@ -422,7 +519,7 @@ pub async fn create_agency_subscription_checkout(
     let mut sub_md = std::collections::HashMap::new();
     sub_md.insert("agency_id".to_string(), user.id.clone());
     sub_md.insert("billing_domain".to_string(), "agency".to_string());
-    sub_md.insert("plan".to_string(), payload.plan.trim().to_lowercase());
+    sub_md.insert("plan".to_string(), normalized_plan.clone());
     sub_md.insert(
         "roster_models".to_string(),
         payload.roster_models.to_string(),
@@ -437,7 +534,7 @@ pub async fn create_agency_subscription_checkout(
     );
     let deepfake_models = payload.addons.deepfake_protection_models.unwrap_or(0);
     let team_members = payload.addons.additional_team_members.unwrap_or(0);
-    // Preserve the request payload for telemetry/debugging, but pricing is package-based.
+    // Preserve upcoming add-on quantities for telemetry/debugging while those products remain non-billable.
     if deepfake_models > 0 {
         sub_md.insert(
             "addon_deepfake_models".to_string(),
@@ -469,7 +566,7 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    info!(agency_id = %user.id, plan = %payload.plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
+    info!(agency_id = %user.id, plan = %normalized_plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
 }
 

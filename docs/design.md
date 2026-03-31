@@ -333,8 +333,14 @@ Configuration variables:
   - Stripe Price ID for scale tier.
 - `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
   - Stripe Price ID for Agency Basic plan (new pricing pages).
+- `STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID`
+  - Stripe Price ID for Agency Basic per-model headcount billing.
 - `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
   - Stripe Price ID for Agency Pro plan (new pricing pages).
+- `STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID`
+  - Stripe Price ID for Agency Pro per-model headcount billing.
+- `STRIPE_AGENCY_IRL_BOOKING_PRICE_ID`
+  - Stripe Price ID for the recurring IRL Booking add-on.
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`

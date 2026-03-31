@@ -3413,10 +3413,37 @@ fn stripe_subscription_to_plan_tier_from_price_id(
     None
 }
 
+fn stripe_subscription_to_plan_tier_from_metadata(
+    sub: &stripe_sdk::Subscription,
+) -> Option<&'static str> {
+    match sub
+        .metadata
+        .get("plan")
+        .map(|plan| plan.trim().to_lowercase())
+        .as_deref()
+    {
+        Some("basic") => Some("basic"),
+        Some("pro") => Some("pro"),
+        Some("enterprise") => Some("enterprise"),
+        _ => None,
+    }
+}
+
+fn stripe_subscription_roster_models(sub: &stripe_sdk::Subscription) -> Option<i64> {
+    sub.metadata
+        .get("roster_models")
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|value| *value > 0)
+}
+
 fn stripe_subscription_to_plan_tier(
     state: &AppState,
     sub: &stripe_sdk::Subscription,
 ) -> Option<&'static str> {
+    if let Some(tier) = stripe_subscription_to_plan_tier_from_metadata(sub) {
+        return Some(tier);
+    }
+
     // Subscriptions may contain multiple line items (roster + add-ons). Determine the tier by
     // scanning for a known base-plan price ID.
     for item in sub.items.data.iter() {
@@ -3491,9 +3518,10 @@ async fn sync_agency_subscription_from_stripe(
         // When canceled/unpaid/etc, fall back to free.
         _ => "free",
     };
+    let roster_models = stripe_subscription_roster_models(&sub).unwrap_or(186);
 
     let seats_limit: i64 = match plan_tier {
-        "basic" | "pro" | "enterprise" => 186,
+        "basic" | "pro" | "enterprise" => roster_models,
         _ => 1,
     };
 
