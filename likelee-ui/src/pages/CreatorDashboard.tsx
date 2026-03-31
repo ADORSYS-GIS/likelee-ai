@@ -13,6 +13,7 @@ import {
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
 import {
+  getKycStatus,
   getCreatorBillingStatus,
   listTalentAgencyInvites,
   listTalentAssetRequests,
@@ -530,6 +531,7 @@ export default function CreatorDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
   const [creatorBilling, setCreatorBilling] = useState<any>(null);
+  const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -689,6 +691,11 @@ export default function CreatorDashboard() {
     [brandConnectionRequests],
   );
   const pendingCount = pending.length;
+  const creatorPlanTierForLoad = String(creatorBilling?.plan_tier || "free");
+  const creatorCanUseKycForLoad =
+    typeof creatorBilling?.can_use_kyc === "boolean"
+      ? creatorBilling.can_use_kyc
+      : creatorPlanTierForLoad !== "free";
   const directOfferIds = new Set(
     directBrandOffers.map((offer: any) => String(offer?.id || "")),
   );
@@ -2317,13 +2324,12 @@ export default function CreatorDashboard() {
   };
 
   useEffect(() => {
-    if (!initialized || !authenticated) return;
+    if (!initialized || !authenticated || !creatorBillingLoaded) return;
     let active = true;
     (async () => {
       try {
         setAgencyConnectionLoading(true);
-        const canLoadTalentCommerceData =
-          String(creatorBilling?.plan_tier || "free") !== "free";
+        const canLoadTalentCommerceData = creatorPlanTierForLoad !== "free";
         const [
           { connections, invites },
           { requests, connections: brandConnected },
@@ -2448,7 +2454,7 @@ export default function CreatorDashboard() {
     return () => {
       active = false;
     };
-  }, [initialized, authenticated, creatorBilling?.plan_tier]);
+  }, [initialized, authenticated, creatorPlanTierForLoad, creatorBillingLoaded]);
   useEffect(() => {
     if (assetRequestsInitialized) return;
     if (assetRequests.length === 0) return;
@@ -2902,12 +2908,12 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     if (!showKycModal) return;
-    if (!authenticated || !user?.id) return;
+    if (!authenticated || !user?.id || !creatorCanUseKycForLoad) return;
 
     let active = true;
     const interval = window.setInterval(async () => {
       try {
-        const rows: any = await base44.get("/kyc/status");
+        const rows: any = await getKycStatus();
         const row = Array.isArray(rows) && rows.length ? rows[0] : null;
         const status = row?.kyc_status;
         if (!active || !status) return;
@@ -2952,7 +2958,7 @@ export default function CreatorDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [authenticated, creatorUserId, showKycModal, user?.id]);
+  }, [authenticated, creatorCanUseKycForLoad, creatorUserId, showKycModal, user?.id]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [editingRules, setEditingRules] = useState(false);
@@ -3467,10 +3473,10 @@ export default function CreatorDashboard() {
   }: {
     manageLoading?: boolean;
   } = {}) => {
-    if (!authenticated || !user?.id) return;
+    if (!authenticated || !user?.id || !creatorCanUseKycForLoad) return;
     try {
       if (manageLoading) setKycStatusRefreshing(true);
-      const rows = await base44.get("/kyc/status");
+      const rows = await getKycStatus();
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         const normalizedStatus = String(row.kyc_status || "")
@@ -3582,6 +3588,10 @@ export default function CreatorDashboard() {
         }
       } catch (error) {
         console.error("Failed to load creator billing status", error);
+      } finally {
+        if (!cancelled) {
+          setCreatorBillingLoaded(true);
+        }
       }
     }
     void loadBilling();
