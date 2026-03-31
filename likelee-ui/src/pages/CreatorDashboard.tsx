@@ -17,6 +17,8 @@ import {
   listTalentAgencyInvites,
   listTalentAssetRequests,
   listTalentBookings,
+  listTalentLicenses,
+  listTalentLicensingRequests,
   markTalentAssetRequestViewed,
 } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ import {
   Mic,
   Users,
   Eye,
+  Search,
   Image as ImageIcon,
   Video,
   AlertCircle,
@@ -294,9 +297,6 @@ const getImageSections = (t: any) => [
 // Example campaigns for blank users (shown when no real campaigns exist)
 // Example campaigns moved inside CreatorDashboard component to support translations
 
-// Example approval for blank users (shown when no real approvals exist)
-// Example data (approvals, archived campaigns, contracts) moved inside component to support translations
-
 // Example content items for blank users
 const exampleContentItems = [
   {
@@ -423,8 +423,6 @@ const exampleProfilePreviewData = {
 // Empty defaults for campaigns (until wired to real data.)
 const mockActiveCampaigns: any[] = [];
 
-const mockPendingApprovals: any[] = [];
-
 const revenueData = [
   { month: "Jun", revenue: 0 },
   { month: "Jul", revenue: 0 },
@@ -507,284 +505,6 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const exampleCampaigns = React.useMemo(
-    () => [
-      {
-        id: "example-nike",
-        brand: "Nike",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-        brand_image_url:
-          "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
-        campaign: "Summer Running Collection",
-        usage_type: "Social Ads",
-        rate: 2500,
-        status: "active",
-        start_date: "2024-01-15",
-        end_date: "2024-07-15",
-        active_until: "2024-07-15",
-        regions: ["North America", "Europe"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 125000 },
-        ),
-        auto_renewal: true,
-        isExample: true,
-      },
-      {
-        id: "example-skincare",
-        brand: "Avo Beauty",
-        brand_logo:
-          "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
-        brand_image_url:
-          "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
-        campaign: "Natural Glow Collection",
-        usage_type: "Social Ads",
-        rate: 15000,
-        status: "expiring_soon",
-        start_date: "2024-02-01",
-        end_date: "2024-08-01",
-        active_until: "2024-08-01",
-        regions: ["Global"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 89000 },
-        ),
-        auto_renewal: false,
-        isExample: true,
-      },
-      {
-        id: "example-pepsi",
-        brand: "Pepsi",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
-        brand_image_url:
-          "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
-        campaign: "Thirsty for More, Best energy drink",
-        usage_type: "Energy Drink",
-        rate: 50000,
-        status: "active",
-        start_date: "2024-03-01",
-        end_date: "2024-06-30",
-        active_until: "2024-06-30",
-        regions: ["North America"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 250000 },
-        ),
-        auto_renewal: false,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleApprovals = React.useMemo(
-    () => [
-      {
-        id: "example-adidas-approval",
-        brand: "Adidas Running",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
-        requested_date: "2025-02-06",
-        proposed_rate: 600,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 6,
-        }),
-        estimated_monthly: 540, // after 10% Likelee fee
-        regions: [t("common.regions.northAmerica"), t("common.regions.asia")],
-        industries: [t("common.industries.sportsFitness")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 6 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.asia")}`,
-        perpetual: false,
-        isExample: true,
-      },
-      {
-        id: "example-samsung-approval",
-        brand: "Samsung Electronic",
-        brand_logo:
-          "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
-        campaign_type: t("common.usageTypes.productLaunch"),
-        requested_date: "2025-02-10",
-        proposed_rate: 800,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 3,
-        }),
-        estimated_monthly: 720,
-        regions: [t("common.regions.global")],
-        industries: [t("common.industries.tech")],
-        usage_type: t("common.usageTypes.tvDigital"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
-        territory: t("common.regions.global"),
-        perpetual: false,
-        isExample: true,
-      },
-      {
-        id: "example-pepsi-approval",
-        brand: "Pepsi",
-        brand_logo:
-          "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
-        campaign_type: t("common.usageTypes.summerCampaign"),
-        requested_date: "2025-02-12",
-        proposed_rate: 700,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 4,
-        }),
-        estimated_monthly: 630,
-        regions: [t("common.regions.northAmerica"), t("common.regions.europe")],
-        industries: [t("common.industries.foodBeverage")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 4 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        perpetual: false,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleArchivedCampaigns = React.useMemo(
-    () => [
-      {
-        id: "example-spotify-archive",
-        brand: "Spotify Premium",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
-        campaign: "Audio Campaign",
-        campaign_type: "Audio Campaign",
-        completed_date: "2/1/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 2 }),
-        monthly_rate: 600,
-        total_earned: 1200,
-        regions: [t("common.regions.global")],
-        show_on_portfolio: false,
-        isExample: true,
-      },
-      {
-        id: "example-lululemon-archive",
-        brand: "Lululemon",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
-        campaign: "Yoga Collection",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
-        completed_date: "1/15/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
-        monthly_rate: 750,
-        total_earned: 2250,
-        regions: [t("common.regions.northAmerica")],
-        show_on_portfolio: true,
-        isExample: true,
-      },
-      {
-        id: "example-shopify-archive",
-        brand: "Shopify",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
-        campaign: "Entrepreneur Stories",
-        campaign_type: "Digital Ad",
-        completed_date: "12/20/2025",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 1 }),
-        monthly_rate: 900,
-        total_earned: 900,
-        regions: [t("common.regions.global")],
-        show_on_portfolio: true,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleContracts = React.useMemo(
-    () => [
-      {
-        id: "example-nike-contract",
-        brand: "Nike Sportswear",
-        brand_logo:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-        project_name: "Spring Running Campaign",
-        creator_earnings: 500,
-        earnings_to_date: 3000,
-        amount_paid: 3000,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-06-30",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-06-30",
-        status: "active",
-        days_until_expiration: 132,
-        days_remaining: 132,
-        usage_description: "Instagram Reels, Hero Image",
-        deliverables: "Instagram Reels, Hero Image",
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
-        restrictions: "Competitor brands, political content",
-        prohibited_uses: "Competitor brands, political content",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-      {
-        id: "example-glossier-contract",
-        brand: "Glossier Beauty",
-        brand_logo:
-          "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-        project_name: "Spring Beauty Collection",
-        creator_earnings: 750,
-        earnings_to_date: 4500,
-        amount_paid: 4500,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-04-15",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-04-15",
-        status: "active",
-        days_until_expiration: 75,
-        days_remaining: 75,
-        usage_description: t("common.usageTypes.socialMedia"),
-        deliverables: "TikTok Videos, Instagram Posts",
-        territory: t("common.regions.northAmerica"),
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
-        restrictions: "Competitor brands",
-        prohibited_uses: "Competitor brands",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-      {
-        id: "example-tesla-contract",
-        brand: "Tesla Motors",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-        project_name: "Model Y Launch",
-        creator_earnings: 1200,
-        earnings_to_date: 7200,
-        amount_paid: 7200,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-03-15",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-03-15",
-        status: "expiring_soon",
-        days_until_expiration: 45,
-        days_remaining: 45,
-        usage_description: "TV Commercial, Digital Ads",
-        deliverables: "TV Commercial, Digital Ads",
-        territory: t("common.regions.global"),
-        channels: [t("common.usageTypes.tvDigital")],
-        restrictions: "Competitor automotive brands",
-        prohibited_uses: "Competitor automotive brands",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
     useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -835,11 +555,13 @@ export default function CreatorDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [creatorCampaigns, setCreatorCampaigns] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
-    "connections" | "requests" | "offers" | "deliverables"
+    "connections" | "requests" | "offers" | "job-invites" | "deliverables"
   >("connections");
   const [agencyConnectionSubTab, setAgencyConnectionSubTab] = useState<
     "connections" | "asset_requests"
   >("connections");
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [archiveSearch, setArchiveSearch] = useState("");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
   const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>(
@@ -1067,6 +789,783 @@ export default function CreatorDashboard() {
     return "Brand Manager";
   };
 
+  const toFiniteNumber = (value: unknown) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const centsToDollars = (value: unknown) => {
+    const cents = toFiniteNumber(value);
+    if (!cents || cents <= 0) return null;
+    return cents / 100;
+  };
+
+  const monthlyFromWeeklyCents = (value: unknown) => {
+    const cents = toFiniteNumber(value);
+    if (!cents || cents <= 0) return null;
+    return (cents / 100) * 4.345;
+  };
+
+  const parseDate = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+    const dt = new Date(raw);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const deriveEndDate = (
+    start: Date | null,
+    end: Date | null,
+    durationDays?: unknown,
+    durationMonths?: unknown,
+  ) => {
+    if (end) return end;
+    if (!start) return null;
+    const days = toFiniteNumber(durationDays);
+    if (days && days > 0) {
+      const dt = new Date(start);
+      dt.setDate(dt.getDate() + Math.round(days));
+      return dt;
+    }
+    const months = toFiniteNumber(durationMonths);
+    if (months && months > 0) {
+      const dt = new Date(start);
+      dt.setMonth(dt.getMonth() + Math.round(months));
+      return dt;
+    }
+    return null;
+  };
+
+  const formatDurationLabel = (daysRaw?: unknown, monthsRaw?: unknown) => {
+    const months = toFiniteNumber(monthsRaw);
+    if (months && months > 0) {
+      return `${Math.round(months)} month${months === 1 ? "" : "s"}`;
+    }
+    const days = toFiniteNumber(daysRaw);
+    if (days && days > 0) {
+      return `${Math.round(days)} day${days === 1 ? "" : "s"}`;
+    }
+    return "";
+  };
+
+  const contractStatusFromDates = (
+    endDateRaw?: string,
+    statusRaw?: unknown,
+  ) => {
+    const normalized = String(statusRaw || "").toLowerCase();
+    if (["expired", "ended", "completed"].includes(normalized))
+      return "expired";
+    const end = parseDate(endDateRaw || "");
+    if (!end) return "active";
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    if (end < startOfToday) return "expired";
+    const diffDays = Math.ceil(
+      (end.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    return diffDays <= 5 ? "expiring_soon" : "active";
+  };
+
+  const resolveMonthlyRate = (
+    candidates: Array<number | null | undefined>,
+    fallback: number,
+  ) => {
+    for (const candidate of candidates) {
+      if (typeof candidate === "number" && Number.isFinite(candidate)) {
+        if (candidate > 0) return candidate;
+      }
+    }
+    return Number.isFinite(fallback) ? fallback : 0;
+  };
+
+  const [creator, setCreator] = useState<any>({
+    name: profile?.full_name || user?.user_metadata?.full_name || "",
+    email: profile?.email || user?.email || "",
+    profile_photo: profile?.profile_photo_url || "",
+    location: "",
+    bio: "",
+    birthday: "",
+    gender: "",
+    ethnicity: "",
+    creator_type: "",
+    race: "",
+    hair_color: "",
+    eye_color: "",
+    height_cm: "",
+    instagram_handle: "",
+    tiktok_handle: "",
+    portfolio_url: "",
+    instagram_connected: false,
+    content_types: [] as string[],
+    industries: [] as string[],
+    content_restrictions: [] as string[],
+    brand_exclusivity: [] as string[],
+    price_per_month: 0,
+    royalty_percentage: 0,
+    accept_negotiations: true,
+    is_public_brands: resolvePublicBrandsVisibility(profile),
+  });
+  const [licenses, setLicenses] = useState<any[]>([]);
+  const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
+
+  const baseMonthlyRate = Number.isFinite(Number(creator.price_per_month))
+    ? Number(creator.price_per_month)
+    : 0;
+
+  const normalizedOfferCampaigns = useMemo(() => {
+    return brandOffers
+      .filter((offer: any) =>
+        fullySignedOfferStatuses.has(String(offer?.status || "").toLowerCase()),
+      )
+      .map((offer: any) => {
+        const campaign = offer?.brand_campaigns || {};
+        const brandLogo =
+          campaign?.brands?.logo_url ||
+          campaign?.brands?.logo ||
+          campaign?.brand_logo ||
+          offer?.brands?.logo_url ||
+          offer?.brands?.logo ||
+          offer?.brand_logo ||
+          "";
+        const startDate =
+          parseDate(
+            campaign?.start_date ||
+              offer?.start_date ||
+              campaign?.start_at ||
+              offer?.start_at ||
+              offer?.license_start_date,
+          ) || new Date();
+        const endDate = parseDate(
+          campaign?.end_date ||
+            offer?.end_date ||
+            campaign?.end_at ||
+            offer?.end_at ||
+            offer?.license_end_date ||
+            campaign?.license_end_date,
+        );
+        const durationDays =
+          campaign?.duration_days ||
+          offer?.duration_days ||
+          campaign?.duration_in_days ||
+          offer?.duration_in_days ||
+          offer?.contract_duration_days ||
+          offer?.license_duration_days;
+        const durationMonths =
+          campaign?.duration_months ||
+          offer?.duration_months ||
+          campaign?.duration_in_months ||
+          offer?.duration_in_months ||
+          offer?.contract_duration_months ||
+          offer?.license_duration_months;
+        const derivedEndDate = deriveEndDate(
+          startDate,
+          endDate,
+          durationDays,
+          durationMonths,
+        );
+        const rate = resolveMonthlyRate(
+          [
+            toFiniteNumber(campaign?.monthly_rate),
+            toFiniteNumber(offer?.monthly_rate),
+            centsToDollars(offer?.monthly_rate_cents),
+            centsToDollars(offer?.rate_cents),
+            monthlyFromWeeklyCents(offer?.creator_rate_weekly_cents),
+            monthlyFromWeeklyCents(offer?.offered_rate_weekly_cents),
+            monthlyFromWeeklyCents(offer?.rate_weekly_cents),
+          ],
+          baseMonthlyRate,
+        );
+        const briefSnapshot =
+          offer?.campaign_brief_snapshot || offer?.brief_snapshot;
+        const amount = resolveMonthlyRate(
+          [
+            toFiniteNumber(briefSnapshot?.budget_creator_payment),
+            centsToDollars(briefSnapshot?.budget_creator_payment_cents),
+            toFiniteNumber(offer?.offer_amount),
+            centsToDollars(offer?.offer_amount_cents),
+          ],
+          baseMonthlyRate,
+        );
+        return {
+          id: `offer:${offer?.id || campaign?.id || campaign?.campaign_id}`,
+          brand: resolveOfferBrandName(offer),
+          brand_logo: brandLogo,
+          campaign: campaign?.name || offer?.campaign_title || "Campaign",
+          usage_type:
+            campaign?.category ||
+            campaign?.usage_scope ||
+            offer?.usage_scope ||
+            campaign?.campaign_type ||
+            "Social Ads",
+          rate,
+          amount,
+          start_date: startDate.toISOString(),
+          end_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+          active_until: derivedEndDate ? derivedEndDate.toISOString() : "",
+          raw_campaign_name: campaign?.name || offer?.campaign_title,
+          source_type: "offer",
+          source_id: String(offer?.id || ""),
+          duration_days: durationDays,
+          duration_months: durationMonths,
+          regions: Array.isArray(campaign?.territory)
+            ? campaign.territory
+            : String(campaign?.territory || "")
+                .split(",")
+                .map((r) => r.trim())
+                .filter(Boolean),
+          impressions_week: toFiniteNumber(campaign?.impressions_week) ?? 0,
+        };
+      })
+      .filter((c) => c.id);
+  }, [
+    brandOffers,
+    fullySignedOfferStatuses,
+    baseMonthlyRate,
+    brandConnections,
+  ]);
+
+  const normalizedLicenseCampaigns = useMemo(() => {
+    return (Array.isArray(licenses) ? licenses : [])
+      .map((license: any) => {
+        const startDate =
+          parseDate(
+            license?.start_at ||
+              license?.start_date ||
+              license?.license_start_date,
+          ) || new Date();
+        const endDate = parseDate(
+          license?.end_at || license?.end_date || license?.license_end_date,
+        );
+        const durationDays =
+          license?.duration_days ||
+          license?.duration_in_days ||
+          license?.license_duration_days;
+        const durationMonths =
+          license?.duration_months ||
+          license?.duration_in_months ||
+          license?.license_duration_months;
+        const derivedEndDate = deriveEndDate(
+          startDate,
+          endDate,
+          durationDays,
+          durationMonths,
+        );
+        const rate = resolveMonthlyRate(
+          [
+            toFiniteNumber(license?.monthly_rate),
+            toFiniteNumber(license?.rate),
+            centsToDollars(license?.monthly_rate_cents),
+            centsToDollars(license?.rate_cents),
+            monthlyFromWeeklyCents(license?.weekly_rate_cents),
+            monthlyFromWeeklyCents(license?.rate_weekly_cents),
+          ],
+          baseMonthlyRate,
+        );
+        const amount = resolveMonthlyRate(
+          [
+            toFiniteNumber(license?.license_fee),
+            centsToDollars(license?.license_fee_cents),
+            toFiniteNumber(license?.offer_amount),
+            centsToDollars(license?.offer_amount_cents),
+          ],
+          baseMonthlyRate,
+        );
+        const brandName =
+          normalizeDisplayName(license?.brand_name) ||
+          normalizeDisplayName(license?.brand?.company_name) ||
+          normalizeDisplayName(license?.brand?.name) ||
+          "Brand";
+        return {
+          id: `license:${license?.id || license?.license_id}`,
+          brand: brandName,
+          brand_logo:
+            license?.brand_logo_url ||
+            license?.brand_logo ||
+            license?.brand?.logo_url ||
+            "",
+          campaign:
+            license?.campaign_title ||
+            license?.project_name ||
+            license?.license_title ||
+            "Licensing campaign",
+          usage_type:
+            license?.usage_scope ||
+            license?.usage_type ||
+            license?.type ||
+            "License",
+          rate,
+          amount,
+          start_date: startDate.toISOString(),
+          end_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+          active_until: derivedEndDate ? derivedEndDate.toISOString() : "",
+          raw_campaign_name:
+            license?.campaign_title ||
+            license?.project_name ||
+            license?.license_title,
+          source_type: "license",
+          source_id: String(license?.id || license?.license_id || ""),
+          duration_days: durationDays,
+          duration_months: durationMonths,
+          regions: Array.isArray(license?.territory)
+            ? license.territory
+            : String(license?.territory || "")
+                .split(",")
+                .map((r) => r.trim())
+                .filter(Boolean),
+          impressions_week: toFiniteNumber(license?.impressions_week) ?? 0,
+          license_status: String(license?.status || ""),
+          total_earned: centsToDollars(license?.total_earned_cents) || 0,
+          show_on_portfolio: Boolean(license?.show_on_portfolio),
+        };
+      })
+      .filter((c) => c.id);
+  }, [licenses, baseMonthlyRate]);
+
+  const normalizedContracts = useMemo(() => {
+    const offerById = new Map<string, any>(
+      brandOffers.map((offer: any) => [String(offer?.id || ""), offer]),
+    );
+    const seen = new Set<string>();
+    const rows: any[] = [];
+
+    const addRow = (row: any) => {
+      const id = String(row?.id || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      rows.push(row);
+    };
+
+    const normalizeFromOfferContract = (contract: any) => {
+      const offerId = String(
+        contract?.offer_id || contract?.campaign_offer_id || "",
+      );
+      const offer = offerById.get(offerId);
+      const campaign = offer?.brand_campaigns || {};
+      const startDate =
+        parseDate(
+          contract?.effective_date ||
+            contract?.start_date ||
+            contract?.start_at ||
+            campaign?.start_date ||
+            offer?.start_date,
+        ) || new Date();
+      const endDate = parseDate(
+        contract?.expiration_date ||
+          contract?.end_date ||
+          contract?.end_at ||
+          campaign?.end_date ||
+          offer?.end_date,
+      );
+      const durationDays =
+        contract?.duration_days ||
+        campaign?.duration_days ||
+        offer?.duration_days;
+      const durationMonths =
+        contract?.duration_months ||
+        campaign?.duration_months ||
+        offer?.duration_months;
+      const derivedEndDate = deriveEndDate(
+        startDate,
+        endDate,
+        durationDays,
+        durationMonths,
+      );
+      const monthly = resolveMonthlyRate(
+        [
+          toFiniteNumber(contract?.creator_earnings),
+          toFiniteNumber(contract?.monthly_rate),
+          centsToDollars(contract?.creator_earnings_cents),
+          centsToDollars(contract?.monthly_rate_cents),
+          monthlyFromWeeklyCents(contract?.rate_weekly_cents),
+        ],
+        baseMonthlyRate,
+      );
+      const brandName = resolveOfferBrandName(offer || {});
+      return {
+        id: String(contract?.id || contract?.contract_id || `offer-${offerId}`),
+        brand: brandName || "Brand",
+        brand_logo:
+          campaign?.brands?.logo_url ||
+          campaign?.brands?.logo ||
+          offer?.brands?.logo_url ||
+          offer?.brands?.logo ||
+          contract?.brand_logo ||
+          contract?.brand_logo_url ||
+          "",
+        project_name:
+          contract?.campaign_name ||
+          contract?.project_name ||
+          campaign?.name ||
+          offer?.offer_title ||
+          "Campaign",
+        creator_earnings: Math.round(monthly),
+        earnings_to_date:
+          toFiniteNumber(contract?.earnings_to_date) ||
+          toFiniteNumber(contract?.amount_paid) ||
+          0,
+        amount_paid: toFiniteNumber(contract?.amount_paid) || 0,
+        payment_status: String(contract?.payment_status || "Paid"),
+        effective_date: startDate.toISOString(),
+        expiration_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+        status: contractStatusFromDates(
+          derivedEndDate ? derivedEndDate.toISOString() : "",
+          contract?.status || contract?.docuseal_status,
+        ),
+        days_remaining: derivedEndDate
+          ? Math.max(
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
+          : 0,
+        deliverables:
+          contract?.deliverables ||
+          contract?.usage_description ||
+          campaign?.usage_scope ||
+          "Deliverables",
+        territory:
+          contract?.territory ||
+          campaign?.territory ||
+          contract?.regions ||
+          "Global",
+        channels:
+          Array.isArray(contract?.channels) && contract.channels.length > 0
+            ? contract.channels
+            : [String(campaign?.category || "Social Media")],
+        prohibited_uses: contract?.prohibited_uses || "N/A",
+        revisions: toFiniteNumber(contract?.revisions) || 0,
+        auto_renew: Boolean(contract?.auto_renew || contract?.auto_renewal),
+        can_pause: true,
+        can_revoke: true,
+      };
+    };
+
+    const normalizeFromLicense = (license: any) => {
+      const startDate =
+        parseDate(
+          license?.start_at ||
+            license?.start_date ||
+            license?.license_start_date,
+        ) || new Date();
+      const endDate = parseDate(
+        license?.end_at || license?.end_date || license?.license_end_date,
+      );
+      const durationDays =
+        license?.duration_days ||
+        license?.duration_in_days ||
+        license?.license_duration_days;
+      const durationMonths =
+        license?.duration_months ||
+        license?.duration_in_months ||
+        license?.license_duration_months;
+      const derivedEndDate = deriveEndDate(
+        startDate,
+        endDate,
+        durationDays,
+        durationMonths,
+      );
+      const monthly = resolveMonthlyRate(
+        [
+          toFiniteNumber(license?.monthly_rate),
+          toFiniteNumber(license?.rate),
+          centsToDollars(license?.monthly_rate_cents),
+          centsToDollars(license?.rate_cents),
+          monthlyFromWeeklyCents(license?.weekly_rate_cents),
+          monthlyFromWeeklyCents(license?.rate_weekly_cents),
+        ],
+        baseMonthlyRate,
+      );
+      return {
+        id: String(
+          license?.id || license?.license_id || `license-${license?.brand_id}`,
+        ),
+        brand:
+          normalizeDisplayName(license?.brand_name) ||
+          normalizeDisplayName(license?.brand?.company_name) ||
+          normalizeDisplayName(license?.brand?.name) ||
+          "Brand",
+        brand_logo:
+          license?.brand_logo_url ||
+          license?.brand_logo ||
+          license?.brand?.logo_url ||
+          "",
+        project_name:
+          license?.campaign_title ||
+          license?.project_name ||
+          license?.license_title ||
+          "License",
+        creator_earnings: Math.round(monthly),
+        earnings_to_date: centsToDollars(license?.total_earned_cents) || 0,
+        amount_paid: centsToDollars(license?.total_earned_cents) || 0,
+        payment_status: "Paid",
+        effective_date: startDate.toISOString(),
+        expiration_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+        status: contractStatusFromDates(
+          derivedEndDate ? derivedEndDate.toISOString() : "",
+          license?.status,
+        ),
+        days_remaining: derivedEndDate
+          ? Math.max(
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
+          : 0,
+        deliverables: license?.usage_scope || "License usage",
+        territory: license?.territory || "Global",
+        channels: [String(license?.usage_type || "License")],
+        prohibited_uses: "N/A",
+        revisions: 0,
+        auto_renew: Boolean(license?.auto_renew || license?.auto_renewal),
+        can_pause: true,
+        can_revoke: true,
+      };
+    };
+
+    const normalizeFromLicensingRequest = (req: any) => {
+      const statusRaw = String(req?.status || "").toLowerCase();
+      if (!["signed", "accepted", "approved", "active"].includes(statusRaw)) {
+        return null;
+      }
+      const startDate =
+        parseDate(req?.license_start_date || req?.start_date) || new Date();
+      const endDate = parseDate(req?.license_end_date || req?.end_date);
+      const durationDays = req?.duration_days || req?.duration_in_days;
+      const durationMonths = req?.duration_months || req?.duration_in_months;
+      const derivedEndDate = deriveEndDate(
+        startDate,
+        endDate,
+        durationDays,
+        durationMonths,
+      );
+      const monthly = resolveMonthlyRate(
+        [
+          toFiniteNumber(req?.monthly_rate),
+          toFiniteNumber(req?.offer_amount),
+          centsToDollars(req?.offer_amount_cents),
+          centsToDollars(req?.monthly_rate_cents),
+        ],
+        baseMonthlyRate,
+      );
+      return {
+        id: String(
+          req?.id || req?.licensing_request_id || `request-${req?.brand_id}`,
+        ),
+        brand:
+          normalizeDisplayName(req?.brand_name) ||
+          normalizeDisplayName(req?.brands?.company_name) ||
+          "Brand",
+        brand_logo:
+          req?.brand_logo_url || req?.brand_logo || req?.brands?.logo_url || "",
+        project_name: req?.campaign_title || "Licensing request",
+        creator_earnings: Math.round(monthly),
+        earnings_to_date: 0,
+        amount_paid: 0,
+        payment_status: "Pending",
+        effective_date: startDate.toISOString(),
+        expiration_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+        status: contractStatusFromDates(
+          derivedEndDate ? derivedEndDate.toISOString() : "",
+          statusRaw,
+        ),
+        days_remaining: derivedEndDate
+          ? Math.max(
+              0,
+              Math.ceil(
+                (derivedEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              ),
+            )
+          : 0,
+        deliverables: req?.usage_scope || "License usage",
+        territory: req?.regions || req?.region || "Global",
+        channels: [String(req?.usage_scope || "License")],
+        prohibited_uses: "N/A",
+        revisions: 0,
+        auto_renew: false,
+        can_pause: false,
+        can_revoke: false,
+      };
+    };
+
+    (Array.isArray(creatorContractHubRows)
+      ? creatorContractHubRows
+      : []
+    ).forEach((contract: any) => addRow(normalizeFromOfferContract(contract)));
+    (Array.isArray(contracts) ? contracts : []).forEach((contract: any) =>
+      addRow(normalizeFromOfferContract(contract)),
+    );
+    (Array.isArray(licenses) ? licenses : []).forEach((license: any) =>
+      addRow(normalizeFromLicense(license)),
+    );
+    (Array.isArray(licensingRequests) ? licensingRequests : []).forEach(
+      (req: any) => {
+        const row = normalizeFromLicensingRequest(req);
+        if (row) addRow(row);
+      },
+    );
+
+    return rows;
+  }, [
+    brandOffers,
+    creatorContractHubRows,
+    contracts,
+    licenses,
+    licensingRequests,
+    baseMonthlyRate,
+  ]);
+
+  const activeCampaignsDerived = useMemo(() => {
+    const today = new Date();
+    const startOfToday = new Date(today);
+    startOfToday.setHours(0, 0, 0, 0);
+    const isActive = (startRaw: string, endRaw: string, status?: string) => {
+      const start = parseDate(startRaw) || startOfToday;
+      const end = parseDate(endRaw);
+      if (status && String(status).toLowerCase() === "active") return true;
+      if (start > startOfToday) return false;
+      if (!end) return true;
+      return end >= startOfToday;
+    };
+    const withStatus = (item: any) => {
+      const end = parseDate(item.end_date || item.active_until);
+      if (!end) return { ...item, status: "active" };
+      const diffDays = Math.ceil(
+        (end.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      return {
+        ...item,
+        status: diffDays <= 5 ? "expiring_soon" : "active",
+      };
+    };
+    const activeOffers = normalizedOfferCampaigns.filter((offer: any) =>
+      isActive(offer.start_date, offer.end_date, offer.status),
+    );
+    const activeLicenses = normalizedLicenseCampaigns.filter((license: any) =>
+      isActive(license.start_date, license.end_date, license.license_status),
+    );
+    const activeRequests = (
+      Array.isArray(licensingRequests) ? licensingRequests : []
+    )
+      .filter((req: any) =>
+        ["signed", "accepted", "approved", "active"].includes(
+          String(req?.status || "").toLowerCase(),
+        ),
+      )
+      .map((req: any) => {
+        const startDate =
+          parseDate(req?.license_start_date || req?.start_date) || new Date();
+        const endDate = parseDate(req?.license_end_date || req?.end_date);
+        const durationDays = req?.duration_days || req?.duration_in_days;
+        const durationMonths = req?.duration_months || req?.duration_in_months;
+        const derivedEndDate = deriveEndDate(
+          startDate,
+          endDate,
+          durationDays,
+          durationMonths,
+        );
+        const rate = resolveMonthlyRate(
+          [
+            toFiniteNumber(req?.monthly_rate),
+            toFiniteNumber(req?.offer_amount),
+            centsToDollars(req?.offer_amount_cents),
+            centsToDollars(req?.monthly_rate_cents),
+          ],
+          baseMonthlyRate,
+        );
+        return {
+          id: `request:${req?.id || req?.licensing_request_id || req?.brand_id}`,
+          brand:
+            normalizeDisplayName(req?.brand_name) ||
+            normalizeDisplayName(req?.brands?.company_name) ||
+            "Brand",
+          brand_logo:
+            req?.brand_logo_url ||
+            req?.brand_logo ||
+            req?.brands?.logo_url ||
+            "",
+          campaign: req?.campaign_title || "Licensing request",
+          usage_type: req?.usage_scope || "License",
+          rate,
+          start_date: startDate.toISOString(),
+          end_date: derivedEndDate ? derivedEndDate.toISOString() : "",
+          active_until: derivedEndDate ? derivedEndDate.toISOString() : "",
+          duration_days: durationDays,
+          duration_months: durationMonths,
+          source_type: "request",
+          source_id: String(req?.id || req?.licensing_request_id || ""),
+        };
+      });
+    return [...activeOffers, ...activeLicenses, ...activeRequests].map(
+      withStatus,
+    );
+  }, [
+    normalizedOfferCampaigns,
+    normalizedLicenseCampaigns,
+    licensingRequests,
+    baseMonthlyRate,
+  ]);
+
+  const archivedCampaigns = useMemo(() => {
+    const today = new Date();
+    const startOfToday = new Date(today);
+    startOfToday.setHours(0, 0, 0, 0);
+    const isArchived = (endRaw: string, status?: string) => {
+      const normalized = String(status || "").toLowerCase();
+      if (["expired", "ended", "completed"].includes(normalized)) return true;
+      const end = parseDate(endRaw);
+      if (!end) return false;
+      return end < startOfToday;
+    };
+    const formatDuration = (startRaw: string, endRaw: string) => {
+      const start = parseDate(startRaw);
+      const end = parseDate(endRaw);
+      if (!start || !end) return "N/A";
+      const days = Math.max(
+        1,
+        Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+      );
+      const months = Math.max(1, Math.round(days / 30));
+      return t("creatorDashboard.approvals.labels.months", { count: months });
+    };
+    const fromOffers = normalizedOfferCampaigns
+      .filter((offer: any) => isArchived(offer.end_date, offer.status))
+      .map((offer: any) => ({
+        ...offer,
+        campaign_type: offer.usage_type,
+        completed_date: offer.end_date
+          ? new Date(offer.end_date).toLocaleDateString()
+          : "N/A",
+        duration: formatDuration(offer.start_date, offer.end_date),
+        monthly_rate: offer.rate,
+        total_earned: 0,
+        show_on_portfolio: false,
+      }));
+    const fromLicenses = normalizedLicenseCampaigns
+      .filter((license: any) =>
+        isArchived(license.end_date, license.license_status),
+      )
+      .map((license: any) => ({
+        ...license,
+        campaign_type: license.usage_type,
+        completed_date: license.end_date
+          ? new Date(license.end_date).toLocaleDateString()
+          : "N/A",
+        duration: formatDuration(license.start_date, license.end_date),
+        monthly_rate: license.rate,
+        total_earned: license.total_earned || 0,
+        show_on_portfolio: Boolean(license.show_on_portfolio),
+      }));
+    return [...fromOffers, ...fromLicenses];
+  }, [normalizedOfferCampaigns, normalizedLicenseCampaigns, t]);
+
+  useEffect(() => {
+    setActiveCampaigns(activeCampaignsDerived);
+  }, [activeCampaignsDerived]);
+
   const resolveJobBrandName = (job: any) => {
     const company = normalizeDisplayName(job?.brands?.company_name);
     if (company) return company;
@@ -1169,7 +1668,7 @@ export default function CreatorDashboard() {
     return "file";
   };
 
-  const selectedBriefOffer = directBrandOffers.find(
+  const selectedBriefOffer = brandOffers.find(
     (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
   );
   const selectedBriefCampaign = selectedBriefOffer?.brand_campaigns || {};
@@ -1763,36 +2262,40 @@ export default function CreatorDashboard() {
         offers.map(async (offer: any) => {
           const offerId = String(offer?.id || "");
           if (!offerId) return [];
-          const contractsResp = await base44.get<{ contracts?: any[] }>(
-            `/api/campaign-offers/${offerId}/contracts`,
-          );
-          const contracts = Array.isArray(contractsResp?.contracts)
-            ? contractsResp.contracts
-            : [];
-          const refreshedContracts = await Promise.all(
-            contracts.map(async (contract: any) => {
-              const contractId = String(contract?.id || "").trim();
-              if (!contractId) return contract;
-              try {
-                const refreshed = await base44.post<{ contract?: any }>(
-                  `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
-                  {},
-                );
-                return refreshed?.contract || contract;
-              } catch {
-                return contract;
-              }
-            }),
-          );
-          return refreshedContracts.map((c: any) => ({
-            ...c,
-            offer_id: offerId,
-            campaign_name: String(
-              offer?.brand_campaigns?.name ||
-                offer?.offer_title ||
-                "Campaign offer",
-            ),
-          }));
+          try {
+            const contractsResp = await base44.get<{ contracts?: any[] }>(
+              `/api/campaign-offers/${offerId}/contracts`,
+            );
+            const contracts = Array.isArray(contractsResp?.contracts)
+              ? contractsResp.contracts
+              : [];
+            const refreshedContracts = await Promise.all(
+              contracts.map(async (contract: any) => {
+                const contractId = String(contract?.id || "").trim();
+                if (!contractId) return contract;
+                try {
+                  const refreshed = await base44.post<{ contract?: any }>(
+                    `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+                    {},
+                  );
+                  return refreshed?.contract || contract;
+                } catch {
+                  return contract;
+                }
+              }),
+            );
+            return refreshedContracts.map((c: any) => ({
+              ...c,
+              offer_id: offerId,
+              campaign_name: String(
+                offer?.brand_campaigns?.name ||
+                  offer?.offer_title ||
+                  "Campaign offer",
+              ),
+            }));
+          } catch {
+            return [];
+          }
         }),
       )
     ).flat();
@@ -1812,6 +2315,8 @@ export default function CreatorDashboard() {
           jobInvitesRes,
           assetRequestsResp,
           bookingsData,
+          licensesResp,
+          licensingRequestsResp,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
@@ -1819,6 +2324,8 @@ export default function CreatorDashboard() {
           loadJobInvites().catch(() => []),
           loadAssetRequests().catch(() => []),
           loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
+          listTalentLicenses().catch(() => []),
+          listTalentLicensingRequests().catch(() => []),
         ]);
         if (!active) return;
         setAgencyConnections(connections);
@@ -1827,6 +2334,7 @@ export default function CreatorDashboard() {
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
         setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+        // Contract hub rows are not needed now that contracts tab is removed.
         const assets = Array.isArray(assetRequestsResp)
           ? assetRequestsResp
           : [];
@@ -1878,6 +2386,22 @@ export default function CreatorDashboard() {
         setCreatorCampaigns(
           Array.isArray(bookingsData.campaigns) ? bookingsData.campaigns : [],
         );
+        const normalizedLicenses = Array.isArray(licensesResp)
+          ? licensesResp
+          : Array.isArray((licensesResp as any)?.licenses)
+            ? (licensesResp as any).licenses
+            : Array.isArray((licensesResp as any)?.data)
+              ? (licensesResp as any).data
+              : [];
+        setLicenses(normalizedLicenses);
+        const normalizedRequests = Array.isArray(licensingRequestsResp)
+          ? licensingRequestsResp
+          : Array.isArray((licensingRequestsResp as any)?.requests)
+            ? (licensingRequestsResp as any).requests
+            : Array.isArray((licensingRequestsResp as any)?.data)
+              ? (licensingRequestsResp as any).data
+              : [];
+        setLicensingRequests(normalizedRequests);
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -2130,36 +2654,6 @@ export default function CreatorDashboard() {
     if (index === -1) return englishRestriction;
     return getTranslatedRestrictions()[index];
   };
-
-  // Creator profile state (declare before any hooks that reference `creator`)
-  const [creator, setCreator] = useState<any>({
-    name: profile?.full_name || user?.user_metadata?.full_name || "",
-    email: profile?.email || user?.email || "",
-    profile_photo: profile?.profile_photo_url || "",
-    location: "",
-    bio: "",
-    birthday: "",
-    gender: "",
-    ethnicity: "",
-    creator_type: "",
-    race: "",
-    hair_color: "",
-    eye_color: "",
-    height_cm: "",
-    instagram_handle: "",
-    tiktok_handle: "",
-    portfolio_url: "",
-    instagram_connected: false,
-    content_types: [] as string[],
-    industries: [] as string[],
-    content_restrictions: [] as string[],
-    brand_exclusivity: [] as string[],
-    price_per_month: 0,
-    royalty_percentage: 0,
-    accept_negotiations: true,
-    is_public_brands: resolvePublicBrandsVisibility(profile),
-    kyc_rejection_reason: profile?.kyc_rejection_reason || null,
-  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -2426,17 +2920,13 @@ export default function CreatorDashboard() {
   }, [authenticated, creatorUserId, showKycModal, user?.id]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
-  const [pendingApprovals, setPendingApprovals] =
-    useState<any[]>(mockPendingApprovals);
   const [editingRules, setEditingRules] = useState(false);
-  const [contracts, setContracts] = useState<any[]>(mockContracts);
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState(null);
   const [showContractDetails, setShowContractDetails] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [pauseOption, setPauseOption] = useState(null);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
-  const [showApprovalContract, setShowApprovalContract] = useState(null);
   const [contractsTab, setContractsTab] = useState("active");
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
@@ -2751,7 +3241,6 @@ export default function CreatorDashboard() {
     0,
   );
   const annualRunRate = totalMonthlyRevenue * 12;
-  const pendingCount = pendingApprovals.length;
   const expiringCount = activeCampaigns.filter(
     (c) => c.status === "expiring_soon",
   ).length;
@@ -2818,11 +3307,7 @@ export default function CreatorDashboard() {
           verified_at: profile.verified_at,
           avatar_canonical_url: profile.avatar_canonical_url,
         }));
-        // If backend provides arrays later, replace mocks
-        if (Array.isArray(json.campaigns) && json.campaigns.length)
-          setActiveCampaigns(json.campaigns);
-        if (Array.isArray(json.approvals) && json.approvals.length)
-          setPendingApprovals(json.approvals);
+        // Campaigns are derived from offers + licenses
         if (Array.isArray(json.contracts) && json.contracts.length)
           setContracts(json.contracts);
         // Optionally, if backend provides metrics, you can store them to override computed ones
@@ -3304,11 +3789,6 @@ export default function CreatorDashboard() {
       premiumFeature: "Payouts",
     },
     {
-      id: "settings",
-      label: t("creatorDashboard.nav.settings"),
-      icon: Settings,
-    },
-    {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
@@ -3351,6 +3831,11 @@ export default function CreatorDashboard() {
       premiumFeature: "Brand Connection",
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
+    },
+    {
+      id: "settings",
+      label: t("creatorDashboard.nav.settings"),
+      icon: Settings,
     },
   ];
 
@@ -3456,19 +3941,6 @@ export default function CreatorDashboard() {
                 {itemsToShow.length}
               </Badge>
             </button>
-            <button
-              onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "detections"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {t("creatorDashboard.content.tabs.detections")}
-              <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
-                {detectionsCount}
-              </Badge>
-            </button>
           </div>
         </div>
 
@@ -3567,224 +4039,6 @@ export default function CreatorDashboard() {
                 </p>
               </div>
             )}
-          </>
-        )}
-
-        {contentTab === "detections" && (
-          <>
-            <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 p-3 rounded-lg border border-orange-100">
-              <ShieldAlert className="h-4 w-4" />
-              {t("creatorDashboard.content.detections.info")}
-            </div>
-
-            {detectionsToShow.length > 0 ? (
-              <div className="space-y-4">
-                {detectionsToShow.map((item) => (
-                  <Card
-                    key={item.id}
-                    className={`p-4 border ${
-                      item.status === "needs_review"
-                        ? "border-red-200 bg-red-50"
-                        : item.status === "takedown_requested"
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-green-200 bg-green-50"
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
-                        <img
-                          src={item.thumbnail_url}
-                          alt="Detected content"
-                          className="w-full h-full object-contain"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ExternalLink className="w-6 h-6 text-white" />
-                        </div>
-                        {item.logo && (
-                          <div className="absolute bottom-1 right-1 w-8 h-8 bg-white rounded-full p-0.5 shadow-sm">
-                            <img
-                              src={item.logo}
-                              alt={item.platform}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-gray-900 text-lg">
-                                {item.account}
-                              </h3>
-                              {item.status === "needs_review" && (
-                                <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.needsReview",
-                                  )}
-                                </Badge>
-                              )}
-                              {item.status === "takedown_requested" && (
-                                <Badge className="bg-orange-400 text-white hover:bg-orange-500 border-none">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.takedownRequested",
-                                  )}
-                                </Badge>
-                              )}
-                              {item.status === "resolved" && (
-                                <Badge className="bg-green-500 text-white hover:bg-green-600 border-none">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.resolved",
-                                  )}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {item.platform}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500 mb-1">
-                              {t(
-                                "creatorDashboard.content.detections.detected",
-                              )}
-                            </p>
-                            <p className="font-medium text-gray-900">
-                              {new Date(item.detected_at).toLocaleDateString(
-                                i18n.language,
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-4">
-                          <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
-                              {t(
-                                "creatorDashboard.content.detections.matchConfidence",
-                              )}
-                            </p>
-                            <p className="font-bold text-lg text-red-500">
-                              {item.match_confidence}%
-                            </p>
-                          </div>
-                          <button className="text-sm text-[#32C8D1] hover:underline flex items-center gap-1 font-medium">
-                            {t(
-                              "creatorDashboard.content.detections.viewOriginal",
-                            )}{" "}
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                          {item.status === "needs_review" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-red-600 hover:bg-red-700 text-white gap-2 w-full sm:w-auto"
-                              >
-                                <XCircle className="w-4 h-4" />
-                                {t(
-                                  "creatorDashboard.content.detections.requestTakedown",
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 w-full sm:w-auto"
-                              >
-                                {t(
-                                  "creatorDashboard.content.detections.dismiss",
-                                )}
-                              </Button>
-                            </>
-                          )}
-                          {item.status === "takedown_requested" && (
-                            <p className="text-sm text-orange-700 flex items-center gap-2">
-                              {t(
-                                "creatorDashboard.content.detections.takedownSent",
-                              )}
-                            </p>
-                          )}
-                          {item.status === "resolved" && (
-                            <p className="text-sm text-green-700 flex items-center gap-2">
-                              <Check className="w-4 h-4" />
-                              {t(
-                                "creatorDashboard.content.detections.contentRemoved",
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">
-                  {t("creatorDashboard.content.detections.noDetections")}
-                </p>
-              </div>
-            )}
-
-            {/* How Detection Works */}
-            <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
-              <h3 className="font-bold text-gray-900 mb-4">
-                {t("creatorDashboard.content.detections.howItWorks.title")}
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <Eye className="w-6 h-6 text-[#32C8D1]" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.scanning.title",
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.scanning.desc",
-                    )}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <AlertCircle className="w-6 h-6 text-orange-500" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.ai.title",
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.ai.desc",
-                    )}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <Shield className="w-6 h-6 text-green-500" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.takedown.title",
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.takedown.desc",
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </div>
@@ -4851,22 +5105,6 @@ export default function CreatorDashboard() {
     );
   };
 
-  const handleApprove = (approvalId) => {
-    setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
-    setShowApprovalContract(null);
-    toast({
-      title: t("creatorDashboard.toasts.campaignApproved"),
-    });
-  };
-
-  const handleDecline = (approvalId) => {
-    setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
-    setShowApprovalContract(null);
-    toast({
-      title: t("creatorDashboard.toasts.campaignDeclined"),
-    });
-  };
-
   const handlePauseLicense = (contract, immediate) => {
     const option = immediate ? "immediate" : "next_month";
     setPauseOption(option);
@@ -5424,18 +5662,6 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                {t("creatorDashboard.dashboard.pendingApprovals")}
-              </p>
-              <AlertCircle className="w-5 h-5 text-gray-500" />
-            </div>
-            <p className="text-4xl font-bold text-gray-900">{pendingCount}</p>
-            <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.dashboard.pendingApprovalsInfo")}
-            </p>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">
                 {t("creatorDashboard.dashboard.annualRunRate")}
               </p>
               <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
@@ -5503,47 +5729,56 @@ export default function CreatorDashboard() {
           {t("creatorDashboard.dashboard.recentActivity")}
         </h3>
         {activeCampaigns.length === 0 ? (
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-blue-900">
-                <strong>
-                  {t("creatorDashboard.dashboard.previewExamples.title")}
-                </strong>{" "}
-                {t("creatorDashboard.dashboard.previewExamples.message")}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {exampleCampaigns.map((campaign) => (
-                <Card
-                  key={campaign.id}
-                  className="relative overflow-hidden rounded-lg h-64 bg-cover bg-center text-white shadow-lg transform hover:scale-105 transition-transform duration-300"
-                  style={{
-                    backgroundImage: `url(${campaign.brand_image_url})`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-black bg-opacity-50 p-4 flex flex-col justify-end">
-                    <h4 className="font-bold text-xl mb-1">{campaign.brand}</h4>
-                    <p className="text-sm mb-2">{campaign.campaign}</p>
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge className="bg-green-500 text-white border-none">
-                        {t("creatorDashboard.dashboard.active")}
-                      </Badge>
-                      <span className="font-bold">${campaign.rate}/mo</span>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ) : (
           <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
             <p>{t("creatorDashboard.dashboard.noCampaigns")}</p>
             <p className="text-sm text-gray-500 mt-1">
               {t("creatorDashboard.dashboard.noCampaignsInfo")}
             </p>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {activeCampaigns.slice(0, 3).map((campaign) => (
+              <Card
+                key={campaign.id}
+                className="p-5 bg-white border border-gray-200 shadow-sm"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  {campaign.brand_logo ? (
+                    <img
+                      src={campaign.brand_logo}
+                      alt={campaign.brand}
+                      className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                      {String(campaign.brand || "B")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">
+                      {campaign.brand}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {campaign.campaign}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <Badge className="bg-green-100 text-green-700 border border-green-300">
+                    {campaign.status === "expiring_soon"
+                      ? t("creatorDashboard.campaigns.status.expiringSoon")
+                      : t("creatorDashboard.campaigns.status.active")}
+                  </Badge>
+                  <span className="font-bold text-gray-900">
+                    ${campaign.rate.toLocaleString()}/mo
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
@@ -7184,6 +7419,24 @@ export default function CreatorDashboard() {
           </Button>
           <Button
             variant={
+              brandConnectionSubTab === "job-invites" ? "default" : "outline"
+            }
+            className={
+              brandConnectionSubTab === "job-invites"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("job-invites")}
+          >
+            Job Invites
+            {jobInvites.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {jobInvites.length}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={
               brandConnectionSubTab === "deliverables" ? "default" : "outline"
             }
             className={
@@ -7331,135 +7584,129 @@ export default function CreatorDashboard() {
           </Card>
         )}
 
+        {brandConnectionSubTab === "job-invites" && (
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="text-lg font-semibold text-gray-900">
+                Job Invites
+              </div>
+              {loadingJobInvites && (
+                <p className="text-sm text-gray-600">Loading job invites...</p>
+              )}
+              {!loadingJobInvites && jobInvites.length === 0 && (
+                <p className="text-sm text-gray-600">No job invites yet.</p>
+              )}
+              {!loadingJobInvites && jobInvites.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {jobInvites.map((job: any) => (
+                    <div
+                      key={String(job?.id || "")}
+                      className="p-4 border border-slate-200 rounded-lg bg-white space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">
+                            {job?.job_title || "Job invite"}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate mt-1">
+                            {resolveJobBrandName(job)}
+                          </div>
+                        </div>
+                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                          {(job?.call_type || "call").replace("_", " ")}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-600 flex flex-wrap gap-2">
+                        {job?.location && (
+                          <span>{String(job.location).replace("_", " ")}</span>
+                        )}
+                        {job?.job_type && (
+                          <span>{String(job.job_type).replace("_", " ")}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!(job?.accepted_creator_ids || []).includes(
+                          user?.id,
+                        ) ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              className="border-gray-300"
+                              onClick={() =>
+                                navigate(
+                                  `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                    String(job?.id || ""),
+                                  )}`,
+                                )
+                              }
+                            >
+                              View job details
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
+                              onClick={() => {
+                                setJobInviteConfirmId(String(job?.id || ""));
+                                setJobInviteConfirmAction("accept");
+                                setJobInviteConfirmOpen(true);
+                              }}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() => {
+                                setJobInviteConfirmId(String(job?.id || ""));
+                                setJobInviteConfirmAction("decline");
+                                setJobInviteConfirmOpen(true);
+                              }}
+                            >
+                              Decline
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            className="bg-black text-white"
+                            onClick={() =>
+                              navigate(
+                                `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                  String(job?.id || ""),
+                                )}&apply=true`,
+                              )
+                            }
+                          >
+                            Apply
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
         {brandConnectionSubTab === "offers" && (
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
                 Brand Offers
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-base font-semibold text-gray-800">
-                    Job Invites
-                  </div>
-                  <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
-                    {jobInvites.length}
-                  </Badge>
-                </div>
-                {loadingJobInvites && (
-                  <p className="text-sm text-gray-600">
-                    Loading job invites...
-                  </p>
-                )}
-                {!loadingJobInvites && jobInvites.length === 0 && (
-                  <p className="text-sm text-gray-600">No job invites yet.</p>
-                )}
-                {!loadingJobInvites && jobInvites.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {jobInvites.map((job: any) => (
-                      <div
-                        key={String(job?.id || "")}
-                        className="p-4 border border-slate-200 rounded-lg bg-white space-y-3"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              {job?.job_title || "Job invite"}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {resolveJobBrandName(job)}
-                            </div>
-                          </div>
-                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
-                            {(job?.call_type || "call").replace("_", " ")}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-gray-600 flex flex-wrap gap-2">
-                          {job?.location && (
-                            <span>
-                              {String(job.location).replace("_", " ")}
-                            </span>
-                          )}
-                          {job?.job_type && (
-                            <span>
-                              {String(job.job_type).replace("_", " ")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {!(job?.accepted_creator_ids || []).includes(
-                            user?.id,
-                          ) ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                className="border-gray-300"
-                                onClick={() =>
-                                  navigate(
-                                    `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                                      String(job?.id || ""),
-                                    )}`,
-                                  )
-                                }
-                              >
-                                View job details
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
-                                onClick={() => {
-                                  setJobInviteConfirmId(String(job?.id || ""));
-                                  setJobInviteConfirmAction("accept");
-                                  setJobInviteConfirmOpen(true);
-                                }}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="border-red-200 text-red-600 hover:bg-red-50"
-                                onClick={() => {
-                                  setJobInviteConfirmId(String(job?.id || ""));
-                                  setJobInviteConfirmAction("decline");
-                                  setJobInviteConfirmOpen(true);
-                                }}
-                              >
-                                Decline
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              className="bg-black text-white"
-                              onClick={() =>
-                                navigate(
-                                  `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                                    String(job?.id || ""),
-                                  )}&apply=true`,
-                                )
-                              }
-                            >
-                              Apply
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
                   Loading campaign offers...
                 </p>
               )}
-              {!loadingBrandOffers && directBrandOffers.length === 0 && (
+              {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
                   No campaign offers available yet.
                 </p>
               )}
-              {!selectedOfferBriefId && directBrandOffers.length > 0 && (
+              {!selectedOfferBriefId && brandOffers.length > 0 && (
                 <div className="space-y-3">
-                  {directBrandOffers.map((offer: any) => {
+                  {brandOffers.map((offer: any) => {
                     const offerId = String(offer?.id || "");
                     const status = String(offer?.status || "sent");
                     return (
@@ -7933,7 +8180,7 @@ export default function CreatorDashboard() {
                 </div>
               )}
               {!selectedOfferBriefId &&
-                directBrandOffers.map((offer: any) => {
+                brandOffers.map((offer: any) => {
                   const offerId = String(offer?.id || "");
                   const campaign = offer?.brand_campaigns || {};
                   return (
@@ -8252,11 +8499,7 @@ export default function CreatorDashboard() {
                 // no-op
               }
             }
-            try {
-              await loadCreatorContractHubRows();
-            } catch {
-              // no-op
-            }
+            // Contract hub rows not needed
           }}
         >
           <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
@@ -8282,11 +8525,7 @@ export default function CreatorDashboard() {
                       // no-op
                     }
                   }
-                  try {
-                    await loadCreatorContractHubRows();
-                  } catch {
-                    // no-op
-                  }
+                  // Contract hub rows not needed
                 }}
               >
                 Done
@@ -8298,986 +8537,537 @@ export default function CreatorDashboard() {
     );
   };
   const renderCampaigns = () => {
-    // Use example campaigns if activeCampaigns is empty, otherwise use real data
-    const campaignsToShow =
-      activeCampaigns.length === 0 ? exampleCampaigns : activeCampaigns;
-    const showingExamples = activeCampaigns.length === 0;
+    const query = campaignSearch.trim().toLowerCase();
+    const campaignsToShow = query
+      ? activeCampaigns.filter((campaign) => {
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(query) || name.includes(query);
+        })
+      : activeCampaigns;
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.campaigns.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.campaigns.subtitle")}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("creatorDashboard.campaigns.title")}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {t("creatorDashboard.campaigns.subtitle")}
+              </p>
+            </div>
+            <Badge
+              className={`${
+                activeCampaigns.length === 0
+                  ? "bg-orange-100 text-orange-700 border border-orange-300"
+                  : "bg-green-100 text-green-700 border border-green-300"
+              } px-4 py-2 text-lg w-fit`}
+            >
+              {t("creatorDashboard.campaigns.activeCount", {
+                count: activeCampaigns.length,
+              })}
+            </Badge>
           </div>
-          <Badge
-            className={`${
-              activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
-            } px-4 py-2 text-lg`}
-          >
-            {t("creatorDashboard.campaigns.activeCount", {
-              count: activeCampaigns.length,
-            })}
-          </Badge>
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={campaignSearch}
+                onChange={(e) => setCampaignSearch(e.target.value)}
+                placeholder="Search by brand or campaign"
+                className="pl-12 pr-12 h-12"
+              />
+              {campaignSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setCampaignSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Welcome message for blank users showing examples */}
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-blue-900">
-              <strong>{t("creatorDashboard.campaigns.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.campaigns.welcome.message")}
-            </p>
-          </div>
+        {campaignsToShow.length === 0 && (
+          <Card className="p-6 bg-white border border-gray-200 text-center text-gray-600">
+            {campaignSearch.trim() ? (
+              <>
+                <p>No campaigns match your search.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try a different brand or campaign name.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>Loading campaigns...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fetching your active campaigns and licenses.
+                </p>
+              </>
+            )}
+          </Card>
         )}
 
         {/* Campaigns Table - Desktop Only */}
-        <Card className="p-6 bg-white border border-gray-200 hidden md:block">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-gray-300">
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.brand")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.usageType")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.rate")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.activeUntil")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.status")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.thisMonth")}
-                  </th>
-                  <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaignsToShow.map((campaign) => (
-                  <tr
-                    key={campaign.id}
-                    className="border-b border-gray-200 hover:bg-gray-50"
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        {campaign.brand_logo && (
-                          <img
-                            src={campaign.brand_logo}
-                            alt={campaign.brand}
-                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                          />
-                        )}
-                        {!campaign.brand_logo && (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                            {campaign.brand.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {campaign.brand}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {campaign.impressions_week?.toLocaleString() ||
-                              campaign.campaign}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {campaign.usage_type ||
-                        campaign.campaign?.split(",")[0] ||
-                        "Social Ads"}
-                    </td>
-                    <td className="py-4 px-4 font-bold text-gray-900">
-                      ${campaign.rate.toLocaleString()}/mo
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {new Date(
-                        campaign.active_until || campaign.end_date,
-                      ).toLocaleDateString()}
-                      {campaign.auto_renewal && (
-                        <Badge
-                          className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
-                          variant="outline"
-                        >
-                          {t("creatorDashboard.campaigns.labels.autoRenew")}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge
-                        className={`${
-                          campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
-                      >
-                        {campaign.status === "active"
-                          ? t("creatorDashboard.campaigns.status.active")
-                          : campaign.status === "expiring_soon"
-                            ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
-                            : campaign.status}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4 font-bold text-green-600">
-                      $
-                      {campaign.earnings_this_month ||
-                        campaign.rate.toLocaleString()}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handlePauseCampaign(campaign.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Pause className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleRevokeCampaign(campaign.id)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          {t("creatorDashboard.campaigns.actions.revoke")}
-                        </Button>
-                      </div>
-                    </td>
+        {campaignsToShow.length > 0 && (
+          <Card className="p-6 bg-white border border-gray-200 hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-300">
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("creatorDashboard.campaigns.table.brand")}
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("creatorDashboard.campaigns.table.usageType")}
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      Amount
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("creatorDashboard.campaigns.table.activeUntil")}
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("creatorDashboard.campaigns.table.status")}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Mobile Campaign Cards */}
-        <div className="md:hidden space-y-4">
-          {campaignsToShow.map((campaign) => {
-            const isExpanded = expandedCampaignId === campaign.id;
-
-            return (
-              <Card
-                key={campaign.id}
-                className="bg-white border border-gray-200 overflow-hidden"
-              >
-                {/* Collapsible Header */}
-                <button
-                  onClick={() =>
-                    setExpandedCampaignId(isExpanded ? null : campaign.id)
-                  }
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    {campaign.brand_logo && (
-                      <img
-                        src={campaign.brand_logo}
-                        alt={campaign.brand}
-                        className="w-12 h-12 rounded-lg object-cover border border-gray-200 flex-shrink-0"
-                      />
-                    )}
-                    {!campaign.brand_logo && (
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                        {campaign.brand.charAt(0)}
-                      </div>
-                    )}
-                    <div className="text-left flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 truncate">
-                        {campaign.brand}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
+                </thead>
+                <tbody>
+                  {campaignsToShow.map((campaign) => (
+                    <tr
+                      key={campaign.id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          {campaign.brand_logo && (
+                            <img
+                              src={campaign.brand_logo}
+                              alt={campaign.brand}
+                              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                            />
+                          )}
+                          {!campaign.brand_logo && (
+                            <div className="w-10 h-10 rounded-full bg-[#32C8D1] flex items-center justify-center text-white font-bold">
+                              {campaign.brand.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {campaign.brand}
+                            </p>
+                            {campaign.raw_campaign_name && (
+                              <p className="text-xs text-gray-500 truncate">
+                                {campaign.raw_campaign_name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-gray-700">
                         {campaign.usage_type ||
                           campaign.campaign?.split(",")[0] ||
                           "Social Ads"}
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight
-                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
-                      isExpanded ? "rotate-90" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Expandable Details */}
-                {isExpanded && (
-                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
-                    {/* Rate */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.rateLabel")}
-                      </span>
-                      <span className="font-bold text-gray-900">
-                        ${campaign.rate.toLocaleString()}/mo
-                      </span>
-                    </div>
-
-                    {/* Active Until */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.activeUntilLabel")}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-900">
-                          {new Date(
-                            campaign.active_until || campaign.end_date,
-                          ).toLocaleDateString()}
-                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-bold text-gray-900">
+                        $
+                        {(
+                          campaign.amount ??
+                          campaign.rate ??
+                          0
+                        ).toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4 text-gray-700">
+                        {parseDate(
+                          campaign.active_until || campaign.end_date,
+                        )?.toLocaleDateString() ||
+                          formatDurationLabel(
+                            campaign.duration_days,
+                            campaign.duration_months,
+                          ) ||
+                          "Ongoing"}
                         {campaign.auto_renewal && (
-                          <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
+                          <Badge
+                            className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
+                            variant="outline"
+                          >
                             {t("creatorDashboard.campaigns.labels.autoRenew")}
                           </Badge>
                         )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <Badge
+                          className={`${
+                            campaign.status === "active"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : campaign.status === "expiring_soon"
+                                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                                : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
+                        >
+                          {campaign.status === "active"
+                            ? t("creatorDashboard.campaigns.status.active")
+                            : campaign.status === "expiring_soon"
+                              ? t(
+                                  "creatorDashboard.campaigns.status.expiringSoon",
+                                )
+                              : campaign.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        {/* Mobile Campaign Cards */}
+        {campaignsToShow.length > 0 && (
+          <div className="md:hidden space-y-4">
+            {campaignsToShow.map((campaign) => {
+              const isExpanded = expandedCampaignId === campaign.id;
+
+              return (
+                <Card
+                  key={campaign.id}
+                  className="bg-white border border-gray-200 overflow-hidden"
+                >
+                  {/* Collapsible Header */}
+                  <button
+                    onClick={() =>
+                      setExpandedCampaignId(isExpanded ? null : campaign.id)
+                    }
+                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      {campaign.brand_logo && (
+                        <img
+                          src={campaign.brand_logo}
+                          alt={campaign.brand}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                        />
+                      )}
+                      {!campaign.brand_logo && (
+                        <div className="w-12 h-12 rounded-lg bg-[#32C8D1] flex items-center justify-center text-white font-bold flex-shrink-0">
+                          {campaign.brand.charAt(0)}
+                        </div>
+                      )}
+                      <div className="text-left flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 truncate">
+                          {campaign.brand}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {campaign.usage_type ||
+                            campaign.campaign?.split(",")[0] ||
+                            "Social Ads"}
+                        </p>
                       </div>
                     </div>
+                    <ChevronRight
+                      className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                        isExpanded ? "rotate-90" : ""
+                      }`}
+                    />
+                  </button>
 
-                    {/* Status */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.statusLabel")}
-                      </span>
-                      <Badge
-                        className={`${
-                          campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
-                      >
-                        {campaign.status === "active"
-                          ? t("creatorDashboard.campaigns.status.active")
-                          : campaign.status === "expiring_soon"
-                            ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
-                            : campaign.status}
-                      </Badge>
-                    </div>
+                  {/* Expandable Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
+                      {/* Amount */}
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-gray-600">Amount</span>
+                        <span className="font-bold text-gray-900">
+                          $
+                          {(
+                            campaign.amount ??
+                            campaign.rate ??
+                            0
+                          ).toLocaleString()}
+                        </span>
+                      </div>
 
-                    {/* This Month */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.thisMonthLabel")}
-                      </span>
-                      <span className="font-bold text-green-600">
-                        $
-                        {campaign.earnings_this_month ||
-                          campaign.rate.toLocaleString()}
-                      </span>
-                    </div>
-
-                    {/* Impressions (if available) */}
-                    {campaign.impressions_week && (
+                      {/* Active Until */}
                       <div className="flex justify-between items-center py-2">
                         <span className="text-sm text-gray-600">
-                          {t("creatorDashboard.campaigns.impressionsLabel")}
+                          {t("creatorDashboard.campaigns.activeUntilLabel")}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {campaign.impressions_week.toLocaleString()}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-900">
+                            {parseDate(
+                              campaign.active_until || campaign.end_date,
+                            )?.toLocaleDateString() ||
+                              formatDurationLabel(
+                                campaign.duration_days,
+                                campaign.duration_months,
+                              ) ||
+                              "Ongoing"}
+                          </span>
+                          {campaign.auto_renewal && (
+                            <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
+                              {t("creatorDashboard.campaigns.labels.autoRenew")}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    )}
 
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePauseCampaign(campaign.id);
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <Pause className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.campaigns.pause")}
-                      </Button>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRevokeCampaign(campaign.id);
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-red-600 hover:bg-red-50"
-                      >
-                        Revoke
-                      </Button>
+                      {/* Status */}
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-gray-600">
+                          {t("creatorDashboard.campaigns.statusLabel")}
+                        </span>
+                        <Badge
+                          className={`${
+                            campaign.status === "active"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : campaign.status === "expiring_soon"
+                                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                                : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
+                        >
+                          {campaign.status === "active"
+                            ? t("creatorDashboard.campaigns.status.active")
+                            : campaign.status === "expiring_soon"
+                              ? t(
+                                  "creatorDashboard.campaigns.status.expiringSoon",
+                                )
+                              : campaign.status}
+                        </Badge>
+                      </div>
+
+                      {/* Actions removed */}
                     </div>
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Campaign Details Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {campaignsToShow.slice(0, 2).map((campaign) => (
-            <Card
-              key={campaign.id}
-              className="p-6 bg-white border border-gray-200"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={campaign.brand_logo}
-                    alt={campaign.brand}
-                    className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
-                  />
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">
-                      {campaign.brand}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {campaign.usage_type}
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  className={
-                    campaign.status === "active"
-                      ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-orange-100 text-orange-700 border border-orange-300"
-                  }
-                >
-                  {campaign.status === "active"
-                    ? t("creatorDashboard.campaigns.status.active")
-                    : t("creatorDashboard.campaigns.status.expiringSoon")}
-                </Badge>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.monthlyRate")}
-                  </span>
-                  <span className="font-bold text-gray-900">
-                    ${campaign.rate.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.activeUntil")}
-                  </span>
-                  <span className="font-medium text-gray-900">
-                    {new Date(campaign.active_until).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.regions")}
-                  </span>
-                  <span className="font-medium text-gray-900">
-                    {campaign.regions.join(", ")}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.weeklyImpressions")}
-                  </span>
-                  <span className="font-medium text-gray-900">
-                    {campaign.impressions_week.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                <Button variant="outline" className="flex-1">
-                  <Eye className="w-4 h-4 mr-2" />
-                  View job details and apply
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 text-red-600 hover:bg-red-50"
-                  onClick={() => handleRevokeCampaign(campaign.id)}
-                >
-                  {t("creatorDashboard.campaigns.actions.revoke")}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Rights Expiration Calendar */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-          <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <p className="text-blue-900 text-sm">
-            <strong>{t("creatorDashboard.campaigns.consent.title")}</strong>{" "}
-            {t("creatorDashboard.campaigns.consent.message", {
-              count: activeCampaigns.length,
+                  )}
+                </Card>
+              );
             })}
-          </p>
-        </div>
+          </div>
+        )}
       </div>
     );
   };
 
-  const renderApprovals = () => {
-    if (showApprovalContract) {
-      // Check both real approvals and examples
-      const approval =
-        pendingApprovals.find((a) => a.id === showApprovalContract) ||
-        exampleApprovals.find((a) => a.id === showApprovalContract);
-      if (!approval) return null;
-
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowApprovalContract(null)}
-              className="border-2 border-gray-300 w-fit"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.approvals.backToQueue")}
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {t("creatorDashboard.approvals.contractReviewTitle", {
-                  brand: approval.brand,
-                })}
-              </h1>
-              <p className="text-gray-600 text-sm sm:text-base">
-                {t("creatorDashboard.approvals.contractReviewSubtitle")}
-              </p>
-            </div>
-          </div>
-
-          {/* What You're Earning */}
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.approvals.whatYouWillEarn")}
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.approvals.yourMonthlyPayment")}
-                </p>
-                <p className="text-5xl font-bold text-green-600">
-                  ${approval.proposed_rate}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.approvals.ifYouKeepThisFor", {
-                    term: approval.term_length,
-                  })}
-                </p>
-                <p className="text-3xl font-bold text-gray-900">
-                  $
-                  {approval.term_length === "Perpetual"
-                    ? t("common.ongoing")
-                    : approval.proposed_rate * parseInt(approval.term_length)}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {t("creatorDashboard.approvals.totalEstimatedEarnings")}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Contract Terms */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.approvals.contractTerms")}
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.duration")}
-                  </p>
-                  <p className="font-bold text-gray-900 text-lg">
-                    {approval.term_length}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.territory")}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {approval.regions.map((region) => (
-                      <Badge
-                        key={region}
-                        variant="secondary"
-                        className="bg-blue-100 text-blue-700"
-                      >
-                        {region}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.usageType")}
-                  </p>
-                  <p className="font-bold text-gray-900 text-lg">
-                    {approval.usage_type}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.industries")}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {approval.industries.map((industry) => (
-                      <Badge
-                        key={industry}
-                        variant="secondary"
-                        className="bg-purple-100 text-purple-700"
-                      >
-                        {industry}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Your Rights */}
-          <Card className="p-6 bg-blue-50 border-2 border-blue-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.approvals.yourRightsAndProtections")}
-            </h3>
-            <div className="space-y-3 text-gray-900">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.canPause")}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.canRevoke")}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.licenseExpires")}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.paymentProtected")}</p>
-              </div>
-            </div>
-          </Card>
-
-          {approval.perpetual && (
-            <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-900 text-sm">
-                <strong>
-                  {t("creatorDashboard.approvals.perpetualUseWarning.title")}
-                </strong>{" "}
-                {t("creatorDashboard.approvals.perpetualUseWarning.message")}
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button
-              onClick={() => handleDecline(approval.id)}
-              variant="outline"
-              className="flex-1 h-14 border-2 border-gray-300"
-            >
-              <XCircle className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.decline")}
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 h-14 border-2 border-[#32C8D1] text-[#32C8D1]"
-            >
-              <MessageSquare className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.counterOffer")}
-            </Button>
-            <Button
-              onClick={() => handleApprove(approval.id)}
-              className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle2 className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.acceptAndSign")}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    // Use example approvals if pendingApprovals is empty, otherwise use real data
-    const approvalsToShow =
-      pendingApprovals.length === 0 ? exampleApprovals : pendingApprovals;
-    const showingExamples = pendingApprovals.length === 0;
+  const renderCampaignArchive = () => {
+    const archiveQuery = archiveSearch.trim().toLowerCase();
+    const campaignsToShow = archiveQuery
+      ? archivedCampaigns.filter((campaign) => {
+          const brand = String(campaign.brand || "").toLowerCase();
+          const name = String(
+            campaign.raw_campaign_name || campaign.campaign || "",
+          ).toLowerCase();
+          return brand.includes(archiveQuery) || name.includes(archiveQuery);
+        })
+      : archivedCampaigns;
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.approvals.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.approvals.subtitle")}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("creatorDashboard.archive.title")}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {t("creatorDashboard.archive.subtitle")}
+              </p>
+            </div>
+            <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg w-fit">
+              {t("creatorDashboard.archive.completedCount", {
+                count: archivedCampaigns.length,
+              })}
+            </Badge>
           </div>
-          <Badge
-            variant="secondary"
-            className={`${pendingCount > 0 ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-gray-100 text-gray-700 border border-gray-300"} px-4 py-2 text-lg`}
-          >
-            {t("creatorDashboard.approvals.pendingCount", {
-              count: pendingCount,
-            })}
-          </Badge>
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={archiveSearch}
+                onChange={(e) => setArchiveSearch(e.target.value)}
+                placeholder="Search by brand or campaign"
+                className="pl-12 pr-12 h-12"
+              />
+              {archiveSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setArchiveSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-
-        {/* Welcome banner for blank users showing examples */}
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-blue-900">
-              <strong>{t("creatorDashboard.approvals.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.approvals.welcome.message")}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {approvalsToShow.map((approval) => (
-            <Card
-              key={approval.id}
-              className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 gap-4">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={approval.brand_logo}
-                    alt={approval.brand}
-                    className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
-                  />
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-2xl">
-                      {approval.brand}
-                    </h3>
-                    <p className="text-gray-600">{approval.usage_type}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("creatorDashboard.approvals.requestedOn", {
-                        date: new Date(
-                          approval.requested_date,
-                        ).toLocaleDateString(),
-                      })}
-                    </p>
+        {campaignsToShow.length === 0 ? (
+          <Card className="p-6 rounded-xl shadow-sm text-center text-gray-600">
+            {archiveSearch.trim() ? (
+              <>
+                <p>No campaigns match your search.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try a different brand or campaign name.
+                </p>
+              </>
+            ) : loadingBrandOffers ? (
+              <>
+                <p>Loading past campaigns...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fetching your completed campaigns.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>No past campaigns yet.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Completed campaigns will appear here.
+                </p>
+              </>
+            )}
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {campaignsToShow.map((campaign) => (
+              <Card
+                key={campaign.id}
+                className="p-6 bg-white border-2 border-gray-200"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    {campaign.brand_logo ? (
+                      <img
+                        src={campaign.brand_logo}
+                        alt={campaign.brand}
+                        className="w-16 h-16 rounded-lg object-contain border-2 border-gray-200 p-2"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-gray-100 border-2 border-gray-200 flex items-center justify-center text-lg font-bold text-gray-700">
+                        {String(campaign.brand || "B")
+                          .trim()
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-2xl">
+                        {campaign.brand}
+                      </h3>
+                      <p className="text-gray-600">{campaign.campaign_type}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {t("creatorDashboard.archive.completedOn", {
+                          date: campaign.completed_date,
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                {approval.perpetual && (
-                  <Badge
-                    variant="destructive"
-                    className="bg-red-500 text-white"
-                  >
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    {t("creatorDashboard.approvals.perpetualRequest")}
+                  <Badge className="bg-green-100 text-green-700 border border-green-300">
+                    {t("creatorDashboard.archive.status.completed")}
                   </Badge>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.proposedRate")}
-                    </span>
-                    <span className="font-bold text-gray-900 text-lg">
-                      {t("creatorDashboard.approvals.labels.pricePerMonth", {
-                        price: approval.proposed_rate,
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.termLength")}
-                    </span>
-                    <span className="font-bold text-gray-900">
-                      {approval.term_length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.estimatedMonthly")}
-                    </span>
-                    <span className="font-bold text-green-600 text-lg">
-                      ${approval.proposed_rate}
-                    </span>
-                  </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid md:grid-cols-4 gap-4 mb-6">
                   <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("creatorDashboard.approvals.regions")}
+                    <p className="text-sm text-gray-600 mb-1">
+                      {t("creatorDashboard.archive.duration")}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {approval.regions.map((region) => (
+                    <p className="font-bold text-gray-900">
+                      {campaign.duration}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600 mb-1">
+                      {t("creatorDashboard.archive.monthlyRate")}
+                    </p>
+                    <p className="font-bold text-gray-900">
+                      ${campaign.monthly_rate}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-gray-600 mb-1">
+                      {t("creatorDashboard.archive.totalEarned")}
+                    </p>
+                    <p className="font-bold text-green-600 text-lg">
+                      ${campaign.total_earned.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600 mb-1">
+                      {t("creatorDashboard.archive.regions")}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {campaign.regions.map((region) => (
                         <Badge
                           key={region}
-                          variant="secondary"
-                          className="bg-blue-100 text-blue-700 border border-blue-300"
+                          className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
                         >
                           {region}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("creatorDashboard.approvals.industries")}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {approval.industries.map((industry) => (
-                        <Badge
-                          key={industry}
-                          variant="secondary"
-                          className="bg-purple-100 text-purple-700 border border-purple-300"
-                        >
-                          {industry}
-                        </Badge>
-                      ))}
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={campaign.show_on_portfolio}
+                      className="data-[state=checked]:bg-gray-900"
+                      onCheckedChange={(checked) => {
+                        // For examples, just show a message
+                        if (campaign.isExample) {
+                          toast({
+                            title: "Demo Mode",
+                            description:
+                              "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                          });
+                          return;
+                        }
+                        // For real campaigns, update the state
+                        // TODO: Add API call to update portfolio visibility
+                        console.log(
+                          `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
+                        );
+                      }}
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {t("creatorDashboard.archive.showOnPortfolio")}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {campaign.show_on_portfolio
+                          ? t("creatorDashboard.archive.visibleOnPortfolio")
+                          : t("creatorDashboard.archive.hiddenFromPortfolio")}
+                      </p>
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    className="border-2 border-gray-300"
+                    disabled={campaign.isExample}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {t("creatorDashboard.archive.viewDetails")}
+                  </Button>
                 </div>
-              </div>
-
-              {approval.perpetual && (
-                <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-900 text-sm">
-                    <strong>
-                      {t("creatorDashboard.approvals.warning.title")}
-                    </strong>{" "}
-                    {t("creatorDashboard.approvals.warning.message")}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <Button
-                  onClick={() => setShowApprovalContract(approval.id)}
-                  variant="outline"
-                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
-                >
-                  <FileText className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.viewContract")}
-                </Button>
-                <Button
-                  onClick={() => handleDecline(approval.id)}
-                  variant="outline"
-                  className="h-12 border-2 border-gray-300 w-full sm:w-auto"
-                >
-                  <XCircle className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.decline")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1] w-full sm:w-auto"
-                >
-                  <MessageSquare className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.counterOffer")}
-                </Button>
-                <Button
-                  onClick={() => handleApprove(approval.id)}
-                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8 w-full sm:w-auto"
-                >
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.acceptAndSign")}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderCampaignArchive = () => {
-    // Use example archived campaigns if none exist, otherwise use real data
-    const archivedCampaigns: any[] = []; // This will be populated from real data later
-    const campaignsToShow =
-      archivedCampaigns.length === 0
-        ? exampleArchivedCampaigns
-        : archivedCampaigns;
-    const showingExamples = archivedCampaigns.length === 0;
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.archive.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.archive.subtitle")}
-            </p>
-          </div>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
-            {t("creatorDashboard.archive.completedCount", {
-              count: archivedCampaigns.length,
-            })}
-          </Badge>
-        </div>
-
-        {/* Welcome banner for blank users showing examples */}
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-blue-900">
-              <strong>{t("creatorDashboard.archive.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.archive.welcome.message")}
-            </p>
+              </Card>
+            ))}
           </div>
         )}
-
-        <div className="space-y-6">
-          {campaignsToShow.map((campaign) => (
-            <Card
-              key={campaign.id}
-              className="p-6 bg-white border-2 border-gray-200"
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={campaign.brand_logo}
-                    alt={campaign.brand}
-                    className="w-16 h-16 rounded-lg object-contain border-2 border-gray-200 p-2"
-                  />
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-2xl">
-                      {campaign.brand}
-                    </h3>
-                    <p className="text-gray-600">{campaign.campaign_type}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("creatorDashboard.archive.completedOn", {
-                        date: campaign.completed_date,
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <Badge className="bg-green-100 text-green-700 border border-green-300">
-                  {t("creatorDashboard.archive.status.completed")}
-                </Badge>
-              </div>
-
-              <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.duration")}
-                  </p>
-                  <p className="font-bold text-gray-900">{campaign.duration}</p>
-                </div>
-                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.monthlyRate")}
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    ${campaign.monthly_rate}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.totalEarned")}
-                  </p>
-                  <p className="font-bold text-green-600 text-lg">
-                    ${campaign.total_earned.toLocaleString()}
-                  </p>
-                </div>
-                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.regions")}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {campaign.regions.map((region) => (
-                      <Badge
-                        key={region}
-                        className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
-                      >
-                        {region}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={campaign.show_on_portfolio}
-                    className="data-[state=checked]:bg-gray-900"
-                    onCheckedChange={(checked) => {
-                      // For examples, just show a message
-                      if (campaign.isExample) {
-                        toast({
-                          title: "Demo Mode",
-                          description:
-                            "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                        });
-                        return;
-                      }
-                      // For real campaigns, update the state
-                      // TODO: Add API call to update portfolio visibility
-                      console.log(
-                        `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
-                      );
-                    }}
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {t("creatorDashboard.archive.showOnPortfolio")}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {campaign.show_on_portfolio
-                        ? t("creatorDashboard.archive.visibleOnPortfolio")
-                        : t("creatorDashboard.archive.hiddenFromPortfolio")}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  disabled={campaign.isExample}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.archive.viewDetails")}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
       </div>
     );
   };
 
   const renderContracts = () => {
     if (showContractDetails && selectedContract) {
-      // Check both real contracts and examples
-      const contract =
-        contracts.find((c) => c.id === selectedContract) ||
-        exampleContracts.find((c) => c.id === selectedContract);
+      const contract = normalizedContracts.find(
+        (c) => c.id === selectedContract,
+      );
       if (!contract) return null;
 
       const currentMonth = new Date().toLocaleString("default", {
@@ -9494,18 +9284,12 @@ export default function CreatorDashboard() {
       );
     }
 
-    // Use example contracts if none exist, otherwise use real data
-    const realActiveContracts = contracts.filter(
+    const activeContracts = normalizedContracts.filter(
       (c) => c.status === "active" || c.status === "expiring_soon",
     );
-    const realExpiredContracts = contracts.filter(
+    const expiredContracts = normalizedContracts.filter(
       (c) => c.status === "expired",
     );
-
-    const activeContracts =
-      realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
-    const expiredContracts = realExpiredContracts;
-    const showingExamples = realActiveContracts.length === 0;
 
     return (
       <div className="space-y-6">
@@ -9520,14 +9304,10 @@ export default function CreatorDashboard() {
           </div>
         </div>
 
-        {/* Welcome banner for blank users showing examples */}
-        {showingExamples && (
+        {activeContracts.length === 0 && expiredContracts.length === 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-blue-900">
-              <strong>{t("creatorDashboard.contracts.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.contracts.welcome.message")}
-            </p>
+            <p className="text-blue-900">No licenses or contracts yet.</p>
           </div>
         )}
 
@@ -11598,9 +11378,7 @@ export default function CreatorDashboard() {
           {activeSection === "likeness" && renderLikeness()}
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
-          {activeSection === "approvals" && renderApprovals()}
           {activeSection === "archive" && renderCampaignArchive()}
-          {activeSection === "contracts" && renderContracts()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
           {activeSection === "agency-connection" && renderAgencyConnection()}
@@ -11997,10 +11775,9 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              // Check both real contracts and examples
-              const contract =
-                contracts.find((c) => c.id === selectedContract) ||
-                exampleContracts.find((c) => c.id === selectedContract);
+              const contract = normalizedContracts.find(
+                (c) => c.id === selectedContract,
+              );
               if (!contract) return null;
               const currentMonth = new Date().toLocaleString(i18n.language, {
                 month: "long",
@@ -12189,10 +11966,9 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              // Check both real contracts and examples
-              const contract =
-                contracts.find((c) => c.id === selectedContract) ||
-                exampleContracts.find((c) => c.id === selectedContract);
+              const contract = normalizedContracts.find(
+                (c) => c.id === selectedContract,
+              );
               if (!contract) return null;
               const revocationDate = new Date();
               const finalDate = new Date(revocationDate);
