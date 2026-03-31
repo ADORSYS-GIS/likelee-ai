@@ -25,9 +25,9 @@ export default function CreatorSubscribe() {
     plan_interval?: string;
   }>({});
 
-  const [billingInterval, setBillingInterval] = React.useState<"month" | "year">(
-    "month",
-  );
+  const [billingInterval, setBillingInterval] = React.useState<
+    "month" | "year"
+  >("month");
 
   const pricing = {
     basic: {
@@ -55,30 +55,18 @@ export default function CreatorSubscribe() {
     },
     {
       title: "Connections & Payouts",
-      items: [
-        "Agency connection",
-        "Brand connection",
-        "Payouts",
-      ],
+      items: ["Agency connection", "Brand connection", "Payouts"],
     },
   ];
 
   const proGroups = [
     {
       title: "Everything in Basic, plus",
-      items: [
-        "Cameo video uploads",
-        "Jobs",
-        "Settings: My Rules",
-      ],
+      items: ["Cameo video uploads", "Jobs", "Settings: My Rules"],
     },
     {
       title: "Voice & Creator Tools",
-      items: [
-        "Voice profile creation",
-        "Up to 6 voice tones",
-        "Talent Portal",
-      ],
+      items: ["Voice profile creation", "Up to 6 voice tones", "Talent Portal"],
     },
     {
       title: "Campaigns & Analytics",
@@ -124,14 +112,14 @@ export default function CreatorSubscribe() {
         const resp = await getCreatorBillingStatus();
         const tier = String((resp as any)?.plan_tier || "free");
         const interval = String((resp as any)?.plan_interval || "month");
-        
+
         setCurrentPlanTier(tier);
         setBillingInfo({
           current_period_end: (resp as any)?.stripe_current_period_end,
           cancel_at_period_end: (resp as any)?.stripe_cancel_at_period_end,
           plan_interval: (resp as any)?.plan_interval,
         });
-        
+
         // If they have an active plan, sync the toggle to their current interval
         if (tier !== "free") {
           setBillingInterval(interval === "year" ? "year" : "month");
@@ -228,7 +216,8 @@ export default function CreatorSubscribe() {
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             <Badge variant="outline" className="bg-white/80">
-              Plans are billed {billingInterval === "year" ? "annually" : "monthly"}
+              Plans are billed{" "}
+              {billingInterval === "year" ? "annually" : "monthly"}
             </Badge>
             <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
               <button
@@ -242,7 +231,10 @@ export default function CreatorSubscribe() {
                   const next = "month" as const;
                   setBillingInterval(next);
                   try {
-                    window.localStorage.setItem("creator_billing_interval", next);
+                    window.localStorage.setItem(
+                      "creator_billing_interval",
+                      next,
+                    );
                   } catch {
                     // ignore
                   }
@@ -255,7 +247,9 @@ export default function CreatorSubscribe() {
               </button>
               <div
                 className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors ${
-                  billingInterval === "year" ? "bg-[#0B9DA2]/15" : "bg-[#F5F7FA]"
+                  billingInterval === "year"
+                    ? "bg-[#0B9DA2]/15"
+                    : "bg-[#F5F7FA]"
                 }`}
                 role="switch"
                 aria-checked={billingInterval === "year"}
@@ -264,7 +258,10 @@ export default function CreatorSubscribe() {
                   const next = billingInterval === "year" ? "month" : "year";
                   setBillingInterval(next);
                   try {
-                    window.localStorage.setItem("creator_billing_interval", next);
+                    window.localStorage.setItem(
+                      "creator_billing_interval",
+                      next,
+                    );
                   } catch {
                     // ignore
                   }
@@ -278,7 +275,10 @@ export default function CreatorSubscribe() {
                   const next = billingInterval === "year" ? "month" : "year";
                   setBillingInterval(next);
                   try {
-                    window.localStorage.setItem("creator_billing_interval", next);
+                    window.localStorage.setItem(
+                      "creator_billing_interval",
+                      next,
+                    );
                   } catch {
                     // ignore
                   }
@@ -289,7 +289,9 @@ export default function CreatorSubscribe() {
               >
                 <div
                   className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    billingInterval === "year" ? "translate-x-5" : "translate-x-0"
+                    billingInterval === "year"
+                      ? "translate-x-5"
+                      : "translate-x-0"
                   }`}
                 />
               </div>
@@ -304,7 +306,10 @@ export default function CreatorSubscribe() {
                   const next = "year" as const;
                   setBillingInterval(next);
                   try {
-                    window.localStorage.setItem("creator_billing_interval", next);
+                    window.localStorage.setItem(
+                      "creator_billing_interval",
+                      next,
+                    );
                   } catch {
                     // ignore
                   }
@@ -333,15 +338,27 @@ export default function CreatorSubscribe() {
           {currentPlanTier !== "free" && billingInfo.current_period_end && (
             <div className="mt-8 flex flex-col items-center gap-2">
               <div className="text-sm font-medium text-[#56708F]">
-                Current Plan: <span className="font-bold text-[#17315F] uppercase">{currentPlanTier}</span> ({billingInfo.plan_interval === "year" ? "Annual" : "Monthly"})
+                Current Plan:{" "}
+                <span className="font-bold text-[#17315F] uppercase">
+                  {currentPlanTier}
+                </span>{" "}
+                ({billingInfo.plan_interval === "year" ? "Annual" : "Monthly"})
               </div>
-              <Badge variant="secondary" className="bg-[#F0F4F8] text-[#56708F] border-[#D9E4F1]">
-                {billingInfo.cancel_at_period_end ? "Expires on " : "Renews on "}
-                {new Date(billingInfo.current_period_end).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+              <Badge
+                variant="secondary"
+                className="bg-[#F0F4F8] text-[#56708F] border-[#D9E4F1]"
+              >
+                {billingInfo.cancel_at_period_end
+                  ? "Expires on "
+                  : "Renews on "}
+                {new Date(billingInfo.current_period_end).toLocaleDateString(
+                  undefined,
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  },
+                )}
               </Badge>
             </div>
           )}
@@ -388,7 +405,8 @@ export default function CreatorSubscribe() {
                   {pricing.basic[billingInterval]}
                 </div>
                 <div className="mt-1 text-[15px] leading-6 text-[#A9B6C8]">
-                  per month {billingInterval === "year" ? "(billed annually)" : ""}
+                  per month{" "}
+                  {billingInterval === "year" ? "(billed annually)" : ""}
                 </div>
               </div>
             </div>
@@ -415,14 +433,17 @@ export default function CreatorSubscribe() {
                   <div className="pt-4">
                     <div className="mx-auto mb-4 h-px w-[90%] bg-[#E9EEF5]" />
                     <div className="space-y-3">
-                    {group.items.map((label) => (
-                      <div key={label} className="flex items-start gap-3 text-[#26415F]">
-                        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#E8FAFB] text-[#12A4A9]">
-                          <Check className="h-3.5 w-3.5" />
+                      {group.items.map((label) => (
+                        <div
+                          key={label}
+                          className="flex items-start gap-3 text-[#26415F]"
+                        >
+                          <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#E8FAFB] text-[#12A4A9]">
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="text-[15px] leading-6">{label}</div>
                         </div>
-                        <div className="text-[15px] leading-6">{label}</div>
-                      </div>
-                    ))}
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -500,7 +521,8 @@ export default function CreatorSubscribe() {
                   {pricing.pro[billingInterval]}
                 </div>
                 <div className="mt-1 text-[15px] leading-6 text-[#9EB2CA]">
-                  per month {billingInterval === "year" ? "(billed annually)" : ""}
+                  per month{" "}
+                  {billingInterval === "year" ? "(billed annually)" : ""}
                 </div>
               </div>
             </div>
@@ -526,14 +548,17 @@ export default function CreatorSubscribe() {
                   <div className="pt-4">
                     <div className="mx-auto mb-4 h-px w-[90%] bg-white/10" />
                     <div className="space-y-3">
-                    {group.items.map((label) => (
-                      <div key={label} className="flex items-start gap-3 text-white/90">
-                        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#1E4D74] text-[#83F5F8]">
-                          <Check className="h-3.5 w-3.5" />
+                      {group.items.map((label) => (
+                        <div
+                          key={label}
+                          className="flex items-start gap-3 text-white/90"
+                        >
+                          <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#1E4D74] text-[#83F5F8]">
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="text-[15px] leading-6">{label}</div>
                         </div>
-                        <div className="text-[15px] leading-6">{label}</div>
-                      </div>
-                    ))}
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -611,7 +636,10 @@ export default function CreatorSubscribe() {
         </div>
 
         <div className="mt-12 flex justify-center">
-          <Button variant="outline" onClick={() => navigate("/CreatorDashboard")}>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/CreatorDashboard")}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
