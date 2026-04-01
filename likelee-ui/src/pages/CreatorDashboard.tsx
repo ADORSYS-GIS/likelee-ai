@@ -576,6 +576,7 @@ export default function CreatorDashboard() {
     "connections" | "asset_requests"
   >("connections");
   const [campaignSearch, setCampaignSearch] = useState("");
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [archiveSearch, setArchiveSearch] = useState("");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
@@ -2325,6 +2326,7 @@ export default function CreatorDashboard() {
     let active = true;
     (async () => {
       try {
+        setIsLoadingCampaigns(true);
         setAgencyConnectionLoading(true);
         const [
           { connections, invites },
@@ -2426,6 +2428,7 @@ export default function CreatorDashboard() {
       } finally {
         if (!active) return;
         setAgencyConnectionLoading(false);
+        setIsLoadingCampaigns(false);
       }
     })();
     return () => {
@@ -8802,11 +8805,18 @@ export default function CreatorDashboard() {
                   Try a different brand or campaign name.
                 </p>
               </>
-            ) : (
+            ) : isLoadingCampaigns ? (
               <>
                 <p>Loading campaigns...</p>
                 <p className="text-sm text-gray-500 mt-1">
                   Fetching your active campaigns and licenses.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>No active campaigns yet.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  New campaigns will appear here once they start.
                 </p>
               </>
             )}
