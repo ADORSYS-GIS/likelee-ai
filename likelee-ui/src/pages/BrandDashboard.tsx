@@ -9957,7 +9957,8 @@ export default function BrandDashboard() {
                             📄 View resume
                           </a>
                         )}
-                        {Array.isArray(app.comp_cards) && app.comp_cards.length > 0 ? (
+                        {Array.isArray(app.comp_cards) &&
+                        app.comp_cards.length > 0 ? (
                           app.comp_cards.map((cc: any, i: number) => (
                             <a
                               key={cc.url || i}
