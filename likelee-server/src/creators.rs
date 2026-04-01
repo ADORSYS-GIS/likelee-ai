@@ -40,6 +40,16 @@ pub async fn upsert_profile(
     user: AuthUser,
     Json(mut body): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if !user.role.trim().is_empty() && user.role != "creator" {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!(
+                "This account is already registered as {}. Use a separate account for creator access.",
+                user.role
+            ),
+        ));
+    }
+
     // Force the ID and email from the authenticated user
     body["id"] = serde_json::Value::String(user.id.clone());
     if let Some(email) = user.email {
@@ -148,6 +158,39 @@ pub async fn upsert_profile(
         let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
         Ok(Json(v))
     } else {
+        for (table, role_label) in [("brands", "brand"), ("agencies", "agency")] {
+            let conflict_resp = state
+                .pg
+                .from(table)
+                .select("id")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let conflict_text = conflict_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let conflict_rows: serde_json::Value = serde_json::from_str(&conflict_text)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if conflict_rows
+                .as_array()
+                .map(|rows| !rows.is_empty())
+                .unwrap_or(false)
+            {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    format!(
+                        "This account already has a {} profile. Use a separate account for creator access.",
+                        role_label
+                    ),
+                ));
+            }
+        }
+
         if body.get("created_at").is_none() {
             body["created_at"] = serde_json::Value::String(now);
         }

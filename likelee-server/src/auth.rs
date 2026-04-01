@@ -14,6 +14,7 @@ pub struct Claims {
     pub email: Option<String>,
     pub exp: usize,
     pub user_metadata: Option<serde_json::Value>,
+    pub app_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -79,13 +80,16 @@ where
             .as_ref()
             .and_then(|m| m.get("role"))
             .and_then(|r| r.as_str())
-            .map(|s| s.to_string());
-
-        // 4. Ensure role is present
-        let role = role.ok_or((
-            StatusCode::UNAUTHORIZED,
-            "User role not found in token metadata".to_string(),
-        ))?;
+            .or_else(|| {
+                token_data
+                    .claims
+                    .app_metadata
+                    .as_ref()
+                    .and_then(|m| m.get("role"))
+                    .and_then(|r| r.as_str())
+            })
+            .map(|s| s.to_string())
+            .unwrap_or_default();
 
         Ok(AuthUser {
             id: user_id,

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-// Temporary comment to trigger TypeScript re-evaluation
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,14 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Upload,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +40,7 @@ import {
   getAgencyProfile,
   createOrganizationKycSession,
 } from "@/api/functions";
+import { clearAuthIntent } from "@/auth/onboarding";
 
 const getProductionTypes = (t: any) => [
   {
@@ -204,7 +197,7 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, ensureRole, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -250,7 +243,16 @@ export default function OrganizationSignup() {
   const progress = (step / totalSteps) * 100;
 
   const [emailVerificationPending, setEmailVerificationPending] =
-    useState(false);
+    useState(false); // New state for email verification
+  const isAuthenticatedOnboarding = !!user;
+  const accountRole = String(
+    profile?.role ||
+      user?.user_metadata?.role ||
+      user?.app_metadata?.role ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
 
   const requireSupabase = () => {
     if (!supabase) {
@@ -338,6 +340,64 @@ export default function OrganizationSignup() {
     return null;
   }, [orgType]);
 
+  const getDefaultDashboardPath = React.useCallback(() => {
+    if (accountRole === "brand") return "/BrandDashboard";
+    if (accountRole === "agency") return "/AgencyDashboard";
+    if (accountRole === "talent") return "/talentportal";
+    return "/CreatorDashboard";
+  }, [accountRole]);
+
+  const getRoleConflictMessage = React.useCallback(
+    (targetRole?: "brand" | "agency" | null) => {
+      const currentRoleLabel =
+        accountRole === "talent" ? "creator/talent" : accountRole || "another";
+      const targetRoleLabel =
+        targetRole === "brand"
+          ? "brand"
+          : targetRole === "agency"
+            ? "agency"
+            : "organization";
+      return `This account is already registered as ${currentRoleLabel}. Use a separate account for ${targetRoleLabel} access.`;
+    },
+    [accountRole],
+  );
+
+  useEffect(() => {
+    if (!user) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      email: prev.email || user.email || "",
+      contact_name:
+        prev.contact_name ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        "",
+    }));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !accountRole) return;
+    if (accountRole === "brand" || accountRole === "agency") return;
+
+    clearAuthIntent();
+    toast({
+      title: t("common.error"),
+      description: getRoleConflictMessage(flow),
+      variant: "destructive",
+    });
+    navigate(getDefaultDashboardPath(), { replace: true });
+  }, [
+    user,
+    accountRole,
+    flow,
+    navigate,
+    toast,
+    t,
+    getDefaultDashboardPath,
+    getRoleConflictMessage,
+  ]);
+
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
   useEffect(() => {
@@ -345,7 +405,7 @@ export default function OrganizationSignup() {
       console.log("handleVerifiedUser check:", {
         hasUser: !!user,
         hasProfile: !!profile,
-        userRole: user?.user_metadata?.role,
+        userRole: user?.user_metadata?.role || user?.app_metadata?.role,
         profileRole: profile?.role,
         onboardingStep: profile?.onboarding_step,
       });
@@ -371,21 +431,30 @@ export default function OrganizationSignup() {
               return;
             }
 
-            if (profile.onboarding_step === "email_verification") {
-              console.log("Advancing to Step 2 based on AuthProvider profile");
-              setProfileId(profile.id);
-              setOrgType(
-                profile.organization_type ||
-                  profile.agency_type ||
-                  (isBrand ? "brand_company" : "marketing_agency"),
-              );
-              setFormData((prev) => ({
-                ...prev,
-                email: profile.email || user.email || "",
-              }));
-              setStep(2);
-              return;
-            }
+            console.log("Resuming incomplete organization onboarding");
+            setProfileId(profile.id);
+            setOrgType(
+              profile.organization_type ||
+                profile.agency_type ||
+                (isBrand ? "brand_company" : "marketing_agency"),
+            );
+            setFormData((prev) => ({
+              ...prev,
+              email: profile.email || user.email || "",
+              organization_name:
+                profile.company_name ||
+                profile.agency_name ||
+                prev.organization_name,
+              contact_name:
+                profile.contact_name ||
+                user.user_metadata?.full_name ||
+                prev.contact_name,
+              contact_title: profile.contact_title || prev.contact_title,
+              website: profile.website || prev.website,
+              phone_number: profile.phone_number || prev.phone_number,
+            }));
+            setStep(2);
+            return;
           }
         }
 
@@ -455,20 +524,29 @@ export default function OrganizationSignup() {
               return;
             }
 
-            if (orgProfile.onboarding_step === "email_verification") {
-              console.log("Advancing to Step 2 via API fallback");
-              setProfileId(orgProfile.id);
-              setOrgType(
-                orgProfile.organization_type ||
-                  orgProfile.agency_type ||
-                  (brandProfile ? "brand_company" : "marketing_agency"),
-              );
-              setFormData((prev) => ({
-                ...prev,
-                email: orgProfile.email || user.email || "",
-              }));
-              setStep(2);
-            }
+            console.log("Advancing to Step 2 via API fallback");
+            setProfileId(orgProfile.id);
+            setOrgType(
+              orgProfile.organization_type ||
+                orgProfile.agency_type ||
+                (brandProfile ? "brand_company" : "marketing_agency"),
+            );
+            setFormData((prev) => ({
+              ...prev,
+              email: orgProfile.email || user.email || "",
+              organization_name:
+                orgProfile.company_name ||
+                orgProfile.agency_name ||
+                prev.organization_name,
+              contact_name:
+                orgProfile.contact_name ||
+                user.user_metadata?.full_name ||
+                prev.contact_name,
+              contact_title: orgProfile.contact_title || prev.contact_title,
+              website: orgProfile.website || prev.website,
+              phone_number: orgProfile.phone_number || prev.phone_number,
+            }));
+            setStep(2);
           } else {
             console.log("No organization profile found via API fallback yet");
           }
@@ -580,6 +658,40 @@ export default function OrganizationSignup() {
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      if (!flow) {
+        throw new Error("Organization flow could not be determined.");
+      }
+      if (accountRole && accountRole !== flow) {
+        throw new Error(getRoleConflictMessage(flow));
+      }
+
+      if (isAuthenticatedOnboarding) {
+        if (flow === "brand") {
+          return updateBrandProfile({
+            email: user?.email || data.email,
+            company_name: data.organization_name,
+            contact_name: data.contact_name || undefined,
+            contact_title: data.contact_title || undefined,
+            website: data.website || undefined,
+            phone_number: data.phone_number || undefined,
+            onboarding_step: "profile_details",
+            status: "waitlist",
+          });
+        }
+
+        return updateAgencyProfile({
+          email: user?.email || data.email,
+          agency_name: data.organization_name,
+          agency_type: orgType,
+          contact_name: data.contact_name || undefined,
+          contact_title: data.contact_title || undefined,
+          website: data.website || undefined,
+          phone_number: data.phone_number || undefined,
+          onboarding_step: "profile_details",
+          status: "waitlist",
+        });
+      }
+
       if (flow === "brand") {
         const payload = {
           email: data.email,
@@ -602,6 +714,29 @@ export default function OrganizationSignup() {
       }
     },
     onSuccess: async (resp: any) => {
+      if (isAuthenticatedOnboarding && user) {
+        setProfileId(user.id);
+        try {
+          if (flow) {
+            await ensureRole(flow);
+          }
+          await refreshProfile();
+          clearAuthIntent();
+        } catch (err) {
+          console.error(
+            "Failed to sync organization role after bootstrap:",
+            err,
+          );
+          toast({
+            title: t("common.error"),
+            description: getTranslatedErrorMessage(err),
+            variant: "destructive",
+          });
+        }
+        setStep(2);
+        return;
+      }
+
       // Postgrest usually returns an array of inserted rows; handle both array/object
       const created = Array.isArray(resp) ? resp[0] : resp;
       const newId = created?.user_id || created?.id;
@@ -657,6 +792,9 @@ export default function OrganizationSignup() {
   // Updated mutation for profile updates (Step 2)
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof formData) => {
+      if (flow && accountRole && accountRole !== flow) {
+        throw new Error(getRoleConflictMessage(flow));
+      }
       if (flow === "brand") {
         return updateBrandProfile({
           industry: data.industry,
@@ -690,12 +828,13 @@ export default function OrganizationSignup() {
     },
     onSuccess: async () => {
       try {
+        if (flow) {
+          await ensureRole(flow);
+        }
         await refreshProfile();
-      } catch (e) {
-        console.warn(
-          "Failed to refresh profile after onboarding completion",
-          e,
-        );
+        clearAuthIntent();
+      } catch (err) {
+        console.error("Failed to sync role after completing onboarding:", err);
       }
       if (flow === "brand") {
         navigate("/BrandDashboard", { replace: true });
@@ -736,11 +875,17 @@ export default function OrganizationSignup() {
         return;
       }
 
+      if (!formData.email || !formData.organization_name) {
+        toast({
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
       if (
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        !formData.organization_name
+        !isAuthenticatedOnboarding &&
+        (!formData.password || !formData.confirmPassword)
       ) {
         toast({
           title: t("organizationSignup.missingFieldsTitle"),
@@ -749,7 +894,10 @@ export default function OrganizationSignup() {
         });
         return;
       }
-      if (formData.password !== formData.confirmPassword) {
+      if (
+        !isAuthenticatedOnboarding &&
+        formData.password !== formData.confirmPassword
+      ) {
         toast({
           title: t("organizationSignup.passwordMismatchTitle"),
           description: t("organizationSignup.passwordMismatchDescription"),
@@ -757,7 +905,7 @@ export default function OrganizationSignup() {
         });
         return;
       }
-      if (formData.password.length < 6) {
+      if (!isAuthenticatedOnboarding && formData.password.length < 6) {
         toast({
           title: t("common.error"),
           description: t("organizationSignup.errors.weakPassword"),
@@ -1112,79 +1260,91 @@ export default function OrganizationSignup() {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
+                    disabled={isAuthenticatedOnboarding}
                     className="border-2 border-gray-300 rounded-none"
                     placeholder={t("organizationSignup.emailPlaceholder")}
                   />
                 </div>
 
-                <div>
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.passwordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                {!isAuthenticatedOnboarding && (
+                  <>
+                    <div>
+                      <Label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.passwordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
-                <div>
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.confirmPasswordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                    <div>
+                      <Label
+                        htmlFor="confirmPassword"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.confirmPasswordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <Label
