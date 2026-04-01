@@ -50,6 +50,7 @@ export default function Layout({ children, currentPageName }) {
     loweredPath === "/book-demo" ||
     loweredPath === "/bookdemothanks" ||
     loweredPath === "/book-demo/thanks";
+  const demoPath = createPageUrl("ForBusiness");
 
   // Scroll to top on route change
   useEffect(() => {
@@ -578,26 +579,33 @@ export default function Layout({ children, currentPageName }) {
                       {t("aboutUs")}
                     </Link>
 
-                    <Link
-                      to={createPageUrl("Contact")}
-                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                        location.pathname === createPageUrl("Contact")
-                          ? "text-gray-900 bg-gray-100"
-                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                    >
-                      {t("contact")}
-                    </Link>
-
                     {!authenticated ? (
-                      <Link
-                        to="/Login"
-                        className="px-5 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-md hover:bg-[#2AB8C1] transition-all"
-                      >
-                        {t("common.signIn")}
-                      </Link>
+                      <div className="flex items-center gap-3 ml-2">
+                        {isLandingPage && (
+                          <Link
+                            to={demoPath}
+                            className="px-5 py-2 text-sm font-bold text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all"
+                          >
+                            {t("bookDemo")}
+                          </Link>
+                        )}
+                        <Link
+                          to="/Login"
+                          className="px-5 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-md hover:bg-[#2AB8C1] transition-all"
+                        >
+                          {t("common.signIn")}
+                        </Link>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-3 ml-4">
+                        {isLandingPage && (
+                          <Link
+                            to={demoPath}
+                            className="px-5 py-2 text-sm font-bold text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all"
+                          >
+                            {t("bookDemo")}
+                          </Link>
+                        )}
                         {currentPageName !== "OrganizationSignup" && (
                           <Link
                             to={dashboardPath}
@@ -663,17 +671,6 @@ export default function Layout({ children, currentPageName }) {
                     {t("aboutUs")}
                   </Link>
 
-                  <Link
-                    to={createPageUrl("Contact")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                      location.pathname === createPageUrl("Contact")
-                        ? "text-gray-900 bg-gray-100"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {t("contact")}
-                  </Link>
                   {!isLandingPage && (
                     <div className="px-4 py-3">
                       <LanguageSwitcher />
@@ -682,16 +679,36 @@ export default function Layout({ children, currentPageName }) {
 
                   <div className="pt-4 px-4">
                     {!authenticated ? (
-                      <Link
-                        to="/Login"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-md"
-                      >
-                        <LogIn className="w-5 h-5" />
-                        {t("common.signIn")}
-                      </Link>
+                      <div className="space-y-3 w-full">
+                        {isLandingPage && (
+                          <Link
+                            to={demoPath}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-center w-full py-3 text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-md"
+                          >
+                            {t("bookDemo")}
+                          </Link>
+                        )}
+                        <Link
+                          to="/Login"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-md"
+                        >
+                          <LogIn className="w-5 h-5" />
+                          {t("common.signIn")}
+                        </Link>
+                      </div>
                     ) : (
                       <div className="space-y-3 w-full">
+                        {isLandingPage && (
+                          <Link
+                            to={demoPath}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-center w-full py-3 text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-md"
+                          >
+                            {t("bookDemo")}
+                          </Link>
+                        )}
                         <Link
                           to={dashboardPath}
                           onClick={() => setMobileMenuOpen(false)}
