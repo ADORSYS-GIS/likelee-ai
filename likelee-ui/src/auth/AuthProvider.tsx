@@ -35,7 +35,10 @@ interface AuthContextValue {
   user?: User | null;
   profile?: Profile | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithProvider: (provider: "google") => Promise<void>;
+  loginWithProvider: (
+    provider: "google",
+    options?: { redirectTo?: string },
+  ) => Promise<void>;
   logout: () => Promise<void>;
   ensureRole: (role: "creator" | "brand" | "agency") => Promise<void>;
   register: (
@@ -317,9 +320,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (error) throw error;
       },
-      loginWithProvider: async (provider: "google") => {
+      loginWithProvider: async (
+        provider: "google",
+        options?: { redirectTo?: string },
+      ) => {
         if (!supabase) throw new Error("Supabase not configured");
-        const redirectTo = `${window.location.origin}/login?oauth=1`;
+        const redirectTo =
+          options?.redirectTo || `${window.location.origin}/login?oauth=1`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
           options: { redirectTo },

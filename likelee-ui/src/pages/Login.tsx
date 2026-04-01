@@ -10,7 +10,6 @@ import {
   getSignupPathForRole,
   isOrganizationOnboardingIncomplete,
   readAuthIntent,
-  saveAuthIntent,
 } from "@/auth/onboarding";
 
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
@@ -111,6 +110,20 @@ export default function Login() {
   // Guard against race conditions during logout/tab switch
   const [accessDenied, setAccessDenied] = React.useState(false);
   const [userType, setUserType] = React.useState(preferredRole);
+  const googleLoginRedirectTo = React.useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("oauth", "1");
+    params.set("role", userType);
+
+    if (creatorType) {
+      params.set("type", creatorType);
+    }
+    if (redirectTarget && redirectTarget.startsWith("/")) {
+      params.set("next", redirectTarget);
+    }
+
+    return `${window.location.origin}/login?${params.toString()}`;
+  }, [creatorType, redirectTarget, userType]);
 
   React.useEffect(() => {
     setUserType(preferredRole);
@@ -348,13 +361,11 @@ export default function Login() {
                     className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
                     onClick={async () => {
                       try {
-                        saveAuthIntent({
-                          role: userType as "creator" | "brand" | "agency",
-                          creatorType,
-                        });
-                        await loginWithProvider("google");
-                      } catch (err: any) {
                         clearAuthIntent();
+                        await loginWithProvider("google", {
+                          redirectTo: googleLoginRedirectTo,
+                        });
+                      } catch (err: any) {
                         toast({
                           title: t("auth.login.googleSignInFailed"),
                           description: getFriendlyErrorMessage(err, t),
