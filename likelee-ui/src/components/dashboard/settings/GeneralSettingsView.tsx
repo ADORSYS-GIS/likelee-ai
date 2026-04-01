@@ -1342,10 +1342,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
+      // Exclude email from update payload as it's not allowed to be changed after sign-in
+      const { email, ...updateData } = formData;
       const { error } = await supabase
         .from("agencies")
         .update({
-          ...formData,
+          ...updateData,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           updated_at: new Date().toISOString(),
@@ -1672,14 +1674,23 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-900">
-                    Email
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-gray-900">
+                      Email
+                    </Label>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Read Only
+                    </span>
+                  </div>
                   <Input
                     value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
+                    disabled
+                    className="bg-gray-50 border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm cursor-not-allowed opacity-70"
                   />
+                  <p className="text-[10px] text-gray-400 font-medium px-1">
+                    Email address is managed at the account level and cannot be
+                    changed.
+                  </p>
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
