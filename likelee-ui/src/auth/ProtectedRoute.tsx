@@ -1,10 +1,6 @@
 import React from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import {
-  getOrganizationSignupPath,
-  isOrganizationOnboardingIncomplete,
-} from "./onboarding";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -38,14 +34,6 @@ export default function ProtectedRoute({
     if (profile.role === "talent") return ["talent", "creator"];
     return [profile.role];
   }, [profile?.role]);
-  const organizationOnboardingPath = React.useMemo(
-    () => getOrganizationSignupPath(profile),
-    [profile],
-  );
-  const needsOrganizationOnboarding = React.useMemo(
-    () => isOrganizationOnboardingIncomplete(profile),
-    [profile],
-  );
 
   // Handle role-based redirect with useEffect to prevent content flash
   React.useEffect(() => {
@@ -61,11 +49,10 @@ export default function ProtectedRoute({
 
       // Redirect incomplete onboarding to signup
       if (
-        needsOrganizationOnboarding &&
-        location.pathname !== "/organization-signup" &&
-        location.pathname !== "/OrganizationSignup"
+        profile.onboarding_step === "email_verification" &&
+        location.pathname !== "/organization-signup"
       ) {
-        navigate(organizationOnboardingPath, { replace: true });
+        navigate("/organization-signup", { replace: true });
       }
     }
   }, [
@@ -75,8 +62,6 @@ export default function ProtectedRoute({
     allowedRoles,
     location.pathname,
     navigate,
-    needsOrganizationOnboarding,
-    organizationOnboardingPath,
   ]);
 
   if (!initialized) {
@@ -100,9 +85,8 @@ export default function ProtectedRoute({
 
   // Show loading spinner during onboarding redirect
   if (
-    needsOrganizationOnboarding &&
-    location.pathname !== "/organization-signup" &&
-    location.pathname !== "/OrganizationSignup"
+    profile.onboarding_step === "email_verification" &&
+    location.pathname !== "/organization-signup"
   ) {
     return <LoadingSpinner />;
   }

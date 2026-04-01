@@ -67,7 +67,7 @@ export default function Register() {
           { replace: true },
         );
       } else {
-        navigate("/CreatorSignupOptions", { replace: true });
+        navigate("/CreatorDashboard", { replace: true });
       }
     }
   }, [initialized, authenticated, navigate, creatorType]);

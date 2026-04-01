@@ -5,7 +5,6 @@ import { createPageUrl } from "@/utils";
 import { Card as UICard } from "@/components/ui/card";
 import { Button as UIButton } from "@/components/ui/button";
 import { Users, User, Trophy } from "lucide-react";
-import { useAuth } from "@/auth/AuthProvider";
 
 const Card: any = UICard;
 const Button: any = UIButton;
@@ -13,7 +12,6 @@ const Button: any = UIButton;
 export default function CreatorSignupOptions() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { authenticated } = useAuth();
 
   const creatorTypes = [
     {
@@ -42,10 +40,6 @@ export default function CreatorSignupOptions() {
   const [showAuth, setShowAuth] = React.useState(false);
 
   const handleSelect = (type) => {
-    if (authenticated) {
-      navigate(`/ReserveProfile?type=${encodeURIComponent(type)}&mode=signup`);
-      return;
-    }
     setSelectedType(type);
     setShowAuth(true);
   };

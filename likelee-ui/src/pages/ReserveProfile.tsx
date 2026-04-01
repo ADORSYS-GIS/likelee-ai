@@ -271,36 +271,9 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const {
-    initialized,
-    authenticated,
-    user,
-    profile,
-    login,
-    ensureRole,
-    refreshProfile,
-  } = useAuth();
+  const { login, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const accountRole = String(
-    profile?.role ||
-      user?.user_metadata?.role ||
-      user?.app_metadata?.role ||
-      "",
-  )
-    .trim()
-    .toLowerCase();
-  const creatorAccessConflict =
-    !!accountRole && accountRole !== "creator" && accountRole !== "talent";
-  const defaultDashboardPath =
-    accountRole === "brand"
-      ? "/BrandDashboard"
-      : accountRole === "agency"
-        ? "/AgencyDashboard"
-        : "/CreatorDashboard";
-  const creatorRoleConflictMessage = `This account is already registered as ${
-    accountRole === "talent" ? "creator/talent" : accountRole || "another"
-  }. Use a separate account for creator access.`;
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("reserve_step");
@@ -700,28 +673,6 @@ export default function ReserveProfile() {
   };
 
   useEffect(() => {
-    if (!initialized || !authenticated || !user || !creatorAccessConflict) {
-      return;
-    }
-
-    toast({
-      title: t("common.error"),
-      description: creatorRoleConflictMessage,
-      variant: "destructive",
-    });
-    navigate(defaultDashboardPath, { replace: true });
-  }, [
-    initialized,
-    authenticated,
-    user,
-    creatorAccessConflict,
-    creatorRoleConflictMessage,
-    defaultDashboardPath,
-    navigate,
-    t,
-  ]);
-
-  useEffect(() => {
     if (step !== 3) return;
     // Initial fetch
     refreshVerificationStatus();
@@ -820,16 +771,6 @@ export default function ReserveProfile() {
   };
 
   const handleFirstContinue = () => {
-    if (creatorAccessConflict) {
-      toast({
-        title: t("common.error"),
-        description: creatorRoleConflictMessage,
-        variant: "destructive",
-      });
-      navigate(defaultDashboardPath, { replace: true });
-      return;
-    }
-
     if (!formData.email) {
       toast({
         title: t("reserveProfile.toasts.emailRequiredTitle"),
@@ -1051,29 +992,9 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
-    if (creatorAccessConflict) {
-      toast({
-        title: t("common.error"),
-        description: creatorRoleConflictMessage,
-        variant: "destructive",
-      });
-      navigate(defaultDashboardPath, { replace: true });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: t("reserveProfile.toasts.notSignedInTitle"),
-        description: t("reserveProfile.toasts.notSignedInDesc"),
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setProfileSaveLoading(true);
       await saveCreatorProfile();
-      await ensureRole("creator");
       await refreshProfile();
       // Clear persisted state on success
       localStorage.removeItem("reserve_formData");
