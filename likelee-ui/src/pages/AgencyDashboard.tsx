@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Plus,
   Sparkles,
+  Crown,
   Download,
   Filter,
   Target,
@@ -18314,11 +18315,14 @@ export default function AgencyDashboard() {
                   ? navigate("/AgencySubscribe")
                   : setAgencyMode(effectiveAgencyMode === "AI" ? "IRL" : "AI")
               }
-              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              className={irlAddonLocked 
+                ? "font-bold border-2 border-amber-200 hover:border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 shadow-sm transition-all px-3 sm:px-4"
+                : "font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              }
             >
               {irlAddonLocked ? (
                 <>
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <Crown className="w-4 h-4 mr-2 text-amber-600" />
                   Add IRL Booking
                 </>
               ) : (
