@@ -129,6 +129,13 @@ export default function Login() {
   }, [preferredRole]);
 
   React.useEffect(() => {
+    console.log("[Login] useEffect START", {
+      authenticated,
+      initialized,
+      profileState: profile === null ? "NULL" : profile ? "EXISTS" : "UNDEFINED",
+      accessDenied,
+    });
+
     // Reset accessDenied once we are fully logged out
     if (!authenticated) {
       setAccessDenied(false);
@@ -171,11 +178,30 @@ export default function Login() {
     // Check if profile resolution is complete (either profile exists or user has no session)
     const profileResolved = initialized && (profile !== null || !user);
 
+    console.log("[Login] profileResolved:", profileResolved, {
+      initialized,
+      profile: profile === null ? "NULL" : profile ? "EXISTS" : "UNDEFINED",
+      hasUser: !!user,
+    });
+
     if (!profile) {
-      if (!profileResolved) return;
+      console.log("[Login] No profile branch", {
+        profileResolved,
+        signupRoleHint,
+        authenticated,
+      });
+
+      if (!profileResolved) {
+        console.log("[Login] Profile not resolved yet, waiting...");
+        return;
+      }
 
       // For authenticated users without profile, redirect to signup
       if (signupRoleHint && authenticated) {
+        console.log("[Login] Redirecting to signup:", getSignupPathForRole(
+          signupRoleHint,
+          authIntent?.creatorType || creatorType,
+        ));
         setIsRedirecting(true);
         navigate(
           getSignupPathForRole(
@@ -191,6 +217,10 @@ export default function Login() {
     }
 
     if (initialized && authenticated && profile) {
+      console.log("[Login] Profile exists, checking role match", {
+        profileRole: profile.role,
+        userType,
+      });
       // If we already detected a mismatch, don't do anything until logout finishes
       if (accessDenied) return;
 
@@ -306,8 +336,8 @@ export default function Login() {
     return "/Register";
   };
 
-  // Show loading state when redirecting or when authenticated
-  if (isRedirecting || authenticated) {
+  // Show loading state when redirecting
+  if (isRedirecting) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">

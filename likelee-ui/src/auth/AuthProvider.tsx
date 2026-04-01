@@ -101,6 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role?: string,
     isOAuthUser?: boolean,
   ) => {
+    console.log("[AuthProvider] fetchProfile START", {
+      userId,
+      userEmail,
+      role,
+      isOAuthUser,
+    });
     try {
       const roleHint = (role || "").trim();
       const roleToTable: Record<string, string> = {
@@ -155,6 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
+        console.log("[AuthProvider] Profile found in table:", table);
         // Add role to profile object for convenience
         let resolvedRole = roleHint;
         if (!resolvedRole) {
@@ -179,11 +186,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        console.log("[AuthProvider] Setting profile with role:", resolvedRole);
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
       } else if (userEmail && (table === "creators" || !table) && !isOAuthUser) {
         // Profile missing in profiles table, create it (only for email/password creators, NOT OAuth)
         // OAuth users should be redirected to signup forms instead
-        console.log("Profile missing, creating new profile for:", userId);
+        console.log("[AuthProvider] Profile missing, auto-creating for email/password user:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("creators")
           .upsert(
@@ -219,9 +227,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (newProfile) {
           setProfile({ ...newProfile, role: roleHint || newProfile.role });
         }
+      } else {
+        // No profile found and either not eligible for auto-creation or is OAuth user
+        console.log("[AuthProvider] No profile found, setting profile to null", {
+          isOAuthUser,
+          userEmail,
+          table,
+        });
+        setProfile(null);
       }
+
+      console.log("[AuthProvider] fetchProfile END", {
+        finalProfileState: data ? "FOUND" : "NULL",
+      });
     } catch (err) {
-      console.error("Error fetching/creating profile:", err);
+      console.error("[AuthProvider] Error fetching/creating profile:", err);
     }
   };
 
