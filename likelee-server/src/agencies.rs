@@ -471,44 +471,12 @@ pub async fn update(
     user: AuthUser,
     Json(payload): Json<AgencyProfilePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if !user.role.trim().is_empty() && user.role != "agency" {
-        return Err((
-            StatusCode::FORBIDDEN,
-            format!(
-                "This account is already registered as {}. Use a separate account for agency access.",
-                user.role
-            ),
-        ));
-    }
-
-    let target_onboarding_step = payload
-        .onboarding_step
-        .clone()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "complete".to_string());
-    let agency_name = payload
-        .agency_name
-        .clone()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
-    let agency_type = payload
-        .agency_type
-        .clone()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
-    let email = payload
-        .email
-        .clone()
-        .or_else(|| user.email.clone())
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
-
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     if let serde_json::Value::Object(ref mut map) = v {
         map.remove("id");
-        map.insert("onboarding_step".into(), json!(target_onboarding_step));
+        map.insert("onboarding_step".into(), json!("complete"));
 
         // Remove nulls
         let null_keys: Vec<String> = map
@@ -520,114 +488,15 @@ pub async fn update(
         }
     }
 
-    let exists_resp = state
+    let resp = state
         .pg
         .from("agencies")
-        .select("id")
+        .auth(state.supabase_service_key.clone())
         .eq("id", &user.id)
-        .limit(1)
+        .update(v.to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let exists_status = exists_resp.status();
-    let exists_text = exists_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    if !exists_status.is_success() {
-        return Err(sanitize_db_error(exists_status.as_u16(), exists_text));
-    }
-
-    let exists_rows: Vec<serde_json::Value> = serde_json::from_str(&exists_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let exists = !exists_rows.is_empty();
-
-    let resp = if exists {
-        state
-            .pg
-            .from("agencies")
-            .auth(state.supabase_service_key.clone())
-            .eq("id", &user.id)
-            .update(v.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-    } else {
-        for (table, role_label) in [("creators", "creator"), ("brands", "brand")] {
-            let conflict_resp = state
-                .pg
-                .from(table)
-                .select("id")
-                .eq("id", &user.id)
-                .limit(1)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            let conflict_status = conflict_resp.status();
-            let conflict_text = conflict_resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            if !conflict_status.is_success() {
-                return Err(sanitize_db_error(conflict_status.as_u16(), conflict_text));
-            }
-
-            let conflict_rows: Vec<serde_json::Value> = serde_json::from_str(&conflict_text)
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            if !conflict_rows.is_empty() {
-                return Err((
-                    StatusCode::FORBIDDEN,
-                    format!(
-                        "This account already has a {} profile. Use a separate account for agency access.",
-                        role_label
-                    ),
-                ));
-            }
-        }
-
-        let agency_name = agency_name.ok_or((
-            StatusCode::BAD_REQUEST,
-            "agency_name is required to create an agency profile".to_string(),
-        ))?;
-        let agency_type = agency_type.ok_or((
-            StatusCode::BAD_REQUEST,
-            "agency_type is required to create an agency profile".to_string(),
-        ))?;
-        let email = email.ok_or((
-            StatusCode::BAD_REQUEST,
-            "email is required to create an agency profile".to_string(),
-        ))?;
-
-        let mut insert_map = match v {
-            serde_json::Value::Object(map) => map,
-            _ => serde_json::Map::new(),
-        };
-        insert_map.insert("id".into(), json!(user.id));
-        insert_map.insert("agency_name".into(), json!(agency_name));
-        insert_map.insert("agency_type".into(), json!(agency_type));
-        insert_map.insert("email".into(), json!(email));
-        insert_map
-            .entry("plan_tier")
-            .or_insert_with(|| json!("free"));
-        insert_map.entry("seats_limit").or_insert_with(|| json!(1));
-        insert_map
-            .entry("status")
-            .or_insert_with(|| json!("waitlist"));
-
-        state
-            .pg
-            .from("agencies")
-            .auth(state.supabase_service_key.clone())
-            .insert(serde_json::Value::Object(insert_map).to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-    };
 
     let status = resp.status();
     let text = resp
