@@ -119,10 +119,10 @@ const TalentSideModal = ({
     city: safeTalent.city || "",
     state_province: safeTalent.state_province || "",
     country: safeTalent.country || "",
-    licensing_rate_weekly_usd:
-      typeof safeTalent.licensing_rate_weekly_cents === "number" &&
-      safeTalent.licensing_rate_weekly_cents > 0
-        ? String(Math.round(safeTalent.licensing_rate_weekly_cents / 100))
+    licensing_rate_monthly_usd:
+      typeof safeTalent.licensing_rate_monthly_cents === "number" &&
+      safeTalent.licensing_rate_monthly_cents > 0
+        ? String(Math.round(safeTalent.licensing_rate_monthly_cents / 100))
         : "",
     accept_negotiations: safeTalent.accept_negotiations ?? true,
     rate_currency: safeTalent.rate_currency || "USD",
@@ -248,8 +248,8 @@ const TalentSideModal = ({
         city: editForm.city || undefined,
         state_province: editForm.state_province || undefined,
         country: editForm.country || undefined,
-        licensing_rate_weekly_cents: editForm.licensing_rate_weekly_usd
-          ? Math.round(Number(editForm.licensing_rate_weekly_usd) * 100)
+        licensing_rate_monthly_cents: editForm.licensing_rate_monthly_usd
+          ? Math.round(Number(editForm.licensing_rate_monthly_usd) * 100)
           : undefined,
         accept_negotiations: !!editForm.accept_negotiations,
         rate_currency: String(editForm.rate_currency || "USD"),
@@ -556,15 +556,15 @@ const TalentSideModal = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Licensing rate (USD/week)
+                      Licensing rate (USD/month)
                     </div>
                     <Input
                       type="number"
                       min="1"
                       step="1"
-                      value={editForm.licensing_rate_weekly_usd}
+                      value={editForm.licensing_rate_monthly_usd}
                       onChange={(e) =>
-                        setField("licensing_rate_weekly_usd", e.target.value)
+                        setField("licensing_rate_monthly_usd", e.target.value)
                       }
                     />
                   </div>

@@ -2871,15 +2871,16 @@ export default function BrandCampaignDashboard({
                             const creatorType = String(
                               creator?.creator_type || "Creator",
                             );
-                            const baseRateWeeklyCents = Number(
-                              creator?.base_rate_weekly_cents ??
+                            const baseRateMonthlyCents = Number(
+                              creator?.base_rate_monthly_cents ??
+                                creator?.base_monthly_price_cents ??
+                                creator?.licensing_rate_monthly_cents ??
                                 creator?.base_weekly_price_cents ??
-                                creator?.licensing_rate_weekly_cents ??
                                 0,
                             );
                             const hasBaseRate =
-                              Number.isFinite(baseRateWeeklyCents) &&
-                              baseRateWeeklyCents > 0;
+                              Number.isFinite(baseRateMonthlyCents) &&
+                              baseRateMonthlyCents > 0;
                             const rateCurrency = String(
                               creator?.rate_currency ||
                                 creator?.currency_code ||
@@ -3124,15 +3125,16 @@ export default function BrandCampaignDashboard({
                               creator?.full_name ||
                               creator?.name,
                           );
-                          const baseRateWeeklyCents = Number(
-                            creator?.base_rate_weekly_cents ??
+                          const baseRateMonthlyCents = Number(
+                            creator?.base_rate_monthly_cents ??
+                              creator?.base_monthly_price_cents ??
+                              creator?.licensing_rate_monthly_cents ??
                               creator?.base_weekly_price_cents ??
-                              creator?.licensing_rate_weekly_cents ??
                               0,
                           );
                           const hasBaseRate =
-                            Number.isFinite(baseRateWeeklyCents) &&
-                            baseRateWeeklyCents > 0;
+                            Number.isFinite(baseRateMonthlyCents) &&
+                            baseRateMonthlyCents > 0;
                           const rateCurrency = String(
                             creator?.rate_currency ||
                               creator?.currency_code ||
