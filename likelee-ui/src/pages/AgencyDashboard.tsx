@@ -17623,7 +17623,8 @@ export default function AgencyDashboard() {
   const hasProAccess =
     agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
   const irlAddonEntitlement = useMemo(() => {
-    const queryValue = (agencyProfileQuery.data as any)?.addon_irl_booking_enabled;
+    const queryValue = (agencyProfileQuery.data as any)
+      ?.addon_irl_booking_enabled;
     if (typeof queryValue === "boolean") return queryValue;
     if (queryValue === 1 || queryValue === 0) return Boolean(queryValue);
     if (typeof queryValue === "string" && queryValue.trim()) {
@@ -18807,9 +18808,7 @@ export default function AgencyDashboard() {
               onClick={() =>
                 irlAddonLocked
                   ? navigate("/AgencySubscribe")
-                  : setAgencyMode(
-                      effectiveAgencyMode === "AI" ? "IRL" : "AI",
-                    )
+                  : setAgencyMode(effectiveAgencyMode === "AI" ? "IRL" : "AI")
               }
               className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
             >

@@ -133,7 +133,9 @@ export default function AgencySubscribe() {
         setMinimumRosterModels(MIN_ROSTER_MODELS);
         setRosterModels(DEFAULT_ROSTER_MODELS);
         setRosterInput(String(DEFAULT_ROSTER_MODELS));
-        setHasIrlBookingAddon(parseBooleanFlag(resp?.addon_irl_booking_enabled));
+        setHasIrlBookingAddon(
+          parseBooleanFlag(resp?.addon_irl_booking_enabled),
+        );
         setIncludeIrlBookingInPlan(false);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
@@ -331,7 +333,8 @@ export default function AgencySubscribe() {
         setIncludeIrlBookingInPlan(false);
         toast({
           title: "IRL Booking already active",
-          description: "This agency account already has the IRL Booking add-on.",
+          description:
+            "This agency account already has the IRL Booking add-on.",
         });
         return;
       }
@@ -366,9 +369,9 @@ export default function AgencySubscribe() {
   };
 
   const checkoutDisabled =
-    (checkingOut || checkingOutIrlAddon) || !initialized || profileLoading;
+    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
   const irlAddonCheckoutDisabled =
-    (checkingOut || checkingOutIrlAddon) || !initialized || profileLoading;
+    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
   const alreadySubscribedToPlan =
     !requiresContactSales &&
     ((plan === "basic" && currentPlanTier === "basic") ||
