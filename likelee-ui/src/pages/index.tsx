@@ -437,15 +437,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/AgencySubscribe"
-        element={<AgencySubscribe />}
-      />
+      <Route path="/AgencySubscribe" element={<AgencySubscribe />} />
 
-      <Route
-        path="/agencysubscribe"
-        element={<AgencySubscribe />}
-      />
+      <Route path="/agencysubscribe" element={<AgencySubscribe />} />
 
       <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
       <Route

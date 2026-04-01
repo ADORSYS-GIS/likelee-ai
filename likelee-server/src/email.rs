@@ -70,15 +70,19 @@ pub fn send_plain_email_with_from_name(
     send_email_smtp_internal(state, to, subject, body, from_name)
 }
 
+pub struct EmailSendOptions<'a> {
+    pub is_html: bool,
+    pub attachments: Option<&'a [EmailAttachment]>,
+    pub from_name: Option<&'a str>,
+    pub reply_to: Option<&'a str>,
+}
+
 pub async fn send_email_core_with_from_name(
     state: &AppState,
     to: &str,
     subject: &str,
     body: &str,
-    is_html: bool,
-    attachments: Option<&[EmailAttachment]>,
-    from_name: Option<&str>,
-    reply_to: Option<&str>,
+    options: EmailSendOptions<'_>,
 ) -> Result<(), (StatusCode, String)> {
     if to.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
@@ -97,7 +101,7 @@ pub async fn send_email_core_with_from_name(
             "invalid_from_address".to_string(),
         )
     })?;
-    let from_addr = match from_name {
+    let from_addr = match options.from_name {
         Some(name) if !name.trim().is_empty() => Mailbox {
             name: Some(name.trim().to_string()),
             email: parsed_from.email.clone(),
@@ -108,15 +112,15 @@ pub async fn send_email_core_with_from_name(
     let to_addr: Mailbox = to
         .parse::<Mailbox>()
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
-    let reply_to_addr = parse_optional_reply_to(reply_to)?;
+    let reply_to_addr = parse_optional_reply_to(options.reply_to)?;
 
-    let part = if is_html {
+    let part = if options.is_html {
         SinglePart::html(body.to_string())
     } else {
         SinglePart::plain(body.to_string())
     };
 
-    let email = if let Some(atts) = attachments {
+    let email = if let Some(atts) = options.attachments {
         let mut multipart = MultiPart::mixed().singlepart(part);
         for att in atts {
             let bytes = general_purpose::STANDARD
@@ -596,10 +600,12 @@ pub async fn send_sales_inquiry(
                     to,
                     &subject,
                     &body,
-                    false,
-                    None,
-                    None,
-                    Some(email),
+                    EmailSendOptions {
+                        is_html: false,
+                        attachments: None,
+                        from_name: None,
+                        reply_to: Some(email),
+                    },
                 )
                 .await
                 .map(|_| SalesInquiryDelivery::EmailAccepted)
@@ -661,5 +667,17 @@ pub async fn send_email_core(
     is_html: bool,
     attachments: Option<&[EmailAttachment]>,
 ) -> Result<(), (StatusCode, String)> {
-    send_email_core_with_from_name(state, to, subject, body, is_html, attachments, None, None).await
+    send_email_core_with_from_name(
+        state,
+        to,
+        subject,
+        body,
+        EmailSendOptions {
+            is_html,
+            attachments,
+            from_name: None,
+            reply_to: None,
+        },
+    )
+    .await
 }

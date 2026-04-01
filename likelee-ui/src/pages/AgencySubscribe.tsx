@@ -172,7 +172,8 @@ export default function AgencySubscribe() {
       });
       toast({
         title: "Sign in required",
-        description: "Sign in with your agency account to continue to checkout.",
+        description:
+          "Sign in with your agency account to continue to checkout.",
       });
       navigate(`/Login?${loginParams.toString()}`);
       return;
@@ -180,8 +181,7 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) {
       toast({
         title: "Agency account required",
-        description:
-          "Use an agency account to start a subscription checkout.",
+        description: "Use an agency account to start a subscription checkout.",
         variant: "destructive",
       });
       return;
