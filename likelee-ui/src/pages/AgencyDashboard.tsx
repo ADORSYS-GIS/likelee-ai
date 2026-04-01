@@ -195,6 +195,7 @@ import {
   sendAgencyPaymentLinkEmail,
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
+  syncAgencyCheckoutSession,
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
@@ -16493,7 +16494,7 @@ export default function AgencyDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, profile, authenticated, logout } = useAuth();
+  const { user, profile, authenticated, logout, refreshProfile } = useAuth();
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
@@ -16545,6 +16546,10 @@ export default function AgencyDashboard() {
     normalizeSubTab(searchParams.get("subTab")) ||
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
+  const checkoutSuccess = searchParams.get("success") === "1";
+  const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
+  const billingSyncRequested =
+    searchParams.get("billing_sync") === "1" || checkoutSuccess;
 
   useEffect(() => {
     const nextTab = String(searchParams.get("tab") || "").trim();
@@ -16688,6 +16693,57 @@ export default function AgencyDashboard() {
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (!authenticated || !user?.id) return;
+    if (!billingSyncRequested && !checkoutSessionId) return;
+
+    let cancelled = false;
+
+    const syncBillingState = async () => {
+      try {
+        if (billingSyncRequested || checkoutSessionId) {
+          await syncAgencyCheckoutSession(
+            checkoutSessionId ? { session_id: checkoutSessionId } : undefined,
+          );
+        }
+
+        const latestProfile = await getAgencyProfile();
+        if (!cancelled) {
+          queryClient.setQueryData(["agency-profile", user.id], latestProfile);
+        }
+        await refreshProfile();
+      } catch (error) {
+        console.error("Failed to sync agency billing state:", error);
+      } finally {
+        if (cancelled) return;
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete("billing_sync");
+            next.delete("success");
+            next.delete("session_id");
+            return next;
+          },
+          { replace: true, preventScrollReset: true },
+        );
+      }
+    };
+
+    void syncBillingState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authenticated,
+    billingSyncRequested,
+    checkoutSessionId,
+    queryClient,
+    refreshProfile,
+    setSearchParams,
+    user?.id,
+  ]);
 
   const licensingRequestsCountQuery = useIndexedDbQuery({
     queryKey: ["agency-licensing-requests", user?.id],
@@ -16914,6 +16970,32 @@ export default function AgencyDashboard() {
 
   const hasProAccess =
     agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+  const irlAddonEntitlement = useMemo(() => {
+    const queryValue = (agencyProfileQuery.data as any)
+      ?.addon_irl_booking_enabled;
+    if (typeof queryValue === "boolean") return queryValue;
+    if (queryValue === 1 || queryValue === 0) return Boolean(queryValue);
+    if (typeof queryValue === "string" && queryValue.trim()) {
+      return ["1", "true", "yes", "on"].includes(
+        queryValue.trim().toLowerCase(),
+      );
+    }
+
+    const profileValue = (profile as any)?.addon_irl_booking_enabled;
+    if (typeof profileValue === "boolean") return profileValue;
+    if (profileValue === 1 || profileValue === 0) return Boolean(profileValue);
+    if (typeof profileValue === "string" && profileValue.trim()) {
+      return ["1", "true", "yes", "on"].includes(
+        profileValue.trim().toLowerCase(),
+      );
+    }
+
+    return null;
+  }, [agencyProfileQuery.data, profile]);
+  const hasIrlBookingAddon = irlAddonEntitlement === true;
+  const irlAddonLocked = irlAddonEntitlement === false;
+  const effectiveAgencyMode: "AI" | "IRL" =
+    agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
 
   useEffect(() => {
     if (activeSubTab === "All Talent" && isSportsAgency) {
@@ -17464,11 +17546,13 @@ export default function AgencyDashboard() {
     "settings",
   ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
-    setAgencyModeState(mode);
+    const resolvedMode =
+      mode === "IRL" && irlAddonEntitlement === false ? "AI" : mode;
+    setAgencyModeState(resolvedMode);
     setSearchParams(
       (prev) => {
         const newParams = new URLSearchParams(prev);
-        newParams.set("mode", mode);
+        newParams.set("mode", resolvedMode);
         return newParams;
       },
       { replace: true, preventScrollReset: true },
@@ -17476,10 +17560,29 @@ export default function AgencyDashboard() {
   };
 
   useEffect(() => {
-    if (agencyMode !== "AI") return;
+    if (effectiveAgencyMode !== "AI") return;
     if (activeTab !== "accounting") return;
     setActiveTab("dashboard");
-  }, [agencyMode, activeTab]);
+  }, [effectiveAgencyMode, activeTab]);
+
+  useEffect(() => {
+    if (irlAddonEntitlement !== false) return;
+    if (agencyMode !== "IRL") return;
+    setAgencyModeState("AI");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("mode", "AI");
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
+    toast({
+      title: "IRL Booking add-on required",
+      description:
+        "Enable the IRL Booking add-on to access IRL mode in the agency dashboard.",
+    });
+  }, [agencyMode, irlAddonEntitlement, setSearchParams, toast]);
 
   const setActiveTab = (tab: string) => {
     startTransition(() => {
@@ -17690,7 +17793,7 @@ export default function AgencyDashboard() {
   }
 
   const sidebarItems: SidebarItem[] =
-    agencyMode === "AI"
+    effectiveAgencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
@@ -18050,11 +18153,21 @@ export default function AgencyDashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
+              onClick={() =>
+                irlAddonLocked
+                  ? navigate("/AgencySubscribe")
+                  : setAgencyMode(effectiveAgencyMode === "AI" ? "IRL" : "AI")
+              }
               className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
             >
-              {agencyMode === "AI" ? "AI" : "IRL"}
-              <span className="hidden sm:inline">&nbsp;Mode</span>
+              {irlAddonLocked ? (
+                "Add IRL Booking"
+              ) : (
+                <>
+                  {effectiveAgencyMode === "AI" ? "AI" : "IRL"}
+                  <span className="hidden sm:inline">&nbsp;Mode</span>
+                </>
+              )}
             </Button>
 
             <Button
@@ -18436,7 +18549,7 @@ export default function AgencyDashboard() {
               setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
-              agencyMode={agencyMode}
+              agencyMode={effectiveAgencyMode}
               rosterData={rosterTalents}
               activeCampaigns={activeCampaigns}
               earnings30dTotalCents={earnings30dTotalCents}
@@ -18573,7 +18686,7 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
-            (agencyMode === "IRL" ? (
+            (effectiveAgencyMode === "IRL" ? (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">
                   Coming soon
@@ -18585,7 +18698,7 @@ export default function AgencyDashboard() {
             ) : hasProAccess ? (
               <AnalyticsDashboardView
                 onRenewLicense={handleRenew}
-                agencyMode={agencyMode}
+                agencyMode={effectiveAgencyMode}
                 licenseComplianceData={LICENSE_COMPLIANCE_DATA}
                 talentData={TALENT_DATA}
               />
@@ -18623,7 +18736,7 @@ export default function AgencyDashboard() {
             <ConnectBankView isSportsAgency={isSportsAgency} />
           )}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
-            <GeneralSettingsView />
+            <GeneralSettingsView hasIrlBookingAddon={hasIrlBookingAddon} />
           )}
           {activeTab === "settings" && activeSubTab === "File Storage" && (
             <FileStorageView />
@@ -18659,7 +18772,7 @@ export default function AgencyDashboard() {
               onAddBookOut={onAddBookOut}
               onRemoveBookOut={onRemoveBookOut}
               isSportsAgency={isSportsAgency}
-              agencyMode={agencyMode}
+              agencyMode={effectiveAgencyMode}
             />
           )}
           {activeTab === "accounting" && (

@@ -341,7 +341,13 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
+const GeneralSettingsView = ({
+  kycStatus,
+  hasIrlBookingAddon = false,
+}: {
+  kycStatus?: string;
+  hasIrlBookingAddon?: boolean;
+}) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -422,6 +428,15 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     useState(false);
 
   const fetchCalendlySettings = async () => {
+    if (!hasIrlBookingAddon) {
+      setIsFetchingCalendlySettings(false);
+      setCalendlySettings({
+        calendly_api_token: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      return;
+    }
     try {
       setIsFetchingCalendlySettings(true);
       const { data, error } = await supabase
@@ -445,6 +460,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   };
 
   const fetchCalendlyEventTypes = async () => {
+    if (!hasIrlBookingAddon) {
+      setIsFetchingCalendlyEventTypes(false);
+      setCalendlyEventTypes([]);
+      return;
+    }
     try {
       setIsFetchingCalendlyEventTypes(true);
       const resp = await fetch("/api/calendly/event-types", {
@@ -468,6 +488,15 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   };
 
   const handleSaveCalendlySettings = async () => {
+    if (!hasIrlBookingAddon) {
+      toast({
+        title: "IRL Booking add-on required",
+        description:
+          "Enable the IRL Booking add-on before configuring Calendly integration.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       setIsSavingCalendlySettings(true);
       const resp = await fetch("/api/calendly/settings", {
@@ -545,11 +574,20 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Integrations" && profile?.id) {
+    if (activeTab === "Integrations" && profile?.id && hasIrlBookingAddon) {
       fetchCalendlySettings();
       fetchCalendlyEventTypes();
+      return;
     }
-  }, [activeTab, profile?.id]);
+    if (activeTab === "Integrations" && !hasIrlBookingAddon) {
+      setCalendlySettings({
+        calendly_api_token: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      setCalendlyEventTypes([]);
+    }
+  }, [activeTab, hasIrlBookingAddon, profile?.id]);
 
   const defaultNotificationPrefs = [
     {
@@ -2452,11 +2490,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">
-                  <a
-                    href={`/AgencyDashboard?mode=IRL&tab=accounting&subTab=${encodeURIComponent(
-                      "Connect Bank",
-                    )}`}
-                  >
+                  <a href={`/AgencyDashboard?tab=payouts`}>
                     {bankStatus?.connected ? "Change account" : "Connect"}
                   </a>
                 </Button>
@@ -2476,15 +2510,24 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         Calendly Integration
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
-                        Automate meeting scheduling with your clients
+                        {hasIrlBookingAddon
+                          ? "Automate meeting scheduling with your clients"
+                          : "Available with the IRL Booking add-on"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
-                        {calendlySettings.is_enabled ? "Active" : "Disabled"}
+                        {hasIrlBookingAddon
+                          ? calendlySettings.is_enabled
+                            ? "Active"
+                            : "Disabled"
+                          : "Locked"}
                       </span>
                       <Switch
-                        checked={calendlySettings.is_enabled}
+                        checked={
+                          hasIrlBookingAddon && calendlySettings.is_enabled
+                        }
+                        disabled={!hasIrlBookingAddon}
                         onCheckedChange={(checked) =>
                           setCalendlySettings((p) => ({
                             ...p,
@@ -2496,6 +2539,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
               </div>
+
+              {!hasIrlBookingAddon && (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Enable the IRL Booking add-on to use Calendly, scouting,
+                  client CRM, bookings, and IRL accounting workflows.
+                </div>
+              )}
 
               <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="space-y-3">
@@ -2519,6 +2569,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       type="password"
                       placeholder="calendly_v2_..."
                       value={calendlySettings.calendly_api_token}
+                      disabled={!hasIrlBookingAddon}
                       onChange={(e) =>
                         setCalendlySettings((p) => ({
                           ...p,
@@ -2540,7 +2591,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </p>
                 </div>
 
-                {calendlySettings.is_enabled && (
+                {hasIrlBookingAddon && calendlySettings.is_enabled && (
                   <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
                     <div>
                       <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
@@ -2623,7 +2674,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSaveCalendlySettings}
-                    disabled={isSavingCalendlySettings}
+                    disabled={isSavingCalendlySettings || !hasIrlBookingAddon}
                     className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     {isSavingCalendlySettings ? (

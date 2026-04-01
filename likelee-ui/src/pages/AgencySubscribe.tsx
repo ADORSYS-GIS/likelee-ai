@@ -5,22 +5,32 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Check } from "lucide-react";
 import {
+  createAgencyIrlBookingAddonCheckout,
   createAgencySubscriptionCheckout,
   getAgencyProfile,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
 
-const DEFAULT_ROSTER_MODELS = 186;
+const DEFAULT_ROSTER_MODELS = 10;
 const MIN_ROSTER_MODELS = 2;
-const MAX_ROSTER_MODELS = 200;
+const MAX_ROSTER_MODELS = 1000;
 const BASIC_BASE_PLAN_COST = 399;
 const PRO_BASE_PLAN_COST = 489;
 const BASIC_ROSTER_RATE = 5;
 const PRO_ROSTER_RATE = 10;
 const IRL_BOOKING_COST = 489;
+
+function parseBooleanFlag(value: unknown) {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return ["1", "true", "yes", "on"].includes(normalized);
+}
 
 function parsePositiveInteger(value: unknown) {
   const normalized = String(value ?? "")
@@ -51,6 +61,7 @@ export default function AgencySubscribe() {
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
+  const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
 
   const [plan, setPlan] = React.useState<"basic" | "pro">("pro");
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
@@ -62,7 +73,11 @@ export default function AgencySubscribe() {
   const [rosterInput, setRosterInput] = React.useState(
     String(DEFAULT_ROSTER_MODELS),
   );
+  const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
+  const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
+    React.useState(false);
   const [checkingOut, setCheckingOut] = React.useState(false);
+  const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
 
@@ -71,15 +86,26 @@ export default function AgencySubscribe() {
   const rosterCostBasic = rosterModels * rosterRateBasic;
   const rosterCostPro = rosterModels * rosterRatePro;
   const irlBookingCost = IRL_BOOKING_COST;
+  const shouldBillIrlBookingInPlan =
+    includeIrlBookingInPlan && !hasIrlBookingAddon;
+  const selectedIrlBookingCost = shouldBillIrlBookingInPlan
+    ? irlBookingCost
+    : 0;
   const basePlanBasic = BASIC_BASE_PLAN_COST;
   const basePlanPro = PRO_BASE_PLAN_COST;
-  const totalMonthlyBasic = basePlanBasic + rosterCostBasic + irlBookingCost;
-  const totalMonthlyPro = basePlanPro + rosterCostPro + irlBookingCost;
+  const totalMonthlyBasic =
+    basePlanBasic + rosterCostBasic + selectedIrlBookingCost;
+  const totalMonthlyPro = basePlanPro + rosterCostPro + selectedIrlBookingCost;
   const requiresContactSales = rosterModels > MAX_ROSTER_MODELS;
   const sliderMin = requiresContactSales ? rosterModels : minimumRosterModels;
   const maxRosterModels = requiresContactSales
     ? rosterModels
     : MAX_ROSTER_MODELS;
+  const irlAddonLineItemLabel = hasIrlBookingAddon
+    ? "Already active"
+    : shouldBillIrlBookingInPlan
+      ? `+$${formatNumber(irlBookingCost)}`
+      : "Not selected";
 
   const syncRosterModels = (nextValue: number) => {
     const clamped = clampRosterModels(
@@ -104,25 +130,13 @@ export default function AgencySubscribe() {
         if (tier === "basic" || tier === "pro") {
           setPlan(tier);
         }
-
-        const rosterCount = parsePositiveInteger(resp?.roster_count);
-        const purchasedSeats = parsePositiveInteger(resp?.seats_limit);
-        const onboardingCount = parsePositiveInteger(resp?.talent_count);
-        const rosterFloor = Math.max(
-          MIN_ROSTER_MODELS,
-          rosterCount ?? onboardingCount ?? MIN_ROSTER_MODELS,
+        setMinimumRosterModels(MIN_ROSTER_MODELS);
+        setRosterModels(DEFAULT_ROSTER_MODELS);
+        setRosterInput(String(DEFAULT_ROSTER_MODELS));
+        setHasIrlBookingAddon(
+          parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
-        const initialRoster = Math.max(
-          rosterFloor,
-          purchasedSeats ??
-            rosterCount ??
-            onboardingCount ??
-            DEFAULT_ROSTER_MODELS,
-        );
-
-        setMinimumRosterModels(rosterFloor);
-        setRosterModels(initialRoster);
-        setRosterInput(String(initialRoster));
+        setIncludeIrlBookingInPlan(false);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
       }
@@ -137,18 +151,29 @@ export default function AgencySubscribe() {
 
     setCurrentPlanTier(null);
     setMinimumRosterModels(MIN_ROSTER_MODELS);
-    if (rosterModels > MAX_ROSTER_MODELS) {
-      setRosterModels(MAX_ROSTER_MODELS);
-      setRosterInput(String(MAX_ROSTER_MODELS));
-    }
-  }, [authenticated, initialized, isAgencyUser, rosterModels]);
+    setRosterModels(DEFAULT_ROSTER_MODELS);
+    setRosterInput(String(DEFAULT_ROSTER_MODELS));
+    setHasIrlBookingAddon(false);
+    setIncludeIrlBookingInPlan(false);
+  }, [authenticated, initialized, isAgencyUser]);
 
   React.useEffect(() => {
-    if (!success) return;
-    navigate(`/AgencyDashboard?tab=settings&subTab=General%20Settings`, {
+    if (!success && !checkoutSessionId) return;
+    if (canceled) return;
+
+    const nextParams = new URLSearchParams({
+      tab: "settings",
+      subTab: "General Settings",
+      billing_sync: "1",
+    });
+    if (checkoutSessionId) {
+      nextParams.set("session_id", checkoutSessionId);
+    }
+
+    navigate(`/AgencyDashboard?${nextParams.toString()}`, {
       replace: true,
     });
-  }, [navigate, success]);
+  }, [canceled, checkoutSessionId, navigate, success]);
 
   const onContact = () => navigate("/SalesInquiry");
 
@@ -193,7 +218,7 @@ export default function AgencySubscribe() {
         plan: targetPlan,
         roster_models: rosterModels,
         addons: {
-          irl_booking: true,
+          irl_booking: shouldBillIrlBookingInPlan,
           deepfake_protection_models: 0,
           additional_team_members: 0,
         },
@@ -223,7 +248,7 @@ export default function AgencySubscribe() {
         toast({
           title: "Contact Sales",
           description:
-            "Self-serve plans support 2 to 200 models. Larger rosters use custom pricing.",
+            "Self-serve plans support 2 to 1,000 models. Larger rosters use custom pricing.",
         });
         onContact();
         return;
@@ -255,6 +280,74 @@ export default function AgencySubscribe() {
     }
   };
 
+  const onCheckoutIrlAddon = async () => {
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (hasIrlBookingAddon) {
+      toast({
+        title: "IRL Booking already active",
+        description: "This agency account already has the IRL Booking add-on.",
+      });
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description:
+          "Sign in with your agency account to buy the IRL Booking add-on.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description: "Use an agency account to buy the IRL Booking add-on.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCheckingOutIrlAddon(true);
+    try {
+      const resp = await createAgencyIrlBookingAddonCheckout();
+      const url = (resp as any)?.checkout_url as string | undefined;
+      if (!url) {
+        toast({
+          title: "Checkout failed",
+          description: "No checkout URL returned.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      if (e?.status === 409) {
+        setHasIrlBookingAddon(true);
+        setIncludeIrlBookingInPlan(false);
+        toast({
+          title: "IRL Booking already active",
+          description:
+            "This agency account already has the IRL Booking add-on.",
+        });
+        return;
+      }
+      toast({
+        title: "Checkout failed",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingOutIrlAddon(false);
+    }
+  };
+
   const onBack = () => {
     navigate(isAgencyUser ? "/AgencyDashboard" : "/");
   };
@@ -275,7 +368,10 @@ export default function AgencySubscribe() {
     return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
   };
 
-  const checkoutDisabled = checkingOut || !initialized || profileLoading;
+  const checkoutDisabled =
+    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
+  const irlAddonCheckoutDisabled =
+    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
   const alreadySubscribedToPlan =
     !requiresContactSales &&
     ((plan === "basic" && currentPlanTier === "basic") ||
@@ -297,6 +393,21 @@ export default function AgencySubscribe() {
       return "Already Subscribed";
     }
     return checkingOut ? "Redirecting..." : "Get Started";
+  })();
+  const irlAddonCtaLabel = (() => {
+    if (!initialized || profileLoading) {
+      return "Loading...";
+    }
+    if (hasIrlBookingAddon) {
+      return "Already Active";
+    }
+    if (!authenticated) {
+      return "Sign in to Buy";
+    }
+    if (!isAgencyUser) {
+      return "Agency account required";
+    }
+    return checkingOutIrlAddon ? "Redirecting..." : "Buy Separately";
   })();
 
   const onSelectPlan = async (targetPlan: "basic" | "pro") => {
@@ -351,10 +462,10 @@ export default function AgencySubscribe() {
                 </div>
                 <div className="text-gray-500 mt-1">
                   {requiresContactSales
-                    ? `Self-serve supports 2 to 200 models. Your current setup is ${formatNumber(rosterModels)}, so pricing goes through Sales.`
+                    ? `Self-serve supports 2 to 1,000 models. Your current setup is ${formatNumber(rosterModels)}, so pricing goes through Sales.`
                     : minimumRosterModels > MIN_ROSTER_MODELS
                       ? `Minimum ${formatNumber(minimumRosterModels)} based on your active roster.`
-                      : "Choose a self-serve roster size between 2 and 200."}
+                      : "Choose a self-serve roster size between 2 and 1,000."}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -405,7 +516,7 @@ export default function AgencySubscribe() {
 
             <div className="text-center text-[#4B4AE6] font-black mt-6 font-display">
               {requiresContactSales
-                ? "More than 200 models requires custom pricing."
+                ? "More than 1,000 models requires custom pricing."
                 : `${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo (headcount)`}
             </div>
           </Card>
@@ -443,7 +554,7 @@ export default function AgencySubscribe() {
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
-                <span>+${formatNumber(irlBookingCost)}</span>
+                <span>{irlAddonLineItemLabel}</span>
               </div>
             </div>
 
@@ -539,7 +650,7 @@ export default function AgencySubscribe() {
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
-                <span>+${formatNumber(irlBookingCost)}</span>
+                <span>{irlAddonLineItemLabel}</span>
               </div>
             </div>
 
@@ -611,19 +722,68 @@ export default function AgencySubscribe() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <div className="text-2xl font-black font-display">
-                    IRL AI-Powered Booking Software
+                    IRL Booking Software
                   </div>
                   <div className="text-gray-500 mt-1">
-                    Manage real-world gigs alongside your licensing income — all
-                    in one place.
+                    Manage real-world gigs alongside your licensing income, and
+                    choose whether to add it to a plan or buy it separately.
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                      {hasIrlBookingAddon
+                        ? "Active"
+                        : includeIrlBookingInPlan
+                          ? "In Plan"
+                          : "Off"}
+                    </span>
+                    <Switch
+                      checked={hasIrlBookingAddon || includeIrlBookingInPlan}
+                      disabled={hasIrlBookingAddon}
+                      onCheckedChange={setIncludeIrlBookingInPlan}
+                      aria-label="Toggle IRL Booking add-on in plan checkout"
+                    />
+                  </div>
                   <div className="text-xl font-black text-gray-900 font-display">
                     +${formatNumber(irlBookingCost)}
                     <span className="text-gray-400 text-sm">/mo</span>
                   </div>
                 </div>
+              </div>
+              <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Unlocks IRL mode in the agency dashboard.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Enables scouting, client CRM, bookings, accounting, and
+                  Calendly integration.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  {hasIrlBookingAddon
+                    ? "Already active on this agency account. Plan checkout will not charge it again."
+                    : "Use the toggle to include it in the selected plan checkout."}
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Buy it as a standalone monthly subscription if you do not want
+                  it bundled into the plan checkout.
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-sm text-gray-500">
+                  Standalone price: ${formatNumber(irlBookingCost)}/mo
+                </div>
+                <Button
+                  type="button"
+                  variant={hasIrlBookingAddon ? "outline" : "default"}
+                  className="rounded-2xl font-black"
+                  disabled={irlAddonCheckoutDisabled || hasIrlBookingAddon}
+                  onClick={() => {
+                    void onCheckoutIrlAddon();
+                  }}
+                >
+                  {irlAddonCtaLabel}
+                </Button>
               </div>
             </Card>
 
@@ -723,7 +883,7 @@ export default function AgencySubscribe() {
                 </div>
                 <div className="text-gray-500 mt-1">
                   Custom storage, security, SLAs, onboarding, integrations, and
-                  bespoke billing support for agencies with more than 200
+                  bespoke billing support for agencies with more than 1,000
                   models.
                 </div>
               </div>

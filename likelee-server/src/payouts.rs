@@ -3481,6 +3481,59 @@ fn stripe_subscription_roster_models(sub: &stripe_sdk::Subscription) -> Option<i
         .filter(|value| *value > 0)
 }
 
+fn stripe_subscription_metadata_flag(sub: &stripe_sdk::Subscription, key: &str) -> Option<bool> {
+    sub.metadata
+        .get(key)
+        .map(|value| value.trim().to_lowercase())
+        .and_then(|value| match value.as_str() {
+            "1" | "true" | "yes" | "on" => Some(true),
+            "0" | "false" | "no" | "off" => Some(false),
+            _ => None,
+        })
+}
+
+fn stripe_subscription_has_irl_booking_addon(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> bool {
+    if let Some(enabled) = stripe_subscription_metadata_flag(sub, "addon_irl_booking") {
+        return enabled;
+    }
+
+    let irl_price_id = state.stripe_agency_irl_booking_price_id.trim();
+    if irl_price_id.is_empty() {
+        return false;
+    }
+
+    sub.items.data.iter().any(|item| {
+        item.price
+            .as_ref()
+            .map(|price| price.id.to_string())
+            .as_deref()
+            == Some(irl_price_id)
+    })
+}
+
+fn stripe_subscription_is_active(sub: &stripe_sdk::Subscription) -> bool {
+    matches!(sub.status.as_str(), "active" | "trialing")
+}
+
+fn agency_plan_tier_rank(tier: &str) -> i32 {
+    match tier {
+        "enterprise" => 3,
+        "pro" => 2,
+        "basic" => 1,
+        _ => 0,
+    }
+}
+
+struct AggregatedAgencySubscriptionState {
+    plan_tier: &'static str,
+    seats_limit: i64,
+    addon_irl_booking_enabled: bool,
+    primary_subscription_id: String,
+}
+
 fn stripe_subscription_to_plan_tier(
     state: &AppState,
     sub: &stripe_sdk::Subscription,
@@ -3520,6 +3573,109 @@ async fn fetch_subscription(
         .map_err(|e| e.to_string())
 }
 
+async fn list_customer_subscriptions(
+    state: &AppState,
+    customer_id: &str,
+) -> Result<Vec<stripe_sdk::Subscription>, String> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let parsed_customer_id = customer_id
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| "invalid_stripe_customer_id".to_string())?;
+
+    let mut params = stripe_sdk::ListSubscriptions::new();
+    params.customer = Some(parsed_customer_id);
+    params.status = Some(stripe_sdk::SubscriptionStatusFilter::All);
+    params.limit = Some(100);
+
+    let list = stripe_sdk::Subscription::list(&client, &params)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(list.data)
+}
+
+fn aggregate_agency_subscription_state(
+    state: &AppState,
+    agency_id: &str,
+    subscriptions: &[stripe_sdk::Subscription],
+    fallback_subscription: &stripe_sdk::Subscription,
+) -> AggregatedAgencySubscriptionState {
+    let exact_matches: Vec<&stripe_sdk::Subscription> = subscriptions
+        .iter()
+        .filter(|sub| {
+            sub.metadata
+                .get("agency_id")
+                .map(|value| value.trim() == agency_id)
+                .unwrap_or(false)
+        })
+        .collect();
+
+    let mut relevant_subscriptions: Vec<&stripe_sdk::Subscription> = if !exact_matches.is_empty() {
+        exact_matches
+    } else if subscriptions.is_empty() {
+        vec![fallback_subscription]
+    } else {
+        subscriptions.iter().collect()
+    };
+
+    if !relevant_subscriptions
+        .iter()
+        .any(|sub| sub.id == fallback_subscription.id)
+    {
+        relevant_subscriptions.push(fallback_subscription);
+    }
+
+    let active_subscriptions: Vec<&stripe_sdk::Subscription> = relevant_subscriptions
+        .iter()
+        .copied()
+        .filter(|sub| stripe_subscription_is_active(sub))
+        .collect();
+
+    let mut best_plan: Option<(&'static str, i64, String)> = None;
+    for sub in &active_subscriptions {
+        let Some(tier) = stripe_subscription_to_plan_tier(state, sub) else {
+            continue;
+        };
+        let roster_models = stripe_subscription_roster_models(sub).unwrap_or(186);
+
+        let replace = match &best_plan {
+            None => true,
+            Some((current_tier, current_roster, _)) => {
+                let next_rank = agency_plan_tier_rank(tier);
+                let current_rank = agency_plan_tier_rank(current_tier);
+                next_rank > current_rank
+                    || (next_rank == current_rank && roster_models > *current_roster)
+            }
+        };
+
+        if replace {
+            best_plan = Some((tier, roster_models, sub.id.to_string()));
+        }
+    }
+
+    let addon_irl_booking_enabled = active_subscriptions
+        .iter()
+        .any(|sub| stripe_subscription_has_irl_booking_addon(state, sub));
+
+    let (plan_tier, seats_limit, primary_subscription_id) = match best_plan {
+        Some((tier, roster_models, subscription_id)) => (tier, roster_models, subscription_id),
+        None => {
+            let addon_subscription_id = active_subscriptions
+                .iter()
+                .find(|sub| stripe_subscription_has_irl_booking_addon(state, sub))
+                .map(|sub| sub.id.to_string())
+                .unwrap_or_else(|| fallback_subscription.id.to_string());
+            ("free", 1, addon_subscription_id)
+        }
+    };
+
+    AggregatedAgencySubscriptionState {
+        plan_tier,
+        seats_limit,
+        addon_irl_booking_enabled,
+        primary_subscription_id,
+    }
+}
+
 async fn sync_agency_subscription_by_subscription_id(
     state: &AppState,
     subscription_id: &str,
@@ -3534,7 +3690,7 @@ async fn sync_agency_subscription_by_subscription_id(
         .await
 }
 
-async fn sync_agency_subscription_from_stripe(
+pub(crate) async fn sync_agency_subscription_from_stripe(
     state: &AppState,
     agency_id: &str,
     subscription_id: &str,
@@ -3556,21 +3712,26 @@ async fn sync_agency_subscription_from_stripe(
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
-
-    let tier = stripe_subscription_to_plan_tier(state, &sub);
-    let plan_tier = match (tier, status.as_str()) {
-        (Some(t), "active") | (Some(t), "trialing") => t,
-        // When canceled/unpaid/etc, fall back to free.
-        _ => "free",
+    let aggregated = if let Some(cust) = customer_id.filter(|cust| !cust.trim().is_empty()) {
+        match list_customer_subscriptions(state, cust).await {
+            Ok(subscriptions) => {
+                aggregate_agency_subscription_state(state, agency_id, &subscriptions, &sub)
+            }
+            Err(err) => {
+                warn!(
+                    agency_id = %agency_id,
+                    customer_id = %cust,
+                    error = %err,
+                    "failed to list customer subscriptions, falling back to single-subscription sync"
+                );
+                aggregate_agency_subscription_state(state, agency_id, &[], &sub)
+            }
+        }
+    } else {
+        aggregate_agency_subscription_state(state, agency_id, &[], &sub)
     };
-    let roster_models = stripe_subscription_roster_models(&sub).unwrap_or(186);
 
-    let seats_limit: i64 = match plan_tier {
-        "basic" | "pro" | "enterprise" => roster_models,
-        _ => 1,
-    };
-
-    let storage_limit_bytes: i64 = match plan_tier {
+    let storage_limit_bytes: i64 = match aggregated.plan_tier {
         "basic" => 500_i64 * 1024 * 1024 * 1024,
         "pro" => 1024_i64 * 1024 * 1024 * 1024,
         _ => 5_i64 * 1024 * 1024 * 1024,
@@ -3578,9 +3739,16 @@ async fn sync_agency_subscription_from_stripe(
 
     // Update agency profile
     let mut update = serde_json::Map::new();
-    update.insert("plan_tier".into(), json!(plan_tier));
-    update.insert("seats_limit".into(), json!(seats_limit));
-    update.insert("stripe_subscription_id".into(), json!(subscription_id));
+    update.insert("plan_tier".into(), json!(aggregated.plan_tier));
+    update.insert("seats_limit".into(), json!(aggregated.seats_limit));
+    update.insert(
+        "addon_irl_booking_enabled".into(),
+        json!(aggregated.addon_irl_booking_enabled),
+    );
+    update.insert(
+        "stripe_subscription_id".into(),
+        json!(aggregated.primary_subscription_id),
+    );
     update.insert(
         "plan_updated_at".into(),
         json!(chrono::Utc::now().to_rfc3339()),
@@ -3640,7 +3808,13 @@ async fn sync_agency_subscription_from_stripe(
         .execute()
         .await;
 
-    info!(agency_id = %agency_id, plan_tier = %plan_tier, subscription_id = %subscription_id, "synced agency plan tier from stripe subscription");
+    info!(
+        agency_id = %agency_id,
+        plan_tier = %aggregated.plan_tier,
+        addon_irl_booking_enabled = aggregated.addon_irl_booking_enabled,
+        subscription_id = %subscription_id,
+        "synced agency plan tier from stripe subscription"
+    );
     Ok(())
 }
 

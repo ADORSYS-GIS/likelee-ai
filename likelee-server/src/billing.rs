@@ -2,6 +2,7 @@ use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
+use std::time::Duration;
 use tracing::{info, warn};
 
 use crate::{auth::AuthUser, config::AppState};
@@ -222,8 +223,21 @@ pub struct AgencyCheckoutResponse {
     pub checkout_url: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AgencyCheckoutSessionSyncRequest {
+    #[serde(default)]
+    pub session_id: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencyCheckoutSessionSyncResponse {
+    pub plan_tier: String,
+    pub seats_limit: i64,
+    pub addon_irl_booking_enabled: bool,
+}
+
 const AGENCY_MIN_SELF_SERVE_ROSTER_MODELS: u32 = 2;
-const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 200;
+const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 1000;
 
 fn agency_plan_price_ids<'a>(
     state: &'a AppState,
@@ -257,6 +271,73 @@ fn recurring_price_line_item(
         quantity: Some(u64::from(quantity)),
         ..Default::default()
     }
+}
+
+fn agency_checkout_success_url(url: &str) -> String {
+    let trimmed = url.trim();
+    if trimmed.is_empty()
+        || trimmed.contains("{CHECKOUT_SESSION_ID}")
+        || trimmed.contains("session_id=")
+    {
+        return trimmed.to_string();
+    }
+
+    let separator = if trimmed.contains('?') { '&' } else { '?' };
+    format!("{trimmed}{separator}session_id={{CHECKOUT_SESSION_ID}}")
+}
+
+fn agency_plan_tier_rank(value: &str) -> i32 {
+    match value.trim().to_lowercase().as_str() {
+        "enterprise" => 3,
+        "pro" => 2,
+        "basic" => 1,
+        _ => 0,
+    }
+}
+
+fn parse_checkout_metadata_flag(value: Option<&String>) -> bool {
+    value
+        .map(|raw| raw.trim().to_lowercase())
+        .map(|raw| matches!(raw.as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
+async fn fetch_agency_checkout_sync_state(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<AgencyCheckoutSessionSyncResponse, (StatusCode, String)> {
+    let agency_resp = state
+        .pg
+        .from("agencies")
+        .select("plan_tier,seats_limit,addon_irl_booking_enabled")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_status = agency_resp.status();
+    let agency_text = agency_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !agency_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
+    let row = rows.first().cloned().unwrap_or_else(|| json!({}));
+
+    Ok(AgencyCheckoutSessionSyncResponse {
+        plan_tier: row
+            .get("plan_tier")
+            .and_then(|v| v.as_str())
+            .unwrap_or("free")
+            .to_string(),
+        seats_limit: row.get("seats_limit").and_then(|v| v.as_i64()).unwrap_or(1),
+        addon_irl_booking_enabled: row
+            .get("addon_irl_booking_enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+    })
 }
 
 async fn agency_roster_count(
@@ -307,6 +388,101 @@ async fn agency_roster_count(
     Ok(legacy_rows.len() as u32)
 }
 
+struct AgencyBillingContext {
+    agency_name: String,
+    customer_id: String,
+    addon_irl_booking_enabled: bool,
+}
+
+async fn get_or_create_agency_billing_context(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<AgencyBillingContext, (StatusCode, String)> {
+    let agency_resp = state
+        .pg
+        .from("agencies")
+        .select("id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = agency_resp.status();
+    let text = agency_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "agency_profile_not_found".to_string(),
+        ));
+    }
+
+    let row = rows[0].clone();
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let agency_name = row
+        .get("agency_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Agency")
+        .to_string();
+    let existing_customer = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let addon_irl_booking_enabled = row
+        .get("addon_irl_booking_enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = if !existing_customer.trim().is_empty() {
+        existing_customer
+    } else {
+        let mut params = stripe_sdk::CreateCustomer::new();
+        if !email.trim().is_empty() {
+            params.email = Some(email.as_str());
+        }
+        params.name = Some(agency_name.as_str());
+        params.metadata = Some(std::collections::HashMap::from([(
+            "agency_id".to_string(),
+            agency_id.to_string(),
+        )]));
+
+        let cust = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+        let cust_id = cust.id.to_string();
+
+        let _ = state
+            .pg
+            .from("agencies")
+            .eq("id", agency_id)
+            .update(json!({"stripe_customer_id": cust_id}).to_string())
+            .execute()
+            .await;
+
+        cust.id.to_string()
+    };
+
+    Ok(AgencyBillingContext {
+        agency_name,
+        customer_id,
+        addon_irl_booking_enabled,
+    })
+}
+
 pub async fn create_agency_subscription_checkout(
     State(state): State<AppState>,
     user: AuthUser,
@@ -350,13 +526,6 @@ pub async fn create_agency_subscription_checkout(
             format!("stripe_price_not_configured:{headcount_env_var}"),
         ));
     }
-    if payload.addons.irl_booking && state.stripe_agency_irl_booking_price_id.trim().is_empty() {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
-        ));
-    }
-
     let roster_count = agency_roster_count(&state, &user.id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
         return Err((
@@ -389,89 +558,24 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    // Fetch agency profile to reuse/create Stripe customer.
-    let agency_resp = state
-        .pg
-        .from("agencies")
-        .select("id,email,agency_name,stripe_customer_id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let status = agency_resp.status();
-    let text = agency_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
-    }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    if rows.is_empty() {
+    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let include_irl_booking = payload.addons.irl_booking && !billing_ctx.addon_irl_booking_enabled;
+    if include_irl_booking && state.stripe_agency_irl_booking_price_id.trim().is_empty() {
         return Err((
-            StatusCode::NOT_FOUND,
-            "agency_profile_not_found".to_string(),
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
         ));
     }
 
-    let row = rows[0].clone();
-    let email = row
-        .get("email")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let agency_name = row
-        .get("agency_name")
-        .and_then(|v| v.as_str())
-        .unwrap_or("Agency")
-        .to_string();
-    let existing_customer = row
-        .get("stripe_customer_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-
-    // Create Stripe customer if missing.
-    let customer_id = if !existing_customer.trim().is_empty() {
-        existing_customer
-    } else {
-        let mut params = stripe_sdk::CreateCustomer::new();
-        if !email.trim().is_empty() {
-            params.email = Some(email.as_str());
-        }
-        params.name = Some(agency_name.as_str());
-        params.metadata = Some(std::collections::HashMap::from([(
-            "agency_id".to_string(),
-            user.id.clone(),
-        )]));
-
-        let cust = stripe_sdk::Customer::create(&client, params)
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-        let cust_id = cust.id.to_string();
-
-        let _ = state
-            .pg
-            .from("agencies")
-            .eq("id", &user.id)
-            .update(json!({"stripe_customer_id": cust_id}).to_string())
-            .execute()
-            .await;
-
-        cust.id.to_string()
-    };
 
     // Create a subscription checkout session.
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
-    cs_params.success_url = Some(state.stripe_checkout_success_url.as_str());
+    let success_url = agency_checkout_success_url(state.stripe_checkout_success_url.as_str());
+    cs_params.success_url = Some(success_url.as_str());
     cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
-    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "invalid_stripe_customer_id".to_string(),
@@ -482,7 +586,7 @@ pub async fn create_agency_subscription_checkout(
         recurring_price_line_item(base_plan_price_id, 1),
         recurring_price_line_item(headcount_price_id, payload.roster_models),
     ];
-    if payload.addons.irl_booking {
+    if include_irl_booking {
         line_items.push(recurring_price_line_item(
             state.stripe_agency_irl_booking_price_id.as_str(),
             1,
@@ -504,7 +608,7 @@ pub async fn create_agency_subscription_checkout(
     );
     md.insert(
         "addon_irl_booking".to_string(),
-        if payload.addons.irl_booking {
+        if include_irl_booking {
             "1".to_string()
         } else {
             "0".to_string()
@@ -524,7 +628,7 @@ pub async fn create_agency_subscription_checkout(
     );
     sub_md.insert(
         "addon_irl_booking".to_string(),
-        if payload.addons.irl_booking {
+        if include_irl_booking {
             "1".to_string()
         } else {
             "0".to_string()
@@ -566,6 +670,285 @@ pub async fn create_agency_subscription_checkout(
 
     info!(agency_id = %user.id, plan = %normalized_plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn create_agency_irl_booking_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+    if state.stripe_agency_irl_booking_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
+        ));
+    }
+    if state.stripe_checkout_success_url.trim().is_empty()
+        || state.stripe_checkout_cancel_url.trim().is_empty()
+    {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_checkout_urls_not_configured".to_string(),
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    if billing_ctx.addon_irl_booking_enabled {
+        return Err((
+            StatusCode::CONFLICT,
+            "addon_irl_booking_already_enabled".to_string(),
+        ));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    let success_url = agency_checkout_success_url(state.stripe_checkout_success_url.as_str());
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.line_items = Some(vec![recurring_price_line_item(
+        state.stripe_agency_irl_booking_price_id.as_str(),
+        1,
+    )]);
+    cs_params.client_reference_id = Some(user.id.as_str());
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "agency".to_string());
+    md.insert(
+        "subscription_kind".to_string(),
+        "irl_booking_addon".to_string(),
+    );
+    md.insert("addon_irl_booking".to_string(), "1".to_string());
+    cs_params.metadata = Some(md);
+
+    let mut sub_md = std::collections::HashMap::new();
+    sub_md.insert("agency_id".to_string(), user.id.clone());
+    sub_md.insert("billing_domain".to_string(), "agency".to_string());
+    sub_md.insert(
+        "subscription_kind".to_string(),
+        "irl_booking_addon".to_string(),
+    );
+    sub_md.insert("addon_irl_booking".to_string(), "1".to_string());
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(sub_md),
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(
+        agency_id = %user.id,
+        agency_name = %billing_ctx.agency_name,
+        "created stripe IRL booking addon checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn sync_agency_checkout_session(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<AgencyCheckoutSessionSyncRequest>,
+) -> Result<Json<AgencyCheckoutSessionSyncResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    let session_id_raw = payload.session_id.trim();
+    if session_id_raw.is_empty() {
+        let agency_resp = state
+            .pg
+            .from("agencies")
+            .select("stripe_subscription_id,stripe_customer_id")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let agency_status = agency_resp.status();
+        let agency_text = agency_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !agency_status.is_success() {
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
+        let row = rows.first().cloned().unwrap_or_else(|| json!({}));
+        let subscription_id = row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let customer_id = row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+
+        if subscription_id.is_empty() {
+            return Ok(Json(
+                fetch_agency_checkout_sync_state(&state, &user.id).await?,
+            ));
+        }
+
+        crate::payouts::sync_agency_subscription_from_stripe(
+            &state,
+            &user.id,
+            subscription_id.as_str(),
+            customer_id.as_deref(),
+        )
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+
+        return Ok(Json(
+            fetch_agency_checkout_sync_state(&state, &user.id).await?,
+        ));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let session_id = session_id_raw
+        .parse::<stripe_sdk::CheckoutSessionId>()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_session_id".to_string()))?;
+    let session = stripe_sdk::CheckoutSession::retrieve(&client, &session_id, &[])
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let session_agency_id = session
+        .client_reference_id
+        .as_deref()
+        .or_else(|| {
+            session
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("agency_id"))
+                .map(|value| value.as_str())
+        })
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if session_agency_id.is_empty() || session_agency_id != user.id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "checkout_session_not_owned".to_string(),
+        ));
+    }
+
+    let billing_domain = session
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("billing_domain"))
+        .map(|value| value.trim().to_lowercase())
+        .unwrap_or_default();
+    if !billing_domain.is_empty() && billing_domain != "agency" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "checkout_session_not_agency_billing".to_string(),
+        ));
+    }
+
+    let subscription_id = session
+        .subscription
+        .as_ref()
+        .map(|subscription| subscription.id().to_string())
+        .unwrap_or_default();
+    if subscription_id.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "checkout_session_missing_subscription".to_string(),
+        ));
+    }
+
+    let customer_id = session
+        .customer
+        .as_ref()
+        .map(|customer| customer.id().to_string());
+    let expected_plan_tier = session
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("plan"))
+        .map(|value| value.trim().to_lowercase());
+    let expected_irl_booking = parse_checkout_metadata_flag(
+        session
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("addon_irl_booking")),
+    );
+
+    let mut latest_state = AgencyCheckoutSessionSyncResponse {
+        plan_tier: "free".to_string(),
+        seats_limit: 1,
+        addon_irl_booking_enabled: false,
+    };
+
+    for attempt in 0..4 {
+        crate::payouts::sync_agency_subscription_from_stripe(
+            &state,
+            &user.id,
+            subscription_id.as_str(),
+            customer_id.as_deref(),
+        )
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+
+        latest_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+
+        let plan_ready = expected_plan_tier
+            .as_deref()
+            .map(|expected| {
+                agency_plan_tier_rank(latest_state.plan_tier.as_str())
+                    >= agency_plan_tier_rank(expected)
+            })
+            .unwrap_or(true);
+        let addon_ready = !expected_irl_booking || latest_state.addon_irl_booking_enabled;
+        if plan_ready && addon_ready {
+            break;
+        }
+
+        if attempt < 3 {
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+        }
+    }
+
+    Ok(Json(latest_state))
 }
 
 #[derive(Debug, Serialize)]
