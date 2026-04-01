@@ -51,9 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const userRef = React.useRef<User | null>(null);
-  const profileRef = React.useRef<Profile | null>(null);
+  const profileRef = React.useRef<Profile | null | undefined>(undefined);
 
   const getUserRoleHint = (user: User | null): string => {
     if (!user) return "";
@@ -266,8 +266,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userChanged = prevUserId !== nextUserId;
 
       if (userChanged) {
-        setProfile(null);
-        profileRef.current = null;
+        setProfile(undefined);
+        profileRef.current = undefined;
         queryClient.clear();
       }
 

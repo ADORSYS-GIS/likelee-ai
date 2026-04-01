@@ -132,7 +132,7 @@ export default function Login() {
     console.log("[Login] useEffect START", {
       authenticated,
       initialized,
-      profileState: profile === null ? "NULL" : profile ? "EXISTS" : "UNDEFINED",
+      profileState: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
       accessDenied,
     });
 
@@ -175,12 +175,13 @@ export default function Login() {
       return null;
     })();
 
-    // Check if profile resolution is complete (either profile exists or user has no session)
-    const profileResolved = initialized && (profile !== null || !user);
+    // Check if profile resolution is complete (either profile fetch finished or user has no session)
+    // undefined = fetch not done yet; null = fetch done, no profile; Profile = fetch done, found profile
+    const profileResolved = initialized && (profile !== undefined || !user);
 
     console.log("[Login] profileResolved:", profileResolved, {
       initialized,
-      profile: profile === null ? "NULL" : profile ? "EXISTS" : "UNDEFINED",
+      profile: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
       hasUser: !!user,
     });
 
