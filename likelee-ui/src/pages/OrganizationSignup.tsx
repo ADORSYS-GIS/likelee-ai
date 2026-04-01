@@ -215,7 +215,7 @@ export default function OrganizationSignup() {
     (user.app_metadata?.provider === "google" ||
       user.app_metadata?.provider === "github");
 
-  const [step, setStep] = useState(isOAuthSignup ? 2 : 1);
+  const [step, setStep] = useState(1); // All users start at step 1 to collect org basics
   const [orgType, setOrgType] = useState("");
   const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
@@ -771,56 +771,69 @@ export default function OrganizationSignup() {
     return getFriendlyErrorMessage(error, t);
   };
 
-  const handleNext = () => {
-    // Basic validation for Step 1 before proceeding
-    if (step === 1) {
-      // Validate organization type is set
-      if (!orgType) {
-        toast({
-          title: t("error"),
-          description:
-            "Organization type is missing. Please try again from the beginning.",
-          variant: "destructive",
-        });
-        return;
-      }
+   const handleNext = () => {
+     // Basic validation for Step 1 before proceeding
+     if (step === 1) {
+       // Validate organization type is set
+       if (!orgType) {
+         toast({
+           title: t("error"),
+           description:
+             "Organization type is missing. Please try again from the beginning.",
+           variant: "destructive",
+         });
+         return;
+       }
 
-      if (
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        !formData.organization_name
-      ) {
-        toast({
-          title: t("organizationSignup.missingFieldsTitle"),
-          description: t("organizationSignup.missingFieldsDescription"),
-          variant: "destructive",
-        });
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: t("organizationSignup.passwordMismatchTitle"),
-          description: t("organizationSignup.passwordMismatchDescription"),
-          variant: "destructive",
-        });
-        return;
-      }
-      if (formData.password.length < 6) {
-        toast({
-          title: t("common.error"),
-          description: t("organizationSignup.errors.weakPassword"),
-          variant: "destructive",
-        });
-        return;
-      }
-      // Create initial profile and move to step 2
-      createInitialProfileMutation.mutate(formData);
-      return; // Prevent further execution of handleNext
-    }
-    // This part should technically not be reached in a 2-step process if step 1 calls mutation
-    if (step < totalSteps) setStep(step + 1);
-  };
+       // Validate organization name is set for all users
+       if (!formData.organization_name) {
+         toast({
+           title: t("organizationSignup.missingFieldsTitle"),
+           description: t("organizationSignup.missingFieldsDescription"),
+           variant: "destructive",
+         });
+         return;
+       }
+
+       // For OAuth users, skip email/password validation and move to step 2
+       if (isOAuthSignup) {
+         console.log("OAuth user proceeding to step 2 with org basics");
+         setStep(2);
+         return;
+       }
+
+       // For non-OAuth users, validate email and passwords
+       if (!formData.email || !formData.password || !formData.confirmPassword) {
+         toast({
+           title: t("organizationSignup.missingFieldsTitle"),
+           description: t("organizationSignup.missingFieldsDescription"),
+           variant: "destructive",
+         });
+         return;
+       }
+       if (formData.password !== formData.confirmPassword) {
+         toast({
+           title: t("organizationSignup.passwordMismatchTitle"),
+           description: t("organizationSignup.passwordMismatchDescription"),
+           variant: "destructive",
+         });
+         return;
+       }
+       if (formData.password.length < 6) {
+         toast({
+           title: t("common.error"),
+           description: t("organizationSignup.errors.weakPassword"),
+           variant: "destructive",
+         });
+         return;
+       }
+       // Create initial profile and move to step 2
+       createInitialProfileMutation.mutate(formData);
+       return; // Prevent further execution of handleNext
+     }
+     // This part should technically not be reached in a 2-step process if step 1 calls mutation
+     if (step < totalSteps) setStep(step + 1);
+   };
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
@@ -1097,143 +1110,155 @@ export default function OrganizationSignup() {
                     : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
-                  {t("organizationSignup.startWithBasics")}
-                </p>
+                   {isOAuthSignup
+                     ? "Tell us about your organization"
+                     : t("organizationSignup.startWithBasics")}
+                 </p>
               </div>
 
               <div className="space-y-4">
                 {/* NEW: Organization Type Selector - Hidden if pre-selected */}
-                {!isPreSelected && (
-                  <div>
-                    <Label
-                      htmlFor="organization_type"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      Organization Type *
-                    </Label>
-                    <Select
-                      value={orgType}
-                      onValueChange={(value) => setOrgType(value)}
-                    >
-                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                        <SelectValue placeholder="Select your organization type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(flow === "brand" || !flow) && (
-                          <>
-                            <SelectItem value="brand_company">
-                              Brand / Company
-                            </SelectItem>
-                            <SelectItem value="production_studio">
-                              Production Studio
-                            </SelectItem>
-                          </>
-                        )}
-                        {(flow === "agency" || !flow) && (
-                          <>
-                            <SelectItem value="marketing_agency">
-                              Marketing Agency
-                            </SelectItem>
-                            <SelectItem value="talent_agency">
-                              Talent / Modeling Agency
-                            </SelectItem>
-                            <SelectItem value="sports_agency">
-                              Sports Agency
-                            </SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+               {!isPreSelected && (
+                   <div>
+                     <Label
+                       htmlFor="organization_type"
+                       className="text-sm font-medium text-gray-700 mb-2 block"
+                     >
+                       Organization Type *
+                     </Label>
+                     <Select
+                       value={orgType}
+                       onValueChange={(value) => setOrgType(value)}
+                     >
+                       <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                         <SelectValue placeholder="Select your organization type" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {(flow === "brand" || !flow) && (
+                           <>
+                             <SelectItem value="brand_company">
+                               Brand / Company
+                             </SelectItem>
+                             <SelectItem value="production_studio">
+                               Production Studio
+                             </SelectItem>
+                           </>
+                         )}
+                         {(flow === "agency" || !flow) && (
+                           <>
+                             <SelectItem value="marketing_agency">
+                               Marketing Agency
+                             </SelectItem>
+                             <SelectItem value="talent_agency">
+                               Talent / Modeling Agency
+                             </SelectItem>
+                             <SelectItem value="sports_agency">
+                               Sports Agency
+                             </SelectItem>
+                           </>
+                         )}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 )}
+
+                {/* Only show email/password for non-OAuth users */}
+                {!isOAuthSignup && (
+                  <>
+                    <div>
+                      <Label
+                        htmlFor="email"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("organizationSignup.companyEmail")}
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t("organizationSignup.emailPlaceholder")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.passwordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t("organizationSignup.passwordPlaceholder")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor="confirmPassword"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.confirmPasswordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
-
-                <div>
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("organizationSignup.companyEmail")}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("organizationSignup.emailPlaceholder")}
-                  />
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.passwordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.confirmPasswordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
 
                 <div>
                   <Label
@@ -1300,16 +1325,29 @@ export default function OrganizationSignup() {
                 </div>
               </div>
 
-              <Button
-                onClick={handleNext}
-                disabled={createInitialProfileMutation.isPending} // Disable while saving initial profile
-                className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
-              >
-                {createInitialProfileMutation.isPending
-                  ? t("common.saving")
-                  : t("common.continue")}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+               <Button
+                 onClick={handleNext}
+                 disabled={
+                   isOAuthSignup
+                     ? false
+                     : createInitialProfileMutation.isPending
+                 }
+                 className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+               >
+                 {isOAuthSignup ? (
+                   <>
+                     {t("common.continue")}
+                     <ArrowRight className="w-5 h-5 ml-2" />
+                   </>
+                 ) : createInitialProfileMutation.isPending ? (
+                   t("common.saving")
+                 ) : (
+                   <>
+                     {t("common.continue")}
+                     <ArrowRight className="w-5 h-5 ml-2" />
+                   </>
+                 )}
+               </Button>
             </div>
           )}
 
