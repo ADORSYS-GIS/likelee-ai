@@ -1573,12 +1573,24 @@ pub async fn stripe_webhook(
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
-            // Check if this is a payment link checkout
+            // Fallback routing for sessions missing billing_domain metadata.
             let md = obj.get("metadata").cloned().unwrap_or(json!({}));
             let agency_id_from_meta = md
                 .get("agency_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
+                .to_string();
+            let licensing_request_ids_from_meta = md
+                .get("licensing_request_ids")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            let offer_id_from_meta = md
+                .get("offer_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
                 .to_string();
             let stripe_payment_link_id = obj
                 .get("payment_link")
@@ -1586,27 +1598,6 @@ pub async fn stripe_webhook(
                 .unwrap_or("")
                 .trim()
                 .to_string();
-            let _payment_intent_id = obj
-                .get("payment_intent")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            // Try to find matching payment link by metadata
-            if !agency_id_from_meta.is_empty() || !stripe_payment_link_id.is_empty() {
-                tracing::info!(
-                    agency_id_from_meta = %agency_id_from_meta,
-                    stripe_payment_link_id = %stripe_payment_link_id,
-                    "checkout.session.completed detected as payment-link checkout"
-                );
-                let _ = handle_payment_link_checkout_completed(&state, &obj).await;
-                return (StatusCode::OK, Json(json!({"status":"ok"})));
-            }
-
-            tracing::info!(
-                "checkout.session.completed detected as subscription/other checkout (no payment_link and no agency_id metadata)"
-            );
-
             let agency_id = obj
                 .get("client_reference_id")
                 .and_then(|v| v.as_str())
@@ -1617,7 +1608,6 @@ pub async fn stripe_webhook(
                 })
                 .unwrap_or("")
                 .to_string();
-
             let subscription_id = obj
                 .get("subscription")
                 .and_then(|v| v.as_str())
@@ -1629,7 +1619,32 @@ pub async fn stripe_webhook(
                 .unwrap_or("")
                 .to_string();
 
+            if !stripe_payment_link_id.is_empty() {
+                tracing::info!(
+                    agency_id_from_meta = %agency_id_from_meta,
+                    licensing_request_ids = %licensing_request_ids_from_meta,
+                    stripe_payment_link_id = %stripe_payment_link_id,
+                    "checkout.session.completed detected as payment-link checkout"
+                );
+                let _ = handle_payment_link_checkout_completed(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
+            if !offer_id_from_meta.is_empty() {
+                tracing::info!(
+                    offer_id = %offer_id_from_meta,
+                    "checkout.session.completed missing billing_domain; falling back to campaign offer handling"
+                );
+                let _ = handle_campaign_offer_checkout_session_completed(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             if !agency_id.is_empty() && !subscription_id.is_empty() {
+                tracing::info!(
+                    agency_id = %agency_id,
+                    subscription_id = %subscription_id,
+                    "checkout.session.completed missing billing_domain; falling back to agency subscription sync"
+                );
                 let _ = sync_agency_subscription_from_stripe(
                     &state,
                     &agency_id,
@@ -1641,7 +1656,36 @@ pub async fn stripe_webhook(
                     },
                 )
                 .await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
+
+            if !agency_id_from_meta.is_empty() && !licensing_request_ids_from_meta.is_empty() {
+                tracing::info!(
+                    agency_id_from_meta = %agency_id_from_meta,
+                    licensing_request_ids = %licensing_request_ids_from_meta,
+                    "checkout.session.completed missing billing_domain; attempting payment-link resolution from metadata"
+                );
+                match handle_payment_link_checkout_completed(&state, &obj).await {
+                    Ok(true) => return (StatusCode::OK, Json(json!({"status":"ok"}))),
+                    Ok(false) => {
+                        tracing::info!(
+                            agency_id_from_meta = %agency_id_from_meta,
+                            licensing_request_ids = %licensing_request_ids_from_meta,
+                            "metadata-only checkout session did not match a stored payment link; falling back to licensing checkout handling"
+                        );
+                        let _ = handle_licensing_requests_checkout_session_completed(&state, &obj)
+                            .await;
+                        return (StatusCode::OK, Json(json!({"status":"ok"})));
+                    }
+                    Err(_) => return (StatusCode::OK, Json(json!({"status":"ok"}))),
+                }
+            }
+
+            tracing::info!(
+                agency_id = %agency_id,
+                subscription_id = %subscription_id,
+                "checkout.session.completed detected as other checkout"
+            );
         }
         "customer.subscription.created"
         | "customer.subscription.updated"
@@ -2577,7 +2621,7 @@ async fn handle_licensing_requests_checkout_session_completed(
 async fn handle_payment_link_checkout_completed(
     state: &AppState,
     obj: &serde_json::Value,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let md = obj.get("metadata").cloned().unwrap_or(json!({}));
     let mut agency_id = md
         .get("agency_id")
@@ -2650,7 +2694,7 @@ async fn handle_payment_link_checkout_completed(
             payment_intent_id = %payment_intent_id,
             "Payment link checkout completed but missing identifiers; skipping distribution"
         );
-        return Ok(());
+        return Ok(false);
     }
 
     let lr_ids: Vec<&str> = licensing_request_ids_str.split(',').collect();
@@ -2673,17 +2717,18 @@ async fn handle_payment_link_checkout_completed(
     let payment_link = match pl_resp {
         Ok(resp) => {
             if !resp.status().is_success() {
-                return Ok(());
+                let err_text = resp.text().await.unwrap_or_else(|_| "unknown error".into());
+                return Err(err_text);
             }
             let text = resp.text().await.map_err(|e| e.to_string())?;
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             rows.into_iter().next()
         }
-        Err(_) => return Ok(()),
+        Err(e) => return Err(e.to_string()),
     };
 
     let Some(pl) = payment_link else {
-        return Ok(());
+        return Ok(false);
     };
 
     let payment_link_id = pl
@@ -2831,7 +2876,7 @@ async fn handle_payment_link_checkout_completed(
     // Note: Archival of license_submissions and licensing_requests is handled
     // atomically within the complete_payment_link_checkout RPC function above.
 
-    Ok(())
+    Ok(true)
 }
 
 // ============================================================================

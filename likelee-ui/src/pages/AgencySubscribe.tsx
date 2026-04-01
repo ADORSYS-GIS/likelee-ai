@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import {
   getAgencyProfile,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/auth/AuthProvider";
 
 const DEFAULT_ROSTER_MODELS = 186;
 const MIN_ROSTER_MODELS = 2;
@@ -42,6 +43,8 @@ function formatNumber(value: number) {
 }
 
 export default function AgencySubscribe() {
+  const { initialized, authenticated, profile } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -60,6 +63,8 @@ export default function AgencySubscribe() {
     String(DEFAULT_ROSTER_MODELS),
   );
   const [checkingOut, setCheckingOut] = React.useState(false);
+  const isAgencyUser = profile?.role === "agency";
+  const profileLoading = initialized && authenticated && !profile;
 
   const rosterRateBasic = BASIC_ROSTER_RATE;
   const rosterRatePro = PRO_ROSTER_RATE;
@@ -88,6 +93,10 @@ export default function AgencySubscribe() {
 
   React.useEffect(() => {
     async function fetchCurrentPlan() {
+      if (!initialized || !authenticated || !isAgencyUser) {
+        return;
+      }
+
       try {
         const resp = (await getAgencyProfile()) as any;
         const tier = resp?.plan_tier || "free";
@@ -118,8 +127,21 @@ export default function AgencySubscribe() {
         console.error("Failed to fetch agency profile:", e);
       }
     }
-    fetchCurrentPlan();
-  }, []);
+    void fetchCurrentPlan();
+  }, [authenticated, initialized, isAgencyUser]);
+
+  React.useEffect(() => {
+    if (!initialized || (authenticated && isAgencyUser)) {
+      return;
+    }
+
+    setCurrentPlanTier(null);
+    setMinimumRosterModels(MIN_ROSTER_MODELS);
+    if (rosterModels > MAX_ROSTER_MODELS) {
+      setRosterModels(MAX_ROSTER_MODELS);
+      setRosterInput(String(MAX_ROSTER_MODELS));
+    }
+  }, [authenticated, initialized, isAgencyUser, rosterModels]);
 
   React.useEffect(() => {
     if (!success) return;
@@ -137,6 +159,31 @@ export default function AgencySubscribe() {
     const targetPlan = planOverride || plan;
     if (requiresContactSales) {
       onContact();
+      return;
+    }
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description: "Sign in with your agency account to continue to checkout.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description:
+          "Use an agency account to start a subscription checkout.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -209,8 +256,48 @@ export default function AgencySubscribe() {
   };
 
   const onBack = () => {
-    navigate("/AgencyDashboard");
+    navigate(isAgencyUser ? "/AgencyDashboard" : "/");
   };
+
+  const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
+    if (!initialized || profileLoading) {
+      return "Loading...";
+    }
+    if (!authenticated) {
+      return targetPlan === "basic" ? "Sign in for Basic" : "Sign in for Pro";
+    }
+    if (!isAgencyUser) {
+      return "Agency account required";
+    }
+    if (requiresContactSales) {
+      return "Contact Sales";
+    }
+    return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
+  };
+
+  const checkoutDisabled = checkingOut || !initialized || profileLoading;
+  const alreadySubscribedToPlan =
+    !requiresContactSales &&
+    ((plan === "basic" && currentPlanTier === "basic") ||
+      (plan === "pro" && currentPlanTier === "pro"));
+  const footerCtaLabel = (() => {
+    if (!initialized || profileLoading) {
+      return "Loading...";
+    }
+    if (requiresContactSales) {
+      return "Contact Sales";
+    }
+    if (!authenticated) {
+      return "Sign in to Checkout";
+    }
+    if (!isAgencyUser) {
+      return "Agency account required";
+    }
+    if (alreadySubscribedToPlan) {
+      return "Already Subscribed";
+    }
+    return checkingOut ? "Redirecting..." : "Get Started";
+  })();
 
   const onSelectPlan = async (targetPlan: "basic" | "pro") => {
     if (requiresContactSales) {
@@ -237,6 +324,11 @@ export default function AgencySubscribe() {
             <Badge variant="outline" className="bg-white/70">
               Plans are billed monthly
             </Badge>
+            {!authenticated && initialized && (
+              <Badge variant="outline" className="bg-white/70">
+                Public pricing preview
+              </Badge>
+            )}
             {success && (
               <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
                 Subscription started
@@ -397,7 +489,7 @@ export default function AgencySubscribe() {
                   void onSelectPlan("basic");
                 }}
                 disabled={
-                  checkingOut ||
+                  checkoutDisabled ||
                   (!requiresContactSales && currentPlanTier === "basic")
                 }
               >
@@ -406,10 +498,8 @@ export default function AgencySubscribe() {
                     <Check className="w-5 h-5" />
                     Current Plan
                   </span>
-                ) : requiresContactSales ? (
-                  "Contact Sales"
                 ) : (
-                  "Checkout Basic"
+                  getPlanCtaLabel("basic")
                 )}
               </Button>
             </div>
@@ -490,7 +580,7 @@ export default function AgencySubscribe() {
                   void onSelectPlan("pro");
                 }}
                 disabled={
-                  checkingOut ||
+                  checkoutDisabled ||
                   (!requiresContactSales && currentPlanTier === "pro")
                 }
               >
@@ -499,10 +589,8 @@ export default function AgencySubscribe() {
                     <Check className="w-5 h-5" />
                     Current Plan
                   </span>
-                ) : requiresContactSales ? (
-                  "Contact Sales"
                 ) : (
-                  "Checkout Pro"
+                  getPlanCtaLabel("pro")
                 )}
               </Button>
             </div>
@@ -606,11 +694,12 @@ export default function AgencySubscribe() {
               className="rounded-2xl"
               onClick={onBack}
             >
-              Back to Dashboard
+              {isAgencyUser ? "Back to Dashboard" : "Back to Home"}
             </Button>
             <Button
               type="button"
               className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+              disabled={checkoutDisabled || alreadySubscribedToPlan}
               onClick={() => {
                 if (requiresContactSales) {
                   onContact();
@@ -618,19 +707,8 @@ export default function AgencySubscribe() {
                 }
                 void onCheckout();
               }}
-              disabled={
-                checkingOut ||
-                (!requiresContactSales &&
-                  ((plan === "basic" && currentPlanTier === "basic") ||
-                    (plan === "pro" && currentPlanTier === "pro")))
-              }
             >
-              {requiresContactSales
-                ? "Contact Sales"
-                : (plan === "basic" && currentPlanTier === "basic") ||
-                    (plan === "pro" && currentPlanTier === "pro")
-                  ? "Already Subscribed"
-                  : "Get Started"}
+              {footerCtaLabel}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

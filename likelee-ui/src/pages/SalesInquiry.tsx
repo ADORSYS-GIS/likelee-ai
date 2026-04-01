@@ -21,6 +21,9 @@ export default function SalesInquiry() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<
+    "email_accepted" | "stored_only"
+  >("email_accepted");
   const [formData, setFormData] = useState({
     company_name: "",
     contact_name: "",
@@ -34,7 +37,10 @@ export default function SalesInquiry() {
     mutationFn: (data: typeof formData) => {
       return base44.post("/integrations/core/send-sales-inquiry", data);
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
+      setDeliveryMode(
+        result?.delivery === "stored_only" ? "stored_only" : "email_accepted",
+      );
       setSubmitted(true);
     },
     onError: (e) => {
@@ -76,14 +82,32 @@ export default function SalesInquiry() {
             {t("salesInquiry.success.title")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {t("salesInquiry.success.message")}
+            {deliveryMode === "stored_only"
+              ? "We received your inquiry and saved it for follow-up, but our email delivery is currently degraded."
+              : t("salesInquiry.success.message")}
           </p>
           <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-3">
-              {t("salesInquiry.success.whatsNextTitle")}
+              {deliveryMode === "stored_only"
+                ? "Direct contact"
+                : t("salesInquiry.success.whatsNextTitle")}
             </h3>
             <p className="text-gray-700 leading-relaxed">
-              {t("salesInquiry.success.whatsNextMessage")}
+              {deliveryMode === "stored_only" ? (
+                <>
+                  Our team can still review the saved inquiry. If this is
+                  urgent, email{" "}
+                  <a
+                    href={SALES_EMAIL_MAILTO}
+                    className="font-semibold underline"
+                  >
+                    {SALES_EMAIL}
+                  </a>{" "}
+                  directly while we sort out delivery.
+                </>
+              ) : (
+                t("salesInquiry.success.whatsNextMessage")
+              )}
             </p>
           </div>
         </Card>

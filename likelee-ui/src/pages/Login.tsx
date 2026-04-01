@@ -47,20 +47,61 @@ export default function Login() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [userType, setUserType] = React.useState("creator");
   const [loginAttempted, setLoginAttempted] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const creatorType = React.useMemo(
-    () => new URLSearchParams(location.search).get("type"),
+  const searchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
     [location.search],
   );
+  const creatorType = searchParams.get("type");
+  const redirectFromQuery = searchParams.get("next");
+  const preferredRoleFromQuery = searchParams.get("role");
+  const redirectFromState = React.useMemo(() => {
+    const from = (location.state as any)?.from;
+    const pathname = typeof from?.pathname === "string" ? from.pathname : "";
+    if (!pathname || pathname.toLowerCase() === "/login") {
+      return null;
+    }
+    const search = typeof from?.search === "string" ? from.search : "";
+    const hash = typeof from?.hash === "string" ? from.hash : "";
+    return `${pathname}${search}${hash}`;
+  }, [location.state]);
+  const redirectTarget = React.useMemo(() => {
+    if (redirectFromQuery && redirectFromQuery.startsWith("/")) {
+      return redirectFromQuery;
+    }
+    return redirectFromState;
+  }, [redirectFromQuery, redirectFromState]);
+  const preferredRole = React.useMemo(() => {
+    if (
+      preferredRoleFromQuery === "creator" ||
+      preferredRoleFromQuery === "brand" ||
+      preferredRoleFromQuery === "agency"
+    ) {
+      return preferredRoleFromQuery;
+    }
+    const fromStateRole = (location.state as any)?.preferredRole;
+    if (
+      fromStateRole === "creator" ||
+      fromStateRole === "brand" ||
+      fromStateRole === "agency"
+    ) {
+      return fromStateRole;
+    }
+    return "creator";
+  }, [location.state, preferredRoleFromQuery]);
 
   // Track if we're about to redirect
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   // Guard against race conditions during logout/tab switch
   const [accessDenied, setAccessDenied] = React.useState(false);
+  const [userType, setUserType] = React.useState(preferredRole);
+
+  React.useEffect(() => {
+    setUserType(preferredRole);
+  }, [preferredRole]);
 
   React.useEffect(() => {
     // Reset accessDenied once we are fully logged out
@@ -103,6 +144,8 @@ export default function Login() {
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
           { replace: true },
         );
+      } else if (redirectTarget) {
+        navigate(redirectTarget, { replace: true });
       } else {
         const dashboard =
           profile.role === "brand"
@@ -119,6 +162,7 @@ export default function Login() {
     profile,
     navigate,
     creatorType,
+    redirectTarget,
     userType,
     logout,
     accessDenied,

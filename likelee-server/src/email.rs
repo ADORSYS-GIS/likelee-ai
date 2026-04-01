@@ -27,6 +27,11 @@ pub struct SendSalesInquiryRequest {
     pub message: Option<String>,
 }
 
+#[derive(Clone, Copy)]
+enum SalesInquiryDelivery {
+    EmailAccepted,
+}
+
 #[derive(Deserialize)]
 pub struct EmailAttachment {
     pub filename: String,
@@ -212,6 +217,94 @@ fn send_sales_plain_text_email(
     reply_to: Option<&str>,
 ) -> Result<(), (StatusCode, String)> {
     send_email_smtp_internal_sales(state, to, subject, body, reply_to)
+}
+
+fn is_missing_sales_inquiries_table(error: &str) -> bool {
+    let normalized = error.to_ascii_lowercase();
+    normalized.contains("pgrst205") && normalized.contains("sales_inquiries")
+}
+
+async fn insert_sales_inquiry(
+    state: &AppState,
+    payload: &SendSalesInquiryRequest,
+    recipient_email: &str,
+) -> Result<Option<String>, String> {
+    let row = json!({
+        "source": "website",
+        "company_name": payload.company_name.trim(),
+        "contact_name": payload.contact_name.trim(),
+        "email": payload.email.trim(),
+        "phone": payload.phone.as_deref().map(str::trim).filter(|v| !v.is_empty()),
+        "company_size": payload.company_size.trim(),
+        "message": payload.message.as_deref().map(str::trim).filter(|v| !v.is_empty()),
+        "recipient_email": recipient_email,
+        "email_delivery_status": "pending",
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("sales_inquiries")
+        .insert(row.to_string())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(resp.text().await.unwrap_or_default());
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let inquiry_id = rows
+        .first()
+        .and_then(|row| row.get("id"))
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string());
+
+    Ok(inquiry_id)
+}
+
+async fn update_sales_inquiry_delivery(
+    state: &AppState,
+    inquiry_id: &str,
+    delivery_status: &str,
+    email_transport: Option<&str>,
+    email_delivery_error: Option<&str>,
+) {
+    if inquiry_id.trim().is_empty() {
+        return;
+    }
+
+    let mut patch = serde_json::Map::new();
+    patch.insert("email_delivery_status".to_string(), json!(delivery_status));
+    patch.insert(
+        "updated_at".to_string(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+
+    if let Some(email_transport) = email_transport.filter(|value| !value.trim().is_empty()) {
+        patch.insert("email_transport".to_string(), json!(email_transport));
+    }
+
+    if let Some(email_delivery_error) = email_delivery_error {
+        if email_delivery_error.trim().is_empty() {
+            patch.insert("email_delivery_error".to_string(), serde_json::Value::Null);
+        } else {
+            patch.insert(
+                "email_delivery_error".to_string(),
+                json!(email_delivery_error.trim()),
+            );
+        }
+    }
+
+    let _ = state
+        .pg
+        .from("sales_inquiries")
+        .eq("id", inquiry_id)
+        .update(serde_json::Value::Object(patch).to_string())
+        .execute()
+        .await;
 }
 
 fn parse_optional_reply_to(
@@ -468,6 +561,24 @@ pub async fn send_sales_inquiry(
         );
     }
 
+    let inquiry_id = match insert_sales_inquiry(&state, &payload, to).await {
+        Ok(id) => id,
+        Err(err) => {
+            if is_missing_sales_inquiries_table(&err) {
+                tracing::warn!(
+                    error = %err,
+                    "sales_inquiries table unavailable; continuing without inquiry persistence"
+                );
+            } else {
+                tracing::error!(
+                    error = %err,
+                    "Failed to persist sales inquiry before email send"
+                );
+            }
+            None
+        }
+    };
+
     let subject_company = company_name.replace(['\r', '\n'], " ");
     let subject = format!("Sales Inquiry from {subject_company}");
     let body = format!(
@@ -476,26 +587,68 @@ pub async fn send_sales_inquiry(
         message = if message.is_empty() { "-" } else { message },
     );
 
-    let res = match send_sales_plain_text_email(&state, to, &subject, &body, Some(email)) {
-        Ok(()) => Ok(()),
-        Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
-            send_email_core_with_from_name(
-                &state,
-                to,
-                &subject,
-                &body,
-                false,
-                None,
-                None,
-                Some(email),
-            )
-            .await
-        }
-        Err(err) => Err(err),
-    };
+    let res: Result<SalesInquiryDelivery, (StatusCode, String)> =
+        match send_sales_plain_text_email(&state, to, &subject, &body, Some(email)) {
+            Ok(()) => Ok(SalesInquiryDelivery::EmailAccepted),
+            Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
+                send_email_core_with_from_name(
+                    &state,
+                    to,
+                    &subject,
+                    &body,
+                    false,
+                    None,
+                    None,
+                    Some(email),
+                )
+                .await
+                .map(|_| SalesInquiryDelivery::EmailAccepted)
+            }
+            Err(err) => Err(err),
+        };
 
     match res {
-        Ok(()) => (StatusCode::OK, Json(json!({"status":"ok"}))),
+        Ok(SalesInquiryDelivery::EmailAccepted) => {
+            if let Some(inquiry_id) = inquiry_id.as_deref() {
+                update_sales_inquiry_delivery(
+                    &state,
+                    inquiry_id,
+                    "email_accepted",
+                    Some("smtp"),
+                    Some(""),
+                )
+                .await;
+            }
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "status":"ok",
+                    "delivery":"email_accepted",
+                    "inquiry_id": inquiry_id
+                })),
+            )
+        }
+        Err((_code, msg)) if inquiry_id.is_some() => {
+            if let Some(inquiry_id) = inquiry_id.as_deref() {
+                update_sales_inquiry_delivery(
+                    &state,
+                    inquiry_id,
+                    "stored_only",
+                    Some("smtp"),
+                    Some(msg.as_str()),
+                )
+                .await;
+            }
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "status":"ok",
+                    "delivery":"stored_only",
+                    "error": msg,
+                    "inquiry_id": inquiry_id
+                })),
+            )
+        }
         Err((code, msg)) => (code, Json(json!({"status":"error", "error": msg}))),
     }
 }
