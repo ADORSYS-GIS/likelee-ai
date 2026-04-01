@@ -16850,7 +16850,7 @@ export default function AgencyDashboard() {
   }, [licensingRequestsCountQuery.data]);
 
   const brandConnectionRequestsCountQuery = useQuery({
-    queryKey: ["agency-brand-connection-requests", user?.id],
+    queryKey: ["agency", "brand-connection-requests"],
     queryFn: async () => {
       const resp = await base44.get<{
         status?: string;
@@ -16865,7 +16865,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionOffersQuery = useIndexedDbQuery({
-    queryKey: ["agency-campaign-offers-my", user?.id],
+    queryKey: ["agency", "campaign-offers-my"],
     queryFn: async () => {
       const resp = await base44.get<{ offers?: any[] }>(
         "/api/campaign-offers/my",
@@ -16882,7 +16882,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionJobInvitesQuery = useIndexedDbQuery({
-    queryKey: ["agency-job-invites", user?.id],
+    queryKey: ["agency", "job-invites"],
     queryFn: async () => {
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
@@ -16899,15 +16899,15 @@ export default function AgencyDashboard() {
       });
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
-    syncInterval: 30 * 1000,
+    maxAge: 120 * 1000,
+    syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
   const brandConnectionFeedbackQuery = useIndexedDbQuery({
-    queryKey: ["agency-package-feedback", user?.id],
+    queryKey: ["agency", "package-feedback"],
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
         "/api/agency/brand-offers/package-feedback",
@@ -16915,7 +16915,7 @@ export default function AgencyDashboard() {
       return Array.isArray(resp?.items) ? resp.items : [];
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
+    maxAge: 120 * 1000,
     syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
@@ -16923,19 +16923,16 @@ export default function AgencyDashboard() {
   });
 
   const pendingBrandConnectionCount = useMemo(() => {
-    const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+    const numRequests = Array.isArray(brandConnectionRequestsCountQuery.data)
       ? brandConnectionRequestsCountQuery.data.length
       : 0;
-    const offers =
-      (Array.isArray(brandConnectionOffersQuery.data)
+    const numOffers =
+      Array.isArray(brandConnectionOffersQuery.data)
         ? brandConnectionOffersQuery.data.filter((o) =>
             ["sent", "viewed"].includes(o.status),
           ).length
-        : 0) +
-      (Array.isArray(brandConnectionJobInvitesQuery.data)
-        ? brandConnectionJobInvitesQuery.data.length
-        : 0);
-    const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+        : 0;
+    const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data.length
       : 0;
 
@@ -16943,24 +16940,29 @@ export default function AgencyDashboard() {
     const saved = localStorage.getItem("brand_connections_seen_counts");
     const seen = saved ? JSON.parse(saved) : {};
 
-    const diffRequests = Math.max(0, requests - (seen.requests || 0));
-    const diffOffers = Math.max(0, offers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, feedback - (seen.feedback || 0));
+    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
+    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
+    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
 
     // If currently on the brand-connections tab, we don't want the badge to persist if viewed
     if (activeTab === "brand-connections") {
-      return 0; // Or return the total if we want it to stay until they switch sub-tabs.
-      // But the user said "when the notification is opened the 2 shouldn't be showing".
+      return 0;
     }
 
     return diffRequests + diffOffers + diffFeedback;
   }, [
     brandConnectionRequestsCountQuery.data,
     brandConnectionOffersQuery.data,
-    brandConnectionJobInvitesQuery.data,
     brandConnectionFeedbackQuery.data,
     activeTab,
   ]);
+
+  const pendingJobInvitesCount = useMemo(() => {
+    return Array.isArray(brandConnectionJobInvitesQuery.data)
+      ? brandConnectionJobInvitesQuery.data.length
+      : 0;
+  }, [brandConnectionJobInvitesQuery.data]);
+
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -17841,20 +17843,32 @@ export default function AgencyDashboard() {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
       alerts.push({
-        id: "brand_conn",
-        title: "Brand Connection Requests",
-        message: `You have ${pendingBrandConnectionCount} pending brand connection request(s).`,
+        id: `brand_conn_${pendingBrandConnectionCount}`,
+        title: "Brand Connections",
+        message: `You have ${pendingBrandConnectionCount} pending brand items (requests, offers, or feedback).`,
         time: "Action required",
         color: "indigo",
+        isSummary: true,
       });
     }
     if (pendingLicensingRequestsCount > 0) {
       alerts.push({
-        id: "license_req",
+        id: `license_req_${pendingLicensingRequestsCount}`,
         title: "Licensing Requests",
         message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
         time: "Action required",
         color: "indigo",
+        isSummary: true,
+      });
+    }
+    if (pendingJobInvitesCount > 0) {
+      alerts.push({
+        id: `job_invites_${pendingJobInvitesCount}`,
+        title: "Job Invites",
+        message: `You have ${pendingJobInvitesCount} pending job invite(s).`,
+        time: "New message",
+        color: "blue",
+        isSummary: true,
       });
     }
     alerts.push({
@@ -17866,12 +17880,16 @@ export default function AgencyDashboard() {
       color: "blue",
     });
     return alerts;
-  }, [pendingBrandConnectionCount, pendingLicensingRequestsCount]);
+  }, [
+    pendingBrandConnectionCount,
+    pendingLicensingRequestsCount,
+    pendingJobInvitesCount,
+  ]);
 
   const notifications = useMemo(() => {
     return systemNotifications.map((n) => ({
       ...n,
-      read: dismissedNotificationIds.includes(n.id),
+      read: n.isSummary ? false : dismissedNotificationIds.includes(n.id),
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
@@ -17881,10 +17899,17 @@ export default function AgencyDashboard() {
   );
 
   const markAllAsRead = () => {
-    setDismissedNotificationIds(systemNotifications.map((n) => n.id));
+    const unreadNonSummaryIds = notifications
+      .filter((n) => !n.read && !n.isSummary)
+      .map((n) => n.id);
+    setDismissedNotificationIds((prev) =>
+      Array.from(new Set([...prev, ...unreadNonSummaryIds])),
+    );
   };
 
   const markAsRead = (id: string) => {
+    const notif = notifications.find((n) => n.id === id);
+    if (notif?.isSummary) return;
     setDismissedNotificationIds((prev) => Array.from(new Set([...prev, id])));
   };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -18024,6 +18049,7 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge: pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
@@ -18041,6 +18067,7 @@ export default function AgencyDashboard() {
               "Active Licenses",
               "License Templates",
             ],
+            badge: pendingLicensingRequestsCount > 0 ? pendingLicensingRequestsCount : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18089,6 +18116,7 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge: pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
