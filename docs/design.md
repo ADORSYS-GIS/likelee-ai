@@ -227,22 +227,6 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
   - Frontend URL for Stripe redirects and email links (default `http://localhost:5173`).
   - Must be an absolute URL starting with `http://` or `https://`.
 
-### AWS & Moderation
-
-- `AWS_REGION`
-  - AWS region for Rekognition (default `us-east-1`).
-- `MODERATION_ENABLED`
-  - Enable content moderation via AWS Rekognition (default `1`).
-  - Set to `0` to disable.
-
-### Liveness Detection
-
-- `LIVENESS_ENABLED`
-  - Enable face liveness detection via AWS Rekognition (default `0`).
-  - Requires Rekognition client initialization.
-- `LIVENESS_MIN_SCORE`
-  - Minimum confidence score for liveness check (default `0.90`).
-
 ### Multi-Level Cache
 
 The server implements a three-level hierarchical caching strategy to reduce database load:
@@ -680,28 +664,6 @@ The Studio Wallet is tied directly to the user's permanent `user_id` in the data
 - **Pricing Configuration**: `public.studio_provider_costs` (DB)
 - **Routes**: `likelee-server/src/studio/routes.rs` (generation endpoints)
 - **Billing Integration**: `likelee-server/src/billing.rs` and `likelee-server/src/payouts.rs` (webhooks)
-
----
-
-## Liveness Detection
-
-Face liveness detection prevents spoofing during identity verification using AWS Rekognition.
-
-### Configuration
-
-- `LIVENESS_ENABLED`: Set to `1` to enable (default `0`).
-- `LIVENESS_MIN_SCORE`: Minimum confidence threshold (default `0.90`).
-
-### API Endpoints
-
-- `POST /api/liveness/session` - Create a liveness detection session
-- `POST /api/liveness/result` - Get liveness check results
-
-### Implementation
-
-- **Backend Logic**: `likelee-server/src/liveness.rs`
-- **AWS Service**: Rekognition Face Liveness
-- **Initialization**: Rekognition client initializes when `MODERATION_ENABLED` or `LIVENESS_ENABLED` is set.
 
 ---
 

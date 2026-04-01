@@ -25,7 +25,7 @@ likelee-server/
 │   ├── billing.rs        # Stripe checkout sessions
 │   ├── payouts.rs        # Stripe Connect, payout logic, webhooks
 │   ├── kyc.rs            # Veriff integration
-│   ├── liveness.rs       # AWS Rekognition liveness detection
+│   ├── liveness.rs       # Face liveness detection
 │   ├── voice.rs          # Voice recording and cloning
 │   ├── calendly.rs       # Calendly IRL booking integration
 │   ├── talent.rs         # Talent Portal endpoints
@@ -150,7 +150,6 @@ type(scope): description
 
 - `feat(studio): add silent failure detection for generation jobs`
 - `fix(payouts): correct fee calculation for instant payouts`
-- `docs(config): document LIVENESS_ENABLED environment variable`
 
 ## Code Review Checklist
 
