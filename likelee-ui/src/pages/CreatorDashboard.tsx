@@ -2773,7 +2773,10 @@ export default function CreatorDashboard() {
   );
 
   const normalizedCreatorStatus = useMemo(
-    () => String(creator?.kyc_status || "").trim().toLowerCase(),
+    () =>
+      String(creator?.kyc_status || "")
+        .trim()
+        .toLowerCase(),
     [creator?.kyc_status],
   );
 
