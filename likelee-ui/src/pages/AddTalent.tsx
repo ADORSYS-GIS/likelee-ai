@@ -715,7 +715,6 @@ export default function AddTalent() {
                     placeholder="e.g. UCLA"
                   />
                 </div>
-
               </div>
 
               <div>
