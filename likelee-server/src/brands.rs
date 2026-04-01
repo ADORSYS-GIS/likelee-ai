@@ -164,10 +164,19 @@ pub async fn update(
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     if let serde_json::Value::Object(ref mut map) = v {
-        map.remove("id");
+        // Include the user's id for upsert matching
+        map.insert("id".into(), json!(user.id));
         map.insert("onboarding_step".into(), json!("complete"));
 
-        // Remove nulls
+        // For new profiles (OAuth signup), set default values
+        if payload.email.is_none() {
+            // Try to get email from auth user metadata if not provided
+            if let Some(email) = &user.email {
+                map.insert("email".into(), json!(email));
+            }
+        }
+
+        // Remove nulls to avoid overwriting existing data with nulls
         let null_keys: Vec<String> = map
             .iter()
             .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
@@ -177,12 +186,15 @@ pub async fn update(
         }
     }
 
+    // Use upsert to create or update the profile
+    // This supports both:
+    // - OAuth users creating their profile for the first time
+    // - Existing users updating their profile
     let resp = state
         .pg
         .from("brands")
         .auth(state.supabase_service_key.clone())
-        .eq("id", &user.id)
-        .update(v.to_string())
+        .upsert(v.to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

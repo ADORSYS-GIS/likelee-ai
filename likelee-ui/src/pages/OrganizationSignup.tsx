@@ -205,7 +205,7 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, initialized } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -361,12 +361,26 @@ export default function OrganizationSignup() {
   useEffect(() => {
     const handleVerifiedUser = async () => {
       console.log("handleVerifiedUser check:", {
+        initialized,
         hasUser: !!user,
-        hasProfile: !!profile,
+        profileState: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
         userRole: user?.user_metadata?.role,
         profileRole: profile?.role,
         onboardingStep: profile?.onboarding_step,
+        isOAuthSignup,
       });
+
+      // Wait for auth to be fully initialized
+      if (!initialized) {
+        console.log("handleVerifiedUser: waiting for initialization...");
+        return;
+      }
+
+      // Wait for profile resolution to complete (undefined = still loading)
+      if (profile === undefined) {
+        console.log("handleVerifiedUser: waiting for profile resolution...");
+        return;
+      }
 
       // We need the user object to proceed.
       if (user) {
@@ -407,97 +421,112 @@ export default function OrganizationSignup() {
           }
         }
 
-        // Fallback to direct API calls if profile is not in context or role is not yet set
-        console.log(
-          "Profile not in context or incomplete, falling back to API calls",
-        );
-        try {
-          const expectedFlow =
-            flow ||
-            (user.user_metadata?.role === "brand"
-              ? "brand"
-              : user.user_metadata?.role === "agency"
-                ? "agency"
-                : null);
-
-          const fetchBrandProfile = () =>
-            getBrandProfile().catch((err) => {
-              if (
-                err.name === "AbortError" ||
-                err.message?.includes("aborted")
-              ) {
-                console.log("getBrandProfile aborted");
-              }
-              return null;
-            });
-
-          const fetchAgencyProfile = () =>
-            getAgencyProfile().catch((err) => {
-              if (
-                err.name === "AbortError" ||
-                err.message?.includes("aborted")
-              ) {
-                console.log("getAgencyProfile aborted");
-              }
-              return null;
-            });
-
-          let brandProfile = null;
-          let agencyProfile = null;
-
-          if (expectedFlow === "brand") {
-            brandProfile = await fetchBrandProfile();
-          } else if (expectedFlow === "agency") {
-            agencyProfile = await fetchAgencyProfile();
-          } else {
-            [brandProfile, agencyProfile] = await Promise.all([
-              fetchBrandProfile(),
-              fetchAgencyProfile(),
-            ]);
+        // For OAuth signup users without a profile, they should just fill out the form
+        // No need for API fallback - they have no profile to fetch
+        if (isOAuthSignup && profile === null) {
+          console.log("OAuth signup user without profile, ready for form input");
+          // Pre-fill email from OAuth provider (only if we have it and form is empty)
+          if (user.email) {
+            setFormData((prev) => 
+              prev.email ? prev : { ...prev, email: user.email || "" }
+            );
           }
+          return;
+        }
 
-          const orgProfile = brandProfile || agencyProfile;
+        // Fallback to direct API calls only for non-OAuth users (email/password returning after verification)
+        if (!isOAuthSignup) {
+          console.log(
+            "Email/password user, falling back to API calls to check profile",
+          );
+          try {
+            const expectedFlow =
+              flow ||
+              (user.user_metadata?.role === "brand"
+                ? "brand"
+                : user.user_metadata?.role === "agency"
+                  ? "agency"
+                  : null);
 
-          if (orgProfile) {
-            console.log("Found orgProfile via API fallback:", orgProfile);
-            if (
-              orgProfile.status === "complete" ||
-              orgProfile.onboarding_step === "complete"
-            ) {
-              console.log("Onboarding complete via fallback, redirecting");
-              if (brandProfile) {
-                navigate("/BrandDashboard", { replace: true });
-              } else {
-                navigate("/AgencyDashboard", { replace: true });
-              }
-              return;
+            const fetchBrandProfile = () =>
+              getBrandProfile().catch((err) => {
+                if (
+                  err.name === "AbortError" ||
+                  err.message?.includes("aborted")
+                ) {
+                  console.log("getBrandProfile aborted");
+                }
+                return null;
+              });
+
+            const fetchAgencyProfile = () =>
+              getAgencyProfile().catch((err) => {
+                if (
+                  err.name === "AbortError" ||
+                  err.message?.includes("aborted")
+                ) {
+                  console.log("getAgencyProfile aborted");
+                }
+                return null;
+              });
+
+            let brandProfile = null;
+            let agencyProfile = null;
+
+            if (expectedFlow === "brand") {
+              brandProfile = await fetchBrandProfile();
+            } else if (expectedFlow === "agency") {
+              agencyProfile = await fetchAgencyProfile();
+            } else {
+              [brandProfile, agencyProfile] = await Promise.all([
+                fetchBrandProfile(),
+                fetchAgencyProfile(),
+              ]);
             }
 
-            if (orgProfile.onboarding_step === "email_verification") {
-              console.log("Advancing to Step 2 via API fallback");
-              setProfileId(orgProfile.id);
-              setOrgType(
-                orgProfile.organization_type ||
-                  orgProfile.agency_type ||
-                  (brandProfile ? "brand_company" : "marketing_agency"),
-              );
-              setFormData((prev) => ({
-                ...prev,
-                email: orgProfile.email || user.email || "",
-              }));
-              setStep(2);
+            const orgProfile = brandProfile || agencyProfile;
+
+            if (orgProfile) {
+              console.log("Found orgProfile via API fallback:", orgProfile);
+              if (
+                orgProfile.status === "complete" ||
+                orgProfile.onboarding_step === "complete"
+              ) {
+                console.log("Onboarding complete via fallback, redirecting");
+                if (brandProfile) {
+                  navigate("/BrandDashboard", { replace: true });
+                } else {
+                  navigate("/AgencyDashboard", { replace: true });
+                }
+                return;
+              }
+
+              if (orgProfile.onboarding_step === "email_verification") {
+                console.log("Advancing to Step 2 via API fallback");
+                setProfileId(orgProfile.id);
+                setOrgType(
+                  orgProfile.organization_type ||
+                    orgProfile.agency_type ||
+                    (brandProfile ? "brand_company" : "marketing_agency"),
+                );
+                setFormData((prev) => ({
+                  ...prev,
+                  email: orgProfile.email || user.email || "",
+                }));
+                setStep(2);
+              }
+            } else {
+              console.log("No organization profile found via API fallback yet");
             }
-          } else {
-            console.log("No organization profile found via API fallback yet");
+          } catch (err) {
+            console.error("Error in handleVerifiedUser API fallback:", err);
           }
-        } catch (err) {
-          console.error("Error in handleVerifiedUser API fallback:", err);
         }
       }
     };
 
     handleVerifiedUser();
-  }, [flow, user, profile, toast]); // Rerun when user or profile state changes
+  }, [flow, user, profile, initialized, isOAuthSignup]); // Rerun when auth state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
