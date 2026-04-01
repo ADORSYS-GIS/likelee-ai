@@ -1,37 +1,27 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/auth/AuthProvider";
 
 export default function AgencySelection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { authenticated } = useAuth();
-  const signupMode =
-    authenticated ||
-    new URLSearchParams(location.search).get("mode") === "signup";
 
   const items = [
     {
       title: t("talentModelingAgency"),
       desc: t("talentModelingAgencyMessage"),
       icon: Users,
-      to: signupMode
-        ? `${createPageUrl("OrganizationSignup")}?type=talent_agency`
-        : createPageUrl("TalentAgency"),
+      to: createPageUrl("TalentAgency"),
     },
     {
       title: t("sportsAgency"),
       desc: t("sportsAgencyMessage"),
       icon: Trophy,
-      to: signupMode
-        ? `${createPageUrl("OrganizationSignup")}?type=sports_agency`
-        : createPageUrl("SportsAgency"),
+      to: createPageUrl("SportsAgency"),
     },
   ];
 
