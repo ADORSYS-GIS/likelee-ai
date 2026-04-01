@@ -16922,7 +16922,7 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
-  const pendingBrandConnectionCount = useMemo(() => {
+  const brandCounts = useMemo(() => {
     const numRequests = Array.isArray(brandConnectionRequestsCountQuery.data)
       ? brandConnectionRequestsCountQuery.data.length
       : 0;
@@ -16934,6 +16934,16 @@ export default function AgencyDashboard() {
     const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data.length
       : 0;
+
+    return { numRequests, numOffers, numFeedback };
+  }, [
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  const pendingBrandConnectionCount = useMemo(() => {
+    const { numRequests, numOffers, numFeedback } = brandCounts;
 
     // Subtract seen counts
     const saved = localStorage.getItem("brand_connections_seen_counts");
@@ -16949,12 +16959,7 @@ export default function AgencyDashboard() {
     }
 
     return diffRequests + diffOffers + diffFeedback;
-  }, [
-    brandConnectionRequestsCountQuery.data,
-    brandConnectionOffersQuery.data,
-    brandConnectionFeedbackQuery.data,
-    activeTab,
-  ]);
+  }, [brandCounts, activeTab]);
 
   const pendingJobInvitesCount = useMemo(() => {
     return Array.isArray(brandConnectionJobInvitesQuery.data)
@@ -17840,10 +17845,16 @@ export default function AgencyDashboard() {
   const systemNotifications = useMemo(() => {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
+      const parts = [];
+      const { numRequests, numOffers, numFeedback } = brandCounts;
+      if (numRequests > 0) parts.push(`${numRequests} request(s)`);
+      if (numOffers > 0) parts.push(`${numOffers} offer(s)`);
+      if (numFeedback > 0) parts.push(`${numFeedback} feedback(s)`);
+      
       alerts.push({
         id: `brand_conn_${pendingBrandConnectionCount}`,
         title: "Brand Connections",
-        message: `You have ${pendingBrandConnectionCount} pending brand items (requests, offers, or feedback).`,
+        message: `Pending: ${parts.join(", ")}.`,
         time: "Action required",
         color: "indigo",
         isSummary: true,
