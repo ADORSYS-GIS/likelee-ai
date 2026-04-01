@@ -875,10 +875,7 @@ export default function OrganizationSignup() {
         return;
       }
 
-      if (
-        !formData.email ||
-        !formData.organization_name
-      ) {
+      if (!formData.email || !formData.organization_name) {
         toast({
           title: t("organizationSignup.missingFieldsTitle"),
           description: t("organizationSignup.missingFieldsDescription"),
