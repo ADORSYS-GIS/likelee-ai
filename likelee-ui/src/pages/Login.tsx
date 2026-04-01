@@ -49,6 +49,7 @@ export default function Login() {
     authenticated,
     profile,
     logout,
+    user,
   } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -137,6 +138,7 @@ export default function Login() {
     if (!initialized) return;
     if (accessDenied) return;
 
+    const authIntent = readAuthIntent();
     const normalizedUserType = (userType || "").toLowerCase().trim();
     const creatorSignupPath = getSignupPathForRole(
       "creator",
@@ -164,6 +166,9 @@ export default function Login() {
       if (authUserRole === "talent") return "creator";
       return null;
     })();
+
+    // Check if profile resolution is complete (either profile exists or user has no session)
+    const profileResolved = initialized && (profile !== null || !user);
 
     if (!profile) {
       if (!profileResolved) return;
@@ -233,6 +238,7 @@ export default function Login() {
     initialized,
     authenticated,
     profile,
+    user,
     navigate,
     creatorType,
     isOauthReturn,
@@ -362,9 +368,7 @@ export default function Login() {
                           role: userType as "creator" | "brand" | "agency",
                           creatorType: creatorType || null,
                         });
-                        await loginWithProvider("google", {
-                          redirectTo: googleLoginRedirectTo,
-                        });
+                        await loginWithProvider("google");
                       } catch (err: any) {
                         toast({
                           title: t("auth.login.googleSignInFailed"),

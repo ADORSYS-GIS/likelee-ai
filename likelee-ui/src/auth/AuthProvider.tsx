@@ -55,6 +55,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userRef = React.useRef<User | null>(null);
   const profileRef = React.useRef<Profile | null>(null);
 
+  const getUserRoleHint = (user: User | null): string => {
+    if (!user) return "";
+    return String(user.user_metadata?.role || user.app_metadata?.role || "").trim();
+  };
+
+  const readAuthIntent = (): { role?: string; creatorType?: string | null } | null => {
+    try {
+      const raw = localStorage.getItem("likelee_auth_intent");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
   const redirectToPasswordUpdateIfNeeded = (event?: string) => {
     try {
       const href = window.location.href;
