@@ -398,11 +398,7 @@ export default function ReserveProfile() {
       )
         .trim()
         .toLowerCase();
-      if (
-        authRole === "creator" ||
-        authRole === "talent" ||
-        isOAuthSignup
-      ) {
+      if (authRole === "creator" || authRole === "talent" || isOAuthSignup) {
         if (user?.email) {
           setFormData((prev) =>
             prev.email ? prev : { ...prev, email: user.email || "" },
@@ -501,7 +497,9 @@ export default function ReserveProfile() {
     }
     if (
       normalizedStep === "verification" ||
-      String(profile.kyc_status || "").trim().toLowerCase() === "approved"
+      String(profile.kyc_status || "")
+        .trim()
+        .toLowerCase() === "approved"
     ) {
       setStep(3);
       return;

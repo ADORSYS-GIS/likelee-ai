@@ -347,8 +347,7 @@ export default function OrganizationSignup() {
       email: typedEmail
         ? normalizeEmail(typedEmail)
         : toOptionalText(profile?.email) || toOptionalText(user?.email),
-      website:
-        toOptionalText(data.website) || toOptionalText(profile?.website),
+      website: toOptionalText(data.website) || toOptionalText(profile?.website),
       phoneNumber:
         toOptionalText(data.phone_number) ||
         toOptionalText(profile?.phone_number),
@@ -462,7 +461,10 @@ export default function OrganizationSignup() {
       .toLowerCase();
     if (authRole === "creator" || authRole === "talent") {
       navigate(
-        getSignupPathForRole("creator", new URLSearchParams(window.location.search).get("creator_type")),
+        getSignupPathForRole(
+          "creator",
+          new URLSearchParams(window.location.search).get("creator_type"),
+        ),
         { replace: true },
       );
     }
@@ -475,7 +477,12 @@ export default function OrganizationSignup() {
       console.log("handleVerifiedUser check:", {
         initialized,
         hasUser: !!user,
-        profileState: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
+        profileState:
+          profile === undefined
+            ? "PENDING"
+            : profile === null
+              ? "NO_PROFILE"
+              : "EXISTS",
         userRole: user?.user_metadata?.role,
         profileRole: profile?.role,
         onboardingStep: profile?.onboarding_step,
@@ -533,11 +540,13 @@ export default function OrganizationSignup() {
         // For OAuth signup users without a profile, they should just fill out the form
         // No need for API fallback - they have no profile to fetch
         if (isOAuthSignup && profile === null) {
-          console.log("OAuth signup user without profile, ready for form input");
+          console.log(
+            "OAuth signup user without profile, ready for form input",
+          );
           // Pre-fill email from OAuth provider (only if we have it and form is empty)
           if (user.email) {
-            setFormData((prev) => 
-              prev.email ? prev : { ...prev, email: user.email || "" }
+            setFormData((prev) =>
+              prev.email ? prev : { ...prev, email: user.email || "" },
             );
           }
           return;
@@ -927,69 +936,69 @@ export default function OrganizationSignup() {
     return getFriendlyErrorMessage(error, t);
   };
 
-   const handleNext = () => {
-     // Basic validation for Step 1 before proceeding
-     if (step === 1) {
-       // Validate organization type is set
-       if (!orgType) {
-         toast({
-           title: t("error"),
-           description:
-             "Organization type is missing. Please try again from the beginning.",
-           variant: "destructive",
-         });
-         return;
-       }
+  const handleNext = () => {
+    // Basic validation for Step 1 before proceeding
+    if (step === 1) {
+      // Validate organization type is set
+      if (!orgType) {
+        toast({
+          title: t("error"),
+          description:
+            "Organization type is missing. Please try again from the beginning.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-       // Validate organization name is set for all users
-       if (!formData.organization_name) {
-         toast({
-           title: t("organizationSignup.missingFieldsTitle"),
-           description: t("organizationSignup.missingFieldsDescription"),
-           variant: "destructive",
-         });
-         return;
-       }
+      // Validate organization name is set for all users
+      if (!formData.organization_name) {
+        toast({
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
 
-       // For OAuth users, skip email/password validation and move to step 2
-       if (isOAuthSignup) {
-         console.log("OAuth user proceeding to step 2 with org basics");
-         setStep(2);
-         return;
-       }
+      // For OAuth users, skip email/password validation and move to step 2
+      if (isOAuthSignup) {
+        console.log("OAuth user proceeding to step 2 with org basics");
+        setStep(2);
+        return;
+      }
 
-       // For non-OAuth users, validate email and passwords
-       if (!formData.email || !formData.password || !formData.confirmPassword) {
-         toast({
-           title: t("organizationSignup.missingFieldsTitle"),
-           description: t("organizationSignup.missingFieldsDescription"),
-           variant: "destructive",
-         });
-         return;
-       }
-       if (formData.password !== formData.confirmPassword) {
-         toast({
-           title: t("organizationSignup.passwordMismatchTitle"),
-           description: t("organizationSignup.passwordMismatchDescription"),
-           variant: "destructive",
-         });
-         return;
-       }
-       if (formData.password.length < 6) {
-         toast({
-           title: t("common.error"),
-           description: t("organizationSignup.errors.weakPassword"),
-           variant: "destructive",
-         });
-         return;
-       }
-       // Create initial profile and move to step 2
-       createInitialProfileMutation.mutate(formData);
-       return; // Prevent further execution of handleNext
-     }
-     // This part should technically not be reached in a 2-step process if step 1 calls mutation
-     if (step < totalSteps) setStep(step + 1);
-   };
+      // For non-OAuth users, validate email and passwords
+      if (!formData.email || !formData.password || !formData.confirmPassword) {
+        toast({
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: t("organizationSignup.passwordMismatchTitle"),
+          description: t("organizationSignup.passwordMismatchDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (formData.password.length < 6) {
+        toast({
+          title: t("common.error"),
+          description: t("organizationSignup.errors.weakPassword"),
+          variant: "destructive",
+        });
+        return;
+      }
+      // Create initial profile and move to step 2
+      createInitialProfileMutation.mutate(formData);
+      return; // Prevent further execution of handleNext
+    }
+    // This part should technically not be reached in a 2-step process if step 1 calls mutation
+    if (step < totalSteps) setStep(step + 1);
+  };
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
@@ -1266,57 +1275,57 @@ export default function OrganizationSignup() {
                     : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
-                   {isOAuthSignup
-                     ? "Tell us about your organization"
-                     : t("organizationSignup.startWithBasics")}
-                 </p>
+                  {isOAuthSignup
+                    ? "Tell us about your organization"
+                    : t("organizationSignup.startWithBasics")}
+                </p>
               </div>
 
               <div className="space-y-4">
                 {/* NEW: Organization Type Selector - Hidden if pre-selected */}
-               {!isPreSelected && (
-                   <div>
-                     <Label
-                       htmlFor="organization_type"
-                       className="text-sm font-medium text-gray-700 mb-2 block"
-                     >
-                       Organization Type *
-                     </Label>
-                     <Select
-                       value={orgType}
-                       onValueChange={(value) => setOrgType(value)}
-                     >
-                       <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                         <SelectValue placeholder="Select your organization type" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {(flow === "brand" || !flow) && (
-                           <>
-                             <SelectItem value="brand_company">
-                               Brand / Company
-                             </SelectItem>
-                             <SelectItem value="production_studio">
-                               Production Studio
-                             </SelectItem>
-                           </>
-                         )}
-                         {(flow === "agency" || !flow) && (
-                           <>
-                             <SelectItem value="marketing_agency">
-                               Marketing Agency
-                             </SelectItem>
-                             <SelectItem value="talent_agency">
-                               Talent / Modeling Agency
-                             </SelectItem>
-                             <SelectItem value="sports_agency">
-                               Sports Agency
-                             </SelectItem>
-                           </>
-                         )}
-                       </SelectContent>
-                     </Select>
-                   </div>
-                 )}
+                {!isPreSelected && (
+                  <div>
+                    <Label
+                      htmlFor="organization_type"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Organization Type *
+                    </Label>
+                    <Select
+                      value={orgType}
+                      onValueChange={(value) => setOrgType(value)}
+                    >
+                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                        <SelectValue placeholder="Select your organization type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(flow === "brand" || !flow) && (
+                          <>
+                            <SelectItem value="brand_company">
+                              Brand / Company
+                            </SelectItem>
+                            <SelectItem value="production_studio">
+                              Production Studio
+                            </SelectItem>
+                          </>
+                        )}
+                        {(flow === "agency" || !flow) && (
+                          <>
+                            <SelectItem value="marketing_agency">
+                              Marketing Agency
+                            </SelectItem>
+                            <SelectItem value="talent_agency">
+                              Talent / Modeling Agency
+                            </SelectItem>
+                            <SelectItem value="sports_agency">
+                              Sports Agency
+                            </SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Only show email/password for non-OAuth users */}
                 {!isOAuthSignup && (
@@ -1359,7 +1368,9 @@ export default function OrganizationSignup() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none pr-10"
-                          placeholder={t("organizationSignup.passwordPlaceholder")}
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
                         />
                         <button
                           type="button"
@@ -1481,29 +1492,27 @@ export default function OrganizationSignup() {
                 </div>
               </div>
 
-               <Button
-                 onClick={handleNext}
-                 disabled={
-                   isOAuthSignup
-                     ? false
-                     : createInitialProfileMutation.isPending
-                 }
-                 className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
-               >
-                 {isOAuthSignup ? (
-                   <>
-                     {t("common.continue")}
-                     <ArrowRight className="w-5 h-5 ml-2" />
-                   </>
-                 ) : createInitialProfileMutation.isPending ? (
-                   t("common.saving")
-                 ) : (
-                   <>
-                     {t("common.continue")}
-                     <ArrowRight className="w-5 h-5 ml-2" />
-                   </>
-                 )}
-               </Button>
+              <Button
+                onClick={handleNext}
+                disabled={
+                  isOAuthSignup ? false : createInitialProfileMutation.isPending
+                }
+                className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+              >
+                {isOAuthSignup ? (
+                  <>
+                    {t("common.continue")}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                ) : createInitialProfileMutation.isPending ? (
+                  t("common.saving")
+                ) : (
+                  <>
+                    {t("common.continue")}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                )}
+              </Button>
             </div>
           )}
 

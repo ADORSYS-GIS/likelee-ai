@@ -156,13 +156,26 @@ export default function Login() {
         return; // Skip rendering login form
       }
     }
-  }, [isOauthReturn, initialized, authenticated, profile, preferredRoleFromQuery, creatorType, navigate]);
+  }, [
+    isOauthReturn,
+    initialized,
+    authenticated,
+    profile,
+    preferredRoleFromQuery,
+    creatorType,
+    navigate,
+  ]);
 
   React.useEffect(() => {
     console.log("[Login] useEffect START", {
       authenticated,
       initialized,
-      profileState: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
+      profileState:
+        profile === undefined
+          ? "PENDING"
+          : profile === null
+            ? "NO_PROFILE"
+            : "EXISTS",
       accessDenied,
     });
 
@@ -211,7 +224,12 @@ export default function Login() {
 
     console.log("[Login] profileResolved:", profileResolved, {
       initialized,
-      profile: profile === undefined ? "PENDING" : profile === null ? "NO_PROFILE" : "EXISTS",
+      profile:
+        profile === undefined
+          ? "PENDING"
+          : profile === null
+            ? "NO_PROFILE"
+            : "EXISTS",
       hasUser: !!user,
     });
 
@@ -229,10 +247,13 @@ export default function Login() {
 
       // For authenticated users without profile, redirect to signup
       if (signupRoleHint && authenticated) {
-        console.log("[Login] Redirecting to signup:", getSignupPathForRole(
-          signupRoleHint,
-          authIntent?.creatorType || creatorType,
-        ));
+        console.log(
+          "[Login] Redirecting to signup:",
+          getSignupPathForRole(
+            signupRoleHint,
+            authIntent?.creatorType || creatorType,
+          ),
+        );
         setIsRedirecting(true);
         navigate(
           getSignupPathForRole(
@@ -272,7 +293,8 @@ export default function Login() {
           getOnboardingPath({
             role: profile.role,
             agency_type: profile.agency_type,
-            creator_type: profile.creator_type || authIntent?.creatorType || creatorType,
+            creator_type:
+              profile.creator_type || authIntent?.creatorType || creatorType,
           }) ||
           getSignupPathForRole(
             profile.role as AuthIntentRole,

@@ -61,7 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getUserRoleHint = (user: User | null): string => {
     if (!user) return "";
-    return String(user.user_metadata?.role || user.app_metadata?.role || "").trim();
+    return String(
+      user.user_metadata?.role || user.app_metadata?.role || "",
+    ).trim();
   };
 
   const redirectToPasswordUpdateIfNeeded = (event?: string) => {
@@ -184,11 +186,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
       } else {
         // No profile found yet. Let the onboarding flow create the record explicitly.
-        console.log("[AuthProvider] No profile found, setting profile to null", {
-          isOAuthUser,
-          userEmail,
-          table,
-        });
+        console.log(
+          "[AuthProvider] No profile found, setting profile to null",
+          {
+            isOAuthUser,
+            userEmail,
+            table,
+          },
+        );
         setProfile(null);
       }
 
@@ -265,7 +270,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, _session) => {
         const ensuredSession =
-          event === "SIGNED_IN" ? await ensureRoleMetadata(_session?.user ?? null) : null;
+          event === "SIGNED_IN"
+            ? await ensureRoleMetadata(_session?.user ?? null)
+            : null;
         const session = ensuredSession ?? _session;
         const currentUser = applySession(session);
 
@@ -276,7 +283,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (!currentProfile || currentProfile.id !== currentUser.id) {
             const isOAuth = currentUser.app_metadata?.provider === "google";
-            const roleHint = getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
+            const roleHint =
+              getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
             fetchProfile(
               currentUser.id,
               currentUser.email,
@@ -294,7 +302,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     // Initialize from current session as well
     supabase.auth.getSession().then(async ({ data }) => {
-      const ensuredSession = await ensureRoleMetadata(data.session?.user ?? null);
+      const ensuredSession = await ensureRoleMetadata(
+        data.session?.user ?? null,
+      );
       const currentSession = ensuredSession ?? data.session ?? null;
       const currentUser = applySession(currentSession);
 
@@ -308,7 +318,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (!currentProfile || currentProfile.id !== currentUser.id)
       ) {
         const isOAuth = currentUser.app_metadata?.provider === "google";
-        const roleHint = getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
+        const roleHint =
+          getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
         fetchProfile(
           currentUser.id,
           currentUser.email,

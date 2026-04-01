@@ -39,7 +39,11 @@ async fn lookup_role_from_supabase_auth(state: &AppState, user_id: &str) -> Opti
         return None;
     }
 
-    let url = format!("{}/auth/v1/admin/users/{}", supabase_auth_base_url(state), user_id);
+    let url = format!(
+        "{}/auth/v1/admin/users/{}",
+        supabase_auth_base_url(state),
+        user_id
+    );
     let client = reqwest::Client::new();
     let resp = client
         .get(&url)
@@ -101,7 +105,11 @@ async fn lookup_role_from_profiles(state: &AppState, user_id: &str) -> Option<St
         let Ok(rows) = serde_json::from_str::<Value>(&text) else {
             continue;
         };
-        if rows.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
+        if rows
+            .as_array()
+            .map(|items| !items.is_empty())
+            .unwrap_or(false)
+        {
             return Some(role.to_string());
         }
     }
