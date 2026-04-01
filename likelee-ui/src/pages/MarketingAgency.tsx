@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, Users, Clock, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 
 export default function MarketingAgency() {
   const { t } = useTranslation();
@@ -65,9 +65,7 @@ export default function MarketingAgency() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  `${createPageUrl("OrganizationSignup")}?type=marketing_agency`,
-                )
+                navigate(getOrganizationSignupPathForType("marketing_agency"))
               }
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
             >

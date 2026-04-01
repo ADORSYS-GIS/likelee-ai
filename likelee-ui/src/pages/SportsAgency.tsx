@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 
 export default function SportsAgency() {
   const { t } = useTranslation();
@@ -63,9 +63,7 @@ export default function SportsAgency() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  `${createPageUrl("OrganizationSignup")}?type=sports_agency`,
-                )
+                navigate(getOrganizationSignupPathForType("sports_agency"))
               }
               className="h-14 px-12 text-lg font-semibold bg-white hover:bg-gray-50 text-gray-900 rounded-none transition-all border-2 border-gray-300"
             >
