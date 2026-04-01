@@ -49,6 +49,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   createAgencyStorageFolder,
   deleteAgencyStorageFile,
   getAgencyStorageFileSignedUrl,
@@ -98,6 +108,8 @@ type StorageFile = {
   mime_type: string | null;
   created_at: string;
 };
+
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024; // 100MB
 
 const isPreviewableImage = (mimeType: string | null) => {
   if (!mimeType) return false;
@@ -849,6 +861,8 @@ const FileStorageView = () => {
     useState<FileItem | null>(null);
   const [selectedFileForShare, setSelectedFileForShare] =
     useState<FileItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<StorageFile | null>(null);
 
   const [usage, setUsage] = useState<StorageUsage | null>(null);
   const [folders, setFolders] = useState<StorageFolder[]>([]);
@@ -882,6 +896,19 @@ const FileStorageView = () => {
     if (!q) return files;
     return files.filter((f) => f.file_name.toLowerCase().includes(q));
   }, [files, searchTerm]);
+
+  const isFileTooLargeError = (msg: string) => {
+    const lowered = msg.toLowerCase();
+    return (
+      lowered.includes("payload too large") ||
+      lowered.includes("request entity too large") ||
+      lowered.includes("content length") ||
+      lowered.includes("body limit") ||
+      lowered.includes("max body") ||
+      lowered.includes("file too large") ||
+      lowered.includes("413")
+    );
+  };
 
   useEffect(() => {
     let canceled = false;
@@ -1039,9 +1066,25 @@ const FileStorageView = () => {
 
   const onUploadFiles = async (picked: FileList | null) => {
     if (!picked || picked.length === 0) return;
+    const filesArr = Array.from(picked);
+    const tooLarge = filesArr.filter((file) => file.size > MAX_UPLOAD_BYTES);
+    if (tooLarge.length > 0) {
+      const tooLargeNames = tooLarge
+        .slice(0, 3)
+        .map((file) => file.name)
+        .join(", ");
+      toast({
+        title: "Upload failed",
+        description:
+          `File too large. Max file size is 100MB. ${tooLargeNames ? `Too large: ${tooLargeNames}` : ""}`.trim(),
+        variant: "destructive" as any,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setIsUploading(true);
     try {
-      for (const file of Array.from(picked)) {
+      for (const file of filesArr) {
         await uploadAgencyStorageFile({
           file,
           folder_id: activeFolderId || undefined,
@@ -1058,7 +1101,11 @@ const FileStorageView = () => {
         title: "Upload failed",
         description: msg.includes("storage_quota_exceeded")
           ? "Storage quota exceeded. Upgrade your plan to increase storage."
-          : msg,
+          : isFileTooLargeError(msg)
+            ? "File too large. The maximum upload size is 100MB. Please choose a smaller file."
+            : msg.includes("<html")
+              ? "Upload failed. Please try again with a file under 100MB."
+              : msg,
         variant: "destructive" as any,
       });
     } finally {
@@ -1098,6 +1145,18 @@ const FileStorageView = () => {
     }
   };
 
+  const openDeleteDialog = (file: StorageFile) => {
+    setFileToDelete(file);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!fileToDelete) return;
+    await onDeleteFile(fileToDelete.id);
+    setDeleteDialogOpen(false);
+    setFileToDelete(null);
+  };
+
   const usagePct = useMemo(() => {
     if (!usage) return 0;
     if (usage.limit_bytes <= 0) return 0;
@@ -1109,6 +1168,33 @@ const FileStorageView = () => {
 
   return (
     <div className="space-y-8">
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete file?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove{" "}
+              <span className="font-semibold text-gray-900">
+                {fileToDelete?.file_name || "this file"}
+              </span>
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setFileToDelete(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete file
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -1306,7 +1392,7 @@ const FileStorageView = () => {
                   <Button
                     variant="outline"
                     className="h-9 px-3 rounded-xl font-bold text-red-600 border-red-200"
-                    onClick={() => onDeleteFile(f.id)}
+                    onClick={() => openDeleteDialog(f)}
                   >
                     Delete
                   </Button>
@@ -1371,7 +1457,7 @@ const FileStorageView = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="font-bold text-red-600 cursor-pointer"
-                        onClick={() => onDeleteFile(f.id)}
+                        onClick={() => openDeleteDialog(f)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                       </DropdownMenuItem>
