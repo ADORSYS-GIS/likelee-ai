@@ -18368,6 +18368,16 @@ export default function AgencyDashboard() {
               "Active Licenses",
               "License Templates",
             ],
+            badge:
+              pendingLicensingRequestsCount > 0
+                ? pendingLicensingRequestsCount
+                : undefined,
+            badges: {
+              "Licensing Requests":
+                pendingLicensingRequestsCount > 0
+                  ? pendingLicensingRequestsCount
+                  : undefined,
+            },
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
