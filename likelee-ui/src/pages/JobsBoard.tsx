@@ -460,7 +460,6 @@ export default function JobsBoard() {
     <>
       <div className="min-h-screen bg-gray-50 px-6 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
-
           <div className="flex items-center justify-between">
             <div className="space-y-3">
               <Button
