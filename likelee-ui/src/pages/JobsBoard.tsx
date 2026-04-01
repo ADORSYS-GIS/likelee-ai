@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { createPageUrl } from "@/utils";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 const PAGE_SIZE = 10;
 
@@ -73,7 +74,6 @@ export default function JobsBoard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const backTo = searchParams.get("backTo");
-  const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [revealingMore, setRevealingMore] = useState(false);
@@ -217,35 +217,44 @@ export default function JobsBoard() {
     [search, callType, jobType, location, category],
   );
 
-  const loadJobs = async () => {
-    try {
-      setLoading(true);
-      setVisibleCount(PAGE_SIZE);
+  const jobsQuery = useIndexedDbQuery<{ jobs?: any[] }>({
+    queryKey: ["find-jobs-board", queryParams],
+    queryFn: async () => {
       const res = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: queryParams,
       });
-      const rows = Array.isArray(res?.jobs) ? res.jobs : [];
+      return res;
+    },
+    maxAge: 2 * 60 * 1000,
+    staleWhileRevalidate: true,
+  });
+
+  const loading = jobsQuery.isLoading && !jobsQuery.data;
+
+  useEffect(() => {
+    if (jobsQuery.data) {
+      const rows = Array.isArray(jobsQuery.data.jobs)
+        ? jobsQuery.data.jobs
+        : [];
       setJobs(rows);
-      if (rows.length > 0) {
-        setSelectedJob((prev) => prev || rows[0]);
-      } else {
+      if (rows.length > 0 && !selectedJob) {
+        setSelectedJob(rows[0]);
+      } else if (rows.length === 0) {
         setSelectedJob(null);
       }
-    } catch (e: any) {
+    } else if (jobsQuery.error) {
       setJobs([]);
       setSelectedJob(null);
       toast({
         title: "Unable to load jobs",
-        description: e?.message || "Please try again.",
+        description: jobsQuery.error?.message || "Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [jobsQuery.data, jobsQuery.error]);
 
   useEffect(() => {
-    loadJobs();
+    setVisibleCount(PAGE_SIZE);
   }, [queryParams]);
 
   const loadMore = useCallback(() => {
