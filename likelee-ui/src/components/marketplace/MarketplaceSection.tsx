@@ -726,13 +726,7 @@ export function MarketplaceSection({
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        {ownershipLabel && (
-                          <Badge
-                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold shadow-sm ${ownershipBadgeClass}`}
-                          >
-                            {ownershipLabel}
-                          </Badge>
-                        )}
+                        {/* Agency-owned badge removed as per request */}
                       </div>
                       <div className="flex items-center gap-1.5">
                         {hasPendingDisconnect && (
@@ -946,6 +940,11 @@ export function MarketplaceSection({
                               : "Connect"}
                         </Button>
                       </div>
+                    )}
+                    {profile.talent_ownership === "agency_owned" && (
+                      <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
+                        Automatically connected (Created by you)
+                      </p>
                     )}
                   </div>
                 </Card>
@@ -1188,21 +1187,7 @@ export function MarketplaceSection({
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                           Verified
                         </Badge>
-                        {selectedProfile?.profile_type === "creator" && (
-                          <Badge
-                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold ${
-                              selectedProfile?.talent_ownership ===
-                              "agency_owned"
-                                ? "bg-violet-50 text-violet-700 border-violet-200"
-                                : "bg-slate-50 text-slate-700 border-slate-200"
-                            }`}
-                          >
-                            {selectedProfile?.talent_ownership ===
-                            "agency_owned"
-                              ? "Agency-Owned"
-                              : "Regular"}
-                          </Badge>
-                        )}
+                        {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
                         {selectedProfile?.location || "Location not specified"}
@@ -1428,9 +1413,17 @@ export function MarketplaceSection({
                         </div>
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                           <p className="text-gray-500">Connection Status</p>
-                          <p className="font-semibold text-gray-900 mt-1 capitalize">
-                            {detailsQuery.data?.connection_status || "none"}
-                          </p>
+                          <div className="flex flex-col">
+                            <p className="font-semibold text-gray-900 mt-1 capitalize leading-none">
+                              {detailsQuery.data?.connection_status || "none"}
+                            </p>
+                            {selectedProfile?.talent_ownership ===
+                              "agency_owned" && (
+                              <p className="text-[10px] text-indigo-600 font-semibold mt-1.5">
+                                Automatically connected (Created by you)
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -307,17 +307,7 @@ export default function JobsBoard() {
       })
       .filter((job) => {
         if (!q) return true;
-        const haystack = [
-          job?.job_title,
-          job?.title,
-          job?.description,
-          job?.about_role,
-          job?.category,
-          job?.location,
-          job?.job_location,
-          job?.company_name,
-          job?.brands?.company_name,
-        ]
+        const haystack = [job?.job_title, job?.title]
           .filter(Boolean)
           .map((v: any) => String(v).toLowerCase())
           .join(" ");
