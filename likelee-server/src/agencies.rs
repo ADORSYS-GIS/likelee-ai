@@ -539,8 +539,14 @@ pub async fn get_profile(
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let roster_count = get_agency_roster_count(&state, &user.id).await?;
     match rows.into_iter().next() {
-        Some(v) => Ok(Json(v)),
+        Some(mut v) => {
+            if let Some(obj) = v.as_object_mut() {
+                obj.insert("roster_count".into(), json!(roster_count));
+            }
+            Ok(Json(v))
+        }
         None => Err((
             StatusCode::NOT_FOUND,
             json!({
@@ -550,6 +556,54 @@ pub async fn get_profile(
             .to_string(),
         )),
     }
+}
+
+async fn get_agency_roster_count(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<u32, (StatusCode, String)> {
+    let rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rel_status = rel_resp.status();
+    let rel_text = rel_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !rel_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
+    }
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    if !rel_rows.is_empty() {
+        return Ok(rel_rows.len() as u32);
+    }
+
+    let legacy_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let legacy_status = legacy_resp.status();
+    let legacy_text = legacy_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !legacy_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, legacy_text));
+    }
+    let legacy_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&legacy_text).unwrap_or_default();
+    Ok(legacy_rows.len() as u32)
 }
 
 #[derive(Deserialize, Serialize, Debug)]
