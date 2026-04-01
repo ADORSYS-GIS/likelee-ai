@@ -149,7 +149,6 @@ supabase db push
 | JWT validation fails         | Check `SUPABASE_JWT_SECRET` matches your Supabase project       |
 | Stripe webhooks not received | Run `stripe listen --forward-to localhost:8787/webhooks/stripe` |
 | Port already in use          | Change `PORT` in `.env` or kill the process using port 8787     |
-| Rekognition errors           | Ensure AWS credentials are set via env vars or IAM role         |
 | Build fails                  | Run `cargo clean` then `cargo build`                            |
 
 ### Debug Logging
@@ -166,4 +165,3 @@ The server logs configuration on startup. Check console output for:
 
 - `payout_config_loaded` - Payout settings
 - `storage buckets ensured` - Storage bucket creation
-- `rekognition: disabled` or `AWS Rekognition client initialized`

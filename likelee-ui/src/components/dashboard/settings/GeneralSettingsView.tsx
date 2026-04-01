@@ -1893,91 +1893,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-            {/* Division Commissions */}
-            {/* Division Commissions */}
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Division Commissions
-                </h3>
-                <Button
-                  variant="outline"
-                  onClick={openAddDivision}
-                  className="h-8 px-3 sm:h-9 sm:px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Division
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {divisionCommissions.map((division) => (
-                  <div
-                    key={division.id}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {division.name}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {`${division.count} ${entityPluralLower}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Input
-                          value={String(division.rate)}
-                          onChange={(e) => {
-                            const next = parseFloat(e.target.value);
-                            const clamped = Number.isFinite(next)
-                              ? Math.max(0, Math.min(100, next))
-                              : 0;
-                            setDivisionCommissions((prev) =>
-                              prev.map((d) =>
-                                d.id === division.id
-                                  ? { ...d, rate: clamped }
-                                  : d,
-                              ),
-                            );
-                          }}
-                          className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
-                        />
-                        <span className="text-xs font-bold text-gray-500">
-                          %
-                        </span>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-7 h-7 text-gray-400 hover:text-indigo-600"
-                          >
-                            <MoreVertical className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openEditDivision(division)}
-                          >
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => removeDivision(division.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
 
             {/* Talent Commission Rules */}
+
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">

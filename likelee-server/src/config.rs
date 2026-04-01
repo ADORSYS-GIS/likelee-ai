@@ -1,4 +1,3 @@
-use aws_sdk_rekognition::Client as RekogClient;
 use envconfig::Envconfig;
 use postgrest::Postgrest;
 
@@ -52,13 +51,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "DUIX_AUTH_TOKEN", default = "change-me")]
     pub duix_auth_token: String,
-
-    // Keep as string to allow legacy "1"/"0" values
-    #[envconfig(from = "MODERATION_ENABLED", default = "1")]
-    pub moderation_enabled: String,
-
-    #[envconfig(from = "AWS_REGION", default = "us-east-1")]
-    pub aws_region: String,
 
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
@@ -274,7 +266,6 @@ pub struct AppState {
     pub pg: Postgrest,
     pub veriff: VeriffConfig,
     pub duix: DuixConfig,
-    pub rekog: Option<RekogClient>,
     pub supabase_url: String,
     pub supabase_service_key: String,
     pub supabase_jwt_secret: String,
