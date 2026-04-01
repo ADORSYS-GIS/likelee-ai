@@ -826,7 +826,10 @@ export default function JobsBoard() {
                       {!compCardUploading && compCardMetas.length > 0 && (
                         <div className="space-y-2">
                           {compCardMetas.map((m: any, idx: number) => (
-                            <div key={`${m?.path || m?.name || idx}`} className="flex items-center gap-2">
+                            <div
+                              key={`${m?.path || m?.name || idx}`}
+                              className="flex items-center gap-2"
+                            >
                               <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
                               <span className="text-xs text-gray-700 truncate max-w-[220px]">
                                 {m?.name}

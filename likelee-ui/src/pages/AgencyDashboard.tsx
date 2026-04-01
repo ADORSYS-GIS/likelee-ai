@@ -17735,8 +17735,12 @@ export default function AgencyDashboard() {
   };
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [activeNotificationTab, setActiveNotificationTab] = useState<"all" | "unread">("all");
-  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>(() => {
+  const [activeNotificationTab, setActiveNotificationTab] = useState<
+    "all" | "unread"
+  >("all");
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<
+    string[]
+  >(() => {
     try {
       const saved = localStorage.getItem("likelee_dismissed_notifications");
       return saved ? JSON.parse(saved) : [];
@@ -17746,9 +17750,12 @@ export default function AgencyDashboard() {
   });
 
   useEffect(() => {
-    localStorage.setItem("likelee_dismissed_notifications", JSON.stringify(dismissedNotificationIds));
+    localStorage.setItem(
+      "likelee_dismissed_notifications",
+      JSON.stringify(dismissedNotificationIds),
+    );
   }, [dismissedNotificationIds]);
-  
+
   const systemNotifications = useMemo(() => {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
@@ -17772,7 +17779,8 @@ export default function AgencyDashboard() {
     alerts.push({
       id: "welcome",
       title: "System Alert",
-      message: "Your verification was successfully processed. Welcome to Likelee!",
+      message:
+        "Your verification was successfully processed. Welcome to Likelee!",
       time: "Just now",
       color: "blue",
     });
@@ -17780,21 +17788,23 @@ export default function AgencyDashboard() {
   }, [pendingBrandConnectionCount, pendingLicensingRequestsCount]);
 
   const notifications = useMemo(() => {
-    return systemNotifications.map(n => ({
+    return systemNotifications.map((n) => ({
       ...n,
-      read: dismissedNotificationIds.includes(n.id)
+      read: dismissedNotificationIds.includes(n.id),
     }));
   }, [systemNotifications, dismissedNotificationIds]);
-  
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const filteredNotifications = notifications.filter(n => activeNotificationTab === "all" || !n.read);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const filteredNotifications = notifications.filter(
+    (n) => activeNotificationTab === "all" || !n.read,
+  );
 
   const markAllAsRead = () => {
-    setDismissedNotificationIds(systemNotifications.map(n => n.id));
+    setDismissedNotificationIds(systemNotifications.map((n) => n.id));
   };
 
   const markAsRead = (id: string) => {
-    setDismissedNotificationIds(prev => Array.from(new Set([...prev, id])));
+    setDismissedNotificationIds((prev) => Array.from(new Set([...prev, id])));
   };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17812,7 +17822,9 @@ export default function AgencyDashboard() {
     try {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["agency-roster"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency-dashboard-overview"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-overview"],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["agency-dashboard-talent-performance"],
         }),
@@ -17837,8 +17849,12 @@ export default function AgencyDashboard() {
         }),
         queryClient.invalidateQueries({ queryKey: ["agency-clients"] }),
         queryClient.invalidateQueries({ queryKey: ["agency-job-invites"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency-campaign-offers-my"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency-package-feedback"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-campaign-offers-my"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-package-feedback"],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["agency-brand-connection-requests"],
         }),
@@ -18286,9 +18302,7 @@ export default function AgencyDashboard() {
             >
               <RefreshCw
                 className={
-                  refreshAllLoading
-                    ? "w-5 h-5 animate-spin"
-                    : "w-5 h-5"
+                  refreshAllLoading ? "w-5 h-5 animate-spin" : "w-5 h-5"
                 }
               />
             </Button>
@@ -18315,7 +18329,6 @@ export default function AgencyDashboard() {
               )}
             </Button>
 
-
             {/* Notifications Dropdown */}
             <div className="relative" data-header-dropdown>
               <Button
@@ -18338,7 +18351,7 @@ export default function AgencyDashboard() {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-gray-900">Notifications</h3>
                       {unreadCount > 0 && (
-                        <button 
+                        <button
                           onClick={markAllAsRead}
                           className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                         >
@@ -18347,7 +18360,7 @@ export default function AgencyDashboard() {
                       )}
                     </div>
                     <div className="flex gap-6">
-                      <button 
+                      <button
                         onClick={() => setActiveNotificationTab("all")}
                         className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
@@ -18365,20 +18378,28 @@ export default function AgencyDashboard() {
                     {filteredNotifications.length === 0 ? (
                       <div className="p-6 flex flex-col items-center justify-center text-center">
                         <p className="text-sm font-medium text-gray-500">
-                          {activeNotificationTab === "all" ? "No notifications found." : "You're all caught up!"}
+                          {activeNotificationTab === "all"
+                            ? "No notifications found."
+                            : "You're all caught up!"}
                         </p>
                       </div>
                     ) : (
                       filteredNotifications.map((notif: any) => (
-                        <button 
+                        <button
                           key={notif.id}
                           onClick={() => markAsRead(notif.id as string)}
                           className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
                         >
-                          <div className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center border ${
-                            notif.color === "indigo" ? "bg-indigo-50 border-indigo-100" : "bg-blue-50 border-blue-100"
-                          }`}>
-                            <Users className={`w-4 h-4 ${notif.color === "indigo" ? "text-indigo-600" : "text-blue-600"}`} />
+                          <div
+                            className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center border ${
+                              notif.color === "indigo"
+                                ? "bg-indigo-50 border-indigo-100"
+                                : "bg-blue-50 border-blue-100"
+                            }`}
+                          >
+                            <Users
+                              className={`w-4 h-4 ${notif.color === "indigo" ? "text-indigo-600" : "text-blue-600"}`}
+                            />
                           </div>
                           <div className="flex-1 min-w-0 pt-0.5">
                             <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
@@ -18387,7 +18408,9 @@ export default function AgencyDashboard() {
                             <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
                               {notif.message}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1.5 font-medium">{notif.time}</p>
+                            <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                              {notif.time}
+                            </p>
                           </div>
                           {!notif.read && (
                             <div className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-2" />
@@ -18397,9 +18420,13 @@ export default function AgencyDashboard() {
                     )}
                   </div>
                   <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
-                    <button 
+                    <button
                       onClick={() => {
-                        toast({ title: "View all notifications", description: "Navigating to full notifications page..." });
+                        toast({
+                          title: "View all notifications",
+                          description:
+                            "Navigating to full notifications page...",
+                        });
                         setShowNotifications(false);
                       }}
                       className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
@@ -18415,7 +18442,7 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
-              onClick={() => navigate('/support')}
+              onClick={() => navigate("/support")}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
