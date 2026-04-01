@@ -10,12 +10,14 @@ export default ({ mode }) => {
     plugins: [
       react(),
       VitePWA({
-        registerType: "autoUpdate",
-        injectRegister: "auto",
-        workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        strategies: "injectManifest",
+        srcDir: "src",
+        filename: "sw.js",
+        injectManifest: {
           maximumFileSizeToCacheInBytes: 15000000,
         },
+        registerType: "autoUpdate",
+        injectRegister: "auto",
         manifest: {
           name: "Likelee - Agency Dashboard",
           short_name: "Likelee",

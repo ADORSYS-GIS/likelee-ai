@@ -397,7 +397,7 @@ export default function PublicProfile() {
                     <div>
                       <div className="text-xs text-gray-500">From</div>
                       <div className="text-lg font-bold text-gray-900">
-                        ${pricePerWeek}/month
+                        ${pricePerWeek}/week
                       </div>
                     </div>
                   )}

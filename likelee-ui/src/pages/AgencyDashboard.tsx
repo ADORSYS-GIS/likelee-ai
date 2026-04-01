@@ -17917,8 +17917,6 @@ export default function AgencyDashboard() {
   };
 
   const markAsRead = (id: string) => {
-    const notif = notifications.find((n) => n.id === id);
-    if (notif?.isSummary) return;
     setDismissedNotificationIds((prev) => Array.from(new Set([...prev, id])));
   };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -17968,10 +17966,10 @@ export default function AgencyDashboard() {
           queryKey: ["agency-campaign-offers-my"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["agency-package-feedback"],
+          queryKey: ["agency", "package-feedback"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["agency-brand-connection-requests"],
+          queryKey: ["agency", "brand-connection-requests"],
         }),
       ]);
 
