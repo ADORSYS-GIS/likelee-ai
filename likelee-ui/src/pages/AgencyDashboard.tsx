@@ -17735,6 +17735,67 @@ export default function AgencyDashboard() {
   };
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeNotificationTab, setActiveNotificationTab] = useState<"all" | "unread">("all");
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("likelee_dismissed_notifications");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("likelee_dismissed_notifications", JSON.stringify(dismissedNotificationIds));
+  }, [dismissedNotificationIds]);
+  
+  const systemNotifications = useMemo(() => {
+    const alerts = [];
+    if (pendingBrandConnectionCount > 0) {
+      alerts.push({
+        id: "brand_conn",
+        title: "Brand Connection Requests",
+        message: `You have ${pendingBrandConnectionCount} pending brand connection request(s).`,
+        time: "Action required",
+        color: "indigo",
+      });
+    }
+    if (pendingLicensingRequestsCount > 0) {
+      alerts.push({
+        id: "license_req",
+        title: "Licensing Requests",
+        message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
+        time: "Action required",
+        color: "indigo",
+      });
+    }
+    alerts.push({
+      id: "welcome",
+      title: "System Alert",
+      message: "Your verification was successfully processed. Welcome to Likelee!",
+      time: "Just now",
+      color: "blue",
+    });
+    return alerts;
+  }, [pendingBrandConnectionCount, pendingLicensingRequestsCount]);
+
+  const notifications = useMemo(() => {
+    return systemNotifications.map(n => ({
+      ...n,
+      read: dismissedNotificationIds.includes(n.id)
+    }));
+  }, [systemNotifications, dismissedNotificationIds]);
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const filteredNotifications = notifications.filter(n => activeNotificationTab === "all" || !n.read);
+
+  const markAllAsRead = () => {
+    setDismissedNotificationIds(systemNotifications.map(n => n.id));
+  };
+
+  const markAsRead = (id: string) => {
+    setDismissedNotificationIds(prev => Array.from(new Set([...prev, id])));
+  };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
@@ -18254,14 +18315,6 @@ export default function AgencyDashboard() {
               )}
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-500 hover:text-gray-900"
-              onClick={() => setShowHeaderSearch(true)}
-            >
-              <Search className="w-5 h-5" />
-            </Button>
 
             {/* Notifications Dropdown */}
             <div className="relative" data-header-dropdown>
@@ -18272,30 +18325,86 @@ export default function AgencyDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center px-[5px] py-[2px] text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900">Notifications</h3>
+                <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                  <div className="p-4 border-b border-gray-100 pb-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={markAllAsRead}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-6">
+                      <button 
+                        onClick={() => setActiveNotificationTab("all")}
+                        className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setActiveNotificationTab("unread")}
+                        className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        Unread ({unreadCount})
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <p className="text-sm font-bold text-gray-900">
-                      No notifications yet
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      When your agency receives updates, they’ll show up here.
-                    </p>
+                  <div className="divide-y divide-gray-100 max-h-[320px] overflow-y-auto w-full">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="p-6 flex flex-col items-center justify-center text-center">
+                        <p className="text-sm font-medium text-gray-500">
+                          {activeNotificationTab === "all" ? "No notifications found." : "You're all caught up!"}
+                        </p>
+                      </div>
+                    ) : (
+                      filteredNotifications.map((notif: any) => (
+                        <button 
+                          key={notif.id}
+                          onClick={() => markAsRead(notif.id as string)}
+                          className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
+                        >
+                          <div className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center border ${
+                            notif.color === "indigo" ? "bg-indigo-50 border-indigo-100" : "bg-blue-50 border-blue-100"
+                          }`}>
+                            <Users className={`w-4 h-4 ${notif.color === "indigo" ? "text-indigo-600" : "text-blue-600"}`} />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                              <span className="font-bold">{notif.title}</span>
+                            </p>
+                            <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                              {notif.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5 font-medium">{notif.time}</p>
+                          </div>
+                          {!notif.read && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-2" />
+                          )}
+                        </button>
+                      ))
+                    )}
                   </div>
-                  <div className="p-4 border-t border-gray-100 text-center">
-                    <button
-                      className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
+                    <button 
                       onClick={() => {
+                        toast({ title: "View all notifications", description: "Navigating to full notifications page..." });
                         setShowNotifications(false);
-                        setShowSupportDialog(true);
                       }}
+                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                      Contact support
+                      View all notifications
                     </button>
                   </div>
                 </div>
@@ -18306,9 +18415,7 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
-              onClick={() => {
-                setShowSupportDialog(true);
-              }}
+              onClick={() => navigate('/support')}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
