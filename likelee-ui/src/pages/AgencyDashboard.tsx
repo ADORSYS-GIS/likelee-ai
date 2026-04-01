@@ -1,12 +1,34 @@
-import React, { startTransition, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, startTransition, useEffect, useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
-import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
-import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
-import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
-import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
-import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
+
+// Heavy scouting components - lazy loaded to defer Leaflet map bundle
+const LicenseTemplatesTab = lazy(() =>
+  import("@/components/licensing/LicenseTemplatesTab").then((m) => ({
+    default: m.LicenseTemplatesTab,
+  }))
+);
+const LicenseSubmissionsTab = lazy(() =>
+  import("@/components/licensing/LicenseSubmissionsTab").then((m) => ({
+    default: m.LicenseSubmissionsTab,
+  }))
+);
+const ActiveLicenseDetailsSheet = lazy(() =>
+  import("@/components/licensing/ActiveLicenseDetailsSheet").then((m) => ({
+    default: m.ActiveLicenseDetailsSheet,
+  }))
+);
+const ScoutingMap = lazy(() =>
+  import("@/components/scouting/map/ScoutingMap").then((m) => ({
+    default: m.ScoutingMap,
+  }))
+);
+const ScoutingTrips = lazy(() =>
+  import("@/components/scouting/ScoutingTrips").then((m) => ({
+    default: m.ScoutingTrips,
+  }))
+);
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,11 +130,36 @@ import {
   Library,
   FolderCheck,
 } from "lucide-react";
-import { AgencyDeliverablesView } from "@/components/agency/AgencyDeliverablesView";
+// ----------- LAZY TAB COMPONENTS -----------
+// Each import is split into its own JS chunk by Vite.
+// The browser only downloads these when the user navigates to that tab.
+const AgencyDeliverablesView = lazy(() =>
+  import("@/components/agency/AgencyDeliverablesView").then((m) => ({
+    default: m.AgencyDeliverablesView,
+  }))
+);
+const BookingsView = lazy(() => import("@/components/Bookings/BookingsView").then((m) => ({ default: m.BookingsView })));
+const GeneralSettingsView = lazy(() => import("@/components/dashboard/settings/GeneralSettingsView"));
+const AgencyDashboardView = lazy(() => import("@/components/agency/DashboardView"));
+const FileStorageView = lazy(() => import("@/components/dashboard/settings/FileStorageView"));
+const AgencyRosterView = lazy(() => import("@/components/agency/RosterView"));
+const AnalyticsDashboardView = lazy(() => import("@/components/agency/AnalyticsDashboardView"));
+const LicensingRequestsView = lazy(() => import("@/components/agency/LicensingRequestsView"));
+const ActiveLicensesView = lazy(() => import("@/components/agency/ActiveLicensesView"));
+const BrandConnectionsView = lazy(() => import("@/components/agency/BrandConnectionsView"));
+const AgencyJobInvitesView = lazy(() => import("@/components/agency/AgencyJobInvitesView"));
+const MarketplaceSection = lazy(() => import("@/components/marketplace/MarketplaceSection"));
+const PerformanceTiers = lazy(() => import("@/components/dashboard/PerformanceTiers"));
+const ClientCRMView = lazy(() => import("@/components/crm/ClientCRMView"));
+const TalentCommissionSettings = lazy(() =>
+  import("@/components/dashboard/settings/TalentCommissionSettings").then((m) => ({
+    default: m.TalentCommissionSettings,
+  }))
+);
+// -------------------------------------------
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
-
 import {
   ComplianceRenewableLicense,
   RenewalLaunchContext,
@@ -146,19 +193,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { BookingsView } from "@/components/Bookings/BookingsView";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
-import AgencyDashboardView from "@/components/agency/DashboardView";
-import FileStorageView from "@/components/dashboard/settings/FileStorageView";
-import AgencyRosterView from "@/components/agency/RosterView";
-import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
-import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
-import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
-import BrandConnectionsView from "@/components/agency/BrandConnectionsView";
-import AgencyJobInvitesView from "@/components/agency/AgencyJobInvitesView";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
-import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
-import { TalentCommissionSettings } from "@/components/dashboard/settings/TalentCommissionSettings";
 import {
   getAgencyRoster,
   getAgencyProfile,
@@ -199,8 +233,21 @@ import {
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
 } from "@/api/functions";
-import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+
+/** Skeleton shown while a lazy tab chunk is being downloaded */
+const TabSkeleton = () => (
+  <div className="flex-1 p-6 lg:p-8 animate-pulse space-y-4">
+    <div className="h-8 bg-gray-100 rounded-lg w-1/3" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-28 bg-gray-100 rounded-xl" />
+      ))}
+    </div>
+    <div className="h-64 bg-gray-100 rounded-xl" />
+    <div className="h-40 bg-gray-100 rounded-xl" />
+  </div>
+);
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -18293,20 +18340,7 @@ export default function AgencyDashboard() {
           </Button>
 
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-500 hover:text-gray-900"
-              onClick={() => void refreshAll()}
-              disabled={refreshAllLoading}
-              aria-label="Refresh all"
-            >
-              <RefreshCw
-                className={
-                  refreshAllLoading ? "w-5 h-5 animate-spin" : "w-5 h-5"
-                }
-              />
-            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -18737,7 +18771,8 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
-          {activeTab === "dashboard" && (
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === "dashboard" && (
             <AgencyDashboardView
               isSportsAgency={isSportsAgency}
               onKYC={handleKYC}
@@ -19059,6 +19094,7 @@ export default function AgencyDashboard() {
                 ))}
             </div>
           )}
+          </Suspense>
         </main>
 
         <Dialog
