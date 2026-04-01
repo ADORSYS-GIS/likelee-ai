@@ -1,6 +1,7 @@
 # Likelee AI — Design
 
 > **Technical Documentation**: See [`docs/knowledge/`](./knowledge/) for detailed technical docs:
+>
 > - [Architecture Overview](./knowledge/architecture.md) - System architecture, components, data flow
 > - [API Reference](./api-reference.md) - All API endpoints and webhooks
 > - [Coding Conventions](./knowledge/coding-conventions.md) - Naming, formatting, and code review checklist
@@ -18,14 +19,14 @@ Likelee AI is a comprehensive talent management and licensing platform that conn
 
 ## Architecture Summary
 
-| Component | Technology | Location |
-|-----------|------------|----------|
-| Backend | Rust + Axum | `likelee-server/` |
-| Frontend | React SPA | `likelee-ui/` |
-| Database | Supabase (PostgreSQL) | `supabase/migrations/` |
-| Storage | Supabase Storage | Buckets: `likelee-private`, `likelee-public`, `likelee-temp` |
-| Auth | Supabase JWT | `likelee-server/src/auth.rs` |
-| Config | envconfig | `likelee-server/src/config.rs` |
+| Component | Technology            | Location                                                     |
+| --------- | --------------------- | ------------------------------------------------------------ |
+| Backend   | Rust + Axum           | `likelee-server/`                                            |
+| Frontend  | React SPA             | `likelee-ui/`                                                |
+| Database  | Supabase (PostgreSQL) | `supabase/migrations/`                                       |
+| Storage   | Supabase Storage      | Buckets: `likelee-private`, `likelee-public`, `likelee-temp` |
+| Auth      | Supabase JWT          | `likelee-server/src/auth.rs`                                 |
+| Config    | envconfig             | `likelee-server/src/config.rs`                               |
 
 See [Architecture Overview](./knowledge/architecture.md) for full details.
 
@@ -424,7 +425,7 @@ Configuration variables:
   - DocuSeal app URL for document viewing (default `https://docuseal.co`).
 - `DOCUSEAL_WEBHOOK_URL`
   - DocuSeal webhook URL used for **scouting offers**.
-  - Campaign and licensing webhooks use **separate endpoints** (see below).
+  - Campaign, licensing, and marketplace creator contracts use **separate endpoints** (see below).
 - `DOCUSEAL_USER_EMAIL`
   - DocuSeal account email.
 - `DOCUSEAL_MASTER_TEMPLATE_ID`
@@ -500,30 +501,38 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 ## Campaign Deliverables
 
 ### Goals
+
 - Allow creators to upload media assets (images/videos) as deliverables for campaign offers.
 - Support a multi-stage review workflow: Creator -> Agency -> Brand.
 - Ensure assets are stored securely and accessed only by authorized parties.
 
 ### Workflow
+
 1. **Draft Stage**: Creators and agencies can upload assets as deliverables. These assets start in a `draft` state (default) and are only visible to the submitting party until submitted.
 2. **Submission**: Creators explicitly "Submit to Agency". This updates the deliverable status to `submitted` and notifies the agency.
 3. **Agency Review**: Agencies can `approve` or `request_changes` on deliverables.
 4. **Brand Review**: Once approved by the agency, deliverables are visible to the Brand for final approval.
 
 ### Secure Media Authentication
+
 To protect private assets stored in Supabase, all deliverable media is accessed via a backend proxy:
+
 - **Proxy Endpoint**: `/api/campaign-offers/:offer_id/deliverables/:id/file`
 - **Authentication**: Since browser `<img />` and `<video />` tags do not natively support custom headers (like `Authorization: Bearer <token>`), the backend supports a fallback authentication mechanism.
 - **Token Fallback**: If the `Authorization` header is missing, the server extracts the JWT from the `token` query parameter. This allows secure, authenticated access to private media files directly within HTML media elements.
 
 ### Payment Gating
+
 To ensure financial security:
+
 - **Deliverable Gating**: Deliverable uploads and submissions (both creator and agency) are disabled until the campaign offer's `payment_status` is `paid`.
 - **Escrow Flow**: When a brand "Pays" an offer, funds are collected via Stripe Checkout. The `payment_status` switches from `unpaid` -> `processing` -> `paid`. For agency offers, funds are released via Stripe **Transfers** to the connected accounts after brand approval triggers escrow release.
 - **UI Gating**: Frontend components (`AgencyDeliverablesView`, `CreatorDashboard`) conditionally disable upload/review buttons and show "Awaiting Brand Payment" indicators based on the offer's payment status.
 
 ### Escrow Status & Transfers
+
 Agency campaign offers track escrow release separately from deliverable workflow:
+
 - `campaign_offers.escrow_status`: `holding` → `releasing` → `released`
 - Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
 - Dashboard balances distinguish:
@@ -531,6 +540,7 @@ Agency campaign offers track escrow release separately from deliverable workflow
   - **cashout (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
 
 #### Commission semantics (agency campaign offers)
+
 When distributing a campaign offer payout for an **agency** collaborator, `commission_rate` is interpreted as the **agency commission percent** for each creator share.
 
 - `creator_payout_percent = 100 - commission_rate`
@@ -538,21 +548,26 @@ When distributing a campaign offer payout for an **agency** collaborator, `commi
 - `agency_earnings = gross_share_cents - creator_earnings`
 
 Commission resolution order (per assigned `creator_id`):
-1) `agency_creator_commissions(agency_id, creator_id).commission_rate` (override, if present)
-2) Tier default from `agencies.performance_commission_config[tier].commission_rate`
+
+1. `agency_creator_commissions(agency_id, creator_id).commission_rate` (override, if present)
+2. Tier default from `agencies.performance_commission_config[tier].commission_rate`
    - tier comes from `agency_talent_relationships.performance_tier_name` for connected creators
    - `agency_users.performance_tier_name` overrides when present for roster creators
-3) Fallback default (used only when no config is present)
+3. Fallback default (used only when no config is present)
+
 ### Calendly Integration (IRL Booking)
 
 #### System Configuration
+
 - `CALENDLY_BOOKING_URL`: The system-wide fallback scheduling link.
 - `CALENDLY_WEBHOOK_SIGNING_KEY`: Secret used to verify Calendly webhook signatures.
 
 #### Agency-Specific Configuration
+
 Agencies can override the system default Calendly settings with their own API tokens and event mappings.
 
 ##### Data Model: `agency_calendly_settings`
+
 - `agency_id` (uuid, PK): Link to `public.agencies(id)`.
 - `calendly_api_token` (text, nullable): The agency's personal access token.
 - `is_enabled` (boolean): Whether the custom integration is active.
@@ -561,7 +576,9 @@ Agencies can override the system default Calendly settings with their own API to
 - `updated_at` (timestamptz)
 
 ##### Resolution Logic
+
 When scheduling a meeting for an agency:
+
 1. Check if the agency has `agency_calendly_settings` with `is_enabled = true`.
 2. If so, use their `calendly_api_token`.
 3. Resolve the target event slug:
@@ -570,6 +587,7 @@ When scheduling a meeting for an agency:
    - Fall back to system defaults if no agency mapping is found.
 
 #### API Endpoints
+
 - `GET /api/calendly/settings`: Fetch the authenticated agency's settings.
 - `POST /api/calendly/settings`: Update settings (JSON payload matching the data model).
 - `GET /api/calendly/event-types`: Fetch available event types for the agency (uses agency token or system fallback).
@@ -777,6 +795,7 @@ Brands can create campaigns, make offers to talent, and manage deliverables.
   - Scouting offers: `POST /webhooks/docuseal`
   - Campaign offer contracts: `POST /webhooks/docuseal/campaign-contracts`
   - Licensing contracts: `POST /api/webhooks/licenseContract`
+  - Marketplace creator contracts: `POST /webhooks/docuseal/marketplace-contracts`
 
 ---
 
@@ -803,9 +822,82 @@ Agencies can invite talent to join their roster:
 - `GET /api/creator/agency-connections` - List agency connections
 - `POST /api/creator/agency-connections/:agency_id/disconnect` - Disconnect from agency
 
+### Marketplace Contract-Backed Agency Connect
+
+- Agencies can start a creator connection from the marketplace `Connect` action.
+- The agency first enters locked commercial terms such as `commission_rate`, `valid_from`, and `valid_until`.
+- Those values are stored before contract rendering and injected into the contract body placeholders.
+- The first submit creates a draft marketplace contract plus a DocuSeal template.
+- The agency then uses the embedded DocuSeal builder to place signature fields and finalize the send.
+- After the creator signs, `POST /webhooks/docuseal/marketplace-contracts` updates the marketplace contract row and activates the creator-agency connection automatically.
+- Creator Dashboard, Talent Portal, and Agency Roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
+- Creator-side connected agency cards should expose contract reminders such as commission rate, start date, end date, disconnect status, and the signed contract link.
+
+#### State Transitions and Table Ownership
+
+- `agency_creator_marketplace_contracts`
+  - Stores the contract lifecycle and signed-document metadata.
+  - This is the legal workflow table, not the final connection table.
+  - Main statuses: `draft`, `pending_signature`, `active`, `expired`, `declined`, `voided`.
+- `creator_agency_invites`
+  - Stores invite/request state for creator-facing pending invitations.
+  - A marketplace contract-backed invite starts as `pending` and is updated to `accepted` once the contract activates.
+- `agency_talent_relationships`
+  - This is the authoritative agency-to-creator connection table used for connected-state reads.
+  - When a marketplace contract becomes active, this row is created or updated to `status = active`.
+- `agency_users`
+  - Ensures the creator exists as an active talent row inside the agency account so roster views and downstream agency features work correctly.
+
+#### Completion Flow
+
+1. Agency clicks marketplace `Connect`.
+2. The backend creates:
+   - a draft row in `agency_creator_marketplace_contracts`
+   - a pending row in `creator_agency_invites`
+3. The agency uses embedded DocuSeal to place signature fields and send the contract.
+4. After both parties sign, the marketplace DocuSeal webhook `POST /webhooks/docuseal/marketplace-contracts` updates the contract row to `active`.
+5. Activation logic then:
+   - updates `creator_agency_invites.status` to `accepted`
+   - ensures `agency_users.status = active`
+   - upserts `agency_talent_relationships.status = active`
+6. UI surfaces then treat the pair as connected:
+   - Creator Dashboard connected agencies
+   - Talent Portal agency connections
+   - Agency roster
+   - Agency marketplace creator cards/details
+
+#### Disconnect Constraints
+
+- Active marketplace contracts are not immediately disconnectable by the creator.
+- `POST /api/creator/agency-connections/:agency_id/disconnect`
+  - if no active marketplace contract exists, it can remove the live relationship immediately
+  - if an active marketplace contract exists, it creates a disconnect request instead of removing the connection
+- The disconnect request is stored on `agency_creator_marketplace_contracts` using:
+  - `disconnect_status`
+  - `disconnect_requested_by`
+  - `disconnect_requested_at`
+  - `disconnect_reason`
+  - `disconnect_reviewed_by`
+  - `disconnect_reviewed_at`
+- Agency reviewers handle pending requests from roster / creator contract details and can approve or reject them.
+- Agency reviewers now handle pending marketplace disconnect requests from the agency marketplace creator side sheet, keeping the review isolated to the relevant agency-creator pair.
+- Approval terminates the live relationship by removing the `agency_talent_relationships` row and marking the corresponding `agency_users` row inactive.
+- Rejection leaves the live relationship active while preserving the request history on the contract record.
+- When the contract passes `valid_until`, the live relationship is removed automatically without requiring approval.
+- Contract rows are retained for audit/history even after the active relationship is removed.
+
+#### Commission Settings Alignment
+
+- Agency Settings commission screens must distinguish between:
+  - agency-managed/internal creator accounts
+  - marketplace-connected creator accounts
+- Marketplace-connected creator accounts use the active signed rate from `agency_creator_marketplace_contracts`.
+- Those rows are read-only in Settings and should be labeled as contract-controlled.
+- Agency-managed/internal creator accounts can still use `agency_creator_commissions` overrides, with tier defaults as the fallback.
+
 ### Implementation
 
-- **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`
+- **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`, `likelee-server/src/agency_marketplace_contracts.rs`
 
 ---
 
@@ -986,6 +1078,7 @@ Multi-step database operations are wrapped in PostgreSQL RPC functions to ensure
 Atomically adjusts a user's wallet balance and records the transaction.
 
 **Parameters:**
+
 - `p_user_id` (uuid): User ID
 - `p_delta` (bigint): Credit change (positive for credit, negative for debit)
 - `p_reason` (text): Transaction reason
@@ -996,6 +1089,7 @@ Atomically adjusts a user's wallet balance and records the transaction.
 **Returns:** JSONB with `wallet_id`, `balance_before`, `balance_after`, `transaction_id`
 
 **Usage in Rust:**
+
 ```rust
 // In likelee-server/src/studio/wallet.rs
 let (_, balance_after) = call_adjust_wallet_credits(
@@ -1009,6 +1103,7 @@ let (_, balance_after) = call_adjust_wallet_credits(
 Atomically completes a payment link checkout: updates payment link status, inserts licensing_payouts, updates payments, and archives related records.
 
 **Parameters:**
+
 - `p_payment_link_id` (uuid)
 - `p_payment_intent_id` (text)
 - `p_agency_id` (uuid)
@@ -1044,13 +1139,13 @@ The following function was created in an earlier migration and remains the sourc
 
 ### When to Use Transactions
 
-| Operation Type | Transaction Required? |
-|----------------|----------------------|
-| Wallet balance + transaction record | Yes |
-| Payment link completion (multi-table) | Yes |
-| Agency onboarding (create + update) | Yes |
-| Single SELECT query | No |
-| Single INSERT/UPDATE | No |
+| Operation Type                        | Transaction Required? |
+| ------------------------------------- | --------------------- |
+| Wallet balance + transaction record   | Yes                   |
+| Payment link completion (multi-table) | Yes                   |
+| Agency onboarding (create + update)   | Yes                   |
+| Single SELECT query                   | No                    |
+| Single INSERT/UPDATE                  | No                    |
 
 ---
 

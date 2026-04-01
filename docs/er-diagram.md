@@ -575,15 +575,14 @@ erDiagram
   - Deliverable events (submitted, approved, commented)
   - Job posting events
   - Asset uploads
-  
-- **Activity Event Types**: 
+- **Activity Event Types**:
   - `campaign.created` - Campaign was created
   - `campaign.completed` - Brand marked campaign as done
   - `contract.signed` - Party signed the contract
   - `deliverable.comment` - Comment added to deliverable
   - Additional event types can be added as features are developed
 
-- **RLS Policies**: 
+- **RLS Policies**:
   - Brands can view their own activity events (`brand_id = auth.uid()`)
   - Brands can insert their own activity events (`brand_id = auth.uid()`)
   - Backend uses service role which bypasses RLS
@@ -595,12 +594,14 @@ erDiagram
 ### SQL Functions
 
 **brand_avg_turnaround_hours(p_brand_id uuid, p_month date)**
+
 - Calculates average turnaround time in hours for a brand's campaigns in a given month
 - Formula: `AVG(EXTRACT(EPOCH FROM (completed_at - start_date)) / 3600)`
 - Only includes campaigns with non-null `completed_at`
 - Returns 0 if no completed campaigns exist
 
 **industry_avg_turnaround_hours(p_month date)**
+
 - Calculates industry-wide average turnaround time for a given month
 - Same formula as brand-specific function but across all brands
 - Used for benchmarking

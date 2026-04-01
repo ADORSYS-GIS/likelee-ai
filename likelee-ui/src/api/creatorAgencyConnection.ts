@@ -1,13 +1,22 @@
 import { base44 } from "@/api/base44Client";
+import { MarketplaceContractSummary } from "@/api/marketplaceContracts";
 
 export type CreatorAgencyInvite = {
   id: string;
   agency_id: string;
   creator_id: string;
   status: "pending" | "accepted" | "declined" | "revoked" | string;
+  contract_id?: string | null;
+  marketplace_contract?: MarketplaceContractSummary | null;
   created_at?: string;
   responded_at?: string;
   updated_at?: string;
+  agencies?: {
+    agency_name?: string;
+    logo_url?: string;
+    email?: string;
+    website?: string;
+  };
 };
 
 export async function listCreatorAgencyInvites(): Promise<
@@ -32,12 +41,27 @@ export async function declineCreatorAgencyInvite(id: string): Promise<void> {
   );
 }
 
+export async function syncCreatorAgencyMarketplaceContract(
+  id: string,
+): Promise<{
+  status: string;
+  contract: MarketplaceContractSummary;
+}> {
+  return await base44.post(
+    `/api/marketplace/contracts/${encodeURIComponent(id)}/sync`,
+    {},
+  );
+}
+
 export type CreatorAgencyConnection = {
   agency_id: string;
   agencies?: {
     agency_name?: string;
     logo_url?: string;
+    email?: string;
+    website?: string;
   };
+  marketplace_contract?: MarketplaceContractSummary | null;
 };
 
 export async function listCreatorAgencyConnections(): Promise<
@@ -52,8 +76,39 @@ export async function listCreatorAgencyConnections(): Promise<
 
 export async function disconnectCreatorAgencyConnection(
   agencyId: string,
-): Promise<void> {
-  await base44.post<{ status: string }>(
+  reason?: string,
+): Promise<{ status: string }> {
+  return await base44.post<{ status: string }>(
     `/api/creator/agency-connections/${encodeURIComponent(agencyId)}/disconnect`,
+    reason ? { reason } : {},
+  );
+}
+
+export async function approveAgencyCreatorDisconnectRequest(
+  creatorId: string,
+): Promise<{ status: string }> {
+  return await base44.post(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/disconnect/approve`,
+    {},
+  );
+}
+
+export async function rejectAgencyCreatorDisconnectRequest(
+  creatorId: string,
+): Promise<{ status: string }> {
+  return await base44.post(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/disconnect/reject`,
+    {},
+  );
+}
+
+export async function getAgencyCreatorContractSummary(
+  creatorId: string,
+): Promise<{
+  status: string;
+  contract?: MarketplaceContractSummary | null;
+}> {
+  return await base44.get(
+    `/api/agency/creator-connections/${encodeURIComponent(creatorId)}/contract`,
   );
 }

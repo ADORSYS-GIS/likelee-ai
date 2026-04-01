@@ -52,7 +52,7 @@ export const fetchJoobleJobs = (params: any) =>
 export const getCalendlyBookingUrl = () =>
   base44Client.get<{
     status: string;
-    data?: { booking_url: string };
+    data?: { booking_url: string; warning?: string | null };
     error?: string;
   }>("/booking/calendly-url");
 

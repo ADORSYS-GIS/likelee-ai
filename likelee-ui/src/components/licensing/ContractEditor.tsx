@@ -1,13 +1,6 @@
 import React from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -51,6 +44,15 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
     },
   });
 
+  React.useEffect(() => {
+    if (!editor || format !== "html") return;
+
+    const currentHtml = editor.getHTML();
+    if (currentHtml === body) return;
+
+    editor.commands.setContent(body || "", false);
+  }, [editor, body, format]);
+
   const insertVariable = (variable: string) => {
     if (readOnly) return;
 
@@ -86,18 +88,16 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
             Contract Format
           </Label>
           {!readOnly ? (
-            <Select
+            <select
               value={format}
-              onValueChange={(val) => onChangeFormat(val as any)}
+              onChange={(e) =>
+                onChangeFormat(e.target.value as "markdown" | "html")
+              }
+              className="w-[180px] bg-white border border-slate-200 shadow-sm rounded-lg h-10 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             >
-              <SelectTrigger className="w-[180px] bg-white border-slate-200 shadow-sm rounded-lg h-10">
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="markdown">Markdown</SelectItem>
-                <SelectItem value="html">HTML</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="markdown">Markdown</option>
+              <option value="html">HTML</option>
+            </select>
           ) : (
             <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 font-medium">
               {format.toUpperCase()}

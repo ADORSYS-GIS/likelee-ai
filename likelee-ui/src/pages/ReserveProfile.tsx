@@ -50,6 +50,7 @@ import { formatKycReason } from "@/utils/kycDisplay";
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import { DobInput } from "@/components/ui/DobInput";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -313,7 +314,6 @@ export default function ReserveProfile() {
     localStorage.setItem("reserve_step", step.toString());
   }, [step]);
 
-  const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -459,7 +459,7 @@ export default function ReserveProfile() {
       setKycRejectionReason(null);
       await saveCreatorProfile();
       const u = new URL(window.location.href);
-      u.searchParams.set("step", "4");
+      u.searchParams.set("step", "3");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
       const res = await fetch(api(`/api/kyc/session`), {
@@ -577,7 +577,7 @@ export default function ReserveProfile() {
         row?.kyc_rejection_reason ?? kycRejectionReason,
       );
       if (normalizedKyc === "approved") {
-        setStep(5);
+        setStep(4);
         return;
       }
       if (normalizedKyc === "rejected" || normalizedKyc === "declined") {
@@ -619,7 +619,7 @@ export default function ReserveProfile() {
     }
   };
 
-  const totalSteps = 5;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -695,15 +695,7 @@ export default function ReserveProfile() {
       if (creatorType === "athlete")
         return t("reserveProfile.stepTitles.step2.athlete");
     }
-    if (step === 3) {
-      if (creatorType === "influencer")
-        return t("reserveProfile.stepTitles.step3.influencer");
-      if (creatorType === "model_actor")
-        return t("reserveProfile.stepTitles.step3.model_actor");
-      if (creatorType === "athlete")
-        return t("reserveProfile.stepTitles.step3.athlete");
-    }
-    if (step === 5) return "Terms & Agreements";
+    if (step === 4) return "Terms & Agreements";
     return "";
   };
 
@@ -730,7 +722,7 @@ export default function ReserveProfile() {
   ]);
 
   useEffect(() => {
-    if (step !== 4) return;
+    if (step !== 3) return;
     // Initial fetch
     refreshVerificationStatus();
     // If redirected back with ?verified=1, attempt to proceed
@@ -1033,16 +1025,6 @@ export default function ReserveProfile() {
           return;
         }
       }
-      // Pricing required in onboarding step (applies to all creator types)
-      const monthly = Number(formData.base_monthly_price_usd);
-      if (!isFinite(monthly) || monthly < 150) {
-        toast({
-          title: t("reserveProfile.toasts.pricingRequiredTitle"),
-          description: t("reserveProfile.toasts.pricingRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
     }
     if (step < totalSteps) setStep(step + 1);
   };
@@ -1052,54 +1034,11 @@ export default function ReserveProfile() {
   };
 
   const handleSubmit = async () => {
-    // Step 3 validations for influencer
-    if (creatorType === "influencer") {
-      if (!formData.content_types || formData.content_types.length === 0) {
-        toast({
-          title: t("reserveProfile.toasts.campaignTypeRequiredTitle"),
-          description: t("reserveProfile.toasts.campaignTypeRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
-      if (!formData.industries || formData.industries.length === 0) {
-        toast({
-          title: t("reserveProfile.toasts.industryRequiredTitle"),
-          description: t("reserveProfile.toasts.industryRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
-      if (!formData.primary_platform?.trim()) {
-        toast({
-          title: t("reserveProfile.toasts.platformRequiredTitle"),
-          description: t("reserveProfile.toasts.platformRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
-      if (!formData.platform_handle?.trim()) {
-        toast({
-          title: t("reserveProfile.toasts.handleRequiredTitle"),
-          description: t("reserveProfile.toasts.handleRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
-      if (!formData.visibility) {
-        toast({
-          title: t("reserveProfile.toasts.visibilityRequiredTitle"),
-          description: t("reserveProfile.toasts.visibilityRequiredDesc"),
-          className: "bg-cyan-50 border-2 border-cyan-400",
-        });
-        return;
-      }
-    }
     try {
       setProfileSaveLoading(true);
       await saveCreatorProfile();
       await refreshProfile();
-      setStep(4);
+      setStep(3);
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.profileUpdateFailed"),
@@ -1136,11 +1075,11 @@ export default function ReserveProfile() {
       await saveCreatorProfile();
       await ensureRole("creator");
       await refreshProfile();
-      setSubmitted(true);
       // Clear persisted state on success
       localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      navigate("/CreatorDashboard", { replace: true });
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.profileSaveFailed"),
@@ -1160,31 +1099,6 @@ export default function ReserveProfile() {
         : [...prev[field], value],
     }));
   };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 py-16 px-6 flex items-center justify-center">
-        <Card className="max-w-2xl w-full p-12 bg-white border-2 border-black shadow-2xl rounded-none text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-[#32C8D1] to-teal-500 border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle2 className="w-12 h-12 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {t("reserveProfile.success.title")}
-          </h1>
-          <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {t("reserveProfile.success.description")}
-          </p>
-          <div className="flex items-center justify-center">
-            <Link to="/CreatorDashboard">
-              <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12">
-                {t("reserveProfile.success.dashboardButton")}
-              </Button>
-            </Link>
-          </div>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 py-12 px-6">
@@ -1545,14 +1459,13 @@ export default function ReserveProfile() {
                       placeholder={t("reserveProfile.form.placeholders.age")}
                     />
                   ) : (
-                    <Input
-                      id="birthdate"
-                      type="date"
+                    <DobInput
                       value={formData.birthdate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birthdate: e.target.value })
+                      onChange={(iso) =>
+                        setFormData({ ...formData, birthdate: iso })
                       }
-                      className="border-2 border-gray-300 rounded-none"
+                      variant="sharp"
+                      minAge={18}
                     />
                   )}
                 </div>
@@ -1862,104 +1775,6 @@ export default function ReserveProfile() {
                     </div>
                   </div>
                 )}
-
-                {/* Influencer vibes */}
-                {creatorType === "influencer" && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      {t("reserveProfile.form.vibes")}
-                    </Label>
-                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                      <Checkbox
-                        id="select-all-vibes"
-                        checked={vibes.every((vibe) =>
-                          formData.vibes.includes(vibe),
-                        )}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({ ...formData, vibes: [...vibes] });
-                          } else {
-                            setFormData({ ...formData, vibes: [] });
-                          }
-                        }}
-                        className="border-2 border-gray-400"
-                      />
-                      <label
-                        htmlFor="select-all-vibes"
-                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                      >
-                        {t("reserveProfile.form.selectAll", "Select All")}
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {vibes.map((vibe) => (
-                        <div
-                          key={vibe}
-                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                        >
-                          <Checkbox
-                            id={vibe}
-                            checked={formData.vibes.includes(vibe)}
-                            onCheckedChange={() =>
-                              toggleArrayItem("vibes", vibe)
-                            }
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor={vibe}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            {t(`common.vibes.${vibe}`, vibe)}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Pricing (USD-only) */}
-              <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  {t("reserveProfile.form.licensingPricing")}
-                </h4>
-                <div className="w-full flex justify-center">
-                  <div className="w-full max-w-sm">
-                    <Label
-                      htmlFor="base_monthly_price"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      {t("reserveProfile.form.basePrice")}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">$</span>
-                      <Input
-                        id="base_monthly_price"
-                        type="number"
-                        min={150}
-                        step={1}
-                        value={formData.base_monthly_price_usd}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9.]/g, "");
-                          setFormData({
-                            ...formData,
-                            base_monthly_price_usd: v,
-                          });
-                        }}
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t(
-                          "reserveProfile.form.placeholders.price",
-                        )}
-                      />
-                      <span className="text-sm text-gray-600">
-                        {t("reserveProfile.form.perMonth", "/month")}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("reserveProfile.form.basePriceHint")}
-                    </p>
-                  </div>
-                </div>
               </div>
 
               <div className="flex gap-4">
@@ -1987,528 +1802,8 @@ export default function ReserveProfile() {
             </div>
           )}
 
-          {/* Step 3: Opportunities/Preferences/Brand Setup (varies by type) */}
+          {/* Step 3: Verify Identity - redesigned */}
           {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
-                <p className="text-gray-600">
-                  {t(`reserveProfile.stepDescriptions.step3.${creatorType}`)}
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                {/* Influencer Step 3 */}
-                {creatorType === "influencer" && (
-                  <>
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          {t("reserveProfile.form.contentInterest")}
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          {t("reserveProfile.form.selectMax3")}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                        <Checkbox
-                          id="select-all-content"
-                          checked={contentTypes.every((type) =>
-                            formData.content_types.includes(type),
-                          )}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData({
-                                ...formData,
-                                content_types: [...contentTypes],
-                              });
-                            } else {
-                              setFormData({ ...formData, content_types: [] });
-                            }
-                          }}
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor="select-all-content"
-                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("reserveProfile.form.selectAll", "Select All")}
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {contentTypes.map((type) => (
-                          <div
-                            key={type}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={type}
-                              checked={formData.content_types.includes(type)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("content_types", type)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={type}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.contentTypes.${type}`, type)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {formData.content_types.includes("Other") && (
-                        <Input
-                          value={formData.content_other}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              content_other: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none mt-2"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.specify",
-                          )}
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          {t(
-                            "reserveProfile.form.brandinterest",
-                            "What types of brands or industries do you want to work with?",
-                          )}
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          {t("reserveProfile.form.selectMax3")}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                        <Checkbox
-                          id="select-all-industries"
-                          checked={industries.every((industry) =>
-                            formData.industries.includes(industry),
-                          )}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData({
-                                ...formData,
-                                industries: [...industries],
-                              });
-                            } else {
-                              setFormData({ ...formData, industries: [] });
-                            }
-                          }}
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor="select-all-industries"
-                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("reserveProfile.form.selectAll", "Select All")}
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {industries.map((industry) => (
-                          <div
-                            key={industry}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={industry}
-                              checked={formData.industries.includes(industry)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("industries", industry)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={industry}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.industries.${industry}`, industry)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label
-                          htmlFor="primary_platform"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t("reserveProfile.form.primaryPlatform")}
-                        </Label>
-                        <Select
-                          value={formData.primary_platform}
-                          onValueChange={(value) =>
-                            setFormData({
-                              ...formData,
-                              primary_platform: value,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                            <SelectValue
-                              placeholder={t(
-                                "reserveProfile.form.placeholders.platform",
-                                "Select platform",
-                              )}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="instagram">Instagram</SelectItem>
-                            <SelectItem value="tiktok">TikTok</SelectItem>
-                            <SelectItem value="youtube">YouTube</SelectItem>
-                            <SelectItem value="twitter">Twitter/X</SelectItem>
-                            <SelectItem value="other">
-                              {t("common.platforms.other", "Other")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="platform_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t("reserveProfile.form.handle")}
-                        </Label>
-                        <Input
-                          id="platform_handle"
-                          value={formData.platform_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              platform_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.handle",
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Model/Actor Step 3 */}
-                {creatorType === "model_actor" && (
-                  <>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        {t(
-                          "reserveProfile.form.representationStatus",
-                          "Representation Status",
-                        )}
-                      </Label>
-                      <RadioGroup
-                        value={formData.representation_status}
-                        onValueChange={(value) =>
-                          setFormData({
-                            ...formData,
-                            representation_status: value,
-                          })
-                        }
-                      >
-                        <div className="space-y-2">
-                          {["Agency", "Independent"].map((option) => (
-                            <div
-                              key={option}
-                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                            >
-                              <RadioGroupItem
-                                value={option}
-                                id={option}
-                                className="border-2 border-gray-400"
-                              />
-                              <Label
-                                htmlFor={option}
-                                className="text-sm text-gray-700 cursor-pointer flex-1"
-                              >
-                                {t(
-                                  `common.representationStatus.options.${option}`,
-                                  option,
-                                )}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                        {t("reserveProfile.form.vibes")}
-                      </Label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {vibes.map((vibe) => (
-                          <div
-                            key={vibe}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={vibe}
-                              checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("vibes", vibe)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={vibe}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.vibes.options.${vibe}`, vibe)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="headshot_url"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        {t("reserveProfile.form.headshot")}
-                      </Label>
-                      <Input
-                        id="headshot_url"
-                        type="text"
-                        value={formData.headshot_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            headshot_url: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t(
-                          "reserveProfile.form.placeholders.headshot",
-                        )}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {t("reserveProfile.form.headshotHint")}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Athlete Step 3 */}
-                {creatorType === "athlete" && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label
-                          htmlFor="instagram_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t(
-                            "reserveProfile.form.instagramOptional",
-                            "Instagram (optional)",
-                          )}
-                        </Label>
-                        <Input
-                          id="instagram_handle"
-                          value={formData.instagram_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              instagram_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.handle",
-                          )}
-                        />
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="twitter_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t(
-                            "reserveProfile.form.twitterOptional",
-                            "Twitter/X (optional)",
-                          )}
-                        </Label>
-                        <Input
-                          id="twitter_handle"
-                          value={formData.twitter_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              twitter_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.handle",
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          {t(
-                            "reserveProfile.form.brandCategories",
-                            "Interests / Brand Categories",
-                          )}
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          {t("reserveProfile.form.selectMax3")}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {athleteBrandCategories.map((category) => (
-                          <div
-                            key={category}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={category}
-                              checked={formData.brand_categories.includes(
-                                category,
-                              )}
-                              onCheckedChange={() =>
-                                toggleArrayItem("brand_categories", category)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={category}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(
-                                `common.brandCategories.options.${category}`,
-                                category,
-                              )}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="bio"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        {t("reserveProfile.form.shortBio", "Short Bio")}
-                      </Label>
-                      <Textarea
-                        id="bio"
-                        value={formData.bio}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bio: e.target.value })
-                        }
-                        className="border-2 border-gray-300 rounded-none h-24"
-                        placeholder={t(
-                          "reserveProfile.form.placeholders.bio",
-                          "Tell brands a bit about you...",
-                        )}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Profile Visibility - Common for all */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("reserveProfile.form.visibility")}
-                  </Label>
-                  <RadioGroup
-                    value={formData.visibility}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, visibility: value })
-                    }
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="public"
-                          id="public"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="public"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          <span className="font-medium">
-                            {t(
-                              "reserveProfile.form.visibilityOptions.public.label",
-                            )}
-                          </span>{" "}
-                          -{" "}
-                          {t(
-                            "reserveProfile.form.visibilityOptions.public.description",
-                          )}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="private"
-                          id="private"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="private"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          <span className="font-medium">
-                            {t(
-                              "reserveProfile.form.visibilityOptions.private.label",
-                            )}
-                          </span>{" "}
-                          -{" "}
-                          {t(
-                            "reserveProfile.form.visibilityOptions.private.description",
-                          )}
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 justify-between">
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="h-12 border-2 border-black rounded-none"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  {t("common.back")}
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={profileSaveLoading}
-                  className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                >
-                  {profileSaveLoading
-                    ? t("common.saving", "Saving...")
-                    : t("reserveProfile.actions.saveAndVerify")}
-                  <CheckCircle2 className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Verify Identity - redesigned */}
-          {step === 4 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">
@@ -2785,7 +2080,7 @@ export default function ReserveProfile() {
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
                           setShowSkipModal(false);
-                          setStep(5);
+                          setStep(4);
                         }}
                       >
                         {t("reserveProfile.skipModal.confirmSkip")}
@@ -2797,8 +2092,8 @@ export default function ReserveProfile() {
             </div>
           )}
 
-          {/* Step 5: Terms & Agreements */}
-          {step === 5 && (
+          {/* Step 4: Terms & Agreements */}
+          {step === 4 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">
@@ -2855,7 +2150,7 @@ export default function ReserveProfile() {
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(3)}
                   variant="outline"
                   className="w-1/3 h-12 border-2 border-black rounded-none"
                 >

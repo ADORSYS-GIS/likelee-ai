@@ -15,7 +15,6 @@ import {
   TrendingUp,
   AlertCircle,
   Undo2,
-  ChevronRight,
   DollarSign,
   Info,
 } from "lucide-react";
@@ -61,6 +60,9 @@ interface TalentPerformance {
   };
   commission_rate: number;
   is_custom_rate: boolean;
+  relationship_type: "internal" | "marketplace_connected";
+  commission_source: "contract" | "custom_override" | "tier_default";
+  is_editable: boolean;
 }
 
 interface PerformanceTiersResponse {
@@ -193,6 +195,8 @@ export const TalentCommissionSettings: React.FC<{
             Only talents with an active creator account are listed here. To
             manage commissions for pending or uninvited roster members, please
             ensure they have accepted their invitation to the talent portal.
+            Marketplace-connected creator accounts are shown as contract
+            controlled once their signed agreement becomes active.
           </p>
         </div>
       </div>
@@ -208,10 +212,14 @@ export const TalentCommissionSettings: React.FC<{
               className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/10"
             />
           </div>
-          <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+          <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              Contract Locked
+            </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              Custom Rate
+              Custom Override
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-gray-300" />
@@ -232,10 +240,13 @@ export const TalentCommissionSettings: React.FC<{
                 Current Tier
               </th>
               <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">
+                Commission Source
+              </th>
+              <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">
                 Effective Rate
               </th>
               <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">
-                Override Rate (%)
+                Settings Rate (%)
               </th>
             </tr>
           </thead>
@@ -248,6 +259,26 @@ export const TalentCommissionSettings: React.FC<{
                 const creatorId = talent.creator_id ?? null;
                 const draft = creatorId ? draftRates[creatorId] : undefined;
                 const isDirty = draft !== undefined;
+                const isContractControlled =
+                  talent.commission_source === "contract";
+                const sourceBadgeClass = isContractControlled
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                  : talent.is_custom_rate
+                    ? "bg-indigo-50 text-indigo-600 border-indigo-100"
+                    : "bg-gray-50 text-gray-500 border-gray-100";
+                const sourceBadgeLabel = isContractControlled
+                  ? "Contract Controlled"
+                  : talent.is_custom_rate
+                    ? "Custom Override"
+                    : "Tier Default";
+                const relationshipLabel =
+                  talent.relationship_type === "marketplace_connected"
+                    ? "Marketplace Connected"
+                    : "Agency Managed";
+                const relationshipBadgeClass =
+                  talent.relationship_type === "marketplace_connected"
+                    ? "bg-cyan-50 text-cyan-700 border-cyan-100"
+                    : "bg-slate-50 text-slate-700 border-slate-200";
 
                 return (
                   <tr
@@ -266,17 +297,23 @@ export const TalentCommissionSettings: React.FC<{
                           <p className="text-sm font-bold text-gray-900 truncate">
                             {talent.name}
                           </p>
-                          <div
-                            className={cn(
-                              "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold mt-1 border",
-                              talent.is_custom_rate
-                                ? "bg-indigo-50 text-indigo-600 border-indigo-100"
-                                : "bg-gray-50 text-gray-400 border-gray-100",
-                            )}
-                          >
-                            {talent.is_custom_rate
-                              ? "Custom Applied"
-                              : "Using Default"}
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <div
+                              className={cn(
+                                "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold border",
+                                relationshipBadgeClass,
+                              )}
+                            >
+                              {relationshipLabel}
+                            </div>
+                            <div
+                              className={cn(
+                                "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold border",
+                                sourceBadgeClass,
+                              )}
+                            >
+                              {sourceBadgeLabel}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -295,6 +332,19 @@ export const TalentCommissionSettings: React.FC<{
                             {talent.tier.tier_name}
                           </span>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold",
+                            sourceBadgeClass,
+                          )}
+                        >
+                          {sourceBadgeLabel}
+                        </Badge>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -322,23 +372,33 @@ export const TalentCommissionSettings: React.FC<{
                             step="0.1"
                             value={draft ?? talent.commission_rate}
                             onChange={(e) =>
-                              creatorId
+                              creatorId && talent.is_editable
                                 ? handleRateChange(creatorId, e.target.value)
                                 : undefined
                             }
-                            disabled={!creatorId}
+                            disabled={!creatorId || !talent.is_editable}
                             className={cn(
                               "w-24 h-9 text-right pr-7 font-bold text-sm bg-white border-gray-200 rounded-lg transition-all",
                               isDirty
                                 ? "border-indigo-300 ring-2 ring-indigo-500/10"
                                 : "group-hover/input:border-gray-300",
-                              !creatorId && "opacity-60 cursor-not-allowed",
+                              (!creatorId || !talent.is_editable) &&
+                                "opacity-60 cursor-not-allowed",
                             )}
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">
                             %
                           </span>
                         </div>
+
+                        {isContractControlled && (
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-bold"
+                          >
+                            Locked
+                          </Badge>
+                        )}
 
                         {isDirty ? (
                           <div className="flex items-center gap-1 animate-in fade-in zoom-in-95 duration-200">
@@ -359,7 +419,9 @@ export const TalentCommissionSettings: React.FC<{
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
-                        ) : creatorId && talent.is_custom_rate ? (
+                        ) : creatorId &&
+                          talent.is_custom_rate &&
+                          talent.is_editable ? (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -379,7 +441,7 @@ export const TalentCommissionSettings: React.FC<{
               })
             ) : (
               <tr>
-                <td colSpan={4} className="px-6 py-20 text-center">
+                <td colSpan={5} className="px-6 py-20 text-center">
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
                       <Target className="w-6 h-6 text-gray-200" />
@@ -411,9 +473,10 @@ export const TalentCommissionSettings: React.FC<{
               <span className="font-bold underline decoration-indigo-300">
                 agency's share
               </span>
-              . The {entitySingularLower} will receive the remaining amount
-              (e.g., if agency commission is 20%, the {entitySingularLower}{" "}
-              receives 80% of the gross payment).
+              . Agency-managed {entitySingularLower} accounts can be adjusted
+              here with settings overrides, while marketplace-connected{" "}
+              {entitySingularLower} accounts follow the active signed contract
+              rate and stay locked on this screen.
             </p>
           </div>
         </div>

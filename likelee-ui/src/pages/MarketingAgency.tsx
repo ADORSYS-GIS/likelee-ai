@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle2, Users, Clock, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function MarketingAgency() {
   const { t } = useTranslation();
@@ -55,7 +56,9 @@ export default function MarketingAgency() {
           </h1>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("marketing_agency_hero"))
+              }
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
               {t("bookDemo")}
@@ -314,7 +317,9 @@ export default function MarketingAgency() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              onClick={() =>
+                navigate(createBookDemoUrl("marketing_agency_cta"))
+              }
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
               {t("bookADemo")}

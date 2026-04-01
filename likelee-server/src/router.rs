@@ -679,6 +679,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::bookings::list).post(crate::bookings::create),
         )
         .route(
+            "/api/booking/calendly-url",
+            get(crate::calendly::get_calendly_booking_url),
+        )
+        .route(
             "/api/calendly/settings",
             get(crate::calendly::get_agency_calendly_settings)
                 .post(crate::calendly::update_agency_calendly_settings),
@@ -1048,6 +1052,26 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::creator_agency_connection::disconnect_agency),
         )
         .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/approve",
+            post(crate::creator_agency_connection::approve_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/reject",
+            post(crate::creator_agency_connection::reject_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/contract",
+            get(crate::creator_agency_connection::get_agency_contract_summary),
+        )
+        .route(
+            "/api/marketplace/contracts/:id/sync",
+            post(crate::agency_marketplace_contracts::sync_contract_endpoint),
+        )
+        .route(
+            "/api/marketplace/contracts/:id/finalize",
+            post(crate::agency_marketplace_contracts::finalize_contract_endpoint),
+        )
+        .route(
             "/api/invites/agency-talent/:token",
             get(crate::agency_talent_invites::get_by_token),
         )
@@ -1102,6 +1126,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::calendly::handle_calendly_webhook),
         )
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
+        .route(
+            "/webhooks/docuseal/marketplace-contracts",
+            post(crate::agency_marketplace_contracts::handle_webhook),
+        )
         .route(
             "/webhooks/docuseal/campaign-contracts",
             post(crate::brand_campaigns::handle_campaign_contract_webhook),

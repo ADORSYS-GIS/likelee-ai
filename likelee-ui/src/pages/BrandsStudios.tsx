@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function BrandsStudios() {
   const navigate = useNavigate();
@@ -103,7 +104,9 @@ export default function BrandsStudios() {
                 Browse Creator Marketplace
               </Button>
               <Button
-                onClick={() => navigate(createPageUrl("SalesInquiry"))}
+                onClick={() =>
+                  navigate(createBookDemoUrl("brands_studios_hero"))
+                }
                 variant="outline"
                 className="h-14 px-10 text-base font-medium border-2 border-black rounded-none"
               >
@@ -739,7 +742,9 @@ export default function BrandsStudios() {
                   Fixed 7-, 15-, or 30-sec asset
                 </p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$350</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $350
+                  </span>
                   <span className="text-gray-600 ml-2">per 15 seconds</span>
                 </div>
               </div>
@@ -760,7 +765,9 @@ export default function BrandsStudios() {
                   Performance-driven campaigns
                 </p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$12</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $12
+                  </span>
                   <span className="text-gray-600 ml-2">CPM</span>
                 </div>
               </div>
@@ -774,7 +781,9 @@ export default function BrandsStudios() {
                 </h3>
                 <p className="text-gray-600 mb-4">TV, OOH, or paid social</p>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">$600</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $600
+                  </span>
                   <span className="text-gray-600 ml-2">/ 30-day region</span>
                 </div>
               </div>

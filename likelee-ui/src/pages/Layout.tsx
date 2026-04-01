@@ -22,6 +22,7 @@ export default function Layout({ children, currentPageName }) {
           : "/CreatorDashboard";
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const loweredPath = location.pathname.toLowerCase();
 
   // Check if we're on a Studio page
   const isStudioPage =
@@ -41,6 +42,14 @@ export default function Layout({ children, currentPageName }) {
     currentPageName === "Landing" ||
     location.pathname === "/" ||
     location.pathname.toLowerCase() === "/landing";
+
+  const isBookingFlow =
+    currentPageName === "BookDemo" ||
+    currentPageName === "BookDemoThanks" ||
+    loweredPath === "/bookdemo" ||
+    loweredPath === "/book-demo" ||
+    loweredPath === "/bookdemothanks" ||
+    loweredPath === "/book-demo/thanks";
 
   // Scroll to top on route change
   useEffect(() => {
@@ -77,13 +86,6 @@ export default function Layout({ children, currentPageName }) {
       gtag('config', 'G-3D3HD3NBKY');
     `;
     document.head.appendChild(script2);
-
-    // Load Ubuntu font
-    const fontLink = document.createElement("link");
-    fontLink.rel = "stylesheet";
-    fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap";
-    document.head.appendChild(fontLink);
 
     // Add meta tags for SEO
     const updateMetaTags = () => {
@@ -172,10 +174,7 @@ export default function Layout({ children, currentPageName }) {
   // If we're on a Studio page, don't render the layout navigation
   if (isStudioPage) {
     return (
-      <div
-        className="min-h-screen bg-white"
-        style={{ fontFamily: "'Ubuntu', sans-serif" }}
-      >
+      <div className="min-h-screen bg-white">
         <noscript>
           <div
             style={{
@@ -272,14 +271,6 @@ export default function Layout({ children, currentPageName }) {
             --brands-primary: #F7B750;
             --brands-secondary: #FAD54C;
           }
-          
-          * {
-            font-family: 'Ubuntu', sans-serif;
-          }
-          
-          body {
-            font-family: 'Ubuntu', sans-serif;
-          }
         `}</style>
         <main>{children}</main>
       </div>
@@ -287,10 +278,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{ fontFamily: "'Ubuntu', sans-serif" }}
-    >
+    <div className="min-h-screen bg-white">
       <noscript>
         <div
           style={{
@@ -510,212 +498,232 @@ export default function Layout({ children, currentPageName }) {
           --brands-primary: #F7B750;
           --brands-secondary: #FAD54C;
         }
-        
-        * {
-          font-family: 'Ubuntu', sans-serif;
-        }
-        
-        body {
-          font-family: 'Ubuntu', sans-serif;
-        }
       `}</style>
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-xl border-b border-gray-200 z-50 shadow-sm">
-        <div
-          className={
-            isDashboardPage
-              ? "w-full px-6 lg:px-8"
-              : "max-w-7xl mx-auto px-6 lg:px-8"
-          }
-        >
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link
-              to={createPageUrl("Landing")}
-              className="flex items-center gap-3 group"
+        {isBookingFlow ? (
+          <div className="max-w-5xl mx-auto px-6 lg:px-8">
+            <div className="flex items-center justify-between h-20">
+              <Link
+                to={createPageUrl("Landing")}
+                className="flex items-center gap-3 group"
+              >
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+                  alt="Likelee Logo"
+                  width="40"
+                  height="40"
+                  className="h-10 w-auto transform transition-transform group-hover:scale-105"
+                />
+                <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
+                  Likelee
+                </span>
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              className={
+                isDashboardPage
+                  ? "w-full px-6 lg:px-8"
+                  : "max-w-7xl mx-auto px-6 lg:px-8"
+              }
             >
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
-                alt="Likelee Logo"
-                width="40"
-                height="40"
-                className="h-10 w-auto transform transition-transform group-hover:scale-105"
-              />
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
-                Likelee
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            {!isDashboardPage && (
-              <div className="hidden md:flex items-center gap-1">
+              <div className="flex items-center justify-between h-16">
+                {/* Logo */}
                 <Link
-                  to={createPageUrl("AgencySelection")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  to={createPageUrl("Landing")}
+                  className="flex items-center gap-3 group"
                 >
-                  {t("agencies")}
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+                    alt="Likelee Logo"
+                    width="40"
+                    height="40"
+                    className="h-10 w-auto transform transition-transform group-hover:scale-105"
+                  />
+                  <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
+                    Likelee
+                  </span>
                 </Link>
 
-                <Link
-                  to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AboutUs")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("aboutUs")}
-                </Link>
-
-                <Link
-                  to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("Contact")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("contact")}
-                </Link>
-
-                {!authenticated ? (
-                  <Link
-                    to="/Login"
-                    className="px-5 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-md hover:bg-[#2AB8C1] transition-all"
-                  >
-                    {t("common.signIn")}
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-3 ml-4">
-                    {currentPageName !== "OrganizationSignup" && (
-                      <Link
-                        to={dashboardPath}
-                        className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
-                      >
-                        {t("common.dashboard")}
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => logout()}
-                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                      title={t("common.logout")}
+                {/* Desktop Navigation */}
+                {!isDashboardPage && (
+                  <div className="hidden md:flex items-center gap-1">
+                    <Link
+                      to={createPageUrl("AgencySelection")}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                        location.pathname === createPageUrl("AgencySelection")
+                          ? "text-gray-900 bg-gray-100"
+                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
                     >
-                      <LogOut className="w-5 h-5" />
-                    </button>
+                      {t("agencies")}
+                    </Link>
+
+                    <Link
+                      to={createPageUrl("AboutUs")}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                        location.pathname === createPageUrl("AboutUs")
+                          ? "text-gray-900 bg-gray-100"
+                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                    >
+                      {t("aboutUs")}
+                    </Link>
+
+                    <Link
+                      to={createPageUrl("Contact")}
+                      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                        location.pathname === createPageUrl("Contact")
+                          ? "text-gray-900 bg-gray-100"
+                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                    >
+                      {t("contact")}
+                    </Link>
+
+                    {!authenticated ? (
+                      <Link
+                        to="/Login"
+                        className="px-5 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-md hover:bg-[#2AB8C1] transition-all"
+                      >
+                        {t("common.signIn")}
+                      </Link>
+                    ) : (
+                      <div className="flex items-center gap-3 ml-4">
+                        {currentPageName !== "OrganizationSignup" && (
+                          <Link
+                            to={dashboardPath}
+                            className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                          >
+                            {t("common.dashboard")}
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => logout()}
+                          className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                          title={t("common.logout")}
+                        >
+                          <LogOut className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Language Switcher and Mobile Menu Button */}
+                <div className="flex items-center gap-2">
+                  {!isLandingPage && <LanguageSwitcher />}
+                  <button
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="md:hidden text-gray-600 hover:text-gray-900 p-2"
+                  >
+                    {mobileMenuOpen ? (
+                      <X className="w-6 h-6" />
+                    ) : (
+                      <Menu className="w-6 h-6" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Navigation */}
+            {mobileMenuOpen && (
+              <div className="md:hidden border-t border-gray-100 bg-white">
+                <div className="px-4 py-3 space-y-1">
+                  <Link
+                    to={createPageUrl("AgencySelection")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                      location.pathname === createPageUrl("AgencySelection")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t("agencies")}
+                  </Link>
+
+                  <Link
+                    to={createPageUrl("AboutUs")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                      location.pathname === createPageUrl("AboutUs")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t("aboutUs")}
+                  </Link>
+
+                  <Link
+                    to={createPageUrl("Contact")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                      location.pathname === createPageUrl("Contact")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t("contact")}
+                  </Link>
+                  {!isLandingPage && (
+                    <div className="px-4 py-3">
+                      <LanguageSwitcher />
+                    </div>
+                  )}
+
+                  <div className="pt-4 px-4">
+                    {!authenticated ? (
+                      <Link
+                        to="/Login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-md"
+                      >
+                        <LogIn className="w-5 h-5" />
+                        {t("common.signIn")}
+                      </Link>
+                    ) : (
+                      <div className="space-y-3 w-full">
+                        <Link
+                          to={dashboardPath}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                        >
+                          {t("common.dashboard")}
+                        </Link>
+                        <button
+                          onClick={() => {
+                            logout();
+                            setMobileMenuOpen(false);
+                          }}
+                          className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          {t("common.logout")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
-
-            {/* Language Switcher and Mobile Menu Button */}
-            <div className="flex items-center gap-2">
-              {!isLandingPage && <LanguageSwitcher />}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden text-gray-600 hover:text-gray-900 p-2"
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white">
-            <div className="px-4 py-3 space-y-1">
-              <Link
-                to={createPageUrl("AgencySelection")}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("AgencySelection")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t("agencies")}
-              </Link>
-
-              <Link
-                to={createPageUrl("AboutUs")}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t("aboutUs")}
-              </Link>
-
-              <Link
-                to={createPageUrl("Contact")}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t("contact")}
-              </Link>
-              {!isLandingPage && (
-                <div className="px-4 py-3">
-                  <LanguageSwitcher />
-                </div>
-              )}
-
-              <div className="pt-4 px-4">
-                {!authenticated ? (
-                  <Link
-                    to="/Login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-md"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    {t("common.signIn")}
-                  </Link>
-                ) : (
-                  <div className="space-y-3 w-full">
-                    <Link
-                      to={dashboardPath}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
-                    >
-                      {t("common.dashboard")}
-                    </Link>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      {t("common.logout")}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          </>
         )}
       </nav>
 
       {/* Main Content */}
-      <main className="pt-16">{children}</main>
+      <main className={isBookingFlow ? "pt-20" : "pt-16"}>{children}</main>
 
       {/* Footer - Hidden on Dashboard pages */}
-      {!isDashboardPage && (
+      {!isDashboardPage && !isBookingFlow && (
         <footer className="bg-white border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
             <div className="grid md:grid-cols-4 gap-12">
@@ -732,7 +740,7 @@ export default function Layout({ children, currentPageName }) {
                     height="40"
                     className="h-10 w-auto"
                   />
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-xl font-bold text-gray-900 font-display">
                     Likelee
                   </span>
                 </Link>

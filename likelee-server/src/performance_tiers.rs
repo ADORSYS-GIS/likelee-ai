@@ -47,6 +47,9 @@ pub struct TalentPerformance {
     pub tier: TierRule,
     pub commission_rate: f64,
     pub is_custom_rate: bool,
+    pub relationship_type: String,
+    pub commission_source: String,
+    pub is_editable: bool,
 }
 
 #[derive(Serialize)]
@@ -97,6 +100,16 @@ pub struct PerformanceStats {
     pub talent_id: String,
     pub earnings_cents: i64,
     pub booking_count: i64,
+}
+
+#[derive(Deserialize)]
+struct ActiveMarketplaceContractRow {
+    creator_id: String,
+    commission_rate: f64,
+}
+
+fn today_iso() -> String {
+    chrono::Utc::now().date_naive().to_string()
 }
 
 #[derive(Serialize)]
@@ -225,9 +238,17 @@ pub async fn get_performance_tiers(
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
     let agency_id = &auth_user.id;
+    let today = today_iso();
 
     // Parallelize calls
-    let (resp_tiers_db, resp_talents, resp_connected, resp_stats, resp_agency) = tokio::try_join!(
+    let (
+        resp_tiers_db,
+        resp_talents,
+        resp_connected,
+        resp_stats,
+        resp_agency,
+        resp_marketplace_contracts,
+    ) = tokio::try_join!(
         state
             .pg
             .from("performance_tiers")
@@ -275,6 +296,15 @@ pub async fn get_performance_tiers(
             .from("agencies")
             .select("performance_commission_config")
             .eq("id", agency_id)
+            .execute(),
+        state
+            .pg
+            .from("agency_creator_marketplace_contracts")
+            .select("id,creator_id,commission_rate")
+            .eq("agency_id", agency_id)
+            .eq("status", "active")
+            .lte("valid_from", &today)
+            .gte("valid_until", &today)
             .execute()
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -411,6 +441,18 @@ pub async fn get_performance_tiers(
     let connected_json: Vec<serde_json::Value> =
         serde_json::from_str(&text_connected).unwrap_or_default();
 
+    let text_marketplace_contracts = resp_marketplace_contracts
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let marketplace_contracts: Vec<ActiveMarketplaceContractRow> =
+        serde_json::from_str(&text_marketplace_contracts).unwrap_or_default();
+    let active_contracts_by_creator: HashMap<String, ActiveMarketplaceContractRow> =
+        marketplace_contracts
+            .into_iter()
+            .map(|row| (row.creator_id.clone(), row))
+            .collect();
+
     // Load per-creator custom commission overrides for this agency.
     let mut creator_ids: Vec<String> = vec![];
     for t in &talents_json {
@@ -526,7 +568,35 @@ pub async fn get_performance_tiers(
             let custom_rate = creator_id
                 .as_ref()
                 .and_then(|cid| custom_by_creator.get(cid).copied());
-            let final_rate = custom_rate.unwrap_or(assigned_tier.commission_rate);
+            let active_contract = creator_id
+                .as_ref()
+                .and_then(|cid| active_contracts_by_creator.get(cid));
+            let (relationship_type, commission_source, is_editable, final_rate, is_custom_rate) =
+                if let Some(contract) = active_contract {
+                    (
+                        "marketplace_connected".to_string(),
+                        "contract".to_string(),
+                        false,
+                        contract.commission_rate.clamp(0.0, 100.0),
+                        false,
+                    )
+                } else if let Some(rate) = custom_rate {
+                    (
+                        "internal".to_string(),
+                        "custom_override".to_string(),
+                        true,
+                        rate,
+                        true,
+                    )
+                } else {
+                    (
+                        "internal".to_string(),
+                        "tier_default".to_string(),
+                        true,
+                        assigned_tier.commission_rate,
+                        false,
+                    )
+                };
 
             group.talents.push(TalentPerformance {
                 id: id.clone(),
@@ -537,7 +607,10 @@ pub async fn get_performance_tiers(
                 bookings_this_month: booking_count,
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
-                is_custom_rate: custom_rate.is_some(),
+                is_custom_rate,
+                relationship_type,
+                commission_source,
+                is_editable,
             });
         }
 
@@ -585,8 +658,34 @@ pub async fn get_performance_tiers(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
+        let active_contract = active_contracts_by_creator.get(&creator_id);
         let custom_rate = custom_by_creator.get(&creator_id).copied();
-        let final_rate = custom_rate.unwrap_or(assigned_tier.commission_rate);
+        let (relationship_type, commission_source, is_editable, final_rate, is_custom_rate) =
+            if let Some(contract) = active_contract {
+                (
+                    "marketplace_connected".to_string(),
+                    "contract".to_string(),
+                    false,
+                    contract.commission_rate.clamp(0.0, 100.0),
+                    false,
+                )
+            } else if let Some(rate) = custom_rate {
+                (
+                    "marketplace_connected".to_string(),
+                    "custom_override".to_string(),
+                    true,
+                    rate,
+                    true,
+                )
+            } else {
+                (
+                    "marketplace_connected".to_string(),
+                    "tier_default".to_string(),
+                    true,
+                    assigned_tier.commission_rate,
+                    false,
+                )
+            };
 
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
@@ -598,7 +697,10 @@ pub async fn get_performance_tiers(
                 bookings_this_month: 0,
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
-                is_custom_rate: custom_rate.is_some(),
+                is_custom_rate,
+                relationship_type,
+                commission_source,
+                is_editable,
             });
         }
     }
@@ -683,6 +785,33 @@ pub async fn update_talent_commission(
         if let Some(cid) = row.get("creator_id").and_then(|v| v.as_str()) {
             actual_creator_id = cid.to_string();
         }
+    }
+    let today = today_iso();
+
+    let contract_guard_resp = state
+        .pg
+        .from("agency_creator_marketplace_contracts")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("creator_id", &actual_creator_id)
+        .eq("status", "active")
+        .lte("valid_from", &today)
+        .gte("valid_until", &today)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_guard_text = contract_guard_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let contract_guard_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&contract_guard_text).unwrap_or_default();
+    if !contract_guard_rows.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Commission for marketplace-connected creators is controlled by the active signed contract.".to_string(),
+        ));
     }
 
     let resp_user = state
@@ -866,6 +995,34 @@ pub async fn bulk_update_talent_commissions(
             if let Some(cid) = row.get("creator_id").and_then(|v| v.as_str()) {
                 actual_creator_id = cid.to_string();
             }
+        }
+        let today = today_iso();
+
+        let contract_guard_resp = state
+            .pg
+            .from("agency_creator_marketplace_contracts")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .eq("creator_id", &actual_creator_id)
+            .eq("status", "active")
+            .lte("valid_from", &today)
+            .gte("valid_until", &today)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let contract_guard_text = contract_guard_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let contract_guard_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&contract_guard_text).unwrap_or_default();
+        if !contract_guard_rows.is_empty() {
+            skipped.push(json!({
+                "creator_id": actual_creator_id,
+                "reason": "contract_controlled"
+            }));
+            continue;
         }
 
         if let Some(new_rate_raw) = update.custom_rate {
