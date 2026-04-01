@@ -60,9 +60,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // For OAuth returns, check early if we should redirect without rendering login form
-  const isInitialOAuthCheck = React.useRef(true);
-
   const searchParams = React.useMemo(
     () => new URLSearchParams(location.search),
     [location.search],
@@ -129,42 +126,6 @@ export default function Login() {
   React.useEffect(() => {
     setUserType(preferredRole);
   }, [preferredRole]);
-
-  // Early redirect for OAuth returns: skip login form entirely
-  // This prevents showing the login page briefly when OAuth redirect happens
-  React.useEffect(() => {
-    if (isOauthReturn && initialized) {
-      console.log("[Login] OAuth return detected, checking auth state...", {
-        isOauthReturn,
-        authenticated,
-      });
-
-      // If user is authenticated from OAuth but didn't complete signup, go directly to signup
-      if (authenticated && (profile === null || profile === undefined)) {
-        const oauthRole =
-          preferredRoleFromQuery === "creator" ||
-          preferredRoleFromQuery === "brand" ||
-          preferredRoleFromQuery === "agency"
-            ? preferredRoleFromQuery
-            : "creator";
-        const signupUrl = getSignupPathForRole(oauthRole, creatorType);
-        console.log(
-          "[Login] OAuth user needs to complete signup, redirecting to:",
-          signupUrl,
-        );
-        navigate(signupUrl, { replace: true });
-        return; // Skip rendering login form
-      }
-    }
-  }, [
-    isOauthReturn,
-    initialized,
-    authenticated,
-    profile,
-    preferredRoleFromQuery,
-    creatorType,
-    navigate,
-  ]);
 
   React.useEffect(() => {
     console.log("[Login] useEffect START", {
@@ -366,13 +327,9 @@ export default function Login() {
     return "/Register";
   };
 
-  // Show loading state when redirecting
-  // For OAuth returns, show loading state until redirect completes
+  // Keep authenticated OAuth callbacks on the redirect loader until routing settles.
   const shouldShowLoading =
-    isRedirecting ||
-    (isOauthReturn &&
-      (!initialized ||
-        (authenticated && (profile === null || profile === undefined))));
+    isRedirecting || (isOauthReturn && (!initialized || authenticated));
 
   if (shouldShowLoading) {
     return (
