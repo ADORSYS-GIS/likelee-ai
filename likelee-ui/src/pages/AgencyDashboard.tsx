@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 import { parseBackendError } from "@/utils/errorParser";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   LayoutDashboard,
@@ -44,6 +45,7 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
+  Sparkles,
   Download,
   Filter,
   Target,
@@ -117,7 +119,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
   clearStoredKycSessionUrl,
@@ -17742,6 +17743,69 @@ export default function AgencyDashboard() {
   const [supportSubject, setSupportSubject] = useState("");
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
+  const [refreshAllLoading, setRefreshAllLoading] = useState(false);
+
+  const refreshAll = async () => {
+    if (refreshAllLoading) return;
+    setRefreshAllLoading(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["agency-roster"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency-dashboard-overview"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-talent-performance"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-revenue-breakdown"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-licensing-pipeline"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-recent-activity"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-profile"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "brand-license-requests"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency-job-invites"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency-campaign-offers-my"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency-package-feedback"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-brand-connection-requests"],
+        }),
+      ]);
+
+      if ("serviceWorker" in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.update();
+        } catch {
+          // best-effort
+        }
+      }
+
+      toast({
+        title: "Refreshed",
+        description: "All dashboard data has been refreshed.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Refresh failed",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setRefreshAllLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!showNotifications && !showProfileMenu) return;
@@ -17821,6 +17885,7 @@ export default function AgencyDashboard() {
             ],
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
           {
             id: "protection",
             label: "Protection & Usage",
@@ -18151,6 +18216,22 @@ export default function AgencyDashboard() {
 
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
             <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-500 hover:text-gray-900"
+              onClick={() => void refreshAll()}
+              disabled={refreshAllLoading}
+              aria-label="Refresh all"
+            >
+              <RefreshCw
+                className={
+                  refreshAllLoading
+                    ? "w-5 h-5 animate-spin"
+                    : "w-5 h-5"
+                }
+              />
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={() =>
@@ -18161,7 +18242,10 @@ export default function AgencyDashboard() {
               className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
             >
               {irlAddonLocked ? (
-                "Add IRL Booking"
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Add IRL Booking
+                </>
               ) : (
                 <>
                   {effectiveAgencyMode === "AI" ? "AI" : "IRL"}

@@ -84,3 +84,19 @@ SET linkedin_link = 'https://' || linkedin_link
 WHERE linkedin_link IS NOT NULL AND linkedin_link != '' AND linkedin_link NOT LIKE 'http%';
 
 COMMIT;
+
+BEGIN;
+
+-- 8. Support multiple comp-card uploads per job application
+ALTER TABLE public.job_applications
+  ADD COLUMN IF NOT EXISTS comp_cards jsonb;
+
+-- Default to empty array to simplify reads
+UPDATE public.job_applications
+SET comp_cards = '[]'::jsonb
+WHERE comp_cards IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_job_applications_comp_cards
+  ON public.job_applications USING GIN (comp_cards);
+
+COMMIT;
