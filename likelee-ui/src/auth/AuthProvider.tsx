@@ -8,6 +8,7 @@ import React, {
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { readAuthIntent } from "./onboarding";
 
 interface AuthContextValue {
   supabase: SupabaseClient;
@@ -17,7 +18,10 @@ interface AuthContextValue {
   user?: User | null;
   profile?: Profile | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithProvider: (provider: "google") => Promise<void>;
+  loginWithProvider: (
+    provider: "google",
+    options?: { redirectTo?: string },
+  ) => Promise<void>;
   logout: () => Promise<void>;
   register: (
     email: string,
@@ -58,16 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getUserRoleHint = (user: User | null): string => {
     if (!user) return "";
     return String(user.user_metadata?.role || user.app_metadata?.role || "").trim();
-  };
-
-  const readAuthIntent = (): { role?: string; creatorType?: string | null } | null => {
-    try {
-      const raw = localStorage.getItem("likelee_auth_intent");
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
   };
 
   const redirectToPasswordUpdateIfNeeded = (event?: string) => {
@@ -188,47 +182,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         console.log("[AuthProvider] Setting profile with role:", resolvedRole);
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
-      } else if (userEmail && (table === "creators" || !table) && !isOAuthUser) {
-        // Profile missing in profiles table, create it (only for email/password creators, NOT OAuth)
-        // OAuth users should be redirected to signup forms instead
-        console.log("[AuthProvider] Profile missing, auto-creating for email/password user:", userId);
-        const { data: newProfile, error: insertError } = await supabase
-          .from("creators")
-          .upsert(
-            {
-              id: userId,
-              email: userEmail,
-              full_name: userFullName,
-              role: roleHint || "creator",
-            },
-            { onConflict: "id" },
-          )
-          .select()
-          .single();
-
-        if (insertError) {
-          if (
-            insertError.code === "23505" ||
-            insertError.message.includes("duplicate key")
-          ) {
-            const { data: existingProfile } = await supabase
-              .from("creators")
-              .select("*")
-              .eq("id", userId)
-              .maybeSingle();
-            if (existingProfile)
-              setProfile({
-                ...existingProfile,
-                role: roleHint || existingProfile.role,
-              });
-          } else {
-            console.error("Error creating profile:", insertError);
-          }
-        } else if (newProfile) {
-          setProfile({ ...newProfile, role: roleHint || newProfile.role });
-        }
       } else {
-        // No profile found and either not eligible for auto-creation or is OAuth user
+        // No profile found yet. Let the onboarding flow create the record explicitly.
         console.log("[AuthProvider] No profile found, setting profile to null", {
           isOAuthUser,
           userEmail,
@@ -259,6 +214,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const ensureRoleMetadata = async (currentUser: User | null) => {
+      if (!currentUser) return null;
+
+      const existingRole = getUserRoleHint(currentUser);
+      const intent = readAuthIntent();
+      if (existingRole || !intent?.role) {
+        return null;
+      }
+
+      try {
+        const nextMetadata = {
+          ...(currentUser.user_metadata || {}),
+          role: intent.role,
+        };
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: nextMetadata,
+        });
+        if (updateError) throw updateError;
+
+        const { data: refreshed, error: refreshError } =
+          await supabase.auth.refreshSession();
+        if (refreshError) throw refreshError;
+
+        return refreshed.session ?? null;
+      } catch (err) {
+        console.error("Failed to set role metadata:", err);
+        return null;
+      }
+    };
+
     const applySession = (nextSession: any | null) => {
       const nextUser = nextSession?.user ?? null;
       const prevUserId = userRef.current?.id ?? null;
@@ -279,7 +264,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, _session) => {
-        const session = _session;
+        const ensuredSession =
+          event === "SIGNED_IN" ? await ensureRoleMetadata(_session?.user ?? null) : null;
+        const session = ensuredSession ?? _session;
         const currentUser = applySession(session);
 
         redirectToPasswordUpdateIfNeeded(event);
@@ -287,32 +274,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           const currentProfile = profileRef.current;
 
-          // For new OAuth users, set role from auth intent if not already set
-          const hasRole = getUserRoleHint(currentUser);
-          if (!hasRole && event === "SIGNED_IN") {
-            const intent = readAuthIntent();
-            if (intent?.role) {
-              try {
-                const nextMetadata = {
-                  ...(currentUser.user_metadata || {}),
-                  role: intent.role,
-                };
-                await supabase.auth.updateUser({
-                  data: nextMetadata,
-                });
-              } catch (err) {
-                console.error("Failed to set role metadata:", err);
-              }
-            }
-          }
-
           if (!currentProfile || currentProfile.id !== currentUser.id) {
             const isOAuth = currentUser.app_metadata?.provider === "google";
+            const roleHint = getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
             fetchProfile(
               currentUser.id,
               currentUser.email,
               currentUser.user_metadata?.full_name,
-              currentUser.user_metadata?.role,
+              roleHint,
               isOAuth,
             );
           }
@@ -324,8 +293,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     );
     // Initialize from current session as well
-    supabase.auth.getSession().then(({ data }) => {
-      const currentUser = applySession(data.session ?? null);
+    supabase.auth.getSession().then(async ({ data }) => {
+      const ensuredSession = await ensureRoleMetadata(data.session?.user ?? null);
+      const currentSession = ensuredSession ?? data.session ?? null;
+      const currentUser = applySession(currentSession);
 
       redirectToPasswordUpdateIfNeeded();
 
@@ -337,11 +308,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (!currentProfile || currentProfile.id !== currentUser.id)
       ) {
         const isOAuth = currentUser.app_metadata?.provider === "google";
+        const roleHint = getUserRoleHint(currentUser) || readAuthIntent()?.role || "";
         fetchProfile(
           currentUser.id,
           currentUser.email,
           currentUser.user_metadata?.full_name,
-          currentUser.user_metadata?.role,
+          roleHint,
           isOAuth,
         );
       } else if (!currentUser) {
@@ -374,9 +346,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (error) throw error;
       },
-      loginWithProvider: async (provider: "google") => {
+      loginWithProvider: async (
+        provider: "google",
+        options?: { redirectTo?: string },
+      ) => {
         if (!supabase) throw new Error("Supabase not configured");
-        const redirectTo = window.location.href; // return to current page so existing logic can route accordingly
+        const redirectTo = options?.redirectTo || window.location.href;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
           options: { redirectTo },
@@ -406,11 +381,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (error) throw error;
 
-        // Profile creation is now handled immediately after signup to capture full_name.
-        if (data.user) {
-          await fetchProfile(data.user.id, data.user.email, displayName, undefined, false);
-        }
-
         return { user: data.user, session: data.session };
       },
       resendEmailConfirmation: async (email: string, redirectTo?: string) => {
@@ -437,7 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user.id,
             user.email,
             user.user_metadata?.full_name,
-            user.user_metadata?.role,
+            getUserRoleHint(user) || readAuthIntent()?.role || "",
             isOAuth,
           );
         }

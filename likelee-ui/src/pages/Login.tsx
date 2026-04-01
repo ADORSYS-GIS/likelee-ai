@@ -5,10 +5,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import {
-  clearAuthIntent,
-  getOrganizationSignupPath,
+  getDashboardPath,
+  getOnboardingPath,
   getSignupPathForRole,
-  isOrganizationOnboardingIncomplete,
   readAuthIntent,
   saveAuthIntent,
   type AuthIntentRole,
@@ -60,6 +59,9 @@ export default function Login() {
   const [loginAttempted, setLoginAttempted] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // For OAuth returns, check early if we should redirect without rendering login form
+  const isInitialOAuthCheck = React.useRef(true);
 
   const searchParams = React.useMemo(
     () => new URLSearchParams(location.search),
@@ -127,6 +129,34 @@ export default function Login() {
   React.useEffect(() => {
     setUserType(preferredRole);
   }, [preferredRole]);
+
+  // Early redirect for OAuth returns: skip login form entirely
+  // This prevents showing the login page briefly when OAuth redirect happens
+  React.useEffect(() => {
+    if (isOauthReturn && initialized) {
+      console.log("[Login] OAuth return detected, checking auth state...", {
+        isOauthReturn,
+        authenticated,
+      });
+
+      // If user is authenticated from OAuth but didn't complete signup, go directly to signup
+      if (authenticated && (profile === null || profile === undefined)) {
+        const oauthRole =
+          preferredRoleFromQuery === "creator" ||
+          preferredRoleFromQuery === "brand" ||
+          preferredRoleFromQuery === "agency"
+            ? preferredRoleFromQuery
+            : "creator";
+        const signupUrl = getSignupPathForRole(oauthRole, creatorType);
+        console.log(
+          "[Login] OAuth user needs to complete signup, redirecting to:",
+          signupUrl,
+        );
+        navigate(signupUrl, { replace: true });
+        return; // Skip rendering login form
+      }
+    }
+  }, [isOauthReturn, initialized, authenticated, profile, preferredRoleFromQuery, creatorType, navigate]);
 
   React.useEffect(() => {
     console.log("[Login] useEffect START", {
@@ -222,36 +252,10 @@ export default function Login() {
         profileRole: profile.role,
         userType,
       });
-      // If we already detected a mismatch, don't do anything until logout finishes
-      if (accessDenied) return;
-
-      // Enforce role-based login
       const normalizedRole = (profile.role || "").toLowerCase().trim();
-      const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
-        setAccessDenied(true);
-        logout();
-        return;
-      }
-
-      const roleMatchesTab =
-        normalizedRole === normalizedUserType ||
-        (normalizedUserType === "creator" && normalizedRole === "talent");
-
-      if (!roleMatchesTab) {
-        const roleLabel =
-          normalizedRole === "brand"
-            ? "Brand"
-            : normalizedRole === "agency"
-              ? "Agency"
-              : normalizedRole === "talent"
-                ? "Creator (Talent)"
-                : "Creator";
-        setError(
-          `Account not found under this tab. Your account is registered as ${roleLabel}. Please switch to the ${roleLabel} tab to continue.`,
-        );
         setAccessDenied(true);
         logout();
         return;
@@ -264,10 +268,16 @@ export default function Login() {
       if (!isOnboardingComplete) {
         // Redirect to appropriate signup form to complete profile
         setIsRedirecting(true);
-        const signupPath = getSignupPathForRole(
-          profile.role as AuthIntentRole,
-          authIntent?.creatorType || creatorType,
-        );
+        const signupPath =
+          getOnboardingPath({
+            role: profile.role,
+            agency_type: profile.agency_type,
+            creator_type: profile.creator_type || authIntent?.creatorType || creatorType,
+          }) ||
+          getSignupPathForRole(
+            profile.role as AuthIntentRole,
+            authIntent?.creatorType || creatorType,
+          );
         navigate(signupPath, { replace: true });
         return;
       }
@@ -275,20 +285,10 @@ export default function Login() {
       // Set redirecting state to hide content during navigation
       setIsRedirecting(true);
 
-      if (creatorType) {
-        navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-          { replace: true },
-        );
-      } else if (redirectTarget) {
+      if (redirectTarget) {
         navigate(redirectTarget, { replace: true });
       } else {
-        const dashboard =
-          profile.role === "brand"
-            ? "/BrandDashboard"
-            : profile.role === "agency"
-              ? "/AgencyDashboard"
-              : "/CreatorDashboard";
+        const dashboard = getDashboardPath(profile);
         navigate(dashboard, { replace: true });
       }
     }
@@ -331,14 +331,28 @@ export default function Login() {
   };
 
   const getSignupLink = () => {
-    if (userType === "creator") return "/CreatorSignupOptions";
-    if (userType === "brand") return "/OrganizationSignup?type=brand_company";
-    if (userType === "agency") return "/AgencySelection";
+    if (
+      userType === "creator" ||
+      userType === "brand" ||
+      userType === "agency"
+    ) {
+      return getSignupPathForRole(
+        userType as AuthIntentRole,
+        creatorType || null,
+      );
+    }
     return "/Register";
   };
 
   // Show loading state when redirecting
-  if (isRedirecting) {
+  // For OAuth returns, show loading state until redirect completes
+  const shouldShowLoading =
+    isRedirecting ||
+    (isOauthReturn &&
+      (!initialized ||
+        (authenticated && (profile === null || profile === undefined))));
+
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -350,7 +364,9 @@ export default function Login() {
               Loading...
             </span>
           </div>
-          <p className="mt-4 text-gray-600">Redirecting...</p>
+          <p className="mt-4 text-gray-600">
+            {isOauthReturn ? "Completing sign up..." : "Redirecting..."}
+          </p>
         </div>
       </div>
     );
@@ -426,7 +442,9 @@ export default function Login() {
                           role: userType as "creator" | "brand" | "agency",
                           creatorType: creatorType || null,
                         });
-                        await loginWithProvider("google");
+                        await loginWithProvider("google", {
+                          redirectTo: googleLoginRedirectTo,
+                        });
                       } catch (err: any) {
                         toast({
                           title: t("auth.login.googleSignInFailed"),

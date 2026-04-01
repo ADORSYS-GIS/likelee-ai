@@ -11,8 +11,8 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 
 export default function TalentAgency() {
   const { t } = useTranslation();
@@ -72,9 +72,7 @@ export default function TalentAgency() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  `${createPageUrl("OrganizationSignup")}?type=talent_agency`,
-                )
+                navigate(getOrganizationSignupPathForType("talent_agency"))
               }
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
             >

@@ -5,10 +5,39 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  getDashboardPath,
+  getOnboardingPath,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+} from "@/auth/onboarding";
 
 export default function AgencySelection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { initialized, authenticated, profile, user } = useAuth();
+
+  React.useEffect(() => {
+    if (!initialized || !authenticated) return;
+    if (!profile) {
+      const role = String(
+        user?.user_metadata?.role || user?.app_metadata?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      if (role === "creator" || role === "brand" || role === "agency") {
+        navigate(getSignupPathForRole(role), { replace: true });
+      }
+      return;
+    }
+    const path = isOnboardingIncomplete(profile)
+      ? getOnboardingPath(profile)
+      : getDashboardPath(profile);
+    if (path) {
+      navigate(path, { replace: true });
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
 
   const items = [
     {

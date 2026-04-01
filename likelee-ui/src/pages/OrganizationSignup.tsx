@@ -48,7 +48,14 @@ import {
   getAgencyProfile,
   createOrganizationKycSession,
 } from "@/api/functions";
-import { clearAuthIntent } from "@/auth/onboarding";
+import {
+  clearAuthIntent,
+  getDashboardPath,
+  getOnboardingPath,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+  normalizeOrganizationSignupType,
+} from "@/auth/onboarding";
 
 const getProductionTypes = (t: any) => [
   {
@@ -205,7 +212,8 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile, initialized } = useAuth();
+  const { user, profile, refreshProfile, initialized, login, authenticated } =
+    useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -254,6 +262,9 @@ export default function OrganizationSignup() {
     bulk_onboard: "",
   });
 
+  // For OAuth users: 2 steps (org basics + type-specific details)
+  // For non-OAuth users: 2 steps (email/password + org basics, then type-specific details)
+  // Same number of steps, but different field requirements
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
@@ -305,6 +316,65 @@ export default function OrganizationSignup() {
     }
   };
 
+  const loginExistingAccount = async () => {
+    await login(normalizeEmail(formData.email), formData.password);
+    toast({
+      title: "Account found",
+      description:
+        "This email already belongs to an existing account. Continuing there now.",
+    });
+  };
+
+  const toOptionalText = (value: unknown) => {
+    const trimmed = String(value ?? "").trim();
+    return trimmed ? trimmed : undefined;
+  };
+
+  const getOrganizationBasics = (data: typeof formData) => {
+    const typedEmail = toOptionalText(data.email);
+
+    return {
+      organizationName:
+        toOptionalText(data.organization_name) ||
+        toOptionalText(profile?.company_name) ||
+        toOptionalText(profile?.agency_name),
+      contactName:
+        toOptionalText(data.contact_name) ||
+        toOptionalText(profile?.contact_name),
+      contactTitle:
+        toOptionalText(data.contact_title) ||
+        toOptionalText(profile?.contact_title),
+      email: typedEmail
+        ? normalizeEmail(typedEmail)
+        : toOptionalText(profile?.email) || toOptionalText(user?.email),
+      website:
+        toOptionalText(data.website) || toOptionalText(profile?.website),
+      phoneNumber:
+        toOptionalText(data.phone_number) ||
+        toOptionalText(profile?.phone_number),
+      agencyType:
+        toOptionalText(orgType) ||
+        toOptionalText(profile?.agency_type) ||
+        toOptionalText(profile?.organization_type),
+    };
+  };
+
+  const mergeOrganizationBasicsIntoForm = (source: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      email: prev.email || source?.email || user?.email || "",
+      organization_name:
+        prev.organization_name ||
+        source?.company_name ||
+        source?.agency_name ||
+        "",
+      contact_name: prev.contact_name || source?.contact_name || "",
+      contact_title: prev.contact_title || source?.contact_title || "",
+      website: prev.website || source?.website || "",
+      phone_number: prev.phone_number || source?.phone_number || "",
+    }));
+  };
+
   const isExistingOrganizationSignupError = (error: any) => {
     const code = String(error?.data?.code || error?.code || "").toLowerCase();
     const message = String(
@@ -337,14 +407,25 @@ export default function OrganizationSignup() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    let type = urlParams.get("type");
+    const rawType = urlParams.get("type");
+
+    if (rawType === "creator") {
+      const creatorType = urlParams.get("creator_type");
+      navigate(getSignupPathForRole("creator", creatorType), { replace: true });
+      return;
+    }
+
+    const type = normalizeOrganizationSignupType(rawType);
+    if (rawType && !type) {
+      navigate("/organization-signup", { replace: true });
+      return;
+    }
+
     if (type) {
-      if (type === "brand") type = "brand_company";
-      if (type === "agency") type = "marketing_agency";
       setOrgType(type);
       setIsPreSelected(true);
     }
-  }, []);
+  }, [navigate]);
 
   const flow = React.useMemo(() => {
     if (["brand_company", "production_studio"].includes(orgType))
@@ -355,6 +436,37 @@ export default function OrganizationSignup() {
       return "agency";
     return null;
   }, [orgType]);
+
+  useEffect(() => {
+    if (!initialized || !authenticated || profile === undefined) {
+      return;
+    }
+
+    if (profile) {
+      if (profile.role !== "brand" && profile.role !== "agency") {
+        const path = isOnboardingIncomplete(profile)
+          ? getOnboardingPath(profile)
+          : getDashboardPath(profile);
+        if (path) {
+          navigate(path, { replace: true });
+        }
+        return;
+      }
+      return;
+    }
+
+    const authRole = String(
+      user?.user_metadata?.role || user?.app_metadata?.role || "",
+    )
+      .trim()
+      .toLowerCase();
+    if (authRole === "creator" || authRole === "talent") {
+      navigate(
+        getSignupPathForRole("creator", new URLSearchParams(window.location.search).get("creator_type")),
+        { replace: true },
+      );
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
 
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
@@ -411,10 +523,7 @@ export default function OrganizationSignup() {
                   profile.agency_type ||
                   (isBrand ? "brand_company" : "marketing_agency"),
               );
-              setFormData((prev) => ({
-                ...prev,
-                email: profile.email || user.email || "",
-              }));
+              mergeOrganizationBasicsIntoForm(profile);
               setStep(2);
               return;
             }
@@ -509,10 +618,7 @@ export default function OrganizationSignup() {
                     orgProfile.agency_type ||
                     (brandProfile ? "brand_company" : "marketing_agency"),
                 );
-                setFormData((prev) => ({
-                  ...prev,
-                  email: orgProfile.email || user.email || "",
-                }));
+                mergeOrganizationBasicsIntoForm(orgProfile);
                 setStep(2);
               }
             } else {
@@ -627,23 +733,37 @@ export default function OrganizationSignup() {
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const organizationBasics = getOrganizationBasics(data);
+
+      if (!organizationBasics.organizationName) {
+        throw new Error("Organization name is required.");
+      }
+
       if (flow === "brand") {
         const payload = {
-          email: data.email,
+          email: organizationBasics.email || normalizeEmail(data.email),
           password: data.password,
-          company_name: data.organization_name,
-          website: data.website || undefined,
-          phone_number: data.phone_number || undefined,
+          company_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
         };
         return await registerBrand(payload);
       } else {
+        if (!organizationBasics.agencyType) {
+          throw new Error("Agency type is required.");
+        }
+
         const payload = {
-          email: data.email,
+          email: organizationBasics.email || normalizeEmail(data.email),
           password: data.password,
-          agency_name: data.organization_name,
-          agency_type: orgType,
-          website: data.website || undefined,
-          phone_number: data.phone_number || undefined,
+          agency_name: organizationBasics.organizationName,
+          agency_type: organizationBasics.agencyType,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
         };
         return await registerAgency(payload);
       }
@@ -676,6 +796,13 @@ export default function OrganizationSignup() {
     onError: async (error) => {
       if (isExistingOrganizationSignupError(error)) {
         try {
+          await loginExistingAccount();
+          return;
+        } catch {
+          // Existing unverified organization signups still resume via OTP.
+        }
+
+        try {
           await handleOrganizationOtpResend(false);
           setEmailVerificationPending(true);
           toast({
@@ -689,6 +816,13 @@ export default function OrganizationSignup() {
             "Existing organization signup found, but resend failed:",
             resendError,
           );
+          toast({
+            title: "Account already exists",
+            description:
+              "This email already belongs to another account. Sign in instead to continue with that account.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+          return;
         }
       }
 
@@ -704,8 +838,20 @@ export default function OrganizationSignup() {
   // Updated mutation for profile updates (Step 2)
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof formData) => {
+      const organizationBasics = getOrganizationBasics(data);
+
+      if (!organizationBasics.organizationName) {
+        throw new Error("Organization name is required.");
+      }
+
       if (flow === "brand") {
         return updateBrandProfile({
+          company_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          email: organizationBasics.email,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
           industry: data.industry,
           primary_goal: data.primary_goal,
           geographic_target: data.geographic_target,
@@ -718,8 +864,18 @@ export default function OrganizationSignup() {
           onboarding_step: "complete",
         });
       } else {
+        if (!organizationBasics.agencyType) {
+          throw new Error("Agency type is required.");
+        }
+
         return updateAgencyProfile({
-          agency_type: orgType,
+          agency_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          email: organizationBasics.email,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
+          agency_type: organizationBasics.agencyType,
           client_count: data.client_count,
           campaign_budget: data.campaign_budget,
           services_offered: data.services_offered,

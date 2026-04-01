@@ -46,7 +46,12 @@ import {
   storeKycSessionUrl,
 } from "@/utils/kycSession";
 import { formatKycReason } from "@/utils/kycDisplay";
-import { clearAuthIntent } from "@/auth/onboarding";
+import {
+  clearAuthIntent,
+  getDashboardPath,
+  getOnboardingPath,
+  isOnboardingIncomplete,
+} from "@/auth/onboarding";
 
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -272,7 +277,8 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, refreshProfile, user, authenticated } = useAuth();
+  const { login, refreshProfile, user, authenticated, profile, initialized } =
+    useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -374,6 +380,143 @@ export default function ReserveProfile() {
     }
   }, [isOAuthSignup, user, formData.email]);
 
+  useEffect(() => {
+    if (isOAuthSignup) {
+      setAuthMode("signup");
+      setStep((currentStep) => (currentStep < 2 ? 2 : currentStep));
+    }
+  }, [isOAuthSignup]);
+
+  useEffect(() => {
+    if (!initialized || !authenticated || profile === undefined) {
+      return;
+    }
+
+    if (!profile) {
+      const authRole = String(
+        user?.user_metadata?.role || user?.app_metadata?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      if (
+        authRole === "creator" ||
+        authRole === "talent" ||
+        isOAuthSignup
+      ) {
+        if (user?.email) {
+          setFormData((prev) =>
+            prev.email ? prev : { ...prev, email: user.email || "" },
+          );
+        }
+        if (user?.id) {
+          setProfileId(user.id);
+        }
+        setAuthMode("signup");
+        setStep((currentStep) => (currentStep < 2 ? 2 : currentStep));
+      }
+      return;
+    }
+
+    if (profile.role !== "creator" && profile.role !== "talent") {
+      navigate(getDashboardPath(profile), { replace: true });
+      return;
+    }
+
+    if (profile.creator_type && profile.creator_type !== creatorType) {
+      navigate(
+        `/ReserveProfile?type=${encodeURIComponent(profile.creator_type)}&mode=signup`,
+        { replace: true },
+      );
+      return;
+    }
+
+    setProfileId(profile.id || user?.id || null);
+    setFormData((prev) => ({
+      ...prev,
+      creator_type: profile.creator_type || prev.creator_type,
+      email: profile.email || user?.email || prev.email,
+      full_name: profile.full_name || prev.full_name,
+      stage_name: profile.stage_name || prev.stage_name,
+      city: profile.city || prev.city,
+      state: profile.state || prev.state,
+      birthdate: profile.birthdate || prev.birthdate,
+      gender: profile.gender || prev.gender,
+      ethnicity: Array.isArray(profile.ethnicity)
+        ? profile.ethnicity
+        : prev.ethnicity,
+      vibes: Array.isArray(profile.vibes) ? profile.vibes : prev.vibes,
+      visibility: profile.visibility || prev.visibility,
+      base_monthly_price_usd:
+        typeof profile.base_monthly_price_cents === "number" &&
+        profile.base_monthly_price_cents > 0
+          ? String(profile.base_monthly_price_cents / 100)
+          : prev.base_monthly_price_usd,
+      content_types: Array.isArray(profile.content_types)
+        ? profile.content_types
+        : prev.content_types,
+      content_other: profile.content_other || prev.content_other,
+      industries: Array.isArray(profile.industries)
+        ? profile.industries
+        : prev.industries,
+      primary_platform: profile.primary_platform || prev.primary_platform,
+      platform_handle: profile.platform_handle || prev.platform_handle,
+      work_types: Array.isArray(profile.work_types)
+        ? profile.work_types
+        : prev.work_types,
+      representation_status:
+        profile.representation_status || prev.representation_status,
+      headshot_url: profile.headshot_url || prev.headshot_url,
+      sport: profile.sport || prev.sport,
+      athlete_type: profile.athlete_type || prev.athlete_type,
+      school_name: profile.school_name || prev.school_name,
+      age: profile.age ? String(profile.age) : prev.age,
+      languages: profile.languages || prev.languages,
+      instagram_handle: profile.instagram_handle || prev.instagram_handle,
+      twitter_handle: profile.twitter_handle || prev.twitter_handle,
+      brand_categories: Array.isArray(profile.brand_categories)
+        ? profile.brand_categories
+        : prev.brand_categories,
+      bio: profile.bio || prev.bio,
+    }));
+
+    if (!isOnboardingIncomplete(profile)) {
+      navigate(getDashboardPath(profile), { replace: true });
+      return;
+    }
+
+    const resumePath = getOnboardingPath(profile);
+    if (resumePath && window.location.pathname !== resumePath.split("?")[0]) {
+      navigate(resumePath, { replace: true });
+      return;
+    }
+
+    setAuthMode("signup");
+
+    const normalizedStep = String(profile.onboarding_step || "")
+      .trim()
+      .toLowerCase();
+    if (normalizedStep === "agreements") {
+      setStep(4);
+      return;
+    }
+    if (
+      normalizedStep === "verification" ||
+      String(profile.kyc_status || "").trim().toLowerCase() === "approved"
+    ) {
+      setStep(3);
+      return;
+    }
+    setStep(2);
+  }, [
+    authenticated,
+    creatorType,
+    initialized,
+    isOAuthSignup,
+    navigate,
+    profile,
+    user,
+  ]);
+
   const [signupOtpOpen, setSignupOtpOpen] = useState(false);
 
   const requireSupabase = () => {
@@ -419,6 +562,15 @@ export default function ReserveProfile() {
     }
   };
 
+  const loginExistingAccount = async () => {
+    await login(normalizeEmail(formData.email), formData.password);
+    toast({
+      title: "Account found",
+      description:
+        "This email already belongs to an existing account. Continuing there now.",
+    });
+  };
+
   const startVerification = async ({
     forceNewSession = false,
   }: {
@@ -449,7 +601,7 @@ export default function ReserveProfile() {
     try {
       setKycLoading(true);
       setKycRejectionReason(null);
-      await saveCreatorProfile();
+      await saveCreatorProfile(formData, { onboardingStep: "verification" });
       const u = new URL(window.location.href);
       u.searchParams.set("step", "3");
       u.searchParams.set("verified", "1");
@@ -569,6 +721,7 @@ export default function ReserveProfile() {
         row?.kyc_rejection_reason ?? kycRejectionReason,
       );
       if (normalizedKyc === "approved") {
+        await saveCreatorProfile(formData, { onboardingStep: "agreements" });
         setStep(4);
         return;
       }
@@ -714,9 +867,26 @@ export default function ReserveProfile() {
     );
   };
 
+  const resolveCreatorOnboardingStep = ({
+    markComplete = false,
+    onboardingStep,
+  }: {
+    markComplete?: boolean;
+    onboardingStep?: string;
+  }) => {
+    if (markComplete) return "complete";
+    if (onboardingStep) return onboardingStep;
+    if (step >= 4 || normalizedKycStatus === "approved") return "agreements";
+    if (step >= 2) return "verification";
+    return "profile_details";
+  };
+
   const buildCreatorPayload = (
     data: typeof formData,
-    markComplete = false,
+    {
+      markComplete = false,
+      onboardingStep,
+    }: { markComplete?: boolean; onboardingStep?: string } = {},
   ) => {
     const monthlyPriceUsd = Number(data.base_monthly_price_usd);
     const hasMonthlyPrice =
@@ -758,13 +928,16 @@ export default function ReserveProfile() {
         : undefined,
       currency_code: hasMonthlyPrice ? "USD" : undefined,
       status: "waitlist",
-      onboarding_step: markComplete ? "complete" : undefined,
+      onboarding_step: resolveCreatorOnboardingStep({
+        markComplete,
+        onboardingStep,
+      }),
     };
   };
 
   const saveCreatorProfile = async (
     data: typeof formData = formData,
-    markComplete = false,
+    options: { markComplete?: boolean; onboardingStep?: string } = {},
   ) => {
     const session = (await supabase.auth.getSession())?.data?.session;
     if (!session?.access_token || !session.user?.id) {
@@ -779,7 +952,7 @@ export default function ReserveProfile() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify(buildCreatorPayload(data, markComplete)),
+        body: JSON.stringify(buildCreatorPayload(data, options)),
       },
     );
 
@@ -864,13 +1037,21 @@ export default function ReserveProfile() {
         const data = await res.json();
         if (!data.available) {
           try {
+            await loginExistingAccount();
+            return;
+          } catch {
+            // Existing unverified creator signups still resume via OTP.
+          }
+          try {
             await handleCreatorOtpResend();
             setSignupOtpOpen(true);
             return;
           } catch {
+            setAuthMode("login");
             toast({
-              title: t("reserveProfile.toasts.emailRegisteredTitle"),
-              description: t("reserveProfile.toasts.emailRegisteredDesc"),
+              title: "Account already exists",
+              description:
+                "This email already belongs to another account. Sign in instead to continue with that account.",
               className: "bg-cyan-50 border-2 border-cyan-400",
             });
             return;
@@ -917,11 +1098,18 @@ export default function ReserveProfile() {
           msg.includes("already registered") ||
           msg.includes("already exists")
         ) {
-          toast({
-            title: t("reserveProfile.toasts.emailRegisteredTitle"),
-            description: t("reserveProfile.toasts.emailRegisteredDesc"),
-            className: "bg-cyan-50 border-2 border-cyan-400",
-          });
+          try {
+            await loginExistingAccount();
+            return;
+          } catch {
+            setAuthMode("login");
+            toast({
+              title: "Account already exists",
+              description:
+                "This email already belongs to another account. Sign in instead to continue with that account.",
+              className: "bg-cyan-50 border-2 border-cyan-400",
+            });
+          }
         } else {
           toast({
             title: "Sign-up Failed",
@@ -997,13 +1185,14 @@ export default function ReserveProfile() {
   };
 
   const handleBack = () => {
+    if (isOAuthSignup && step === 2) return;
     if (step > 1) setStep(step - 1);
   };
 
   const handleSubmit = async () => {
     try {
       setProfileSaveLoading(true);
-      await saveCreatorProfile();
+      await saveCreatorProfile(formData, { onboardingStep: "verification" });
       await refreshProfile();
       setStep(3);
     } catch (e: any) {
@@ -1021,7 +1210,7 @@ export default function ReserveProfile() {
     try {
       setProfileSaveLoading(true);
       // Mark profile as complete
-      await saveCreatorProfile(formData, true);
+      await saveCreatorProfile(formData, { markComplete: true });
       await refreshProfile();
       // Clear persisted state on success
       localStorage.removeItem("reserve_formData");
@@ -1257,7 +1446,6 @@ export default function ReserveProfile() {
                     e.preventDefault();
                     try {
                       await login(formData.email, formData.password);
-                      navigate("/CreatorDashboard");
                     } catch (err: any) {
                       const msg = err?.message || "Failed to sign in";
                       toast({
@@ -1728,17 +1916,19 @@ export default function ReserveProfile() {
               </div>
 
               <div className="flex gap-4">
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  {t("common.back")}
-                </Button>
+                {!isOAuthSignup && (
+                  <Button
+                    onClick={handleBack}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    {t("common.back")}
+                  </Button>
+                )}
                 <Button
                   onClick={handleNext}
-                  className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                  className={`${isOAuthSignup ? "w-full" : "flex-1"} h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none`}
                 >
                   {creatorType === "athlete"
                     ? t(
