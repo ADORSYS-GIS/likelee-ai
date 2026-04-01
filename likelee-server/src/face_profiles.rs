@@ -3359,7 +3359,7 @@ pub async fn list_brand_agency_talent_rates(
     let conn_resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency")
         .eq("agency_id", &agency_id)
         .eq("status", "active")
         .limit(limit)
@@ -3487,7 +3487,7 @@ pub async fn list_brand_agency_talent_rates(
             "location": location,
             "profile_photo_url": talent.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
             "creator_type": talent.get("role_type").cloned().unwrap_or(serde_json::json!("Creator")),
-            "base_rate_weekly_cents": conn.get("licensing_rate_weekly_cents").cloned().unwrap_or(serde_json::Value::Null),
+            "base_rate_monthly_cents": conn.get("licensing_rate_monthly_cents").cloned().unwrap_or(serde_json::Value::Null),
             "rate_currency": conn.get("rate_currency").cloned().unwrap_or(serde_json::json!("USD")),
             "accept_negotiations": conn.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
             "rate_source_type": "agency_connection",

@@ -42,7 +42,6 @@ pub mod license_submissions;
 pub mod license_templates;
 pub mod licenses;
 pub mod licensing_requests;
-pub mod moderation;
 pub mod notifications;
 pub mod packages;
 pub mod payment_links;

@@ -178,7 +178,7 @@ pub struct TalentRow {
     pub race_ethnicity: Vec<String>,
     pub tattoos: Option<bool>,
     pub piercings: Option<bool>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: bool,
     pub rate_currency: String,
 }
@@ -261,7 +261,7 @@ pub async fn get_roster(
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
         .eq("agency_id", &agency_id)
         .execute()
         .await
@@ -527,8 +527,8 @@ pub async fn get_roster(
 
             let tattoos = get_field("tattoos").and_then(|v| v.as_bool());
             let piercings = get_field("piercings").and_then(|v| v.as_bool());
-            let licensing_rate_weekly_cents = item
-                .get("licensing_rate_weekly_cents")
+            let licensing_rate_monthly_cents = item
+                .get("licensing_rate_monthly_cents")
                 .and_then(|v| v.as_i64());
             let accept_negotiations = item
                 .get("accept_negotiations")
@@ -597,7 +597,7 @@ pub async fn get_roster(
                 race_ethnicity,
                 tattoos,
                 piercings,
-                licensing_rate_weekly_cents,
+                licensing_rate_monthly_cents,
                 accept_negotiations,
                 rate_currency,
             };
@@ -1250,7 +1250,7 @@ pub struct CreateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
 }
@@ -1293,7 +1293,7 @@ pub struct UpdateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
 }
@@ -1305,7 +1305,7 @@ struct AgencyTalentConnectionUpsert<'a> {
     talent_id: &'a str,
     creator_id: Option<&'a str>,
     status: &'a str,
-    licensing_rate_weekly_cents: Option<i64>,
+    licensing_rate_monthly_cents: Option<i64>,
     accept_negotiations: bool,
     rate_currency: &'a str,
 }
@@ -1319,7 +1319,7 @@ async fn upsert_agency_talent_connection(
         "talent_id": input.talent_id,
         "creator_id": input.creator_id,
         "status": input.status,
-        "licensing_rate_weekly_cents": input.licensing_rate_weekly_cents,
+        "licensing_rate_monthly_cents": input.licensing_rate_monthly_cents,
         "accept_negotiations": input.accept_negotiations,
         "rate_currency": input.rate_currency,
         "updated_at": chrono::Utc::now().to_rfc3339(),
@@ -1345,11 +1345,11 @@ pub async fn create_talent(
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let licensing_rate_weekly_cents = match payload.licensing_rate_weekly_cents {
+    let licensing_rate_monthly_cents = match payload.licensing_rate_monthly_cents {
         Some(v) if v <= 0 => {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+                "licensing_rate_monthly_cents must be greater than 0".to_string(),
             ));
         }
         Some(v) => Some(v),
@@ -1661,7 +1661,7 @@ pub async fn create_talent(
             talent_id: talent_id.as_str(),
             creator_id: creator_id.as_deref(),
             status: status.as_str(),
-            licensing_rate_weekly_cents,
+            licensing_rate_monthly_cents,
             accept_negotiations,
             rate_currency: rate_currency.as_str(),
         },
@@ -1718,11 +1718,11 @@ pub async fn update_talent(
         .unwrap_or("active")
         .to_string();
 
-    if let Some(v) = payload.licensing_rate_weekly_cents {
+    if let Some(v) = payload.licensing_rate_monthly_cents {
         if v <= 0 {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+                "licensing_rate_monthly_cents must be greater than 0".to_string(),
             ));
         }
     }
@@ -1849,7 +1849,7 @@ pub async fn update_talent(
                 talent_id: &id,
                 creator_id,
                 status: next_status.as_str(),
-                licensing_rate_weekly_cents: payload.licensing_rate_weekly_cents,
+                licensing_rate_monthly_cents: payload.licensing_rate_monthly_cents,
                 accept_negotiations: next_accept_negotiations,
                 rate_currency: next_rate_currency.as_str(),
             },

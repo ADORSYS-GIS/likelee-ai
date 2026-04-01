@@ -2016,7 +2016,7 @@ pub async fn list_offer_options(
                 || visibility == "true"
         })
         .map(|r| {
-            let weekly = r
+            let monthly = r
                 .get("base_weekly_price_cents")
                 .and_then(|v| v.as_i64())
                 .or_else(|| {
@@ -2031,7 +2031,7 @@ pub async fn list_offer_options(
                 "state": r.get("state").cloned().unwrap_or(serde_json::Value::Null),
                 "profile_photo_url": r.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
                 "creator_type": r.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
-                "base_rate_weekly_cents": weekly,
+                "base_rate_monthly_cents": monthly,
                 "rate_currency": r.get("currency_code").cloned().unwrap_or(json!("USD")),
                 "accept_negotiations": r.get("accept_negotiations").cloned().unwrap_or(json!(true)),
             })

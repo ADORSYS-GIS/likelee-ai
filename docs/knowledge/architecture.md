@@ -49,7 +49,7 @@ graph TB
         Stripe[Stripe API]
         Veriff[Veriff KYC]
         Fal[Fal AI]
-        AWS[AWS Rekognition]
+        Moderation[Moderation]
     end
 
     UI --> Router
@@ -136,7 +136,6 @@ graph TB
 | Stripe          | Payments, Connect       | `STRIPE_SECRET_KEY`  | Returns error    |
 | Veriff          | KYC verification        | `VERIFF_API_KEY`     | Feature disabled |
 | Fal             | AI generation           | `FAL_API_KEY`        | Returns error    |
-| AWS Rekognition | Moderation, Liveness    | `AWS_REGION`         | Feature disabled |
 | DocuSeal        | Contract signing        | `DOCUSEAL_API_KEY`   | Returns error    |
 | Calendly        | IRL booking             | `CALENDLY_API_TOKEN` | Feature disabled |
 | ElevenLabs      | Voice synthesis         | `ELEVENLABS_API_KEY` | Feature disabled |

@@ -993,8 +993,8 @@ export default function CreatorDashboard() {
             centsToDollars(offer?.monthly_rate_cents),
             centsToDollars(offer?.rate_cents),
             monthlyFromWeeklyCents(offer?.creator_rate_weekly_cents),
-            monthlyFromWeeklyCents(offer?.offered_rate_weekly_cents),
-            monthlyFromWeeklyCents(offer?.rate_weekly_cents),
+            centsToDollars(offer?.offered_rate_monthly_cents),
+            centsToDollars(offer?.rate_monthly_cents),
           ],
           baseMonthlyRate,
         );
