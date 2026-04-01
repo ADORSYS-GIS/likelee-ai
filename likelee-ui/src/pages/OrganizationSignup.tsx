@@ -48,6 +48,7 @@ import {
   getAgencyProfile,
   createOrganizationKycSession,
 } from "@/api/functions";
+import { clearAuthIntent } from "@/auth/onboarding";
 
 const getProductionTypes = (t: any) => [
   {
@@ -207,7 +208,14 @@ export default function OrganizationSignup() {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+
+  // Check if user arrived via OAuth
+  const isOAuthSignup =
+    user &&
+    (user.app_metadata?.provider === "google" ||
+      user.app_metadata?.provider === "github");
+
+  const [step, setStep] = useState(isOAuthSignup ? 2 : 1);
   const [orgType, setOrgType] = useState("");
   const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
@@ -251,6 +259,16 @@ export default function OrganizationSignup() {
 
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false);
+
+  // Pre-fill email and set profileId for OAuth users
+  useEffect(() => {
+    if (isOAuthSignup && user?.email && !formData.email) {
+      setFormData((prev) => ({ ...prev, email: user.email || "" }));
+      if (user.id) {
+        setProfileId(user.id);
+      }
+    }
+  }, [isOAuthSignup, user, formData.email]);
 
   const requireSupabase = () => {
     if (!supabase) {
@@ -697,6 +715,8 @@ export default function OrganizationSignup() {
           e,
         );
       }
+      // Clear auth intent after successful profile completion
+      clearAuthIntent();
       if (flow === "brand") {
         navigate("/BrandDashboard", { replace: true });
         return;

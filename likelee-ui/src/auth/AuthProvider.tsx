@@ -99,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userEmail?: string,
     userFullName?: string,
     role?: string,
+    isOAuthUser?: boolean,
   ) => {
     try {
       const roleHint = (role || "").trim();
@@ -179,8 +180,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
-      } else if (userEmail && (table === "creators" || !table)) {
-        // Profile missing in profiles table, create it (only for creators)
+      } else if (userEmail && (table === "creators" || !table) && !isOAuthUser) {
+        // Profile missing in profiles table, create it (only for email/password creators, NOT OAuth)
+        // OAuth users should be redirected to signup forms instead
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("creators")
@@ -285,11 +287,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           if (!currentProfile || currentProfile.id !== currentUser.id) {
+            const isOAuth = currentUser.app_metadata?.provider === "google";
             fetchProfile(
               currentUser.id,
               currentUser.email,
               currentUser.user_metadata?.full_name,
               currentUser.user_metadata?.role,
+              isOAuth,
             );
           }
         } else {
@@ -312,11 +316,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentUser &&
         (!currentProfile || currentProfile.id !== currentUser.id)
       ) {
+        const isOAuth = currentUser.app_metadata?.provider === "google";
         fetchProfile(
           currentUser.id,
           currentUser.email,
           currentUser.user_metadata?.full_name,
           currentUser.user_metadata?.role,
+          isOAuth,
         );
       } else if (!currentUser) {
         setProfile(null);
@@ -382,7 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Profile creation is now handled immediately after signup to capture full_name.
         if (data.user) {
-          await fetchProfile(data.user.id, data.user.email, displayName);
+          await fetchProfile(data.user.id, data.user.email, displayName, undefined, false);
         }
 
         return { user: data.user, session: data.session };
@@ -406,11 +412,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       refreshProfile: async () => {
         if (user) {
+          const isOAuth = user.app_metadata?.provider === "google";
           await fetchProfile(
             user.id,
             user.email,
             user.user_metadata?.full_name,
             user.user_metadata?.role,
+            isOAuth,
           );
         }
       },

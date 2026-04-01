@@ -11,6 +11,7 @@ import {
   isOrganizationOnboardingIncomplete,
   readAuthIntent,
   saveAuthIntent,
+  type AuthIntentRole,
 } from "@/auth/onboarding";
 
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
@@ -173,7 +174,8 @@ export default function Login() {
     if (!profile) {
       if (!profileResolved) return;
 
-      if (signupRoleHint) {
+      // For authenticated users without profile, redirect to signup
+      if (signupRoleHint && authenticated) {
         setIsRedirecting(true);
         navigate(
           getSignupPathForRole(
@@ -208,9 +210,34 @@ export default function Login() {
         (normalizedUserType === "creator" && normalizedRole === "talent");
 
       if (!roleMatchesTab) {
-        setError("Account does not exist under this tab, try another");
+        const roleLabel =
+          normalizedRole === "brand"
+            ? "Brand"
+            : normalizedRole === "agency"
+              ? "Agency"
+              : normalizedRole === "talent"
+                ? "Creator (Talent)"
+                : "Creator";
+        setError(
+          `Account not found under this tab. Your account is registered as ${roleLabel}. Please switch to the ${roleLabel} tab to continue.`,
+        );
         setAccessDenied(true);
         logout();
+        return;
+      }
+
+      // Check if onboarding is complete
+      const isOnboardingComplete =
+        !profile.onboarding_step || profile.onboarding_step === "complete";
+
+      if (!isOnboardingComplete) {
+        // Redirect to appropriate signup form to complete profile
+        setIsRedirecting(true);
+        const signupPath = getSignupPathForRole(
+          profile.role as AuthIntentRole,
+          authIntent?.creatorType || creatorType,
+        );
+        navigate(signupPath, { replace: true });
         return;
       }
 

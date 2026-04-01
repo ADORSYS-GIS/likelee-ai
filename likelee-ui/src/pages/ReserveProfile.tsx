@@ -46,6 +46,7 @@ import {
   storeKycSessionUrl,
 } from "@/utils/kycSession";
 import { formatKycReason } from "@/utils/kycDisplay";
+import { clearAuthIntent } from "@/auth/onboarding";
 
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -271,15 +272,23 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, refreshProfile } = useAuth();
+  const { login, refreshProfile, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Check if user arrived via OAuth
+  const isOAuthSignup =
+    authenticated &&
+    (user?.app_metadata?.provider === "google" ||
+      user?.app_metadata?.provider === "github");
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("reserve_step");
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get("step");
     if (stepParam) return parseInt(stepParam, 10);
+    // OAuth users skip step 1 (email verification)
+    if (isOAuthSignup) return 2;
     return saved ? parseInt(saved) : 1;
   });
 
@@ -354,6 +363,16 @@ export default function ReserveProfile() {
     const { password, confirmPassword, ...safeData } = formData;
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
+
+  // Pre-fill email and set profileId for OAuth users
+  useEffect(() => {
+    if (isOAuthSignup && user?.email && !formData.email) {
+      setFormData((prev) => ({ ...prev, email: user.email || "" }));
+      if (user.id) {
+        setProfileId(user.id);
+      }
+    }
+  }, [isOAuthSignup, user, formData.email]);
 
   const [signupOtpOpen, setSignupOtpOpen] = useState(false);
 
@@ -695,7 +714,10 @@ export default function ReserveProfile() {
     );
   };
 
-  const buildCreatorPayload = (data: typeof formData) => {
+  const buildCreatorPayload = (
+    data: typeof formData,
+    markComplete = false,
+  ) => {
     const monthlyPriceUsd = Number(data.base_monthly_price_usd);
     const hasMonthlyPrice =
       Number.isFinite(monthlyPriceUsd) && monthlyPriceUsd > 0;
@@ -736,10 +758,14 @@ export default function ReserveProfile() {
         : undefined,
       currency_code: hasMonthlyPrice ? "USD" : undefined,
       status: "waitlist",
+      onboarding_step: markComplete ? "complete" : undefined,
     };
   };
 
-  const saveCreatorProfile = async (data: typeof formData = formData) => {
+  const saveCreatorProfile = async (
+    data: typeof formData = formData,
+    markComplete = false,
+  ) => {
     const session = (await supabase.auth.getSession())?.data?.session;
     if (!session?.access_token || !session.user?.id) {
       throw new Error("Not authenticated");
@@ -753,7 +779,7 @@ export default function ReserveProfile() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify(buildCreatorPayload(data)),
+        body: JSON.stringify(buildCreatorPayload(data, markComplete)),
       },
     );
 
@@ -994,12 +1020,15 @@ export default function ReserveProfile() {
   const finalizeProfile = async () => {
     try {
       setProfileSaveLoading(true);
-      await saveCreatorProfile();
+      // Mark profile as complete
+      await saveCreatorProfile(formData, true);
       await refreshProfile();
       // Clear persisted state on success
       localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      // Clear auth intent after successful profile completion
+      clearAuthIntent();
       navigate("/CreatorDashboard", { replace: true });
     } catch (e: any) {
       toast({
