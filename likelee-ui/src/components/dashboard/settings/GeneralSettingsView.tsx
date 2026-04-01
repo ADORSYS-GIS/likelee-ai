@@ -976,8 +976,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     }
   };
 
-
-
   const saveTaxCurrencySettings = async () => {
     setIsSavingTaxCurrencySettings(true);
     try {
@@ -1152,8 +1150,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
       setIsSavingEmailTemplates(false);
     }
   };
-
-
 
   const handleSaveCommissionSettings = async () => {
     if (!profile?.id) return;
@@ -2354,11 +2350,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
           </div>
         )}
 
-
-
         {activeTab === "File Storage" && <FileStorageView />}
-
-
 
         {activeTab === "Team" && (
           <div className="space-y-6">
