@@ -1893,7 +1893,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-
             {/* Talent Commission Rules */}
 
             <div>

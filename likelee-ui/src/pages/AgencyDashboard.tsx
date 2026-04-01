@@ -15984,7 +15984,6 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-
       {activeTab === "Royalties & Payouts" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           {/* Royalties Overview Metrics */}
