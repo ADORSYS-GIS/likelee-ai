@@ -10,6 +10,7 @@ import {
   getSignupPathForRole,
   isOrganizationOnboardingIncomplete,
   readAuthIntent,
+  saveAuthIntent,
 } from "@/auth/onboarding";
 
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
@@ -68,6 +69,7 @@ export default function Login() {
     [location.search, location.state],
   );
   const creatorType = searchParams.get("type");
+  const isOauthReturn = searchParams.get("oauth") === "1";
   const redirectFromQuery = searchParams.get("next");
   const preferredRoleFromQuery = searchParams.get("role");
   const redirectFromState = React.useMemo(() => {
@@ -150,16 +152,33 @@ export default function Login() {
     )
       .trim()
       .toLowerCase();
+    const oauthRoleHint =
+      isOauthReturn &&
+      (preferredRoleFromQuery === "creator" ||
+        preferredRoleFromQuery === "brand" ||
+        preferredRoleFromQuery === "agency")
+        ? preferredRoleFromQuery
+        : null;
+    const signupRoleHint = (() => {
+      if (authIntent?.role) return authIntent.role;
+      if (oauthRoleHint) return oauthRoleHint;
+      if (authUserRole === "creator" || authUserRole === "brand") {
+        return authUserRole;
+      }
+      if (authUserRole === "agency") return "agency";
+      if (authUserRole === "talent") return "creator";
+      return null;
+    })();
 
     if (!profile) {
       if (!profileResolved) return;
 
-      if (authIntent?.role && !authUserRole) {
+      if (signupRoleHint) {
         setIsRedirecting(true);
         navigate(
           getSignupPathForRole(
-            authIntent.role,
-            authIntent.creatorType || creatorType,
+            signupRoleHint,
+            authIntent?.creatorType || creatorType,
           ),
           {
             replace: true,
@@ -239,6 +258,8 @@ export default function Login() {
     authIntent,
     navigate,
     creatorType,
+    isOauthReturn,
+    preferredRoleFromQuery,
     redirectTarget,
     userType,
     user,
@@ -361,7 +382,11 @@ export default function Login() {
                     className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
                     onClick={async () => {
                       try {
-                        clearAuthIntent();
+                        // Save auth intent before OAuth redirect so new users know which role to sign up for
+                        saveAuthIntent({
+                          role: userType as "creator" | "brand" | "agency",
+                          creatorType: creatorType || null,
+                        });
                         await loginWithProvider("google", {
                           redirectTo: googleLoginRedirectTo,
                         });

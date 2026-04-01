@@ -245,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, _session) => {
+      async (event, _session) => {
         const session = _session;
         const currentUser = applySession(session);
 
@@ -253,6 +253,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           const currentProfile = profileRef.current;
+
+          // For new OAuth users, set role from auth intent if not already set
+          const hasRole = getUserRoleHint(currentUser);
+          if (!hasRole && event === "SIGNED_IN") {
+            const intent = readAuthIntent();
+            if (intent?.role) {
+              try {
+                const nextMetadata = {
+                  ...(currentUser.user_metadata || {}),
+                  role: intent.role,
+                };
+                await supabase.auth.updateUser({
+                  data: nextMetadata,
+                });
+              } catch (err) {
+                console.error("Failed to set role metadata:", err);
+              }
+            }
+          }
+
           if (!currentProfile || currentProfile.id !== currentUser.id) {
             fetchProfile(
               currentUser.id,
