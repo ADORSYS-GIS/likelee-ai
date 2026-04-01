@@ -107,6 +107,20 @@ export default function Login() {
   // Guard against race conditions during logout/tab switch
   const [accessDenied, setAccessDenied] = React.useState(false);
   const [userType, setUserType] = React.useState(preferredRole);
+  const googleLoginRedirectTo = React.useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("oauth", "1");
+    params.set("role", userType);
+
+    if (creatorType) {
+      params.set("type", creatorType);
+    }
+    if (redirectTarget && redirectTarget.startsWith("/")) {
+      params.set("next", redirectTarget);
+    }
+
+    return `${window.location.origin}/login?${params.toString()}`;
+  }, [creatorType, redirectTarget, userType]);
 
   React.useEffect(() => {
     setUserType(preferredRole);
