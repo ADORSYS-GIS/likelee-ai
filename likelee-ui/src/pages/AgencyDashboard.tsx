@@ -16926,12 +16926,11 @@ export default function AgencyDashboard() {
     const numRequests = Array.isArray(brandConnectionRequestsCountQuery.data)
       ? brandConnectionRequestsCountQuery.data.length
       : 0;
-    const numOffers =
-      Array.isArray(brandConnectionOffersQuery.data)
-        ? brandConnectionOffersQuery.data.filter((o) =>
-            ["sent", "viewed"].includes(o.status),
-          ).length
-        : 0;
+    const numOffers = Array.isArray(brandConnectionOffersQuery.data)
+      ? brandConnectionOffersQuery.data.filter((o) =>
+          ["sent", "viewed"].includes(o.status),
+        ).length
+      : 0;
     const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data.length
       : 0;
@@ -16962,7 +16961,6 @@ export default function AgencyDashboard() {
       ? brandConnectionJobInvitesQuery.data.length
       : 0;
   }, [brandConnectionJobInvitesQuery.data]);
-
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -18049,7 +18047,8 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
-            badge: pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
@@ -18067,7 +18066,10 @@ export default function AgencyDashboard() {
               "Active Licenses",
               "License Templates",
             ],
-            badge: pendingLicensingRequestsCount > 0 ? pendingLicensingRequestsCount : undefined,
+            badge:
+              pendingLicensingRequestsCount > 0
+                ? pendingLicensingRequestsCount
+                : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18116,7 +18118,8 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
-            badge: pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
