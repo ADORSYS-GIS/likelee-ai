@@ -715,23 +715,7 @@ export default function AddTalent() {
                     placeholder="e.g. UCLA"
                   />
                 </div>
-                <div>
-                  <Label
-                    htmlFor="sports"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    Sports
-                  </Label>
-                  <Input
-                    id="sports"
-                    value={formData.sports}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sports: e.target.value })
-                    }
-                    className="border-2 border-gray-300"
-                    placeholder="e.g. Basketball"
-                  />
-                </div>
+
               </div>
 
               <div>
