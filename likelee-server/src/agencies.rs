@@ -1,8 +1,8 @@
 use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
-use chrono::{Duration, Utc};
 use axum::extract::Multipart;
 use axum::extract::Query;
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
+use chrono::{Duration, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -488,7 +488,10 @@ pub async fn update(
                 map.insert("email".into(), json!(email));
             }
             // Set default trial for new OAuth profiles if not already set
-            map.insert("trial_ends_at".into(), json!((Utc::now() + Duration::days(14)).to_rfc3339()));
+            map.insert(
+                "trial_ends_at".into(),
+                json!((Utc::now() + Duration::days(14)).to_rfc3339()),
+            );
         }
 
         // Remove nulls to avoid overwriting existing data with nulls
