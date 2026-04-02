@@ -385,7 +385,10 @@ export default function JobsBoard() {
       });
       return;
     }
-    if (!compCardMeta?.url || (compCardMeta?.size ?? 0) <= 0) {
+    const hasCompCard = (compCardMetas || []).some(
+      (m: any) => m?.url && (m?.size ?? 0) > 0,
+    );
+    if (!hasCompCard) {
       toast({
         title: "Comp card required",
         description: "Please upload a comp card before applying.",
@@ -970,7 +973,7 @@ export default function JobsBoard() {
                   resumeUploading ||
                   compCardUploading ||
                   !resumeMeta?.url ||
-                  !compCardMeta?.url ||
+                  compCardMetas.length === 0 ||
                   !portfolioLink.trim()
                 }
               >
