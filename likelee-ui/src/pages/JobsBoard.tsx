@@ -253,8 +253,7 @@ export default function JobsBoard() {
       const openRows = rows.filter((job) => !isJobClosed(job));
       if (openRows.length > 0) {
         setSelectedJob((prev) => prev || openRows[0]);
-      } else {
-      if (rows.length > 0 && !selectedJob) {
+      } else if (rows.length > 0 && !selectedJob) {
         setSelectedJob(rows[0]);
       } else if (rows.length === 0) {
         setSelectedJob(null);
