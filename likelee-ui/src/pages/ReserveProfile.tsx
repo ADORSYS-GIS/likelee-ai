@@ -2205,7 +2205,9 @@ export default function ReserveProfile() {
                                   "Action needed",
                                 )
                               : kycStatus === "rejected"
-                                ? t("reserveProfile.verification.status.rejected")
+                                ? t(
+                                    "reserveProfile.verification.status.rejected",
+                                  )
                                 : t(
                                     "reserveProfile.verification.status.verifying",
                                   )}
