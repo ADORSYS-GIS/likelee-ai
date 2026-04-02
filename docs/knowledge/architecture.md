@@ -130,15 +130,15 @@ graph TB
 
 ## External Dependencies
 
-| Service         | Purpose                 | Config Key           | Fallback         |
-| --------------- | ----------------------- | -------------------- | ---------------- |
-| Supabase        | Database, Storage, Auth | `SUPABASE_URL`       | None (required)  |
-| Stripe          | Payments, Connect       | `STRIPE_SECRET_KEY`  | Returns error    |
-| Veriff          | KYC verification        | `VERIFF_API_KEY`     | Feature disabled |
-| Fal             | AI generation           | `FAL_API_KEY`        | Returns error    |
-| DocuSeal        | Contract signing        | `DOCUSEAL_API_KEY`   | Returns error    |
-| Calendly        | IRL booking             | `CALENDLY_API_TOKEN` | Feature disabled |
-| ElevenLabs      | Voice synthesis         | `ELEVENLABS_API_KEY` | Feature disabled |
+| Service    | Purpose                 | Config Key           | Fallback         |
+| ---------- | ----------------------- | -------------------- | ---------------- |
+| Supabase   | Database, Storage, Auth | `SUPABASE_URL`       | None (required)  |
+| Stripe     | Payments, Connect       | `STRIPE_SECRET_KEY`  | Returns error    |
+| Veriff     | KYC verification        | `VERIFF_API_KEY`     | Feature disabled |
+| Fal        | AI generation           | `FAL_API_KEY`        | Returns error    |
+| DocuSeal   | Contract signing        | `DOCUSEAL_API_KEY`   | Returns error    |
+| Calendly   | IRL booking             | `CALENDLY_API_TOKEN` | Feature disabled |
+| ElevenLabs | Voice synthesis         | `ELEVENLABS_API_KEY` | Feature disabled |
 
 ## Security Architecture
 

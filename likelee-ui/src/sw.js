@@ -17,8 +17,6 @@ import { precacheAndRoute } from "workbox-precaching";
 // Their URLs are injected into the aggregate below.
 precacheAndRoute(self.__WB_MANIFEST);
 
-
-
 // Sync event names
 const SYNC_EVENTS = {
   TALENTS: "sync-talents",
