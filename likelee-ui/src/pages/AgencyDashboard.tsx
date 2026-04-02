@@ -17898,7 +17898,7 @@ export default function AgencyDashboard() {
   const notifications = useMemo(() => {
     return systemNotifications.map((n) => ({
       ...n,
-      read: n.isSummary ? false : dismissedNotificationIds.includes(n.id),
+      read: dismissedNotificationIds.includes(n.id),
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
@@ -17908,11 +17908,11 @@ export default function AgencyDashboard() {
   );
 
   const markAllAsRead = () => {
-    const unreadNonSummaryIds = notifications
-      .filter((n) => !n.read && !n.isSummary)
+    const unreadIds = notifications
+      .filter((n) => !n.read)
       .map((n) => n.id);
     setDismissedNotificationIds((prev) =>
-      Array.from(new Set([...prev, ...unreadNonSummaryIds])),
+      Array.from(new Set([...prev, ...unreadIds])),
     );
   };
 
@@ -17961,9 +17961,9 @@ export default function AgencyDashboard() {
           queryKey: ["agency", "brand-license-requests"],
         }),
         queryClient.invalidateQueries({ queryKey: ["agency-clients"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency-job-invites"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency", "job-invites"] }),
         queryClient.invalidateQueries({
-          queryKey: ["agency-campaign-offers-my"],
+          queryKey: ["agency", "campaign-offers-my"],
         }),
         queryClient.invalidateQueries({
           queryKey: ["agency", "package-feedback"],
