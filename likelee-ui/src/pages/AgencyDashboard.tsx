@@ -17092,8 +17092,9 @@ export default function AgencyDashboard() {
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
   const isMobile = useIsMobile();
-  const SIDEBAR_MIN_WIDTH = 72;
+  const SIDEBAR_MIN_WIDTH = 80;
   const SIDEBAR_MAX_WIDTH = 280;
+  const SIDEBAR_EXPANDED_WIDTH = 256;
   const SIDEBAR_COLLAPSE_THRESHOLD = 140;
   const SIDEBAR_FADE_START = 220;
   const isSidebarCollapsed =
@@ -17110,6 +17111,14 @@ export default function AgencyDashboard() {
       );
   const showLabels = isMobile || sidebarWidth > SIDEBAR_COLLAPSE_THRESHOLD;
   const showSubItems = isMobile || sidebarWidth >= 200;
+  const toggleSidebarCollapsed = () => {
+    if (isMobile) return;
+    setSidebarWidth((prev) =>
+      prev <= SIDEBAR_COLLAPSE_THRESHOLD
+        ? SIDEBAR_EXPANDED_WIDTH
+        : SIDEBAR_MIN_WIDTH,
+    );
+  };
 
   const handleSidebarDragStart = (event: React.MouseEvent) => {
     if (isMobile) return;
@@ -18389,7 +18398,7 @@ export default function AgencyDashboard() {
                 }
                 className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
                   isSidebarCollapsed
-                    ? "justify-center px-2 py-2.5"
+                    ? "justify-center px-2 py-3"
                     : "gap-3 px-3 py-2.5"
                 } ${
                   activeTab === item.id && !item.subItems
@@ -18398,29 +18407,34 @@ export default function AgencyDashboard() {
                 } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`${
+                    isSidebarCollapsed ? "w-6 h-6" : "w-5 h-5"
+                  } ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"}`}
                 />
                 {showLabels && (
                   <>
-                    <span
-                      className="flex-1 text-left whitespace-nowrap overflow-hidden transition-opacity duration-150"
-                      style={{
-                        opacity: labelOpacity,
-                        maxWidth: isMobile ? "none" : Math.max(0, sidebarWidth - 140),
-                      }}
+                    <div
+                      className="flex-1 text-left leading-snug transition-opacity duration-150"
+                      style={{ opacity: labelOpacity }}
                     >
-                      {item.label}
-                    </span>
-                    {item.badge !== undefined && (
-                      <span
-                        className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
-                        style={{ opacity: labelOpacity }}
-                      >
-                        {item.badge}
+                      <span className="block whitespace-normal break-words">
+                        {item.label}
                       </span>
-                    )}
+                      {typeof item.badge === "string" && (
+                        <span className="inline-flex mt-1 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    {item.badge !== undefined &&
+                      typeof item.badge !== "string" && (
+                        <span
+                          className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                          style={{ opacity: labelOpacity }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                     {item.disabled && (
                       <span
                         className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
@@ -18444,7 +18458,7 @@ export default function AgencyDashboard() {
                 expandedItems.includes(item.id) &&
                 showSubItems &&
                 showLabels && (
-                <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                  <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
                     {item.subItems.map((subItem) => (
                       <button
                         key={subItem}
@@ -18506,7 +18520,7 @@ export default function AgencyDashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4">
           <button
             onClick={() => logout()}
             className={`flex items-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full rounded-lg hover:bg-red-50 ${
@@ -18527,6 +18541,19 @@ export default function AgencyDashboard() {
             )}
           </button>
         </div>
+
+        {!isMobile && (
+          <button
+            onClick={toggleSidebarCollapsed}
+            className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+          >
+            <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+          </button>
+        )}
 
         {!isMobile && (
           <div
