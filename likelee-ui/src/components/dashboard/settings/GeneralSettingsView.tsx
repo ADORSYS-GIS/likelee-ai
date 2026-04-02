@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Activity,
+  ChevronDown,
   ShieldCheck,
   ExternalLink,
   Key,
@@ -55,6 +56,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -71,6 +77,60 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+
+const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
+const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
+const CALENDLY_BOOKING_TYPE_OPTIONS = [
+  { key: "default", label: "Calendly Event Type" },
+] as const;
+
+async function parseApiResponse(resp: Response) {
+  const raw = await resp.text();
+  if (!raw.trim()) return {};
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      status: resp.ok ? "success" : "error",
+      message: raw.trim(),
+    };
+  }
+}
+
+function isCalendlyEventTypeUri(value?: string | null) {
+  return Boolean(
+    value?.trim().startsWith(CALENDLY_EVENT_TYPE_URI_PREFIX),
+  );
+}
+
+function withCalendlyManualMappingGuidance(message: string) {
+  if (!message) return message;
+  if (message.toLowerCase().includes("paste event type uris manually")) {
+    return message;
+  }
+  return `${message} You can still paste event type URIs manually below.`;
+}
+
+function normalizeCalendlyMappingsWithEventTypes(
+  mappings: Record<string, string>,
+  eventTypes: any[],
+) {
+  const eventTypeUriBySlug = new Map(
+    eventTypes
+      .filter((eventType) => eventType?.slug && eventType?.uri)
+      .map((eventType) => [eventType.slug, eventType.uri]),
+  );
+
+  return Object.fromEntries(
+    Object.entries(mappings).map(([key, value]) => {
+      if (isCalendlyEventTypeUri(value)) {
+        return [key, value];
+      }
+      return [key, eventTypeUriBySlug.get(value) || value];
+    }),
+  );
+}
 
 const InviteTeamMemberModal = ({
   open,
@@ -348,7 +408,7 @@ const GeneralSettingsView = ({
   kycStatus?: string;
   hasIrlBookingAddon?: boolean;
 }) => {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
     .trim()
@@ -416,6 +476,7 @@ const GeneralSettingsView = ({
   // Calendly State
   const [calendlySettings, setCalendlySettings] = useState({
     calendly_api_token: "",
+    scheduling_url: "",
     is_enabled: false,
     mappings: {} as Record<string, string>,
   });
@@ -426,62 +487,102 @@ const GeneralSettingsView = ({
     useState(false);
   const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
     useState(false);
+  const [calendlyEventTypesError, setCalendlyEventTypesError] = useState<
+    string | null
+  >(null);
+  const [hasSavedCalendlyToken, setHasSavedCalendlyToken] = useState(false);
+  const [isCalendlyMappingsOpen, setIsCalendlyMappingsOpen] = useState(false);
+
+  const getAccessToken = () => token || "";
 
   const fetchCalendlySettings = async () => {
     if (!hasIrlBookingAddon) {
       setIsFetchingCalendlySettings(false);
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(null);
       setCalendlySettings({
         calendly_api_token: "",
+        scheduling_url: "",
         is_enabled: false,
         mappings: {},
       });
-      return;
+      return null;
     }
     try {
       setIsFetchingCalendlySettings(true);
-      const { data, error } = await supabase
-        .from("agency_calendly_settings")
-        .select("*")
-        .eq("agency_id", profile?.id)
-        .maybeSingle();
-      if (error) throw error;
+      const resp = await fetch("/api/calendly/settings", {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      const payload = await parseApiResponse(resp);
+      if (payload.status !== "success" || !payload.data) {
+        throw new Error(payload.message || "Failed to load Calendly settings");
+      }
+      const data = payload.data;
       if (data) {
         setCalendlySettings({
           calendly_api_token: data.calendly_api_token || "",
+          scheduling_url: data.scheduling_url || "",
           is_enabled: data.is_enabled ?? false,
           mappings: data.mappings || {},
         });
+        setHasSavedCalendlyToken(Boolean(data.calendly_api_token?.trim()));
+        return data;
       }
     } catch (err: any) {
       console.error("Error fetching Calendly settings:", err);
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(
+        err.message || "Failed to load your saved Calendly configuration.",
+      );
     } finally {
       setIsFetchingCalendlySettings(false);
     }
+    return null;
   };
 
   const fetchCalendlyEventTypes = async () => {
     if (!hasIrlBookingAddon) {
       setIsFetchingCalendlyEventTypes(false);
       setCalendlyEventTypes([]);
+      setCalendlyEventTypesError(null);
       return;
     }
     try {
       setIsFetchingCalendlyEventTypes(true);
+      setCalendlyEventTypesError(null);
       const resp = await fetch("/api/calendly/event-types", {
         headers: {
-          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+          Authorization: `Bearer ${getAccessToken()}`,
         },
       });
-      const data = await resp.json();
+      const data = await parseApiResponse(resp);
       if (data.status === "success" && Array.isArray(data.data)) {
         setCalendlyEventTypes(data.data);
+        setCalendlySettings((prev) => ({
+          ...prev,
+          mappings: normalizeCalendlyMappingsWithEventTypes(
+            prev.mappings,
+            data.data,
+          ),
+        }));
       } else {
-        // If not configured, it might return an error
         setCalendlyEventTypes([]);
+        setCalendlyEventTypesError(
+          withCalendlyManualMappingGuidance(
+            data.message || "Failed to load Calendly event types.",
+          ),
+        );
       }
     } catch (err: any) {
       console.error("Error fetching Calendly event types:", err);
       setCalendlyEventTypes([]);
+      setCalendlyEventTypesError(
+        withCalendlyManualMappingGuidance(
+          err.message || "Failed to load Calendly event types.",
+        ),
+      );
     } finally {
       setIsFetchingCalendlyEventTypes(false);
     }
@@ -499,26 +600,45 @@ const GeneralSettingsView = ({
     }
     try {
       setIsSavingCalendlySettings(true);
+      setCalendlyEventTypesError(null);
       const resp = await fetch("/api/calendly/settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+          Authorization: `Bearer ${getAccessToken()}`,
         },
         body: JSON.stringify(calendlySettings),
       });
-      const data = await resp.json();
+      const data = await parseApiResponse(resp);
       if (data.status === "success") {
+        if (data.data) {
+          setCalendlySettings({
+            calendly_api_token: data.data.calendly_api_token || "",
+            scheduling_url: data.data.scheduling_url || "",
+            is_enabled: data.data.is_enabled ?? false,
+            mappings: data.data.mappings || {},
+          });
+          setHasSavedCalendlyToken(Boolean(data.data.calendly_api_token?.trim()));
+        } else {
+          setHasSavedCalendlyToken(
+            Boolean(calendlySettings.calendly_api_token.trim()),
+          );
+        }
         toast({
           title: "Settings Saved",
-          description: "Calendly integration settings have been updated.",
+          description:
+            data.message || "Calendly integration settings have been updated.",
         });
-        // Refetch event types in case token changed
-        fetchCalendlyEventTypes();
+        if (data.data?.calendly_api_token || calendlySettings.calendly_api_token) {
+          await fetchCalendlyEventTypes();
+        } else {
+          setCalendlyEventTypes([]);
+        }
       } else {
         throw new Error(data.message || "Failed to save Calendly settings");
       }
     } catch (err: any) {
+      setCalendlyEventTypesError(err.message || null);
       toast({
         title: "Error",
         description: err.message || "Failed to save Calendly settings",
@@ -574,20 +694,52 @@ const GeneralSettingsView = ({
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Integrations" && profile?.id && hasIrlBookingAddon) {
-      fetchCalendlySettings();
-      fetchCalendlyEventTypes();
-      return;
-    }
-    if (activeTab === "Integrations" && !hasIrlBookingAddon) {
+    if (activeTab !== "Integrations") return;
+    if (!hasIrlBookingAddon) {
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(null);
       setCalendlySettings({
         calendly_api_token: "",
+        scheduling_url: "",
         is_enabled: false,
         mappings: {},
       });
       setCalendlyEventTypes([]);
+      return;
     }
+    let mounted = true;
+    void (async () => {
+      const data = await fetchCalendlySettings();
+      if (!mounted) return;
+      if (data?.calendly_api_token) {
+        await fetchCalendlyEventTypes();
+      } else {
+        setCalendlyEventTypes([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [activeTab, hasIrlBookingAddon, profile?.id]);
+
+  useEffect(() => {
+    if (!hasIrlBookingAddon || !calendlySettings.is_enabled) {
+      setIsCalendlyMappingsOpen(false);
+      return;
+    }
+
+    if (
+      calendlyEventTypesError ||
+      Object.keys(calendlySettings.mappings || {}).length > 0
+    ) {
+      setIsCalendlyMappingsOpen(true);
+    }
+  }, [
+    calendlyEventTypesError,
+    calendlySettings.is_enabled,
+    calendlySettings.mappings,
+    hasIrlBookingAddon,
+  ]);
 
   const defaultNotificationPrefs = [
     {
@@ -2541,9 +2693,20 @@ const GeneralSettingsView = ({
               </div>
 
               {!hasIrlBookingAddon && (
-                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Enable the IRL Booking add-on to use Calendly, scouting,
-                  client CRM, bookings, and IRL accounting workflows.
+                <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    Enable the IRL Booking add-on to use Calendly, scouting,
+                    client CRM, bookings, and IRL accounting workflows.
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
+                  >
+                    <a href={createPageUrl("AgencySubscribe")}>
+                      Get IRL Booking Add-on
+                    </a>
+                  </Button>
                 </div>
               )}
 
@@ -2571,10 +2734,18 @@ const GeneralSettingsView = ({
                       value={calendlySettings.calendly_api_token}
                       disabled={!hasIrlBookingAddon}
                       onChange={(e) =>
-                        setCalendlySettings((p) => ({
-                          ...p,
-                          calendly_api_token: e.target.value,
-                        }))
+                        setCalendlySettings((p) => {
+                          const nextToken = e.target.value;
+                          const tokenChanged =
+                            p.calendly_api_token.trim() &&
+                            p.calendly_api_token !== nextToken;
+
+                          return {
+                            ...p,
+                            calendly_api_token: nextToken,
+                            mappings: tokenChanged ? {} : p.mappings,
+                          };
+                        })
                       }
                       className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     />
@@ -2591,87 +2762,217 @@ const GeneralSettingsView = ({
                   </p>
                 </div>
 
-                {hasIrlBookingAddon && calendlySettings.is_enabled && (
-                  <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
-                        <Activity className="w-4 h-4 text-gray-400" />
-                        Event Type Mappings
-                      </h4>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Map platform booking categories to specific Calendly
-                        event types
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { key: "default", label: "Default Meeting" },
-                        { key: "agency_discovery", label: "Agency Discovery" },
-                        { key: "talent_interview", label: "Interview" },
-                        { key: "photo_shoot", label: "Photo Shoot" },
-                      ].map((type) => (
-                        <div
-                          key={type.key}
-                          className="space-y-2 p-4 bg-gray-50/50 border border-gray-100 rounded-xl group hover:border-indigo-100 transition-colors"
-                        >
-                          <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-indigo-600 transition-colors">
-                            {type.label}
-                          </Label>
-                          {isFetchingCalendlyEventTypes ? (
-                            <div className="h-10 flex items-center justify-center bg-white border border-gray-100 rounded-lg animate-pulse">
-                              <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
-                            </div>
-                          ) : calendlyEventTypes.length > 0 ? (
-                            <Select
-                              value={calendlySettings.mappings[type.key] || ""}
-                              onValueChange={(val) =>
-                                setCalendlySettings((p) => ({
-                                  ...p,
-                                  mappings: { ...p.mappings, [type.key]: val },
-                                }))
-                              }
-                            >
-                              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
-                                <SelectValue placeholder="Select Calendly Event" />
-                              </SelectTrigger>
-                              <SelectContent className="rounded-xl border-gray-200 shadow-xl">
-                                <SelectItem
-                                  value=""
-                                  className="text-xs font-bold text-gray-400 italic"
-                                >
-                                  Use System Default
-                                </SelectItem>
-                                {calendlyEventTypes.map((et: any) => (
-                                  <SelectItem
-                                    key={et.slug}
-                                    value={et.slug}
-                                    className="text-xs font-bold py-2.5"
-                                  >
-                                    <div className="flex flex-col gap-0.5">
-                                      <span>{et.name}</span>
-                                      {et.duration && (
-                                        <span className="text-[10px] text-gray-400">
-                                          {et.duration} mins
-                                        </span>
-                                      )}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
-                              Enter API Token to load event types
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                      Public Calendly Scheduling Link
+                    </Label>
+                    <a
+                      href="https://help.calendly.com/hc/en-us/articles/223193448-How-to-share-your-scheduling-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
+                    >
+                      Where to find it
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
+                  <Input
+                    type="url"
+                    placeholder="https://calendly.com/your-handle/your-event"
+                    value={calendlySettings.scheduling_url}
+                    disabled={!hasIrlBookingAddon}
+                    onChange={(e) =>
+                      setCalendlySettings((p) => ({
+                        ...p,
+                        scheduling_url: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-400 font-medium leading-relaxed flex items-start gap-2 italic">
+                    <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    Use the public Calendly event link that should open when a
+                    booking is sent through Calendly from Likelee. In Calendly,
+                    open your Scheduling page, find the event type, and copy its
+                    link.
+                  </p>
+                </div>
+
+                {hasIrlBookingAddon && calendlySettings.is_enabled && (
+                  <Collapsible
+                    open={isCalendlyMappingsOpen}
+                    onOpenChange={setIsCalendlyMappingsOpen}
+                  >
+                    <div className="space-y-4 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
+                        >
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
+                              <Activity className="w-4 h-4 text-gray-400" />
+                              Calendly Event Type
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium">
+                              Select the Calendly event type Likelee should use
+                              for booking invites and reminders
+                            </p>
+                          </div>
+                          <ChevronDown
+                            className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${
+                              isCalendlyMappingsOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      </CollapsibleTrigger>
+
+                      {calendlyEventTypesError && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          {calendlyEventTypesError}
+                        </div>
+                      )}
+
+                      <CollapsibleContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {CALENDLY_BOOKING_TYPE_OPTIONS.map((type) => (
+                            <div
+                              key={type.key}
+                              className="space-y-2 p-4 bg-gray-50/50 border border-gray-100 rounded-xl group hover:border-indigo-100 transition-colors"
+                            >
+                              <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-indigo-600 transition-colors">
+                                {type.label}
+                              </Label>
+                              {isFetchingCalendlyEventTypes ? (
+                                <div className="h-10 flex items-center justify-center bg-white border border-gray-100 rounded-lg animate-pulse">
+                                  <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
+                                </div>
+                              ) : calendlyEventTypes.length > 0 ? (
+                                <Select
+                                  value={
+                                    (() => {
+                                      const currentMapping =
+                                        calendlySettings.mappings[type.key];
+                                      if (!currentMapping) {
+                                        return CALENDLY_USE_DEFAULT_VALUE;
+                                      }
+                                      if (isCalendlyEventTypeUri(currentMapping)) {
+                                        return currentMapping;
+                                      }
+                                      const matchingEventType =
+                                        calendlyEventTypes.find(
+                                          (eventType: any) =>
+                                            eventType.slug === currentMapping,
+                                        );
+                                      return (
+                                        matchingEventType?.uri ||
+                                        CALENDLY_USE_DEFAULT_VALUE
+                                      );
+                                    })()
+                                  }
+                                  onValueChange={(val) =>
+                                    setCalendlySettings((p) => {
+                                      const nextMappings = { ...p.mappings };
+                                      if (val === CALENDLY_USE_DEFAULT_VALUE) {
+                                        delete nextMappings[type.key];
+                                      } else {
+                                        nextMappings[type.key] = val;
+                                      }
+                                      return {
+                                        ...p,
+                                        mappings: nextMappings,
+                                      };
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
+                                    <SelectValue placeholder="Select Calendly Event" />
+                                  </SelectTrigger>
+                                  <SelectContent className="rounded-xl border-gray-200 shadow-xl">
+                                    <SelectItem
+                                      value={CALENDLY_USE_DEFAULT_VALUE}
+                                      className="text-xs font-bold text-gray-400 italic"
+                                    >
+                                      Leave Unset
+                                    </SelectItem>
+                                    {calendlyEventTypes.map((et: any) => (
+                                      <SelectItem
+                                        key={et.uri || et.slug}
+                                        value={et.uri || et.slug}
+                                        className="text-xs font-bold py-2.5"
+                                      >
+                                        <div className="flex flex-col gap-0.5">
+                                          <span>{et.name}</span>
+                                          <span className="text-[10px] text-gray-400">
+                                            {et.slug}
+                                          </span>
+                                          {et.duration && (
+                                            <span className="text-[10px] text-gray-400">
+                                              {et.duration} mins
+                                            </span>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : hasSavedCalendlyToken ? (
+                                <div className="space-y-2">
+                                  <Input
+                                    value={calendlySettings.mappings[type.key] || ""}
+                                    onChange={(e) =>
+                                      setCalendlySettings((p) => {
+                                        const nextMappings = { ...p.mappings };
+                                        const nextValue = e.target.value.trim();
+                                        if (!nextValue) {
+                                          delete nextMappings[type.key];
+                                        } else {
+                                          nextMappings[type.key] = nextValue;
+                                        }
+                                        return {
+                                          ...p,
+                                          mappings: nextMappings,
+                                        };
+                                      })
+                                    }
+                                    placeholder="https://api.calendly.com/event_types/..."
+                                    className="h-10 bg-white border-gray-200 rounded-lg text-xs font-medium"
+                                  />
+                                  <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                                    Paste the full Calendly event type URI that
+                                    Likelee should use for bookings. This works even when the token
+                                    cannot list event types automatically.
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
+                                  {hasSavedCalendlyToken
+                                    ? "No active Calendly event types found for this account"
+                                    : "Save a valid Calendly token to load event types"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
                 )}
 
-                <div className="flex justify-end pt-4">
+                <div className="flex justify-end gap-3 pt-4">
+                  {!hasIrlBookingAddon && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-11 rounded-xl border-amber-300 px-6 font-bold text-amber-800 hover:bg-amber-50"
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>
+                        Buy IRL Booking Add-on
+                      </a>
+                    </Button>
+                  )}
                   <Button
                     onClick={handleSaveCalendlySettings}
                     disabled={isSavingCalendlySettings || !hasIrlBookingAddon}

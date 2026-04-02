@@ -41,11 +41,14 @@ import { parseBackendError } from "@/utils/errorParser";
 import {
   getAgencyTalents,
   getAgencyClients,
+  getAgencyCalendlySettings,
   createAgencyClient,
   createBookingWithFiles,
   getBookingsCampaigns,
+  sendBookingCreatedEmail,
 } from "@/api/functions";
 import { CampaignModal } from "./CampaignModal";
+import { buildCalendlyBookingUrl } from "@/utils/bookDemo";
 
 export const NewBookingModal = ({
   open,
@@ -127,7 +130,7 @@ export const NewBookingModal = ({
   const [notifications, setNotifications] = useState({
     email: true,
     sms: false,
-    push: false,
+    push: true,
     calendar: true,
   });
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -136,6 +139,9 @@ export const NewBookingModal = ({
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [campaignSearch, setCampaignSearch] = useState("");
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [calendlyEmbedOpen, setCalendlyEmbedOpen] = useState(false);
+  const [calendlyEmbedUrl, setCalendlyEmbedUrl] = useState("");
+  const useCalendlyHandoff = notifications.calendar;
 
   // When all-day is enabled, normalize times to full-day window
   useEffect(() => {
@@ -333,6 +339,7 @@ export const NewBookingModal = ({
   };
 
   const commission = rate * 0.2;
+  const todayDateString = format(new Date(), "yyyy-MM-dd");
 
   const hasTimeMismatch =
     !allDay &&
@@ -361,6 +368,37 @@ export const NewBookingModal = ({
     return "";
   })();
 
+  const pastStartTimeIssue = (() => {
+    if (mode === "edit" || allDay || !date || !callTime) {
+      return "";
+    }
+    if (date !== todayDateString) {
+      return "";
+    }
+
+    const [hours, minutes] = String(callTime)
+      .split(":")
+      .map((value) => Number(value));
+    if (
+      Number.isNaN(hours) ||
+      Number.isNaN(minutes) ||
+      hours < 0 ||
+      hours > 23 ||
+      minutes < 0 ||
+      minutes > 59
+    ) {
+      return "Please select a valid call time";
+    }
+
+    const now = new Date();
+    const selectedStart = new Date();
+    selectedStart.setHours(hours, minutes, 0, 0);
+    if (selectedStart.getTime() <= now.getTime()) {
+      return "Call time must be in the future for bookings scheduled today";
+    }
+    return "";
+  })();
+
   const missingInputs = (() => {
     const missing: string[] = [];
     if (selectedTalents.length === 0) missing.push(`${entitySingularTitle}`);
@@ -374,8 +412,14 @@ export const NewBookingModal = ({
     if (missingInputs.length > 0) {
       issues.push(`Select: ${missingInputs.join(", ")}`);
     }
+    if (notifications.calendar && selectedTalents.length > 1) {
+      issues.push("Calendly booking supports one talent at a time");
+    }
     if (dateIssue) {
       issues.push(dateIssue);
+    }
+    if (pastStartTimeIssue) {
+      issues.push(pastStartTimeIssue);
     }
     if (hasTimeMismatch) {
       issues.push("Wrap time must be after call time");
@@ -410,6 +454,44 @@ export const NewBookingModal = ({
 
     setSaving(true);
     try {
+      let calendlyUrlAfterSave = "";
+      if (useCalendlyHandoff) {
+        const response = await getAgencyCalendlySettings();
+        const schedulingUrl = response?.data?.scheduling_url?.trim();
+        if (!schedulingUrl) {
+          toast({
+            title: "Calendly link required",
+            description:
+              "Save the public Calendly scheduling link in Agency Settings > Integrations before using calendar booking.",
+            variant: "destructive" as any,
+          });
+          return;
+        }
+
+        calendlyUrlAfterSave = buildCalendlyBookingUrl(
+          schedulingUrl,
+          "agency_booking_modal",
+          {
+            companyName: selectedClient?.company,
+            userName:
+              selectedClient?.contact ||
+              selectedClient?.company ||
+              selectedTalents[0]?.name,
+            workEmail: selectedClient?.email,
+            phoneNumber: selectedClient?.phone,
+          },
+        );
+
+        setPreviewOpen(false);
+        onOpenChange(false);
+        toast({
+          title: "Saving booking",
+          description:
+            "Email and in-app notifications are being processed. Calendly will open next.",
+        });
+      }
+
+      const notificationWarnings: string[] = [];
       for (let index = 0; index < selectedTalents.length; index++) {
         const talent = selectedTalents[index];
         const payload: any = {
@@ -433,14 +515,24 @@ export const NewBookingModal = ({
           exclusive: exclusive,
           notes: notes || undefined,
           notify_email: notifications.email,
-          notify_sms: notifications.sms,
-          notify_push: notifications.push,
-          notify_calendar: notifications.calendar,
+          notify_sms: false,
+          notify_push: true,
+          notify_calendar: false,
           campaign_id: selectedCampaign?.id,
         };
         const created = await createBookingWithFiles(payload, files);
         const row = Array.isArray(created) ? created[0] : created;
         if (row) {
+          if (row.id) {
+            try {
+              await sendBookingCreatedEmail(row.id);
+            } catch (notificationError: any) {
+              notificationWarnings.push(
+                notificationError?.message ||
+                  `Notifications could not be sent for ${talent.name}.`,
+              );
+            }
+          }
           const normalized = {
             ...row,
             status: row.status || payload.status,
@@ -461,6 +553,24 @@ export const NewBookingModal = ({
           .map((t) => t.name)
           .join(", ")} on ${date}.`,
       });
+      if (notificationWarnings.length > 0) {
+        toast({
+          title: "Booking saved with notification issues",
+          description: notificationWarnings[0],
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      if (useCalendlyHandoff) {
+        setCalendlyEmbedUrl(calendlyUrlAfterSave);
+        setCalendlyEmbedOpen(true);
+        toast({
+          title: "Continue in Calendly",
+          description:
+            "The booking was saved. Complete the calendar invite and reminders in Calendly.",
+        });
+        return;
+      }
       setTimeout(() => onOpenChange(false), 800);
     } catch (e: any) {
       const status = e?.status || e?.response?.status || e?.statusCode;
@@ -897,6 +1007,7 @@ export const NewBookingModal = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  min={mode === "edit" ? undefined : todayDateString}
                 />
                 <div className="flex items-center gap-2 mt-1">
                   <Switch
@@ -1133,33 +1244,13 @@ export const NewBookingModal = ({
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="notify-sms"
-                    checked={notifications.sms}
-                    onChange={(e) =>
-                      setNotifications({
-                        ...notifications,
-                        sms: e.target.checked,
-                      })
-                    }
-                  />
-                  <label htmlFor="notify-sms" className="text-sm">
-                    {`SMS ${entitySingularLower}`}
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
                     id="notify-push"
                     checked={notifications.push}
-                    onChange={(e) =>
-                      setNotifications({
-                        ...notifications,
-                        push: e.target.checked,
-                      })
-                    }
+                    disabled
+                    readOnly
                   />
                   <label htmlFor="notify-push" className="text-sm">
-                    Push notification (mobile app)
+                    In-app notification
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1175,9 +1266,17 @@ export const NewBookingModal = ({
                     }
                   />
                   <label htmlFor="notify-calendar" className="text-sm">
-                    Send calendar invite (.ics file)
+                    Send calendar invite and reminders
                   </label>
                 </div>
+                {notifications.calendar && (
+                  <p className="pl-6 text-xs text-amber-700">
+                    This saves the booking first, sends email and in-app
+                    notifications, then opens Calendly as the final step. Calendly
+                    booking only supports one-to-one bookings, not batch talent
+                    bookings.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1202,6 +1301,8 @@ export const NewBookingModal = ({
               >
                 {saving
                   ? "Saving..."
+                  : notifications.calendar
+                    ? "Save & Continue to Calendly"
                   : mode === "edit"
                     ? "Update Booking"
                     : `Save as ${
@@ -1268,8 +1369,7 @@ export const NewBookingModal = ({
               <span className="font-bold">
                 {[
                   notifications.email && "Email",
-                  notifications.sms && "SMS",
-                  notifications.push && "Push",
+                  notifications.push && "In-app",
                   notifications.calendar && "Calendar",
                 ]
                   .filter(Boolean)
@@ -1305,9 +1405,46 @@ export const NewBookingModal = ({
               }}
               disabled={!canSubmit}
             >
-              Confirm & Save
+              {notifications.calendar
+                ? "Confirm, Save & Continue"
+                : "Confirm & Save"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={calendlyEmbedOpen} onOpenChange={setCalendlyEmbedOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">
+              Complete Booking in Calendly
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>
+              Email and in-app notifications have already been processed. Select
+              the final time slot in Calendly to send the calendar invite and
+              reminders.
+            </span>
+            <Button asChild variant="outline" className="shrink-0">
+              <a href={calendlyEmbedUrl} target="_blank" rel="noreferrer">
+                Open in new tab
+              </a>
+            </Button>
+          </div>
+          <div className="mt-4 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            {calendlyEmbedUrl ? (
+              <iframe
+                title="Calendly booking"
+                src={calendlyEmbedUrl}
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                Calendly link unavailable.
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

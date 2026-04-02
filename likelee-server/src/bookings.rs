@@ -1,4 +1,9 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    agencies::{resolve_effective_agency_id, resolve_effective_agency_talent_id},
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+};
 use axum::extract::Multipart;
 use axum::{
     body::Body,
@@ -84,6 +89,16 @@ pub async fn create_with_files(
     }
 
     let payload = payload.ok_or((StatusCode::BAD_REQUEST, "missing data part".to_string()))?;
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let resolved_talent_id = match payload
+        .talent_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => Some(resolve_effective_agency_talent_id(&state, &agency_id, value).await?),
+        None => None,
+    };
 
     // Reuse create logic: normalize times
     let is_all_day = payload.all_day.unwrap_or(false);
@@ -94,7 +109,7 @@ pub async fn create_with_files(
     };
 
     // Validate: if talent is booked out on this date, block the booking
-    if let (Some(tid), date) = (payload.talent_id.as_ref(), &payload.date) {
+    if let (Some(tid), date) = (resolved_talent_id.as_ref(), &payload.date) {
         // Overlap when date is within [start_date, end_date]
         let resp = state
             .pg
@@ -132,7 +147,7 @@ pub async fn create_with_files(
     let row = json!({
         "agency_user_id": user.id,
         "client_id": payload.client_id,
-        "talent_id": payload.talent_id,
+        "talent_id": resolved_talent_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
         "date": payload.date,
@@ -152,8 +167,8 @@ pub async fn create_with_files(
         "notes": payload.notes,
         "industries": payload.industries,
         "notify_email": payload.notify_email.unwrap_or(true),
-        "notify_sms": payload.notify_sms.unwrap_or(false),
-        "notify_push": payload.notify_push.unwrap_or(false),
+        "notify_sms": false,
+        "notify_push": payload.notify_push.unwrap_or(true),
         "notify_calendar": payload.notify_calendar.unwrap_or(true),
         "campaign_id": payload.campaign_id,
     });

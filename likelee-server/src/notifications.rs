@@ -25,6 +25,53 @@ pub struct ListBookingNotificationsQuery {
     pub limit: Option<u32>,
 }
 
+fn classify_calendly_failure(error: &str) -> &'static str {
+    let normalized = error.to_ascii_lowercase();
+
+    if normalized.contains("token") {
+        "token"
+    } else if normalized.contains("mapping") {
+        "mapping"
+    } else if normalized.contains("not configured")
+        || normalized.contains("disabled for this agency")
+        || normalized.contains("agency settings")
+    {
+        "configuration"
+    } else if normalized.contains("in the past")
+        || normalized.contains("must be in the future")
+        || normalized.contains("past booking")
+    {
+        "timing"
+    } else if normalized.contains("no longer available")
+        || normalized.contains("already_filled")
+        || normalized.contains("slot")
+        || normalized.contains("filled")
+    {
+        "availability"
+    } else if normalized.contains("email")
+        || normalized.contains("recipient")
+        || normalized.contains("contact")
+    {
+        "recipient"
+    } else if normalized.contains("webhook") {
+        "webhook"
+    } else if normalized.contains("event type")
+        || normalized.contains("location")
+        || normalized.contains("invitee")
+    {
+        "event_type"
+    } else {
+        "unknown"
+    }
+}
+
+fn non_empty_string(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
 pub async fn list_booking_notifications(
     State(state): State<AppState>,
     user: AuthUser,
@@ -68,7 +115,7 @@ pub async fn booking_created_email(
     let resp = state
         .pg
         .from("bookings")
-        .select("id,agency_user_id,client_name,client_id,talent_name,talent_id,date,call_time,wrap_time,location,rate_cents,rate_type,notify_calendar,type")
+        .select("id,agency_user_id,client_name,client_id,talent_name,talent_id,date,call_time,wrap_time,location,rate_cents,rate_type,notify_email,notify_calendar,type")
         .eq("id", &payload.booking_id)
         .eq("agency_user_id", &user.id)
         .single()
@@ -108,6 +155,10 @@ pub async fn booking_created_email(
         .get("notify_calendar")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let notify_email = b
+        .get("notify_email")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
     let booking_type = b.get("type").and_then(|v| v.as_str()).unwrap_or("");
     let client_id_opt = b.get("client_id").and_then(|v| v.as_str());
 
@@ -200,10 +251,9 @@ pub async fn booking_created_email(
                                                 if let Ok(v2) =
                                                     serde_json::from_str::<serde_json::Value>(&txt2)
                                                 {
-                                                    to_email = v2
-                                                        .get("email")
-                                                        .and_then(|x| x.as_str())
-                                                        .map(|s| s.to_string());
+                                                    to_email = non_empty_string(
+                                                        v2.get("email").and_then(|x| x.as_str()),
+                                                    );
                                                 }
                                             }
                                         }
@@ -229,10 +279,8 @@ pub async fn booking_created_email(
                     if resp.status().is_success() {
                         if let Ok(txt) = resp.text().await {
                             if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
-                                to_email = v
-                                    .get("email")
-                                    .and_then(|x| x.as_str())
-                                    .map(|s| s.to_string());
+                                to_email =
+                                    non_empty_string(v.get("email").and_then(|x| x.as_str()));
                             }
                         }
                     }
@@ -253,10 +301,8 @@ pub async fn booking_created_email(
             if let Ok(txt) = resp.text().await {
                 if let Ok(arr) = serde_json::from_str::<serde_json::Value>(&txt) {
                     if let Some(first) = arr.as_array().and_then(|a| a.first()) {
-                        to_email = first
-                            .get("email")
-                            .and_then(|x| x.as_str())
-                            .map(|s| s.to_string());
+                        to_email =
+                            non_empty_string(first.get("email").and_then(|x| x.as_str()));
                     }
                 }
             }
@@ -342,14 +388,8 @@ pub async fn booking_created_email(
         if resp.status().is_success() {
             if let Ok(txt) = resp.text().await {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
-                    agency_email = v
-                        .get("email")
-                        .and_then(|x| x.as_str())
-                        .map(|s| s.to_string());
-                    agency_name = v
-                        .get("agency_name")
-                        .and_then(|x| x.as_str())
-                        .map(|s| s.to_string());
+                    agency_email = non_empty_string(v.get("email").and_then(|x| x.as_str()));
+                    agency_name = non_empty_string(v.get("agency_name").and_then(|x| x.as_str()));
                 }
             }
         }
@@ -373,11 +413,15 @@ pub async fn booking_created_email(
                 if resp.status().is_success() {
                     if let Ok(txt) = resp.text().await {
                         if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
-                            if let Some(e) = v.get("email").and_then(|x| x.as_str()) {
-                                client_email = Some(e.to_string());
+                            if let Some(email) =
+                                non_empty_string(v.get("email").and_then(|x| x.as_str()))
+                            {
+                                client_email = Some(email);
                             }
-                            if let Some(cn) = v.get("contact_name").and_then(|x| x.as_str()) {
-                                client_contact_name = cn.to_string();
+                            if let Some(contact_name) =
+                                non_empty_string(v.get("contact_name").and_then(|x| x.as_str()))
+                            {
+                                client_contact_name = contact_name;
                             }
                         }
                     }
@@ -417,10 +461,38 @@ pub async fn booking_created_email(
 
         if let Ok(start_dt) = chrono::DateTime::parse_from_rfc3339(&start_time_str) {
             let start_utc = start_dt.with_timezone(&chrono::Utc);
+            if start_utc <= chrono::Utc::now() {
+                warn!(
+                    booking_id = %payload.booking_id,
+                    start_time = %start_utc,
+                    error = "Calendly invitee registration skipped because the booking start time is in the past. Calendly invites can only be created for future bookings.",
+                    error_category = "timing",
+                    "Calendly invitee registration skipped"
+                );
+                return Ok(Json(json!({
+                    "status": "ok",
+                    "queued": true,
+                    "sent_to": dest,
+                })));
+            }
 
             // Use the client email for Calendly (so they receive the invite + reminders)
             // Fall back to talent email if client email is unavailable
-            let calendly_email = client_email.unwrap_or_else(|| dest.clone());
+            let calendly_email = client_email
+                .or_else(|| non_empty_string(Some(dest.as_str())))
+                .unwrap_or_default();
+            if calendly_email.is_empty() {
+                warn!(
+                    error = "Calendly invitee registration skipped because neither the client nor the talent has a valid email address on file.",
+                    error_category = "recipient",
+                    "Calendly invitee registration skipped"
+                );
+                return Ok(Json(json!({
+                    "status": "ok",
+                    "queued": true,
+                    "sent_to": dest,
+                })));
+            }
 
             let state_clone = state.clone();
             let booking_type_clone = if booking_type.is_empty() {
@@ -455,7 +527,11 @@ pub async fn booking_created_email(
                         info!(invitee_uri = %uri, invitee_email = %calendly_email, "Calendly invitee registered — reminders will be sent")
                     }
                     Err(e) => {
-                        warn!(error = %e, "Calendly invitee registration skipped — check Calendly event type location settings (e.g. Google Meet integration)")
+                        warn!(
+                            error = %e,
+                            error_category = classify_calendly_failure(&e),
+                            "Calendly invitee registration skipped"
+                        )
                     }
                 }
             });
@@ -500,33 +576,42 @@ pub async fn booking_created_email(
             .await;
     }
 
-    let send_res =
-        email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
+    if notify_email {
+        let send_res = email::send_plain_text_email(
+            &state,
+            &dest,
+            &subject,
+            &body,
+            agency_email.as_deref(),
+        );
 
-    // Log notification regardless of SMTP result (status success/error)
-    let status_ok = send_res.is_ok();
-    let insert = json!({
-        "agency_user_id": user.id,
-        "booking_id": payload.booking_id,
-        "channel": "email",
-        "recipient_type": "talent",
-        "to_email": dest,
-        "subject": subject,
-        "message": body,
-        "meta_json": json!({"smtp_status": if status_ok {"ok"} else {"error"}}),
-    });
-    let _ = state
-        .pg
-        .from("booking_notifications")
-        .insert(insert.to_string())
-        .execute()
-        .await;
+        // Log notification regardless of SMTP result (status success/error)
+        let status_ok = send_res.is_ok();
+        let insert = json!({
+            "agency_user_id": user.id,
+            "booking_id": payload.booking_id,
+            "channel": "email",
+            "recipient_type": "talent",
+            "to_email": dest,
+            "subject": subject,
+            "message": body,
+            "meta_json": json!({"smtp_status": if status_ok {"ok"} else {"error"}}),
+        });
+        let _ = state
+            .pg
+            .from("booking_notifications")
+            .insert(insert.to_string())
+            .execute()
+            .await;
 
-    match send_res {
-        Ok(_) => Ok(Json(json!({"status":"ok"}))),
-        Err((code, msg)) => Err((
-            StatusCode::BAD_GATEWAY,
-            format!("email_send_failed upstream_status={} message={}", code, msg),
-        )),
+        match send_res {
+            Ok(_) => Ok(Json(json!({"status":"ok"}))),
+            Err((code, msg)) => Err((
+                StatusCode::BAD_GATEWAY,
+                format!("email_send_failed upstream_status={} message={}", code, msg),
+            )),
+        }
+    } else {
+        Ok(Json(json!({"status":"ok"})))
     }
 }
