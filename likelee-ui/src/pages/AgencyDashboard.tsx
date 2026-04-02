@@ -17125,7 +17125,9 @@ export default function AgencyDashboard() {
   }, [agencyPlanTier, agencyTrialActive, agencyTrialEndsAt]);
 
   const hasProAccess =
-    agencyPlanTier === "pro" || agencyPlanTier === "enterprise" || agencyTrialActive;
+    agencyPlanTier === "pro" ||
+    agencyPlanTier === "enterprise" ||
+    agencyTrialActive;
 
   const irlAddonEntitlement = useMemo(() => {
     const queryValue = (agencyProfileQuery.data as any)
@@ -17747,7 +17749,9 @@ export default function AgencyDashboard() {
   ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
     const resolvedMode =
-      mode === "IRL" && irlAddonEntitlement === false && !agencyTrialActive ? "AI" : mode;
+      mode === "IRL" && irlAddonEntitlement === false && !agencyTrialActive
+        ? "AI"
+        : mode;
     setAgencyModeState(resolvedMode);
     setSearchParams(
       (prev) => {
@@ -17782,7 +17786,13 @@ export default function AgencyDashboard() {
       description:
         "Enable the IRL Booking add-on to access IRL mode in the agency dashboard.",
     });
-  }, [agencyMode, irlAddonEntitlement, agencyTrialActive, setSearchParams, toast]);
+  }, [
+    agencyMode,
+    irlAddonEntitlement,
+    agencyTrialActive,
+    setSearchParams,
+    toast,
+  ]);
 
   const setActiveTab = (tab: string) => {
     startTransition(() => {
@@ -18395,24 +18405,37 @@ export default function AgencyDashboard() {
                   <Crown className="w-5 h-5 font-bold" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-amber-900 leading-tight">Pro Free Trial</p>
-                  <p className="text-[11px] text-amber-700 font-medium">All features unlocked</p>
+                  <p className="text-sm font-bold text-amber-900 leading-tight">
+                    Pro Free Trial
+                  </p>
+                  <p className="text-[11px] text-amber-700 font-medium">
+                    All features unlocked
+                  </p>
                 </div>
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[11px] text-amber-800 font-bold mb-1">
                   <span>Expires in {agencyTrialCountdown}</span>
-                  <span>{Math.max(0, 14 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0))}/14 Days</span>
+                  <span>
+                    {Math.max(
+                      0,
+                      14 -
+                        (agencyTrialCountdown
+                          ? parseInt(agencyTrialCountdown)
+                          : 0),
+                    )}
+                    /14 Days
+                  </span>
                 </div>
                 <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-amber-500 h-full rounded-full transition-all duration-1000"
-                    style={{ 
-                      width: `${Math.max(5, (1 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0) / 14) * 100)}%` 
+                    style={{
+                      width: `${Math.max(5, (1 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0) / 14) * 100)}%`,
                     }}
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => navigate("/AgencySubscribe")}
                   className="w-full mt-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors shadow-sm"
                 >
