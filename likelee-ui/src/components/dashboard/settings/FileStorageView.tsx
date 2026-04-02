@@ -61,6 +61,7 @@ import {
 import {
   createAgencyStorageFolder,
   deleteAgencyStorageFile,
+  deleteAgencyStorageFolder,
   getAgencyStorageFileSignedUrl,
   getAgencyStorageUsage,
   listAgencyStorageFilesPaged,
@@ -230,7 +231,15 @@ const MOCK_FILES: FileItem[] = [
   },
 ];
 
-const FolderCard = ({ folder }: { folder: FolderItem }) => {
+const FolderCard = ({
+  folder,
+  onOpen,
+  onDelete,
+}: {
+  folder: FolderItem;
+  onOpen: () => void;
+  onDelete: () => void;
+}) => {
   const getFolderColor = (type: string) => {
     switch (type) {
       case "talent":
@@ -266,7 +275,10 @@ const FolderCard = ({ folder }: { folder: FolderItem }) => {
   };
 
   return (
-    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
+    <Card
+      className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+      onClick={onOpen}
+    >
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div
           className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
@@ -286,18 +298,34 @@ const FolderCard = ({ folder }: { folder: FolderItem }) => {
               size="icon"
               variant="ghost"
               className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
+              onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+            <DropdownMenuItem
+              className="font-bold text-gray-700 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen();
+              }}
+            >
               <FolderOpen className="w-4 h-4 mr-2" /> Open
             </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+            <DropdownMenuItem
+              className="font-bold text-gray-700 cursor-pointer"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Edit className="w-4 h-4 mr-2" /> Rename
             </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
+            <DropdownMenuItem
+              className="font-bold text-red-600 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
               <Trash2 className="w-4 h-4 mr-2" /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -863,6 +891,10 @@ const FileStorageView = () => {
     useState<FileItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<StorageFile | null>(null);
+  const [deleteFolderDialogOpen, setDeleteFolderDialogOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<StorageFolder | null>(
+    null,
+  );
 
   const [usage, setUsage] = useState<StorageUsage | null>(null);
   const [folders, setFolders] = useState<StorageFolder[]>([]);
@@ -1136,12 +1168,35 @@ const FileStorageView = () => {
       toast({
         title: "File deleted",
       });
+      return true;
     } catch (e: any) {
       toast({
         title: "Failed to delete file",
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
+      return false;
+    }
+  };
+
+  const onDeleteFolder = async (folderId: string) => {
+    try {
+      await deleteAgencyStorageFolder(folderId);
+      if (activeFolderId === folderId) {
+        setActiveFolderId(null);
+      }
+      await loadInitial(activeFolderId === folderId ? null : activeFolderId);
+      toast({
+        title: "Folder deleted with its files",
+      });
+      return true;
+    } catch (e: any) {
+      toast({
+        title: "Failed to delete folder",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+      return false;
     }
   };
 
@@ -1150,11 +1205,25 @@ const FileStorageView = () => {
     setDeleteDialogOpen(true);
   };
 
+  const openDeleteFolderDialog = (folder: StorageFolder) => {
+    setFolderToDelete(folder);
+    setDeleteFolderDialogOpen(true);
+  };
+
   const confirmDelete = async () => {
     if (!fileToDelete) return;
-    await onDeleteFile(fileToDelete.id);
+    const ok = await onDeleteFile(fileToDelete.id);
+    if (!ok) return;
     setDeleteDialogOpen(false);
     setFileToDelete(null);
+  };
+
+  const confirmDeleteFolder = async () => {
+    if (!folderToDelete) return;
+    const ok = await onDeleteFolder(folderToDelete.id);
+    if (!ok) return;
+    setDeleteFolderDialogOpen(false);
+    setFolderToDelete(null);
   };
 
   const usagePct = useMemo(() => {
@@ -1191,6 +1260,37 @@ const FileStorageView = () => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>
               Delete file
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={deleteFolderDialogOpen}
+        onOpenChange={setDeleteFolderDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete folder?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove{" "}
+              <span className="font-semibold text-gray-900">
+                {folderToDelete?.name || "this folder"}
+              </span>
+              . All files inside will be permanently deleted. This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteFolderDialogOpen(false);
+                setFolderToDelete(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteFolder}>
+              Delete folder
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1320,18 +1420,19 @@ const FileStorageView = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
           {folders.map((folder) => (
-            <div key={folder.id} onClick={() => setActiveFolderId(folder.id)}>
-              <FolderCard
-                folder={{
-                  id: folder.id,
-                  name: folder.name,
-                  fileCount: files.filter((f) => f.folder_id === folder.id)
-                    .length,
-                  totalSize: "",
-                  type: "others",
-                }}
-              />
-            </div>
+            <FolderCard
+              key={folder.id}
+              folder={{
+                id: folder.id,
+                name: folder.name,
+                fileCount: files.filter((f) => f.folder_id === folder.id)
+                  .length,
+                totalSize: "",
+                type: "others",
+              }}
+              onOpen={() => setActiveFolderId(folder.id)}
+              onDelete={() => openDeleteFolderDialog(folder)}
+            />
           ))}
         </div>
         <div className="flex justify-center">

@@ -580,6 +580,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
         )
         .route(
+            "/api/agency/storage/folders/:folder_id",
+            delete(crate::agencies::delete_agency_folder),
+        )
+        .route(
             "/api/agency/storage/files",
             get(crate::agencies::list_agency_files),
         )

@@ -849,6 +849,116 @@ pub async fn create_agency_folder(
     Ok(Json(v))
 }
 
+pub async fn delete_agency_folder(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(folder_id): Path<String>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    // Fetch files in folder for this agency
+    let files_resp = state
+        .pg
+        .from("agency_files")
+        .select("id,storage_bucket,storage_path")
+        .eq("agency_id", &user.id)
+        .eq("folder_id", &folder_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files_status = files_resp.status();
+    let files_text = files_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !files_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            files_status.as_u16(),
+            files_text,
+        ));
+    }
+    let files_json: serde_json::Value =
+        serde_json::from_str(&files_text).unwrap_or(serde_json::json!([]));
+    let files = files_json.as_array().cloned().unwrap_or_default();
+
+    // Delete each file from storage and DB
+    let http = reqwest::Client::new();
+    for f in files {
+        let file_id = f.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let bucket = f
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let path = f
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if file_id.is_empty() || bucket.is_empty() || path.is_empty() {
+            continue;
+        }
+
+        let storage_url = format!(
+            "{}/storage/v1/object/{}/{}",
+            state.supabase_url, bucket, path
+        );
+        let del = http
+            .delete(&storage_url)
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
+            .header("apikey", state.supabase_service_key.clone())
+            .send()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        if !del.status().is_success() {
+            let msg = del.text().await.unwrap_or_default();
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                format!("storage delete failed: {msg}"),
+            ));
+        }
+
+        let resp = state
+            .pg
+            .from("agency_files")
+            .eq("id", &file_id)
+            .delete()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            let code =
+                StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+    }
+
+    // Delete folder row (scoped to agency).
+    let resp = state
+        .pg
+        .from("agency_folders")
+        .delete()
+        .eq("id", &folder_id)
+        .eq("agency_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn list_agency_files(
     State(state): State<AppState>,
     user: AuthUser,
@@ -897,7 +1007,7 @@ pub async fn get_agency_storage_file_signed_url(
         .pg
         .from("agency_files")
         .select("storage_bucket,storage_path,agency_id")
-        .eq("id", &file_id)
+        .eq("id", file_id)
         .limit(1)
         .execute()
         .await

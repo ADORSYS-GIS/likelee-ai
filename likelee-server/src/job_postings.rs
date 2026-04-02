@@ -635,10 +635,7 @@ pub async fn list_jobs(
     }
     if let Some(s) = params.search.as_ref().filter(|s| !s.is_empty()) {
         let pattern = format!("%{}%", s);
-        req = req.or(format!(
-            "job_title.ilike.{},about_role.ilike.{}",
-            pattern, pattern
-        ));
+        req = req.ilike("job_title", pattern);
     }
 
     let resp = req
