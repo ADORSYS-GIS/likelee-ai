@@ -899,10 +899,7 @@ pub async fn delete_agency_folder(
             .get("storage_bucket")
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        let path = f
-            .get("storage_path")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let path = f.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
         if file_id.is_empty() || bucket.is_empty() || path.is_empty() {
             continue;
         }
