@@ -20,6 +20,11 @@ pub struct SendMessageRequest {
 }
 
 #[derive(Deserialize)]
+pub struct EditMessageRequest {
+    pub content: String,
+}
+
+#[derive(Deserialize)]
 pub struct StartConversationRequest {
     pub agency_id: Uuid,
     pub creator_id: Uuid,
@@ -321,7 +326,7 @@ pub async fn list_messages(
         .pg
         .from("messages")
         .select(
-            "id,conversation_id,sender_id,content,is_read,created_at",
+            "id,conversation_id,sender_id,content,is_read,created_at,is_deleted,edited_at",
         )
         .eq("conversation_id", &conversation_id.to_string())
         .order("created_at.asc")
@@ -431,4 +436,77 @@ pub async fn send_message(
         serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(json!({ "message": v })))
+}
+
+// ---------------------------------------------------------------------------
+// PUT /api/messages/:id
+// Edit an existing message.
+// RLS enforces that only the sender can edit.
+// ---------------------------------------------------------------------------
+pub async fn edit_message(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(message_id): Path<Uuid>,
+    Json(payload): Json<EditMessageRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let content = payload.content.trim().to_string();
+    if content.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "content_empty".to_string()));
+    }
+
+    let update = json!({
+        "content": content,
+        "edited_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("messages")
+        .update(update.to_string())
+        .eq("id", &message_id.to_string())
+        .eq("sender_id", &user.id.to_string()) // Extra safety
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(json!({ "success": true })))
+}
+
+// ---------------------------------------------------------------------------
+// DELETE /api/messages/:id
+// Soft-delete an existing message.
+// RLS enforces that only the sender can delete.
+// ---------------------------------------------------------------------------
+pub async fn delete_message(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(message_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let update = json!({
+        "is_deleted": true,
+    });
+
+    let resp = state
+        .pg
+        .from("messages")
+        .update(update.to_string())
+        .eq("id", &message_id.to_string())
+        .eq("sender_id", &user.id.to_string()) // Extra safety
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(json!({ "success": true })))
 }

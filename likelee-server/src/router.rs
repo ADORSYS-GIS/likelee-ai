@@ -33,6 +33,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/conversations/start", post(crate::messages::start_conversation))
         .route("/api/conversations/:id/messages", get(crate::messages::list_messages))
         .route("/api/messages/send", post(crate::messages::send_message))
+        .route(
+            "/api/messages/:id",
+            put(crate::messages::edit_message).delete(crate::messages::delete_message),
+        )
         // --- Talent Portal ---
         .route("/api/talent/me", get(crate::talent::talent_me))
         .route("/api/talent/profile", post(crate::talent::update_profile))

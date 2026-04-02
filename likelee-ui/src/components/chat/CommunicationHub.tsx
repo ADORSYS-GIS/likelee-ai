@@ -20,6 +20,8 @@ export function CommunicationHub() {
     openConversation,
     startConversation,
     sendMessage,
+    editMessage,
+    deleteMessage,
     getParticipant,
   } = useChat(profile?.id, profile?.role);
 
@@ -39,8 +41,8 @@ export function CommunicationHub() {
   const selfParticipant = activeConversation && profile?.id
     ? {
         id: profile.id,
-        name: "You",
-        avatarUrl: null,
+        name: profile?.full_name || "You",
+        avatarUrl: profile?.profile_photo_url || null,
         role: (activeConversation.agency_id === profile.id ? "agency" : "creator") as "agency" | "creator",
       }
     : null;
@@ -92,6 +94,8 @@ export function CommunicationHub() {
               otherParticipant={otherParticipant}
               selfParticipant={selfParticipant}
               onSend={sendMessage}
+              onEdit={editMessage}
+              onDelete={deleteMessage}
             />
           )
         ) : (

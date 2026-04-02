@@ -24,6 +24,8 @@ export interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  is_deleted?: boolean;
+  edited_at?: string | null;
 }
 
 export interface Conversation {
@@ -183,12 +185,29 @@ export function useChat(currentUserId?: string, userRole?: string) {
           const updatedMsg = payload.new as Message;
           if (updatedMsg.conversation_id === activeConversationId) {
             setMessages((prev) => 
-               prev.map(m => m.id === updatedMsg.id ? { ...m, is_read: updatedMsg.is_read } : m)
+               prev.map(m => m.id === updatedMsg.id ? { 
+                 ...m, 
+                 is_read: updatedMsg.is_read,
+                 content: updatedMsg.content,
+                 is_deleted: updatedMsg.is_deleted,
+                 edited_at: updatedMsg.edited_at
+               } : m)
             );
           }
 
-          // If unread count changed, we might need to refresh conversation list
-          // but usually messages are marked as read in bulk, so we just update the specific message for the "ticks"
+          // If it's a delete or edit, we might want to update the last message in the thread list
+          if (updatedMsg.is_deleted || updatedMsg.edited_at) {
+            queryClient.setQueryData<Conversation[]>(["conversations", currentUserId], (prev = []) => {
+              const index = prev.findIndex((c) => c.id === updatedMsg.conversation_id);
+              if (index === -1) return prev;
+              const newList = [...prev];
+              newList[index] = { 
+                ...prev[index], 
+                last_message_content: updatedMsg.is_deleted ? "This message was deleted" : updatedMsg.content 
+              };
+              return newList;
+            });
+          }
         }
       )
       .on(
@@ -286,6 +305,26 @@ export function useChat(currentUserId?: string, userRole?: string) {
     [activeConversationId, currentUserId, queryClient, loadConversations],
   );
 
+  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+    try {
+      await base44.put(`/api/messages/${messageId}`, {
+        content: newContent.trim(),
+      });
+      // Realtime will pick up the change
+    } catch (e) {
+      console.error("Failed to edit message:", e);
+    }
+  }, []);
+
+  const deleteMessage = useCallback(async (messageId: string) => {
+    try {
+      await base44.delete(`/api/messages/${messageId}`);
+      // Realtime will pick up the change
+    } catch (e) {
+      console.error("Failed to delete message:", e);
+    }
+  }, []);
+
   const getParticipant = useCallback((conversation: Conversation, perspectiveUserId: string): Participant => {
       const isAgency = conversation.agency_id === perspectiveUserId;
       if (isAgency) {
@@ -320,6 +359,8 @@ export function useChat(currentUserId?: string, userRole?: string) {
     openConversation,
     startConversation,
     sendMessage,
+    editMessage,
+    deleteMessage,
     getParticipant,
   };
 }

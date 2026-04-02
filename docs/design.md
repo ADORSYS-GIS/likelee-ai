@@ -798,6 +798,40 @@ Agencies can invite talent to join their roster:
 - The first submit creates a draft marketplace contract plus a DocuSeal template.
 - The agency then uses the embedded DocuSeal builder to place signature fields and finalize the send.
 - After the creator signs, `POST /webhooks/docuseal/marketplace-contracts` updates the marketplace contract row and activates the creator-agency connection automatically.
+
+---
+
+## Messaging Hub Enhancements
+
+### Goals
+
+- Modernize the messaging UI with improved aesthetics and interactive features.
+- Support message lifecycle management (editing and soft deletion).
+- Improve navigation via search and filtering.
+
+### Features
+
+- **Soft Deletion**: Messages can be marked as `is_deleted`. On the UI, they are replaced by a "Message was deleted" placeholder.
+- **Message Editing**: Messages can be edited by the sender. The `edited_at` timestamp is updated, and an "(edited)" label is shown in the UI.
+- **Search**: Users can search for conversations by participant name in the `ThreadList`.
+- **Filtering**: Quick filters for "All" and "Unread" conversations.
+- **Aesthetics**: Circular send button (pointing right), rounded bubbles (`20px`), green read receipt ticks, and removed self-avatars for a cleaner layout.
+
+### Data Model Updates
+
+#### `messages`
+- `is_deleted` (boolean, default `false`)
+- `edited_at` (timestamptz, nullable)
+
+### Backend API
+
+- `PUT /api/messages/:id`: Edit message content (sender only).
+- `DELETE /api/messages/:id`: Set `is_deleted = true` (sender only).
+
+### Realtime Synchronization
+
+- Supabase realtime broadasts `UPDATE` events on the `messages` table.
+- Frontend `useChat` hook listens for these events to update the message list and thread list (last message preview) in realtime.
 - Creator Dashboard, Talent Portal, and Agency Roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
 - Creator-side connected agency cards should expose contract reminders such as commission rate, start date, end date, disconnect status, and the signed contract link.
 
