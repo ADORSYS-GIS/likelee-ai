@@ -28,10 +28,22 @@ pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/api/health", get(crate::health::health))
         // --- Messaging Hub ---
-        .route("/api/conversations", get(crate::messages::list_conversations))
-        .route("/api/conversations/contacts", get(crate::messages::list_contacts))
-        .route("/api/conversations/start", post(crate::messages::start_conversation))
-        .route("/api/conversations/:id/messages", get(crate::messages::list_messages))
+        .route(
+            "/api/conversations",
+            get(crate::messages::list_conversations),
+        )
+        .route(
+            "/api/conversations/contacts",
+            get(crate::messages::list_contacts),
+        )
+        .route(
+            "/api/conversations/start",
+            post(crate::messages::start_conversation),
+        )
+        .route(
+            "/api/conversations/:id/messages",
+            get(crate::messages::list_messages),
+        )
         .route("/api/messages/send", post(crate::messages::send_message))
         .route(
             "/api/messages/:id",

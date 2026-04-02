@@ -32,20 +32,25 @@ export function CommunicationHub() {
     }
   }, [profile?.id, loadConversations, loadContacts]);
 
-  const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
+  const activeConversation =
+    conversations.find((c) => c.id === activeConversationId) ?? null;
 
-  const otherParticipant = activeConversation && profile?.id
-    ? getParticipant(activeConversation, profile.id)
-    : null;
+  const otherParticipant =
+    activeConversation && profile?.id
+      ? getParticipant(activeConversation, profile.id)
+      : null;
 
-  const selfParticipant = activeConversation && profile?.id
-    ? {
-        id: profile.id,
-        name: profile?.full_name || "You",
-        avatarUrl: profile?.profile_photo_url || null,
-        role: (activeConversation.agency_id === profile.id ? "agency" : "creator") as "agency" | "creator",
-      }
-    : null;
+  const selfParticipant =
+    activeConversation && profile?.id
+      ? {
+          id: profile.id,
+          name: profile?.full_name || "You",
+          avatarUrl: profile?.profile_photo_url || null,
+          role: (activeConversation.agency_id === profile.id
+            ? "agency"
+            : "creator") as "agency" | "creator",
+        }
+      : null;
 
   const isCreator = profile?.role === "creator" || profile?.role === "talent";
 
@@ -53,12 +58,6 @@ export function CommunicationHub() {
     <div className="flex h-[calc(100vh-10rem)] min-h-[500px] rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
       {/* Thread list */}
       <aside className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">Messages</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {conversations.length} thread{conversations.length !== 1 ? "s" : ""}
-          </p>
-        </div>
         {loadingConversations || loadingContacts ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
@@ -102,18 +101,31 @@ export function CommunicationHub() {
           <div className="flex-1 flex flex-col bg-white">
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8 border-b border-gray-100 pb-16">
               <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
-                <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                <svg
+                  className="w-8 h-8 text-indigo-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                  />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-700">Select a conversation</p>
+                <p className="text-sm font-bold text-gray-700">
+                  Select a conversation
+                </p>
                 <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                  Choose a thread on the left, or initiate a new conversation with {isCreator ? "an agency" : "a creator"}.
+                  Choose a thread on the left, or initiate a new conversation
+                  with {isCreator ? "an agency" : "a creator"}.
                 </p>
               </div>
             </div>
-            
+
             {/* Disabled Input bar for WhatsApp-style appearance */}
             <div className="px-4 py-3 bg-white">
               <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 px-4 py-2 opacity-60">
@@ -128,7 +140,11 @@ export function CommunicationHub() {
                   disabled
                   className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-600 text-white opacity-40 cursor-not-allowed"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                   </svg>
                 </button>

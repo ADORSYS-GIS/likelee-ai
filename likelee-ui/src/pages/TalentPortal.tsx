@@ -1324,7 +1324,12 @@ export default function TalentPortal({
                   },
                   { id: "portfolio", label: "Portfolio", icon: LucideImage },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "messages", label: "Messages", icon: MessageSquare, badge: totalUnreadMessages || undefined },
+                  {
+                    id: "messages",
+                    label: "Messages",
+                    icon: MessageSquare,
+                    badge: totalUnreadMessages || undefined,
+                  },
                   { id: "settings", label: "Settings", icon: Settings },
                   {
                     id: "agency_connection",
@@ -1345,7 +1350,12 @@ export default function TalentPortal({
                   { id: "archive", label: "Archive", icon: FolderArchive },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "analytics", label: "Analytics", icon: BarChart3 },
-                  { id: "messages", label: "Messages", icon: MessageSquare, badge: totalUnreadMessages || undefined },
+                  {
+                    id: "messages",
+                    label: "Messages",
+                    icon: MessageSquare,
+                    badge: totalUnreadMessages || undefined,
+                  },
                   { id: "settings", label: "Settings", icon: Settings },
                 ]
             ).map((item) => {

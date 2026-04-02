@@ -17910,7 +17910,8 @@ export default function AgencyDashboard() {
   }, [systemNotifications, dismissedNotificationIds]);
 
   const chatUnreadCount = useUnreadMessages(profile?.id);
-  const unreadCount = notifications.filter((n) => !n.read).length + chatUnreadCount;
+  const unreadCount =
+    notifications.filter((n) => !n.read).length + chatUnreadCount;
   const filteredNotifications = notifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -18071,7 +18072,12 @@ export default function AgencyDashboard() {
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
-          { id: "messages", label: "Messages", icon: MessageSquare, badge: chatUnreadCount || undefined },
+          {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+          },
           {
             id: "licensing",
             label: "Licensing",
@@ -18143,7 +18149,12 @@ export default function AgencyDashboard() {
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
-          { id: "messages", label: "Messages", icon: MessageSquare, badge: chatUnreadCount || undefined },
+          {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+          },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
           {

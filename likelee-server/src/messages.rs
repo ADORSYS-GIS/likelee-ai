@@ -70,25 +70,32 @@ pub async fn list_conversations(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
-    let mut v: Vec<serde_json::Value> =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut v: Vec<serde_json::Value> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Concurrently fetch last message and unread count for each thread
     let mut futures = Vec::new();
     for conv in v.iter() {
-        let cid = conv.get("id").and_then(|i| i.as_str()).unwrap_or_default().to_string();
+        let cid = conv
+            .get("id")
+            .and_then(|i| i.as_str())
+            .unwrap_or_default()
+            .to_string();
         let user_id = user.id.clone();
         let state_clone = state.clone();
 
         futures.push(tokio::spawn(async move {
             // Fetch unread count
-            let unread_resp = state_clone.pg.from("messages")
+            let unread_resp = state_clone
+                .pg
+                .from("messages")
                 .select("id")
                 .eq("conversation_id", &cid)
                 .eq("is_read", "false")
                 .neq("sender_id", &user_id)
-                .execute().await;
-                
+                .execute()
+                .await;
+
             let mut unread_count = 0;
             if let Ok(resp) = unread_resp {
                 if let Ok(txt) = resp.text().await {
@@ -97,15 +104,18 @@ pub async fn list_conversations(
                     }
                 }
             }
-            
+
             // Fetch last message content
-            let last_msg_resp = state_clone.pg.from("messages")
+            let last_msg_resp = state_clone
+                .pg
+                .from("messages")
                 .select("content")
                 .eq("conversation_id", &cid)
                 .order("created_at.desc")
                 .limit(1)
-                .execute().await;
-                
+                .execute()
+                .await;
+
             let mut last_message_content = None;
             if let Ok(resp) = last_msg_resp {
                 if let Ok(txt) = resp.text().await {
@@ -118,7 +128,7 @@ pub async fn list_conversations(
                     }
                 }
             }
-            
+
             (cid, unread_count, last_message_content)
         }));
     }
@@ -258,8 +268,8 @@ pub async fn start_conversation(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
-    let conversation: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let conversation: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Extract conversation id from the array response
     let conv_id = conversation
@@ -325,9 +335,7 @@ pub async fn list_messages(
     let resp = state
         .pg
         .from("messages")
-        .select(
-            "id,conversation_id,sender_id,content,is_read,created_at,is_deleted,edited_at",
-        )
+        .select("id,conversation_id,sender_id,content,is_read,created_at,is_deleted,edited_at")
         .eq("conversation_id", &conversation_id.to_string())
         .order("created_at.asc")
         .limit(200)
@@ -356,8 +364,8 @@ pub async fn list_messages(
         .execute()
         .await;
 
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(json!({ "messages": v })))
 }
@@ -377,7 +385,10 @@ pub async fn send_message(
         return Err((StatusCode::BAD_REQUEST, "content_empty".to_string()));
     }
     if content.len() > 5000 {
-        return Err((StatusCode::UNPROCESSABLE_ENTITY, "content_too_long".to_string()));
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "content_too_long".to_string(),
+        ));
     }
 
     // Verify participation before insert (gives a clean 403)
@@ -432,8 +443,8 @@ pub async fn send_message(
         .execute()
         .await;
 
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(json!({ "message": v })))
 }
