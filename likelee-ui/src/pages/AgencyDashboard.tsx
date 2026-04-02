@@ -17908,9 +17908,7 @@ export default function AgencyDashboard() {
   );
 
   const markAllAsRead = () => {
-    const unreadIds = notifications
-      .filter((n) => !n.read)
-      .map((n) => n.id);
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     setDismissedNotificationIds((prev) =>
       Array.from(new Set([...prev, ...unreadIds])),
     );
