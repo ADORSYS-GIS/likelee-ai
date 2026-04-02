@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import {
   Building2,
   Calendar as CalendarIcon,
-  CheckCircle2,
   Clock,
   DollarSign,
   MapPin,
@@ -34,7 +33,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
@@ -131,7 +129,7 @@ export const NewBookingModal = ({
     email: true,
     sms: false,
     push: true,
-    calendar: true,
+    calendar: false,
   });
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -141,6 +139,11 @@ export const NewBookingModal = ({
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [calendlyEmbedOpen, setCalendlyEmbedOpen] = useState(false);
   const [calendlyEmbedUrl, setCalendlyEmbedUrl] = useState("");
+  const [isCalendlyConfigured, setIsCalendlyConfigured] = useState(false);
+  const [isCalendlyConfigLoading, setIsCalendlyConfigLoading] = useState(false);
+  const [calendlyConfigMessage, setCalendlyConfigMessage] = useState(
+    "Set up Calendly in Agency Settings > Integrations before enabling calendar invites and reminders.",
+  );
   const useCalendlyHandoff = notifications.calendar;
 
   // When all-day is enabled, normalize times to full-day window
@@ -209,6 +212,47 @@ export const NewBookingModal = ({
     loadCampaigns();
   }, [open]);
 
+  useEffect(() => {
+    const loadCalendlySettings = async () => {
+      if (!open) return;
+      setIsCalendlyConfigLoading(true);
+      try {
+        const response = await getAgencyCalendlySettings();
+        const settings = response?.data || {};
+        const schedulingUrl = String(settings?.scheduling_url || "").trim();
+        const integrationEnabled = settings?.is_enabled !== false;
+        const configured = Boolean(schedulingUrl) && integrationEnabled;
+
+        setIsCalendlyConfigured(configured);
+        setCalendlyConfigMessage(
+          configured
+            ? ""
+            : "Set up Calendly in Agency Settings > Integrations and save the public scheduling link before enabling calendar invites and reminders.",
+        );
+
+        if (!configured) {
+          setNotifications((previous) => ({
+            ...previous,
+            calendar: false,
+          }));
+        }
+      } catch (_error) {
+        setIsCalendlyConfigured(false);
+        setCalendlyConfigMessage(
+          "Calendly is not ready yet. Go to Agency Settings > Integrations, enable Calendly, and save the public scheduling link before turning this on.",
+        );
+        setNotifications((previous) => ({
+          ...previous,
+          calendar: false,
+        }));
+      } finally {
+        setIsCalendlyConfigLoading(false);
+      }
+    };
+
+    loadCalendlySettings();
+  }, [open]);
+
   // Pre-fill data for Edit or Duplicate modes
   useEffect(() => {
     if (open && initialData) {
@@ -255,8 +299,36 @@ export const NewBookingModal = ({
       setNotes("");
       setDate(format(new Date(), "yyyy-MM-dd"));
       setSelectedCampaign(null);
+      setNotifications({
+        email: true,
+        sms: false,
+        push: true,
+        calendar: false,
+      });
     }
   }, [open, initialData, clients, talents, campaigns]);
+
+  const handleCalendarToggle = (checked: boolean) => {
+    if (checked && !isCalendlyConfigured) {
+      toast({
+        title: "Set up Calendly first",
+        description:
+          calendlyConfigMessage ||
+          "Go to Agency Settings > Integrations and complete the Calendly setup before enabling calendar invites and reminders.",
+        variant: "destructive" as any,
+      });
+      setNotifications((previous) => ({
+        ...previous,
+        calendar: false,
+      }));
+      return;
+    }
+
+    setNotifications((previous) => ({
+      ...previous,
+      calendar: checked,
+    }));
+  };
 
   // Server-side filtering of talents via q param
   useEffect(() => {
@@ -1224,57 +1296,67 @@ export const NewBookingModal = ({
 
             <div className="space-y-3">
               <Label>Notifications</Label>
-              <div className="space-y-2 border border-gray-100 p-4 rounded-xl bg-gray-50/50">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="notify-email"
+              <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {`Email ${entitySingularLower}`}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Send the booking confirmation by email.
+                    </p>
+                  </div>
+                  <Switch
                     checked={notifications.email}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setNotifications({
                         ...notifications,
-                        email: e.target.checked,
+                        email: checked,
                       })
                     }
                   />
-                  <label htmlFor="notify-email" className="text-sm">
-                    {`Email ${entitySingularLower}`}
-                  </label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="notify-push"
-                    checked={notifications.push}
-                    disabled
-                    readOnly
-                  />
-                  <label htmlFor="notify-push" className="text-sm">
-                    In-app notification
-                  </label>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      In-app notification
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Always on for bookings in the platform.
+                    </p>
+                  </div>
+                  <Switch checked={notifications.push} disabled />
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="notify-calendar"
+
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      Send calendar invite and reminders
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Opens Calendly after the booking is saved.
+                    </p>
+                  </div>
+                  <Switch
                     checked={notifications.calendar}
-                    onChange={(e) =>
-                      setNotifications({
-                        ...notifications,
-                        calendar: e.target.checked,
-                      })
-                    }
+                    onCheckedChange={handleCalendarToggle}
+                    disabled={isCalendlyConfigLoading}
                   />
-                  <label htmlFor="notify-calendar" className="text-sm">
-                    Send calendar invite and reminders
-                  </label>
                 </div>
+
+                {!isCalendlyConfigured && (
+                  <p className="text-xs text-amber-700">
+                    {isCalendlyConfigLoading
+                      ? "Checking Calendly integration setup..."
+                      : calendlyConfigMessage}
+                  </p>
+                )}
+
                 {notifications.calendar && (
-                  <p className="pl-6 text-xs text-amber-700">
-                    This saves the booking first, sends email and in-app
-                    notifications, then opens Calendly as the final step.
-                    Calendly booking only supports one-to-one bookings, not
-                    batch talent bookings.
+                  <p className="text-xs text-amber-700">
+                    Email and in-app notifications are sent first. Calendly
+                    opens last and only supports one-to-one bookings.
                   </p>
                 )}
               </div>
