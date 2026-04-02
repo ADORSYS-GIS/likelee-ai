@@ -580,6 +580,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
         )
         .route(
+            "/api/agency/storage/folders/:folder_id",
+            delete(crate::agencies::delete_agency_folder),
+        )
+        .route(
             "/api/agency/storage/files",
             get(crate::agencies::list_agency_files),
         )
@@ -1168,7 +1172,7 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
+        .layer(DefaultBodyLimit::max(100 * 1024 * 1024)) // 100MB limit
         .layer(cors)
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))

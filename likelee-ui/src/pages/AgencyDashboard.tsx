@@ -16841,13 +16841,36 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
+  const brandLicenseRequestsQuery = useQuery({
+    queryKey: ["agency-brand-license-requests", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyBrandLicenseRequests();
+      return Array.isArray(resp) ? resp : resp?.requests || [];
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 15 * 1000,
+  });
+
   const pendingLicensingRequestsCount = useMemo(() => {
-    const d: any = licensingRequestsCountQuery.data;
-    const requests = d?.requests ?? d?.data ?? d;
-    if (!Array.isArray(requests)) return 0;
-    const pending = requests.filter((r: any) => r?.status === "pending");
-    return pending.length;
-  }, [licensingRequestsCountQuery.data]);
+    const requests = Array.isArray(brandLicenseRequestsQuery.data)
+      ? brandLicenseRequestsQuery.data.filter(
+          (r: any) => r?.status === "pending",
+        ).length
+      : 0;
+
+    // Use seen count from localStorage
+    const saved = localStorage.getItem("brand_licensing_seen_count");
+    const seenCount = saved ? parseInt(saved, 10) : 0;
+
+    // If currently on the licensing requests tab, we clear it visually
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      return 0;
+    }
+
+    return Math.max(0, requests - seenCount);
+  }, [brandLicenseRequestsQuery.data, activeTab, activeSubTab]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17109,6 +17132,49 @@ export default function AgencyDashboard() {
       setActiveSubTab("Talent Availability");
     }
   }, [activeSubTab, isSportsAgency]);
+
+  // Handle clearing notification counts when visiting tabs
+  useEffect(() => {
+    if (activeTab === "brand-connections") {
+      const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+        ? brandConnectionRequestsCountQuery.data.length
+        : 0;
+      const offers =
+        (Array.isArray(brandConnectionOffersQuery.data)
+          ? brandConnectionOffersQuery.data.filter((o) =>
+              ["sent", "viewed"].includes(o.status),
+            ).length
+          : 0) +
+        (Array.isArray(brandConnectionJobInvitesQuery.data)
+          ? brandConnectionJobInvitesQuery.data.length
+          : 0);
+      const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+        ? brandConnectionFeedbackQuery.data.length
+        : 0;
+
+      localStorage.setItem(
+        "brand_connections_seen_counts",
+        JSON.stringify({ requests, offers, feedback }),
+      );
+    }
+  }, [
+    activeTab,
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionJobInvitesQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      const requests = Array.isArray(brandLicenseRequestsQuery.data)
+        ? brandLicenseRequestsQuery.data.filter(
+            (r: any) => r?.status === "pending",
+          ).length
+        : 0;
+      localStorage.setItem("brand_licensing_seen_count", String(requests));
+    }
+  }, [activeTab, activeSubTab, brandLicenseRequestsQuery.data]);
 
   useEffect(() => {
     if (activeTab !== "roster") return;
@@ -18077,6 +18143,12 @@ export default function AgencyDashboard() {
               pendingLicensingRequestsCount > 0
                 ? pendingLicensingRequestsCount
                 : undefined,
+            badges: {
+              "Licensing Requests":
+                pendingLicensingRequestsCount > 0
+                  ? pendingLicensingRequestsCount
+                  : undefined,
+            },
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           { id: "client-crm", label: "Client CRM", icon: Building2 },

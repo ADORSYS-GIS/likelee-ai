@@ -309,15 +309,28 @@ const LicensingRequestsView = ({
               Licensing Requests
             </h2>
             <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
-              {["Active", "Archive", "Brand Requests"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveRequestTab(tab as any)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {["Active", "Archive", "Brand Requests"].map((tab) => {
+                const isBrandTab = tab === "Brand Requests";
+                const pendingCount = isBrandTab
+                  ? brandLicenseData.filter((r: any) => r.status === "pending")
+                      .length
+                  : 0;
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveRequestTab(tab as any)}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                  >
+                    {tab}
+                    {isBrandTab && pendingCount > 0 && (
+                      <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <Button

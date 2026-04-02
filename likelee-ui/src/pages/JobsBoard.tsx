@@ -88,8 +88,6 @@ export default function JobsBoard() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
-  const [githubLink, setGithubLink] = useState("");
-  const [linkedinLink, setLinkedinLink] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
@@ -205,6 +203,21 @@ export default function JobsBoard() {
     return "Not specified";
   };
 
+  const isJobClosed = (job: any) => {
+    const status = String(
+      job?.status || job?.job_status || job?.state || "",
+    ).toLowerCase();
+    return [
+      "closed",
+      "filled",
+      "inactive",
+      "expired",
+      "cancelled",
+      "canceled",
+      "completed",
+    ].includes(status);
+  };
+
   const queryParams = useMemo(
     () => ({
       search: search || undefined,
@@ -237,7 +250,10 @@ export default function JobsBoard() {
         ? jobsQuery.data.jobs
         : [];
       setJobs(rows);
-      if (rows.length > 0 && !selectedJob) {
+      const openRows = rows.filter((job) => !isJobClosed(job));
+      if (openRows.length > 0) {
+        setSelectedJob((prev) => prev || openRows[0]);
+      } else if (rows.length > 0 && !selectedJob) {
         setSelectedJob(rows[0]);
       } else if (rows.length === 0) {
         setSelectedJob(null);
@@ -266,14 +282,52 @@ export default function JobsBoard() {
     }, 400);
   }, [revealingMore]);
 
-  const visibleJobs = jobs.slice(0, visibleCount);
-  const hasMore = visibleCount < jobs.length;
   const isFiltered =
     search.trim() !== "" ||
     callType !== "all" ||
     jobType !== "all" ||
     location !== "all" ||
     category !== "";
+
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return jobs
+      .filter((job) => !isJobClosed(job))
+      .filter((job) => {
+        if (callType !== "all") {
+          const val = String(
+            job?.call_type || job?.callType || "",
+          ).toLowerCase();
+          if (val !== callType) return false;
+        }
+        if (jobType !== "all") {
+          const val = String(job?.job_type || job?.jobType || "").toLowerCase();
+          if (val !== jobType) return false;
+        }
+        if (location !== "all") {
+          const val = String(
+            job?.location || job?.job_location || job?.location_name || "",
+          ).toLowerCase();
+          if (val !== location.toLowerCase()) return false;
+        }
+        if (category) {
+          const val = String(job?.category || "").toLowerCase();
+          if (val !== category.toLowerCase()) return false;
+        }
+        return true;
+      })
+      .filter((job) => {
+        if (!q) return true;
+        const haystack = [job?.job_title, job?.title]
+          .filter(Boolean)
+          .map((v: any) => String(v).toLowerCase())
+          .join(" ");
+        return haystack.includes(q);
+      });
+  }, [jobs, search, callType, jobType, location, category]);
+
+  const visibleJobs = filteredJobs.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredJobs.length;
 
   // Auto-load next batch when sentinel enters viewport
   useEffect(() => {
@@ -315,6 +369,41 @@ export default function JobsBoard() {
 
   const handleApply = async () => {
     if (!selectedJob?.id) return;
+    if (isJobClosed(selectedJob)) {
+      toast({
+        title: "Job closed or no vacancies",
+        description: "This role is no longer accepting applications.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!resumeMeta?.url || (resumeMeta?.size ?? 0) <= 0) {
+      toast({
+        title: "Resume required",
+        description: "Please upload a resume before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const hasCompCard = (compCardMetas || []).some(
+      (m: any) => m?.url && (m?.size ?? 0) > 0,
+    );
+    if (!hasCompCard) {
+      toast({
+        title: "Comp card required",
+        description: "Please upload a comp card before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!portfolioLink.trim()) {
+      toast({
+        title: "Portfolio required",
+        description: "Please provide a portfolio link before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       setApplyLoading(true);
       const compCardsPayload = (compCardMetas || []).map((m: any) => ({
@@ -339,8 +428,6 @@ export default function JobsBoard() {
         // New multi-upload field
         comp_cards: compCardsPayload,
         portfolio_link: portfolioLink || undefined,
-        github_link: githubLink || undefined,
-        linkedin_link: linkedinLink || undefined,
       });
       toast({
         title: "Application sent",
@@ -349,8 +436,6 @@ export default function JobsBoard() {
       setApplyOpen(false);
       setApplyMessage("");
       setPortfolioLink("");
-      setGithubLink("");
-      setLinkedinLink("");
       setResumeFile(null);
       setResumeMeta(null);
       setCompCardFiles([]);
@@ -492,21 +577,6 @@ export default function JobsBoard() {
     <>
       <div className="min-h-screen bg-gray-50 px-6 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-fit px-0 text-gray-600 hover:bg-transparent hover:text-gray-900"
-            onClick={() => {
-              if (backTo) {
-                navigate(backTo);
-                return;
-              }
-              navigate(-1);
-            }}
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
           <div className="flex items-center justify-between">
             <div className="space-y-3">
               <Button
@@ -514,10 +584,14 @@ export default function JobsBoard() {
                 variant="ghost"
                 className="px-2"
                 onClick={() => {
+                  if (backTo) {
+                    navigate(backTo);
+                    return;
+                  }
                   if (window.history.length > 1) {
                     navigate(-1);
                   } else {
-                    navigate(createPageUrl("AgencyDashboard"));
+                    navigate(createPageUrl("CreatorDashboard"));
                   }
                 }}
               >
@@ -531,7 +605,7 @@ export default function JobsBoard() {
             </div>
             <div className="flex items-center gap-2 text-gray-500">
               <Briefcase className="w-5 h-5" />
-              <span className="text-sm">{jobs.length} open roles</span>
+              <span className="text-sm">{filteredJobs.length} open roles</span>
             </div>
           </div>
 
@@ -614,7 +688,7 @@ export default function JobsBoard() {
                   </div>
                 </Card>
               ))}
-            {!loading && jobs.length === 0 && (
+            {!loading && filteredJobs.length === 0 && (
               <div className="col-span-full">
                 <Card className="p-8 text-center">
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -870,7 +944,7 @@ export default function JobsBoard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Portfolio Link
+                      Portfolio Link *
                     </label>
                     <Input
                       placeholder="https://yourportfolio.com"
@@ -878,26 +952,6 @@ export default function JobsBoard() {
                       onChange={(e) => setPortfolioLink(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">
-                      LinkedIn Profile
-                    </label>
-                    <Input
-                      placeholder="https://linkedin.com/in/..."
-                      value={linkedinLink}
-                      onChange={(e) => setLinkedinLink(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    GitHub Profile
-                  </label>
-                  <Input
-                    placeholder="https://github.com/..."
-                    value={githubLink}
-                    onChange={(e) => setGithubLink(e.target.value)}
-                  />
                 </div>
               </div>
               <Textarea
@@ -914,7 +968,14 @@ export default function JobsBoard() {
               <Button
                 className="bg-black text-white"
                 onClick={handleApply}
-                disabled={applyLoading}
+                disabled={
+                  applyLoading ||
+                  resumeUploading ||
+                  compCardUploading ||
+                  !resumeMeta?.url ||
+                  compCardMetas.length === 0 ||
+                  !portfolioLink.trim()
+                }
               >
                 {applyLoading ? "Sending..." : "Send application"}
               </Button>

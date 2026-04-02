@@ -1230,10 +1230,12 @@ const GeneralSettingsView = ({
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
+      // Exclude email from update payload as it's not allowed to be changed after sign-in
+      const { email, ...updateData } = formData;
       const { error } = await supabase
         .from("agencies")
         .update({
-          ...formData,
+          ...updateData,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           updated_at: new Date().toISOString(),
@@ -1564,8 +1566,8 @@ const GeneralSettingsView = ({
                   </Label>
                   <Input
                     value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
+                    disabled
+                    className="bg-gray-50 border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm cursor-not-allowed opacity-70"
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
