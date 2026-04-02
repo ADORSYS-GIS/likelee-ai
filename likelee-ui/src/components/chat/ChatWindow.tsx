@@ -92,9 +92,9 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white relative">
       {/* Dynamic Background Watermark */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden opacity-[0.06] z-0">
-        <img 
-          src="/likelee-logo.png" 
-          alt="" 
+        <img
+          src="/likelee-logo.png"
+          alt=""
           className="w-[80%] max-w-[500px] object-contain grayscale"
         />
       </div>

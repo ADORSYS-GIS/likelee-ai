@@ -129,15 +129,21 @@ export function ThreadList({
     );
   }
 
-  const countLabel = isCreator 
-    ? conversations.length === 1 ? "Agency" : "Agencies"
-    : conversations.length === 1 ? "Creator" : "Creators";
+  const countLabel = isCreator
+    ? conversations.length === 1
+      ? "Agency"
+      : "Agencies"
+    : conversations.length === 1
+      ? "Creator"
+      : "Creators";
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 bg-white">
-        <h2 className="text-xl font-black text-gray-900 tracking-tight">Messages</h2>
+        <h2 className="text-xl font-black text-gray-900 tracking-tight">
+          Messages
+        </h2>
         <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">
           {conversations.length} {countLabel}
         </p>
