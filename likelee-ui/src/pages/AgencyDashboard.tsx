@@ -40,6 +40,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
@@ -128,6 +129,8 @@ import {
   MapPin,
   Star,
   Menu,
+  PanelLeft,
+  PanelRight,
   ImageIcon,
   Loader2,
   Mic,
@@ -16596,10 +16599,13 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const normalizeSubTab = (value: string | null | undefined) =>
-    String(value || "")
+  const normalizeSubTab = (value: string | null | undefined) => {
+    const cleaned = String(value || "")
       .trim()
       .replace(/\/+$/g, "");
+    if (cleaned === "Protect & Usage") return "Protection & Usage";
+    return cleaned;
+  };
 
   // Sensible default sub-tab based on tab
   const getDefaultSubTab = (tab: string) => {
@@ -16611,7 +16617,7 @@ export default function AgencyDashboard() {
       case "jobs":
         return "Job Invites";
       case "protection":
-        return "Protect & Usage";
+        return "Protection & Usage";
       case "analytics":
         return "Analytics Dashboard";
       case "bookings":
@@ -16652,6 +16658,8 @@ export default function AgencyDashboard() {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
   });
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
     if (!license.template_id) {
       toast({
@@ -17083,6 +17091,74 @@ export default function AgencyDashboard() {
   const irlAddonLocked = irlAddonEntitlement === false;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
+  const isMobile = useIsMobile();
+  const SIDEBAR_MIN_WIDTH = 72;
+  const SIDEBAR_MAX_WIDTH = 280;
+  const SIDEBAR_COLLAPSE_THRESHOLD = 140;
+  const SIDEBAR_FADE_START = 220;
+  const isSidebarCollapsed =
+    !isMobile && sidebarWidth <= SIDEBAR_COLLAPSE_THRESHOLD;
+  const labelOpacity = isMobile
+    ? 1
+    : Math.min(
+        1,
+        Math.max(
+          0,
+          (sidebarWidth - SIDEBAR_COLLAPSE_THRESHOLD) /
+            (SIDEBAR_FADE_START - SIDEBAR_COLLAPSE_THRESHOLD),
+        ),
+      );
+  const showLabels = isMobile || sidebarWidth > SIDEBAR_COLLAPSE_THRESHOLD;
+  const showSubItems = isMobile || sidebarWidth >= 200;
+
+  const handleSidebarDragStart = (event: React.MouseEvent) => {
+    if (isMobile) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+    const handleMove = (event: MouseEvent) => {
+      const nextWidth = Math.min(
+        SIDEBAR_MAX_WIDTH,
+        Math.max(SIDEBAR_MIN_WIDTH, event.clientX),
+      );
+      setSidebarWidth(nextWidth);
+    };
+    const handleUp = () => {
+      setIsResizingSidebar(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [
+    isResizingSidebar,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_COLLAPSE_THRESHOLD,
+  ]);
+
+  useEffect(() => {
+    if (effectiveAgencyMode !== "AI") return;
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      ["roster", "licensing", "protection", "analytics"].forEach((id) =>
+        next.add(id),
+      );
+      return Array.from(next);
+    });
+  }, [effectiveAgencyMode]);
 
   useEffect(() => {
     if (activeSubTab === "All Talent" && isSportsAgency) {
@@ -18069,7 +18145,6 @@ export default function AgencyDashboard() {
             icon: FileText,
             subItems: [
               "Licensing Requests",
-              "License Submissions",
               "Active Licenses",
               "License Templates",
             ],
@@ -18084,10 +18159,7 @@ export default function AgencyDashboard() {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            badge: "Coming soon",
           },
           {
             id: "analytics",
@@ -18226,17 +18298,29 @@ export default function AgencyDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        style={{ width: isMobile ? "16rem" : `${sidebarWidth}px` }}
       >
         <div
-          className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+            isSidebarCollapsed
+              ? "p-4 flex items-center justify-center"
+              : "p-6 flex items-center gap-3"
+          }`}
           onClick={() => {
             setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
+          title={
+            isSidebarCollapsed ? profile?.agency_name || "Agency" : undefined
+          }
         >
           <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
+            <div
+              className={`${
+                isSidebarCollapsed ? "w-12 h-12" : "w-16 h-16"
+              } rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden`}
+            >
               {profile?.logo_url ? (
                 <img
                   src={profile.logo_url}
@@ -18245,27 +18329,34 @@ export default function AgencyDashboard() {
                 />
               ) : (
                 <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-indigo-600" />
+                  <Building2
+                    className={`${isSidebarCollapsed ? "w-6 h-6" : "w-8 h-8"} text-indigo-600`}
+                  />
                 </div>
               )}
             </div>
             <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-                {profile?.agency_name || "Agency Name"}
-              </h2>
-              {agencyKycStatus === "approved" && (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </Badge>
-              )}
+          {showLabels && (
+            <div
+              className="flex flex-col min-w-0 transition-opacity duration-150"
+              style={{ opacity: labelOpacity }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+                  {profile?.agency_name || "Agency Name"}
+                </h2>
+                {agencyKycStatus === "approved" && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 font-medium truncate">
+                {profile?.email || user?.email}
+              </p>
             </div>
-            <p className="text-sm text-gray-500 font-medium truncate">
-              {profile?.email || user?.email}
-            </p>
-          </div>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
@@ -18292,9 +18383,15 @@ export default function AgencyDashboard() {
                 title={
                   item.disabled
                     ? item.disabledReason || "Requires Pro"
-                    : undefined
+                    : isSidebarCollapsed
+                      ? item.label
+                      : undefined
                 }
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
+                  isSidebarCollapsed
+                    ? "justify-center px-2 py-2.5"
+                    : "gap-3 px-3 py-2.5"
+                } ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -18305,83 +18402,106 @@ export default function AgencyDashboard() {
                     activeTab === item.id ? "text-indigo-700" : "text-gray-500"
                   }`}
                 />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    {item.badge}
-                  </span>
-                )}
-                {item.disabled && (
-                  <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    Pro
-                  </span>
-                )}
-                {item.subItems && (
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
-                  />
+                {showLabels && (
+                  <>
+                    <span
+                      className="flex-1 text-left whitespace-nowrap overflow-hidden transition-opacity duration-150"
+                      style={{
+                        opacity: labelOpacity,
+                        maxWidth: isMobile ? "none" : Math.max(0, sidebarWidth - 140),
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    {item.badge !== undefined && (
+                      <span
+                        className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        style={{ opacity: labelOpacity }}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                    {item.disabled && (
+                      <span
+                        className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        style={{ opacity: labelOpacity }}
+                      >
+                        Pro
+                      </span>
+                    )}
+                    {item.subItems && (
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
+                        style={{ opacity: labelOpacity }}
+                      />
+                    )}
+                  </>
                 )}
               </button>
 
               {/* Sub-items */}
-              {item.subItems && expandedItems.includes(item.id) && (
+              {item.subItems &&
+                expandedItems.includes(item.id) &&
+                showSubItems &&
+                showLabels && (
                 <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                  {item.subItems.map((subItem) => (
-                    <button
-                      key={subItem}
-                      onClick={() => {
-                        if (
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                        }}
+                        title={
                           item.disabledSubItems &&
                           item.disabledSubItems[subItem]
-                        ) {
-                          navigate("/AgencySubscribe");
-                          setSidebarOpen(false);
-                          return;
+                            ? "Requires Pro"
+                            : undefined
                         }
-                        if (
-                          item.id === "jobs" &&
-                          subItem === "Open Job Board"
-                        ) {
-                          navigate(
-                            `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
-                              `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
-                            )}`,
-                          );
-                          setSidebarOpen(false);
-                          return;
-                        }
-                        setActiveView(item.id, subItem);
-                        setSidebarOpen(false);
-                      }}
-                      title={
-                        item.disabledSubItems && item.disabledSubItems[subItem]
-                          ? "Requires Pro"
-                          : undefined
-                      }
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="truncate">{subItem}</span>
-                      <span className="flex items-center gap-2">
-                        {item.disabledSubItems &&
-                          item.disabledSubItems[subItem] && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                              Pro
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
                             </span>
                           )}
-                        {item.badges && item.badges[subItem] && (
-                          <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                            {item.badges[subItem]}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
           ))}
         </nav>
@@ -18389,16 +18509,40 @@ export default function AgencyDashboard() {
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={() => logout()}
-            className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50"
+            className={`flex items-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full rounded-lg hover:bg-red-50 ${
+              isSidebarCollapsed
+                ? "justify-center px-2 py-2"
+                : "gap-2 px-3 py-2"
+            }`}
+            title={isSidebarCollapsed ? "Sign Out" : undefined}
           >
             <LogOut className="w-5 h-5" />
-            Sign Out
+            {showLabels && (
+              <span
+                className="transition-opacity duration-150"
+                style={{ opacity: labelOpacity }}
+              >
+                Sign Out
+              </span>
+            )}
           </button>
         </div>
+
+        {!isMobile && (
+          <div
+            onMouseDown={handleSidebarDragStart}
+            className="absolute inset-y-0 right-0 w-2 cursor-ew-resize"
+            title="Resize sidebar"
+            aria-hidden="true"
+          />
+        )}
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden">
+      <div
+        className="flex-1 flex flex-col ml-0 overflow-hidden"
+        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
+      >
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
@@ -18949,72 +19093,16 @@ export default function AgencyDashboard() {
                   }}
                 />
               )}
-            {activeTab === "protection" &&
-              activeSubTab === "Protect & Usage" &&
-              (hasProAccess ? (
-                <ProtectionUsageView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Protection & Usage is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "protection" &&
-              activeSubTab === "Compliance Hub" &&
-              (hasProAccess ? (
-                <ComplianceHubView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Compliance Hub is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "protection" &&
-              activeSubTab === "Protect & Usage" && (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Coming soon
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Protection & Usage is coming soon.
-                  </div>
-                </Card>
-              )}
-            {activeTab === "protection" &&
-              activeSubTab === "Compliance Hub" && (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Coming soon
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Compliance Hub is coming soon.
-                  </div>
-                </Card>
-              )}
+            {activeTab === "protection" && (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Coming soon
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Protection & Usage is coming soon.
+                </div>
+              </Card>
+            )}
             {activeTab === "analytics" &&
               activeSubTab === "Analytics Dashboard" &&
               (effectiveAgencyMode === "IRL" ? (
