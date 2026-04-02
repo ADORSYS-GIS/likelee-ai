@@ -439,7 +439,7 @@ pub async fn send_message(
         .pg
         .from("conversations")
         .update(json!({"updated_at": chrono::Utc::now().to_rfc3339()}).to_string())
-        .eq("id", &payload.conversation_id)
+        .eq("id", payload.conversation_id.to_string())
         .execute()
         .await;
 
@@ -474,8 +474,8 @@ pub async fn edit_message(
         .pg
         .from("messages")
         .update(update.to_string())
-        .eq("id", &message_id)
-        .eq("sender_id", &user.id) // Extra safety
+        .eq("id", message_id.to_string())
+        .eq("sender_id", user.id.to_string()) // Extra safety
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -507,8 +507,8 @@ pub async fn delete_message(
         .pg
         .from("messages")
         .update(update.to_string())
-        .eq("id", &message_id)
-        .eq("sender_id", &user.id) // Extra safety
+        .eq("id", message_id.to_string())
+        .eq("sender_id", user.id.to_string()) // Extra safety
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
