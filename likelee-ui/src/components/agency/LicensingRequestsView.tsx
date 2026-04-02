@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, CheckCircle2, Send, RefreshCw, Eye } from "lucide-react";
+import { Filter, CheckCircle2, Send, RefreshCw, Eye, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -522,7 +522,7 @@ const LicensingRequestsView = ({
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <span className="text-[10px] font-bold">\u2715</span>
+                        <X className="w-3 h-3" />
                       </div>
                       Decline
                     </Button>
@@ -658,7 +658,7 @@ const LicensingRequestsView = ({
                   <div className="space-y-4">
                     <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
                       <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
-                        <span className="text-[10px] font-bold">\u2715</span>{" "}
+                        <X className="w-4 h-4" />
                         Declined
                       </p>
                     </div>
@@ -683,7 +683,7 @@ const LicensingRequestsView = ({
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <span className="text-[10px] font-bold">\u2715</span>
+                        <X className="w-3 h-3" />
                       </div>
                       Decline
                     </Button>

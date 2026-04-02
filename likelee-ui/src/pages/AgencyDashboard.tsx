@@ -1,12 +1,41 @@
-import React, { startTransition, useEffect, useMemo, useState } from "react";
+import React, {
+  lazy,
+  Suspense,
+  startTransition,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { format, addDays } from "date-fns";
-import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
-import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
-import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
-import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
-import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
+
+// Heavy scouting components - lazy loaded to defer Leaflet map bundle
+const LicenseTemplatesTab = lazy(() =>
+  import("@/components/licensing/LicenseTemplatesTab").then((m) => ({
+    default: m.LicenseTemplatesTab,
+  })),
+);
+const LicenseSubmissionsTab = lazy(() =>
+  import("@/components/licensing/LicenseSubmissionsTab").then((m) => ({
+    default: m.LicenseSubmissionsTab,
+  })),
+);
+const ActiveLicenseDetailsSheet = lazy(() =>
+  import("@/components/licensing/ActiveLicenseDetailsSheet").then((m) => ({
+    default: m.ActiveLicenseDetailsSheet,
+  })),
+);
+const ScoutingMap = lazy(() =>
+  import("@/components/scouting/map/ScoutingMap").then((m) => ({
+    default: m.ScoutingMap,
+  })),
+);
+const ScoutingTrips = lazy(() =>
+  import("@/components/scouting/ScoutingTrips").then((m) => ({
+    default: m.ScoutingTrips,
+  })),
+);
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +48,7 @@ import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 
 import { parseBackendError } from "@/utils/errorParser";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   LayoutDashboard,
@@ -44,6 +74,8 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
+  Sparkles,
+  Crown,
   Download,
   Filter,
   Target,
@@ -105,11 +137,62 @@ import {
   Library,
   FolderCheck,
 } from "lucide-react";
-import { AgencyDeliverablesView } from "@/components/agency/AgencyDeliverablesView";
+// ----------- LAZY TAB COMPONENTS -----------
+// Each import is split into its own JS chunk by Vite.
+// The browser only downloads these when the user navigates to that tab.
+const AgencyDeliverablesView = lazy(() =>
+  import("@/components/agency/AgencyDeliverablesView").then((m) => ({
+    default: m.AgencyDeliverablesView,
+  })),
+);
+const BookingsView = lazy(() =>
+  import("@/components/Bookings/BookingsView").then((m) => ({
+    default: m.BookingsView,
+  })),
+);
+const GeneralSettingsView = lazy(
+  () => import("@/components/dashboard/settings/GeneralSettingsView"),
+);
+const AgencyDashboardView = lazy(
+  () => import("@/components/agency/DashboardView"),
+);
+const FileStorageView = lazy(
+  () => import("@/components/dashboard/settings/FileStorageView"),
+);
+const AgencyRosterView = lazy(() => import("@/components/agency/RosterView"));
+const AnalyticsDashboardView = lazy(
+  () => import("@/components/agency/AnalyticsDashboardView"),
+);
+const LicensingRequestsView = lazy(
+  () => import("@/components/agency/LicensingRequestsView"),
+);
+const ActiveLicensesView = lazy(
+  () => import("@/components/agency/ActiveLicensesView"),
+);
+const BrandConnectionsView = lazy(
+  () => import("@/components/agency/BrandConnectionsView"),
+);
+const AgencyJobInvitesView = lazy(
+  () => import("@/components/agency/AgencyJobInvitesView"),
+);
+const MarketplaceSection = lazy(
+  () => import("@/components/marketplace/MarketplaceSection"),
+);
+const PerformanceTiers = lazy(
+  () => import("@/components/dashboard/PerformanceTiers"),
+);
+const ClientCRMView = lazy(() => import("@/components/crm/ClientCRMView"));
+const TalentCommissionSettings = lazy(() =>
+  import("@/components/dashboard/settings/TalentCommissionSettings").then(
+    (m) => ({
+      default: m.TalentCommissionSettings,
+    }),
+  ),
+);
+// -------------------------------------------
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
-
 import {
   ComplianceRenewableLicense,
   RenewalLaunchContext,
@@ -117,7 +200,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
   clearStoredKycSessionUrl,
@@ -144,19 +226,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { BookingsView } from "@/components/Bookings/BookingsView";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
-import AgencyDashboardView from "@/components/agency/DashboardView";
-import FileStorageView from "@/components/dashboard/settings/FileStorageView";
-import AgencyRosterView from "@/components/agency/RosterView";
-import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
-import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
-import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
-import BrandConnectionsView from "@/components/agency/BrandConnectionsView";
-import AgencyJobInvitesView from "@/components/agency/AgencyJobInvitesView";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
-import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
-import { TalentCommissionSettings } from "@/components/dashboard/settings/TalentCommissionSettings";
 import {
   getAgencyRoster,
   getAgencyProfile,
@@ -197,8 +266,21 @@ import {
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
 } from "@/api/functions";
-import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+
+/** Skeleton shown while a lazy tab chunk is being downloaded */
+const TabSkeleton = () => (
+  <div className="flex-1 p-6 lg:p-8 animate-pulse space-y-4">
+    <div className="h-8 bg-gray-100 rounded-lg w-1/3" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-28 bg-gray-100 rounded-xl" />
+      ))}
+    </div>
+    <div className="h-64 bg-gray-100 rounded-xl" />
+    <div className="h-40 bg-gray-100 rounded-xl" />
+  </div>
+);
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -16768,7 +16850,7 @@ export default function AgencyDashboard() {
   }, [licensingRequestsCountQuery.data]);
 
   const brandConnectionRequestsCountQuery = useQuery({
-    queryKey: ["agency-brand-connection-requests", user?.id],
+    queryKey: ["agency", "brand-connection-requests"],
     queryFn: async () => {
       const resp = await base44.get<{
         status?: string;
@@ -16783,7 +16865,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionOffersQuery = useIndexedDbQuery({
-    queryKey: ["agency-campaign-offers-my", user?.id],
+    queryKey: ["agency", "campaign-offers-my"],
     queryFn: async () => {
       const resp = await base44.get<{ offers?: any[] }>(
         "/api/campaign-offers/my",
@@ -16800,7 +16882,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionJobInvitesQuery = useIndexedDbQuery({
-    queryKey: ["agency-job-invites", user?.id],
+    queryKey: ["agency", "job-invites"],
     queryFn: async () => {
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
@@ -16817,15 +16899,15 @@ export default function AgencyDashboard() {
       });
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
-    syncInterval: 30 * 1000,
+    maxAge: 120 * 1000,
+    syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
   const brandConnectionFeedbackQuery = useIndexedDbQuery({
-    queryKey: ["agency-package-feedback", user?.id],
+    queryKey: ["agency", "package-feedback"],
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
         "/api/agency/brand-offers/package-feedback",
@@ -16833,52 +16915,57 @@ export default function AgencyDashboard() {
       return Array.isArray(resp?.items) ? resp.items : [];
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
+    maxAge: 120 * 1000,
     syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
-  const pendingBrandConnectionCount = useMemo(() => {
-    const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+  const brandCounts = useMemo(() => {
+    const numRequests = Array.isArray(brandConnectionRequestsCountQuery.data)
       ? brandConnectionRequestsCountQuery.data.length
       : 0;
-    const offers =
-      (Array.isArray(brandConnectionOffersQuery.data)
-        ? brandConnectionOffersQuery.data.filter((o) =>
-            ["sent", "viewed"].includes(o.status),
-          ).length
-        : 0) +
-      (Array.isArray(brandConnectionJobInvitesQuery.data)
-        ? brandConnectionJobInvitesQuery.data.length
-        : 0);
-    const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+    const numOffers = Array.isArray(brandConnectionOffersQuery.data)
+      ? brandConnectionOffersQuery.data.filter((o) =>
+          ["sent", "viewed"].includes(o.status),
+        ).length
+      : 0;
+    const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data.length
       : 0;
+
+    return { numRequests, numOffers, numFeedback };
+  }, [
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  const pendingBrandConnectionCount = useMemo(() => {
+    const { numRequests, numOffers, numFeedback } = brandCounts;
 
     // Subtract seen counts
     const saved = localStorage.getItem("brand_connections_seen_counts");
     const seen = saved ? JSON.parse(saved) : {};
 
-    const diffRequests = Math.max(0, requests - (seen.requests || 0));
-    const diffOffers = Math.max(0, offers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, feedback - (seen.feedback || 0));
+    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
+    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
+    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
 
     // If currently on the brand-connections tab, we don't want the badge to persist if viewed
     if (activeTab === "brand-connections") {
-      return 0; // Or return the total if we want it to stay until they switch sub-tabs.
-      // But the user said "when the notification is opened the 2 shouldn't be showing".
+      return 0;
     }
 
     return diffRequests + diffOffers + diffFeedback;
-  }, [
-    brandConnectionRequestsCountQuery.data,
-    brandConnectionOffersQuery.data,
-    brandConnectionJobInvitesQuery.data,
-    brandConnectionFeedbackQuery.data,
-    activeTab,
-  ]);
+  }, [brandCounts, activeTab]);
+
+  const pendingJobInvitesCount = useMemo(() => {
+    return Array.isArray(brandConnectionJobInvitesQuery.data)
+      ? brandConnectionJobInvitesQuery.data.length
+      : 0;
+  }, [brandConnectionJobInvitesQuery.data]);
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -17734,6 +17821,102 @@ export default function AgencyDashboard() {
   };
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeNotificationTab, setActiveNotificationTab] = useState<
+    "all" | "unread"
+  >("all");
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<
+    string[]
+  >(() => {
+    try {
+      const saved = localStorage.getItem("likelee_dismissed_notifications");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "likelee_dismissed_notifications",
+      JSON.stringify(dismissedNotificationIds),
+    );
+  }, [dismissedNotificationIds]);
+
+  const systemNotifications = useMemo(() => {
+    const alerts = [];
+    if (pendingBrandConnectionCount > 0) {
+      const parts = [];
+      const { numRequests, numOffers, numFeedback } = brandCounts;
+      if (numRequests > 0) parts.push(`${numRequests} request(s)`);
+      if (numOffers > 0) parts.push(`${numOffers} offer(s)`);
+      if (numFeedback > 0) parts.push(`${numFeedback} feedback(s)`);
+
+      alerts.push({
+        id: `brand_conn_${pendingBrandConnectionCount}`,
+        title: "Brand Connections",
+        message: `Pending: ${parts.join(", ")}.`,
+        time: "Action required",
+        color: "indigo",
+        isSummary: true,
+      });
+    }
+    if (pendingLicensingRequestsCount > 0) {
+      alerts.push({
+        id: `license_req_${pendingLicensingRequestsCount}`,
+        title: "Licensing Requests",
+        message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
+        time: "Action required",
+        color: "indigo",
+        isSummary: true,
+      });
+    }
+    if (pendingJobInvitesCount > 0) {
+      alerts.push({
+        id: `job_invites_${pendingJobInvitesCount}`,
+        title: "Job Invites",
+        message: `You have ${pendingJobInvitesCount} pending job invite(s).`,
+        time: "New message",
+        color: "blue",
+        isSummary: true,
+      });
+    }
+    alerts.push({
+      id: "welcome",
+      title: "System Alert",
+      message:
+        "Your verification was successfully processed. Welcome to Likelee!",
+      time: "Just now",
+      color: "blue",
+    });
+    return alerts;
+  }, [
+    pendingBrandConnectionCount,
+    pendingLicensingRequestsCount,
+    pendingJobInvitesCount,
+  ]);
+
+  const notifications = useMemo(() => {
+    return systemNotifications.map((n) => ({
+      ...n,
+      read: dismissedNotificationIds.includes(n.id),
+    }));
+  }, [systemNotifications, dismissedNotificationIds]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const filteredNotifications = notifications.filter(
+    (n) => activeNotificationTab === "all" || !n.read,
+  );
+
+  const markAllAsRead = () => {
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    setDismissedNotificationIds((prev) =>
+      Array.from(new Set([...prev, ...unreadIds])),
+    );
+  };
+
+  const markAsRead = (id: string) => {
+    setDismissedNotificationIds((prev) => Array.from(new Set([...prev, id])));
+  };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
@@ -17742,6 +17925,75 @@ export default function AgencyDashboard() {
   const [supportSubject, setSupportSubject] = useState("");
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
+  const [refreshAllLoading, setRefreshAllLoading] = useState(false);
+
+  const refreshAll = async () => {
+    if (refreshAllLoading) return;
+    setRefreshAllLoading(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["agency-roster"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-talent-performance"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-revenue-breakdown"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-licensing-pipeline"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-recent-activity"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-profile"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "brand-license-requests"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency", "job-invites"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "campaign-offers-my"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "package-feedback"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "brand-connection-requests"],
+        }),
+      ]);
+
+      if ("serviceWorker" in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.update();
+        } catch {
+          // best-effort
+        }
+      }
+
+      toast({
+        title: "Refreshed",
+        description: "All dashboard data has been refreshed.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Refresh failed",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setRefreshAllLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!showNotifications && !showProfileMenu) return;
@@ -17802,6 +18054,8 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
@@ -17819,8 +18073,13 @@ export default function AgencyDashboard() {
               "Active Licenses",
               "License Templates",
             ],
+            badge:
+              pendingLicensingRequestsCount > 0
+                ? pendingLicensingRequestsCount
+                : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
           {
             id: "protection",
             label: "Protection & Usage",
@@ -17866,6 +18125,8 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
           },
           {
             id: "roster",
@@ -18158,25 +18419,23 @@ export default function AgencyDashboard() {
                   ? navigate("/AgencySubscribe")
                   : setAgencyMode(effectiveAgencyMode === "AI" ? "IRL" : "AI")
               }
-              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              className={
+                irlAddonLocked
+                  ? "font-bold border-2 border-amber-200 hover:border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 shadow-sm transition-all px-3 sm:px-4"
+                  : "font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              }
             >
               {irlAddonLocked ? (
-                "Add IRL Booking"
+                <>
+                  <Crown className="w-4 h-4 mr-2 text-amber-600" />
+                  Add IRL Booking
+                </>
               ) : (
                 <>
                   {effectiveAgencyMode === "AI" ? "AI" : "IRL"}
                   <span className="hidden sm:inline">&nbsp;Mode</span>
                 </>
               )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-500 hover:text-gray-900"
-              onClick={() => setShowHeaderSearch(true)}
-            >
-              <Search className="w-5 h-5" />
             </Button>
 
             {/* Notifications Dropdown */}
@@ -18188,30 +18447,100 @@ export default function AgencyDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center px-[5px] py-[2px] text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900">Notifications</h3>
+                <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                  <div className="p-4 border-b border-gray-100 pb-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-6">
+                      <button
+                        onClick={() => setActiveNotificationTab("all")}
+                        className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setActiveNotificationTab("unread")}
+                        className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        Unread ({unreadCount})
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <p className="text-sm font-bold text-gray-900">
-                      No notifications yet
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      When your agency receives updates, they’ll show up here.
-                    </p>
+                  <div className="divide-y divide-gray-100 max-h-[320px] overflow-y-auto w-full">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="p-6 flex flex-col items-center justify-center text-center">
+                        <p className="text-sm font-medium text-gray-500">
+                          {activeNotificationTab === "all"
+                            ? "No notifications found."
+                            : "You're all caught up!"}
+                        </p>
+                      </div>
+                    ) : (
+                      filteredNotifications.map((notif: any) => (
+                        <button
+                          key={notif.id}
+                          onClick={() => markAsRead(notif.id as string)}
+                          className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center border ${
+                              notif.color === "indigo"
+                                ? "bg-indigo-50 border-indigo-100"
+                                : "bg-blue-50 border-blue-100"
+                            }`}
+                          >
+                            <Users
+                              className={`w-4 h-4 ${notif.color === "indigo" ? "text-indigo-600" : "text-blue-600"}`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                              <span className="font-bold">{notif.title}</span>
+                            </p>
+                            <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                              {notif.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                              {notif.time}
+                            </p>
+                          </div>
+                          {!notif.read && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-2" />
+                          )}
+                        </button>
+                      ))
+                    )}
                   </div>
-                  <div className="p-4 border-t border-gray-100 text-center">
+                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
                     <button
-                      className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
                       onClick={() => {
+                        toast({
+                          title: "View all notifications",
+                          description:
+                            "Navigating to full notifications page...",
+                        });
                         setShowNotifications(false);
-                        setShowSupportDialog(true);
                       }}
+                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                      Contact support
+                      View all notifications
                     </button>
                   </div>
                 </div>
@@ -18222,9 +18551,7 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
-              onClick={() => {
-                setShowSupportDialog(true);
-              }}
+              onClick={() => navigate("/support")}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
@@ -18515,328 +18842,336 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
-          {activeTab === "dashboard" && (
-            <AgencyDashboardView
-              isSportsAgency={isSportsAgency}
-              onKYC={handleKYC}
-              agencyName={agencyName}
-              rosterData={rosterTalents}
-              licensingRequestsCount={pendingLicensingRequestsCount}
-              overview={dashboardOverviewQuery.data}
-              talentPerformance={talentPerformanceQuery.data}
-              revenueBreakdown={revenueBreakdownQuery.data}
-              licensingPipeline={licensingPipelineQuery.data}
-              recentActivity={recentActivityQuery.data}
-              kycStatus={agencyKycStatus}
-              kycRejectionReason={agencyKycRejectionReason}
-              kycLoading={kycLoading}
-              onRefreshStatus={refreshAgencyKycStatus}
-              refreshLoading={kycStatusRefreshing}
-              canResumeKyc={
-                String(agencyKycStatus || "")
-                  .trim()
-                  .toLowerCase() === "pending" && !!savedKycSessionUrl
-              }
-            />
-          )}
-          {activeTab === "roster" && isRosterPrimarySubTab && (
-            <AgencyRosterView
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              categoryFilter={categoryFilter}
-              setCategoryFilter={setCategoryFilter}
-              sortConfig={sortConfig}
-              setSortConfig={setSortConfig}
-              agencyMode={effectiveAgencyMode}
-              rosterData={rosterTalents}
-              activeCampaigns={activeCampaigns}
-              earnings30dTotalCents={earnings30dTotalCents}
-              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
-              agencyName={agencyName}
-              agencyEmail={agencyEmail}
-              agencyWebsite={agencyWebsite}
-              logoUrl={agencyLogoUrl}
-              kycStatus={agencyKycStatus}
-              onEditProfile={goToEditProfile}
-              onViewMarketplace={goToMarketplace}
-              seatsLimit={seatsLimit}
-              isLoading={rosterQuery.isLoading}
-              onRosterChanged={() => rosterQuery.refetch()}
-              isSportsAgency={isSportsAgency}
-            />
-          )}
-          {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-            <PerformanceTiers isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "jobs" && activeSubTab === "Job Invites" && (
-            <AgencyJobInvitesView />
-          )}
-          {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && (
-              <LicensingRequestsView
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === "dashboard" && (
+              <AgencyDashboardView
                 isSportsAgency={isSportsAgency}
-                onBrandRequestAccepted={(ctx) => {
-                  console.log("Brand request accepted, context:", ctx);
-                  setBrandRequestContext(ctx);
-                  setActiveView("licensing", "License Templates");
-                }}
-              />
-            )}
-          {activeTab === "licensing" &&
-            activeSubTab === "Brand Connections" && <BrandConnectionsView />}
-          {activeTab === "brand-connections" && <BrandConnectionsView />}
-          {activeTab === "licensing" &&
-            activeSubTab === "License Submissions" && (
-              <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
-            )}
-          {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
-            <ActiveLicensesView
-              onRenew={handleRenew}
-              isSportsAgency={isSportsAgency}
-            />
-          )}
-          {activeTab === "licensing" &&
-            activeSubTab === "License Templates" && (
-              <LicenseTemplatesTab
-                isSportsAgency={isSportsAgency}
-                brandRequestContext={
-                  brandRequestContext
-                    ? {
-                        brand_id: brandRequestContext.brandId,
-                        brand_name: brandRequestContext.brandName,
-                        brand_email: brandRequestContext.brandEmail,
-                        licensing_request_id:
-                          brandRequestContext.licensingRequestId,
-                        talent_id: brandRequestContext.talentId,
-                        talent_name: brandRequestContext.talentName,
-                      }
-                    : null
+                onKYC={handleKYC}
+                agencyName={agencyName}
+                rosterData={rosterTalents}
+                licensingRequestsCount={pendingLicensingRequestsCount}
+                overview={dashboardOverviewQuery.data}
+                talentPerformance={talentPerformanceQuery.data}
+                revenueBreakdown={revenueBreakdownQuery.data}
+                licensingPipeline={licensingPipelineQuery.data}
+                recentActivity={recentActivityQuery.data}
+                kycStatus={agencyKycStatus}
+                kycRejectionReason={agencyKycRejectionReason}
+                kycLoading={kycLoading}
+                onRefreshStatus={refreshAgencyKycStatus}
+                refreshLoading={kycStatusRefreshing}
+                canResumeKyc={
+                  String(agencyKycStatus || "")
+                    .trim()
+                    .toLowerCase() === "pending" && !!savedKycSessionUrl
                 }
-                onBrandRequestContextHandled={() => {
-                  console.log("Brand request context handled, clearing");
-                  setBrandRequestContext(null);
-                }}
               />
             )}
-          {activeTab === "protection" &&
-            activeSubTab === "Protect & Usage" &&
-            (hasProAccess ? (
-              <ProtectionUsageView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Protection & Usage is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "protection" &&
-            activeSubTab === "Compliance Hub" &&
-            (hasProAccess ? (
-              <ComplianceHubView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Compliance Hub is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
-            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-              <div className="text-lg font-black text-gray-900">
-                Coming soon
-              </div>
-              <div className="text-gray-500 font-medium mt-1">
-                Protection & Usage is coming soon.
-              </div>
-            </Card>
-          )}
-          {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
-            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-              <div className="text-lg font-black text-gray-900">
-                Coming soon
-              </div>
-              <div className="text-gray-500 font-medium mt-1">
-                Compliance Hub is coming soon.
-              </div>
-            </Card>
-          )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Analytics Dashboard" &&
-            (effectiveAgencyMode === "IRL" ? (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Coming soon
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Analytics Dashboard for IRL Mode is coming soon.
-                </div>
-              </Card>
-            ) : hasProAccess ? (
-              <AnalyticsDashboardView
-                onRenewLicense={handleRenew}
+            {activeTab === "roster" && isRosterPrimarySubTab && (
+              <AgencyRosterView
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                categoryFilter={categoryFilter}
+                setCategoryFilter={setCategoryFilter}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
                 agencyMode={effectiveAgencyMode}
-                licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                talentData={TALENT_DATA}
+                rosterData={rosterTalents}
+                activeCampaigns={activeCampaigns}
+                earnings30dTotalCents={earnings30dTotalCents}
+                earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+                agencyName={agencyName}
+                agencyEmail={agencyEmail}
+                agencyWebsite={agencyWebsite}
+                logoUrl={agencyLogoUrl}
+                kycStatus={agencyKycStatus}
+                onEditProfile={goToEditProfile}
+                onViewMarketplace={goToMarketplace}
+                seatsLimit={seatsLimit}
+                isLoading={rosterQuery.isLoading}
+                onRosterChanged={() => rosterQuery.refetch()}
+                isSportsAgency={isSportsAgency}
               />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Advanced Analytics is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && (
-              <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
             )}
-          {activeTab === "deliverables" && <AgencyDeliverablesView />}
-
-          {activeTab === "packages" && (
-            <PackagesView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "catalogs" && (
-            <CatalogsView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "payouts" && (
-            <ConnectBankView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "settings" && activeSubTab === "General Settings" && (
-            <GeneralSettingsView hasIrlBookingAddon={hasIrlBookingAddon} />
-          )}
-          {activeTab === "settings" && activeSubTab === "File Storage" && (
-            <FileStorageView />
-          )}
-          {activeTab === "scouting" && (
-            <ScoutingHubView
-              isSportsAgency={isSportsAgency}
-              activeTab={activeScoutingTab}
-              setActiveTab={setActiveScoutingTab}
-              isEventModalOpen={isEventModalOpen}
-              setIsEventModalOpen={setIsEventModalOpen}
-              eventToEdit={eventToEdit}
-              setEventToEdit={setEventToEdit}
-              isPlanTripModalOpen={isPlanTripModalOpen}
-              setIsPlanTripModalOpen={setIsPlanTripModalOpen}
-              isProspectModalOpen={isProspectModalOpen}
-              setIsProspectModalOpen={setIsProspectModalOpen}
-              prospectToEdit={prospectToEdit}
-              setProspectToEdit={setProspectToEdit}
-            />
-          )}
-          {activeTab === "marketplace" && <MarketplaceTab />}
-          {activeTab === "client-crm" && <ClientCRMView />}
-          {activeTab === "file-storage" && <FileStorageView />}
-          {activeTab === "bookings" && (
-            <BookingsView
-              activeSubTab={activeSubTab}
-              bookings={bookings}
-              onAddBooking={onAddBooking}
-              onUpdateBooking={onUpdateBooking}
-              onCancelBooking={onCancelBooking}
-              bookOuts={bookOuts}
-              onAddBookOut={onAddBookOut}
-              onRemoveBookOut={onRemoveBookOut}
-              isSportsAgency={isSportsAgency}
-              agencyMode={effectiveAgencyMode}
-            />
-          )}
-          {activeTab === "accounting" && (
-            <div>
-              {activeSubTab === "Connect Bank" && (
-                <ConnectBankView isSportsAgency={isSportsAgency} />
+            {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
+              <PerformanceTiers isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "jobs" && activeSubTab === "Job Invites" && (
+              <AgencyJobInvitesView />
+            )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Licensing Requests" && (
+                <LicensingRequestsView
+                  isSportsAgency={isSportsAgency}
+                  onBrandRequestAccepted={(ctx) => {
+                    console.log("Brand request accepted, context:", ctx);
+                    setBrandRequestContext(ctx);
+                    setActiveView("licensing", "License Templates");
+                  }}
+                />
               )}
-              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
-              {activeSubTab === "Invoice Management" && (
-                <InvoiceManagementView
-                  setActiveSubTab={setActiveSubTab}
-                  activeSubTab={activeSubTab}
+            {activeTab === "licensing" &&
+              activeSubTab === "Brand Connections" && <BrandConnectionsView />}
+            {activeTab === "brand-connections" && <BrandConnectionsView />}
+            {activeTab === "licensing" &&
+              activeSubTab === "License Submissions" && (
+                <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Active Licenses" && (
+                <ActiveLicensesView
+                  onRenew={handleRenew}
                   isSportsAgency={isSportsAgency}
                 />
               )}
-              {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
-              {(activeSubTab === "Talent Statements" ||
-                activeSubTab === "Athlete Statements") && (
-                <TalentStatementsView isSportsAgency={isSportsAgency} />
+            {activeTab === "licensing" &&
+              activeSubTab === "License Templates" && (
+                <LicenseTemplatesTab
+                  isSportsAgency={isSportsAgency}
+                  brandRequestContext={
+                    brandRequestContext
+                      ? {
+                          brand_id: brandRequestContext.brandId,
+                          brand_name: brandRequestContext.brandName,
+                          brand_email: brandRequestContext.brandEmail,
+                          licensing_request_id:
+                            brandRequestContext.licensingRequestId,
+                          talent_id: brandRequestContext.talentId,
+                          talent_name: brandRequestContext.talentName,
+                        }
+                      : null
+                  }
+                  onBrandRequestContextHandled={() => {
+                    console.log("Brand request context handled, clearing");
+                    setBrandRequestContext(null);
+                  }}
+                />
               )}
-              {activeSubTab === "Financial Reports" &&
-                (hasProAccess ? (
-                  <FinancialReportsView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Financial Reports are available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeSubTab === "Expense Tracking" &&
-                (hasProAccess ? (
-                  <ExpenseTrackingView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Expense Tracking is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          )}
+            {activeTab === "protection" &&
+              activeSubTab === "Protect & Usage" &&
+              (hasProAccess ? (
+                <ProtectionUsageView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Protection & Usage is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "protection" &&
+              activeSubTab === "Compliance Hub" &&
+              (hasProAccess ? (
+                <ComplianceHubView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Compliance Hub is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "protection" &&
+              activeSubTab === "Protect & Usage" && (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Coming soon
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Protection & Usage is coming soon.
+                  </div>
+                </Card>
+              )}
+            {activeTab === "protection" &&
+              activeSubTab === "Compliance Hub" && (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Coming soon
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Compliance Hub is coming soon.
+                  </div>
+                </Card>
+              )}
+            {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (effectiveAgencyMode === "IRL" ? (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Coming soon
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Analytics Dashboard for IRL Mode is coming soon.
+                  </div>
+                </Card>
+              ) : hasProAccess ? (
+                <AnalyticsDashboardView
+                  onRenewLicense={handleRenew}
+                  agencyMode={effectiveAgencyMode}
+                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                  talentData={TALENT_DATA}
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Advanced Analytics is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "analytics" &&
+              activeSubTab === "Royalties & Payouts" && (
+                <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
+              )}
+            {activeTab === "deliverables" && <AgencyDeliverablesView />}
+
+            {activeTab === "packages" && (
+              <PackagesView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "catalogs" && (
+              <CatalogsView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "payouts" && (
+              <ConnectBankView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "settings" &&
+              activeSubTab === "General Settings" && (
+                <GeneralSettingsView hasIrlBookingAddon={hasIrlBookingAddon} />
+              )}
+            {activeTab === "settings" && activeSubTab === "File Storage" && (
+              <FileStorageView />
+            )}
+            {activeTab === "scouting" && (
+              <ScoutingHubView
+                isSportsAgency={isSportsAgency}
+                activeTab={activeScoutingTab}
+                setActiveTab={setActiveScoutingTab}
+                isEventModalOpen={isEventModalOpen}
+                setIsEventModalOpen={setIsEventModalOpen}
+                eventToEdit={eventToEdit}
+                setEventToEdit={setEventToEdit}
+                isPlanTripModalOpen={isPlanTripModalOpen}
+                setIsPlanTripModalOpen={setIsPlanTripModalOpen}
+                isProspectModalOpen={isProspectModalOpen}
+                setIsProspectModalOpen={setIsProspectModalOpen}
+                prospectToEdit={prospectToEdit}
+                setProspectToEdit={setProspectToEdit}
+              />
+            )}
+            {activeTab === "marketplace" && <MarketplaceTab />}
+            {activeTab === "client-crm" && <ClientCRMView />}
+            {activeTab === "file-storage" && <FileStorageView />}
+            {activeTab === "bookings" && (
+              <BookingsView
+                activeSubTab={activeSubTab}
+                bookings={bookings}
+                onAddBooking={onAddBooking}
+                onUpdateBooking={onUpdateBooking}
+                onCancelBooking={onCancelBooking}
+                bookOuts={bookOuts}
+                onAddBookOut={onAddBookOut}
+                onRemoveBookOut={onRemoveBookOut}
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+              />
+            )}
+            {activeTab === "accounting" && (
+              <div>
+                {activeSubTab === "Connect Bank" && (
+                  <ConnectBankView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Invoice Generation" && (
+                  <GenerateInvoiceView />
+                )}
+                {activeSubTab === "Invoice Management" && (
+                  <InvoiceManagementView
+                    setActiveSubTab={setActiveSubTab}
+                    activeSubTab={activeSubTab}
+                    isSportsAgency={isSportsAgency}
+                  />
+                )}
+                {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
+                {(activeSubTab === "Talent Statements" ||
+                  activeSubTab === "Athlete Statements") && (
+                  <TalentStatementsView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Financial Reports" &&
+                  (hasProAccess ? (
+                    <FinancialReportsView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        Financial Reports are available on the Pro plan.
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                {activeSubTab === "Expense Tracking" &&
+                  (hasProAccess ? (
+                    <ExpenseTrackingView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        Expense Tracking is available on the Pro plan.
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </Suspense>
         </main>
 
         <Dialog
