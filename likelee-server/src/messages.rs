@@ -135,10 +135,8 @@ pub async fn list_conversations(
 
     let results = futures::future::join_all(futures).await;
     let mut enrichments = std::collections::HashMap::new();
-    for res in results {
-        if let Ok((cid, unread_count, last_message_content)) = res {
-            enrichments.insert(cid, (unread_count, last_message_content));
-        }
+    for (cid, unread_count, last_message_content) in results.into_iter().flatten() {
+        enrichments.insert(cid, (unread_count, last_message_content));
     }
 
     for conv in v.iter_mut() {
@@ -196,7 +194,7 @@ pub async fn list_contacts(
     let mut unique_contacts = std::collections::HashMap::new();
     for item in items {
         if let Some(agency_id) = item.get("agency_id").and_then(|v| v.as_str()) {
-            if agency_id == user.id.to_string() {
+            if agency_id == user.id {
                 // User is the agency, contact is the creator
                 if let Some(creator_id) = item.get("creator_id").and_then(|v| v.as_str()) {
                     if !creator_id.trim().is_empty() {
@@ -317,7 +315,7 @@ pub async fn list_messages(
         .pg
         .from("conversations")
         .select("id")
-        .eq("id", &conversation_id.to_string())
+        .eq("id", conversation_id.to_string())
         .or(format!(
             "agency_id.eq.{uid},creator_id.eq.{uid}",
             uid = user.id
@@ -336,7 +334,7 @@ pub async fn list_messages(
         .pg
         .from("messages")
         .select("id,conversation_id,sender_id,content,is_read,created_at,is_deleted,edited_at")
-        .eq("conversation_id", &conversation_id.to_string())
+        .eq("conversation_id", conversation_id.to_string())
         .order("created_at.asc")
         .limit(200)
         .execute()
@@ -358,8 +356,8 @@ pub async fn list_messages(
         .pg
         .from("messages")
         .update(json!({"is_read": true}).to_string())
-        .eq("conversation_id", &conversation_id.to_string())
-        .neq("sender_id", &user.id.to_string())
+        .eq("conversation_id", conversation_id.to_string())
+        .neq("sender_id", &user.id)
         .eq("is_read", "false")
         .execute()
         .await;
@@ -396,7 +394,7 @@ pub async fn send_message(
         .pg
         .from("conversations")
         .select("id")
-        .eq("id", &payload.conversation_id.to_string())
+        .eq("id", payload.conversation_id.to_string())
         .or(format!(
             "agency_id.eq.{uid},creator_id.eq.{uid}",
             uid = user.id
@@ -475,7 +473,7 @@ pub async fn edit_message(
         .from("messages")
         .update(update.to_string())
         .eq("id", message_id.to_string())
-        .eq("sender_id", user.id.to_string()) // Extra safety
+        .eq("sender_id", &user.id) // Extra safety
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -508,7 +506,7 @@ pub async fn delete_message(
         .from("messages")
         .update(update.to_string())
         .eq("id", message_id.to_string())
-        .eq("sender_id", user.id.to_string()) // Extra safety
+        .eq("sender_id", &user.id) // Extra safety
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
