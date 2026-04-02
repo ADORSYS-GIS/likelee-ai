@@ -1,7 +1,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import {
   getDashboardPath,
   getOnboardingPath,
+  getOrganizationSignupPathForType,
   getSignupPathForRole,
   isOnboardingIncomplete,
 } from "@/auth/onboarding";
@@ -16,7 +17,12 @@ import {
 export default function AgencySelection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { initialized, authenticated, profile, user } = useAuth();
+  const isSignupMode = React.useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("mode") === "signup";
+  }, [location.search]);
 
   React.useEffect(() => {
     if (!initialized || !authenticated) return;
@@ -44,13 +50,17 @@ export default function AgencySelection() {
       title: t("talentModelingAgency"),
       desc: t("talentModelingAgencyMessage"),
       icon: Users,
-      to: createPageUrl("TalentAgency"),
+      to: isSignupMode
+        ? getOrganizationSignupPathForType("talent_agency")
+        : createPageUrl("TalentAgency"),
     },
     {
       title: t("sportsAgency"),
       desc: t("sportsAgencyMessage"),
       icon: Trophy,
-      to: createPageUrl("SportsAgency"),
+      to: isSignupMode
+        ? getOrganizationSignupPathForType("sports_agency")
+        : createPageUrl("SportsAgency"),
     },
   ];
 
