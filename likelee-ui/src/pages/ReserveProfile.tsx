@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button as UIButton } from "@/components/ui/button";
 import { Input as UIInput } from "@/components/ui/input";
 import { Label as UILabel } from "@/components/ui/label";
@@ -57,6 +57,13 @@ import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -592,8 +599,7 @@ export default function ReserveProfile() {
       normalizedStatus === "pending" &&
       savedKycSessionUrl
     ) {
-      setKycSessionUrl(savedKycSessionUrl);
-      window.open(savedKycSessionUrl, "_blank");
+      openKycModal(savedKycSessionUrl);
       return;
     }
     try {
@@ -624,9 +630,8 @@ export default function ReserveProfile() {
         storeKycSessionUrl("reserve-profile", kycStorageUserId, sessionUrl);
       }
       setSavedKycSessionUrl(sessionUrl);
-      setKycSessionUrl(sessionUrl);
       setKycStatus("pending");
-      window.open(sessionUrl, "_blank");
+      openKycModal(sessionUrl);
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.verificationFailed"),
@@ -774,14 +779,20 @@ export default function ReserveProfile() {
   const [savedKycSessionUrl, setSavedKycSessionUrl] = useState<string | null>(
     null,
   );
+  const [showKycModal, setShowKycModal] = useState(false);
+  const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
   const [kycRejectionReason, setKycRejectionReason] = useState<string | null>(
     null,
   );
   const [kycLoading, setKycLoading] = useState(false);
   const [kycRefreshLoading, setKycRefreshLoading] = useState(false);
+  const veriffFrameRef = useRef<any>(null);
   const normalizedKycStatus = String(kycStatus || "")
     .trim()
     .toLowerCase();
+  const kycProviderLabel = kycProvider
+    ? String(kycProvider).trim().toUpperCase()
+    : "VERIFF";
   const currentKycReason = formatKycReason(kycRejectionReason);
   const hasKycFollowUp =
     normalizedKycStatus === "pending" && currentKycReason.length > 0;
@@ -800,6 +811,18 @@ export default function ReserveProfile() {
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
   const [profileSaveLoading, setProfileSaveLoading] = useState(false);
+
+  const openKycModal = (sessionUrl: string) => {
+    setShowKycModal(true);
+    setKycEmbedLoading(true);
+    setKycSessionUrl(sessionUrl);
+  };
+
+  const closeKycModal = () => {
+    setShowKycModal(false);
+    setKycSessionUrl(null);
+    setKycEmbedLoading(false);
+  };
 
   useEffect(() => {
     if (!profileId) {
@@ -827,6 +850,128 @@ export default function ReserveProfile() {
       setSavedKycSessionUrl(null);
     }
   }, [kycStatus, profileId]);
+
+  useEffect(() => {
+    if (!kycSessionUrl) return;
+
+    const rootElementId = "veriff-kyc-embedded-reserve-profile";
+    let cancelled = false;
+
+    const loadIncontextScript = () => {
+      const w = window as any;
+      if (w.veriffSDK?.createVeriffFrame) return Promise.resolve();
+
+      return new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector(
+          'script[data-likelee-veriff-incontext="1"]',
+        ) as HTMLScriptElement | null;
+        if (existing) {
+          existing.addEventListener("load", () => resolve(), { once: true });
+          existing.addEventListener("error", () => reject(), { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://cdn.veriff.me/incontext/js/v2.5.0/veriff.js";
+        script.async = true;
+        script.setAttribute("data-likelee-veriff-incontext", "1");
+        script.onload = () => resolve();
+        script.onerror = () =>
+          reject(new Error("Failed to load Veriff InContext"));
+        document.body.appendChild(script);
+      });
+    };
+
+    (async () => {
+      try {
+        setKycEmbedLoading(true);
+        await loadIncontextScript();
+        if (cancelled) return;
+
+        const container = document.getElementById(rootElementId);
+        if (container) container.innerHTML = "";
+
+        const w = window as any;
+        if (!w.veriffSDK?.createVeriffFrame) {
+          throw new Error("Veriff SDK not available");
+        }
+
+        veriffFrameRef.current = w.veriffSDK.createVeriffFrame({
+          url: kycSessionUrl,
+          embedded: true,
+          embeddedOptions: {
+            rootElementID: rootElementId,
+          },
+          onEvent: (msg: any) => {
+            if (msg === "SUBMITTED") {
+              setKycStatus("pending");
+              setKycRejectionReason(null);
+              closeKycModal();
+              refreshVerificationStatus({ manageLoading: false });
+            }
+          },
+        });
+
+        setKycEmbedLoading(false);
+      } catch (e: any) {
+        toast({
+          title: t("reserveProfile.toasts.verificationFailed"),
+          description:
+            e?.message || "Failed to load verification. Please try again.",
+          variant: "destructive",
+        });
+        closeKycModal();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        veriffFrameRef.current?.close?.();
+      } catch {
+        // ignore
+      }
+      veriffFrameRef.current = null;
+      const container = document.getElementById(rootElementId);
+      if (container) container.innerHTML = "";
+    };
+  }, [kycSessionUrl, t]);
+
+  useEffect(() => {
+    if (!showKycModal || normalizedKycStatus !== "pending") return;
+
+    let active = true;
+    const interval = window.setInterval(async () => {
+      const row = await refreshVerificationStatus({ manageLoading: false });
+      const status = String(row?.kyc_status || "")
+        .trim()
+        .toLowerCase();
+      if (!active || !status) return;
+
+      if (
+        status === "approved" ||
+        status === "rejected" ||
+        status === "declined"
+      ) {
+        closeKycModal();
+      }
+    }, 5000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [showKycModal, normalizedKycStatus]);
+
+  useEffect(() => {
+    if (step !== 4 || normalizedKycStatus !== "pending" || showKycModal) return;
+
+    const interval = window.setInterval(() => {
+      refreshVerificationStatus({ manageLoading: false });
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [step, normalizedKycStatus, showKycModal]);
 
   const getStepTitle = () => {
     if (step === 1) return t("reserveProfile.stepTitles.step1");
@@ -2038,33 +2183,38 @@ export default function ReserveProfile() {
                   </Button>
                 )}
                 <div className="text-sm text-gray-700 flex items-center justify-between gap-3">
-                  <span>
-                    KYC:{" "}
-                    <strong
-                      className={
-                        hasKycFollowUp
-                          ? "capitalize text-amber-700"
-                          : isKycRejected
-                            ? "capitalize text-red-700"
-                            : "capitalize"
-                      }
-                    >
-                      {kycStatus === "not_started"
-                        ? t("reserveProfile.verification.status.notStarted")
-                        : kycStatus === "approved"
-                          ? t("reserveProfile.verification.status.approved")
-                          : hasKycFollowUp
-                            ? t(
-                                "reserveProfile.verification.status.actionNeeded",
-                                "Action needed",
-                              )
-                            : kycStatus === "rejected"
-                              ? t("reserveProfile.verification.status.rejected")
-                              : t(
-                                  "reserveProfile.verification.status.verifying",
-                                )}
-                    </strong>
-                  </span>
+                  <div className="flex flex-col">
+                    <span>
+                      KYC:{" "}
+                      <strong
+                        className={
+                          hasKycFollowUp
+                            ? "capitalize text-amber-700"
+                            : isKycRejected
+                              ? "capitalize text-red-700"
+                              : "capitalize"
+                        }
+                      >
+                        {kycStatus === "not_started"
+                          ? t("reserveProfile.verification.status.notStarted")
+                          : kycStatus === "approved"
+                            ? t("reserveProfile.verification.status.approved")
+                            : hasKycFollowUp
+                              ? t(
+                                  "reserveProfile.verification.status.actionNeeded",
+                                  "Action needed",
+                                )
+                              : kycStatus === "rejected"
+                                ? t("reserveProfile.verification.status.rejected")
+                                : t(
+                                    "reserveProfile.verification.status.verifying",
+                                  )}
+                      </strong>
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Provider: <strong>{kycProviderLabel}</strong>
+                    </span>
+                  </div>
                   <Button
                     onClick={handleManualVerificationRefresh}
                     variant="outline"
@@ -2327,6 +2477,39 @@ export default function ReserveProfile() {
           onVerify={handleCreatorOtpVerify}
           onResend={handleCreatorOtpResend}
         />
+        <Dialog
+          open={showKycModal}
+          onOpenChange={(open) => {
+            setShowKycModal(open);
+            if (!open) {
+              setKycSessionUrl(null);
+              setKycEmbedLoading(false);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+            <DialogHeader className="sr-only">
+              <DialogTitle>KYC Verification</DialogTitle>
+              <DialogDescription>
+                Complete identity verification securely in this modal.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="w-full h-full bg-white">
+              {(kycEmbedLoading || !kycSessionUrl) && (
+                <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <p className="text-sm text-gray-700">
+                    Loading verification...
+                  </p>
+                </div>
+              )}
+              <div
+                id="veriff-kyc-embedded-reserve-profile"
+                className="w-full h-full"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
