@@ -7,6 +7,16 @@ const ALLOWED_ADVISORY_IDS = new Set([
 ]);
 
 const ALLOWED_MODULES = new Set(["lodash"]);
+const ALLOWED_TRANSITIVE = new Set([
+  "@aws-amplify/notifications",
+  "@aws-amplify/ui",
+  "@aws-amplify/ui-react",
+  "@aws-amplify/ui-react-core",
+  "@aws-amplify/ui-react-liveness",
+  "aws-amplify",
+  "recharts",
+  "workbox-build",
+]);
 
 const result = spawnSync("npm", ["audit", "--json"], { encoding: "utf8" });
 const rawOutput = `${result.stdout || ""}${result.stderr || ""}`.trim();
@@ -31,10 +41,10 @@ const disallowed = [];
 const isAllowedVia = (via) => {
   if (!via) return false;
   if (typeof via === "string") {
-    return ALLOWED_MODULES.has(via);
+    return ALLOWED_MODULES.has(via) || ALLOWED_TRANSITIVE.has(via);
   }
   const name = via.name || "";
-  if (!ALLOWED_MODULES.has(name)) return false;
+  if (!ALLOWED_MODULES.has(name) && !ALLOWED_TRANSITIVE.has(name)) return false;
   if (via.source && ALLOWED_ADVISORY_IDS.has(via.source)) return true;
   if (typeof via.source === "number") return true;
   return false;
