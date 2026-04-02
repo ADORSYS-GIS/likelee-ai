@@ -51,6 +51,8 @@ import {
   uploadOfferDeliverable,
 } from "@/api/functions";
 import { BookingsView } from "@/components/Bookings/BookingsView";
+import { CommunicationHub } from "@/components/chat/CommunicationHub";
+import { useUnreadMessages } from "@/hooks/useChat";
 import {
   BarChart3,
   Briefcase,
@@ -235,9 +237,10 @@ export default function TalentPortal({
   }, [connectedAgencies]);
 
   const fixedTalent = React.useMemo(() => {
-    if (!talentId) return undefined;
     return { id: talentId, name: String(talentName || "Talent") };
   }, [talentId, talentName]);
+
+  const totalUnreadMessages = useUnreadMessages(profile?.id);
 
   const currentMonth = React.useMemo(() => {
     const d = new Date();
@@ -1321,7 +1324,7 @@ export default function TalentPortal({
                   },
                   { id: "portfolio", label: "Portfolio", icon: LucideImage },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "messages", label: "Messages", icon: MessageSquare, badge: totalUnreadMessages || undefined },
                   { id: "settings", label: "Settings", icon: Settings },
                   {
                     id: "agency_connection",
@@ -1342,7 +1345,7 @@ export default function TalentPortal({
                   { id: "archive", label: "Archive", icon: FolderArchive },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "analytics", label: "Analytics", icon: BarChart3 },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "messages", label: "Messages", icon: MessageSquare, badge: totalUnreadMessages || undefined },
                   { id: "settings", label: "Settings", icon: Settings },
                 ]
             ).map((item) => {
@@ -2100,105 +2103,7 @@ export default function TalentPortal({
             </div>
           )}
 
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-              <div className="w-[240px]">
-                <Select
-                  value={selectedAgencyId}
-                  onValueChange={setSelectedAgencyId}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="All agencies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All agencies</SelectItem>
-                    {connectedAgencyIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {agencyNameById.get(id) || id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
+          {tab === "messages" && <CommunicationHub />}
 
           {tab === "settings" && (
             <div className="space-y-6">
@@ -3879,106 +3784,7 @@ export default function TalentPortal({
             </div>
           )}
 
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-              <div className="w-[240px]">
-                <Select
-                  value={selectedAgencyId}
-                  onValueChange={setSelectedAgencyId}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="All agencies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All agencies</SelectItem>
-                    {connectedAgencyIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {agencyNameById.get(id) || id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
+          {tab === "messages" && <CommunicationHub />}
 
           {tab === "settings" && (
             <div className="space-y-6">

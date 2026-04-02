@@ -1136,3 +1136,56 @@ Automated scheduling of agency payouts.
 - **Configuration**: `AGENCY_PAYOUT_SCHEDULER_ENABLED`
 
 ### Implementation
+
+---
+
+## Two-Way Messaging Hub (HB-13)
+
+### Goals
+
+- Replace the static notification inbox with a real-time, two-way conversation system.
+- Guarantee strict data isolation: each (Agency, Creator) pair has exactly one private thread; different agencies cannot see each other's messages with the same creator.
+- Display professional participant identity (agency logo, creator profile photo) in the chat UI.
+
+### Database Schema
+
+See [ER Diagram – HB-13 Addendum](./er-diagram.md#two-way-messaging-hub-addendum-hb-13-2026-04-02).
+
+**Migration**: `supabase/migrations/2026-04-02_messaging_hub.sql`
+
+| Table | Key constraints |
+|---|---|
+| `conversations` | `UNIQUE(agency_id, creator_id)` prevents duplicate threads |
+| `messages` | RLS restricts access to participants only; `REPLICA IDENTITY FULL` for Realtime |
+
+### API Endpoints
+
+| Method | Route | Handler | Description |
+|---|---|---|---|
+| `GET` | `/api/conversations` | `messages::list_conversations` | List all threads for the auth user with participant metadata |
+| `POST` | `/api/conversations/start` | `messages::start_conversation` | Idempotent upsert — creates or resumes a thread |
+| `GET` | `/api/conversations/:id/messages` | `messages::list_messages` | Paginated message history; marks received messages as read |
+| `POST` | `/api/messages/send` | `messages::send_message` | Send a message; validates participation before insert |
+
+### Frontend Components
+
+| File | Purpose |
+|---|---|
+| `src/hooks/useChat.ts` | Supabase Realtime subscription, optimistic sends, conversation management |
+| `src/components/chat/ThreadList.tsx` | Left panel with avatars, last-seen timestamps, active thread highlight |
+| `src/components/chat/ChatWindow.tsx` | Premium bubble UI with sender/receiver avatars, read receipts (✓/✓✓) |
+| `src/components/chat/CommunicationHub.tsx` | Drop-in container to embed in `AgencyDashboard` and `TalentPortal` |
+
+### Realtime
+
+Supabase Realtime is used for instant message delivery via `postgres_changes` subscription on `INSERT` events filtered by `conversation_id`. The `messages` table has `REPLICA IDENTITY FULL` set.
+
+> Also enable the table in Supabase Dashboard → Database → Replication → `supabase_realtime`.
+
+---
+
+## Milestones
+
+- [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Multi-stage deliverable review workflow and secure media proxy with JWT fallback.
+- [x] **Creator Payment Gate (2026-03-17)**: Payment gating for campaign deliverables; Stripe-based campaign offer checkout.
+- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.

@@ -136,8 +136,15 @@ import {
   Play,
   Library,
   FolderCheck,
+  MessageSquare,
 } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/useChat";
 // ----------- LAZY TAB COMPONENTS -----------
+const CommunicationHub = lazy(() =>
+  import("@/components/chat/CommunicationHub").then((m) => ({
+    default: m.CommunicationHub,
+  })),
+);
 // Each import is split into its own JS chunk by Vite.
 // The browser only downloads these when the user navigates to that tab.
 const AgencyDeliverablesView = lazy(() =>
@@ -17902,7 +17909,8 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const chatUnreadCount = useUnreadMessages(profile?.id);
+  const unreadCount = notifications.filter((n) => !n.read).length + chatUnreadCount;
   const filteredNotifications = notifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -18063,6 +18071,7 @@ export default function AgencyDashboard() {
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
+          { id: "messages", label: "Messages", icon: MessageSquare, badge: chatUnreadCount || undefined },
           {
             id: "licensing",
             label: "Licensing",
@@ -18134,6 +18143,7 @@ export default function AgencyDashboard() {
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
+          { id: "messages", label: "Messages", icon: MessageSquare, badge: chatUnreadCount || undefined },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
           {
@@ -19091,6 +19101,7 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "marketplace" && <MarketplaceTab />}
+            {activeTab === "messages" && <CommunicationHub />}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (

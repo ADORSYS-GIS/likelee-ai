@@ -43,6 +43,7 @@ pub mod license_templates;
 pub mod licenses;
 pub mod licensing_requests;
 pub mod notifications;
+pub mod messages;
 pub mod packages;
 pub mod payment_links;
 pub mod payouts;

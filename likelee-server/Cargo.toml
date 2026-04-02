@@ -46,6 +46,7 @@ pulldown-cmark = "0.12"
 regex = "1"
 dashmap = "5"
 parking_lot = "0.12"
+futures = "0.3"
 
 [patch.crates-io]
 postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }
