@@ -265,6 +265,8 @@ import {
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
+  getAgencyBillingStatus,
+  getAgencyBrandLicenseRequests,
 } from "@/api/functions";
 import * as crmApi from "@/api/crm";
 
@@ -17078,8 +17080,53 @@ export default function AgencyDashboard() {
     return "Free";
   }, [agencyPlanTier]);
 
+  const [agencyBilling, setAgencyBilling] = useState<any>(null);
+  const agencyTrialActive = !!agencyBilling?.trial_active;
+  const agencyTrialEndsAt = agencyBilling?.trial_ends_at
+    ? String(agencyBilling.trial_ends_at)
+    : "";
+  const agencyTrialStartAt = agencyBilling?.trial_start_at;
+  const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadBilling = async () => {
+      try {
+        const resp = await getAgencyBillingStatus();
+        if (!cancelled) setAgencyBilling(resp);
+      } catch {
+        // ignore
+      }
+    };
+    void loadBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (agencyPlanTier !== "free" || !agencyTrialActive || !agencyTrialEndsAt) {
+      setAgencyTrialCountdown("");
+      return;
+    }
+    const compute = () => {
+      const end = new Date(agencyTrialEndsAt).getTime();
+      const ms = Math.max(0, end - Date.now());
+      if (ms <= 0) {
+        setAgencyTrialCountdown("Trial ended");
+        return;
+      }
+      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+      setAgencyTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+    };
+    compute();
+    const id = window.setInterval(compute, 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [agencyPlanTier, agencyTrialActive, agencyTrialEndsAt]);
+
   const hasProAccess =
-    agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+    agencyPlanTier === "pro" || agencyPlanTier === "enterprise" || agencyTrialActive;
+
   const irlAddonEntitlement = useMemo(() => {
     const queryValue = (agencyProfileQuery.data as any)
       ?.addon_irl_booking_enabled;
@@ -17102,8 +17149,8 @@ export default function AgencyDashboard() {
 
     return null;
   }, [agencyProfileQuery.data, profile]);
-  const hasIrlBookingAddon = irlAddonEntitlement === true;
-  const irlAddonLocked = irlAddonEntitlement === false;
+  const hasIrlBookingAddon = irlAddonEntitlement === true || agencyTrialActive;
+  const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
 
@@ -17700,7 +17747,7 @@ export default function AgencyDashboard() {
   ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
     const resolvedMode =
-      mode === "IRL" && irlAddonEntitlement === false ? "AI" : mode;
+      mode === "IRL" && irlAddonEntitlement === false && !agencyTrialActive ? "AI" : mode;
     setAgencyModeState(resolvedMode);
     setSearchParams(
       (prev) => {
@@ -17719,7 +17766,7 @@ export default function AgencyDashboard() {
   }, [effectiveAgencyMode, activeTab]);
 
   useEffect(() => {
-    if (irlAddonEntitlement !== false) return;
+    if (irlAddonEntitlement !== false || agencyTrialActive) return;
     if (agencyMode !== "IRL") return;
     setAgencyModeState("AI");
     setSearchParams(
@@ -17735,7 +17782,7 @@ export default function AgencyDashboard() {
       description:
         "Enable the IRL Booking add-on to access IRL mode in the agency dashboard.",
     });
-  }, [agencyMode, irlAddonEntitlement, setSearchParams, toast]);
+  }, [agencyMode, irlAddonEntitlement, agencyTrialActive, setSearchParams, toast]);
 
   const setActiveTab = (tab: string) => {
     startTransition(() => {
@@ -18341,6 +18388,39 @@ export default function AgencyDashboard() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
+          {agencyPlanTier === "free" && agencyTrialActive && (
+            <div className="mb-6 mx-2 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                  <Crown className="w-5 h-5 font-bold" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-amber-900 leading-tight">Pro Free Trial</p>
+                  <p className="text-[11px] text-amber-700 font-medium">All features unlocked</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-amber-800 font-bold mb-1">
+                  <span>Expires in {agencyTrialCountdown}</span>
+                  <span>{Math.max(0, 14 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0))}/14 Days</span>
+                </div>
+                <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-amber-500 h-full rounded-full transition-all duration-1000"
+                    style={{ 
+                      width: `${Math.max(5, (1 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0) / 14) * 100)}%` 
+                    }}
+                  />
+                </div>
+                <button 
+                  onClick={() => navigate("/AgencySubscribe")}
+                  className="w-full mt-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors shadow-sm"
+                >
+                  Upgrade to Keep Access
+                </button>
+              </div>
+            </div>
+          )}
           {sidebarItems.map((item) => (
             <div key={item.id} className="mb-2">
               <button

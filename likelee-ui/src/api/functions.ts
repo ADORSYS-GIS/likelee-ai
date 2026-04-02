@@ -1001,3 +1001,6 @@ export const updateAgencyBrandLicenseRequestStatus = (payload: {
   status: string;
   decline_reason?: string;
 }) => base44Client.post("/api/agency/brand-license-requests/status", payload);
+
+export const getAgencyBillingStatus = () =>
+  base44Client.get(`/api/agency/billing/status`);

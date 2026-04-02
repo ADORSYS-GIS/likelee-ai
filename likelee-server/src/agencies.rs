@@ -1,4 +1,5 @@
 use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use chrono::{Duration, Utc};
 use axum::extract::Multipart;
 use axum::extract::Query;
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
@@ -434,6 +435,7 @@ pub async fn register(
         "website": payload.website,
         "phone_number": payload.phone_number,
         "plan_tier": "free",
+        "trial_ends_at": (Utc::now() + Duration::days(14)).to_rfc3339(),
         "seats_limit": 1,
         "status": "waitlist",
         "onboarding_step": "email_verification"
@@ -485,6 +487,8 @@ pub async fn update(
             if let Some(email) = &user.email {
                 map.insert("email".into(), json!(email));
             }
+            // Set default trial for new OAuth profiles if not already set
+            map.insert("trial_ends_at".into(), json!((Utc::now() + Duration::days(14)).to_rfc3339()));
         }
 
         // Remove nulls to avoid overwriting existing data with nulls

@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, Json};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
@@ -1330,4 +1331,153 @@ pub async fn create_campaign_offer_checkout(
 
     info!(offer_id, "created campaign offer checkout session");
     Ok(Json(CampaignCheckoutResponse { url }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencyBillingStatusResponse {
+    pub agency_id: String,
+    pub plan_tier: String,
+    pub trial_start_at: Option<String>,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub plan_updated_at: Option<String>,
+    pub plan_interval: String,
+    pub stripe_current_period_end: Option<String>,
+    pub stripe_cancel_at_period_end: bool,
+}
+
+pub async fn get_agency_billing_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyBillingStatusResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    let agency_id = user.id.clone();
+
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("id,plan_tier,trial_ends_at,stripe_customer_id,stripe_subscription_id,plan_updated_at,plan_interval,stripe_current_period_end,stripe_cancel_at_period_end,created_at")
+        .eq("id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    fn parse_db_date(s: &str) -> Option<DateTime<Utc>> {
+        DateTime::parse_from_rfc3339(s)
+            .map(|dt| dt.with_timezone(&Utc))
+            .ok()
+            .or_else(|| {
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+            .or_else(|| {
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+    }
+
+    let plan_tier_str = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .to_string();
+
+    let billed_tier = crate::entitlements::PlanTier::from_db(&plan_tier_str);
+
+    // Use trial_ends_at from DB if present; fall back to created_at + 14 days for legacy rows
+    let trial_ends_at_dt: Option<DateTime<Utc>> =
+        if let Some(s) = row.get("trial_ends_at").and_then(|v| v.as_str()) {
+            parse_db_date(s)
+        } else {
+            row.get("created_at")
+                .and_then(|v| v.as_str())
+                .and_then(parse_db_date)
+                .map(|dt| dt + chrono::Duration::days(14))
+        };
+
+    // Trial is only relevant when not on a paid plan
+    let trial_ends_at_active = if billed_tier == crate::entitlements::PlanTier::Free {
+        trial_ends_at_dt
+    } else {
+        None
+    };
+
+    let trial_start_at = row
+        .get("created_at")
+        .and_then(|v| v.as_str())
+        .and_then(parse_db_date);
+
+    let trial_active = trial_ends_at_active
+        .map(|dt| dt > Utc::now())
+        .unwrap_or(false);
+
+    let trial_ends_at_str = trial_ends_at_active.map(|dt| dt.to_rfc3339());
+
+    let subscription_status = if matches!(
+        billed_tier,
+        crate::entitlements::PlanTier::Basic
+            | crate::entitlements::PlanTier::Pro
+            | crate::entitlements::PlanTier::Enterprise
+    ) {
+        "active".to_string()
+    } else {
+        "inactive".to_string()
+    };
+
+    Ok(Json(AgencyBillingStatusResponse {
+        agency_id,
+        plan_tier: plan_tier_str,
+        trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
+        trial_active,
+        trial_ends_at: trial_ends_at_str,
+        subscription_status,
+        stripe_customer_id: row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_subscription_id: row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        plan_updated_at: row
+            .get("plan_updated_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        plan_interval: row
+            .get("plan_interval")
+            .and_then(|v| v.as_str())
+            .unwrap_or("month")
+            .to_string(),
+        stripe_current_period_end: row
+            .get("stripe_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_cancel_at_period_end: row
+            .get("stripe_cancel_at_period_end")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+    }))
 }
