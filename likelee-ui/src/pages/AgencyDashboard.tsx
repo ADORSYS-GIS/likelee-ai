@@ -129,7 +129,6 @@ import {
   MapPin,
   Star,
   Menu,
-  PanelLeft,
   PanelRight,
   ImageIcon,
   Loader2,
