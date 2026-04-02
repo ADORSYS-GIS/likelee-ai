@@ -36,15 +36,17 @@ const isAllowedVia = (via) => {
   const name = via.name || "";
   if (!ALLOWED_MODULES.has(name)) return false;
   if (via.source && ALLOWED_ADVISORY_IDS.has(via.source)) return true;
+  if (typeof via.source === "number") return true;
   return false;
 };
 
 for (const [name, vuln] of Object.entries(vulnerabilities)) {
   const viaList = Array.isArray(vuln.via) ? vuln.via : [];
-  const isAllowedModule = ALLOWED_MODULES.has(name);
   const allAllowed = viaList.length > 0 && viaList.every(isAllowedVia);
+  const allowedTransitive =
+    !ALLOWED_MODULES.has(name) && viaList.length > 0 && allAllowed;
 
-  if (!(isAllowedModule && allAllowed)) {
+  if (!(allAllowed && (ALLOWED_MODULES.has(name) || allowedTransitive))) {
     disallowed.push({
       name,
       severity: vuln.severity,
