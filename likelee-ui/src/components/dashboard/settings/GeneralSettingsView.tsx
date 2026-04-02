@@ -99,9 +99,7 @@ async function parseApiResponse(resp: Response) {
 }
 
 function isCalendlyEventTypeUri(value?: string | null) {
-  return Boolean(
-    value?.trim().startsWith(CALENDLY_EVENT_TYPE_URI_PREFIX),
-  );
+  return Boolean(value?.trim().startsWith(CALENDLY_EVENT_TYPE_URI_PREFIX));
 }
 
 function withCalendlyManualMappingGuidance(message: string) {
@@ -618,7 +616,9 @@ const GeneralSettingsView = ({
             is_enabled: data.data.is_enabled ?? false,
             mappings: data.data.mappings || {},
           });
-          setHasSavedCalendlyToken(Boolean(data.data.calendly_api_token?.trim()));
+          setHasSavedCalendlyToken(
+            Boolean(data.data.calendly_api_token?.trim()),
+          );
         } else {
           setHasSavedCalendlyToken(
             Boolean(calendlySettings.calendly_api_token.trim()),
@@ -629,7 +629,10 @@ const GeneralSettingsView = ({
           description:
             data.message || "Calendly integration settings have been updated.",
         });
-        if (data.data?.calendly_api_token || calendlySettings.calendly_api_token) {
+        if (
+          data.data?.calendly_api_token ||
+          calendlySettings.calendly_api_token
+        ) {
           await fetchCalendlyEventTypes();
         } else {
           setCalendlyEventTypes([]);
@@ -2851,27 +2854,27 @@ const GeneralSettingsView = ({
                                 </div>
                               ) : calendlyEventTypes.length > 0 ? (
                                 <Select
-                                  value={
-                                    (() => {
-                                      const currentMapping =
-                                        calendlySettings.mappings[type.key];
-                                      if (!currentMapping) {
-                                        return CALENDLY_USE_DEFAULT_VALUE;
-                                      }
-                                      if (isCalendlyEventTypeUri(currentMapping)) {
-                                        return currentMapping;
-                                      }
-                                      const matchingEventType =
-                                        calendlyEventTypes.find(
-                                          (eventType: any) =>
-                                            eventType.slug === currentMapping,
-                                        );
-                                      return (
-                                        matchingEventType?.uri ||
-                                        CALENDLY_USE_DEFAULT_VALUE
+                                  value={(() => {
+                                    const currentMapping =
+                                      calendlySettings.mappings[type.key];
+                                    if (!currentMapping) {
+                                      return CALENDLY_USE_DEFAULT_VALUE;
+                                    }
+                                    if (
+                                      isCalendlyEventTypeUri(currentMapping)
+                                    ) {
+                                      return currentMapping;
+                                    }
+                                    const matchingEventType =
+                                      calendlyEventTypes.find(
+                                        (eventType: any) =>
+                                          eventType.slug === currentMapping,
                                       );
-                                    })()
-                                  }
+                                    return (
+                                      matchingEventType?.uri ||
+                                      CALENDLY_USE_DEFAULT_VALUE
+                                    );
+                                  })()}
                                   onValueChange={(val) =>
                                     setCalendlySettings((p) => {
                                       const nextMappings = { ...p.mappings };
@@ -2921,7 +2924,9 @@ const GeneralSettingsView = ({
                               ) : hasSavedCalendlyToken ? (
                                 <div className="space-y-2">
                                   <Input
-                                    value={calendlySettings.mappings[type.key] || ""}
+                                    value={
+                                      calendlySettings.mappings[type.key] || ""
+                                    }
                                     onChange={(e) =>
                                       setCalendlySettings((p) => {
                                         const nextMappings = { ...p.mappings };
@@ -2942,8 +2947,9 @@ const GeneralSettingsView = ({
                                   />
                                   <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
                                     Paste the full Calendly event type URI that
-                                    Likelee should use for bookings. This works even when the token
-                                    cannot list event types automatically.
+                                    Likelee should use for bookings. This works
+                                    even when the token cannot list event types
+                                    automatically.
                                   </p>
                                 </div>
                               ) : (

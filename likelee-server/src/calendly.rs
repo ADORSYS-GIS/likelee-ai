@@ -379,7 +379,10 @@ async fn load_agency_calendly_settings(
         .execute()
         .await
         .map_err(|error| {
-            CalendlyConfigError::new("database_error", format!("Failed to fetch settings: {error}"))
+            CalendlyConfigError::new(
+                "database_error",
+                format!("Failed to fetch settings: {error}"),
+            )
         })?;
 
     let status = resp.status();
@@ -419,7 +422,9 @@ fn build_serializable_calendly_settings(
     })
 }
 
-fn normalize_agency_calendly_settings_payload(payload: serde_json::Value) -> AgencyCalendlySettingsRecord {
+fn normalize_agency_calendly_settings_payload(
+    payload: serde_json::Value,
+) -> AgencyCalendlySettingsRecord {
     let calendly_api_token = payload
         .get("calendly_api_token")
         .and_then(|value| value.as_str())
@@ -428,7 +433,12 @@ fn normalize_agency_calendly_settings_payload(payload: serde_json::Value) -> Age
     let scheduling_url = payload
         .get("scheduling_url")
         .and_then(|value| value.as_str())
-        .map(|value| normalize_public_calendly_booking_url(value).0.trim().to_string())
+        .map(|value| {
+            normalize_public_calendly_booking_url(value)
+                .0
+                .trim()
+                .to_string()
+        })
         .unwrap_or_default();
     let is_enabled = payload
         .get("is_enabled")
@@ -479,7 +489,9 @@ fn classify_calendly_status_error(
         .unwrap_or_else(|| trimmed_response.to_string());
 
     if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
-        if let Some(scope_message) = build_calendly_scope_error_message(context, parsed_response.as_ref()) {
+        if let Some(scope_message) =
+            build_calendly_scope_error_message(context, parsed_response.as_ref())
+        {
             return CalendlyConfigError::new("token_invalid", scope_message);
         }
 
@@ -520,7 +532,10 @@ fn collect_required_scopes(value: &serde_json::Value) -> Vec<String> {
     fn visit(node: &serde_json::Value, scopes: &mut Vec<String>) {
         match node {
             serde_json::Value::Object(map) => {
-                if let Some(entries) = map.get("required_scopes").and_then(|entry| entry.as_array()) {
+                if let Some(entries) = map
+                    .get("required_scopes")
+                    .and_then(|entry| entry.as_array())
+                {
                     for scope in entries.iter().filter_map(|entry| entry.as_str()) {
                         let scope = scope.trim();
                         if !scope.is_empty() && !scopes.iter().any(|existing| existing == scope) {
@@ -588,10 +603,7 @@ fn build_calendly_scope_error_message(
     ))
 }
 
-fn build_calendly_invitee_request_error(
-    status: StatusCode,
-    response_text: &str,
-) -> String {
+fn build_calendly_invitee_request_error(status: StatusCode, response_text: &str) -> String {
     let parsed_response = serde_json::from_str::<serde_json::Value>(response_text).ok();
 
     if let Some(details) = parsed_response
@@ -634,8 +646,7 @@ fn build_calendly_invitee_request_error(
 }
 
 fn canonicalize_calendly_mapping_value(value: &str) -> String {
-    canonicalize_calendly_event_type_reference(value)
-        .unwrap_or_else(|| value.trim().to_string())
+    canonicalize_calendly_event_type_reference(value).unwrap_or_else(|| value.trim().to_string())
 }
 
 fn canonicalize_calendly_event_type_reference(reference: &str) -> Option<String> {
@@ -659,16 +670,14 @@ fn canonicalize_calendly_event_type_reference(reference: &str) -> Option<String>
                 .unwrap_or_default();
 
             if segments.len() >= 2 && segments[0] == "event_types" {
-                let event_type_uuid =
-                    segments[1].trim_matches(|char: char| !char.is_ascii_alphanumeric() && char != '-');
+                let event_type_uuid = segments[1]
+                    .trim_matches(|char: char| !char.is_ascii_alphanumeric() && char != '-');
                 if !event_type_uuid.is_empty()
                     && event_type_uuid
                         .chars()
                         .all(|char| char.is_ascii_alphanumeric() || char == '-')
                 {
-                    return Some(format!(
-                        "{CALENDLY_EVENT_TYPE_URI_PREFIX}{event_type_uuid}"
-                    ));
+                    return Some(format!("{CALENDLY_EVENT_TYPE_URI_PREFIX}{event_type_uuid}"));
                 }
             }
         }
@@ -685,9 +694,7 @@ fn canonicalize_calendly_event_type_reference(reference: &str) -> Option<String>
         return None;
     }
 
-    Some(format!(
-        "{CALENDLY_EVENT_TYPE_URI_PREFIX}{event_type_uuid}"
-    ))
+    Some(format!("{CALENDLY_EVENT_TYPE_URI_PREFIX}{event_type_uuid}"))
 }
 
 fn is_calendly_event_type_uri(value: &str) -> bool {
@@ -695,8 +702,11 @@ fn is_calendly_event_type_uri(value: &str) -> bool {
 }
 
 fn calendly_event_type_uuid_from_reference(reference: &str) -> Option<String> {
-    canonicalize_calendly_event_type_reference(reference)
-        .and_then(|value| value.strip_prefix(CALENDLY_EVENT_TYPE_URI_PREFIX).map(str::to_string))
+    canonicalize_calendly_event_type_reference(reference).and_then(|value| {
+        value
+            .strip_prefix(CALENDLY_EVENT_TYPE_URI_PREFIX)
+            .map(str::to_string)
+    })
 }
 
 async fn fetch_calendly_event_type_by_reference(
@@ -737,12 +747,13 @@ async fn fetch_calendly_event_type_by_reference(
         ));
     }
 
-    let event_type_response: CalendlyEventTypeResponse = response.json().await.map_err(|error| {
-        CalendlyConfigError::new(
-            "calendly_api_error",
-            format!("Failed to parse the Calendly event type response: {error}"),
-        )
-    })?;
+    let event_type_response: CalendlyEventTypeResponse =
+        response.json().await.map_err(|error| {
+            CalendlyConfigError::new(
+                "calendly_api_error",
+                format!("Failed to parse the Calendly event type response: {error}"),
+            )
+        })?;
 
     Ok(event_type_response.resource)
 }
@@ -765,10 +776,8 @@ async fn fetch_calendly_event_types_for_token(
         })?;
 
     if direct_event_types_resp.status().is_success() {
-        let et_data: CalendlyEventTypesResponse = direct_event_types_resp
-            .json()
-            .await
-            .map_err(|error| {
+        let et_data: CalendlyEventTypesResponse =
+            direct_event_types_resp.json().await.map_err(|error| {
                 CalendlyConfigError::new(
                     "calendly_api_error",
                     format!("Failed to parse the Calendly event types response: {error}"),
@@ -1189,16 +1198,19 @@ pub async fn schedule_calendly_invitee(
             .await
             .map_err(|error| error.message)?;
         if !event_type.active {
-            return Err("The configured Calendly event type is not active in Calendly.".to_string());
+            return Err(
+                "The configured Calendly event type is not active in Calendly.".to_string(),
+            );
         }
         event_type
     } else {
-        let active_event_types: Vec<CalendlyEventType> = fetch_calendly_event_types_for_token(&token)
-            .await
-            .map_err(|error| error.message)?
-            .into_iter()
-            .filter(|et| et.active)
-            .collect();
+        let active_event_types: Vec<CalendlyEventType> =
+            fetch_calendly_event_types_for_token(&token)
+                .await
+                .map_err(|error| error.message)?
+                .into_iter()
+                .filter(|et| et.active)
+                .collect();
 
         let available_slugs: Vec<&str> = active_event_types
             .iter()
@@ -1450,7 +1462,10 @@ mod tests {
 
         let normalized = normalize_calendly_mappings(Some(&raw));
 
-        assert_eq!(normalized.get("default").and_then(|v| v.as_str()), Some("agency-general"));
+        assert_eq!(
+            normalized.get("default").and_then(|v| v.as_str()),
+            Some("agency-general")
+        );
         assert!(!normalized.contains_key("confirmed"));
         assert!(!normalized.contains_key("casting"));
         assert!(!normalized.contains_key("photo_shoot"));

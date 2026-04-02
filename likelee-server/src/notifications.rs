@@ -301,8 +301,7 @@ pub async fn booking_created_email(
             if let Ok(txt) = resp.text().await {
                 if let Ok(arr) = serde_json::from_str::<serde_json::Value>(&txt) {
                     if let Some(first) = arr.as_array().and_then(|a| a.first()) {
-                        to_email =
-                            non_empty_string(first.get("email").and_then(|x| x.as_str()));
+                        to_email = non_empty_string(first.get("email").and_then(|x| x.as_str()));
                     }
                 }
             }
@@ -577,13 +576,8 @@ pub async fn booking_created_email(
     }
 
     if notify_email {
-        let send_res = email::send_plain_text_email(
-            &state,
-            &dest,
-            &subject,
-            &body,
-            agency_email.as_deref(),
-        );
+        let send_res =
+            email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
 
         // Log notification regardless of SMTP result (status success/error)
         let status_ok = send_res.is_ok();

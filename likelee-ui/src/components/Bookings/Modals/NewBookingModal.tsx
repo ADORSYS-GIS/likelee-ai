@@ -1272,9 +1272,9 @@ export const NewBookingModal = ({
                 {notifications.calendar && (
                   <p className="pl-6 text-xs text-amber-700">
                     This saves the booking first, sends email and in-app
-                    notifications, then opens Calendly as the final step. Calendly
-                    booking only supports one-to-one bookings, not batch talent
-                    bookings.
+                    notifications, then opens Calendly as the final step.
+                    Calendly booking only supports one-to-one bookings, not
+                    batch talent bookings.
                   </p>
                 )}
               </div>
@@ -1303,14 +1303,14 @@ export const NewBookingModal = ({
                   ? "Saving..."
                   : notifications.calendar
                     ? "Save & Continue to Calendly"
-                  : mode === "edit"
-                    ? "Update Booking"
-                    : `Save as ${
-                        bookingType === "test-shoot"
-                          ? "Test Shoot"
-                          : bookingType.charAt(0).toUpperCase() +
-                            bookingType.slice(1)
-                      }`}
+                    : mode === "edit"
+                      ? "Update Booking"
+                      : `Save as ${
+                          bookingType === "test-shoot"
+                            ? "Test Shoot"
+                            : bookingType.charAt(0).toUpperCase() +
+                              bookingType.slice(1)
+                        }`}
               </Button>
             </div>
           </DialogFooter>
