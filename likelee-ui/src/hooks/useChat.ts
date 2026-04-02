@@ -224,7 +224,7 @@ export function useChat(currentUserId?: string, userRole?: string) {
 
   const startConversation = useCallback(async (contactId: string, firstMessage?: string): Promise<string | null> => {
       try {
-        const isUserCreator = userRole === "creator";
+        const isUserCreator = userRole === "creator" || userRole === "talent";
         const agency_id = isUserCreator ? contactId : currentUserId;
         const creator_id = isUserCreator ? currentUserId : contactId;
 

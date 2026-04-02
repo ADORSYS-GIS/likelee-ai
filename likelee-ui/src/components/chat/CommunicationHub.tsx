@@ -45,7 +45,7 @@ export function CommunicationHub() {
       }
     : null;
 
-  const isCreator = profile?.role === "creator";
+  const isCreator = profile?.role === "creator" || profile?.role === "talent";
 
   return (
     <div className="flex h-[calc(100vh-10rem)] min-h-[500px] rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
