@@ -920,7 +920,7 @@ pub async fn delete_agency_folder(
         let resp = state
             .pg
             .from("agency_files")
-            .eq("id", &file_id)
+            .eq("id", file_id)
             .delete()
             .execute()
             .await
@@ -1007,7 +1007,7 @@ pub async fn get_agency_storage_file_signed_url(
         .pg
         .from("agency_files")
         .select("storage_bucket,storage_path,agency_id")
-        .eq("id", file_id)
+        .eq("id", file_id.clone())
         .limit(1)
         .execute()
         .await
@@ -1235,7 +1235,7 @@ pub async fn delete_agency_storage_file(
         .pg
         .from("agency_files")
         .select("storage_bucket,storage_path,agency_id")
-        .eq("id", &file_id)
+        .eq("id", file_id.clone())
         .limit(1)
         .execute()
         .await
@@ -1302,7 +1302,7 @@ pub async fn delete_agency_storage_file(
     let resp = state
         .pg
         .from("agency_files")
-        .eq("id", &file_id)
+        .eq("id", file_id)
         .delete()
         .execute()
         .await
@@ -1665,7 +1665,7 @@ pub async fn get_client_file_signed_url(
         .pg
         .from("agency_files")
         .select("storage_bucket,storage_path,agency_id,client_id")
-        .eq("id", &file_id)
+        .eq("id", file_id)
         .limit(1)
         .execute()
         .await
