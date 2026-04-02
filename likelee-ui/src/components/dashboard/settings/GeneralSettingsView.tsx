@@ -341,7 +341,13 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
+const GeneralSettingsView = ({
+  kycStatus,
+  hasIrlBookingAddon = false,
+}: {
+  kycStatus?: string;
+  hasIrlBookingAddon?: boolean;
+}) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -368,23 +374,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [defaultCommissionRate, setDefaultCommissionRate] =
     useState<number>(20);
-  const [divisionCommissions, setDivisionCommissions] = useState<
-    { id: string; name: string; count: number; rate: number }[]
-  >([
-    { id: "women", name: "Women", count: 45, rate: 20 },
-    { id: "men", name: "Men", count: 32, rate: 20 },
-    { id: "kids", name: "Kids", count: 18, rate: 15 },
-    { id: "curve", name: "Curve", count: 12, rate: 20 },
-  ]);
-  const [showDivisionModal, setShowDivisionModal] = useState(false);
-  const [editingDivisionId, setEditingDivisionId] = useState<string | null>(
-    null,
-  );
-  const [divisionDraft, setDivisionDraft] = useState({
-    name: "",
-    count: 0,
-    rate: 20,
-  });
   const [isSavingCommissions, setIsSavingCommissions] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<
     {
@@ -439,6 +428,15 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     useState(false);
 
   const fetchCalendlySettings = async () => {
+    if (!hasIrlBookingAddon) {
+      setIsFetchingCalendlySettings(false);
+      setCalendlySettings({
+        calendly_api_token: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      return;
+    }
     try {
       setIsFetchingCalendlySettings(true);
       const { data, error } = await supabase
@@ -462,6 +460,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   };
 
   const fetchCalendlyEventTypes = async () => {
+    if (!hasIrlBookingAddon) {
+      setIsFetchingCalendlyEventTypes(false);
+      setCalendlyEventTypes([]);
+      return;
+    }
     try {
       setIsFetchingCalendlyEventTypes(true);
       const resp = await fetch("/api/calendly/event-types", {
@@ -485,6 +488,15 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   };
 
   const handleSaveCalendlySettings = async () => {
+    if (!hasIrlBookingAddon) {
+      toast({
+        title: "IRL Booking add-on required",
+        description:
+          "Enable the IRL Booking add-on before configuring Calendly integration.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       setIsSavingCalendlySettings(true);
       const resp = await fetch("/api/calendly/settings", {
@@ -562,11 +574,20 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Integrations" && profile?.id) {
+    if (activeTab === "Integrations" && profile?.id && hasIrlBookingAddon) {
       fetchCalendlySettings();
       fetchCalendlyEventTypes();
+      return;
     }
-  }, [activeTab, profile?.id]);
+    if (activeTab === "Integrations" && !hasIrlBookingAddon) {
+      setCalendlySettings({
+        calendly_api_token: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      setCalendlyEventTypes([]);
+    }
+  }, [activeTab, hasIrlBookingAddon, profile?.id]);
 
   const defaultNotificationPrefs = [
     {
@@ -687,33 +708,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             setDefaultCommissionRate(
               Math.max(0, Math.min(100, data.default_commission_bps / 100)),
             );
-          }
-
-          if (Array.isArray(data.division_commissions)) {
-            const parsed = data.division_commissions
-              .map((row: any) => {
-                const id = String(row?.id || "");
-                const name = String(row?.name || "");
-                const count = Number.isFinite(row?.count)
-                  ? Math.max(0, Math.floor(row.count))
-                  : 0;
-                const rateBps = Number.isFinite(row?.rate_bps)
-                  ? Math.max(0, Math.min(10000, Math.floor(row.rate_bps)))
-                  : null;
-                const ratePct =
-                  rateBps !== null
-                    ? Math.max(0, Math.min(100, rateBps / 100))
-                    : null;
-                if (!id || !name) return null;
-                return {
-                  id,
-                  name,
-                  count,
-                  rate: ratePct !== null ? ratePct : defaultCommissionRate,
-                };
-              })
-              .filter(Boolean);
-            setDivisionCommissions(parsed as any);
           }
         } catch (e: any) {
           toast({
@@ -1020,41 +1014,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     }
   };
 
-  const persistDivisionCommissions = async (
-    nextDivisions: { id: string; name: string; count: number; rate: number }[],
-  ) => {
-    if (!profile?.id) return;
-    try {
-      setIsSavingCommissions(true);
-      const payload = {
-        agency_id: profile.id,
-        default_commission_bps: Math.round(
-          Math.max(0, Math.min(100, defaultCommissionRate)) * 100,
-        ),
-        division_commissions: nextDivisions.map((d) => ({
-          id: d.id,
-          name: d.name,
-          count: d.count,
-          rate_bps: Math.round(Math.max(0, Math.min(100, d.rate)) * 100),
-        })),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from("agency_commission_settings")
-        .upsert(payload, { onConflict: "agency_id" });
-      if (error) throw error;
-    } catch (e: any) {
-      toast({
-        title: "Failed to save division settings",
-        description: getUserFriendlyError(e),
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingCommissions(false);
-    }
-  };
-
   const saveTaxCurrencySettings = async () => {
     setIsSavingTaxCurrencySettings(true);
     try {
@@ -1230,71 +1189,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     }
   };
 
-  const openAddDivision = () => {
-    setEditingDivisionId(null);
-    setDivisionDraft({ name: "", count: 0, rate: defaultCommissionRate });
-    setShowDivisionModal(true);
-  };
-
-  const openEditDivision = (division: {
-    id: string;
-    name: string;
-    count: number;
-    rate: number;
-  }) => {
-    setEditingDivisionId(division.id);
-    setDivisionDraft({
-      name: division.name,
-      count: division.count,
-      rate: division.rate,
-    });
-    setShowDivisionModal(true);
-  };
-
-  const saveDivision = () => {
-    const name = (divisionDraft.name || "").trim();
-    const count = Number.isFinite(divisionDraft.count)
-      ? Math.max(0, Math.floor(divisionDraft.count))
-      : 0;
-    const rate = Number.isFinite(divisionDraft.rate)
-      ? Math.max(0, Math.min(100, divisionDraft.rate))
-      : defaultCommissionRate;
-
-    if (!name) {
-      toast({
-        title: "Missing division name",
-        description: "Please enter a division name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDivisionCommissions((prev) => {
-      let next: { id: string; name: string; count: number; rate: number }[];
-      if (editingDivisionId) {
-        next = prev.map((d) =>
-          d.id === editingDivisionId ? { ...d, name, count, rate } : d,
-        );
-      } else {
-        const idBase = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const id = `${idBase}-${Math.random().toString(16).slice(2)}`;
-        next = [...prev, { id, name, count, rate }];
-      }
-      void persistDivisionCommissions(next);
-      return next;
-    });
-
-    setShowDivisionModal(false);
-  };
-
-  const removeDivision = (id: string) => {
-    setDivisionCommissions((prev) => {
-      const next = prev.filter((d) => d.id !== id);
-      void persistDivisionCommissions(next);
-      return next;
-    });
-  };
-
   const handleSaveCommissionSettings = async () => {
     if (!profile?.id) return;
     try {
@@ -1305,12 +1199,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
         default_commission_bps: Math.round(
           Math.max(0, Math.min(100, defaultCommissionRate)) * 100,
         ),
-        division_commissions: divisionCommissions.map((d) => ({
-          id: d.id,
-          name: d.name,
-          count: d.count,
-          rate_bps: Math.round(Math.max(0, Math.min(100, d.rate)) * 100),
-        })),
         updated_at: new Date().toISOString(),
       };
 
@@ -1436,7 +1324,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             "Email Templates",
             "Notifications",
             "Tax & Currency",
-            "Divisions",
             "Team",
             "File Storage",
             "Integrations",
@@ -1895,91 +1782,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-            {/* Division Commissions */}
-            {/* Division Commissions */}
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Division Commissions
-                </h3>
-                <Button
-                  variant="outline"
-                  onClick={openAddDivision}
-                  className="h-8 px-3 sm:h-9 sm:px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Division
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {divisionCommissions.map((division) => (
-                  <div
-                    key={division.id}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {division.name}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {`${division.count} ${entityPluralLower}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Input
-                          value={String(division.rate)}
-                          onChange={(e) => {
-                            const next = parseFloat(e.target.value);
-                            const clamped = Number.isFinite(next)
-                              ? Math.max(0, Math.min(100, next))
-                              : 0;
-                            setDivisionCommissions((prev) =>
-                              prev.map((d) =>
-                                d.id === division.id
-                                  ? { ...d, rate: clamped }
-                                  : d,
-                              ),
-                            );
-                          }}
-                          className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
-                        />
-                        <span className="text-xs font-bold text-gray-500">
-                          %
-                        </span>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-7 h-7 text-gray-400 hover:text-indigo-600"
-                          >
-                            <MoreVertical className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openEditDivision(division)}
-                          >
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => removeDivision(division.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
             {/* Talent Commission Rules */}
+
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
@@ -2586,160 +2390,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
           </div>
         )}
 
-        {activeTab === "Divisions" && (
-          <div className="space-y-6">
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Divisions / Boards
-                    </h3>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {`Organize your ${entityPluralLower} into divisions`}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={openAddDivision}
-                  className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Division
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {divisionCommissions.map((division) => (
-                  <div
-                    key={division.id}
-                    className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-bold text-gray-900">
-                        {division.name}
-                      </h4>
-                      <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5">
-                        Active
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {`${division.count} ${entityPluralLower} assigned`}
-                    </p>
-                    <div className="flex items-end justify-between pt-2">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          Commission Rate
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {division.rate}%
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-9 h-9 rounded-xl border-gray-200"
-                          onClick={() => openEditDivision(division)}
-                        >
-                          <Edit2 className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-9 h-9 rounded-xl border-red-100 bg-red-50 hover:bg-red-100"
-                          onClick={() => removeDivision(division.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        )}
-
         {activeTab === "File Storage" && <FileStorageView />}
-
-        <Dialog open={showDivisionModal} onOpenChange={setShowDivisionModal}>
-          <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-gray-900">
-                {editingDivisionId ? "Edit Division" : "Add Division"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-5 py-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-900">
-                  Division Name
-                </Label>
-                <Input
-                  value={divisionDraft.name}
-                  onChange={(e) =>
-                    setDivisionDraft((p) => ({ ...p, name: e.target.value }))
-                  }
-                  className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-900">
-                    {`${entitySingularTitle} Count`}
-                  </Label>
-                  <Input
-                    value={String(divisionDraft.count)}
-                    onChange={(e) => {
-                      const n = parseInt(e.target.value, 10);
-                      setDivisionDraft((p) => ({
-                        ...p,
-                        count: Number.isFinite(n) ? n : 0,
-                      }));
-                    }}
-                    className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-900">
-                    Commission Rate (%)
-                  </Label>
-                  <Input
-                    value={String(divisionDraft.rate)}
-                    onChange={(e) => {
-                      const n = parseFloat(e.target.value);
-                      setDivisionDraft((p) => ({
-                        ...p,
-                        rate: Number.isFinite(n) ? n : 0,
-                      }));
-                    }}
-                    className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="ghost"
-                onClick={() => setShowDivisionModal(false)}
-                className="font-bold"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={saveDivision}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
-              >
-                Save
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {activeTab === "Team" && (
           <div className="space-y-6">
@@ -2841,11 +2492,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">
-                  <a
-                    href={`/AgencyDashboard?mode=IRL&tab=accounting&subTab=${encodeURIComponent(
-                      "Connect Bank",
-                    )}`}
-                  >
+                  <a href={`/AgencyDashboard?tab=payouts`}>
                     {bankStatus?.connected ? "Change account" : "Connect"}
                   </a>
                 </Button>
@@ -2865,15 +2512,24 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         Calendly Integration
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
-                        Automate meeting scheduling with your clients
+                        {hasIrlBookingAddon
+                          ? "Automate meeting scheduling with your clients"
+                          : "Available with the IRL Booking add-on"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
-                        {calendlySettings.is_enabled ? "Active" : "Disabled"}
+                        {hasIrlBookingAddon
+                          ? calendlySettings.is_enabled
+                            ? "Active"
+                            : "Disabled"
+                          : "Locked"}
                       </span>
                       <Switch
-                        checked={calendlySettings.is_enabled}
+                        checked={
+                          hasIrlBookingAddon && calendlySettings.is_enabled
+                        }
+                        disabled={!hasIrlBookingAddon}
                         onCheckedChange={(checked) =>
                           setCalendlySettings((p) => ({
                             ...p,
@@ -2885,6 +2541,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
               </div>
+
+              {!hasIrlBookingAddon && (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Enable the IRL Booking add-on to use Calendly, scouting,
+                  client CRM, bookings, and IRL accounting workflows.
+                </div>
+              )}
 
               <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="space-y-3">
@@ -2908,6 +2571,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       type="password"
                       placeholder="calendly_v2_..."
                       value={calendlySettings.calendly_api_token}
+                      disabled={!hasIrlBookingAddon}
                       onChange={(e) =>
                         setCalendlySettings((p) => ({
                           ...p,
@@ -2929,7 +2593,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </p>
                 </div>
 
-                {calendlySettings.is_enabled && (
+                {hasIrlBookingAddon && calendlySettings.is_enabled && (
                   <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
                     <div>
                       <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
@@ -3012,7 +2676,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSaveCalendlySettings}
-                    disabled={isSavingCalendlySettings}
+                    disabled={isSavingCalendlySettings || !hasIrlBookingAddon}
                     className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     {isSavingCalendlySettings ? (

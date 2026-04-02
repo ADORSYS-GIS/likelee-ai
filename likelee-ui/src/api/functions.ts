@@ -147,6 +147,16 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createAgencyIrlBookingAddonCheckout = () =>
+  base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
+
+export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
+  base44Client.post<{
+    plan_tier: string;
+    seats_limit: number;
+    addon_irl_booking_enabled: boolean;
+  }>(`/agency/billing/checkout/sync`, data || {});
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 

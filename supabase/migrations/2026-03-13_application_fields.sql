@@ -83,4 +83,4 @@ UPDATE public.job_applications
 SET linkedin_link = 'https://' || linkedin_link
 WHERE linkedin_link IS NOT NULL AND linkedin_link != '' AND linkedin_link NOT LIKE 'http%';
 
-COMMIT;
+

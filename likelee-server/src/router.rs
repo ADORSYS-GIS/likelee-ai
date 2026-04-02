@@ -992,14 +992,6 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::update_face_profile),
         )
         .route("/api/faces/search", get(crate::face_profiles::search_faces))
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
-        )
-        .route(
-            "/api/moderation/image-bytes",
-            post(crate::moderation::moderate_image_bytes),
-        )
         .route("/api/email/available", get(crate::creators::check_email))
         .route(
             "/api/reference-images/upload",
@@ -1158,6 +1150,14 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/billing/checkout",
             post(crate::billing::create_agency_subscription_checkout),
+        )
+        .route(
+            "/api/agency/billing/checkout/sync",
+            post(crate::billing::sync_agency_checkout_session),
+        )
+        .route(
+            "/api/agency/billing/addons/irl-booking/checkout",
+            post(crate::billing::create_agency_irl_booking_addon_checkout),
         )
         .route(
             "/api/licenses/activated",

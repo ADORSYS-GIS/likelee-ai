@@ -623,44 +623,6 @@ const TalentSideModal = ({
               </div>
             </div>
 
-            {/* License Status */}
-            <div className="p-4 rounded-xl border border-blue-50 bg-blue-50/20">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-indigo-900 font-bold">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  License Status
-                </div>
-                <Badge
-                  variant="outline"
-                  className={`bg-white font-bold border-none ${
-                    talent.consent === "complete"
-                      ? "text-green-600 bg-green-50"
-                      : "text-red-600 bg-red-50"
-                  }`}
-                >
-                  {talent.consent || "missing"}
-                </Badge>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Consent:</span>
-                  <span className="font-medium text-gray-900 capitalize">
-                    {talent.consent || "missing"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Expiry Date:</span>
-                  <span className="font-medium text-gray-900">—</span>
-                </div>
-                <div className="flex justify-between items-start">
-                  <span className="text-gray-500">AI Usage:</span>
-                  <span className="font-medium text-gray-900 text-right max-w-[120px]">
-                    {/* Placeholder or empty */}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Recent Campaigns */}
             <div className="space-y-3">
               <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">

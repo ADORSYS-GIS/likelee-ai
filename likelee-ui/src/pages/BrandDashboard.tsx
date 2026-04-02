@@ -9957,7 +9957,21 @@ export default function BrandDashboard() {
                             📄 View resume
                           </a>
                         )}
-                        {app.comp_card_url && (
+                        {Array.isArray(app.comp_cards) &&
+                        app.comp_cards.length > 0 ? (
+                          app.comp_cards.map((cc: any, i: number) => (
+                            <a
+                              key={cc.url || i}
+                              href={cc.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={cc.name || `comp_card_${i + 1}`}
+                              className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                            >
+                              🖼️ Card {i + 1}
+                            </a>
+                          ))
+                        ) : app.comp_card_url ? (
                           <a
                             href={app.comp_card_url}
                             target="_blank"
@@ -9967,7 +9981,7 @@ export default function BrandDashboard() {
                           >
                             🖼️ Comp card
                           </a>
-                        )}
+                        ) : null}
                         {app.portfolio_link && (
                           <a
                             href={ensureProtocol(app.portfolio_link)}

@@ -217,9 +217,7 @@ const ClientCard = ({
             variant="outline"
             className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
             onClick={() => {
-              navigate(
-                `${createPageUrl("AgencyDashboard")}?mode=IRL&tab=packages`,
-              );
+              navigate(`${createPageUrl("AgencyDashboard")}?tab=packages`);
             }}
           >
             <Package className="w-3.5 h-3.5 mr-2" />

@@ -48,6 +48,14 @@ import {
   getAgencyProfile,
   createOrganizationKycSession,
 } from "@/api/functions";
+import {
+  clearAuthIntent,
+  getDashboardPath,
+  getOnboardingPath,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+  normalizeOrganizationSignupType,
+} from "@/auth/onboarding";
 
 const getProductionTypes = (t: any) => [
   {
@@ -204,10 +212,18 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, initialized, login, authenticated } =
+    useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+
+  // Check if user arrived via OAuth
+  const isOAuthSignup =
+    user &&
+    (user.app_metadata?.provider === "google" ||
+      user.app_metadata?.provider === "github");
+
+  const [step, setStep] = useState(1); // All users start at step 1 to collect org basics
   const [orgType, setOrgType] = useState("");
   const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
@@ -246,11 +262,24 @@ export default function OrganizationSignup() {
     bulk_onboard: "",
   });
 
+  // For OAuth users: 2 steps (org basics + type-specific details)
+  // For non-OAuth users: 2 steps (email/password + org basics, then type-specific details)
+  // Same number of steps, but different field requirements
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false);
+
+  // Pre-fill email and set profileId for OAuth users
+  useEffect(() => {
+    if (isOAuthSignup && user?.email && !formData.email) {
+      setFormData((prev) => ({ ...prev, email: user.email || "" }));
+      if (user.id) {
+        setProfileId(user.id);
+      }
+    }
+  }, [isOAuthSignup, user, formData.email]);
 
   const requireSupabase = () => {
     if (!supabase) {
@@ -287,6 +316,64 @@ export default function OrganizationSignup() {
     }
   };
 
+  const loginExistingAccount = async () => {
+    await login(normalizeEmail(formData.email), formData.password);
+    toast({
+      title: "Account found",
+      description:
+        "This email already belongs to an existing account. Continuing there now.",
+    });
+  };
+
+  const toOptionalText = (value: unknown) => {
+    const trimmed = String(value ?? "").trim();
+    return trimmed ? trimmed : undefined;
+  };
+
+  const getOrganizationBasics = (data: typeof formData) => {
+    const typedEmail = toOptionalText(data.email);
+
+    return {
+      organizationName:
+        toOptionalText(data.organization_name) ||
+        toOptionalText(profile?.company_name) ||
+        toOptionalText(profile?.agency_name),
+      contactName:
+        toOptionalText(data.contact_name) ||
+        toOptionalText(profile?.contact_name),
+      contactTitle:
+        toOptionalText(data.contact_title) ||
+        toOptionalText(profile?.contact_title),
+      email: typedEmail
+        ? normalizeEmail(typedEmail)
+        : toOptionalText(profile?.email) || toOptionalText(user?.email),
+      website: toOptionalText(data.website) || toOptionalText(profile?.website),
+      phoneNumber:
+        toOptionalText(data.phone_number) ||
+        toOptionalText(profile?.phone_number),
+      agencyType:
+        toOptionalText(orgType) ||
+        toOptionalText(profile?.agency_type) ||
+        toOptionalText(profile?.organization_type),
+    };
+  };
+
+  const mergeOrganizationBasicsIntoForm = (source: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      email: prev.email || source?.email || user?.email || "",
+      organization_name:
+        prev.organization_name ||
+        source?.company_name ||
+        source?.agency_name ||
+        "",
+      contact_name: prev.contact_name || source?.contact_name || "",
+      contact_title: prev.contact_title || source?.contact_title || "",
+      website: prev.website || source?.website || "",
+      phone_number: prev.phone_number || source?.phone_number || "",
+    }));
+  };
+
   const isExistingOrganizationSignupError = (error: any) => {
     const code = String(error?.data?.code || error?.code || "").toLowerCase();
     const message = String(
@@ -319,14 +406,25 @@ export default function OrganizationSignup() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    let type = urlParams.get("type");
+    const rawType = urlParams.get("type");
+
+    if (rawType === "creator") {
+      const creatorType = urlParams.get("creator_type");
+      navigate(getSignupPathForRole("creator", creatorType), { replace: true });
+      return;
+    }
+
+    const type = normalizeOrganizationSignupType(rawType);
+    if (rawType && !type) {
+      navigate("/organization-signup", { replace: true });
+      return;
+    }
+
     if (type) {
-      if (type === "brand") type = "brand_company";
-      if (type === "agency") type = "marketing_agency";
       setOrgType(type);
       setIsPreSelected(true);
     }
-  }, []);
+  }, [navigate]);
 
   const flow = React.useMemo(() => {
     if (["brand_company", "production_studio"].includes(orgType))
@@ -338,17 +436,70 @@ export default function OrganizationSignup() {
     return null;
   }, [orgType]);
 
+  useEffect(() => {
+    if (!initialized || !authenticated || profile === undefined) {
+      return;
+    }
+
+    if (profile) {
+      if (profile.role !== "brand" && profile.role !== "agency") {
+        const path = isOnboardingIncomplete(profile)
+          ? getOnboardingPath(profile)
+          : getDashboardPath(profile);
+        if (path) {
+          navigate(path, { replace: true });
+        }
+        return;
+      }
+      return;
+    }
+
+    const authRole = String(
+      user?.user_metadata?.role || user?.app_metadata?.role || "",
+    )
+      .trim()
+      .toLowerCase();
+    if (authRole === "creator" || authRole === "talent") {
+      navigate(
+        getSignupPathForRole(
+          "creator",
+          new URLSearchParams(window.location.search).get("creator_type"),
+        ),
+        { replace: true },
+      );
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
+
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
   useEffect(() => {
     const handleVerifiedUser = async () => {
       console.log("handleVerifiedUser check:", {
+        initialized,
         hasUser: !!user,
-        hasProfile: !!profile,
+        profileState:
+          profile === undefined
+            ? "PENDING"
+            : profile === null
+              ? "NO_PROFILE"
+              : "EXISTS",
         userRole: user?.user_metadata?.role,
         profileRole: profile?.role,
         onboardingStep: profile?.onboarding_step,
+        isOAuthSignup,
       });
+
+      // Wait for auth to be fully initialized
+      if (!initialized) {
+        console.log("handleVerifiedUser: waiting for initialization...");
+        return;
+      }
+
+      // Wait for profile resolution to complete (undefined = still loading)
+      if (profile === undefined) {
+        console.log("handleVerifiedUser: waiting for profile resolution...");
+        return;
+      }
 
       // We need the user object to proceed.
       if (user) {
@@ -379,107 +530,118 @@ export default function OrganizationSignup() {
                   profile.agency_type ||
                   (isBrand ? "brand_company" : "marketing_agency"),
               );
-              setFormData((prev) => ({
-                ...prev,
-                email: profile.email || user.email || "",
-              }));
+              mergeOrganizationBasicsIntoForm(profile);
               setStep(2);
               return;
             }
           }
         }
 
-        // Fallback to direct API calls if profile is not in context or role is not yet set
-        console.log(
-          "Profile not in context or incomplete, falling back to API calls",
-        );
-        try {
-          const expectedFlow =
-            flow ||
-            (user.user_metadata?.role === "brand"
-              ? "brand"
-              : user.user_metadata?.role === "agency"
-                ? "agency"
-                : null);
-
-          const fetchBrandProfile = () =>
-            getBrandProfile().catch((err) => {
-              if (
-                err.name === "AbortError" ||
-                err.message?.includes("aborted")
-              ) {
-                console.log("getBrandProfile aborted");
-              }
-              return null;
-            });
-
-          const fetchAgencyProfile = () =>
-            getAgencyProfile().catch((err) => {
-              if (
-                err.name === "AbortError" ||
-                err.message?.includes("aborted")
-              ) {
-                console.log("getAgencyProfile aborted");
-              }
-              return null;
-            });
-
-          let brandProfile = null;
-          let agencyProfile = null;
-
-          if (expectedFlow === "brand") {
-            brandProfile = await fetchBrandProfile();
-          } else if (expectedFlow === "agency") {
-            agencyProfile = await fetchAgencyProfile();
-          } else {
-            [brandProfile, agencyProfile] = await Promise.all([
-              fetchBrandProfile(),
-              fetchAgencyProfile(),
-            ]);
+        // For OAuth signup users without a profile, they should just fill out the form
+        // No need for API fallback - they have no profile to fetch
+        if (isOAuthSignup && profile === null) {
+          console.log(
+            "OAuth signup user without profile, ready for form input",
+          );
+          // Pre-fill email from OAuth provider (only if we have it and form is empty)
+          if (user.email) {
+            setFormData((prev) =>
+              prev.email ? prev : { ...prev, email: user.email || "" },
+            );
           }
+          return;
+        }
 
-          const orgProfile = brandProfile || agencyProfile;
+        // Fallback to direct API calls only for non-OAuth users (email/password returning after verification)
+        if (!isOAuthSignup) {
+          console.log(
+            "Email/password user, falling back to API calls to check profile",
+          );
+          try {
+            const expectedFlow =
+              flow ||
+              (user.user_metadata?.role === "brand"
+                ? "brand"
+                : user.user_metadata?.role === "agency"
+                  ? "agency"
+                  : null);
 
-          if (orgProfile) {
-            console.log("Found orgProfile via API fallback:", orgProfile);
-            if (
-              orgProfile.status === "complete" ||
-              orgProfile.onboarding_step === "complete"
-            ) {
-              console.log("Onboarding complete via fallback, redirecting");
-              if (brandProfile) {
-                navigate("/BrandDashboard", { replace: true });
-              } else {
-                navigate("/AgencyDashboard", { replace: true });
-              }
-              return;
+            const fetchBrandProfile = () =>
+              getBrandProfile().catch((err) => {
+                if (
+                  err.name === "AbortError" ||
+                  err.message?.includes("aborted")
+                ) {
+                  console.log("getBrandProfile aborted");
+                }
+                return null;
+              });
+
+            const fetchAgencyProfile = () =>
+              getAgencyProfile().catch((err) => {
+                if (
+                  err.name === "AbortError" ||
+                  err.message?.includes("aborted")
+                ) {
+                  console.log("getAgencyProfile aborted");
+                }
+                return null;
+              });
+
+            let brandProfile = null;
+            let agencyProfile = null;
+
+            if (expectedFlow === "brand") {
+              brandProfile = await fetchBrandProfile();
+            } else if (expectedFlow === "agency") {
+              agencyProfile = await fetchAgencyProfile();
+            } else {
+              [brandProfile, agencyProfile] = await Promise.all([
+                fetchBrandProfile(),
+                fetchAgencyProfile(),
+              ]);
             }
 
-            if (orgProfile.onboarding_step === "email_verification") {
-              console.log("Advancing to Step 2 via API fallback");
-              setProfileId(orgProfile.id);
-              setOrgType(
-                orgProfile.organization_type ||
-                  orgProfile.agency_type ||
-                  (brandProfile ? "brand_company" : "marketing_agency"),
-              );
-              setFormData((prev) => ({
-                ...prev,
-                email: orgProfile.email || user.email || "",
-              }));
-              setStep(2);
+            const orgProfile = brandProfile || agencyProfile;
+
+            if (orgProfile) {
+              console.log("Found orgProfile via API fallback:", orgProfile);
+              if (
+                orgProfile.status === "complete" ||
+                orgProfile.onboarding_step === "complete"
+              ) {
+                console.log("Onboarding complete via fallback, redirecting");
+                if (brandProfile) {
+                  navigate("/BrandDashboard", { replace: true });
+                } else {
+                  navigate("/AgencyDashboard", { replace: true });
+                }
+                return;
+              }
+
+              if (orgProfile.onboarding_step === "email_verification") {
+                console.log("Advancing to Step 2 via API fallback");
+                setProfileId(orgProfile.id);
+                setOrgType(
+                  orgProfile.organization_type ||
+                    orgProfile.agency_type ||
+                    (brandProfile ? "brand_company" : "marketing_agency"),
+                );
+                mergeOrganizationBasicsIntoForm(orgProfile);
+                setStep(2);
+              }
+            } else {
+              console.log("No organization profile found via API fallback yet");
             }
-          } else {
-            console.log("No organization profile found via API fallback yet");
+          } catch (err) {
+            console.error("Error in handleVerifiedUser API fallback:", err);
           }
-        } catch (err) {
-          console.error("Error in handleVerifiedUser API fallback:", err);
         }
       }
     };
 
     handleVerifiedUser();
-  }, [flow, user, profile, toast]); // Rerun when user or profile state changes
+  }, [flow, user, profile, initialized, isOAuthSignup]); // Rerun when auth state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -580,23 +742,37 @@ export default function OrganizationSignup() {
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const organizationBasics = getOrganizationBasics(data);
+
+      if (!organizationBasics.organizationName) {
+        throw new Error("Organization name is required.");
+      }
+
       if (flow === "brand") {
         const payload = {
-          email: data.email,
+          email: organizationBasics.email || normalizeEmail(data.email),
           password: data.password,
-          company_name: data.organization_name,
-          website: data.website || undefined,
-          phone_number: data.phone_number || undefined,
+          company_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
         };
         return await registerBrand(payload);
       } else {
+        if (!organizationBasics.agencyType) {
+          throw new Error("Agency type is required.");
+        }
+
         const payload = {
-          email: data.email,
+          email: organizationBasics.email || normalizeEmail(data.email),
           password: data.password,
-          agency_name: data.organization_name,
-          agency_type: orgType,
-          website: data.website || undefined,
-          phone_number: data.phone_number || undefined,
+          agency_name: organizationBasics.organizationName,
+          agency_type: organizationBasics.agencyType,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
         };
         return await registerAgency(payload);
       }
@@ -629,6 +805,13 @@ export default function OrganizationSignup() {
     onError: async (error) => {
       if (isExistingOrganizationSignupError(error)) {
         try {
+          await loginExistingAccount();
+          return;
+        } catch {
+          // Existing unverified organization signups still resume via OTP.
+        }
+
+        try {
           await handleOrganizationOtpResend(false);
           setEmailVerificationPending(true);
           toast({
@@ -642,6 +825,13 @@ export default function OrganizationSignup() {
             "Existing organization signup found, but resend failed:",
             resendError,
           );
+          toast({
+            title: "Account already exists",
+            description:
+              "This email already belongs to another account. Sign in instead to continue with that account.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+          return;
         }
       }
 
@@ -657,8 +847,20 @@ export default function OrganizationSignup() {
   // Updated mutation for profile updates (Step 2)
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof formData) => {
+      const organizationBasics = getOrganizationBasics(data);
+
+      if (!organizationBasics.organizationName) {
+        throw new Error("Organization name is required.");
+      }
+
       if (flow === "brand") {
         return updateBrandProfile({
+          company_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          email: organizationBasics.email,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
           industry: data.industry,
           primary_goal: data.primary_goal,
           geographic_target: data.geographic_target,
@@ -671,8 +873,18 @@ export default function OrganizationSignup() {
           onboarding_step: "complete",
         });
       } else {
+        if (!organizationBasics.agencyType) {
+          throw new Error("Agency type is required.");
+        }
+
         return updateAgencyProfile({
-          agency_type: orgType,
+          agency_name: organizationBasics.organizationName,
+          contact_name: organizationBasics.contactName,
+          contact_title: organizationBasics.contactTitle,
+          email: organizationBasics.email,
+          website: organizationBasics.website,
+          phone_number: organizationBasics.phoneNumber,
+          agency_type: organizationBasics.agencyType,
           client_count: data.client_count,
           campaign_budget: data.campaign_budget,
           services_offered: data.services_offered,
@@ -697,6 +909,8 @@ export default function OrganizationSignup() {
           e,
         );
       }
+      // Clear auth intent after successful profile completion
+      clearAuthIntent();
       if (flow === "brand") {
         navigate("/BrandDashboard", { replace: true });
         return;
@@ -736,12 +950,25 @@ export default function OrganizationSignup() {
         return;
       }
 
-      if (
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        !formData.organization_name
-      ) {
+      // Validate organization name is set for all users
+      if (!formData.organization_name) {
+        toast({
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // For OAuth users, skip email/password validation and move to step 2
+      if (isOAuthSignup) {
+        console.log("OAuth user proceeding to step 2 with org basics");
+        setStep(2);
+        return;
+      }
+
+      // For non-OAuth users, validate email and passwords
+      if (!formData.email || !formData.password || !formData.confirmPassword) {
         toast({
           title: t("organizationSignup.missingFieldsTitle"),
           description: t("organizationSignup.missingFieldsDescription"),
@@ -1048,7 +1275,9 @@ export default function OrganizationSignup() {
                     : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
-                  {t("organizationSignup.startWithBasics")}
+                  {isOAuthSignup
+                    ? "Tell us about your organization"
+                    : t("organizationSignup.startWithBasics")}
                 </p>
               </div>
 
@@ -1098,93 +1327,105 @@ export default function OrganizationSignup() {
                   </div>
                 )}
 
-                <div>
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("organizationSignup.companyEmail")}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("organizationSignup.emailPlaceholder")}
-                  />
-                </div>
+                {/* Only show email/password for non-OAuth users */}
+                {!isOAuthSignup && (
+                  <>
+                    <div>
+                      <Label
+                        htmlFor="email"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("organizationSignup.companyEmail")}
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t("organizationSignup.emailPlaceholder")}
+                      />
+                    </div>
 
-                <div>
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.passwordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                    <div>
+                      <Label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.passwordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
-                <div>
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {t("common.confirmPasswordRequired")}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder={t("organizationSignup.passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                    <div>
+                      <Label
+                        htmlFor="confirmPassword"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("common.confirmPasswordRequired")}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none pr-10"
+                          placeholder={t(
+                            "organizationSignup.passwordPlaceholder",
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <Label
@@ -1253,13 +1494,24 @@ export default function OrganizationSignup() {
 
               <Button
                 onClick={handleNext}
-                disabled={createInitialProfileMutation.isPending} // Disable while saving initial profile
+                disabled={
+                  isOAuthSignup ? false : createInitialProfileMutation.isPending
+                }
                 className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
               >
-                {createInitialProfileMutation.isPending
-                  ? t("common.saving")
-                  : t("common.continue")}
-                <ArrowRight className="w-5 h-5 ml-2" />
+                {isOAuthSignup ? (
+                  <>
+                    {t("common.continue")}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                ) : createInitialProfileMutation.isPending ? (
+                  t("common.saving")
+                ) : (
+                  <>
+                    {t("common.continue")}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                )}
               </Button>
             </div>
           )}
