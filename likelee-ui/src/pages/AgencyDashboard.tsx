@@ -16900,15 +16900,6 @@ export default function AgencyDashboard() {
       localStorage.getItem("brand_licensing_seen_count") || "0",
       10,
     );
-    const requests = Array.isArray(brandLicenseRequestsQuery.data)
-      ? brandLicenseRequestsQuery.data.filter(
-          (r: any) => r?.status === "pending",
-        ).length
-      : 0;
-
-    // Use seen count from localStorage
-    const saved = localStorage.getItem("brand_licensing_seen_count");
-    const seenCount = saved ? parseInt(saved, 10) : 0;
 
     // If currently on the licensing requests tab, we clear it visually
     if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
@@ -16925,8 +16916,6 @@ export default function AgencyDashboard() {
     activeTab,
     activeSubTab,
   ]);
-    return Math.max(0, requests - seenCount);
-  }, [brandLicenseRequestsQuery.data, activeTab, activeSubTab]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
