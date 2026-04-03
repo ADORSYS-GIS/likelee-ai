@@ -1271,13 +1271,13 @@ export default function AddTalent() {
                       <video
                         src={formData.hero_media.url}
                         controls
-                        className="w-full h-64 object-cover border-2 border-gray-200 rounded-lg"
+                        className="w-full h-64 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                       />
                     ) : (
                       <img
                         src={formData.hero_media.url}
                         alt="Hero"
-                        className="w-full h-64 object-cover border-2 border-gray-200 rounded-lg"
+                        className="w-full h-64 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                       />
                     )}
                     <Button
@@ -1336,7 +1336,7 @@ export default function AddTalent() {
                           <img
                             src={photo.url}
                             alt={photo.name}
-                            className="w-full h-24 object-cover border-2 border-gray-200 rounded-lg"
+                            className="w-full h-24 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                           />
                           {formData.photos.length > 1 && (
                             <button

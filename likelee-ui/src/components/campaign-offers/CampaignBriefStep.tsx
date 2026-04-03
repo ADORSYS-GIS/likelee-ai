@@ -325,7 +325,7 @@ export default function CampaignBriefStep({
                 <img
                   src={img.url}
                   alt={`Style Ref ${idx + 1}`}
-                  className="w-full h-24 object-cover"
+                  className="w-full h-24 object-contain bg-gray-100"
                 />
                 <p className="text-xs text-gray-700 mt-2 truncate">
                   Style Ref {idx + 1}

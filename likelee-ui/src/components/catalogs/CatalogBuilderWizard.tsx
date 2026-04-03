@@ -368,7 +368,7 @@ export function CatalogBuilderWizard({
   // -------------------------------- Render -----------------------------------
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl w-full rounded-2xl p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl w-full rounded-2xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
             Create Asset Catalog
@@ -412,7 +412,7 @@ export function CatalogBuilderWizard({
         </div>
 
         {/* Step content */}
-        <div className="px-6 py-5 min-h-[400px] overflow-y-auto max-h-[650px]">
+        <div className="px-6 py-5 flex-1 overflow-y-auto min-h-0">
           {/* ---- Step: Info ---- */}
           {step === "info" && (
             <div className="space-y-4">

@@ -197,6 +197,12 @@ const CalendlyAutosaveStatus = ({
   );
 };
 
+const clampAndSnapCommissionPct = (value: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  const clamped = Math.max(0, Math.min(100, value));
+  return Math.round(clamped / 5) * 5;
+};
+
 const InviteTeamMemberModal = ({
   open,
   onOpenChange,
@@ -2103,6 +2109,10 @@ const GeneralSettingsView = ({
                     Agency Commission (%)
                   </Label>
                   <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
                     value={String(defaultCommissionRate)}
                     onChange={(e) => {
                       const n = parseFloat(e.target.value);
@@ -2111,6 +2121,11 @@ const GeneralSettingsView = ({
                         return;
                       }
                       setDefaultCommissionRate(Math.max(0, Math.min(100, n)));
+                    }}
+                    onBlur={() => {
+                      setDefaultCommissionRate((prev) =>
+                        clampAndSnapCommissionPct(prev),
+                      );
                     }}
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />

@@ -34,42 +34,12 @@ type Category = "images" | "videos" | "voice";
 /* ─── Likelee Logo ─── */
 function LikeleeLogoMark({ className = "h-8" }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <svg
-        width="36"
-        height="24"
-        viewBox="0 0 36 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M7.5 12L1.5 17.5V6.5L7.5 12Z" fill="#4DD0E1" />
-        <path
-          d="M34.5 12C34.5 12 28.5 22 18.5 22C8.5 22 7.5 12 7.5 12C7.5 12 8.5 2 18.5 2C28.5 2 34.5 12 34.5 12Z"
-          fill="url(#fishGrad)"
-        />
-        <circle cx="18.5" cy="12" r="5" fill="white" />
-        <path
-          d="M18.5 9.5L19.4265 11.3765L21.5 11.6765L20 13.1385L20.3541 15.2045L18.5 14.2295L16.6459 15.2045L17 13.1385L15.5 11.6765L17.5735 11.3765L18.5 9.5Z"
-          fill="#FF8A65"
-        />
-        <defs>
-          <linearGradient
-            id="fishGrad"
-            x1="7.5"
-            y1="12"
-            x2="34.5"
-            y2="12"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#4DD0E1" />
-            <stop offset="0.4" stopColor="#FFD54F" />
-            <stop offset="1" stopColor="#FF8A65" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <span className="text-2xl font-black text-[#1A1F2C] tracking-tighter">
-        Likelee
-      </span>
+    <div className={`flex items-center ${className}`}>
+      <img
+        src="/likelee-logo.png"
+        alt="Likelee"
+        className="h-full w-auto object-contain"
+      />
     </div>
   );
 }
