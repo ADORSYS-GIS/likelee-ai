@@ -18154,6 +18154,7 @@ export default function AgencyDashboard() {
             subItems: [
               "Licensing Requests",
               "Active Licenses",
+              "License Submissions",
               "License Templates",
             ],
             badge:
@@ -18367,9 +18368,15 @@ export default function AgencyDashboard() {
           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
+        <nav
+          className={`flex-1 py-4 overflow-x-hidden ${
+            isSidebarCollapsed
+              ? "px-2 overflow-y-hidden"
+              : "px-4 overflow-y-auto"
+          }`}
+        >
           {sidebarItems.map((item) => (
-            <div key={item.id} className="mb-2">
+            <div key={item.id} className={isSidebarCollapsed ? "mb-1" : "mb-2"}>
               <button
                 onClick={() => {
                   if (item.disabled) {
@@ -18397,7 +18404,7 @@ export default function AgencyDashboard() {
                 }
                 className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
                   isSidebarCollapsed
-                    ? "justify-center px-2 py-3"
+                    ? "justify-center px-2 py-1.5"
                     : "gap-3 px-3 py-2.5"
                 } ${
                   activeTab === item.id && !item.subItems
@@ -18407,7 +18414,7 @@ export default function AgencyDashboard() {
               >
                 <item.icon
                   className={`${
-                    isSidebarCollapsed ? "w-6 h-6" : "w-5 h-5"
+                    isSidebarCollapsed ? "w-5 h-5" : "w-5 h-5"
                   } ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"}`}
                 />
                 {showLabels && (
@@ -18513,6 +18520,71 @@ export default function AgencyDashboard() {
                         </span>
                       </button>
                     ))}
+                  </div>
+                )}
+
+              {/* Collapsed sub-items flyout */}
+              {item.subItems &&
+                expandedItems.includes(item.id) &&
+                isSidebarCollapsed && (
+                  <div className="relative">
+                    <div className="absolute left-[calc(100%+8px)] top-0 z-50 w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+                      {item.subItems.map((subItem) => (
+                        <button
+                          key={subItem}
+                          onClick={() => {
+                            if (
+                              item.disabledSubItems &&
+                              item.disabledSubItems[subItem]
+                            ) {
+                              navigate("/AgencySubscribe");
+                              setSidebarOpen(false);
+                              return;
+                            }
+                            if (
+                              item.id === "jobs" &&
+                              subItem === "Open Job Board"
+                            ) {
+                              navigate(
+                                `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                  `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                                )}`,
+                              );
+                              setSidebarOpen(false);
+                              return;
+                            }
+                            setActiveView(item.id, subItem);
+                            setSidebarOpen(false);
+                          }}
+                          title={
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                              ? "Requires Pro"
+                              : undefined
+                          }
+                          className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                            activeTab === item.id && activeSubTab === subItem
+                              ? "text-indigo-700 bg-indigo-50 font-bold"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                          } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          <span className="truncate">{subItem}</span>
+                          <span className="flex items-center gap-2">
+                            {item.disabledSubItems &&
+                              item.disabledSubItems[subItem] && (
+                                <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                  Pro
+                                </span>
+                              )}
+                            {item.badges && item.badges[subItem] && (
+                              <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                {item.badges[subItem]}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
             </div>
