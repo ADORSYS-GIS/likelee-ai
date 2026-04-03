@@ -16660,7 +16660,14 @@ export default function AgencyDashboard() {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
   });
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("agency-sidebar-width");
+    return saved ? parseInt(saved, 10) : 280;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("agency-sidebar-width", sidebarWidth.toString());
+  }, [sidebarWidth]);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
     if (!license.template_id) {
