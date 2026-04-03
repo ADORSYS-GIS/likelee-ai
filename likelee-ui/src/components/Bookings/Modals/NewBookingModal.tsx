@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import {
   Building2,
   Calendar as CalendarIcon,
+  CheckCircle2,
   Clock,
   DollarSign,
   MapPin,

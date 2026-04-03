@@ -168,8 +168,8 @@ pub async fn create_with_files(
         "industries": payload.industries,
         "notify_email": payload.notify_email.unwrap_or(true),
         "notify_sms": false,
-        "notify_push": payload.notify_push.unwrap_or(true),
-        "notify_calendar": payload.notify_calendar.unwrap_or(true),
+        "notify_push": false,
+        "notify_calendar": payload.notify_calendar.unwrap_or(false),
         "campaign_id": payload.campaign_id,
     });
 
