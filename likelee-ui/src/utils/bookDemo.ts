@@ -52,6 +52,7 @@ export function buildCalendlyBookingUrl(
   baseBookingUrl: string,
   source?: string,
   leadInput?: DemoBookingLeadInput,
+  thankYouUrl?: string,
 ): string {
   const url = new URL(baseBookingUrl);
 
@@ -80,6 +81,10 @@ export function buildCalendlyBookingUrl(
 
   if (leadInput?.phoneNumber) {
     url.searchParams.set("a2", leadInput.phoneNumber);
+  }
+
+  if (thankYouUrl) {
+    url.searchParams.set("redirect_url", thankYouUrl);
   }
 
   return url.toString();

@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
-import { buildCalendlyBookingUrl } from "@/utils/bookDemo";
+import {
+  buildCalendlyBookingUrl,
+  createBookDemoThankYouUrl,
+  saveDemoBookingContext,
+} from "@/utils/bookDemo";
 
 export default function BookDemo() {
   const { t } = useTranslation();
@@ -29,7 +33,12 @@ export default function BookDemo() {
     if (!bookingUrl) return "";
 
     try {
-      return buildCalendlyBookingUrl(bookingUrl, source, formData);
+      return buildCalendlyBookingUrl(
+        bookingUrl,
+        source,
+        formData,
+        createBookDemoThankYouUrl(source),
+      );
     } catch {
       return "";
     }
@@ -114,11 +123,20 @@ export default function BookDemo() {
         }
       } catch (error) {
         if (!cancelled) {
-          const message =
-            error instanceof Error &&
-            error.message === t("bookDemoPage.notConfigured")
-              ? t("bookDemoPage.notConfigured")
-              : t("bookDemoPage.embedErrorDescription");
+          const errorData = (error as any)?.data;
+          const errorCode =
+            errorData?.error ||
+            errorData?.code ||
+            errorData?.error_code ||
+            errorData?.status;
+          const isNotConfigured =
+            String(errorCode).trim().toLowerCase() === "not_configured" ||
+            String((error as any)?.message || "")
+              .toLowerCase()
+              .includes("not configured");
+          const message = isNotConfigured
+            ? t("bookDemoPage.notConfigured")
+            : t("bookDemoPage.embedErrorDescription");
           setErrorMessage(message);
         }
       } finally {
@@ -139,11 +157,21 @@ export default function BookDemo() {
     if (!isRedirecting || !calendlyUrl || errorMessage) return;
 
     const timeout = window.setTimeout(() => {
+      saveDemoBookingContext({
+        source,
+        inviteeEmail: formData.workEmail,
+        inviteeFullName: formData.userName,
+        inviteeFirstName: formData.userName?.split(" ")[0],
+        inviteeLastName: formData.userName?.split(" ").slice(1).join(" "),
+        answer1: formData.companyName,
+        answer2: formData.phoneNumber,
+        scheduledAt: new Date().toISOString(),
+      });
       window.location.assign(calendlyUrl);
     }, 1000);
 
     return () => window.clearTimeout(timeout);
-  }, [calendlyUrl, errorMessage, isRedirecting]);
+  }, [calendlyUrl, errorMessage, formData, isRedirecting, source]);
 
   function updateField(field: keyof typeof formData, value: string) {
     setFormData((current) => ({

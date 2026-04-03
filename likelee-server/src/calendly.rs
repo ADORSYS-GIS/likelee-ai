@@ -79,17 +79,6 @@ fn normalize_public_calendly_booking_url(booking_url: &str) -> (String, Option<S
 
     let suspicious_terminal_segments = [
         "confirmed",
-        "default",
-        "casting",
-        "option",
-        "test-shoot",
-        "test_shoot",
-        "fitting",
-        "rehearsal",
-        "agency_discovery",
-        "talent_interview",
-        "photo_shoot",
-        "photo-shoot",
         "scheduled",
         "completed",
         "cancelled",
