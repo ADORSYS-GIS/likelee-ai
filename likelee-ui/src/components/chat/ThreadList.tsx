@@ -29,6 +29,7 @@ function AvatarPlaceholder({
   name: string;
   size?: number;
 }) {
+  const dimRem = `${size * 0.25}rem`;
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -37,7 +38,8 @@ function AvatarPlaceholder({
     .toUpperCase();
   return (
     <div
-      className={`w-${size} h-${size} rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
+      className="rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+      style={{ width: dimRem, height: dimRem }}
     >
       {initials}
     </div>
@@ -53,11 +55,13 @@ export function Avatar({
   name: string;
   size?: number;
 }) {
+  const dimRem = `${size * 0.25}rem`;
   return url ? (
     <img
       src={url}
       alt={name}
-      className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm`}
+      className="rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
+      style={{ width: dimRem, height: dimRem }}
     />
   ) : (
     <AvatarPlaceholder name={name} size={size} />
