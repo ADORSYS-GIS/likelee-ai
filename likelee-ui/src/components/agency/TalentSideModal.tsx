@@ -285,7 +285,7 @@ const TalentSideModal = ({
               <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                 <img
                   src={talent.img || "https://placehold.co/150"}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   alt={talent.name}
                 />
               </div>
@@ -351,7 +351,7 @@ const TalentSideModal = ({
                       <img
                         src={u}
                         alt="Gallery"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   ))}

@@ -1796,12 +1796,12 @@ export default function BrandCampaignDashboard({
           return;
         }
 
+        await loadCampaignCards();
+        resetCampaignBuilder();
         toast({
           title: "Offers sent",
           description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
         });
-        await loadCampaignCards();
-        resetCampaignBuilder();
         return;
       }
 
@@ -1834,12 +1834,12 @@ export default function BrandCampaignDashboard({
           },
           message: campaignForm.custom_terms || null,
         });
+        await loadCampaignCards();
+        resetCampaignBuilder();
         toast({
           title: "Offer sent",
           description: "Offer sent to the selected agency.",
         });
-        await loadCampaignCards();
-        resetCampaignBuilder();
       } catch (e: any) {
         const msg = String(e?.message || "");
         toast({
