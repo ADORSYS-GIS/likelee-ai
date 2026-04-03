@@ -127,7 +127,7 @@ CREATE POLICY "Senders can edit or delete their own messages"
  AS $$
  BEGIN
    IF auth.uid() IS NULL THEN
-     RAISE EXCEPTION 'unauthenticated';
+     RETURN NEW;
    END IF;
 
    -- Non-senders may only update the read flag.
