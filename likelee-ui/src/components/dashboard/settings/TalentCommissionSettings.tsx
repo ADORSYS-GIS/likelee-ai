@@ -22,6 +22,12 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+const clampAndSnapCommissionPct = (value: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  const clamped = Math.max(0, Math.min(100, value));
+  return Math.round(clamped / 5) * 5;
+};
+
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
     icon: Trophy,
@@ -134,7 +140,7 @@ export const TalentCommissionSettings: React.FC<{
   const handleBulkSave = () => {
     const updates = Object.entries(draftRates).map(([talentId, rate]) => ({
       creatorId: creatorIdByTalentId[talentId] ?? talentId,
-      rate: parseFloat(rate),
+      rate: clampAndSnapCommissionPct(parseFloat(rate)),
     }));
     updateMutation.mutate(updates);
   };
@@ -369,13 +375,27 @@ export const TalentCommissionSettings: React.FC<{
                             type="number"
                             min="0"
                             max="100"
-                            step="0.1"
+                            step={5}
                             value={draft ?? talent.commission_rate}
                             onChange={(e) =>
                               creatorId && talent.is_editable
                                 ? handleRateChange(creatorId, e.target.value)
                                 : undefined
                             }
+                            onBlur={() => {
+                              if (!creatorId || !talent.is_editable) return;
+                              setDraftRates((prev) => {
+                                const current = prev[creatorId];
+                                if (current === undefined) return prev;
+                                const snapped = clampAndSnapCommissionPct(
+                                  parseFloat(current),
+                                );
+                                return {
+                                  ...prev,
+                                  [creatorId]: String(snapped),
+                                };
+                              });
+                            }}
                             disabled={!creatorId || !talent.is_editable}
                             className={cn(
                               "w-24 h-9 text-right pr-7 font-bold text-sm bg-white border-gray-200 rounded-lg transition-all",

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Download, FileDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileDown, X } from "lucide-react";
 import { generateBriefPDF } from "@/services/BriefPDFService";
 
 export function CampaignBriefView({
@@ -34,6 +34,52 @@ export function CampaignBriefView({
   const brandAssets = Array.isArray(brief?.brand_assets)
     ? brief.brand_assets
     : [];
+
+  const referenceImageUrls = useMemo(
+    () =>
+      referenceImages
+        .map((img: any) => String(img?.url || "").trim())
+        .filter(Boolean),
+    [referenceImages],
+  );
+
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxUrl =
+    lightboxIndex === null ? null : referenceImageUrls[lightboxIndex] || null;
+
+  const closeLightbox = () => setLightboxIndex(null);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeLightbox();
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setLightboxIndex((prev) => {
+          if (prev === null) return prev;
+          const total = referenceImageUrls.length;
+          if (total <= 1) return prev;
+          return (prev - 1 + total) % total;
+        });
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setLightboxIndex((prev) => {
+          if (prev === null) return prev;
+          const total = referenceImageUrls.length;
+          if (total <= 1) return prev;
+          return (prev + 1) % total;
+        });
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lightboxIndex, referenceImageUrls.length]);
 
   return (
     <>
@@ -187,7 +233,12 @@ export function CampaignBriefView({
               {referenceImages.map((img: any, idx: number) => (
                 <div
                   key={`ref-img-${idx}`}
-                  className="border border-gray-200 rounded-none overflow-hidden"
+                  className="border border-gray-200 rounded-none overflow-hidden cursor-pointer"
+                  onClick={() => {
+                    const url = String(img?.url || "").trim();
+                    const index = referenceImageUrls.indexOf(url);
+                    setLightboxIndex(index >= 0 ? index : idx);
+                  }}
                 >
                   <img
                     src={String(img?.url || "")}
@@ -348,6 +399,73 @@ export function CampaignBriefView({
           </button>
         </div>
       </Card>
+
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70"
+            onClick={closeLightbox}
+            aria-label="Close gallery"
+          />
+          <div className="relative z-10 w-full max-w-5xl mx-4 bg-white border border-gray-200">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <div className="text-sm font-semibold text-slate-800">
+                {lightboxIndex !== null
+                  ? `Reference ${lightboxIndex + 1} of ${referenceImageUrls.length}`
+                  : "Reference"}
+              </div>
+              <button
+                type="button"
+                className="h-9 w-9 inline-flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+                onClick={closeLightbox}
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="relative bg-black">
+              <img
+                src={lightboxUrl}
+                alt="Reference"
+                className="w-full max-h-[80vh] object-contain"
+              />
+              {referenceImageUrls.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/90 hover:bg-white border border-gray-200 inline-flex items-center justify-center"
+                    onClick={() =>
+                      setLightboxIndex((prev) => {
+                        if (prev === null) return prev;
+                        const total = referenceImageUrls.length;
+                        return (prev - 1 + total) % total;
+                      })
+                    }
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/90 hover:bg-white border border-gray-200 inline-flex items-center justify-center"
+                    onClick={() =>
+                      setLightboxIndex((prev) => {
+                        if (prev === null) return prev;
+                        const total = referenceImageUrls.length;
+                        return (prev + 1) % total;
+                      })
+                    }
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
