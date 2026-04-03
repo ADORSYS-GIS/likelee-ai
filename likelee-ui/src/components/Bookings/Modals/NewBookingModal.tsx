@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
   Building2,
   Calendar as CalendarIcon,
+  CheckCircle2,
   Clock,
   DollarSign,
   MapPin,
@@ -47,6 +48,9 @@ import {
 } from "@/api/functions";
 import { CampaignModal } from "./CampaignModal";
 import { buildCalendlyBookingUrl } from "@/utils/bookDemo";
+
+const CALENDLY_WIDGET_SCRIPT_ID = "calendly-widget-script";
+const CALENDLY_WIDGET_STYLESHEET_ID = "calendly-widget-stylesheet";
 
 export const NewBookingModal = ({
   open,
@@ -139,12 +143,127 @@ export const NewBookingModal = ({
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [calendlyEmbedOpen, setCalendlyEmbedOpen] = useState(false);
   const [calendlyEmbedUrl, setCalendlyEmbedUrl] = useState("");
+  const [calendlySchedulingUrl, setCalendlySchedulingUrl] = useState("");
+  const calendlyEmbedContainerRef = useRef<HTMLDivElement | null>(null);
+  const [calendlyEmbedLoadError, setCalendlyEmbedLoadError] = useState("");
   const [isCalendlyConfigured, setIsCalendlyConfigured] = useState(false);
   const [isCalendlyConfigLoading, setIsCalendlyConfigLoading] = useState(false);
   const [calendlyConfigMessage, setCalendlyConfigMessage] = useState(
     "Set up Calendly in Agency Settings > Integrations before enabling calendar invites and reminders.",
   );
   const useCalendlyHandoff = notifications.calendar;
+
+  useEffect(() => {
+    if (!calendlyEmbedOpen || !calendlyEmbedUrl) return;
+
+    let cancelled = false;
+
+    const ensureCalendlyStylesheet = () => {
+      if (
+        document.getElementById(CALENDLY_WIDGET_STYLESHEET_ID) ||
+        document.querySelector(
+          'link[href="https://assets.calendly.com/assets/external/widget.css"]',
+        )
+      ) {
+        return;
+      }
+
+      const link = document.createElement("link");
+      link.id = CALENDLY_WIDGET_STYLESHEET_ID;
+      link.rel = "stylesheet";
+      link.href = "https://assets.calendly.com/assets/external/widget.css";
+      document.head.appendChild(link);
+    };
+
+    const mountCalendlyWidget = () => {
+      const container = calendlyEmbedContainerRef.current;
+      const calendlyApi = (window as any).Calendly;
+      if (!container || !calendlyApi?.initInlineWidget) return false;
+
+      container.innerHTML = "";
+      calendlyApi.initInlineWidget({
+        url: calendlyEmbedUrl,
+        parentElement: container,
+      });
+      return true;
+    };
+
+    const ensureCalendlyScript = async () => {
+      ensureCalendlyStylesheet();
+      setCalendlyEmbedLoadError("");
+
+      if (mountCalendlyWidget()) return;
+
+      const existingScript = document.getElementById(
+        CALENDLY_WIDGET_SCRIPT_ID,
+      ) as HTMLScriptElement | null;
+
+      const loadScript = () =>
+        new Promise<void>((resolve, reject) => {
+          const script = existingScript || document.createElement("script");
+          script.id = CALENDLY_WIDGET_SCRIPT_ID;
+          script.src = "https://assets.calendly.com/assets/external/widget.js";
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () =>
+            reject(new Error("Failed to load the Calendly widget."));
+          if (!existingScript) {
+            document.body.appendChild(script);
+          }
+        });
+
+      try {
+        await loadScript();
+        if (cancelled) return;
+        if (!mountCalendlyWidget()) {
+          throw new Error("Calendly widget is unavailable.");
+        }
+      } catch (error: any) {
+        if (cancelled) return;
+        setCalendlyEmbedLoadError(
+          error?.message || "Failed to load the Calendly widget.",
+        );
+      }
+    };
+
+    void ensureCalendlyScript();
+
+    return () => {
+      cancelled = true;
+      if (calendlyEmbedContainerRef.current) {
+        calendlyEmbedContainerRef.current.innerHTML = "";
+      }
+    };
+  }, [calendlyEmbedOpen, calendlyEmbedUrl]);
+
+  useEffect(() => {
+    if (!calendlyEmbedOpen) return;
+
+    const handleCalendlyMessage = (event: MessageEvent) => {
+      const origin = String(event.origin || "");
+      if (!origin.includes("calendly.com")) return;
+
+      const payload = event.data;
+      const calendlyEventName =
+        typeof payload?.event === "string" ? payload.event : "";
+
+      if (calendlyEventName !== "calendly.event_scheduled") return;
+
+      setCalendlyEmbedOpen(false);
+      setCalendlyEmbedUrl("");
+      setCalendlyEmbedLoadError("");
+      toast({
+        title: "Meeting scheduled",
+        description:
+          "The Calendly booking is complete and the scheduling window has been closed.",
+      });
+    };
+
+    window.addEventListener("message", handleCalendlyMessage);
+    return () => {
+      window.removeEventListener("message", handleCalendlyMessage);
+    };
+  }, [calendlyEmbedOpen, toast]);
 
   // When all-day is enabled, normalize times to full-day window
   useEffect(() => {
@@ -223,6 +342,7 @@ export const NewBookingModal = ({
         const integrationEnabled = settings?.is_enabled !== false;
         const configured = Boolean(schedulingUrl) && integrationEnabled;
 
+        setCalendlySchedulingUrl(schedulingUrl);
         setIsCalendlyConfigured(configured);
         setCalendlyConfigMessage(
           configured
@@ -237,6 +357,7 @@ export const NewBookingModal = ({
           }));
         }
       } catch (_error) {
+        setCalendlySchedulingUrl("");
         setIsCalendlyConfigured(false);
         setCalendlyConfigMessage(
           "Calendly is not ready yet. Go to Agency Settings > Integrations, enable Calendly, and save the public scheduling link before turning this on.",
@@ -528,8 +649,7 @@ export const NewBookingModal = ({
     try {
       let calendlyUrlAfterSave = "";
       if (useCalendlyHandoff) {
-        const response = await getAgencyCalendlySettings();
-        const schedulingUrl = response?.data?.scheduling_url?.trim();
+        const schedulingUrl = calendlySchedulingUrl.trim();
         if (!schedulingUrl) {
           toast({
             title: "Calendly link required",
@@ -563,9 +683,7 @@ export const NewBookingModal = ({
         });
       }
 
-      const notificationWarnings: string[] = [];
-      for (let index = 0; index < selectedTalents.length; index++) {
-        const talent = selectedTalents[index];
+      const bookingRequests = selectedTalents.map(async (talent) => {
         const payload: any = {
           booking_type: bookingType,
           status: "pending",
@@ -592,32 +710,51 @@ export const NewBookingModal = ({
           notify_calendar: false,
           campaign_id: selectedCampaign?.id,
         };
+
         const created = await createBookingWithFiles(payload, files);
         const row = Array.isArray(created) ? created[0] : created;
-        if (row) {
-          if (row.id) {
-            try {
-              await sendBookingCreatedEmail(row.id);
-            } catch (notificationError: any) {
-              notificationWarnings.push(
-                notificationError?.message ||
-                  `Notifications could not be sent for ${talent.name}.`,
-              );
-            }
-          }
-          const normalized = {
-            ...row,
-            status: row.status || payload.status,
-            type: row.type || payload.booking_type,
-            date: row.date || payload.date,
-            talent_id: row.talent_id || payload.talent_id,
-            talent_name: row.talent_name || payload.talent_name,
-            client_id: row.client_id || payload.client_id,
-            client_name: row.client_name || payload.client_name,
-          };
-          onSave(normalized);
-        }
-      }
+        return { row, payload, talent };
+      });
+
+      const createdBookings = await Promise.all(bookingRequests);
+
+      createdBookings.forEach(({ row, payload }) => {
+        if (!row) return;
+        const normalized = {
+          ...row,
+          status: row.status || payload.status,
+          type: row.type || payload.booking_type,
+          date: row.date || payload.date,
+          talent_id: row.talent_id || payload.talent_id,
+          talent_name: row.talent_name || payload.talent_name,
+          client_id: row.client_id || payload.client_id,
+          client_name: row.client_name || payload.client_name,
+        };
+        onSave(normalized);
+      });
+
+      void (async () => {
+        const notificationResults = await Promise.allSettled(
+          createdBookings
+            .filter(({ row }) => Boolean(row?.id))
+            .map(({ row }) => sendBookingCreatedEmail(row.id)),
+        );
+
+        const firstFailure = notificationResults.find(
+          (result) => result.status === "rejected",
+        );
+        if (!firstFailure) return;
+
+        const message =
+          (firstFailure as PromiseRejectedResult).reason?.message ||
+          "Some booking notifications could not be sent.";
+        toast({
+          title: "Booking saved with notification issues",
+          description: message,
+          variant: "destructive" as any,
+        });
+      })();
+
       setUploadSuccess(true);
       toast({
         title: "Booking Created",
@@ -625,14 +762,6 @@ export const NewBookingModal = ({
           .map((t) => t.name)
           .join(", ")} on ${date}.`,
       });
-      if (notificationWarnings.length > 0) {
-        toast({
-          title: "Booking saved with notification issues",
-          description: notificationWarnings[0],
-          variant: "destructive" as any,
-        });
-        return;
-      }
       if (useCalendlyHandoff) {
         setCalendlyEmbedUrl(calendlyUrlAfterSave);
         setCalendlyEmbedOpen(true);
@@ -1516,11 +1645,21 @@ export const NewBookingModal = ({
           </div>
           <div className="mt-4 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white">
             {calendlyEmbedUrl ? (
-              <iframe
-                title="Calendly booking"
-                src={calendlyEmbedUrl}
-                className="h-full w-full"
-              />
+              calendlyEmbedLoadError ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-gray-500">
+                  <div>{calendlyEmbedLoadError}</div>
+                  <Button asChild variant="outline">
+                    <a href={calendlyEmbedUrl} target="_blank" rel="noreferrer">
+                      Open Calendly in new tab
+                    </a>
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  ref={calendlyEmbedContainerRef}
+                  className="h-full w-full overflow-auto"
+                />
+              )
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-gray-500">
                 Calendly link unavailable.

@@ -84,6 +84,15 @@ const CALENDLY_BOOKING_TYPE_OPTIONS = [
   { key: "default", label: "Calendly Event Type" },
 ] as const;
 
+type CalendlySettingsState = {
+  calendly_api_token: string;
+  scheduling_url: string;
+  is_enabled: boolean;
+  mappings: Record<string, string>;
+};
+
+type CalendlyFieldStatus = "idle" | "saving" | "saved" | "error";
+
 async function parseApiResponse(resp: Response) {
   const raw = await resp.text();
   if (!raw.trim()) return {};
@@ -129,6 +138,64 @@ function normalizeCalendlyMappingsWithEventTypes(
     }),
   );
 }
+
+function cloneCalendlySettings(
+  settings: CalendlySettingsState,
+): CalendlySettingsState {
+  return {
+    calendly_api_token: settings.calendly_api_token || "",
+    scheduling_url: settings.scheduling_url || "",
+    is_enabled: Boolean(settings.is_enabled),
+    mappings: { ...(settings.mappings || {}) },
+  };
+}
+
+function areCalendlySettingsEqual(
+  left: CalendlySettingsState,
+  right: CalendlySettingsState,
+) {
+  return (
+    JSON.stringify(cloneCalendlySettings(left)) ===
+    JSON.stringify(cloneCalendlySettings(right))
+  );
+}
+
+function getCalendlyMappingFieldKey(typeKey: string) {
+  return `mapping:${typeKey}`;
+}
+
+const CalendlyAutosaveStatus = ({
+  status,
+}: {
+  status?: CalendlyFieldStatus;
+}) => {
+  if (!status || status === "idle") return null;
+
+  if (status === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
+        <RefreshCw className="h-3 w-3 animate-spin" />
+        Saving...
+      </span>
+    );
+  }
+
+  if (status === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+        <Check className="h-3 w-3" />
+        Saved
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+      <XCircle className="h-3 w-3" />
+      Save failed
+    </span>
+  );
+};
 
 const InviteTeamMemberModal = ({
   open,
@@ -472,12 +539,20 @@ const GeneralSettingsView = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calendly State
-  const [calendlySettings, setCalendlySettings] = useState({
-    calendly_api_token: "",
-    scheduling_url: "",
-    is_enabled: false,
-    mappings: {} as Record<string, string>,
-  });
+  const [calendlySettings, setCalendlySettings] =
+    useState<CalendlySettingsState>({
+      calendly_api_token: "",
+      scheduling_url: "",
+      is_enabled: false,
+      mappings: {},
+    });
+  const [lastSavedCalendlySettings, setLastSavedCalendlySettings] =
+    useState<CalendlySettingsState>({
+      calendly_api_token: "",
+      scheduling_url: "",
+      is_enabled: false,
+      mappings: {},
+    });
   const [calendlyEventTypes, setCalendlyEventTypes] = useState<any[]>([]);
   const [isFetchingCalendlyEventTypes, setIsFetchingCalendlyEventTypes] =
     useState(false);
@@ -490,20 +565,71 @@ const GeneralSettingsView = ({
   >(null);
   const [hasSavedCalendlyToken, setHasSavedCalendlyToken] = useState(false);
   const [isCalendlyMappingsOpen, setIsCalendlyMappingsOpen] = useState(false);
+  const [calendlyFieldStatuses, setCalendlyFieldStatuses] = useState<
+    Record<string, CalendlyFieldStatus>
+  >({});
+  const calendlyFieldStatusTimeoutsRef = useRef<Record<string, number>>({});
 
   const getAccessToken = () => token || "";
+
+  const setCalendlyFieldStatus = (
+    fieldKey: string,
+    status: CalendlyFieldStatus,
+  ) => {
+    const existingTimeout = calendlyFieldStatusTimeoutsRef.current[fieldKey];
+    if (existingTimeout) {
+      window.clearTimeout(existingTimeout);
+      delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
+    }
+
+    setCalendlyFieldStatuses((prev) => ({
+      ...prev,
+      [fieldKey]: status,
+    }));
+
+    if (status === "saved") {
+      calendlyFieldStatusTimeoutsRef.current[fieldKey] = window.setTimeout(
+        () => {
+          setCalendlyFieldStatuses((prev) => ({
+            ...prev,
+            [fieldKey]: "idle",
+          }));
+          delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
+        },
+        1800,
+      );
+    }
+  };
+
+  const updateCalendlySettings = (
+    updater:
+      | CalendlySettingsState
+      | ((previous: CalendlySettingsState) => CalendlySettingsState),
+  ) => {
+    let nextSettings!: CalendlySettingsState;
+    setCalendlySettings((previous) => {
+      nextSettings =
+        typeof updater === "function"
+          ? cloneCalendlySettings(updater(previous))
+          : cloneCalendlySettings(updater);
+      return nextSettings;
+    });
+    return nextSettings;
+  };
 
   const fetchCalendlySettings = async () => {
     if (!hasIrlBookingAddon) {
       setIsFetchingCalendlySettings(false);
       setHasSavedCalendlyToken(false);
       setCalendlyEventTypesError(null);
-      setCalendlySettings({
+      const emptySettings = cloneCalendlySettings({
         calendly_api_token: "",
         scheduling_url: "",
         is_enabled: false,
         mappings: {},
       });
+      setCalendlySettings(emptySettings);
+      setLastSavedCalendlySettings(emptySettings);
       return null;
     }
     try {
@@ -519,12 +645,14 @@ const GeneralSettingsView = ({
       }
       const data = payload.data;
       if (data) {
-        setCalendlySettings({
+        const normalizedSettings = cloneCalendlySettings({
           calendly_api_token: data.calendly_api_token || "",
           scheduling_url: data.scheduling_url || "",
           is_enabled: data.is_enabled ?? false,
           mappings: data.mappings || {},
         });
+        setCalendlySettings(normalizedSettings);
+        setLastSavedCalendlySettings(normalizedSettings);
         setHasSavedCalendlyToken(Boolean(data.calendly_api_token?.trim()));
         return data;
       }
@@ -586,7 +714,15 @@ const GeneralSettingsView = ({
     }
   };
 
-  const handleSaveCalendlySettings = async () => {
+  const handleSaveCalendlySettings = async ({
+    nextSettings,
+    fieldKey,
+    silentSuccess = false,
+  }: {
+    nextSettings?: CalendlySettingsState;
+    fieldKey?: string;
+    silentSuccess?: boolean;
+  } = {}) => {
     if (!hasIrlBookingAddon) {
       toast({
         title: "IRL Booking add-on required",
@@ -596,6 +732,12 @@ const GeneralSettingsView = ({
       });
       return;
     }
+
+    const payload = cloneCalendlySettings(nextSettings || calendlySettings);
+    if (fieldKey) {
+      setCalendlyFieldStatus(fieldKey, "saving");
+    }
+
     try {
       setIsSavingCalendlySettings(true);
       setCalendlyEventTypesError(null);
@@ -605,43 +747,57 @@ const GeneralSettingsView = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify(calendlySettings),
+        body: JSON.stringify(payload),
       });
       const data = await parseApiResponse(resp);
       if (data.status === "success") {
+        const savedSettings = cloneCalendlySettings({
+          calendly_api_token:
+            data.data?.calendly_api_token || payload.calendly_api_token,
+          scheduling_url: data.data?.scheduling_url || payload.scheduling_url,
+          is_enabled: data.data?.is_enabled ?? payload.is_enabled,
+          mappings: data.data?.mappings || payload.mappings,
+        });
         if (data.data) {
-          setCalendlySettings({
-            calendly_api_token: data.data.calendly_api_token || "",
-            scheduling_url: data.data.scheduling_url || "",
-            is_enabled: data.data.is_enabled ?? false,
-            mappings: data.data.mappings || {},
-          });
+          setCalendlySettings(savedSettings);
           setHasSavedCalendlyToken(
             Boolean(data.data.calendly_api_token?.trim()),
           );
         } else {
-          setHasSavedCalendlyToken(
-            Boolean(calendlySettings.calendly_api_token.trim()),
-          );
+          setCalendlySettings(savedSettings);
+          setHasSavedCalendlyToken(Boolean(payload.calendly_api_token.trim()));
         }
-        toast({
-          title: "Settings Saved",
-          description:
-            data.message || "Calendly integration settings have been updated.",
-        });
+        setLastSavedCalendlySettings(savedSettings);
+        if (fieldKey) {
+          setCalendlyFieldStatus(fieldKey, "saved");
+        }
+        if (!silentSuccess) {
+          toast({
+            title: "Settings Saved",
+            description:
+              data.message ||
+              "Calendly integration settings have been updated.",
+          });
+        }
         if (
-          data.data?.calendly_api_token ||
-          calendlySettings.calendly_api_token
+          payload.calendly_api_token.trim() &&
+          (payload.calendly_api_token !==
+            lastSavedCalendlySettings.calendly_api_token ||
+            calendlyEventTypes.length === 0)
         ) {
           await fetchCalendlyEventTypes();
-        } else {
+        } else if (!payload.calendly_api_token.trim()) {
           setCalendlyEventTypes([]);
         }
+        return true;
       } else {
         throw new Error(data.message || "Failed to save Calendly settings");
       }
     } catch (err: any) {
       setCalendlyEventTypesError(err.message || null);
+      if (fieldKey) {
+        setCalendlyFieldStatus(fieldKey, "error");
+      }
       toast({
         title: "Error",
         description: err.message || "Failed to save Calendly settings",
@@ -650,6 +806,7 @@ const GeneralSettingsView = ({
     } finally {
       setIsSavingCalendlySettings(false);
     }
+    return false;
   };
 
   const [bankStatusLoading, setBankStatusLoading] = useState(false);
@@ -701,12 +858,14 @@ const GeneralSettingsView = ({
     if (!hasIrlBookingAddon) {
       setHasSavedCalendlyToken(false);
       setCalendlyEventTypesError(null);
-      setCalendlySettings({
+      const emptySettings = cloneCalendlySettings({
         calendly_api_token: "",
         scheduling_url: "",
         is_enabled: false,
         mappings: {},
       });
+      setCalendlySettings(emptySettings);
+      setLastSavedCalendlySettings(emptySettings);
       setCalendlyEventTypes([]);
       return;
     }
@@ -743,6 +902,31 @@ const GeneralSettingsView = ({
     calendlySettings.mappings,
     hasIrlBookingAddon,
   ]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(calendlyFieldStatusTimeoutsRef.current).forEach(
+        (timeoutId) => window.clearTimeout(timeoutId),
+      );
+    };
+  }, []);
+
+  const autosaveCalendlyField = async (
+    fieldKey: string,
+    nextSettings?: CalendlySettingsState,
+  ) => {
+    const settingsToSave = cloneCalendlySettings(
+      nextSettings || calendlySettings,
+    );
+    if (areCalendlySettingsEqual(settingsToSave, lastSavedCalendlySettings)) {
+      return;
+    }
+    await handleSaveCalendlySettings({
+      nextSettings: settingsToSave,
+      fieldKey,
+      silentSuccess: true,
+    });
+  };
 
   const defaultNotificationPrefs = [
     {
@@ -2732,14 +2916,19 @@ const GeneralSettingsView = ({
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
+                  <div className="flex justify-end">
+                    <CalendlyAutosaveStatus
+                      status={calendlyFieldStatuses.calendly_api_token}
+                    />
+                  </div>
                   <div className="relative group">
                     <Input
                       type="password"
                       placeholder="calendly_v2_..."
                       value={calendlySettings.calendly_api_token}
                       disabled={!hasIrlBookingAddon}
-                      onChange={(e) =>
-                        setCalendlySettings((p) => {
+                      onChange={(e) => {
+                        updateCalendlySettings((p) => {
                           const nextToken = e.target.value;
                           const tokenChanged =
                             p.calendly_api_token.trim() &&
@@ -2750,7 +2939,14 @@ const GeneralSettingsView = ({
                             calendly_api_token: nextToken,
                             mappings: tokenChanged ? {} : p.mappings,
                           };
-                        })
+                        });
+                        setCalendlyFieldStatuses((prev) => ({
+                          ...prev,
+                          calendly_api_token: "idle",
+                        }));
+                      }}
+                      onBlur={() =>
+                        void autosaveCalendlyField("calendly_api_token")
                       }
                       className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     />
@@ -2783,17 +2979,27 @@ const GeneralSettingsView = ({
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
+                  <div className="flex justify-end">
+                    <CalendlyAutosaveStatus
+                      status={calendlyFieldStatuses.scheduling_url}
+                    />
+                  </div>
                   <Input
                     type="url"
                     placeholder="https://calendly.com/your-handle/your-event"
                     value={calendlySettings.scheduling_url}
                     disabled={!hasIrlBookingAddon}
-                    onChange={(e) =>
-                      setCalendlySettings((p) => ({
+                    onChange={(e) => {
+                      updateCalendlySettings((p) => ({
                         ...p,
                         scheduling_url: e.target.value,
-                      }))
-                    }
+                      }));
+                      setCalendlyFieldStatuses((prev) => ({
+                        ...prev,
+                        scheduling_url: "idle",
+                      }));
+                    }}
+                    onBlur={() => void autosaveCalendlyField("scheduling_url")}
                     className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   />
                   <p className="text-xs text-gray-400 font-medium leading-relaxed flex items-start gap-2 italic">
@@ -2855,82 +3061,111 @@ const GeneralSettingsView = ({
                                   <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
                                 </div>
                               ) : calendlyEventTypes.length > 0 ? (
-                                <Select
-                                  value={(() => {
-                                    const currentMapping =
-                                      calendlySettings.mappings[type.key];
-                                    if (!currentMapping) {
-                                      return CALENDLY_USE_DEFAULT_VALUE;
-                                    }
-                                    if (
-                                      isCalendlyEventTypeUri(currentMapping)
-                                    ) {
-                                      return currentMapping;
-                                    }
-                                    const matchingEventType =
-                                      calendlyEventTypes.find(
-                                        (eventType: any) =>
-                                          eventType.slug === currentMapping,
-                                      );
-                                    return (
-                                      matchingEventType?.uri ||
-                                      CALENDLY_USE_DEFAULT_VALUE
-                                    );
-                                  })()}
-                                  onValueChange={(val) =>
-                                    setCalendlySettings((p) => {
-                                      const nextMappings = { ...p.mappings };
-                                      if (val === CALENDLY_USE_DEFAULT_VALUE) {
-                                        delete nextMappings[type.key];
-                                      } else {
-                                        nextMappings[type.key] = val;
+                                <div className="space-y-2">
+                                  <div className="flex justify-end">
+                                    <CalendlyAutosaveStatus
+                                      status={
+                                        calendlyFieldStatuses[
+                                          getCalendlyMappingFieldKey(type.key)
+                                        ]
                                       }
-                                      return {
-                                        ...p,
-                                        mappings: nextMappings,
-                                      };
-                                    })
-                                  }
-                                >
-                                  <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
-                                    <SelectValue placeholder="Select Calendly Event" />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-xl border-gray-200 shadow-xl">
-                                    <SelectItem
-                                      value={CALENDLY_USE_DEFAULT_VALUE}
-                                      className="text-xs font-bold text-gray-400 italic"
-                                    >
-                                      Leave Unset
-                                    </SelectItem>
-                                    {calendlyEventTypes.map((et: any) => (
+                                    />
+                                  </div>
+                                  <Select
+                                    value={(() => {
+                                      const currentMapping =
+                                        calendlySettings.mappings[type.key];
+                                      if (!currentMapping) {
+                                        return CALENDLY_USE_DEFAULT_VALUE;
+                                      }
+                                      if (
+                                        isCalendlyEventTypeUri(currentMapping)
+                                      ) {
+                                        return currentMapping;
+                                      }
+                                      const matchingEventType =
+                                        calendlyEventTypes.find(
+                                          (eventType: any) =>
+                                            eventType.slug === currentMapping,
+                                        );
+                                      return (
+                                        matchingEventType?.uri ||
+                                        CALENDLY_USE_DEFAULT_VALUE
+                                      );
+                                    })()}
+                                    onValueChange={(val) => {
+                                      const nextSettings =
+                                        updateCalendlySettings((p) => {
+                                          const nextMappings = {
+                                            ...p.mappings,
+                                          };
+                                          if (
+                                            val === CALENDLY_USE_DEFAULT_VALUE
+                                          ) {
+                                            delete nextMappings[type.key];
+                                          } else {
+                                            nextMappings[type.key] = val;
+                                          }
+                                          return {
+                                            ...p,
+                                            mappings: nextMappings,
+                                          };
+                                        });
+                                      void autosaveCalendlyField(
+                                        getCalendlyMappingFieldKey(type.key),
+                                        nextSettings,
+                                      );
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
+                                      <SelectValue placeholder="Select Calendly Event" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-gray-200 shadow-xl">
                                       <SelectItem
-                                        key={et.uri || et.slug}
-                                        value={et.uri || et.slug}
-                                        className="text-xs font-bold py-2.5"
+                                        value={CALENDLY_USE_DEFAULT_VALUE}
+                                        className="text-xs font-bold text-gray-400 italic"
                                       >
-                                        <div className="flex flex-col gap-0.5">
-                                          <span>{et.name}</span>
-                                          <span className="text-[10px] text-gray-400">
-                                            {et.slug}
-                                          </span>
-                                          {et.duration && (
-                                            <span className="text-[10px] text-gray-400">
-                                              {et.duration} mins
-                                            </span>
-                                          )}
-                                        </div>
+                                        Leave Unset
                                       </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                      {calendlyEventTypes.map((et: any) => (
+                                        <SelectItem
+                                          key={et.uri || et.slug}
+                                          value={et.uri || et.slug}
+                                          className="text-xs font-bold py-2.5"
+                                        >
+                                          <div className="flex flex-col gap-0.5">
+                                            <span>{et.name}</span>
+                                            <span className="text-[10px] text-gray-400">
+                                              {et.slug}
+                                            </span>
+                                            {et.duration && (
+                                              <span className="text-[10px] text-gray-400">
+                                                {et.duration} mins
+                                              </span>
+                                            )}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               ) : hasSavedCalendlyToken ? (
                                 <div className="space-y-2">
+                                  <div className="flex justify-end">
+                                    <CalendlyAutosaveStatus
+                                      status={
+                                        calendlyFieldStatuses[
+                                          getCalendlyMappingFieldKey(type.key)
+                                        ]
+                                      }
+                                    />
+                                  </div>
                                   <Input
                                     value={
                                       calendlySettings.mappings[type.key] || ""
                                     }
-                                    onChange={(e) =>
-                                      setCalendlySettings((p) => {
+                                    onChange={(e) => {
+                                      updateCalendlySettings((p) => {
                                         const nextMappings = { ...p.mappings };
                                         const nextValue = e.target.value.trim();
                                         if (!nextValue) {
@@ -2942,7 +3177,17 @@ const GeneralSettingsView = ({
                                           ...p,
                                           mappings: nextMappings,
                                         };
-                                      })
+                                      });
+                                      setCalendlyFieldStatuses((prev) => ({
+                                        ...prev,
+                                        [getCalendlyMappingFieldKey(type.key)]:
+                                          "idle",
+                                      }));
+                                    }}
+                                    onBlur={() =>
+                                      void autosaveCalendlyField(
+                                        getCalendlyMappingFieldKey(type.key),
+                                      )
                                     }
                                     placeholder="https://api.calendly.com/event_types/..."
                                     className="h-10 bg-white border-gray-200 rounded-lg text-xs font-medium"
