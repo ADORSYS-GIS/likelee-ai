@@ -1091,7 +1091,7 @@ export default function PublicCatalogView() {
       <footer className="border-t border-gray-50 mt-20 py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="mb-10 opacity-20 hover:opacity-100 transition-opacity duration-500">
-            <LikeleeLogoMark className="justify-center grayscale" />
+            <LikeleeLogoMark className="justify-center" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-300 mb-10">
             Premium Talent Repository
