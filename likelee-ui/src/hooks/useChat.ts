@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -81,6 +81,7 @@ export function useChat(currentUserId?: string, userRole?: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const refreshTimerRef = useRef<number | null>(null);
 
   // 1. Load all conversation threads using TanStack Query
   const {
@@ -151,126 +152,124 @@ export function useChat(currentUserId?: string, userRole?: string) {
   useEffect(() => {
     if (!currentUserId || !supabase) return;
 
-    // Without a filter, realtime delivers inserts/updates for ALL messages in the database.
-    // We must scope to the user's conversation IDs.
-    if (conversationIds.length === 0) return;
+    const scheduleRefresh = () => {
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+      refreshTimerRef.current = window.setTimeout(() => {
+        refreshTimerRef.current = null;
+        loadConversations();
+      }, 250);
+    };
 
-    const filter = `conversation_id=in.(${conversationIds.join(",")})`;
+    const channel = supabase.channel(`chat-global-${currentUserId}`);
 
-    const channel = supabase
-      .channel(`chat-global-${currentUserId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter },
-        async (payload) => {
-          const newMsg = payload.new as Message;
-          const isFromMe = newMsg.sender_id === currentUserId;
-          const isActive = newMsg.conversation_id === activeConversationId;
+    channel.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "conversations" },
+      () => loadConversations(),
+    );
 
-          if (isActive) {
-            setMessages((prev) => {
-              // Deduplicate: If the message matches an optimistic one from us, replace it
-              if (isFromMe) {
-                const tempIndex = prev.findIndex(
-                  (m) =>
-                    m.id.startsWith("temp_") &&
-                    m.content === newMsg.content &&
-                    m.conversation_id === newMsg.conversation_id,
-                );
-                if (tempIndex !== -1) {
-                  const newList = [...prev];
-                  newList[tempIndex] = newMsg;
-                  return newList;
+    if (conversationIds.length > 0) {
+      const filter = `conversation_id=in.(${conversationIds.join(",")})`;
+
+      channel
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages", filter },
+          async (payload) => {
+            const newMsg = payload.new as Message;
+            const isFromMe = newMsg.sender_id === currentUserId;
+            const isActive = newMsg.conversation_id === activeConversationId;
+
+            if (isActive) {
+              setMessages((prev) => {
+                if (isFromMe) {
+                  const tempIndex = prev.findIndex(
+                    (m) =>
+                      m.id.startsWith("temp_") &&
+                      m.content === newMsg.content &&
+                      m.conversation_id === newMsg.conversation_id,
+                  );
+                  if (tempIndex !== -1) {
+                    const newList = [...prev];
+                    newList[tempIndex] = newMsg;
+                    return newList;
+                  }
                 }
+
+                if (prev.find((m) => m.id === newMsg.id)) return prev;
+                return [...prev, newMsg];
+              });
+
+              if (!isFromMe) {
+                await supabase
+                  .from("messages")
+                  .update({ is_read: true })
+                  .eq("id", newMsg.id);
               }
-
-              if (prev.find((m) => m.id === newMsg.id)) return prev;
-              return [...prev, newMsg];
-            });
-
-            if (!isFromMe) {
-              await supabase
-                .from("messages")
-                .update({ is_read: true })
-                .eq("id", newMsg.id);
             }
-          }
 
-          // Update global query cache
-          queryClient.setQueryData<Conversation[]>(
-            ["conversations", currentUserId],
-            (prev = []) => {
-              const index = prev.findIndex(
-                (c) => c.id === newMsg.conversation_id,
-              );
-              if (index === -1) {
-                loadConversations(); // New thread
-                return prev;
-              }
-
-              const updatedConv = {
-                ...prev[index],
-                last_message_content: newMsg.content,
-                updated_at: newMsg.created_at,
-                unread_count:
-                  (prev[index].unread_count || 0) +
-                  (!isFromMe && !isActive ? 1 : 0),
-              };
-
-              const newList = [...prev];
-              newList[index] = updatedConv;
-              return newList.sort(
-                (a, b) =>
-                  new Date(b.updated_at).getTime() -
-                  new Date(a.updated_at).getTime(),
-              );
-            },
-          );
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages", filter },
-        (payload) => {
-          const updatedMsg = payload.new as Message;
-          if (updatedMsg.conversation_id === activeConversationId) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === updatedMsg.id
-                  ? {
-                      ...m,
-                      is_read: updatedMsg.is_read,
-                      content: updatedMsg.content,
-                      is_deleted: updatedMsg.is_deleted,
-                      edited_at: updatedMsg.edited_at,
-                    }
-                  : m,
-              ),
-            );
-          }
-
-          // If it's a delete or edit, we might want to update the last message in the thread list
-          if (updatedMsg.is_deleted || updatedMsg.edited_at) {
             queryClient.setQueryData<Conversation[]>(
               ["conversations", currentUserId],
               (prev = []) => {
                 const index = prev.findIndex(
-                  (c) => c.id === updatedMsg.conversation_id,
+                  (c) => c.id === newMsg.conversation_id,
                 );
-                if (index === -1) return prev;
-                const newList = [...prev];
-                newList[index] = {
+                if (index === -1) {
+                  loadConversations();
+                  return prev;
+                }
+
+                const updatedConv = {
                   ...prev[index],
-                  last_message_content: updatedMsg.is_deleted
-                    ? "This message was deleted"
-                    : updatedMsg.content,
+                  last_message_content: newMsg.content,
+                  updated_at: newMsg.created_at,
+                  unread_count:
+                    (prev[index].unread_count || 0) +
+                    (!isFromMe && !isActive ? 1 : 0),
                 };
-                return newList;
+
+                const newList = [...prev];
+                newList[index] = updatedConv;
+                return newList.sort(
+                  (a, b) =>
+                    new Date(b.updated_at).getTime() -
+                    new Date(a.updated_at).getTime(),
+                );
               },
             );
-          }
-        },
-      )
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "messages", filter },
+          (payload) => {
+            const updatedMsg = payload.new as Message;
+            if (updatedMsg.conversation_id === activeConversationId) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === updatedMsg.id
+                    ? {
+                        ...m,
+                        is_read: updatedMsg.is_read,
+                        content: updatedMsg.content,
+                        is_deleted: updatedMsg.is_deleted,
+                        edited_at: updatedMsg.edited_at,
+                      }
+                    : m,
+                ),
+              );
+            }
+
+            if (updatedMsg.is_deleted || updatedMsg.edited_at) {
+              scheduleRefresh();
+            }
+          },
+        );
+    }
+
+    channel
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversations" },
@@ -292,14 +291,13 @@ export function useChat(currentUserId?: string, userRole?: string) {
           );
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "conversations" },
-        () => loadConversations(),
-      )
       .subscribe();
 
     return () => {
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
       supabase.removeChannel(channel);
     };
   }, [
