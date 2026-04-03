@@ -17925,7 +17925,9 @@ export default function AgencyDashboard() {
           }
         : null;
 
-    return chatNotification ? [chatNotification, ...notifications] : notifications;
+    return chatNotification
+      ? [chatNotification, ...notifications]
+      : notifications;
   }, [chatUnreadCount, notifications]);
 
   const unreadCount = allNotifications.filter((n: any) => !n.read).length;
@@ -17934,7 +17936,9 @@ export default function AgencyDashboard() {
   );
 
   const markAllAsRead = () => {
-    const unreadIds = allNotifications.filter((n: any) => !n.read).map((n: any) => n.id);
+    const unreadIds = allNotifications
+      .filter((n: any) => !n.read)
+      .map((n: any) => n.id);
     setDismissedNotificationIds((prev) =>
       Array.from(new Set([...prev, ...unreadIds])),
     );

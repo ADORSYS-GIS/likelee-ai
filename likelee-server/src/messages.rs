@@ -19,7 +19,11 @@ async fn resolve_effective_creator_id(
 
     fn is_missing_user_id_column(text: &str) -> bool {
         let lower = text.to_lowercase();
-        if !(lower.contains("user_id") && (lower.contains("not found") || lower.contains("does not exist") || lower.contains("schema cache"))) {
+        if !(lower.contains("user_id")
+            && (lower.contains("not found")
+                || lower.contains("does not exist")
+                || lower.contains("schema cache")))
+        {
             // try Postgres undefined_column code (42703) when error is JSON
             if let Ok(v) = serde_json::from_str::<serde_json::Value>(text) {
                 if v.get("code").and_then(|c| c.as_str()) == Some("42703") {
