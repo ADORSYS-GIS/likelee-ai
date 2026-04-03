@@ -154,7 +154,10 @@ function areCalendlySettingsEqual(
   left: CalendlySettingsState,
   right: CalendlySettingsState,
 ) {
-  return JSON.stringify(cloneCalendlySettings(left)) === JSON.stringify(cloneCalendlySettings(right));
+  return (
+    JSON.stringify(cloneCalendlySettings(left)) ===
+    JSON.stringify(cloneCalendlySettings(right))
+  );
 }
 
 function getCalendlyMappingFieldKey(typeKey: string) {
@@ -536,12 +539,13 @@ const GeneralSettingsView = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calendly State
-  const [calendlySettings, setCalendlySettings] = useState<CalendlySettingsState>({
-    calendly_api_token: "",
-    scheduling_url: "",
-    is_enabled: false,
-    mappings: {},
-  });
+  const [calendlySettings, setCalendlySettings] =
+    useState<CalendlySettingsState>({
+      calendly_api_token: "",
+      scheduling_url: "",
+      is_enabled: false,
+      mappings: {},
+    });
   const [lastSavedCalendlySettings, setLastSavedCalendlySettings] =
     useState<CalendlySettingsState>({
       calendly_api_token: "",
@@ -584,13 +588,16 @@ const GeneralSettingsView = ({
     }));
 
     if (status === "saved") {
-      calendlyFieldStatusTimeoutsRef.current[fieldKey] = window.setTimeout(() => {
-        setCalendlyFieldStatuses((prev) => ({
-          ...prev,
-          [fieldKey]: "idle",
-        }));
-        delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
-      }, 1800);
+      calendlyFieldStatusTimeoutsRef.current[fieldKey] = window.setTimeout(
+        () => {
+          setCalendlyFieldStatuses((prev) => ({
+            ...prev,
+            [fieldKey]: "idle",
+          }));
+          delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
+        },
+        1800,
+      );
     }
   };
 
@@ -745,14 +752,17 @@ const GeneralSettingsView = ({
       const data = await parseApiResponse(resp);
       if (data.status === "success") {
         const savedSettings = cloneCalendlySettings({
-          calendly_api_token: data.data?.calendly_api_token || payload.calendly_api_token,
+          calendly_api_token:
+            data.data?.calendly_api_token || payload.calendly_api_token,
           scheduling_url: data.data?.scheduling_url || payload.scheduling_url,
           is_enabled: data.data?.is_enabled ?? payload.is_enabled,
           mappings: data.data?.mappings || payload.mappings,
         });
         if (data.data) {
           setCalendlySettings(savedSettings);
-          setHasSavedCalendlyToken(Boolean(data.data.calendly_api_token?.trim()));
+          setHasSavedCalendlyToken(
+            Boolean(data.data.calendly_api_token?.trim()),
+          );
         } else {
           setCalendlySettings(savedSettings);
           setHasSavedCalendlyToken(Boolean(payload.calendly_api_token.trim()));
@@ -765,12 +775,14 @@ const GeneralSettingsView = ({
           toast({
             title: "Settings Saved",
             description:
-              data.message || "Calendly integration settings have been updated.",
+              data.message ||
+              "Calendly integration settings have been updated.",
           });
         }
         if (
           payload.calendly_api_token.trim() &&
-          (payload.calendly_api_token !== lastSavedCalendlySettings.calendly_api_token ||
+          (payload.calendly_api_token !==
+            lastSavedCalendlySettings.calendly_api_token ||
             calendlyEventTypes.length === 0)
         ) {
           await fetchCalendlyEventTypes();
@@ -893,8 +905,8 @@ const GeneralSettingsView = ({
 
   useEffect(() => {
     return () => {
-      Object.values(calendlyFieldStatusTimeoutsRef.current).forEach((timeoutId) =>
-        window.clearTimeout(timeoutId),
+      Object.values(calendlyFieldStatusTimeoutsRef.current).forEach(
+        (timeoutId) => window.clearTimeout(timeoutId),
       );
     };
   }, []);
@@ -903,7 +915,9 @@ const GeneralSettingsView = ({
     fieldKey: string,
     nextSettings?: CalendlySettingsState,
   ) => {
-    const settingsToSave = cloneCalendlySettings(nextSettings || calendlySettings);
+    const settingsToSave = cloneCalendlySettings(
+      nextSettings || calendlySettings,
+    );
     if (areCalendlySettingsEqual(settingsToSave, lastSavedCalendlySettings)) {
       return;
     }
@@ -2929,7 +2943,9 @@ const GeneralSettingsView = ({
                           calendly_api_token: "idle",
                         }));
                       }}
-                      onBlur={() => void autosaveCalendlyField("calendly_api_token")}
+                      onBlur={() =>
+                        void autosaveCalendlyField("calendly_api_token")
+                      }
                       className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     />
                     {calendlySettings.calendly_api_token && (
@@ -3076,18 +3092,23 @@ const GeneralSettingsView = ({
                                       );
                                     })()}
                                     onValueChange={(val) => {
-                                      const nextSettings = updateCalendlySettings((p) => {
-                                        const nextMappings = { ...p.mappings };
-                                        if (val === CALENDLY_USE_DEFAULT_VALUE) {
-                                          delete nextMappings[type.key];
-                                        } else {
-                                          nextMappings[type.key] = val;
-                                        }
-                                        return {
-                                          ...p,
-                                          mappings: nextMappings,
-                                        };
-                                      });
+                                      const nextSettings =
+                                        updateCalendlySettings((p) => {
+                                          const nextMappings = {
+                                            ...p.mappings,
+                                          };
+                                          if (
+                                            val === CALENDLY_USE_DEFAULT_VALUE
+                                          ) {
+                                            delete nextMappings[type.key];
+                                          } else {
+                                            nextMappings[type.key] = val;
+                                          }
+                                          return {
+                                            ...p,
+                                            mappings: nextMappings,
+                                          };
+                                        });
                                       void autosaveCalendlyField(
                                         getCalendlyMappingFieldKey(type.key),
                                         nextSettings,
