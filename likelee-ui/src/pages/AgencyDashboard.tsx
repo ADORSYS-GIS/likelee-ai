@@ -17930,7 +17930,8 @@ export default function AgencyDashboard() {
       : notifications;
   }, [chatUnreadCount, notifications]);
 
-  const unreadCount = allNotifications.filter((n: any) => !n.read).length;
+  const unreadCount =
+    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
   const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
