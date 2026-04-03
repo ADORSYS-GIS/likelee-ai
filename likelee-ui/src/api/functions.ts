@@ -56,6 +56,19 @@ export const getCalendlyBookingUrl = () =>
     error?: string;
   }>("/booking/calendly-url");
 
+export const getAgencyCalendlySettings = () =>
+  base44Client.get<{
+    status: string;
+    data?: {
+      calendly_api_token?: string | null;
+      scheduling_url?: string | null;
+      is_enabled?: boolean;
+      mappings?: Record<string, string>;
+    };
+    error?: string;
+    message?: string;
+  }>("/calendly/settings");
+
 export const testJobApis = () => base44Client.get("/jobs/test");
 
 export const expandJobDescription = (data: any) =>
@@ -626,6 +639,11 @@ export const createBookingWithFiles = async (data: any, files: File[]) => {
   return base44Client.post(`/bookings/with-files`, fd);
 };
 
+export const sendBookingCreatedEmail = (bookingId: string) =>
+  base44Client.post(`/notifications/booking-created-email`, {
+    booking_id: bookingId,
+  });
+
 // Agency clients
 export const getAgencyClients = () => base44Client.get(`/agency/clients`);
 export const createAgencyClient = (data: any) =>
@@ -723,6 +741,9 @@ export const listAgencyStorageFoldersPaged = (params?: {
   limit?: number;
   offset?: number;
 }) => base44Client.get(`/agency/storage/folders`, { params: params || {} });
+
+export const deleteAgencyStorageFolder = (folder_id: string) =>
+  base44Client.delete(`/agency/storage/folders/${folder_id}`);
 
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });

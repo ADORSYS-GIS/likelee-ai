@@ -140,8 +140,15 @@ import {
   Play,
   Library,
   FolderCheck,
+  MessageSquare,
 } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/useChat";
 // ----------- LAZY TAB COMPONENTS -----------
+const CommunicationHub = lazy(() =>
+  import("@/components/chat/CommunicationHub").then((m) => ({
+    default: m.CommunicationHub,
+  })),
+);
 // Each import is split into its own JS chunk by Vite.
 // The browser only downloads these when the user navigates to that tab.
 const AgencyDeliverablesView = lazy(() =>
@@ -16893,6 +16900,15 @@ export default function AgencyDashboard() {
       localStorage.getItem("brand_licensing_seen_count") || "0",
       10,
     );
+    const requests = Array.isArray(brandLicenseRequestsQuery.data)
+      ? brandLicenseRequestsQuery.data.filter(
+          (r: any) => r?.status === "pending",
+        ).length
+      : 0;
+
+    // Use seen count from localStorage
+    const saved = localStorage.getItem("brand_licensing_seen_count");
+    const seenCount = saved ? parseInt(saved, 10) : 0;
 
     // If currently on the licensing requests tab, we clear it visually
     if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
@@ -16909,6 +16925,8 @@ export default function AgencyDashboard() {
     activeTab,
     activeSubTab,
   ]);
+    return Math.max(0, requests - seenCount);
+  }, [brandLicenseRequestsQuery.data, activeTab, activeSubTab]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17298,6 +17316,49 @@ export default function AgencyDashboard() {
       setActiveSubTab("Talent Availability");
     }
   }, [activeSubTab, isSportsAgency]);
+
+  // Handle clearing notification counts when visiting tabs
+  useEffect(() => {
+    if (activeTab === "brand-connections") {
+      const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+        ? brandConnectionRequestsCountQuery.data.length
+        : 0;
+      const offers =
+        (Array.isArray(brandConnectionOffersQuery.data)
+          ? brandConnectionOffersQuery.data.filter((o) =>
+              ["sent", "viewed"].includes(o.status),
+            ).length
+          : 0) +
+        (Array.isArray(brandConnectionJobInvitesQuery.data)
+          ? brandConnectionJobInvitesQuery.data.length
+          : 0);
+      const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+        ? brandConnectionFeedbackQuery.data.length
+        : 0;
+
+      localStorage.setItem(
+        "brand_connections_seen_counts",
+        JSON.stringify({ requests, offers, feedback }),
+      );
+    }
+  }, [
+    activeTab,
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionJobInvitesQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      const requests = Array.isArray(brandLicenseRequestsQuery.data)
+        ? brandLicenseRequestsQuery.data.filter(
+            (r: any) => r?.status === "pending",
+          ).length
+        : 0;
+      localStorage.setItem("brand_licensing_seen_count", String(requests));
+    }
+  }, [activeTab, activeSubTab, brandLicenseRequestsQuery.data]);
 
   useEffect(() => {
     if (activeTab !== "roster") return;
@@ -18091,7 +18152,9 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const chatUnreadCount = useUnreadMessages(profile?.id);
+  const unreadCount =
+    notifications.filter((n) => !n.read).length + chatUnreadCount;
   const filteredNotifications = notifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -18253,6 +18316,12 @@ export default function AgencyDashboard() {
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
           {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+          },
+          {
             id: "licensing",
             label: "Licensing",
             icon: FileText,
@@ -18266,6 +18335,12 @@ export default function AgencyDashboard() {
               pendingLicensingRequestsCount > 0
                 ? pendingLicensingRequestsCount
                 : undefined,
+            badges: {
+              "Licensing Requests":
+                pendingLicensingRequestsCount > 0
+                  ? pendingLicensingRequestsCount
+                  : undefined,
+            },
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18319,6 +18394,12 @@ export default function AgencyDashboard() {
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+          },
+          {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -19501,6 +19582,7 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "marketplace" && <MarketplaceTab />}
+            {activeTab === "messages" && <CommunicationHub />}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (

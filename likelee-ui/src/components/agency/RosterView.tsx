@@ -1443,7 +1443,9 @@ const RosterView = ({
                                 {talent.organization || talent.school || "—"}
                               </td>
                               <td className="px-6 py-4 text-sm font-medium">
-                                {talent.sport || talent.sports || "—"}
+                                {Array.isArray(talent.sports)
+                                  ? talent.sports.join(", ")
+                                  : talent.sport || talent.sports || "—"}
                               </td>
                             </>
                           ) : (

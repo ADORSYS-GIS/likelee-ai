@@ -29,6 +29,8 @@ const AgencyJobInvitesView = () => {
   const [confirmAction, setConfirmAction] = useState<"accept" | "decline" | "">(
     "",
   );
+  const [closedDialogOpen, setClosedDialogOpen] = useState(false);
+  const [closedJobLabel, setClosedJobLabel] = useState("");
   const agencyJobsBackTo = `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`;
 
   const jobInvitesQuery = useQuery({
@@ -73,6 +75,21 @@ const AgencyJobInvitesView = () => {
       return companyName;
     }
     return brandName || companyName || "Brand";
+  };
+
+  const isJobClosed = (job: any) => {
+    const status = String(
+      job?.status || job?.job_status || job?.state || "",
+    ).toLowerCase();
+    return [
+      "closed",
+      "filled",
+      "inactive",
+      "expired",
+      "cancelled",
+      "canceled",
+      "completed",
+    ].includes(status);
   };
 
   const declineJobInvite = async (jobId: string) => {
@@ -243,11 +260,18 @@ const AgencyJobInvitesView = () => {
                     <Button
                       size="sm"
                       className="bg-black text-white hover:bg-gray-800"
-                      onClick={() =>
+                      onClick={() => {
+                        if (isJobClosed(job)) {
+                          setClosedJobLabel(
+                            String(job?.job_title || job?.title || "This job"),
+                          );
+                          setClosedDialogOpen(true);
+                          return;
+                        }
                         navigate(
                           `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}&apply=true&backTo=${encodeURIComponent(agencyJobsBackTo)}`,
-                        )
-                      }
+                        );
+                      }}
                     >
                       Apply
                     </Button>
@@ -283,6 +307,23 @@ const AgencyJobInvitesView = () => {
               {busyIds.has(confirmJobId)
                 ? "Working..."
                 : `Yes, ${confirmAction}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={closedDialogOpen} onOpenChange={setClosedDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Job closed or no vacancies</AlertDialogTitle>
+            <AlertDialogDescription>
+              {closedJobLabel || "This job"} is no longer accepting
+              applications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setClosedDialogOpen(false)}>
+              Okay
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

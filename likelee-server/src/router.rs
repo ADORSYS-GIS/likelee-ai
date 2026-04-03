@@ -27,6 +27,28 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Messaging Hub ---
+        .route(
+            "/api/conversations",
+            get(crate::messages::list_conversations),
+        )
+        .route(
+            "/api/conversations/contacts",
+            get(crate::messages::list_contacts),
+        )
+        .route(
+            "/api/conversations/start",
+            post(crate::messages::start_conversation),
+        )
+        .route(
+            "/api/conversations/:id/messages",
+            get(crate::messages::list_messages),
+        )
+        .route("/api/messages/send", post(crate::messages::send_message))
+        .route(
+            "/api/messages/:id",
+            put(crate::messages::edit_message).delete(crate::messages::delete_message),
+        )
         // --- Talent Portal ---
         .route("/api/talent/me", get(crate::talent::talent_me))
         .route("/api/talent/profile", post(crate::talent::update_profile))
@@ -578,6 +600,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/storage/folders",
             get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
+        )
+        .route(
+            "/api/agency/storage/folders/:folder_id",
+            delete(crate::agencies::delete_agency_folder),
         )
         .route(
             "/api/agency/storage/files",
@@ -1168,7 +1194,7 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
+        .layer(DefaultBodyLimit::max(100 * 1024 * 1024)) // 100MB limit
         .layer(cors)
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))

@@ -325,6 +325,7 @@ const LicensingRequestsView = ({
             </h2>
             <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
               {["Active", "Archive", "Brand Requests"].map((tab) => {
+<<<<<<< HB-01
                 let badgeCount = 0;
                 if (tab === "Active") {
                   const pending = (data || []).filter(
@@ -353,6 +354,13 @@ const LicensingRequestsView = ({
                       ? 0
                       : Math.max(0, pending - seen);
                 }
+=======
+                const isBrandTab = tab === "Brand Requests";
+                const pendingCount = isBrandTab
+                  ? brandLicenseData.filter((r: any) => r.status === "pending")
+                      .length
+                  : 0;
+>>>>>>> main
 
                 return (
                   <button
@@ -361,9 +369,15 @@ const LicensingRequestsView = ({
                     className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                   >
                     {tab}
+<<<<<<< HB-01
                     {badgeCount > 0 && (
                       <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                         {badgeCount}
+=======
+                    {isBrandTab && pendingCount > 0 && (
+                      <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                        {pendingCount}
+>>>>>>> main
                       </span>
                     )}
                   </button>
