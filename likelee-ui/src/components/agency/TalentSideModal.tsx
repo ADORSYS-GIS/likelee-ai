@@ -438,7 +438,7 @@ const TalentSideModal = ({
                       <img
                         src={u}
                         alt="Gallery"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   ))}

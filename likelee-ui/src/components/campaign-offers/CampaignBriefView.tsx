@@ -243,7 +243,7 @@ export function CampaignBriefView({
                   <img
                     src={String(img?.url || "")}
                     alt={`Ref ${idx + 1}`}
-                    className="w-full h-40 object-cover bg-gray-100"
+                    className="w-full h-40 object-contain bg-gray-100"
                   />
                   <div className="p-2 text-xs text-gray-700 truncate">
                     {`Ref ${idx + 1}`}
