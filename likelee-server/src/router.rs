@@ -1152,6 +1152,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_agency_subscription_checkout),
         )
         .route(
+            "/api/agency/billing/change-plan",
+            post(crate::billing::change_agency_subscription_plan),
+        )
+        .route(
             "/api/agency/billing/checkout/sync",
             post(crate::billing::sync_agency_checkout_session),
         )

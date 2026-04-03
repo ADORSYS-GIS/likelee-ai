@@ -3,12 +3,20 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Check } from "lucide-react";
 import {
-  createAgencyBillingPortal,
+  changeAgencySubscriptionPlan,
   createAgencyIrlBookingAddonCheckout,
   createAgencySubscriptionCheckout,
   getAgencyProfile,
@@ -53,6 +61,16 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
+function planRank(plan: string | null) {
+  if (plan === "pro") return 2;
+  if (plan === "basic") return 1;
+  return 0;
+}
+
+function describePlan(plan: "basic" | "pro", interval: "month" | "year") {
+  return `${plan === "pro" ? "Pro" : "Basic"} ${interval === "year" ? "Annual" : "Monthly"}`;
+}
+
 export default function AgencySubscribe() {
   const { initialized, authenticated, profile } = useAuth();
   const location = useLocation();
@@ -85,6 +103,12 @@ export default function AgencySubscribe() {
   const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
   const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
     React.useState(false);
+  const [pendingPlanChange, setPendingPlanChange] = React.useState<{
+    plan: "basic" | "pro";
+    interval: "month" | "year";
+    rosterModels: number;
+    includeIrlBooking: boolean;
+  } | null>(null);
   const [checkingOut, setCheckingOut] = React.useState(false);
   const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
   const isAgencyUser = profile?.role === "agency";
@@ -234,6 +258,20 @@ export default function AgencySubscribe() {
 
   const rosterRate = plan === "basic" ? rosterRateBasic : rosterRatePro;
   const rosterCost = plan === "basic" ? rosterCostBasic : rosterCostPro;
+  const currentPlanRank = planRank(currentPlanTier);
+  const selectedPlanRank = planRank(plan);
+  const isDowngradeSelection =
+    (currentPlanTier === "pro" && plan === "basic") ||
+    (currentPlanTier === plan &&
+      currentPlanInterval === "year" &&
+      billingInterval === "month");
+  const planChangeRaisesCost =
+    currentPlanTier !== null &&
+    currentPlanTier !== "free" &&
+    (selectedPlanRank > currentPlanRank ||
+      (currentPlanTier === plan &&
+        currentPlanInterval === "month" &&
+        billingInterval === "year"));
 
   const onCheckout = async (planOverride?: "basic" | "pro") => {
     const targetPlan = planOverride || plan;
@@ -275,12 +313,34 @@ export default function AgencySubscribe() {
         (targetPlan !== currentPlanTier || billingInterval !== currentPlanInterval);
 
       if (isSwitchOrUpgrade) {
-        const resp = await createAgencyBillingPortal();
-        const url = (resp as any)?.checkout_url as string | undefined;
-        if (url) {
-          window.location.href = url;
-          return;
-        }
+        const resp = await changeAgencySubscriptionPlan({
+          plan: targetPlan,
+          roster_models: rosterModels,
+          interval: billingInterval,
+          addons: {
+            irl_booking: shouldBillIrlBookingInPlan,
+            deepfake_protection_models: 0,
+            additional_team_members: 0,
+          },
+        });
+        const nextPlanTier = String((resp as any)?.plan_tier || targetPlan);
+        setCurrentPlanTier(nextPlanTier);
+        setCurrentPlanInterval(billingInterval);
+        setPlan(targetPlan);
+        setHasIrlBookingAddon(
+          Boolean((resp as any)?.addon_irl_booking_enabled) ||
+            shouldBillIrlBookingInPlan,
+        );
+        setIncludeIrlBookingInPlan(false);
+        toast({
+          title: "Subscription updated",
+          description:
+            billingInterval === "year"
+              ? "Your upgrade was confirmed and annual billing is now active."
+              : "Your upgrade was confirmed and monthly billing is now active.",
+        });
+        setPendingPlanChange(null);
+        return;
       }
 
       const resp = await createAgencySubscriptionCheckout({
@@ -337,6 +397,15 @@ export default function AgencySubscribe() {
         toast({
           title: "Roster updated",
           description: `Your current roster is ${formatNumber(currentRoster)} models. Pricing has been updated to match.`,
+        });
+        return;
+      }
+      if (msg.includes("downgrade_not_allowed")) {
+        toast({
+          title: "Downgrades unavailable",
+          description:
+            "This billing flow only supports upgrades. Contact support if you need a downgrade.",
+          variant: "destructive",
         });
         return;
       }
@@ -432,6 +501,16 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) {
       return "Agency account required";
     }
+    if (currentPlanTier === "pro" && targetPlan === "basic") {
+      return "Downgrade unavailable";
+    }
+    if (
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === "year" &&
+      billingInterval === "month"
+    ) {
+      return "Monthly downgrade unavailable";
+    }
     if (requiresContactSales) {
       return "Contact Sales";
     }
@@ -467,8 +546,12 @@ export default function AgencySubscribe() {
     checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
   const alreadySubscribedToPlan =
     !requiresContactSales &&
-    ((plan === "basic" && currentPlanTier === "basic") ||
-      (plan === "pro" && currentPlanTier === "pro"));
+    ((plan === "basic" &&
+      currentPlanTier === "basic" &&
+      currentPlanInterval === billingInterval) ||
+      (plan === "pro" &&
+        currentPlanTier === "pro" &&
+        currentPlanInterval === billingInterval));
   const footerCtaLabel = (() => {
     if (!initialized || profileLoading) {
       return "Loading...";
@@ -482,10 +565,17 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) {
       return "Agency account required";
     }
+    if (isDowngradeSelection) {
+      return "Downgrade unavailable";
+    }
     if (alreadySubscribedToPlan) {
       return "Already Subscribed";
     }
-    return checkingOut ? "Redirecting..." : "Get Started";
+    return checkingOut
+      ? "Processing..."
+      : currentPlanTier && currentPlanTier !== "free"
+        ? "Review Upgrade"
+        : "Get Started";
   })();
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
@@ -508,8 +598,42 @@ export default function AgencySubscribe() {
       onContact();
       return;
     }
-    if (currentPlanTier === targetPlan) return;
+    if (currentPlanTier === "pro" && targetPlan === "basic") {
+      toast({
+        title: "Downgrades unavailable",
+        description:
+          "Basic downgrades are not available in self-serve. Contact support if you need plan changes downward.",
+      });
+      return;
+    }
+    if (
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === "year" &&
+      billingInterval === "month"
+    ) {
+      toast({
+        title: "Monthly downgrade unavailable",
+        description:
+          "Annual plans cannot be switched down to monthly in self-serve. Contact support if you need help.",
+      });
+      return;
+    }
+    if (
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === billingInterval
+    ) {
+      return;
+    }
     setPlan(targetPlan);
+    if (currentPlanTier && currentPlanTier !== "free") {
+      setPendingPlanChange({
+        plan: targetPlan,
+        interval: billingInterval,
+        rosterModels,
+        includeIrlBooking: shouldBillIrlBookingInPlan,
+      });
+      return;
+    }
     await onCheckout(targetPlan);
   };
 
@@ -807,7 +931,10 @@ export default function AgencySubscribe() {
                 }}
                 disabled={
                   checkoutDisabled ||
-                  (!requiresContactSales && currentPlanTier === "basic")
+                  (!requiresContactSales &&
+                    currentPlanTier === "basic" &&
+                    currentPlanInterval === billingInterval) ||
+                  (!requiresContactSales && currentPlanTier === "pro")
                 }
               >
                 {currentPlanTier === "basic" &&
@@ -906,7 +1033,9 @@ export default function AgencySubscribe() {
                 }}
                 disabled={
                   checkoutDisabled ||
-                  (!requiresContactSales && currentPlanTier === "pro")
+                  (!requiresContactSales &&
+                    currentPlanTier === "pro" &&
+                    currentPlanInterval === billingInterval)
                 }
               >
                 {currentPlanTier === "pro" &&
@@ -1088,13 +1217,15 @@ export default function AgencySubscribe() {
             <Button
               type="button"
               className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
-              disabled={checkoutDisabled || alreadySubscribedToPlan}
+              disabled={
+                checkoutDisabled || alreadySubscribedToPlan || isDowngradeSelection
+              }
               onClick={() => {
                 if (requiresContactSales) {
                   onContact();
                   return;
                 }
-                void onCheckout();
+                void onSelectPlan(plan);
               }}
             >
               {footerCtaLabel}
@@ -1128,6 +1259,108 @@ export default function AgencySubscribe() {
           </Card>
         </div>
       </div>
+
+      <Dialog
+        open={pendingPlanChange !== null}
+        onOpenChange={(open) => {
+          if (!open && !checkingOut) {
+            setPendingPlanChange(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl rounded-[28px] border border-gray-200 bg-white p-8">
+          <DialogHeader className="text-left">
+            <Badge className="w-fit border border-amber-200 bg-amber-100 text-amber-700">
+              Payment confirmation
+            </Badge>
+            <DialogTitle className="mt-3 text-2xl font-black font-display text-[#1B1C23]">
+              Confirm your paid upgrade
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-sm leading-6 text-gray-600">
+              This change updates your active Stripe subscription immediately.
+              Stripe will apply prorated credit for unused time on your current
+              plan and charge your saved payment method for the upgraded plan
+              now.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 rounded-[24px] border border-[#D9E4F1] bg-[#F6F8FB] p-5">
+            <div className="flex items-center justify-between gap-4 text-sm">
+              <span className="font-bold text-gray-500">Current plan</span>
+              <span className="font-black text-[#1B1C23]">
+                {describePlan(
+                  currentPlanTier === "pro" ? "pro" : "basic",
+                  currentPlanInterval || "month",
+                )}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4 text-sm">
+              <span className="font-bold text-gray-500">New plan</span>
+              <span className="font-black text-[#1B1C23]">
+                {pendingPlanChange
+                  ? describePlan(
+                      pendingPlanChange.plan,
+                      pendingPlanChange.interval,
+                    )
+                  : ""}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4 text-sm">
+              <span className="font-bold text-gray-500">Roster</span>
+              <span className="font-black text-[#1B1C23]">
+                {pendingPlanChange
+                  ? `${formatNumber(pendingPlanChange.rosterModels)} models`
+                  : ""}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4 text-sm">
+              <span className="font-bold text-gray-500">IRL Booking</span>
+              <span className="font-black text-[#1B1C23]">
+                {hasIrlBookingAddon
+                  ? "Already active"
+                  : pendingPlanChange?.includeIrlBooking
+                    ? "Included in upgrade"
+                    : "Not included"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            <div className="font-black">
+              {planChangeRaisesCost
+                ? "Your saved payment method will be charged immediately if you continue."
+                : "Your subscription will be updated immediately if you continue."}
+            </div>
+            <div className="mt-2">
+              By confirming, you authorize Likelee to switch your existing
+              subscription to the selected plan and billing interval.
+            </div>
+          </div>
+
+          <DialogFooter className="mt-8 flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              disabled={checkingOut}
+              onClick={() => setPendingPlanChange(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+              disabled={checkingOut || !pendingPlanChange}
+              onClick={() => {
+                if (!pendingPlanChange) return;
+                void onCheckout(pendingPlanChange.plan);
+              }}
+            >
+              {checkingOut ? "Processing payment..." : "Confirm and Pay"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

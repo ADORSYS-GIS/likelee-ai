@@ -154,6 +154,22 @@ export const createAgencyIrlBookingAddonCheckout = () =>
 export const createAgencyBillingPortal = () =>
   base44Client.post(`/api/agency/billing/portal`, {});
 
+export const changeAgencySubscriptionPlan = (data: {
+  plan: "basic" | "pro" | "enterprise";
+  roster_models: number;
+  interval?: "month" | "year";
+  addons?: {
+    irl_booking?: boolean;
+    deepfake_protection_models?: number;
+    additional_team_members?: number;
+  };
+}) =>
+  base44Client.post<{
+    plan_tier: string;
+    seats_limit: number;
+    addon_irl_booking_enabled: boolean;
+  }>(`/api/agency/billing/change-plan`, data);
+
 export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
   base44Client.post<{
     plan_tier: string;
