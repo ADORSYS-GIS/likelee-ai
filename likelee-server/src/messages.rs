@@ -155,7 +155,6 @@ pub async fn list_conversations(
                 .from("messages")
                 .select("content,is_deleted")
                 .eq("conversation_id", &cid)
-                .eq("is_deleted", "false")
                 .order("created_at.desc")
                 .limit(1)
                 .execute()
@@ -166,7 +165,15 @@ pub async fn list_conversations(
                 if let Ok(txt) = resp.text().await {
                     if let Ok(msgs) = serde_json::from_str::<Vec<serde_json::Value>>(&txt) {
                         if let Some(msg) = msgs.first() {
-                            if let Some(content) = msg.get("content").and_then(|c| c.as_str()) {
+                            let is_deleted = msg
+                                .get("is_deleted")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            if is_deleted {
+                                last_message_content = Some("This message was deleted".to_string());
+                            } else if let Some(content) =
+                                msg.get("content").and_then(|c| c.as_str())
+                            {
                                 last_message_content = Some(content.to_string());
                             }
                         }

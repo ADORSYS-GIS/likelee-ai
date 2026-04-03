@@ -99,6 +99,11 @@ export function useChat(currentUserId?: string, userRole?: string) {
     staleTime: 5 * 60 * 1000,
   });
 
+  const conversationIds = useMemo(
+    () => conversations.map((c) => c.id).filter(Boolean),
+    [conversations],
+  );
+
   // 2. Load all eligible contacts using TanStack Query
   const {
     data: contacts = [],
@@ -146,11 +151,17 @@ export function useChat(currentUserId?: string, userRole?: string) {
   useEffect(() => {
     if (!currentUserId || !supabase) return;
 
+    // Without a filter, realtime delivers inserts/updates for ALL messages in the database.
+    // We must scope to the user's conversation IDs.
+    if (conversationIds.length === 0) return;
+
+    const filter = `conversation_id=in.(${conversationIds.join(",")})`;
+
     const channel = supabase
       .channel(`chat-global-${currentUserId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages", filter },
         async (payload) => {
           const newMsg = payload.new as Message;
           const isFromMe = newMsg.sender_id === currentUserId;
@@ -219,7 +230,7 @@ export function useChat(currentUserId?: string, userRole?: string) {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
+        { event: "UPDATE", schema: "public", table: "messages", filter },
         (payload) => {
           const updatedMsg = payload.new as Message;
           if (updatedMsg.conversation_id === activeConversationId) {
@@ -291,7 +302,13 @@ export function useChat(currentUserId?: string, userRole?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId, activeConversationId, queryClient, loadConversations]);
+  }, [
+    currentUserId,
+    activeConversationId,
+    queryClient,
+    loadConversations,
+    conversationIds,
+  ]);
 
   const openConversation = useCallback(
     async (conversationId: string) => {
