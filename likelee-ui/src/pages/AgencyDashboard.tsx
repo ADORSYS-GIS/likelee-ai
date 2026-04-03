@@ -4,6 +4,7 @@ import React, {
   startTransition,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { format, addDays } from "date-fns";
@@ -47,6 +48,7 @@ import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { parseBackendError } from "@/utils/errorParser";
 import { useToast } from "@/components/ui/use-toast";
@@ -237,6 +239,7 @@ import {
   getAgencyLicensingPipeline,
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
+  getAgencyBrandLicenseRequests,
   updateAgencyLicensingRequestsStatus,
   sendLicensingRequestPaymentLink,
   listBookings,
@@ -16848,13 +16851,57 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
+  const brandLicenseRequestsQuery = useQuery({
+    queryKey: ["agency-brand-license-requests", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyBrandLicenseRequests();
+      return Array.isArray(resp) ? resp : resp?.requests || [];
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 15 * 1000,
+  });
+
   const pendingLicensingRequestsCount = useMemo(() => {
+    // 1. Regular Requests
     const d: any = licensingRequestsCountQuery.data;
-    const requests = d?.requests ?? d?.data ?? d;
-    if (!Array.isArray(requests)) return 0;
-    const pending = requests.filter((r: any) => r?.status === "pending");
-    return pending.length;
-  }, [licensingRequestsCountQuery.data]);
+    const regReqs = d?.requests ?? d?.data ?? d;
+    const regPending = Array.isArray(regReqs)
+      ? regReqs.filter((r: any) => r?.status === "pending").length
+      : 0;
+
+    // 2. Brand Requests
+    const brandReqs = brandLicenseRequestsQuery.data;
+    const brandPending = Array.isArray(brandReqs)
+      ? brandReqs.filter((r: any) => r?.status === "pending").length
+      : 0;
+
+    // seen counts from localStorage
+    const regSeen = parseInt(
+      localStorage.getItem("regular_licensing_seen_count") || "0",
+      10,
+    );
+    const brandSeen = parseInt(
+      localStorage.getItem("brand_licensing_seen_count") || "0",
+      10,
+    );
+
+    // If currently on the licensing requests tab, we clear it visually
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      return 0;
+    }
+
+    const regUnseen = Math.max(0, regPending - regSeen);
+    const brandUnseen = Math.max(0, brandPending - brandSeen);
+
+    return regUnseen + brandUnseen;
+  }, [
+    licensingRequestsCountQuery.data,
+    brandLicenseRequestsQuery.data,
+    activeTab,
+    activeSubTab,
+  ]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17110,6 +17157,57 @@ export default function AgencyDashboard() {
       );
   const showLabels = isMobile || sidebarWidth > SIDEBAR_COLLAPSE_THRESHOLD;
   const showSubItems = isMobile || sidebarWidth >= 200;
+  const sidebarNavRef = useRef<HTMLElement | null>(null);
+  const collapsedItemButtonRefs = useRef<
+    Record<string, HTMLButtonElement | null>
+  >({});
+  const collapsedPopoutHideTimeoutRef = useRef<number | null>(null);
+  const [collapsedPopout, setCollapsedPopout] = useState<{
+    itemId: string;
+    top: number;
+  } | null>(null);
+  const [openCollapsedSubmenu, setOpenCollapsedSubmenu] = useState<
+    string | null
+  >(null);
+
+  const clearCollapsedPopoutHideTimeout = () => {
+    if (collapsedPopoutHideTimeoutRef.current !== null) {
+      window.clearTimeout(collapsedPopoutHideTimeoutRef.current);
+      collapsedPopoutHideTimeoutRef.current = null;
+    }
+  };
+
+  const closeCollapsedPopout = (opts?: { immediate?: boolean }) => {
+    const immediate = !!opts?.immediate;
+    clearCollapsedPopoutHideTimeout();
+    if (immediate) {
+      setCollapsedPopout(null);
+      return;
+    }
+    collapsedPopoutHideTimeoutRef.current = window.setTimeout(() => {
+      setCollapsedPopout(null);
+    }, 180);
+  };
+
+  const openCollapsedPopout = (itemId: string) => {
+    clearCollapsedPopoutHideTimeout();
+    if (!isSidebarCollapsed) return;
+    const navEl = sidebarNavRef.current;
+    const btnEl = collapsedItemButtonRefs.current[itemId];
+    if (!navEl || !btnEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideEl = navEl.parentElement;
+    if (!asideEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideRect = asideEl.getBoundingClientRect();
+    const btnRect = btnEl.getBoundingClientRect();
+    const top = Math.max(0, btnRect.top - asideRect.top);
+    setCollapsedPopout({ itemId, top });
+  };
   const toggleSidebarCollapsed = () => {
     if (isMobile) return;
     setSidebarWidth((prev) =>
@@ -18369,19 +18467,41 @@ export default function AgencyDashboard() {
         </div>
 
         <nav
-          className={`flex-1 py-4 overflow-x-hidden ${
+          ref={(node) => {
+            sidebarNavRef.current = node;
+          }}
+          className={`relative flex-1 py-4 overflow-x-hidden ${
             isSidebarCollapsed
               ? "px-2 overflow-y-hidden"
               : "px-4 overflow-y-auto"
           }`}
         >
           {sidebarItems.map((item) => (
-            <div key={item.id} className={isSidebarCollapsed ? "mb-1" : "mb-2"}>
+            <div
+              key={item.id}
+              className={isSidebarCollapsed ? "mb-1" : "mb-2"}
+              onMouseEnter={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                openCollapsedPopout(item.id);
+              }}
+              onMouseLeave={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                closeCollapsedPopout();
+              }}
+            >
               <button
+                ref={(node) => {
+                  collapsedItemButtonRefs.current[item.id] = node;
+                }}
                 onClick={() => {
                   if (item.disabled) {
                     navigate("/AgencySubscribe");
                     setSidebarOpen(false);
+                    return;
+                  }
+                  if (isSidebarCollapsed && item.subItems) {
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
                     return;
                   }
                   if (item.subItems) {
@@ -18393,6 +18513,9 @@ export default function AgencyDashboard() {
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
+                    if (isSidebarCollapsed) {
+                      setOpenCollapsedSubmenu(null);
+                    }
                   }
                 }}
                 title={
@@ -18402,14 +18525,44 @@ export default function AgencyDashboard() {
                       ? item.label
                       : undefined
                 }
+                onFocus={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  openCollapsedPopout(item.id);
+                }}
+                onBlur={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (openCollapsedSubmenu === item.id) return;
+                  closeCollapsedPopout();
+                }}
+                onKeyDown={(event) => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setOpenCollapsedSubmenu(null);
+                    closeCollapsedPopout({ immediate: true });
+                    return;
+                  }
+                  if (event.key === "ArrowRight" || event.key === "Enter") {
+                    event.preventDefault();
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
+                  }
+                }}
                 className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
                   isSidebarCollapsed
-                    ? "justify-center px-2 py-1.5"
+                    ? "justify-center px-2 py-1.5 relative"
                     : "gap-3 px-3 py-2.5"
                 } ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                } ${
+                  isSidebarCollapsed &&
+                  !!item.subItems &&
+                  (collapsedPopout?.itemId === item.id ||
+                    openCollapsedSubmenu === item.id)
+                    ? "bg-gray-50 text-gray-900"
+                    : ""
                 } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
@@ -18417,6 +18570,29 @@ export default function AgencyDashboard() {
                     isSidebarCollapsed ? "w-5 h-5" : "w-5 h-5"
                   } ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"}`}
                 />
+                {isSidebarCollapsed && item.subItems && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="absolute right-1.5 h-5 w-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openCollapsedPopout(item.id);
+                      setOpenCollapsedSubmenu(item.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openCollapsedPopout(item.id);
+                        setOpenCollapsedSubmenu(item.id);
+                      }
+                    }}
+                    aria-label={`Open ${item.label} submenu`}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </span>
+                )}
                 {showLabels && (
                   <>
                     <div
@@ -18522,73 +18698,10 @@ export default function AgencyDashboard() {
                     ))}
                   </div>
                 )}
-
-              {/* Collapsed sub-items flyout */}
-              {item.subItems &&
-                expandedItems.includes(item.id) &&
-                isSidebarCollapsed && (
-                  <div className="relative">
-                    <div className="absolute left-[calc(100%+8px)] top-0 z-50 w-56 rounded-lg border border-gray-200 bg-white shadow-lg p-2">
-                      {item.subItems.map((subItem) => (
-                        <button
-                          key={subItem}
-                          onClick={() => {
-                            if (
-                              item.disabledSubItems &&
-                              item.disabledSubItems[subItem]
-                            ) {
-                              navigate("/AgencySubscribe");
-                              setSidebarOpen(false);
-                              return;
-                            }
-                            if (
-                              item.id === "jobs" &&
-                              subItem === "Open Job Board"
-                            ) {
-                              navigate(
-                                `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
-                                  `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
-                                )}`,
-                              );
-                              setSidebarOpen(false);
-                              return;
-                            }
-                            setActiveView(item.id, subItem);
-                            setSidebarOpen(false);
-                          }}
-                          title={
-                            item.disabledSubItems &&
-                            item.disabledSubItems[subItem]
-                              ? "Requires Pro"
-                              : undefined
-                          }
-                          className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                            activeTab === item.id && activeSubTab === subItem
-                              ? "text-indigo-700 bg-indigo-50 font-bold"
-                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                          } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
-                          <span className="truncate">{subItem}</span>
-                          <span className="flex items-center gap-2">
-                            {item.disabledSubItems &&
-                              item.disabledSubItems[subItem] && (
-                                <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                                  Pro
-                                </span>
-                              )}
-                            {item.badges && item.badges[subItem] && (
-                              <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                                {item.badges[subItem]}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
             </div>
           ))}
+
+          {/* Items are rendered above */}
         </nav>
 
         <div className="p-4">
@@ -18634,6 +18747,110 @@ export default function AgencyDashboard() {
             aria-hidden="true"
           />
         )}
+
+        {/* Collapsed sub-items popout (single instance, anchored to hovered item) */}
+        {/* Rendered outside the <nav> to avoid clipping by overflow-x-hidden */}
+        <AnimatePresence>
+          {isSidebarCollapsed &&
+            collapsedPopout &&
+            (() => {
+              const item = sidebarItems.find(
+                (i) => i.id === collapsedPopout.itemId,
+              );
+              if (!item?.subItems || item.subItems.length === 0) return null;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute left-full z-50 w-64 pl-2 -ml-px"
+                  style={{ top: collapsedPopout.top }}
+                  onMouseEnter={() => {
+                    clearCollapsedPopoutHideTimeout();
+                  }}
+                  onMouseLeave={() => {
+                    closeCollapsedPopout();
+                  }}
+                >
+                  <div
+                    className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2"
+                    role="menu"
+                    aria-label={`${item.label} submenu`}
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        setOpenCollapsedSubmenu(null);
+                        closeCollapsedPopout({ immediate: true });
+                      }
+                    }}
+                  >
+                    <div className="absolute -left-1.5 top-3 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        role="menuitem"
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                          setOpenCollapsedSubmenu(null);
+                          closeCollapsedPopout({ immediate: true });
+                        }}
+                        title={
+                          item.disabledSubItems &&
+                          item.disabledSubItems[subItem]
+                            ? "Requires Pro"
+                            : undefined
+                        }
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
+        </AnimatePresence>
       </aside>
 
       {/* Main Content Area */}
