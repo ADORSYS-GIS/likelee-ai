@@ -215,6 +215,7 @@ pub struct AgencyCheckoutAddons {
 pub struct AgencyCheckoutRequest {
     pub plan: String, // "basic" | "pro" | "enterprise" (enterprise is contact-sales only)
     pub roster_models: u32,
+    pub interval: Option<String>,
     #[serde(default)]
     pub addons: AgencyCheckoutAddons,
 }
@@ -243,22 +244,49 @@ const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 1000;
 fn agency_plan_price_ids<'a>(
     state: &'a AppState,
     plan: &str,
+    interval: Option<&str>,
 ) -> Option<(&'static str, &'a str, &'a str, &'static str, &'static str)> {
+    let is_annual = interval.unwrap_or("month").eq_ignore_ascii_case("year");
+
     match plan.trim().to_lowercase().as_str() {
-        "basic" => Some((
-            "Agency Basic",
-            state.stripe_agency_basic_base_price_id.as_str(),
-            state.stripe_agency_basic_headcount_price_id.as_str(),
-            "STRIPE_AGENCY_BASIC_BASE_PRICE_ID",
-            "STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID",
-        )),
-        "pro" => Some((
-            "Agency Pro",
-            state.stripe_agency_pro_base_price_id.as_str(),
-            state.stripe_agency_pro_headcount_price_id.as_str(),
-            "STRIPE_AGENCY_PRO_BASE_PRICE_ID",
-            "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID",
-        )),
+        "basic" => {
+            if is_annual {
+                Some((
+                    "Agency Basic (Annual)",
+                    state.stripe_agency_basic_base_annual_price_id.as_str(),
+                    state.stripe_agency_basic_headcount_annual_price_id.as_str(),
+                    "STRIPE_AGENCY_BASIC_BASE_ANNUAL_PRICE_ID",
+                    "STRIPE_AGENCY_BASIC_HEADCOUNT_ANNUAL_PRICE_ID",
+                ))
+            } else {
+                Some((
+                    "Agency Basic",
+                    state.stripe_agency_basic_base_price_id.as_str(),
+                    state.stripe_agency_basic_headcount_price_id.as_str(),
+                    "STRIPE_AGENCY_BASIC_BASE_PRICE_ID",
+                    "STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID",
+                ))
+            }
+        }
+        "pro" => {
+            if is_annual {
+                Some((
+                    "Agency Pro (Annual)",
+                    state.stripe_agency_pro_base_annual_price_id.as_str(),
+                    state.stripe_agency_pro_headcount_annual_price_id.as_str(),
+                    "STRIPE_AGENCY_PRO_BASE_ANNUAL_PRICE_ID",
+                    "STRIPE_AGENCY_PRO_HEADCOUNT_ANNUAL_PRICE_ID",
+                ))
+            } else {
+                Some((
+                    "Agency Pro",
+                    state.stripe_agency_pro_base_price_id.as_str(),
+                    state.stripe_agency_pro_headcount_price_id.as_str(),
+                    "STRIPE_AGENCY_PRO_BASE_PRICE_ID",
+                    "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID",
+                ))
+            }
+        }
         _ => None,
     }
 }
@@ -513,7 +541,7 @@ pub async fn create_agency_subscription_checkout(
     }
 
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
-        agency_plan_price_ids(&state, &normalized_plan)
+        agency_plan_price_ids(&state, &normalized_plan, payload.interval.as_deref())
             .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
     if base_plan_price_id.trim().is_empty() {
         return Err((
@@ -560,11 +588,24 @@ pub async fn create_agency_subscription_checkout(
     }
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let is_annual = payload.interval.as_deref().unwrap_or("month").eq_ignore_ascii_case("year");
+    let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
+        (
+            state.stripe_agency_irl_booking_annual_price_id.as_str(),
+            "STRIPE_AGENCY_IRL_BOOKING_ANNUAL_PRICE_ID",
+        )
+    } else {
+        (
+            state.stripe_agency_irl_booking_price_id.as_str(),
+            "STRIPE_AGENCY_IRL_BOOKING_PRICE_ID",
+        )
+    };
+
     let include_irl_booking = payload.addons.irl_booking && !billing_ctx.addon_irl_booking_enabled;
-    if include_irl_booking && state.stripe_agency_irl_booking_price_id.trim().is_empty() {
+    if include_irl_booking && irl_booking_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
-            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
+            format!("stripe_price_not_configured:{irl_booking_env_var}"),
         ));
     }
 
@@ -589,7 +630,7 @@ pub async fn create_agency_subscription_checkout(
     ];
     if include_irl_booking {
         line_items.push(recurring_price_line_item(
-            state.stripe_agency_irl_booking_price_id.as_str(),
+            irl_booking_price_id,
             1,
         ));
     }
@@ -1480,4 +1521,64 @@ pub async fn get_agency_billing_status(
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
     }))
+}
+
+pub async fn create_agency_billing_portal(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    let agency_id = user.id.clone();
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_customer_id")
+        .eq("id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "agency_not_found".to_string()))?;
+
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_customer_id".to_string()))?;
+
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    // Use the AgencySubscribe page as return URL so they come back to the pricing view
+    let return_url = format!("{}/agency/subscribe", state.frontend_url.trim_end_matches('/'));
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(AgencyCheckoutResponse {
+            checkout_url: session.url,
+        })),
+        Err(e) => {
+            warn!(error = %e, agency_id = %agency_id, "failed to create stripe billing portal session");
+            Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        }
+    }
 }

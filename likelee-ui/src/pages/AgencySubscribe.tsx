@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Check } from "lucide-react";
 import {
+  createAgencyBillingPortal,
   createAgencyIrlBookingAddonCheckout,
   createAgencySubscriptionCheckout,
   getAgencyProfile,
@@ -62,11 +63,19 @@ export default function AgencySubscribe() {
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
   const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
+  const billingParam = String(searchParams.get("billing") || "").trim();
+
+  const [billingInterval, setBillingInterval] = React.useState<
+    "month" | "year"
+  >("month");
 
   const [plan, setPlan] = React.useState<"basic" | "pro">("pro");
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
     null,
   );
+  const [currentPlanInterval, setCurrentPlanInterval] = React.useState<
+    "month" | "year" | null
+  >(null);
   const [minimumRosterModels, setMinimumRosterModels] =
     React.useState(MIN_ROSTER_MODELS);
   const [rosterModels, setRosterModels] = React.useState(DEFAULT_ROSTER_MODELS);
@@ -81,18 +90,28 @@ export default function AgencySubscribe() {
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
 
-  const rosterRateBasic = BASIC_ROSTER_RATE;
-  const rosterRatePro = PRO_ROSTER_RATE;
-  const rosterCostBasic = rosterModels * rosterRateBasic;
-  const rosterCostPro = rosterModels * rosterRatePro;
-  const irlBookingCost = IRL_BOOKING_COST;
+  const rosterRateBasic =
+    billingInterval === "year" ? BASIC_ROSTER_RATE * 0.8 : BASIC_ROSTER_RATE;
+  const rosterRatePro =
+    billingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
+  const rosterCostBasic = Math.round(rosterModels * rosterRateBasic);
+  const rosterCostPro = Math.round(rosterModels * rosterRatePro);
+  const irlBookingCost = Math.round(
+    billingInterval === "year" ? IRL_BOOKING_COST * 0.8 : IRL_BOOKING_COST,
+  );
   const shouldBillIrlBookingInPlan =
     includeIrlBookingInPlan && !hasIrlBookingAddon;
   const selectedIrlBookingCost = shouldBillIrlBookingInPlan
     ? irlBookingCost
     : 0;
-  const basePlanBasic = BASIC_BASE_PLAN_COST;
-  const basePlanPro = PRO_BASE_PLAN_COST;
+  const basePlanBasic = Math.round(
+    billingInterval === "year"
+      ? BASIC_BASE_PLAN_COST * 0.8
+      : BASIC_BASE_PLAN_COST,
+  );
+  const basePlanPro = Math.round(
+    billingInterval === "year" ? PRO_BASE_PLAN_COST * 0.8 : PRO_BASE_PLAN_COST,
+  );
   const totalMonthlyBasic =
     basePlanBasic + rosterCostBasic + selectedIrlBookingCost;
   const totalMonthlyPro = basePlanPro + rosterCostPro + selectedIrlBookingCost;
@@ -127,6 +146,7 @@ export default function AgencySubscribe() {
         const resp = (await getAgencyProfile()) as any;
         const tier = resp?.plan_tier || "free";
         setCurrentPlanTier(tier);
+        setCurrentPlanInterval(resp?.plan_interval || "month");
         if (tier === "basic" || tier === "pro") {
           setPlan(tier);
         }
@@ -150,12 +170,47 @@ export default function AgencySubscribe() {
     }
 
     setCurrentPlanTier(null);
+    setCurrentPlanInterval(null);
     setMinimumRosterModels(MIN_ROSTER_MODELS);
     setRosterModels(DEFAULT_ROSTER_MODELS);
     setRosterInput(String(DEFAULT_ROSTER_MODELS));
     setHasIrlBookingAddon(false);
     setIncludeIrlBookingInPlan(false);
   }, [authenticated, initialized, isAgencyUser]);
+
+  React.useEffect(() => {
+    const key = "agency_billing_interval";
+    const fromUrl = billingParam.toLowerCase();
+    if (fromUrl === "monthly") {
+      setBillingInterval("month");
+      try {
+        window.localStorage.setItem(key, "month");
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    if (fromUrl === "annual") {
+      setBillingInterval("year");
+      try {
+        window.localStorage.setItem(key, "year");
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      const stored = String(window.localStorage.getItem(key) || "").trim();
+      if (stored === "year") {
+        setBillingInterval("year");
+      } else {
+        setBillingInterval("month");
+      }
+    } catch {
+      setBillingInterval("month");
+    }
+  }, [billingParam]);
 
   React.useEffect(() => {
     if (!success && !checkoutSessionId) return;
@@ -214,9 +269,24 @@ export default function AgencySubscribe() {
 
     setCheckingOut(true);
     try {
+      const isSwitchOrUpgrade =
+        currentPlanTier !== "free" &&
+        currentPlanTier !== null &&
+        (targetPlan !== currentPlanTier || billingInterval !== currentPlanInterval);
+
+      if (isSwitchOrUpgrade) {
+        const resp = await createAgencyBillingPortal();
+        const url = (resp as any)?.checkout_url as string | undefined;
+        if (url) {
+          window.location.href = url;
+          return;
+        }
+      }
+
       const resp = await createAgencySubscriptionCheckout({
         plan: targetPlan,
         roster_models: rosterModels,
+        interval: billingInterval,
         addons: {
           irl_booking: shouldBillIrlBookingInPlan,
           deepfake_protection_models: 0,
@@ -365,7 +435,30 @@ export default function AgencySubscribe() {
     if (requiresContactSales) {
       return "Contact Sales";
     }
-    return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
+
+    const isCurrentTier = currentPlanTier === targetPlan;
+    const isCurrentInterval = currentPlanInterval === billingInterval;
+
+    if (isCurrentTier && isCurrentInterval) return "Current Plan";
+
+    if (currentPlanTier === "free" || currentPlanTier === null) {
+      return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
+    }
+
+    if (targetPlan === "pro" && currentPlanTier === "basic") {
+      return "Upgrade to Pro";
+    }
+    if (targetPlan === "basic" && currentPlanTier === "pro") {
+      return "Downgrade to Basic";
+    }
+
+    if (isCurrentTier && !isCurrentInterval) {
+      return billingInterval === "year"
+        ? "Switch to Annual"
+        : "Switch to Monthly";
+    }
+
+    return "Change Plan";
   };
 
   const checkoutDisabled =
@@ -433,8 +526,114 @@ export default function AgencySubscribe() {
 
           <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
             <Badge variant="outline" className="bg-white/70">
-              Plans are billed monthly
+              Plans are billed{" "}
+              {billingInterval === "year" ? "annually" : "monthly"}
             </Badge>
+            <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
+              <button
+                type="button"
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  billingInterval === "month"
+                    ? "bg-[#E9FBFB] text-[#0B9DA2]"
+                    : "text-[#6D7F97] hover:text-[#17315F]"
+                }`}
+                onClick={() => {
+                  const next = "month" as const;
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem(
+                      "agency_billing_interval",
+                      next,
+                    );
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                Monthly
+              </button>
+              <div
+                className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors cursor-pointer ${
+                  billingInterval === "year"
+                    ? "bg-[#0B9DA2]/15"
+                    : "bg-[#F5F7FA]"
+                }`}
+                role="switch"
+                aria-checked={billingInterval === "year"}
+                tabIndex={0}
+                onClick={() => {
+                  const next = billingInterval === "year" ? "month" : "year";
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem(
+                      "agency_billing_interval",
+                      next,
+                    );
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", next === "year" ? "annual" : "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  const next = billingInterval === "year" ? "month" : "year";
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem(
+                      "agency_billing_interval",
+                      next,
+                    );
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", next === "year" ? "annual" : "monthly");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                <div
+                  className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    billingInterval === "year"
+                      ? "translate-x-5"
+                      : "translate-x-0"
+                  }`}
+                />
+              </div>
+              <button
+                type="button"
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  billingInterval === "year"
+                    ? "bg-[#E9FBFB] text-[#0B9DA2]"
+                    : "text-[#6D7F97] hover:text-[#17315F]"
+                }`}
+                onClick={() => {
+                  const next = "year" as const;
+                  setBillingInterval(next);
+                  try {
+                    window.localStorage.setItem(
+                      "agency_billing_interval",
+                      next,
+                    );
+                  } catch {
+                    // ignore
+                  }
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("billing", "annual");
+                  navigate({ search: sp.toString() }, { replace: true });
+                }}
+              >
+                Annual
+              </button>
+              <Badge className="ml-1 border border-emerald-200 bg-emerald-100 text-emerald-700">
+                SAVE 20%
+              </Badge>
+            </div>
             {!authenticated && initialized && (
               <Badge variant="outline" className="bg-white/70">
                 Public pricing preview
@@ -517,7 +716,7 @@ export default function AgencySubscribe() {
             <div className="text-center text-[#4B4AE6] font-black mt-6 font-display">
               {requiresContactSales
                 ? "More than 1,000 models requires custom pricing."
-                : `${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo (headcount)`}
+                : `${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
             </div>
           </Card>
         </div>
@@ -535,11 +734,18 @@ export default function AgencySubscribe() {
                 10% fee
               </Badge>
             </div>
-            <div className="mt-6 flex items-end gap-2">
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
               <div className="text-6xl font-black font-display">
                 ${formatNumber(totalMonthlyBasic)}
               </div>
-              <div className="text-gray-500 font-bold">/mo</div>
+              <div className="text-gray-500 font-bold pb-2">
+                /mo
+                {billingInterval === "year" && (
+                  <div className="text-emerald-600 text-sm font-bold mt-0.5">
+                    Billed annually (20% discount applied)
+                  </div>
+                )}
+              </div>
             </div>
             <div className="mt-6 text-gray-500 font-medium">
               <div className="flex justify-between">
@@ -604,7 +810,8 @@ export default function AgencySubscribe() {
                   (!requiresContactSales && currentPlanTier === "basic")
                 }
               >
-                {currentPlanTier === "basic" ? (
+                {currentPlanTier === "basic" &&
+                currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2">
                     <Check className="w-5 h-5" />
                     Current Plan
@@ -631,11 +838,18 @@ export default function AgencySubscribe() {
                 5% fee
               </Badge>
             </div>
-            <div className="mt-6 flex items-end gap-2">
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
               <div className="text-6xl font-black font-display">
                 ${formatNumber(totalMonthlyPro)}
               </div>
-              <div className="text-white/60 font-bold">/mo</div>
+              <div className="text-white/60 font-bold pb-2">
+                /mo
+                {billingInterval === "year" && (
+                  <div className="text-emerald-400 text-sm font-bold mt-0.5">
+                    Billed annually (20% discount applied)
+                  </div>
+                )}
+              </div>
             </div>
             <div className="mt-6 text-white/70 font-medium">
               <div className="flex justify-between">
@@ -695,7 +909,8 @@ export default function AgencySubscribe() {
                   (!requiresContactSales && currentPlanTier === "pro")
                 }
               >
-                {currentPlanTier === "pro" ? (
+                {currentPlanTier === "pro" &&
+                currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2">
                     <Check className="w-5 h-5" />
                     Current Plan
@@ -745,9 +960,16 @@ export default function AgencySubscribe() {
                       aria-label="Toggle IRL Booking add-on in plan checkout"
                     />
                   </div>
-                  <div className="text-xl font-black text-gray-900 font-display">
-                    +${formatNumber(irlBookingCost)}
-                    <span className="text-gray-400 text-sm">/mo</span>
+                  <div className="text-xl font-black text-gray-900 font-display flex flex-col items-end">
+                    <div>
+                      +${formatNumber(irlBookingCost)}
+                      <span className="text-gray-400 text-sm ml-1">/mo</span>
+                    </div>
+                    {billingInterval === "year" && (
+                      <div className="text-emerald-500 text-xs font-bold mt-0.5">
+                        Billed annually (20% discount applied)
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -771,7 +993,14 @@ export default function AgencySubscribe() {
               </div>
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm text-gray-500">
-                  Standalone price: ${formatNumber(irlBookingCost)}/mo
+                  <div className="font-bold">
+                    Standalone price: ${formatNumber(irlBookingCost)}/mo
+                  </div>
+                  {billingInterval === "year" && (
+                    <div className="text-emerald-500 text-xs font-bold mt-0.5">
+                      (Billed annually, 20% discount applied)
+                    </div>
+                  )}
                 </div>
                 <Button
                   type="button"
@@ -844,7 +1073,7 @@ export default function AgencySubscribe() {
                 ? "Custom pricing"
                 : `$${formatNumber(
                     plan === "basic" ? totalMonthlyBasic : totalMonthlyPro,
-                  )}/mo`}
+                  )}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
             </div>
           </div>
           <div className="flex items-center gap-3">

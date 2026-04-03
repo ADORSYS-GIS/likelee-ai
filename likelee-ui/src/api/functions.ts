@@ -140,6 +140,7 @@ export const getAgencyProfile = () => base44Client.get(`/agency-profile/user`);
 export const createAgencySubscriptionCheckout = (data: {
   plan: "basic" | "pro" | "enterprise";
   roster_models: number;
+  interval?: "month" | "year";
   addons?: {
     irl_booking?: boolean;
     deepfake_protection_models?: number;
@@ -149,6 +150,9 @@ export const createAgencySubscriptionCheckout = (data: {
 
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
+
+export const createAgencyBillingPortal = () =>
+  base44Client.post(`/api/agency/billing/portal`, {});
 
 export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
   base44Client.post<{

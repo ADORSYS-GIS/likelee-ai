@@ -1164,6 +1164,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::billing::get_agency_billing_status),
         )
         .route(
+            "/api/agency/billing/portal",
+            post(crate::billing::create_agency_billing_portal),
+        )
+        .route(
             "/api/licenses/activated",
             post(crate::licenses::activated_stub),
         )
