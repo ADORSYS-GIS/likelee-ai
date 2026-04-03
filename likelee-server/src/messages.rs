@@ -9,6 +9,46 @@ use uuid::Uuid;
 
 use crate::{auth::AuthUser, config::AppState};
 
+async fn resolve_effective_creator_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    if user.role != "talent" {
+        return Ok(user.id.clone());
+    }
+
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+
+    if !status.is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mapped = rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    Ok(mapped.unwrap_or_else(|| user.id.clone()))
+}
+
 // ---------------------------------------------------------------------------
 // Request / Response types
 // ---------------------------------------------------------------------------
@@ -41,6 +81,8 @@ pub async fn list_conversations(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_creator_id = resolve_effective_creator_id(&state, &user).await?;
+
     // Fetch all conversations where the user participates as either side.
     // Pull profile data for both sides so the UI can render participant info.
     let resp = state
@@ -52,8 +94,9 @@ pub async fn list_conversations(
              creator_id,creators(full_name,profile_photo_url,email)",
         )
         .or(format!(
-            "agency_id.eq.{uid},creator_id.eq.{uid}",
-            uid = user.id
+            "agency_id.eq.{agency_uid},creator_id.eq.{creator_uid}",
+            agency_uid = user.id,
+            creator_uid = effective_creator_id
         ))
         .order("updated_at.desc")
         .execute()
@@ -92,6 +135,7 @@ pub async fn list_conversations(
                 .select("id")
                 .eq("conversation_id", &cid)
                 .eq("is_read", "false")
+                .eq("is_deleted", "false")
                 .neq("sender_id", &user_id)
                 .execute()
                 .await;
@@ -105,12 +149,13 @@ pub async fn list_conversations(
                 }
             }
 
-            // Fetch last message content
+            // Fetch last message content (mask deleted)
             let last_msg_resp = state_clone
                 .pg
                 .from("messages")
-                .select("content")
+                .select("content,is_deleted")
                 .eq("conversation_id", &cid)
+                .eq("is_deleted", "false")
                 .order("created_at.desc")
                 .limit(1)
                 .execute()
@@ -165,13 +210,16 @@ pub async fn list_contacts(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_creator_id = resolve_effective_creator_id(&state, &user).await?;
+
     let resp = state
         .pg
         .from("agency_talent_relationships")
         .select("agency_id,creator_id,agencies(agency_name,logo_url,email),creators(full_name,profile_photo_url,email)")
         .or(format!(
-            "agency_id.eq.{uid},creator_id.eq.{uid}",
-            uid = user.id
+            "agency_id.eq.{agency_uid},creator_id.eq.{creator_uid}",
+            agency_uid = user.id,
+            creator_uid = effective_creator_id
         ))
         .eq("status", "active")
         .execute()
@@ -237,14 +285,56 @@ pub async fn start_conversation(
     user: AuthUser,
     Json(payload): Json<StartConversationRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if payload.agency_id.to_string() != user.id && payload.creator_id.to_string() != user.id {
+    let effective_creator_id = resolve_effective_creator_id(&state, &user).await?;
+    let creator_id_to_use = if user.role == "talent" {
+        Uuid::parse_str(&effective_creator_id)
+            .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_creator_id".to_string()))?
+    } else {
+        payload.creator_id
+    };
+
+    let is_participant = if user.role == "agency" {
+        payload.agency_id.to_string() == user.id
+    } else {
+        creator_id_to_use.to_string() == effective_creator_id
+            || payload.creator_id.to_string() == user.id
+    };
+    if !is_participant {
         return Err((StatusCode::FORBIDDEN, "not_a_participant".to_string()));
+    }
+
+    // Enforce that an active relationship exists before creating/upserting a thread.
+    let rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("id")
+        .eq("agency_id", payload.agency_id.to_string())
+        .eq("creator_id", creator_id_to_use.to_string())
+        .eq("status", "active")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rel_status = rel_resp.status();
+    let rel_text = rel_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !rel_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            rel_status.as_u16(),
+            rel_text,
+        ));
+    }
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    if rel_rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "no_active_relationship".to_string()));
     }
 
     // Upsert conversation (UNIQUE constraint prevents duplicate threads)
     let upsert_body = json!({
         "agency_id": payload.agency_id,
-        "creator_id": payload.creator_id,
+        "creator_id": creator_id_to_use,
     });
 
     let resp = state
@@ -310,6 +400,8 @@ pub async fn list_messages(
     user: AuthUser,
     Path(conversation_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_creator_id = resolve_effective_creator_id(&state, &user).await?;
+
     // Verify participation (RLS will also enforce this, but gives a cleaner 403)
     let check = state
         .pg
@@ -317,8 +409,9 @@ pub async fn list_messages(
         .select("id")
         .eq("id", conversation_id.to_string())
         .or(format!(
-            "agency_id.eq.{uid},creator_id.eq.{uid}",
-            uid = user.id
+            "agency_id.eq.{agency_uid},creator_id.eq.{creator_uid}",
+            agency_uid = user.id,
+            creator_uid = effective_creator_id
         ))
         .single()
         .execute()
@@ -378,6 +471,8 @@ pub async fn send_message(
     user: AuthUser,
     Json(payload): Json<SendMessageRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_creator_id = resolve_effective_creator_id(&state, &user).await?;
+
     let content = payload.content.trim().to_string();
     if content.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "content_empty".to_string()));
@@ -396,8 +491,9 @@ pub async fn send_message(
         .select("id")
         .eq("id", payload.conversation_id.to_string())
         .or(format!(
-            "agency_id.eq.{uid},creator_id.eq.{uid}",
-            uid = user.id
+            "agency_id.eq.{agency_uid},creator_id.eq.{creator_uid}",
+            agency_uid = user.id,
+            creator_uid = effective_creator_id
         ))
         .single()
         .execute()

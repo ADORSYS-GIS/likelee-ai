@@ -206,6 +206,7 @@ export function ThreadList({
         {filteredConversations.map((conv) => {
           const participant = getParticipant(conv, currentUserId);
           const isActive = conv.id === activeConversationId;
+          const preview = (conv.last_message_content || "").trim();
 
           return (
             <li
@@ -229,7 +230,7 @@ export function ThreadList({
                 </div>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-gray-500 truncate mr-2">
-                    {conv.last_message_content || ""}
+                    {preview || "This message was deleted"}
                   </p>
                   {conv.unread_count && conv.unread_count > 0 ? (
                     <span className="min-w-[18px] h-[18px] px-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0 shadow-sm shadow-indigo-200">

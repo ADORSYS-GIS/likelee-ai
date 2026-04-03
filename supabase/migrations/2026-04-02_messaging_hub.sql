@@ -96,6 +96,11 @@ CREATE POLICY "Recipients can mark messages as read"
     )
     WITH CHECK (is_read = TRUE);
 
+-- 4.1 Tighten UPDATE permissions to prevent client-side message tampering.
+-- RLS policies cannot constrain columns, so we restrict UPDATE privileges to `is_read`.
+REVOKE UPDATE ON TABLE public.messages FROM anon, authenticated;
+GRANT UPDATE (is_read) ON TABLE public.messages TO authenticated;
+
 -- 5. Enable Supabase Realtime on messages table
 -- NOTE: Also enable via Supabase Dashboard: Database > Replication > supabase_realtime
 ALTER TABLE public.messages REPLICA IDENTITY FULL;
