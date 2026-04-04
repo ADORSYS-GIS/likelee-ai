@@ -74,18 +74,20 @@ pub async fn create_checkout_session_legacy(
     Json(payload): Json<StudioCheckoutRequest>,
 ) -> Result<Json<StudioCheckoutResponse>, (StatusCode, String)> {
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
     if state.stripe_studio_success_url.trim().is_empty()
         || state.stripe_studio_cancel_url.trim().is_empty()
     {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_studio_checkout_urls_not_configured".to_string(),
+            "stripe_studio_checkout_urls_not_configured",
+            "Stripe studio checkout URLs are not configured on the server.",
         ));
     }
 
@@ -93,29 +95,36 @@ pub async fn create_checkout_session_legacy(
     let success_url = state.stripe_studio_success_url.trim().to_string();
     let cancel_url = state.stripe_studio_cancel_url.trim().to_string();
     if !success_url.starts_with("http://") && !success_url.starts_with("https://") {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_studio_success_url is not an absolute URL: {success_url}"),
+            "stripe_studio_success_url_invalid",
+            "Stripe studio success URL is not an absolute URL.",
         ));
     }
     if !cancel_url.starts_with("http://") && !cancel_url.starts_with("https://") {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_studio_cancel_url is not an absolute URL: {cancel_url}"),
+            "stripe_studio_cancel_url_invalid",
+            "Stripe studio cancel URL is not an absolute URL.",
         ));
     }
 
     if payload.credits <= 0 {
-        return Err((StatusCode::BAD_REQUEST, "invalid_credits".to_string()));
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_credits",
+            "Credits must be greater than 0.",
+        ));
     }
 
     let stripe_price_id =
         studio_price_id_for_plan(&state, payload.plan_type.as_deref(), payload.credits)
             .unwrap_or_default();
     if stripe_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_studio_price_ids_not_configured".to_string(),
+            "stripe_studio_price_ids_not_configured",
+            "Stripe studio price IDs are not configured on the server.",
         ));
     }
 
@@ -123,11 +132,16 @@ pub async fn create_checkout_session_legacy(
 
     // Studio credits are sold as one-time packs (CheckoutSessionMode::Payment).
     // A recurring price here will cause Stripe to reject the session creation.
-    let price_id = stripe_sdk::PriceId::from_str(stripe_price_id.as_str())
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let price_id = stripe_sdk::PriceId::from_str(stripe_price_id.as_str()).map_err(|e| {
+        billing_error_msg(
+            StatusCode::BAD_REQUEST,
+            "invalid_stripe_price_id",
+            e.to_string(),
+        )
+    })?;
     let price = stripe_sdk::Price::retrieve(&client, &price_id, &[])
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
     let is_recurring =
         price.recurring.is_some() || matches!(price.type_, Some(stripe_sdk::PriceType::Recurring));
     let (mode, sub_data) = if is_recurring {
@@ -182,7 +196,7 @@ pub async fn create_checkout_session_legacy(
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let url = session
         .url
@@ -191,9 +205,10 @@ pub async fn create_checkout_session_legacy(
         .unwrap_or_default();
     if url.is_empty() {
         warn!("stripe checkout session missing url");
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_GATEWAY,
-            "stripe_checkout_missing_url".to_string(),
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
         ));
     }
 
@@ -231,6 +246,73 @@ pub struct AgencySeatAddonRequest {
     pub seats: u32,
     pub plan: Option<String>,
     pub interval: Option<String>,
+}
+
+fn billing_error(status: StatusCode, code: &str, message: &str) -> (StatusCode, String) {
+    (
+        status,
+        json!({
+            "status": "error",
+            "error": code,
+            "message": message,
+        })
+        .to_string(),
+    )
+}
+
+fn billing_error_msg(status: StatusCode, code: &str, message: String) -> (StatusCode, String) {
+    billing_error(status, code, message.as_str())
+}
+
+fn map_postgrest_transport_error(e: impl std::fmt::Display) -> (StatusCode, String) {
+    billing_error_msg(StatusCode::INTERNAL_SERVER_ERROR, "database_error", e.to_string())
+}
+
+fn normalize_interval(value: Option<&str>) -> Result<String, (StatusCode, String)> {
+    let v = value.unwrap_or("month").trim().to_lowercase();
+    if v == "month" || v == "year" {
+        Ok(v)
+    } else {
+        Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_interval",
+            "Interval must be 'month' or 'year'.",
+        ))
+    }
+}
+
+fn normalize_self_serve_plan(value: &str) -> Result<String, (StatusCode, String)> {
+    let v = value.trim().to_lowercase();
+    if v.is_empty() {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_plan",
+            "Plan is required.",
+        ));
+    }
+    if v == "enterprise" {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "enterprise_contact_sales",
+            "Enterprise plan requires contacting sales.",
+        ));
+    }
+    if v == "basic" || v == "pro" {
+        Ok(v)
+    } else {
+        Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_plan",
+            "Plan must be 'basic' or 'pro'.",
+        ))
+    }
+}
+
+fn normalize_optional_self_serve_plan(value: Option<&str>) -> Result<Option<String>, (StatusCode, String)> {
+    match value {
+        None => Ok(None),
+        Some(v) => Ok(Some(normalize_self_serve_plan(v)?)),
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -429,14 +511,17 @@ async fn fetch_agency_checkout_sync_state(
         .limit(1)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     let agency_status = agency_resp.status();
     let agency_text = agency_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !agency_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+        return Err(crate::errors::sanitize_db_error(
+            agency_status.as_u16(),
+            agency_text,
+        ));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
     let row = rows.first().cloned().unwrap_or_else(|| json!({}));
@@ -461,20 +546,20 @@ async fn agency_roster_count(
 ) -> Result<u32, (StatusCode, String)> {
     let rel_resp = state
         .pg
-        .from("agency_talent_relationships")
+        .from("agency_roster")
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     let rel_status = rel_resp.status();
     let rel_text = rel_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !rel_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
+        return Err(crate::errors::sanitize_db_error(rel_status.as_u16(), rel_text));
     }
     let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
     if !rel_rows.is_empty() {
@@ -489,14 +574,17 @@ async fn agency_roster_count(
         .eq("role", "talent")
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     let legacy_status = legacy_resp.status();
     let legacy_text = legacy_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !legacy_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, legacy_text));
+        return Err(crate::errors::sanitize_db_error(
+            legacy_status.as_u16(),
+            legacy_text,
+        ));
     }
     let legacy_rows: Vec<serde_json::Value> =
         serde_json::from_str(&legacy_text).unwrap_or_default();
@@ -524,7 +612,7 @@ async fn list_customer_subscriptions_for_billing(
     stripe_sdk::Subscription::list(&client, &params)
         .await
         .map(|list| list.data)
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))
 }
 
 fn find_active_seat_addon_subscription<'a>(
@@ -579,21 +667,22 @@ async fn get_or_create_agency_billing_context(
         .limit(1)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
 
     let status = agency_resp.status();
     let text = agency_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::NOT_FOUND,
-            "agency_profile_not_found".to_string(),
+            "agency_profile_not_found",
+            "Agency profile not found.",
         ));
     }
 
@@ -634,7 +723,7 @@ async fn get_or_create_agency_billing_context(
 
         let cust = stripe_sdk::Customer::create(&client, params)
             .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
         let cust_id = cust.id.to_string();
 
@@ -662,82 +751,85 @@ pub async fn create_agency_subscription_checkout(
     Json(payload): Json<AgencyCheckoutRequest>,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
     if payload.roster_models < AGENCY_MIN_SELF_SERVE_ROSTER_MODELS {
-        return Err((StatusCode::BAD_REQUEST, "invalid_roster_models".to_string()));
-    }
-
-    let normalized_plan = payload.plan.trim().to_lowercase();
-    if normalized_plan == "enterprise" {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "enterprise_contact_sales".to_string(),
+            "invalid_roster_models",
+            "Roster models must be at least 1.",
         ));
     }
 
+    let normalized_plan = normalize_self_serve_plan(payload.plan.as_str())?;
+    let interval = normalize_interval(payload.interval.as_deref())?;
+
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
-        agency_plan_price_ids(&state, &normalized_plan, payload.interval.as_deref())
-            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str()))
+            .ok_or_else(|| billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."))?;
     if base_plan_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{base_plan_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {base_plan_env_var}").as_str(),
         ));
     }
     if payload.addons.seats_in_plan && headcount_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{headcount_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {headcount_env_var}").as_str(),
         ));
     }
     let roster_count = agency_roster_count(&state, &user.id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("enterprise_contact_sales_roster_limit:{roster_count}"),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.roster_models > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!(
-                "enterprise_contact_sales_roster_limit:{}",
-                payload.roster_models
-            ),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.roster_models < roster_count {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("roster_models_below_current_roster:{roster_count}"),
+            "roster_models_below_current_roster",
+            format!("Roster models cannot be below current roster size ({roster_count}).").as_str(),
         ));
     }
 
     if state.stripe_checkout_success_url.trim().is_empty()
         || state.stripe_checkout_cancel_url.trim().is_empty()
     {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_checkout_urls_not_configured".to_string(),
+            "stripe_checkout_urls_not_configured",
+            "Stripe checkout URLs are not configured on the server.",
         ));
     }
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
     let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
-    let is_annual = payload
-        .interval
-        .as_deref()
-        .unwrap_or("month")
-        .eq_ignore_ascii_case("year");
+    let is_annual = interval.eq_ignore_ascii_case("year");
     let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
         (
             state.stripe_agency_irl_booking_annual_price_id.as_str(),
@@ -752,9 +844,10 @@ pub async fn create_agency_subscription_checkout(
 
     let include_irl_booking = payload.addons.irl_booking && !billing_ctx.addon_irl_booking_enabled;
     if include_irl_booking && irl_booking_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{irl_booking_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {irl_booking_env_var}").as_str(),
         ));
     }
 
@@ -767,9 +860,10 @@ pub async fn create_agency_subscription_checkout(
     cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
     cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
-        (
+        billing_error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "invalid_stripe_customer_id".to_string(),
+            "invalid_stripe_customer_id",
+            "Server has an invalid Stripe customer ID configured for this agency.",
         )
     })?);
 
@@ -820,15 +914,17 @@ pub async fn create_agency_subscription_checkout(
     );
     if payload.start_trial {
         if access.has_paid_access() {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "trial_only_available_for_free_accounts".to_string(),
+                "trial_only_available_for_free_accounts",
+                "Trial is only available for free agencies.",
             ));
         }
         if !payload.agreement_accepted {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "trial_agreement_required".to_string(),
+                "trial_agreement_required",
+                "You must accept the trial agreement before starting a trial.",
             ));
         }
         md.insert("trial_started_from_checkout".to_string(), "1".to_string());
@@ -896,7 +992,7 @@ pub async fn create_agency_subscription_checkout(
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let url = session
         .url
@@ -905,9 +1001,10 @@ pub async fn create_agency_subscription_checkout(
         .unwrap_or_default();
     if url.is_empty() {
         warn!("stripe checkout session missing url");
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_GATEWAY,
-            "stripe_checkout_missing_url".to_string(),
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
         ));
     }
 
@@ -918,79 +1015,129 @@ pub async fn create_agency_subscription_checkout(
     }))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::{normalize_interval, normalize_optional_self_serve_plan, normalize_self_serve_plan};
+
+    #[test]
+    fn normalize_interval_defaults_to_month() {
+        let v = normalize_interval(None).expect("should default");
+        assert_eq!(v, "month");
+    }
+
+    #[test]
+    fn normalize_interval_accepts_month_and_year() {
+        assert_eq!(normalize_interval(Some("month")).unwrap(), "month");
+        assert_eq!(normalize_interval(Some("year")).unwrap(), "year");
+        assert_eq!(normalize_interval(Some(" MONTH ")).unwrap(), "month");
+        assert_eq!(normalize_interval(Some("YeAr")).unwrap(), "year");
+    }
+
+    #[test]
+    fn normalize_interval_rejects_other_values() {
+        assert!(normalize_interval(Some("weekly")).is_err());
+        assert!(normalize_interval(Some("")) .is_err());
+    }
+
+    #[test]
+    fn normalize_self_serve_plan_accepts_basic_and_pro() {
+        assert_eq!(normalize_self_serve_plan("basic").unwrap(), "basic");
+        assert_eq!(normalize_self_serve_plan(" pro ").unwrap(), "pro");
+        assert_eq!(normalize_self_serve_plan("BASIC").unwrap(), "basic");
+    }
+
+    #[test]
+    fn normalize_self_serve_plan_rejects_enterprise_and_unknown() {
+        assert!(normalize_self_serve_plan("enterprise").is_err());
+        assert!(normalize_self_serve_plan("free").is_err());
+        assert!(normalize_self_serve_plan("").is_err());
+    }
+
+    #[test]
+    fn normalize_optional_self_serve_plan_handles_none_and_valid_values() {
+        assert_eq!(normalize_optional_self_serve_plan(None).unwrap(), None);
+        assert_eq!(
+            normalize_optional_self_serve_plan(Some("basic")).unwrap(),
+            Some("basic".to_string())
+        );
+    }
+}
+
 pub async fn change_agency_subscription_plan(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<AgencyCheckoutRequest>,
 ) -> Result<Json<AgencyPlanChangeResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
     if payload.roster_models < AGENCY_MIN_SELF_SERVE_ROSTER_MODELS {
-        return Err((StatusCode::BAD_REQUEST, "invalid_roster_models".to_string()));
-    }
-
-    let normalized_plan = payload.plan.trim().to_lowercase();
-    if normalized_plan == "enterprise" {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "enterprise_contact_sales".to_string(),
+            "invalid_roster_models",
+            "Roster models must be at least 1.",
         ));
     }
 
+    let normalized_plan = normalize_self_serve_plan(payload.plan.as_str())?;
+    let interval = normalize_interval(payload.interval.as_deref())?;
+
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
-        agency_plan_price_ids(&state, &normalized_plan, payload.interval.as_deref())
-            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str()))
+            .ok_or_else(|| billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."))?;
     if base_plan_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{base_plan_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {base_plan_env_var}").as_str(),
         ));
     }
     if payload.addons.seats_in_plan && headcount_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{headcount_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {headcount_env_var}").as_str(),
         ));
     }
 
     let roster_count = agency_roster_count(&state, &user.id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("enterprise_contact_sales_roster_limit:{roster_count}"),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.roster_models > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!(
-                "enterprise_contact_sales_roster_limit:{}",
-                payload.roster_models
-            ),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.roster_models < roster_count {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("roster_models_below_current_roster:{roster_count}"),
+            "roster_models_below_current_roster",
+            format!("Roster models cannot be below current roster size ({roster_count}).").as_str(),
         ));
     }
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
-    let is_annual = payload
-        .interval
-        .as_deref()
-        .unwrap_or("month")
-        .eq_ignore_ascii_case("year");
+    let is_annual = interval.eq_ignore_ascii_case("year");
     let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
         (
             state.stripe_agency_irl_booking_annual_price_id.as_str(),
@@ -1012,14 +1159,17 @@ pub async fn change_agency_subscription_plan(
             .limit(1)
             .execute()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(map_postgrest_transport_error)?;
         let agency_status = agency_resp.status();
         let agency_text = agency_resp
             .text()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(map_postgrest_transport_error)?;
         if !agency_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+            return Err(crate::errors::sanitize_db_error(
+                agency_status.as_u16(),
+                agency_text,
+            ));
         }
         let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
         let row = rows.first().cloned().unwrap_or_else(|| json!({}));
@@ -1043,9 +1193,10 @@ pub async fn change_agency_subscription_plan(
     };
 
     if subscription_id.is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "no_active_subscription_to_change".to_string(),
+            "no_active_subscription_to_change",
+            "No active subscription found to change.",
         ));
     }
 
@@ -1057,7 +1208,11 @@ pub async fn change_agency_subscription_plan(
             && current_plan_interval == "year"
             && target_interval == "month")
     {
-        return Err((StatusCode::BAD_REQUEST, "downgrade_not_allowed".to_string()));
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "downgrade_not_allowed",
+            "Downgrades are not allowed from this endpoint.",
+        ));
     }
 
     let sub = crate::payouts::fetch_subscription(&state, &subscription_id)
@@ -1069,9 +1224,10 @@ pub async fn change_agency_subscription_plan(
         && !billing_ctx.addon_irl_booking_enabled
         && irl_booking_price_id.trim().is_empty()
     {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{irl_booking_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {irl_booking_env_var}").as_str(),
         ));
     }
 
@@ -1177,9 +1333,10 @@ pub async fn change_agency_subscription_plan(
     let parsed_subscription_id = subscription_id
         .parse::<stripe_sdk::SubscriptionId>()
         .map_err(|_| {
-            (
+            billing_error(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "invalid_subscription_id".to_string(),
+                "invalid_subscription_id",
+                "Server has an invalid Stripe subscription ID configured for this agency.",
             )
         })?;
 
@@ -1194,7 +1351,7 @@ pub async fn change_agency_subscription_plan(
 
     stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     crate::payouts::sync_agency_subscription_from_stripe(
         &state,
@@ -1220,46 +1377,65 @@ pub async fn create_or_update_agency_seat_addon(
     Json(payload): Json<AgencySeatAddonRequest>,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
     if payload.seats < AGENCY_MIN_SELF_SERVE_ROSTER_MODELS {
-        return Err((StatusCode::BAD_REQUEST, "invalid_roster_models".to_string()));
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_roster_models",
+            "Seats must be at least 1.",
+        ));
     }
+
+    let requested_plan = normalize_optional_self_serve_plan(payload.plan.as_deref())?;
+    let requested_interval = match payload.interval.as_deref() {
+        None => None,
+        Some(v) => Some(normalize_interval(Some(v))?),
+    };
 
     let roster_count = agency_roster_count(&state, &user.id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("enterprise_contact_sales_roster_limit:{roster_count}"),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.seats > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("enterprise_contact_sales_roster_limit:{}", payload.seats),
+            "enterprise_contact_sales_roster_limit",
+            "Roster size exceeds self-serve limits. Please contact sales for enterprise.",
         ));
     }
     if payload.seats < roster_count {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            format!("roster_models_below_current_roster:{roster_count}"),
+            "roster_models_below_current_roster",
+            format!("Seats cannot be below current roster size ({roster_count}).").as_str(),
         ));
     }
 
     if state.stripe_checkout_success_url.trim().is_empty()
         || state.stripe_checkout_cancel_url.trim().is_empty()
     {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_checkout_urls_not_configured".to_string(),
+            "stripe_checkout_urls_not_configured",
+            "Stripe checkout URLs are not configured on the server.",
         ));
     }
 
@@ -1272,14 +1448,17 @@ pub async fn create_or_update_agency_seat_addon(
         .limit(1)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     let agency_status = agency_resp.status();
     let agency_text = agency_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !agency_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+        return Err(crate::errors::sanitize_db_error(
+            agency_status.as_u16(),
+            agency_text,
+        ));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
     let row = rows.first().cloned().unwrap_or_else(|| json!({}));
@@ -1296,34 +1475,25 @@ pub async fn create_or_update_agency_seat_addon(
         .trim()
         .to_lowercase();
 
-    let effective_plan = payload
-        .plan
-        .as_deref()
-        .map(|value| value.trim().to_lowercase())
-        .filter(|value| value == "basic" || value == "pro")
-        .unwrap_or_else(|| {
-            if current_plan_tier == "pro" {
-                "pro".to_string()
-            } else {
-                "basic".to_string()
-            }
-        });
-    let effective_interval = payload
-        .interval
-        .as_deref()
-        .map(|value| value.trim().to_lowercase())
-        .filter(|value| value == "month" || value == "year")
-        .unwrap_or(current_plan_interval.clone());
+    let effective_plan = requested_plan.unwrap_or_else(|| {
+        if current_plan_tier == "pro" {
+            "pro".to_string()
+        } else {
+            "basic".to_string()
+        }
+    });
+    let effective_interval = requested_interval.unwrap_or(current_plan_interval.clone());
     let (seat_price_id, seat_env_var) = agency_seat_price_id(
         &state,
         effective_plan.as_str(),
         Some(effective_interval.as_str()),
     )
-    .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    .ok_or_else(|| billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."))?;
     if seat_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            format!("stripe_price_not_configured:{seat_env_var}"),
+            "stripe_price_not_configured",
+            format!("Missing Stripe price configuration: {seat_env_var}").as_str(),
         ));
     }
 
@@ -1390,7 +1560,7 @@ pub async fn create_or_update_agency_seat_addon(
 
         stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
             .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
         crate::payouts::sync_agency_subscription_from_stripe(
             &state,
@@ -1415,9 +1585,10 @@ pub async fn create_or_update_agency_seat_addon(
     cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
     cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
-        (
+        billing_error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "invalid_stripe_customer_id".to_string(),
+            "invalid_stripe_customer_id",
+            "Server has an invalid Stripe customer ID configured for this agency.",
         )
     })?);
     cs_params.line_items = Some(vec![recurring_price_line_item(
@@ -1442,7 +1613,7 @@ pub async fn create_or_update_agency_seat_addon(
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let url = session
         .url
@@ -1450,9 +1621,10 @@ pub async fn create_or_update_agency_seat_addon(
         .map(|value| value.to_string())
         .unwrap_or_default();
     if url.is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_GATEWAY,
-            "stripe_checkout_missing_url".to_string(),
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
         ));
     }
 
@@ -1467,17 +1639,33 @@ pub async fn start_agency_pro_trial(
     user: AuthUser,
 ) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
     if access.trial_active {
-        return Err((StatusCode::CONFLICT, "trial_already_active".to_string()));
+        return Err(billing_error(
+            StatusCode::CONFLICT,
+            "trial_already_active",
+            "Trial is already active.",
+        ));
+    }
+    if access.trial_ends_at.is_some() {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "trial_already_used",
+            "This agency has already used its trial.",
+        ));
     }
     if access.billed_tier != crate::entitlements::PlanTier::Free {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "trial_only_available_for_free_accounts".to_string(),
+            "trial_only_available_for_free_accounts",
+            "Trial is only available for free agencies.",
         ));
     }
 
@@ -1495,12 +1683,12 @@ pub async fn start_agency_pro_trial(
         .update(update.to_string())
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
@@ -1517,35 +1705,43 @@ pub async fn create_agency_irl_booking_addon_checkout(
     user: AuthUser,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
     if state.stripe_agency_irl_booking_price_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_price_not_configured:STRIPE_AGENCY_IRL_BOOKING_PRICE_ID".to_string(),
+            "stripe_price_not_configured",
+            "Missing Stripe price configuration: STRIPE_AGENCY_IRL_BOOKING_PRICE_ID",
         ));
     }
     if state.stripe_checkout_success_url.trim().is_empty()
         || state.stripe_checkout_cancel_url.trim().is_empty()
     {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_checkout_urls_not_configured".to_string(),
+            "stripe_checkout_urls_not_configured",
+            "Stripe checkout URLs are not configured on the server.",
         ));
     }
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
     if billing_ctx.addon_irl_booking_enabled {
-        return Err((
+        return Err(billing_error(
             StatusCode::CONFLICT,
-            "addon_irl_booking_already_enabled".to_string(),
+            "addon_irl_booking_already_enabled",
+            "IRL booking add-on is already enabled.",
         ));
     }
 
@@ -1556,9 +1752,10 @@ pub async fn create_agency_irl_booking_addon_checkout(
     cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
     cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
-        (
+        billing_error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "invalid_stripe_customer_id".to_string(),
+            "invalid_stripe_customer_id",
+            "Server has an invalid Stripe customer ID configured for this agency.",
         )
     })?);
     cs_params.line_items = Some(vec![recurring_price_line_item(
@@ -1592,7 +1789,7 @@ pub async fn create_agency_irl_booking_addon_checkout(
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let url = session
         .url
@@ -1601,9 +1798,10 @@ pub async fn create_agency_irl_booking_addon_checkout(
         .unwrap_or_default();
     if url.is_empty() {
         warn!("stripe checkout session missing url");
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_GATEWAY,
-            "stripe_checkout_missing_url".to_string(),
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
         ));
     }
 
@@ -1624,13 +1822,18 @@ pub async fn sync_agency_checkout_session(
     Json(payload): Json<AgencyCheckoutSessionSyncRequest>,
 ) -> Result<Json<AgencyCheckoutSessionSyncResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
@@ -1651,7 +1854,10 @@ pub async fn sync_agency_checkout_session(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !agency_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+            return Err(crate::errors::sanitize_db_error(
+                agency_status.as_u16(),
+                agency_text,
+            ));
         }
         let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
         let row = rows.first().cloned().unwrap_or_else(|| json!({}));
@@ -1688,12 +1894,20 @@ pub async fn sync_agency_checkout_session(
     }
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-    let session_id = session_id_raw
+    let session_id = payload
+        .session_id
+        .trim()
         .parse::<stripe_sdk::CheckoutSessionId>()
-        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_session_id".to_string()))?;
+        .map_err(|_| {
+            billing_error_msg(
+                StatusCode::BAD_REQUEST,
+                "invalid_session_id",
+                "Invalid checkout session id.".to_string(),
+            )
+        })?;
     let session = stripe_sdk::CheckoutSession::retrieve(&client, &session_id, &[])
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let session_agency_id = session
         .client_reference_id
@@ -1709,9 +1923,10 @@ pub async fn sync_agency_checkout_session(
         .trim()
         .to_string();
     if session_agency_id.is_empty() || session_agency_id != user.id {
-        return Err((
+        return Err(billing_error(
             StatusCode::FORBIDDEN,
-            "checkout_session_not_owned".to_string(),
+            "checkout_session_not_owned",
+            "Checkout session does not belong to this agency.",
         ));
     }
 
@@ -1722,9 +1937,10 @@ pub async fn sync_agency_checkout_session(
         .map(|value| value.trim().to_lowercase())
         .unwrap_or_default();
     if !billing_domain.is_empty() && billing_domain != "agency" {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "checkout_session_not_agency_billing".to_string(),
+            "checkout_session_not_agency_billing",
+            "Checkout session is not an agency billing session.",
         ));
     }
 
@@ -1734,9 +1950,10 @@ pub async fn sync_agency_checkout_session(
         .map(|subscription| subscription.id().to_string())
         .unwrap_or_default();
     if subscription_id.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "checkout_session_missing_subscription".to_string(),
+            "checkout_session_missing_subscription",
+            "Checkout session is missing a subscription.",
         ));
     }
 
@@ -1805,13 +2022,18 @@ pub async fn create_campaign_offer_checkout(
     axum::extract::Path(offer_id): axum::extract::Path<String>,
 ) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
     if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "brand_only",
+            "Only brand accounts can perform this action.",
+        ));
     }
 
     if state.stripe_secret_key.trim().is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
-            "stripe_not_configured".to_string(),
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
         ));
     }
 
@@ -1827,21 +2049,32 @@ pub async fn create_campaign_offer_checkout(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !offer_resp.status().is_success() {
+    let offer_status = offer_resp.status();
+    if !offer_status.is_success() {
         let err = offer_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        return Err(crate::errors::sanitize_db_error(
+            offer_status.as_u16(),
+            err,
+        ));
     }
     let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
     let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
     let offer = offer_rows
         .first()
-        .ok_or((StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+        .ok_or_else(|| {
+            billing_error(
+                StatusCode::NOT_FOUND,
+                "offer_not_found",
+                "Offer not found.",
+            )
+        })?;
 
     let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
     if offer_status != "contract_fully_signed" {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "contract_must_be_fully_signed".to_string(),
+            "contract_must_be_fully_signed",
+            "Offer contract must be fully signed before payment.",
         ));
     }
 
@@ -1850,9 +2083,10 @@ pub async fn create_campaign_offer_checkout(
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "unpaid" {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_REQUEST,
-            "offer_already_paid_or_processing".to_string(),
+            "offer_already_paid_or_processing",
+            "Offer is already paid or processing.",
         ));
     }
 
@@ -1887,8 +2121,8 @@ pub async fn create_campaign_offer_checkout(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !agency_acct_resp.status().is_success() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
+            return Err(crate::errors::sanitize_db_error(
+                agency_acct_resp.status().as_u16(),
                 agency_acct_resp.text().await.unwrap_or_default(),
             ));
         }
@@ -1905,10 +2139,10 @@ pub async fn create_campaign_offer_checkout(
             .trim()
             .to_string();
         if agency_stripe_account_id.is_empty() {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "Agency must connect a Stripe account before the brand can pay for this offer"
-                    .to_string(),
+                "agency_stripe_connect_required",
+                "Agency must connect a Stripe account before the brand can pay for this offer.",
             ));
         }
 
@@ -1924,8 +2158,8 @@ pub async fn create_campaign_offer_checkout(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !assignments_resp.status().is_success() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
+            return Err(crate::errors::sanitize_db_error(
+                assignments_resp.status().as_u16(),
                 assignments_resp.text().await.unwrap_or_default(),
             ));
         }
@@ -1944,10 +2178,10 @@ pub async fn create_campaign_offer_checkout(
         creator_ids.sort();
         creator_ids.dedup();
         if creator_ids.is_empty() {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "At least one talent must be assigned before the brand can pay for this offer"
-                    .to_string(),
+                "offer_requires_assigned_talent",
+                "At least one talent must be assigned before the brand can pay for this offer.",
             ));
         }
 
@@ -1962,8 +2196,8 @@ pub async fn create_campaign_offer_checkout(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !creators_resp.status().is_success() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
+            return Err(crate::errors::sanitize_db_error(
+                creators_resp.status().as_u16(),
                 creators_resp.text().await.unwrap_or_default(),
             ));
         }
@@ -2010,12 +2244,14 @@ pub async fn create_campaign_offer_checkout(
             }
         }
         if !missing_stripe.is_empty() {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
+                "creator_stripe_connect_required",
                 format!(
                     "The following creators must connect their Stripe account before the brand can pay: {}",
                     missing_stripe.join(", ")
-                ),
+                )
+                .as_str(),
             ));
         }
     } else if target_type == "creator" {
@@ -2029,8 +2265,8 @@ pub async fn create_campaign_offer_checkout(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !creator_resp.status().is_success() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
+            return Err(crate::errors::sanitize_db_error(
+                creator_resp.status().as_u16(),
                 creator_resp.text().await.unwrap_or_default(),
             ));
         }
@@ -2044,10 +2280,10 @@ pub async fn create_campaign_offer_checkout(
             .trim()
             .to_string();
         if stripe_id.is_empty() {
-            return Err((
+            return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "Creator must connect a Stripe account before the brand can pay for this offer"
-                    .to_string(),
+                "creator_stripe_connect_required",
+                "Creator must connect a Stripe account before the brand can pay for this offer.",
             ));
         }
     }
@@ -2058,18 +2294,20 @@ pub async fn create_campaign_offer_checkout(
                 billing_request_id = stub_id;
             }
             Err(e) => {
-                return Err((
+                return Err(billing_error(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed_to_create_stub: {}", e),
+                    "failed_to_create_stub",
+                    format!("failed_to_create_stub: {}", e).as_str(),
                 ));
             }
         }
     }
 
     if target_type == "agency" && billing_request_id.is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "missing_billing_stub_for_agency".to_string(),
+            "missing_billing_stub_for_agency",
+            "missing_billing_stub_for_agency",
         ));
     }
 
@@ -2090,7 +2328,11 @@ pub async fn create_campaign_offer_checkout(
     let amount_cents = (budget_total * 100.0).round() as i64;
 
     if amount_cents <= 0 {
-        return Err((StatusCode::BAD_REQUEST, "invalid_budget".to_string()));
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_budget",
+            "Budget must be greater than 0.",
+        ));
     }
 
     let success_url = format!(
@@ -2148,7 +2390,7 @@ pub async fn create_campaign_offer_checkout(
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
 
     let url = session
         .url
@@ -2156,9 +2398,10 @@ pub async fn create_campaign_offer_checkout(
         .map(|u| u.to_string())
         .unwrap_or_default();
     if url.is_empty() {
-        return Err((
+        return Err(billing_error(
             StatusCode::BAD_GATEWAY,
-            "stripe_checkout_missing_url".to_string(),
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
         ));
     }
 
@@ -2204,7 +2447,11 @@ pub async fn get_agency_billing_status(
     user: AuthUser,
 ) -> Result<Json<AgencyBillingStatusResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     let agency_id = user.id.clone();
@@ -2218,13 +2465,13 @@ pub async fn get_agency_billing_status(
         .limit(1)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(map_postgrest_transport_error)?;
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
@@ -2325,7 +2572,11 @@ pub async fn create_agency_billing_portal(
     user: AuthUser,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
     }
 
     let agency_id = user.id.clone();
