@@ -351,7 +351,7 @@ export default function CampaignBriefStep({
         </div>
 
         <p className="text-sm font-semibold text-gray-700">
-          Brand Assets Provided
+          Deliverable Expectations &amp; Brand Guidelines (PDFs)
         </p>
         <div className="border-2 border-dashed border-gray-300 rounded-none p-3">
           <div className="flex items-center gap-3">

@@ -44,6 +44,26 @@ function LikeleeLogoMark({ className = "h-8" }: { className?: string }) {
   );
 }
 
+// Downloads a cross-origin file by fetching it as a blob first,
+// which bypasses browser restrictions on the `download` attribute for Supabase URLs.
+async function downloadFile(url: string, filename?: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename || url.split("/").pop() || "download";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    // Fallback: open in new tab
+    window.open(url, "_blank");
+  }
+}
+
 /* ─── Main Component ─── */
 export default function PublicCatalogView() {
   const { token } = useParams<{ token: string }>();
@@ -894,16 +914,19 @@ export default function PublicCatalogView() {
                         <ZoomIn className="w-7 h-7 text-gray-900" />
                       </div>
                     </div>
-                    <a
-                      href={asset.url || asset.thumbnail_url}
-                      download
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadFile(
+                          asset.url || asset.thumbnail_url,
+                          `image_${idx + 1}`,
+                        );
+                      }}
                       className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 bg-white shadow-2xl rounded-2xl flex items-center justify-center hover:scale-110"
                     >
                       <Download className="w-5 h-5 text-indigo-600" />
-                    </a>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -937,13 +960,13 @@ export default function PublicCatalogView() {
                           VOD_COLLECTION_{idx + 1}
                         </p>
                       </div>
-                      <a
-                        href={asset.url}
-                        download
+                      <button
+                        type="button"
+                        onClick={() => downloadFile(asset.url, `video_${idx + 1}`)}
                         className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[20px] flex items-center justify-center transition-all"
                       >
                         <Download className="w-6 h-6" />
-                      </a>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1137,14 +1160,16 @@ export default function PublicCatalogView() {
               className="max-w-full max-h-[80vh] rounded-[48px] shadow-[0_80px_160px_-40px_rgba(0,0,0,0.2)] object-contain mb-10"
               onClick={(e) => e.stopPropagation()}
             />
-            <a
-              href={lightboxUrl}
-              download
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadFile(lightboxUrl, "original_content");
+              }}
               className="flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-[24px] font-black shadow-2xl hover:bg-black transition-all scale-100 hover:scale-105 active:scale-95"
-              onClick={(e) => e.stopPropagation()}
             >
               <Download className="w-6 h-6" /> Download Original Content
-            </a>
+            </button>
           </div>
         </div>
       )}

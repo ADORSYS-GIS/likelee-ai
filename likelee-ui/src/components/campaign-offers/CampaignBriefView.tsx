@@ -259,7 +259,7 @@ export function CampaignBriefView({
         </div>
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-slate-800">
-            Brand Assets Provided
+            Deliverable Expectations &amp; Brand Guidelines (PDFs)
           </h3>
           {brandAssets.length > 0 ? (
             <div className="space-y-2">
