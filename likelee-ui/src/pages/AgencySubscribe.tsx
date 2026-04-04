@@ -205,7 +205,7 @@ export default function AgencySubscribe() {
           parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
         setIncludeIrlBookingInPlan(false);
-        setIncludeSeatsInPlan(tier === "free" || tier === null);
+        setIncludeSeatsInPlan(true);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
       }
@@ -1120,8 +1120,13 @@ export default function AgencySubscribe() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-center">
-              <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-left text-[#4B4AE6] font-black font-display">
+                {requiresContactSales
+                  ? "More than 1,000 models requires custom pricing."
+                  : `${includeSeatsInPlan ? "In-plan seat preview" : "Seat add-on preview"}: ${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
+              </div>
+              <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 shrink-0">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
                   {includeSeatsInPlan ? "In Plan" : "Off"}
                 </span>
@@ -1131,12 +1136,6 @@ export default function AgencySubscribe() {
                   aria-label="Toggle roster seats into plan checkout"
                 />
               </div>
-            </div>
-
-            <div className="text-center text-[#4B4AE6] font-black mt-6 font-display">
-              {requiresContactSales
-                ? "More than 1,000 models requires custom pricing."
-                : `${includeSeatsInPlan ? "In-plan seat preview" : "Seat add-on preview"}: ${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
             </div>
             {!includeSeatsInPlan && (
               <div className="mt-6 flex justify-end">
