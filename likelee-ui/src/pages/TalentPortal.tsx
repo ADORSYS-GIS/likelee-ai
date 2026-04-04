@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   createTalentBookOut,
   deleteTalentBookOut,
@@ -210,7 +211,9 @@ export default function TalentPortal({
     (agencyMe as any)?.agency_user || (baseMe as any)?.agency_user;
   const talentId = agencyUser?.id as string | undefined;
   const agencyName = agencyUser?.agency_name as string | undefined;
-  const profilePhotoUrl = agencyUser?.profile_photo_url as string | undefined;
+  const profilePhotoUrl = (agencyUser?.profile_photo_url ||
+    agencyUser?.profile_photo ||
+    profile?.profile_photo) as string | undefined;
   const email = (agencyUser?.email || profile?.email) as string | undefined;
   const talentName =
     agencyUser?.stage_name ||
@@ -241,6 +244,8 @@ export default function TalentPortal({
   }, [talentId, talentName]);
 
   const totalUnreadMessages = useUnreadMessages(profile?.id);
+
+  const [showPhotoFull, setShowPhotoFull] = React.useState(false);
 
   const currentMonth = React.useMemo(() => {
     const d = new Date();
@@ -1270,15 +1275,33 @@ export default function TalentPortal({
   const portalContent = (
     <>
       <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-2xl font-bold text-gray-900">
-              {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div 
+              className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in hover:scale-105 transition-transform"
+              onClick={() => setShowPhotoFull(true)}
+            >
+              <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                {profilePhotoUrl ? (
+                  <img
+                    src={profilePhotoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                )}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 mt-1">
-              {mode === "irl"
-                ? "Track your bookings and earnings"
-                : "Manage your AI licensing deals and earnings"}
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                {mode === "irl"
+                  ? "Track your bookings and earnings"
+                  : "Manage your AI licensing deals and earnings"}
+              </div>
             </div>
           </div>
           <div />
@@ -3697,100 +3720,6 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm border border-cyan-200 bg-cyan-50/30">
-                <div className="text-sm font-semibold text-gray-900">
-                  ROI: Traditional UGC vs AI Licensing
-                </div>
-                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="p-5 rounded-xl shadow-sm">
-                    <div className="text-sm font-semibold text-gray-900">
-                      Traditional UGC Model
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Post:</div>
-                        <div className="font-semibold text-gray-900">
-                          {fmtCents(
-                            (analytics as any)?.roi?.traditional
-                              ?.per_post_cents,
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.time_investment || "4-6 hours"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Posts/Month:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.posts_per_month || "5-8"}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.monthly_earnings_range || "$2,500-$4,000"}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-5 rounded-xl shadow-sm border border-green-200 bg-green-50/40">
-                    <div className="text-sm font-semibold text-gray-900">
-                      AI Licensing Model (You)
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Campaign:</div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.per_campaign_cents,
-                          )}
-                          /mo
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.time_investment ||
-                            "0 hours/month"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Active Campaigns:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.active_campaigns ??
-                            (analytics as any)?.kpis?.active_campaigns ??
-                            0}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.monthly_earnings_cents,
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="mt-4 rounded-lg bg-white border border-cyan-200 px-4 py-3 text-sm text-gray-700">
-                  {(analytics as any)?.roi?.message ||
-                    "Your earnings comparison will appear here."}
-                </div>
-              </Card>
             </div>
           )}
 
@@ -3849,30 +3778,10 @@ export default function TalentPortal({
                   <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        Data Usage for Training
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Allow anonymized data for AI model improvement
-                      </div>
-                    </div>
-                    <Switch
-                      checked={!!(portalSettings as any)?.allow_training}
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          allow_training: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
                         Public Profile Visibility
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        Show in marketplace search results
+                        When enabled, your profile will be searchable by brands in the Likeslee marketplace.
                       </div>
                     </div>
                     <Switch
@@ -3945,7 +3854,10 @@ export default function TalentPortal({
             {/* Profile Section */}
             <div className="p-6 border-b border-gray-50">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0">
+                <div 
+                  className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in"
+                  onClick={() => setShowPhotoFull(true)}
+                >
                   <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
                     {profilePhotoUrl ? (
                       <img
@@ -3958,6 +3870,24 @@ export default function TalentPortal({
                     )}
                   </div>
                 </div>
+
+                <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+                  <DialogContent className="max-w-2xl p-0 bg-transparent border-none shadow-none flex items-center justify-center">
+                    <div className="relative group">
+                      <img
+                        src={profilePhotoUrl || "https://placehold.co/800"}
+                        className="max-h-[85vh] rounded-lg shadow-2xl"
+                        alt={talentName}
+                      />
+                      <button 
+                        onClick={() => setShowPhotoFull(false)}
+                        className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
+                      >
+                        Close X
+                      </button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <div className="min-w-0">
                   <div className="text-[17px] font-bold text-[#1A1C1E] truncate leading-tight">
                     {talentName}

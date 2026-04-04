@@ -24,6 +24,9 @@ interface CompCardModalProps {
   onOpenChange: (open: boolean) => void;
   talents: any[];
   agencyName: string;
+  agencyEmail?: string;
+  agencyWebsite?: string;
+  logoUrl?: string;
 }
 
 const CompCardModal = ({
@@ -31,6 +34,9 @@ const CompCardModal = ({
   onOpenChange,
   talents,
   agencyName,
+  agencyEmail,
+  agencyWebsite,
+  logoUrl,
 }: CompCardModalProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
@@ -739,9 +745,14 @@ const CompCardModal = ({
                           {agencyName}
                         </p>
                         <p className="text-[9px] text-gray-400">
-                          bookings@
-                          {agencyName.toLowerCase().replace(/\s+/g, "")}.com
+                          {agencyEmail ||
+                            `bookings@${agencyName.toLowerCase().replace(/\s+/g, "")}.com`}
                         </p>
+                        {agencyWebsite && (
+                          <p className="text-[9px] text-gray-400">
+                            {agencyWebsite.replace(/^https?:\/\//, "")}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -806,6 +817,9 @@ const CompCardModal = ({
                         <div>
                           <p className="font-bold text-sm tracking-widest uppercase">
                             {agencyName}
+                          </p>
+                          <p className="text-[10px] opacity-70">
+                            {agencyEmail || ""}
                           </p>
                         </div>
                       </div>
@@ -887,12 +901,14 @@ const CompCardModal = ({
                           {agencyName}
                         </p>
                         <p className="text-[10px] text-gray-400 mt-2 break-all">
-                          bookings@
-                          {agencyName.toLowerCase().replace(/\s+/g, "")}.com
+                          {agencyEmail ||
+                            `bookings@${agencyName.toLowerCase().replace(/\s+/g, "")}.com`}
                         </p>
-                        <p className="text-[10px] text-gray-400">
-                          (212) 555-0123
-                        </p>
+                        {agencyWebsite && (
+                          <p className="text-[10px] text-gray-400">
+                            {agencyWebsite.replace(/^https?:\/\//, "")}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
