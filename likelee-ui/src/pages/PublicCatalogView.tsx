@@ -879,7 +879,71 @@ export default function PublicCatalogView() {
                 </p>
               </div>
             </div>
-            <button className="hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-200">
+            <button
+              onClick={async (e) => {
+                const btn = e.currentTarget;
+                btn.textContent = "Packing…";
+                btn.setAttribute("disabled", "true");
+
+                try {
+                  const JSZip = (await import("jszip")).default;
+                  const zip = new JSZip();
+
+                  const assets =
+                    activeCategory === "images"
+                      ? talentImages
+                      : activeCategory === "videos"
+                        ? talentVideos
+                        : talentVoice;
+
+                  // Fetch all files in parallel
+                  await Promise.all(
+                    assets.map(async (asset: any, i: number) => {
+                      const url =
+                        activeCategory === "voice"
+                          ? (asset.signed_url ?? "")
+                          : (asset.url ?? asset.thumbnail_url ?? "");
+
+                      const ext =
+                        activeCategory === "voice"
+                          ? "mp3"
+                          : activeCategory === "videos"
+                            ? "mp4"
+                            : "jpg";
+
+                      const filename =
+                        activeCategory === "voice"
+                          ? `${(asset.emotion_tag ?? `vocal_${i + 1}`).replace(/\s+/g, "_")}.${ext}`
+                          : `${activeCategory}_${String(i + 1).padStart(3, "0")}.${ext}`;
+
+                      if (!url) return;
+                      try {
+                        const res = await fetch(url);
+                        const blob = await res.blob();
+                        zip.file(filename, blob);
+                      } catch {
+                        // Skip files that can't be fetched
+                      }
+                    }),
+                  );
+
+                  const zipBlob = await zip.generateAsync({ type: "blob" });
+                  const objectUrl = URL.createObjectURL(zipBlob);
+                  const a = document.createElement("a");
+                  a.href = objectUrl;
+                  a.download = `${selectedItem?.talent_stage_name ?? selectedItem?.talent_name ?? "catalog"}_${activeCategory}.zip`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(objectUrl);
+                } finally {
+                  btn.innerHTML =
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Repository';
+                  btn.removeAttribute("disabled");
+                }
+              }}
+              className="hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-60 disabled:cursor-wait"
+            >
               <Download className="w-5 h-5" /> Download Repository
             </button>
           </div>
@@ -962,7 +1026,9 @@ export default function PublicCatalogView() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => downloadFile(asset.url, `video_${idx + 1}`)}
+                        onClick={() =>
+                          downloadFile(asset.url, `video_${idx + 1}`)
+                        }
                         className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[20px] flex items-center justify-center transition-all"
                       >
                         <Download className="w-6 h-6" />
