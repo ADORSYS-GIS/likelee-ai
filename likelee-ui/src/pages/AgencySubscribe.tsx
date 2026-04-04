@@ -336,47 +336,6 @@ export default function AgencySubscribe() {
     }
     setCheckingOut(true);
     try {
-      const isSwitchOrUpgrade =
-        currentPlanTier !== "free" &&
-        currentPlanTier !== null &&
-        (targetPlan !== currentPlanTier ||
-          billingInterval !== currentPlanInterval ||
-          (includeSeatsInPlan && seatCountChanged));
-
-      if (isSwitchOrUpgrade) {
-        const resp = await changeAgencySubscriptionPlan({
-          plan: targetPlan,
-          roster_models: rosterModels,
-          interval: billingInterval,
-          addons: {
-            irl_booking: shouldBillIrlBookingInPlan,
-            seats_in_plan: includeSeatsInPlan,
-            deepfake_protection_models: 0,
-            additional_team_members: 0,
-          },
-        });
-        const nextPlanTier = String((resp as any)?.plan_tier || targetPlan);
-        setCurrentPlanTier(nextPlanTier);
-        setCurrentPlanInterval(billingInterval);
-        setCurrentSeatsLimit(Number((resp as any)?.seats_limit || rosterModels));
-        setPlan(targetPlan);
-        setHasIrlBookingAddon(
-          Boolean((resp as any)?.addon_irl_booking_enabled) ||
-            shouldBillIrlBookingInPlan,
-        );
-        setIncludeIrlBookingInPlan(false);
-        setIncludeSeatsInPlan(false);
-        toast({
-          title: "Subscription updated",
-          description:
-            billingInterval === "year"
-              ? "Your upgrade was confirmed and annual billing is now active."
-              : "Your upgrade was confirmed and monthly billing is now active.",
-        });
-        setPendingPlanChange(null);
-        return;
-      }
-
       const resp = await createAgencySubscriptionCheckout({
         plan: targetPlan,
         roster_models: rosterModels,
@@ -848,18 +807,7 @@ export default function AgencySubscribe() {
       return;
     }
     setPlan(targetPlan);
-    if (!currentPlanTier || currentPlanTier === "free") {
-      void onCheckout(targetPlan);
-      return;
-    }
-
-    setPendingPlanChange({
-      plan: targetPlan,
-      interval: billingInterval,
-      rosterModels,
-      includeIrlBooking: shouldBillIrlBookingInPlan,
-      includeSeatsInPlan,
-    });
+    void onCheckout(targetPlan);
   };
 
   return (

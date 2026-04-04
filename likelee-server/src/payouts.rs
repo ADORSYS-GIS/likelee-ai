@@ -3868,6 +3868,73 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
             update.insert("stripe_customer_id".into(), json!(cust));
         }
     }
+
+    // Before writing the new subscription ID, check if the agency already has a different
+    // active subscription that would result in double-billing.
+    let old_subscription_id: Option<String> = async {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("stripe_subscription_id")
+            .eq("id", agency_id)
+            .limit(1)
+            .execute()
+            .await
+            .ok()?;
+        let text = resp.text().await.ok()?;
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
+        rows.first()
+            .and_then(|row| row.get("stripe_subscription_id"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    }
+    .await;
+
+    if let Some(ref old_sub_id) = old_subscription_id {
+        let is_different = old_sub_id != subscription_id;
+        let is_not_seat_addon = !aggregated.primary_subscription_id.is_empty()
+            && old_sub_id != &aggregated.primary_subscription_id;
+        if is_different && is_not_seat_addon {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            match old_sub_id.parse::<stripe_sdk::SubscriptionId>() {
+                Ok(parsed_old_id) => {
+                    match stripe_sdk::Subscription::cancel(
+                        &client,
+                        &parsed_old_id,
+                        stripe_sdk::CancelSubscription::default(),
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            info!(
+                                agency_id = %agency_id,
+                                old_subscription_id = %old_sub_id,
+                                new_subscription_id = %subscription_id,
+                                "cancelled superseded agency subscription to prevent double-billing"
+                            );
+                        }
+                        Err(e) => {
+                            warn!(
+                                agency_id = %agency_id,
+                                old_subscription_id = %old_sub_id,
+                                error = %e,
+                                "failed to cancel superseded agency subscription (best-effort)"
+                            );
+                        }
+                    }
+                }
+                Err(_) => {
+                    warn!(
+                        agency_id = %agency_id,
+                        old_subscription_id = %old_sub_id,
+                        "could not parse old subscription id for cancellation"
+                    );
+                }
+            }
+        }
+    }
+
     let _ = state
         .pg
         .from("agencies")
