@@ -17976,14 +17976,36 @@ export default function AgencyDashboard() {
   }, [systemNotifications, dismissedNotificationIds]);
 
   const chatUnreadCount = useUnreadMessages(profile?.id);
+
+  const allNotifications = useMemo(() => {
+    const chatNotification =
+      chatUnreadCount > 0
+        ? {
+            id: `chat_unread_${chatUnreadCount}`,
+            title: "Messages",
+            message: `You have ${chatUnreadCount} unread message(s).`,
+            time: "New message",
+            color: "blue",
+            isSummary: true,
+            read: false,
+          }
+        : null;
+
+    return chatNotification
+      ? [chatNotification, ...notifications]
+      : notifications;
+  }, [chatUnreadCount, notifications]);
+
   const unreadCount =
-    notifications.filter((n) => !n.read).length + chatUnreadCount;
-  const filteredNotifications = notifications.filter(
+    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+  const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
 
   const markAllAsRead = () => {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    const unreadIds = allNotifications
+      .filter((n: any) => !n.read)
+      .map((n: any) => n.id);
     setDismissedNotificationIds((prev) =>
       Array.from(new Set([...prev, ...unreadIds])),
     );
