@@ -120,7 +120,6 @@ fn normalize_public_calendly_booking_url(booking_url: &str) -> (String, Option<S
         "scheduled",
         "completed",
         "cancelled",
-        "canceled",
     ];
 
     let final_segment = path_segments
