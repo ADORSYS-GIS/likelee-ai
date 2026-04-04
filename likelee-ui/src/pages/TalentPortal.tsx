@@ -1277,7 +1277,7 @@ export default function TalentPortal({
       <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div 
+            <div
               className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in hover:scale-105 transition-transform"
               onClick={() => setShowPhotoFull(true)}
             >
@@ -3781,7 +3781,8 @@ export default function TalentPortal({
                         Public Profile Visibility
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        When enabled, your profile will be searchable by brands in the Likeslee marketplace.
+                        When enabled, your profile will be searchable by brands
+                        in the Likeslee marketplace.
                       </div>
                     </div>
                     <Switch
@@ -3854,7 +3855,7 @@ export default function TalentPortal({
             {/* Profile Section */}
             <div className="p-6 border-b border-gray-50">
               <div className="flex items-center gap-4">
-                <div 
+                <div
                   className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in"
                   onClick={() => setShowPhotoFull(true)}
                 >
@@ -3879,7 +3880,7 @@ export default function TalentPortal({
                         className="max-h-[85vh] rounded-lg shadow-2xl"
                         alt={talentName}
                       />
-                      <button 
+                      <button
                         onClick={() => setShowPhotoFull(false)}
                         className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
                       >

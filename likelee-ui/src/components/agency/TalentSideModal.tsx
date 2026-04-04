@@ -316,7 +316,7 @@ const TalentSideModal = ({
           <div className="space-y-6">
             <div className="flex gap-5 items-start">
               <div className="relative shrink-0">
-                <div 
+                <div
                   className="w-24 h-24 bg-gray-100 rounded-xl overflow-hidden relative group cursor-zoom-in border border-gray-200"
                   onClick={() => setShowPhotoFull(true)}
                 >
@@ -329,7 +329,7 @@ const TalentSideModal = ({
                     <Maximize2 className="w-6 h-6 text-white" />
                   </div>
                 </div>
-                
+
                 {/* Obvious Change button */}
                 <label className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors group">
                   {uploadingPhoto ? (
@@ -356,7 +356,7 @@ const TalentSideModal = ({
                       className="max-h-[85vh] rounded-lg shadow-2xl"
                       alt={talent.name}
                     />
-                    <button 
+                    <button
                       onClick={() => setShowPhotoFull(false)}
                       className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
                     >
