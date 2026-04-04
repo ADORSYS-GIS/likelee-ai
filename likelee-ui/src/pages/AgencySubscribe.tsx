@@ -1154,60 +1154,43 @@ export default function AgencySubscribe() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <Card className="rounded-[28px] border border-[#D9E4F1] bg-[#F8FAFC] p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-3xl font-black font-display">Free</div>
-                <div className="text-gray-500 mt-1">
-                  Start with core agency setup
-                </div>
+          {/* Card 1: Free */}
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
+            <div className="absolute top-6 left-8">
+              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Free</span>
+            </div>
+            
+            <div className="mt-8 pt-4">
+              <div className="text-3xl font-black font-display text-gray-900">Free</div>
+              <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
+                Start with core agency setup
               </div>
-              <Badge className="bg-white text-[#17315F] border border-[#D9E4F1]">
-                $0
-              </Badge>
             </div>
-            <div className="mt-6 flex items-end gap-2">
-              <div className="text-6xl font-black font-display">$0</div>
-              <div className="text-gray-500 font-bold pb-2">/mo</div>
+
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2 text-gray-900">
+               <span className="text-5xl font-black font-display tracking-tight text-gray-900">$0</span>
+               <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">per month</span>
             </div>
-            <div className="mt-6 text-gray-500 font-medium">
+
+            <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span>$0</span>
+                <span className="text-gray-900 font-semibold">$0</span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
-                <span>Not included</span>
+                <span className="text-gray-900 font-semibold">Not included</span>
               </div>
               <div className="flex justify-between">
-                <span>IRL Booking add-on</span>
-                <span>Not included</span>
+                <span>IRL Booking</span>
+                <span className="text-gray-900 font-semibold">Not included</span>
               </div>
             </div>
-            <div className="mt-8">
-              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
-                Included
-              </div>
-              <div className="mt-4 space-y-3 text-gray-700 font-medium">
-                {[
-                  "Agency dashboard access",
-                  "Agency profile and organization setup",
-                  "Read-only platform exploration",
-                ].map((label) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <div className="mt-[2px] w-5 h-5 rounded-full bg-white border border-[#D9E4F1] flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-[#17315F]" />
-                    </div>
-                    <div className="leading-snug">{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+
             <div className="mt-8">
               <Button
                 type="button"
-                className="w-full h-12 rounded-2xl font-black"
-                variant="outline"
+                className="w-full h-12 rounded-lg font-bold bg-[#00BFA5] hover:bg-[#00A18B] text-white transition-colors"
                 onClick={() => {
                   if (authenticated && isAgencyUser) {
                     navigate("/AgencyDashboard");
@@ -1219,56 +1202,111 @@ export default function AgencySubscribe() {
                 {currentPlanTier === "free" ? "Current Plan" : "Continue Free"}
               </Button>
             </div>
+
+            <hr className="my-8 border-gray-100" />
+            
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
+              Included
+            </div>
+            <div className="space-y-4 flex-grow">
+                {[
+                  "Agency dashboard access",
+                  "Agency profile and organization setup",
+                  "Read-only platform exploration",
+                ].map((label) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
+                    </div>
+                    <div className="leading-snug text-sm text-gray-600">{label}</div>
+                  </div>
+                ))}
+            </div>
           </Card>
 
-          <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-3xl font-black font-display">Basic</div>
-                <div className="text-gray-500 mt-1">
+          {/* Card 2: Basic */}
+          <Card className="rounded-2xl border-none bg-[#0B1828] text-white p-8 relative flex flex-col shadow-xl">
+            <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
+              <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Basic</span>
+              <span className="px-2 py-1 bg-[#1A2E44] text-white font-bold text-[10px] tracking-[0.15em] rounded uppercase">Most Popular</span>
+            </div>
+            
+            <div className="mt-8 pt-4 flex justify-between items-start">
+              <div className="pr-4">
+                <div className="text-3xl font-black font-display text-white">Basic</div>
+                <div className="text-gray-300 mt-2 text-sm leading-relaxed min-h-[40px]">
                   Get started with licensing
                 </div>
               </div>
-              <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+              <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
                 10% fee
               </Badge>
             </div>
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
-              <div className="text-6xl font-black font-display">
-                ${formatNumber(displayedMonthlyBasic)}
-              </div>
-              <div className="text-gray-500 font-bold pb-2">
-                /mo
-                {billingInterval === "year" && (
-                  <div className="text-emerald-600 text-sm font-bold mt-0.5">
-                    Billed annually (20% discount applied)
-                  </div>
-                )}
-              </div>
+
+            <div className="mt-6 flex flex-col gap-1">
+               <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                 <span className="text-5xl font-black font-display tracking-tight text-white">${formatNumber(displayedMonthlyBasic)}</span>
+                 <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">per month</span>
+               </div>
+               {billingInterval === "year" && (
+                  <div className="text-emerald-400 text-xs font-bold mt-1">Billed annually (20% discount applied)</div>
+               )}
             </div>
-            <div className="mt-6 text-gray-500 font-medium">
+
+            <div className="mt-6 text-sm text-gray-400 font-medium space-y-2">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span>${formatNumber(basePlanBasic)}</span>
+                <span className="text-white font-semibold">${formatNumber(basePlanBasic)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
-                <span className="text-[#17315F]">
+                <span className="text-emerald-300 font-semibold">
                   {includeSeatsInPlan
                     ? `$${formatNumber(rosterCostBasic)} in plan`
                     : "Billed separately"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>IRL Booking add-on</span>
-                <span>{irlAddonLineItemLabel}</span>
+                <span>IRL Booking</span>
+                <span className="text-white font-semibold">{irlAddonLineItemLabel}</span>
               </div>
             </div>
+
             <div className="mt-8">
-              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
-                Included
-              </div>
-              <div className="mt-4 space-y-3 text-gray-700 font-medium">
+              <Button
+                type="button"
+                className={`w-full h-12 rounded-lg font-bold transition-colors ${
+                  currentPlanTier === "basic"
+                    ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-none"
+                    : "bg-white text-[#0B1828] hover:bg-gray-100 shadow-sm"
+                }`}
+                onClick={() => { void onSelectPlan("basic"); }}
+                disabled={
+                  checkoutDisabled ||
+                  (!requiresContactSales &&
+                    currentPlanTier === "basic" &&
+                    currentPlanInterval === billingInterval) ||
+                  (!requiresContactSales && currentPlanTier === "pro")
+                }
+              >
+                {currentPlanTier === "basic" &&
+                currentPlanInterval === billingInterval ? (
+                  <span className="flex items-center gap-2 text-white">
+                    <Check className="w-5 h-5 text-white" />
+                    Current Plan
+                  </span>
+                ) : (
+                  getPlanCtaLabel("basic")
+                )}
+              </Button>
+            </div>
+
+            <hr className="my-8 border-white/10" />
+
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40 mb-4">
+              Included
+            </div>
+            <div className="space-y-4 flex-grow">
                 {[
                   "Roster Management & Performance Tiers",
                   "Licensing Requests",
@@ -1280,130 +1318,75 @@ export default function AgencySubscribe() {
                   "Talent Statements",
                 ].map((label) => (
                   <div key={label} className="flex items-start gap-3">
-                    <div className="mt-[2px] w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-gray-700" />
+                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#0B1828]" strokeWidth={3} />
                     </div>
-                    <div className="leading-snug">{label}</div>
+                    <div className="leading-snug text-sm text-gray-200">{label}</div>
                   </div>
                 ))}
-              </div>
-              <div className="mt-6 text-amber-700 font-bold text-sm">
-                10% fee applied on all licensing bookings
-              </div>
             </div>
-            <div className="mt-8">
-              <Button
-                type="button"
-                className={`w-full h-12 rounded-2xl font-black ${
-                  currentPlanTier === "basic"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default hover:bg-emerald-50"
-                    : ""
-                }`}
-                variant={plan === "basic" ? "default" : "outline"}
-                onClick={() => {
-                  void onSelectPlan("basic");
-                }}
-                disabled={
-                  checkoutDisabled ||
-                  (!requiresContactSales &&
-                    currentPlanTier === "basic" &&
-                    currentPlanInterval === billingInterval) ||
-                  (!requiresContactSales && currentPlanTier === "pro")
-                }
-              >
-                {currentPlanTier === "basic" &&
-                currentPlanInterval === billingInterval ? (
-                  <span className="flex items-center gap-2">
-                    <Check className="w-5 h-5" />
-                    Current Plan
-                  </span>
-                ) : (
-                  getPlanCtaLabel("basic")
-                )}
-              </Button>
+            <div className="mt-6 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+               10% fee applied on all licensing bookings
             </div>
           </Card>
 
-          <Card className="rounded-[28px] border border-gray-200 bg-[#0F1225] text-white p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-black font-display">Pro</div>
-                  <Badge className="bg-[#4B4AE6] text-white border border-[#4B4AE6]">
-                    Most Popular
-                  </Badge>
+          {/* Card 3: Pro */}
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
+            <div className="absolute top-6 left-8">
+              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Pro</span>
+            </div>
+            
+            <div className="mt-8 pt-4 flex justify-between items-start">
+              <div className="pr-4">
+                <div className="text-3xl font-black font-display text-gray-900">Pro</div>
+                <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
+                  Full licensing power
                 </div>
-                <div className="text-white/70 mt-1">Full licensing power</div>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
                 5% fee
               </Badge>
             </div>
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
-              <div className="text-6xl font-black font-display">
-                ${formatNumber(displayedMonthlyPro)}
-              </div>
-              <div className="text-white/60 font-bold pb-2">
-                /mo
-                {billingInterval === "year" && (
-                  <div className="text-emerald-400 text-sm font-bold mt-0.5">
-                    Billed annually (20% discount applied)
-                  </div>
-                )}
-              </div>
+
+            <div className="mt-6 flex flex-col gap-1">
+               <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                 <span className="text-5xl font-black font-display tracking-tight text-gray-900">${formatNumber(displayedMonthlyPro)}</span>
+                 <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">per month</span>
+               </div>
+               {billingInterval === "year" && (
+                  <div className="text-emerald-600 text-xs font-bold mt-1">Billed annually (20% discount applied)</div>
+               )}
             </div>
-            <div className="mt-6 text-white/70 font-medium">
+
+            <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span>${formatNumber(basePlanPro)}</span>
+                <span className="text-gray-900 font-semibold">${formatNumber(basePlanPro)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
-                <span className="text-white">
+                <span className="text-[#3B82F6] font-semibold">
                   {includeSeatsInPlan
                     ? `$${formatNumber(rosterCostPro)} in plan`
                     : "Billed separately"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>IRL Booking add-on</span>
-                <span>{irlAddonLineItemLabel}</span>
+                <span>IRL Booking</span>
+                <span className="text-gray-900 font-semibold">{irlAddonLineItemLabel}</span>
               </div>
             </div>
-            <div className="mt-8">
-              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">
-                Everything in Basic, plus
-              </div>
-              <div className="mt-4 space-y-3 text-white/80 font-medium">
-                {[
-                  "Advanced Analytics",
-                  "Royalties & Payouts Dashboard",
-                  "Financial Reports & Expense Tracking",
-                  "Calendly integration",
-                ].map((label) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <div className="mt-[2px] w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div className="leading-snug">{label}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 text-emerald-300 font-bold text-sm">
-                Only 5% fee on licensing bookings
-              </div>
-            </div>
+
             <div className="mt-8">
               <Button
                 type="button"
-                className={`w-full h-12 rounded-2xl font-black ${
+                variant="outline"
+                className={`w-full h-12 rounded-lg font-bold border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
                   currentPlanTier === "pro"
-                    ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-white/20"
-                    : "bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+                    ? "bg-slate-50 text-slate-400 cursor-default"
+                    : ""
                 }`}
-                onClick={() => {
-                  void onSelectPlan("pro");
-                }}
+                onClick={() => { void onSelectPlan("pro"); }}
                 disabled={
                   checkoutDisabled ||
                   (!requiresContactSales &&
@@ -1413,8 +1396,8 @@ export default function AgencySubscribe() {
               >
                 {currentPlanTier === "pro" &&
                 currentPlanInterval === billingInterval ? (
-                  <span className="flex items-center gap-2">
-                    <Check className="w-5 h-5" />
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Check className="w-5 h-5 text-gray-400" />
                     Current Plan
                   </span>
                 ) : (
@@ -1422,9 +1405,32 @@ export default function AgencySubscribe() {
                 )}
               </Button>
             </div>
+
+            <hr className="my-8 border-gray-100" />
+            
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
+              Everything in Basic, plus
+            </div>
+            <div className="space-y-4 flex-grow">
+                {[
+                  "Advanced Analytics",
+                  "Royalties & Payouts Dashboard",
+                  "Financial Reports & Expense Tracking",
+                  "Calendly integration"
+                ].map((label) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
+                    </div>
+                    <div className="leading-snug text-sm text-gray-600">{label}</div>
+                  </div>
+                ))}
+            </div>
+            <div className="mt-6 text-[#3B82F6] font-bold text-xs uppercase tracking-wider">
+               Only 5% fee on licensing bookings
+            </div>
           </Card>
         </div>
-
         <div id="roster-seats" className="mt-10">
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
