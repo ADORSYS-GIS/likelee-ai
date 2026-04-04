@@ -247,7 +247,6 @@ import {
   getAgencyLicensingPipeline,
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
-  getAgencyBrandLicenseRequests,
   updateAgencyLicensingRequestsStatus,
   sendLicensingRequestPaymentLink,
   listBookings,
@@ -18721,7 +18720,6 @@ export default function AgencyDashboard() {
                 )}
               </div>
             </div>
-            </div>
           )}
         </div>
 
@@ -18742,7 +18740,6 @@ export default function AgencyDashboard() {
               <Gift className="w-5 h-5 text-white" />
             </button>
           )}
-        </div>
 
         <nav
           ref={(node) => {
