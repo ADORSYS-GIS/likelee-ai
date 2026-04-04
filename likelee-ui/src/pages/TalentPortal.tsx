@@ -3805,21 +3805,21 @@ export default function TalentPortal({
               </Card>
             </div>
           )}
-        <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
-          <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
-              <img
-                src={profilePhotoUrl || "https://placehold.co/800"}
-                className="h-full w-full object-contain"
-                alt={talentName}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      </>
-    )}
-  </>
-);
+          <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+            <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+                <img
+                  src={profilePhotoUrl || "https://placehold.co/800"}
+                  className="h-full w-full object-contain"
+                  alt={talentName}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </>
+  );
 
   if (embedded) {
     return <div className="space-y-8">{portalContent}</div>;
