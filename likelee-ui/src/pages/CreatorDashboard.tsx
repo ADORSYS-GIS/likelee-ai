@@ -645,6 +645,7 @@ export default function CreatorDashboard() {
     agency_name?: string;
     marketplace_contract?: CreatorAgencyConnection["marketplace_contract"];
   } | null>(null);
+  const [showPhotoFull, setShowPhotoFull] = useState(false);
   const IMAGE_SECTIONS = getImageSections(t);
 
   const fullySignedOfferStatuses = useMemo(
@@ -4123,6 +4124,10 @@ export default function CreatorDashboard() {
             <div className="relative flex justify-between items-start mb-6">
               <div className="flex items-end -mt-16 mb-4">
                 <div className="relative">
+                <div
+                  className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                  onClick={() => setShowPhotoFull(true)}
+                >
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
                     <AvatarImage
                       src={
@@ -4137,6 +4142,7 @@ export default function CreatorDashboard() {
                         : user?.email?.[0].toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
+                </div>
                 </div>
                 <div className="ml-6 mb-2">
                   <div className="flex items-center gap-3 mb-1">
@@ -10238,11 +10244,16 @@ export default function CreatorDashboard() {
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
-                <img
-                  src={profile?.profile_photo_url || creator.profile_photo}
-                  alt={creator.name}
-                  className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
-                />
+                <div
+                  className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                  onClick={() => setShowPhotoFull(true)}
+                >
+                  <img
+                    src={profile?.profile_photo_url || creator.profile_photo}
+                    alt={creator.name}
+                    className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
+                  />
+                </div>
                 <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
                   <Edit className="w-4 h-4 text-gray-600" />
                   <input
@@ -13333,6 +13344,22 @@ export default function CreatorDashboard() {
                 : `Yes, ${jobInviteConfirmAction}`}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+            <img
+              src={
+                profile?.profile_photo_url ||
+                creator.profile_photo ||
+                user?.user_metadata?.avatar_url
+              }
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

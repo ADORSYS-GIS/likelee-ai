@@ -3782,7 +3782,7 @@ export default function TalentPortal({
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         When enabled, your profile will be searchable by brands
-                        in the Likeslee marketplace.
+                        in the Likelee marketplace.
                       </div>
                     </div>
                     <Switch

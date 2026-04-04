@@ -139,6 +139,11 @@ const TalentSideModal = ({
   }, [talent?.id]);
 
   const [showPhotoFull, setShowPhotoFull] = useState(false);
+  const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalPhotoUrl(null); // Reset when talent changes
+  }, [talent?.id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,7 +156,8 @@ const TalentSideModal = ({
       const res: any = await uploadTalentAsset(talent.id, fd);
       const newImg = res?.public_url || res?.url || "";
       if (newImg) {
-        await updateAgencyTalent(talent.id, { img: newImg });
+        await updateAgencyTalent(talent.id, { profile_photo_url: newImg });
+        setLocalPhotoUrl(newImg);
         toast({ title: "Photo updated successfully" });
         onSaved?.();
       } else {
@@ -321,7 +327,12 @@ const TalentSideModal = ({
                   onClick={() => setShowPhotoFull(true)}
                 >
                   <img
-                    src={talent.img || "https://placehold.co/150"}
+                    src={
+                      localPhotoUrl ||
+                      talent.profile_photo_url ||
+                      talent.img ||
+                      "https://placehold.co/150"
+                    }
                     className="w-full h-full object-cover"
                     alt={talent.name}
                   />
