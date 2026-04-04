@@ -651,28 +651,29 @@ export default function AgencySubscribe() {
     }
   };
 
-  const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
-    if (!initialized || profileLoading) {
-      return "Loading...";
-    }
-    if (!authenticated) {
-      return targetPlan === "basic" ? "Sign in for Basic" : "Sign in for Pro";
-    }
-    if (!isAgencyUser) {
-      return "Agency account required";
-    }
-    if (currentPlanTier === "pro" && targetPlan === "basic") {
-      return "Downgrade unavailable";
-    }
+  const isPlanDisabled = (targetPlan: "basic" | "pro") => {
+    // Disable: Pro -> Basic downgrade
+    if (currentPlanTier === "pro" && targetPlan === "basic") return true;
+    // Disable: Annual -> Monthly switch
     if (
       currentPlanTier === targetPlan &&
       currentPlanInterval === "year" &&
       billingInterval === "month"
-    ) {
-      return "Monthly downgrade unavailable";
-    }
-    if (requiresContactSales) {
-      return "Contact Sales";
+    ) return true;
+    // Disable: already on this exact plan
+    if (
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)
+    ) return true;
+    return false;
+  };
+
+  const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
+    if (!initialized || profileLoading) return "Loading...";
+    if (requiresContactSales) return "Contact Sales";
+    if (!authenticated || !isAgencyUser) {
+      return targetPlan === "basic" ? "Get Basic" : "Get Pro";
     }
 
     const isCurrentTier = currentPlanTier === targetPlan;
@@ -681,28 +682,16 @@ export default function AgencySubscribe() {
     if (isCurrentTier && isCurrentInterval && !(includeSeatsInPlan && seatCountChanged)) {
       return "Current Plan";
     }
-
     if (currentPlanTier === "free" || currentPlanTier === null) {
-      if (authenticated && isAgencyUser) {
-        return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
-      }
-      return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
+      return targetPlan === "basic" ? "Get Basic" : "Get Pro";
     }
-
     if (targetPlan === "pro" && currentPlanTier === "basic") {
       return "Upgrade to Pro";
     }
-    if (targetPlan === "basic" && currentPlanTier === "pro") {
-      return "Downgrade to Basic";
-    }
-
     if (isCurrentTier && !isCurrentInterval) {
-      return billingInterval === "year"
-        ? "Switch to Annual"
-        : "Switch to Monthly";
+      return billingInterval === "year" ? "Switch to Annual" : "Switch to Monthly";
     }
-
-    return "Change Plan";
+    return "Select Plan";
   };
 
   const checkoutDisabled =
@@ -728,35 +717,15 @@ export default function AgencySubscribe() {
         currentPlanInterval === billingInterval &&
         !(includeSeatsInPlan && seatCountChanged)));
   const footerCtaLabel = (() => {
-    if (!initialized || profileLoading) {
-      return "Loading...";
-    }
-    if (requiresContactSales) {
-      return "Contact Sales";
-    }
-    if (!authenticated) {
-      return "Sign in to Checkout";
-    }
-    if (!isAgencyUser) {
-      return "Agency account required";
-    }
-    if (isDowngradeSelection) {
-      return "Downgrade unavailable";
-    }
-    if (alreadySubscribedToPlan) {
-      return "Already Subscribed";
-    }
-    if (currentPlanTier === "free" || currentPlanTier === null) {
-      return "Activate Selected Plan";
-    }
-    if (includeSeatsInPlan && seatCountChanged) {
-      return "Update Plan and Seats";
-    }
-    return checkingOut
-      ? "Processing..."
-      : currentPlanTier && currentPlanTier !== "free"
-        ? "Review Upgrade"
-        : "Activate Plan";
+    if (!initialized || profileLoading) return "Loading...";
+    if (requiresContactSales) return "Contact Sales";
+    if (!authenticated) return "Sign in";
+    if (!isAgencyUser) return "Agency account required";
+    if (isDowngradeSelection || alreadySubscribedToPlan) return "Current Plan";
+    if (checkingOut) return "Processing...";
+    if (currentPlanTier === "free" || currentPlanTier === null) return "Get Started";
+    if (includeSeatsInPlan && seatCountChanged) return "Update Plan";
+    return "Upgrade Plan";
   })();
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
@@ -779,33 +748,8 @@ export default function AgencySubscribe() {
       onContact();
       return;
     }
-    if (currentPlanTier === "pro" && targetPlan === "basic") {
-      toast({
-        title: "Downgrades unavailable",
-        description:
-          "Basic downgrades are not available in self-serve. Contact support if you need plan changes downward.",
-      });
-      return;
-    }
-    if (
-      currentPlanTier === targetPlan &&
-      currentPlanInterval === "year" &&
-      billingInterval === "month"
-    ) {
-      toast({
-        title: "Monthly downgrade unavailable",
-        description:
-          "Annual plans cannot be switched down to monthly in self-serve. Contact support if you need help.",
-      });
-      return;
-    }
-    if (
-      currentPlanTier === targetPlan &&
-      currentPlanInterval === billingInterval &&
-      !(includeSeatsInPlan && seatCountChanged)
-    ) {
-      return;
-    }
+    // Silently ignore disabled actions (downgrade / already on plan)
+    if (isPlanDisabled(targetPlan)) return;
     setPlan(targetPlan);
     void onCheckout(targetPlan);
   };
