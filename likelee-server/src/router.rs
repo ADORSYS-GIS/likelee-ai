@@ -1164,6 +1164,14 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_agency_irl_booking_addon_checkout),
         )
         .route(
+            "/api/agency/billing/addons/seats",
+            post(crate::billing::create_or_update_agency_seat_addon),
+        )
+        .route(
+            "/api/agency/billing/start-trial",
+            post(crate::billing::start_agency_pro_trial),
+        )
+        .route(
             "/api/agency/billing/status",
             get(crate::billing::get_agency_billing_status),
         )

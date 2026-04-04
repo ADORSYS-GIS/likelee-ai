@@ -297,6 +297,25 @@ pub async fn get_agency_calendly_settings(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({"status": "error", "error": error})));
+        }
+    };
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({"status": "error", "error": "irl_booking_addon_required_for_calendly"})),
+        );
+    }
+
     let resp = state
         .pg
         .from("agency_calendly_settings")
@@ -355,6 +374,25 @@ pub async fn update_agency_calendly_settings(
     user: AuthUser,
     Json(payload): Json<serde_json::Value>,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({"status": "error", "error": error})));
+        }
+    };
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({"status": "error", "error": "irl_booking_addon_required_for_calendly"})),
+        );
+    }
+
     let mut insert_payload = payload;
     insert_payload["agency_id"] = json!(user.id);
     insert_payload["updated_at"] = json!(chrono::Utc::now().to_rfc3339());
@@ -393,6 +431,25 @@ pub async fn get_calendly_event_types(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({"status": "error", "error": error})));
+        }
+    };
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({"status": "error", "error": "irl_booking_addon_required_for_calendly"})),
+        );
+    }
+
     // 1. Fetch agency settings to get the token
     let resp = state
         .pg

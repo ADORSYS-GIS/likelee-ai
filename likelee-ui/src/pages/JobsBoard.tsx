@@ -42,6 +42,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { createPageUrl } from "@/utils";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { useAuth } from "@/auth/AuthProvider";
+import { getAgencyBillingStatus } from "@/api/functions";
 
 const PAGE_SIZE = 10;
 
@@ -71,6 +73,7 @@ const locationOptions = [
 
 export default function JobsBoard() {
   const { toast } = useToast();
+  const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const backTo = searchParams.get("backTo");
@@ -98,9 +101,35 @@ export default function JobsBoard() {
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
     null,
   );
+  const [agencyCanApply, setAgencyCanApply] = useState(true);
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const compCardInputRef = useRef<HTMLInputElement>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  const isAgencyUser = authenticated && profile?.role === "agency";
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAgencyBilling = async () => {
+      if (!isAgencyUser) {
+        setAgencyCanApply(true);
+        return;
+      }
+      try {
+        const resp = await getAgencyBillingStatus();
+        if (!cancelled) {
+          setAgencyCanApply(Boolean(resp?.can_apply_for_jobs));
+        }
+      } catch {
+        if (!cancelled) {
+          setAgencyCanApply(false);
+        }
+      }
+    };
+    void loadAgencyBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAgencyUser]);
 
   const resolveAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -369,6 +398,16 @@ export default function JobsBoard() {
 
   const handleApply = async () => {
     if (!selectedJob?.id) return;
+    if (isAgencyUser && !agencyCanApply) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+        variant: "destructive",
+      });
+      navigate("/agencysubscribe");
+      return;
+    }
     if (isJobClosed(selectedJob)) {
       toast({
         title: "Job closed or no vacancies",
@@ -782,10 +821,22 @@ export default function JobsBoard() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedJob(job);
+                      if (isAgencyUser && !agencyCanApply) {
+                        toast({
+                          title: "Upgrade required",
+                          description:
+                            "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+                          variant: "destructive",
+                        });
+                        navigate("/agencysubscribe");
+                        return;
+                      }
                       setApplyOpen(true);
                     }}
                   >
-                    Apply Now
+                    {isAgencyUser && !agencyCanApply
+                      ? "Upgrade to Apply"
+                      : "Apply Now"}
                   </Button>
                 </div>
               </Card>
@@ -1494,10 +1545,20 @@ export default function JobsBoard() {
                 className="bg-black text-white"
                 onClick={() => {
                   setDetailsOpen(false);
+                  if (isAgencyUser && !agencyCanApply) {
+                    toast({
+                      title: "Upgrade required",
+                      description:
+                        "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+                      variant: "destructive",
+                    });
+                    navigate("/agencysubscribe");
+                    return;
+                  }
                   setApplyOpen(true);
                 }}
               >
-                Apply
+                {isAgencyUser && !agencyCanApply ? "Upgrade to Apply" : "Apply"}
               </Button>
             )}
           </DialogFooter>

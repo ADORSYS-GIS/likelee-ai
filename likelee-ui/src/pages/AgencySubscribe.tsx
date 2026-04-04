@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,12 +15,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Gift } from "lucide-react";
 import {
   changeAgencySubscriptionPlan,
   createAgencyIrlBookingAddonCheckout,
+  createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
   getAgencyProfile,
+  startAgencyProTrial,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
@@ -82,6 +85,7 @@ export default function AgencySubscribe() {
   const canceled = searchParams.get("canceled") === "1";
   const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
   const billingParam = String(searchParams.get("billing") || "").trim();
+  const postSignup = searchParams.get("post_signup") === "1";
 
   const [billingInterval, setBillingInterval] = React.useState<
     "month" | "year"
@@ -91,9 +95,15 @@ export default function AgencySubscribe() {
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
     null,
   );
+  const [currentTrialEndsAt, setCurrentTrialEndsAt] = React.useState<
+    string | null
+  >(null);
   const [currentPlanInterval, setCurrentPlanInterval] = React.useState<
     "month" | "year" | null
   >(null);
+  const [currentSeatsLimit, setCurrentSeatsLimit] = React.useState(
+    DEFAULT_ROSTER_MODELS,
+  );
   const [minimumRosterModels, setMinimumRosterModels] =
     React.useState(MIN_ROSTER_MODELS);
   const [rosterModels, setRosterModels] = React.useState(DEFAULT_ROSTER_MODELS);
@@ -103,14 +113,18 @@ export default function AgencySubscribe() {
   const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
   const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
     React.useState(false);
+  const [includeSeatsInPlan, setIncludeSeatsInPlan] = React.useState(true);
   const [pendingPlanChange, setPendingPlanChange] = React.useState<{
     plan: "basic" | "pro";
     interval: "month" | "year";
     rosterModels: number;
     includeIrlBooking: boolean;
+    includeSeatsInPlan: boolean;
   } | null>(null);
   const [checkingOut, setCheckingOut] = React.useState(false);
   const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
+  const [checkingOutSeats, setCheckingOutSeats] = React.useState(false);
+  const [startingTrial, setStartingTrial] = React.useState(false);
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
 
@@ -136,9 +150,12 @@ export default function AgencySubscribe() {
   const basePlanPro = Math.round(
     billingInterval === "year" ? PRO_BASE_PLAN_COST * 0.8 : PRO_BASE_PLAN_COST,
   );
-  const totalMonthlyBasic =
-    basePlanBasic + rosterCostBasic + selectedIrlBookingCost;
-  const totalMonthlyPro = basePlanPro + rosterCostPro + selectedIrlBookingCost;
+  const totalMonthlyBasic = basePlanBasic + selectedIrlBookingCost;
+  const totalMonthlyPro = basePlanPro + selectedIrlBookingCost;
+  const bundledSeatCostBasic = includeSeatsInPlan ? rosterCostBasic : 0;
+  const bundledSeatCostPro = includeSeatsInPlan ? rosterCostPro : 0;
+  const displayedMonthlyBasic = totalMonthlyBasic + bundledSeatCostBasic;
+  const displayedMonthlyPro = totalMonthlyPro + bundledSeatCostPro;
   const requiresContactSales = rosterModels > MAX_ROSTER_MODELS;
   const sliderMin = requiresContactSales ? rosterModels : minimumRosterModels;
   const maxRosterModels = requiresContactSales
@@ -169,18 +186,26 @@ export default function AgencySubscribe() {
       try {
         const resp = (await getAgencyProfile()) as any;
         const tier = resp?.plan_tier || "free";
+        const trialEndsAt = resp?.trial_ends_at ? String(resp.trial_ends_at) : null;
+        const seats = Math.max(
+          MIN_ROSTER_MODELS,
+          Number(resp?.seats_limit || DEFAULT_ROSTER_MODELS),
+        );
         setCurrentPlanTier(tier);
+        setCurrentTrialEndsAt(trialEndsAt);
         setCurrentPlanInterval(resp?.plan_interval || "month");
+        setCurrentSeatsLimit(seats);
         if (tier === "basic" || tier === "pro") {
           setPlan(tier);
         }
         setMinimumRosterModels(MIN_ROSTER_MODELS);
-        setRosterModels(DEFAULT_ROSTER_MODELS);
-        setRosterInput(String(DEFAULT_ROSTER_MODELS));
+        setRosterModels(seats);
+        setRosterInput(String(seats));
         setHasIrlBookingAddon(
           parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
         setIncludeIrlBookingInPlan(false);
+        setIncludeSeatsInPlan(tier === "free" || tier === null);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
       }
@@ -194,12 +219,15 @@ export default function AgencySubscribe() {
     }
 
     setCurrentPlanTier(null);
+    setCurrentTrialEndsAt(null);
     setCurrentPlanInterval(null);
+    setCurrentSeatsLimit(DEFAULT_ROSTER_MODELS);
     setMinimumRosterModels(MIN_ROSTER_MODELS);
     setRosterModels(DEFAULT_ROSTER_MODELS);
     setRosterInput(String(DEFAULT_ROSTER_MODELS));
     setHasIrlBookingAddon(false);
     setIncludeIrlBookingInPlan(false);
+    setIncludeSeatsInPlan(true);
   }, [authenticated, initialized, isAgencyUser]);
 
   React.useEffect(() => {
@@ -260,6 +288,8 @@ export default function AgencySubscribe() {
   const rosterCost = plan === "basic" ? rosterCostBasic : rosterCostPro;
   const currentPlanRank = planRank(currentPlanTier);
   const selectedPlanRank = planRank(plan);
+  const seatCountChanged =
+    currentPlanTier !== null && rosterModels !== currentSeatsLimit;
   const isDowngradeSelection =
     (currentPlanTier === "pro" && plan === "basic") ||
     (currentPlanTier === plan &&
@@ -304,13 +334,14 @@ export default function AgencySubscribe() {
       });
       return;
     }
-
     setCheckingOut(true);
     try {
       const isSwitchOrUpgrade =
         currentPlanTier !== "free" &&
         currentPlanTier !== null &&
-        (targetPlan !== currentPlanTier || billingInterval !== currentPlanInterval);
+        (targetPlan !== currentPlanTier ||
+          billingInterval !== currentPlanInterval ||
+          (includeSeatsInPlan && seatCountChanged));
 
       if (isSwitchOrUpgrade) {
         const resp = await changeAgencySubscriptionPlan({
@@ -319,6 +350,7 @@ export default function AgencySubscribe() {
           interval: billingInterval,
           addons: {
             irl_booking: shouldBillIrlBookingInPlan,
+            seats_in_plan: includeSeatsInPlan,
             deepfake_protection_models: 0,
             additional_team_members: 0,
           },
@@ -326,12 +358,14 @@ export default function AgencySubscribe() {
         const nextPlanTier = String((resp as any)?.plan_tier || targetPlan);
         setCurrentPlanTier(nextPlanTier);
         setCurrentPlanInterval(billingInterval);
+        setCurrentSeatsLimit(Number((resp as any)?.seats_limit || rosterModels));
         setPlan(targetPlan);
         setHasIrlBookingAddon(
           Boolean((resp as any)?.addon_irl_booking_enabled) ||
             shouldBillIrlBookingInPlan,
         );
         setIncludeIrlBookingInPlan(false);
+        setIncludeSeatsInPlan(false);
         toast({
           title: "Subscription updated",
           description:
@@ -347,8 +381,11 @@ export default function AgencySubscribe() {
         plan: targetPlan,
         roster_models: rosterModels,
         interval: billingInterval,
+        start_trial: false,
+        agreement_accepted: false,
         addons: {
           irl_booking: shouldBillIrlBookingInPlan,
+          seats_in_plan: includeSeatsInPlan,
           deepfake_protection_models: 0,
           additional_team_members: 0,
         },
@@ -491,6 +528,170 @@ export default function AgencySubscribe() {
     navigate(isAgencyUser ? "/AgencyDashboard" : "/");
   };
 
+  const onStartTrial = async () => {
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description: "Sign in with your agency account to start the Pro trial.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description: "Use an agency account to start the Pro trial.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStartingTrial(true);
+    try {
+      await startAgencyProTrial();
+      toast({
+        title: "Pro trial started",
+        description:
+          "Your 14-day Pro trial is now active. After it ends, your account will automatically return to the Free plan.",
+      });
+      navigate("/AgencyDashboard");
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      if (msg.includes("trial_already_active")) {
+        toast({
+          title: "Trial already active",
+          description: "Your agency already has an active Pro trial.",
+        });
+        navigate("/AgencyDashboard");
+        return;
+      }
+      if (msg.includes("trial_only_available_for_free_accounts")) {
+        toast({
+          title: "Trial unavailable",
+          description:
+            "The Pro trial is only available while your agency is on the Free plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Could not start trial",
+        description: msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingTrial(false);
+    }
+  };
+
+  const scrollToSeatsSection = () => {
+    document
+      .getElementById("roster-seats")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const onCheckoutSeats = async () => {
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description:
+          "Sign in with your agency account to buy the seats add-on.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description: "Use an agency account to buy seats separately.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!seatCountChanged) {
+      toast({
+        title: "Seats already up to date",
+        description: "Your separate seat add-on already matches this count.",
+      });
+      return;
+    }
+
+    setCheckingOutSeats(true);
+    try {
+      const resp = await createOrUpdateAgencySeatAddon({
+        seats: rosterModels,
+        plan: currentPlanTier === "pro" ? "pro" : plan,
+        interval: currentPlanInterval || billingInterval,
+      });
+      const url = (resp as any)?.checkout_url as string | undefined;
+      const nextSeats = Number((resp as any)?.seats_limit || rosterModels);
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      setCurrentSeatsLimit(nextSeats);
+      setIncludeSeatsInPlan(false);
+      toast({
+        title: "Seat add-on updated",
+        description: `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats.`,
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      const contactSales = msg.match(
+        /enterprise_contact_sales_roster_limit(?::(\d+))?/,
+      );
+      if (contactSales) {
+        toast({
+          title: "Contact Sales",
+          description:
+            "Self-serve seats support 2 to 1,000 models. Larger rosters use custom pricing.",
+        });
+        onContact();
+        return;
+      }
+      const rosterMismatch = msg.match(
+        /roster_models_below_current_roster:(\d+)/,
+      );
+      if (rosterMismatch) {
+        const currentRoster = Math.max(
+          minimumRosterModels,
+          Number.parseInt(rosterMismatch[1], 10) || minimumRosterModels,
+        );
+        setMinimumRosterModels(currentRoster);
+        setRosterModels(currentRoster);
+        setRosterInput(String(currentRoster));
+        toast({
+          title: "Roster updated",
+          description: `Your current roster is ${formatNumber(currentRoster)} models. The seat add-on has to cover at least that many.`,
+        });
+        return;
+      }
+      toast({
+        title: "Seat checkout failed",
+        description: msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingOutSeats(false);
+    }
+  };
+
   const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
     if (!initialized || profileLoading) {
       return "Loading...";
@@ -518,9 +719,14 @@ export default function AgencySubscribe() {
     const isCurrentTier = currentPlanTier === targetPlan;
     const isCurrentInterval = currentPlanInterval === billingInterval;
 
-    if (isCurrentTier && isCurrentInterval) return "Current Plan";
+    if (isCurrentTier && isCurrentInterval && !(includeSeatsInPlan && seatCountChanged)) {
+      return "Current Plan";
+    }
 
     if (currentPlanTier === "free" || currentPlanTier === null) {
+      if (authenticated && isAgencyUser) {
+        return targetPlan === plan ? "Selected Plan" : "Select Plan";
+      }
       return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
     }
 
@@ -541,17 +747,27 @@ export default function AgencySubscribe() {
   };
 
   const checkoutDisabled =
-    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading;
   const irlAddonCheckoutDisabled =
-    checkingOut || checkingOutIrlAddon || !initialized || profileLoading;
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading;
   const alreadySubscribedToPlan =
     !requiresContactSales &&
     ((plan === "basic" &&
       currentPlanTier === "basic" &&
-      currentPlanInterval === billingInterval) ||
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)) ||
       (plan === "pro" &&
         currentPlanTier === "pro" &&
-        currentPlanInterval === billingInterval));
+        currentPlanInterval === billingInterval &&
+        !(includeSeatsInPlan && seatCountChanged)));
   const footerCtaLabel = (() => {
     if (!initialized || profileLoading) {
       return "Loading...";
@@ -571,11 +787,17 @@ export default function AgencySubscribe() {
     if (alreadySubscribedToPlan) {
       return "Already Subscribed";
     }
+    if (currentPlanTier === "free" || currentPlanTier === null) {
+      return "Activate Selected Plan";
+    }
+    if (includeSeatsInPlan && seatCountChanged) {
+      return "Update Plan and Seats";
+    }
     return checkingOut
       ? "Processing..."
       : currentPlanTier && currentPlanTier !== "free"
         ? "Review Upgrade"
-        : "Get Started";
+        : "Activate Plan";
   })();
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
@@ -620,7 +842,8 @@ export default function AgencySubscribe() {
     }
     if (
       currentPlanTier === targetPlan &&
-      currentPlanInterval === billingInterval
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)
     ) {
       return;
     }
@@ -631,10 +854,10 @@ export default function AgencySubscribe() {
         interval: billingInterval,
         rosterModels,
         includeIrlBooking: shouldBillIrlBookingInPlan,
+        includeSeatsInPlan,
       });
       return;
     }
-    await onCheckout(targetPlan);
   };
 
   return (
@@ -768,6 +991,11 @@ export default function AgencySubscribe() {
                 Subscription started
               </Badge>
             )}
+            {postSignup && !success && (
+              <Badge className="bg-[#EEF4FF] text-[#17315F] border border-[#D9E4F1]">
+                Finish setup with a trial or continue on free
+              </Badge>
+            )}
             {canceled && (
               <Badge variant="outline" className="bg-white/70">
                 Checkout canceled
@@ -775,6 +1003,59 @@ export default function AgencySubscribe() {
             )}
           </div>
         </div>
+
+        {currentPlanTier === "free" && currentTrialEndsAt === null && !success && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="mt-10 overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-r from-[#0F172A] via-[#102A43] to-[#0B9DA2] text-white shadow-[0_24px_80px_rgba(11,157,162,0.16)]"
+          >
+            <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  animate={{ y: [0, -5, 0], rotate: [0, -4, 4, 0] }}
+                  transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur"
+                >
+                  <Gift className="h-7 w-7 text-[#9FF5D6]" />
+                </motion.div>
+                <div className="max-w-3xl">
+                  <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#C8FFF0]">
+                    Optional Pro Trial
+                  </div>
+                  <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
+                    Start a 14-day Pro trial only when you are ready
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
+                    Your agency stays on the Free plan by default. If you want full Pro access, start the trial from here and move into a Pro setup flow only when you choose it.
+                  </p>
+                </div>
+              </div>
+              <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C8FFF0]">
+                  Trial Offer
+                </div>
+                <div className="mt-3 space-y-2 text-sm text-white/85">
+                  <div>14 days of Pro access</div>
+                  <div>Instant access with no payment step</div>
+                  <div>Falls back to Free automatically after the trial</div>
+                </div>
+                <Button
+                  type="button"
+                  className="mt-4 w-full rounded-2xl bg-white text-[#102A43] hover:bg-[#E8FFFA] font-black"
+                  disabled={startingTrial}
+                  onClick={() => {
+                    void onStartTrial();
+                  }}
+                >
+                  {startingTrial ? "Starting Trial..." : "Start 14-Day Pro Trial"}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="mt-12">
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
@@ -837,15 +1118,107 @@ export default function AgencySubscribe() {
               </div>
             </div>
 
+            <div className="mt-6 flex items-center justify-center">
+              <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  {includeSeatsInPlan ? "In Plan" : "Off"}
+                </span>
+                <Switch
+                  checked={includeSeatsInPlan}
+                  onCheckedChange={setIncludeSeatsInPlan}
+                  aria-label="Toggle roster seats into plan checkout"
+                />
+              </div>
+            </div>
+
             <div className="text-center text-[#4B4AE6] font-black mt-6 font-display">
               {requiresContactSales
                 ? "More than 1,000 models requires custom pricing."
-                : `${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
+                : `${includeSeatsInPlan ? "In-plan seat preview" : "Seat add-on preview"}: ${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
             </div>
+            {!includeSeatsInPlan && (
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-2xl font-black"
+                  onClick={scrollToSeatsSection}
+                >
+                  Buy Seats Separately
+                </Button>
+              </div>
+            )}
           </Card>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <Card className="rounded-[28px] border border-[#D9E4F1] bg-[#F8FAFC] p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-3xl font-black font-display">Free</div>
+                <div className="text-gray-500 mt-1">
+                  Start with core agency setup
+                </div>
+              </div>
+              <Badge className="bg-white text-[#17315F] border border-[#D9E4F1]">
+                $0
+              </Badge>
+            </div>
+            <div className="mt-6 flex items-end gap-2">
+              <div className="text-6xl font-black font-display">$0</div>
+              <div className="text-gray-500 font-bold pb-2">/mo</div>
+            </div>
+            <div className="mt-6 text-gray-500 font-medium">
+              <div className="flex justify-between">
+                <span>Base plan</span>
+                <span>$0</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Roster seats</span>
+                <span>Not included</span>
+              </div>
+              <div className="flex justify-between">
+                <span>IRL Booking add-on</span>
+                <span>Not included</span>
+              </div>
+            </div>
+            <div className="mt-8">
+              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
+                Included
+              </div>
+              <div className="mt-4 space-y-3 text-gray-700 font-medium">
+                {[
+                  "Agency dashboard access",
+                  "Agency profile and organization setup",
+                  "Read-only platform exploration",
+                ].map((label) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <div className="mt-[2px] w-5 h-5 rounded-full bg-white border border-[#D9E4F1] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3.5 h-3.5 text-[#17315F]" />
+                    </div>
+                    <div className="leading-snug">{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-8">
+              <Button
+                type="button"
+                className="w-full h-12 rounded-2xl font-black"
+                variant="outline"
+                onClick={() => {
+                  if (authenticated && isAgencyUser) {
+                    navigate("/AgencyDashboard");
+                    return;
+                  }
+                  navigate("/Login?role=agency");
+                }}
+              >
+                {currentPlanTier === "free" ? "Current Plan" : "Continue Free"}
+              </Button>
+            </div>
+          </Card>
+
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -860,7 +1233,7 @@ export default function AgencySubscribe() {
             </div>
             <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
               <div className="text-6xl font-black font-display">
-                ${formatNumber(totalMonthlyBasic)}
+                ${formatNumber(displayedMonthlyBasic)}
               </div>
               <div className="text-gray-500 font-bold pb-2">
                 /mo
@@ -877,17 +1250,18 @@ export default function AgencySubscribe() {
                 <span>${formatNumber(basePlanBasic)}</span>
               </div>
               <div className="flex justify-between">
-                <span>
-                  {formatNumber(rosterModels)} models × ${rosterRateBasic}
+                <span>Roster seats</span>
+                <span className="text-[#17315F]">
+                  {includeSeatsInPlan
+                    ? `$${formatNumber(rosterCostBasic)} in plan`
+                    : "Billed separately"}
                 </span>
-                <span>${formatNumber(rosterCostBasic)}</span>
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
                 <span>{irlAddonLineItemLabel}</span>
               </div>
             </div>
-
             <div className="mt-8">
               <div className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                 Included
@@ -911,12 +1285,10 @@ export default function AgencySubscribe() {
                   </div>
                 ))}
               </div>
-
               <div className="mt-6 text-amber-700 font-bold text-sm">
                 10% fee applied on all licensing bookings
               </div>
             </div>
-
             <div className="mt-8">
               <Button
                 type="button"
@@ -967,7 +1339,7 @@ export default function AgencySubscribe() {
             </div>
             <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2">
               <div className="text-6xl font-black font-display">
-                ${formatNumber(totalMonthlyPro)}
+                ${formatNumber(displayedMonthlyPro)}
               </div>
               <div className="text-white/60 font-bold pb-2">
                 /mo
@@ -984,17 +1356,18 @@ export default function AgencySubscribe() {
                 <span>${formatNumber(basePlanPro)}</span>
               </div>
               <div className="flex justify-between">
-                <span>
-                  {formatNumber(rosterModels)} models × ${rosterRatePro}
+                <span>Roster seats</span>
+                <span className="text-white">
+                  {includeSeatsInPlan
+                    ? `$${formatNumber(rosterCostPro)} in plan`
+                    : "Billed separately"}
                 </span>
-                <span>${formatNumber(rosterCostPro)}</span>
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
                 <span>{irlAddonLineItemLabel}</span>
               </div>
             </div>
-
             <div className="mt-8">
               <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">
                 Everything in Basic, plus
@@ -1004,7 +1377,6 @@ export default function AgencySubscribe() {
                   "Advanced Analytics",
                   "Royalties & Payouts Dashboard",
                   "Financial Reports & Expense Tracking",
-                  "Connect Bank Account",
                 ].map((label) => (
                   <div key={label} className="flex items-start gap-3">
                     <div className="mt-[2px] w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -1014,12 +1386,10 @@ export default function AgencySubscribe() {
                   </div>
                 ))}
               </div>
-
               <div className="mt-6 text-emerald-300 font-bold text-sm">
                 Only 5% fee on licensing bookings
               </div>
             </div>
-
             <div className="mt-8">
               <Button
                 type="button"
@@ -1048,6 +1418,129 @@ export default function AgencySubscribe() {
                   getPlanCtaLabel("pro")
                 )}
               </Button>
+            </div>
+          </Card>
+        </div>
+
+        <div id="roster-seats" className="mt-10">
+          <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="text-2xl font-black font-display">
+                  Roster Seats
+                </div>
+                <div className="mt-2 text-gray-500">
+                  Seat billing scales with the number of talent profiles you
+                  manage. Choose whether to include seats in the selected plan
+                  checkout or buy them separately as their own recurring add-on.
+                </div>
+                <div className="mt-5 flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 w-fit">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                    {includeSeatsInPlan ? "In Plan" : "Off"}
+                  </span>
+                  <Switch
+                    checked={includeSeatsInPlan}
+                    onCheckedChange={setIncludeSeatsInPlan}
+                    aria-label="Toggle roster seats into plan checkout"
+                  />
+                </div>
+                <div className="mt-5 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    Current billed seats:{" "}
+                    <span className="font-bold text-gray-900">
+                      {formatNumber(currentSeatsLimit)}
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Selected seats:</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={rosterInput}
+                        disabled={requiresContactSales}
+                        onChange={(event) => {
+                          const nextValue = event.target.value.replace(
+                            /[^\d]/g,
+                            "",
+                          );
+                          setRosterInput(nextValue);
+                          const parsed = parsePositiveInteger(nextValue);
+                          if (parsed == null) return;
+                          setRosterModels(
+                            clampRosterModels(
+                              parsed,
+                              minimumRosterModels,
+                              maxRosterModels,
+                            ),
+                          );
+                        }}
+                        onBlur={() => setRosterInput(String(rosterModels))}
+                        aria-label="Selected seat count"
+                        className="h-10 w-24 rounded-xl border-gray-200 bg-white text-right font-black text-gray-900"
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    Seat pricing follows your{" "}
+                    {currentPlanTier === "free" || currentPlanTier === null
+                      ? billingInterval === "year"
+                        ? "selected annual"
+                        : "selected monthly"
+                      : currentPlanInterval === "year"
+                        ? "active annual"
+                        : "active monthly"}{" "}
+                    billing interval.
+                  </div>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    {currentPlanTier === "free"
+                      ? includeSeatsInPlan
+                        ? "Your selected trial or checkout will start with this seat count included in plan."
+                        : "Buy seats separately from this section anytime."
+                      : includeSeatsInPlan
+                        ? "Updating the selected plan will include these seats directly on the plan subscription."
+                        : "Buying seats here creates or updates a separate recurring seat add-on."}
+                  </div>
+                </div>
+              </div>
+              <div className="w-full max-w-sm rounded-[24px] border border-[#D9E4F1] bg-[#F6F8FB] p-5">
+                <div className="text-sm font-bold uppercase tracking-[0.18em] text-gray-500">
+                  Seat total
+                </div>
+                <div className="mt-3 text-4xl font-black font-display text-[#1B1C23]">
+                  ${formatNumber(rosterCost)}
+                </div>
+                <div className="mt-1 text-sm text-gray-500">
+                  {formatNumber(rosterModels)} seats × ${rosterRate}/mo
+                </div>
+                <div className="mt-4 text-xs leading-5 text-gray-500">
+                  {includeSeatsInPlan
+                    ? "These seats will be charged inside the selected plan checkout."
+                    : "Seats are charged on a separate recurring Stripe subscription."}
+                </div>
+                <Button
+                  type="button"
+                  className="mt-5 w-full rounded-2xl font-black"
+                  variant={seatCountChanged ? "default" : "outline"}
+                  disabled={
+                    checkoutDisabled ||
+                    includeSeatsInPlan ||
+                    !seatCountChanged
+                  }
+                  onClick={() => {
+                    void onCheckoutSeats();
+                  }}
+                >
+                  {includeSeatsInPlan
+                    ? "Included In Plan Checkout"
+                    : checkingOutSeats
+                      ? "Processing..."
+                      : seatCountChanged
+                        ? "Buy Seats"
+                        : "Seats Up to Date"}
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
@@ -1218,11 +1711,17 @@ export default function AgencySubscribe() {
               type="button"
               className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
               disabled={
-                checkoutDisabled || alreadySubscribedToPlan || isDowngradeSelection
+                checkoutDisabled ||
+                alreadySubscribedToPlan ||
+                isDowngradeSelection
               }
               onClick={() => {
                 if (requiresContactSales) {
                   onContact();
+                  return;
+                }
+                if (currentPlanTier === "free" || currentPlanTier === null) {
+                  void onCheckout(plan);
                   return;
                 }
                 void onSelectPlan(plan);
@@ -1231,6 +1730,16 @@ export default function AgencySubscribe() {
               {footerCtaLabel}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
+            {currentPlanTier === "free" && isAgencyUser && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-2xl font-bold text-gray-600"
+                onClick={() => navigate("/AgencyDashboard")}
+              >
+                Skip Trial for Now
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1306,11 +1815,11 @@ export default function AgencySubscribe() {
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
-              <span className="font-bold text-gray-500">Roster</span>
+              <span className="font-bold text-gray-500">Seats add-on</span>
               <span className="font-black text-[#1B1C23]">
-                {pendingPlanChange
-                  ? `${formatNumber(pendingPlanChange.rosterModels)} models`
-                  : ""}
+                {pendingPlanChange?.includeSeatsInPlan
+                  ? `${formatNumber(pendingPlanChange.rosterModels)} seats in plan`
+                  : "Purchased separately"}
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
@@ -1334,6 +1843,9 @@ export default function AgencySubscribe() {
             <div className="mt-2">
               By confirming, you authorize Likelee to switch your existing
               subscription to the selected plan and billing interval.
+              {pendingPlanChange?.includeSeatsInPlan
+                ? " The selected seat count will also be billed inside that plan."
+                : " Roster seats remain managed as a separate add-on."}
             </div>
           </div>
 

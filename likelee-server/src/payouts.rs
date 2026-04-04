@@ -3552,8 +3552,37 @@ fn stripe_subscription_plan_interval(
     "month"
 }
 
-fn stripe_subscription_is_active(sub: &stripe_sdk::Subscription) -> bool {
+pub(crate) fn stripe_subscription_is_active(sub: &stripe_sdk::Subscription) -> bool {
     matches!(sub.status.as_str(), "active" | "trialing")
+}
+
+fn stripe_subscription_seat_quantity(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> Option<i64> {
+    let quantity = sub
+        .items
+        .data
+        .iter()
+        .filter_map(|item| {
+            let price_id = item
+                .price
+                .as_ref()
+                .map(|price| price.id.to_string())
+                .unwrap_or_default();
+            if crate::billing::agency_headcount_price_id_matches(state, price_id.as_str()) {
+                item.quantity.and_then(|value| i64::try_from(value).ok())
+            } else {
+                None
+            }
+        })
+        .sum::<i64>();
+
+    if quantity > 0 {
+        Some(quantity)
+    } else {
+        stripe_subscription_roster_models(sub)
+    }
 }
 
 fn agency_plan_tier_rank(tier: &str) -> i32 {
@@ -3675,7 +3704,7 @@ fn aggregate_agency_subscription_state(
             continue;
         };
         let plan_interval = stripe_subscription_plan_interval(state, sub);
-        let roster_models = stripe_subscription_roster_models(sub).unwrap_or(186);
+        let roster_models = stripe_subscription_seat_quantity(state, sub).unwrap_or(1);
 
         let replace = match &best_plan {
             None => true,
@@ -3699,10 +3728,23 @@ fn aggregate_agency_subscription_state(
     let addon_irl_booking_enabled = active_subscriptions
         .iter()
         .any(|sub| stripe_subscription_has_irl_booking_addon(state, sub));
+    let aggregated_seat_quantity = active_subscriptions
+        .iter()
+        .filter_map(|sub| stripe_subscription_seat_quantity(state, sub))
+        .sum::<i64>();
 
     let (plan_tier, plan_interval, seats_limit, primary_subscription_id) = match best_plan {
         Some((tier, interval, roster_models, subscription_id)) => {
-            (tier, interval, roster_models, subscription_id)
+            (
+                tier,
+                interval,
+                if aggregated_seat_quantity > 0 {
+                    aggregated_seat_quantity
+                } else {
+                    roster_models
+                },
+                subscription_id,
+            )
         }
         None => {
             let addon_subscription_id = active_subscriptions
@@ -3710,7 +3752,16 @@ fn aggregate_agency_subscription_state(
                 .find(|sub| stripe_subscription_has_irl_booking_addon(state, sub))
                 .map(|sub| sub.id.to_string())
                 .unwrap_or_else(|| fallback_subscription.id.to_string());
-            ("free", "month", 1, addon_subscription_id)
+            (
+                "free",
+                "month",
+                if aggregated_seat_quantity > 0 {
+                    aggregated_seat_quantity
+                } else {
+                    1
+                },
+                addon_subscription_id,
+            )
         }
     };
 
@@ -3759,6 +3810,10 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
+    let trial_ends_at =
+        sub.trial_end
+            .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
+            .map(|dt| dt.to_rfc3339());
     let aggregated = if let Some(cust) = customer_id.filter(|cust| !cust.trim().is_empty()) {
         match list_customer_subscriptions(state, cust).await {
             Ok(subscriptions) => {
@@ -3800,6 +3855,13 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     update.insert(
         "plan_updated_at".into(),
         json!(chrono::Utc::now().to_rfc3339()),
+    );
+    update.insert(
+        "trial_ends_at".into(),
+        match status.as_str() {
+            "trialing" => trial_ends_at.map_or(serde_json::Value::Null, |value| json!(value)),
+            _ => serde_json::Value::Null,
+        },
     );
     if let Some(cust) = customer_id {
         if !cust.trim().is_empty() {

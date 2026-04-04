@@ -26,14 +26,85 @@ impl PlanTier {
     }
 }
 
-pub async fn get_agency_plan_tier(
+#[derive(Debug, Clone)]
+pub struct AgencyAccessState {
+    pub billed_tier: PlanTier,
+    pub effective_tier: PlanTier,
+    pub plan_interval: String,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub addon_irl_booking_enabled: bool,
+}
+
+impl AgencyAccessState {
+    pub fn has_paid_access(&self) -> bool {
+        self.effective_tier != PlanTier::Free
+    }
+
+    pub fn has_pro_access(&self) -> bool {
+        matches!(self.effective_tier, PlanTier::Pro | PlanTier::Enterprise)
+    }
+
+    pub fn display_plan_label(&self) -> String {
+        let tier_label = match self.billed_tier {
+            PlanTier::Enterprise => "Enterprise".to_string(),
+            PlanTier::Pro => "Pro".to_string(),
+            PlanTier::Basic => "Basic".to_string(),
+            PlanTier::Free if self.trial_active => "Trial".to_string(),
+            PlanTier::Free => "Free".to_string(),
+        };
+
+        if self.trial_active {
+            let base = match self.effective_tier {
+                PlanTier::Enterprise => "Enterprise",
+                PlanTier::Pro => "Pro",
+                PlanTier::Basic => "Basic",
+                PlanTier::Free => "Pro",
+            };
+            return format!("{base} Trial");
+        }
+
+        match self.billed_tier {
+            PlanTier::Basic | PlanTier::Pro => {
+                let interval = if self.plan_interval.eq_ignore_ascii_case("year") {
+                    "Annual"
+                } else {
+                    "Monthly"
+                };
+                format!("{tier_label} {interval}")
+            }
+            _ => tier_label,
+        }
+    }
+}
+
+fn parse_trial_datetime(value: Option<&str>) -> Option<chrono::DateTime<chrono::Utc>> {
+    value
+        .and_then(|s| {
+            chrono::DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .or_else(|| {
+                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                        .ok()
+                        .map(|ndt| {
+                            chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                                ndt,
+                                chrono::Utc,
+                            )
+                        })
+                })
+        })
+}
+
+pub async fn get_agency_access_state(
     state: &AppState,
     agency_id: &str,
-) -> Result<PlanTier, (StatusCode, String)> {
+) -> Result<AgencyAccessState, (StatusCode, String)> {
     let resp = state
         .pg
         .from("agencies")
-        .select("plan_tier,trial_ends_at")
+        .select("plan_tier,trial_ends_at,plan_interval,addon_irl_booking_enabled")
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -54,44 +125,68 @@ pub async fn get_agency_plan_tier(
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let row = rows.as_array().and_then(|a| a.first());
 
-    let tier = row
+    let billed_tier = row
         .and_then(|o| o.get("plan_tier"))
         .and_then(|v| v.as_str())
         .map(PlanTier::from_db)
         .unwrap_or(PlanTier::Free);
+    let trial_ends_at = parse_trial_datetime(
+        row.and_then(|o| o.get("trial_ends_at"))
+            .and_then(|v| v.as_str()),
+    );
+    let trial_active = trial_ends_at.map(|dt| dt > chrono::Utc::now()).unwrap_or(false);
+    let effective_tier = if trial_active && billed_tier == PlanTier::Free {
+        PlanTier::Pro
+    } else {
+        billed_tier
+    };
 
-    // If the agency is on the free tier but their 14-day trial is still active,
-    // grant them Pro-level access for the duration of the trial.
-    if tier == PlanTier::Free {
-        let trial_ends_at_str = row
-            .and_then(|o| o.get("trial_ends_at"))
-            .and_then(|v| v.as_str());
+    Ok(AgencyAccessState {
+        billed_tier,
+        effective_tier,
+        plan_interval: row
+            .and_then(|o| o.get("plan_interval"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("month")
+            .to_string(),
+        trial_active,
+        trial_ends_at,
+        addon_irl_booking_enabled: row
+            .and_then(|o| o.get("addon_irl_booking_enabled"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+    })
+}
 
-        let trial_active = trial_ends_at_str
-            .and_then(|s| {
-                chrono::DateTime::parse_from_rfc3339(s)
-                    .ok()
-                    .map(|dt| dt.with_timezone(&chrono::Utc))
-                    .or_else(|| {
-                        chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
-                            .ok()
-                            .map(|ndt| {
-                                chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                                    ndt,
-                                    chrono::Utc,
-                                )
-                            })
-                    })
-            })
-            .map(|dt| dt > chrono::Utc::now())
-            .unwrap_or(false);
-
-        if trial_active {
-            return Ok(PlanTier::Pro);
-        }
+pub async fn require_agency_paid_access(
+    state: &AppState,
+    agency_id: &str,
+    restriction_code: &str,
+) -> Result<AgencyAccessState, (StatusCode, String)> {
+    let access = get_agency_access_state(state, agency_id).await?;
+    if !access.has_paid_access() {
+        return Err((StatusCode::FORBIDDEN, restriction_code.to_string()));
     }
+    Ok(access)
+}
 
-    Ok(tier)
+pub async fn require_agency_pro_access(
+    state: &AppState,
+    agency_id: &str,
+    restriction_code: &str,
+) -> Result<AgencyAccessState, (StatusCode, String)> {
+    let access = get_agency_access_state(state, agency_id).await?;
+    if !access.has_pro_access() {
+        return Err((StatusCode::FORBIDDEN, restriction_code.to_string()));
+    }
+    Ok(access)
+}
+
+pub async fn get_agency_plan_tier(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    Ok(get_agency_access_state(state, agency_id).await?.effective_tier)
 }
 
 pub fn docuseal_template_limit(tier: PlanTier) -> Option<usize> {

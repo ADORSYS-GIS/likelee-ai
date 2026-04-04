@@ -118,6 +118,9 @@ type MarketplaceSectionProps = {
     details?: MarketplaceProfileDetails,
   ) => void;
   enableAgencyContractConnect?: boolean;
+  connectLocked?: boolean;
+  connectLockedReason?: string;
+  onConnectLocked?: () => void;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -187,6 +190,9 @@ export function MarketplaceSection({
   showRequestLicense = false,
   onRequestLicense,
   enableAgencyContractConnect = false,
+  connectLocked = false,
+  connectLockedReason = "",
+  onConnectLocked,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -686,7 +692,8 @@ export function MarketplaceSection({
               const disableConnectAction =
                 connectionStatus === "waiting" ||
                 connectionStatus === "pending" ||
-                isRequestingConnect;
+                isRequestingConnect ||
+                connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
@@ -840,6 +847,10 @@ export function MarketplaceSection({
                           onClick={async (e) => {
                             // Prevent card click from opening details when pressing connect.
                             e.stopPropagation();
+                            if (connectLocked) {
+                              onConnectLocked?.();
+                              return;
+                            }
                             if (isRequestingConnect) return;
                             setRequestingConnectKeys((prev) =>
                               new Set(prev).add(profileKey),
@@ -934,11 +945,18 @@ export function MarketplaceSection({
                         >
                           {isRequestingConnect
                             ? "Sending..."
+                            : connectLocked
+                              ? "Upgrade to Connect"
                             : connectionStatus === "pending" ||
                                 connectionStatus === "waiting"
                               ? `Waiting for ${entityLabel} response`
                               : "Connect"}
                         </Button>
+                        {connectLockedReason ? (
+                          <span className="text-[10px] font-semibold text-amber-700">
+                            {connectLockedReason}
+                          </span>
+                        ) : null}
                       </div>
                     )}
                     {profile.talent_ownership === "agency_owned" && (

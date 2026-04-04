@@ -344,9 +344,11 @@ const ActivityLogModal = ({
 const GeneralSettingsView = ({
   kycStatus,
   hasIrlBookingAddon = false,
+  hasProAccess = false,
 }: {
   kycStatus?: string;
   hasIrlBookingAddon?: boolean;
+  hasProAccess?: boolean;
 }) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -426,9 +428,10 @@ const GeneralSettingsView = ({
     useState(false);
   const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
     useState(false);
+  const hasCalendlyAccess = hasIrlBookingAddon && hasProAccess;
 
   const fetchCalendlySettings = async () => {
-    if (!hasIrlBookingAddon) {
+    if (!hasCalendlyAccess) {
       setIsFetchingCalendlySettings(false);
       setCalendlySettings({
         calendly_api_token: "",
@@ -460,7 +463,7 @@ const GeneralSettingsView = ({
   };
 
   const fetchCalendlyEventTypes = async () => {
-    if (!hasIrlBookingAddon) {
+    if (!hasCalendlyAccess) {
       setIsFetchingCalendlyEventTypes(false);
       setCalendlyEventTypes([]);
       return;
@@ -488,6 +491,15 @@ const GeneralSettingsView = ({
   };
 
   const handleSaveCalendlySettings = async () => {
+    if (!hasProAccess) {
+      toast({
+        title: "Pro plan required",
+        description:
+          "Calendly integration is available on Pro plans with the IRL Booking add-on.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!hasIrlBookingAddon) {
       toast({
         title: "IRL Booking add-on required",
@@ -574,12 +586,12 @@ const GeneralSettingsView = ({
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Integrations" && profile?.id && hasIrlBookingAddon) {
+    if (activeTab === "Integrations" && profile?.id && hasCalendlyAccess) {
       fetchCalendlySettings();
       fetchCalendlyEventTypes();
       return;
     }
-    if (activeTab === "Integrations" && !hasIrlBookingAddon) {
+    if (activeTab === "Integrations" && !hasCalendlyAccess) {
       setCalendlySettings({
         calendly_api_token: "",
         is_enabled: false,
@@ -587,7 +599,7 @@ const GeneralSettingsView = ({
       });
       setCalendlyEventTypes([]);
     }
-  }, [activeTab, hasIrlBookingAddon, profile?.id]);
+  }, [activeTab, hasCalendlyAccess, profile?.id]);
 
   const defaultNotificationPrefs = [
     {
@@ -2512,24 +2524,22 @@ const GeneralSettingsView = ({
                         Calendly Integration
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
-                        {hasIrlBookingAddon
+                        {hasCalendlyAccess
                           ? "Automate meeting scheduling with your clients"
-                          : "Available with the IRL Booking add-on"}
+                          : "Available on Pro with the IRL Booking add-on"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
-                        {hasIrlBookingAddon
+                        {hasCalendlyAccess
                           ? calendlySettings.is_enabled
                             ? "Active"
                             : "Disabled"
                           : "Locked"}
                       </span>
                       <Switch
-                        checked={
-                          hasIrlBookingAddon && calendlySettings.is_enabled
-                        }
-                        disabled={!hasIrlBookingAddon}
+                        checked={hasCalendlyAccess && calendlySettings.is_enabled}
+                        disabled={!hasCalendlyAccess}
                         onCheckedChange={(checked) =>
                           setCalendlySettings((p) => ({
                             ...p,
@@ -2542,10 +2552,10 @@ const GeneralSettingsView = ({
                 </div>
               </div>
 
-              {!hasIrlBookingAddon && (
+              {!hasCalendlyAccess && (
                 <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Enable the IRL Booking add-on to use Calendly, scouting,
-                  client CRM, bookings, and IRL accounting workflows.
+                  Upgrade to Pro and enable the IRL Booking add-on to use
+                  Calendly, scouting, client CRM, bookings, and IRL workflows.
                 </div>
               )}
 
@@ -2571,7 +2581,7 @@ const GeneralSettingsView = ({
                       type="password"
                       placeholder="calendly_v2_..."
                       value={calendlySettings.calendly_api_token}
-                      disabled={!hasIrlBookingAddon}
+                      disabled={!hasCalendlyAccess}
                       onChange={(e) =>
                         setCalendlySettings((p) => ({
                           ...p,
@@ -2593,7 +2603,7 @@ const GeneralSettingsView = ({
                   </p>
                 </div>
 
-                {hasIrlBookingAddon && calendlySettings.is_enabled && (
+                {hasCalendlyAccess && calendlySettings.is_enabled && (
                   <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
                     <div>
                       <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
@@ -2676,7 +2686,7 @@ const GeneralSettingsView = ({
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSaveCalendlySettings}
-                    disabled={isSavingCalendlySettings || !hasIrlBookingAddon}
+                    disabled={isSavingCalendlySettings || !hasCalendlyAccess}
                     className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     {isSavingCalendlySettings ? (

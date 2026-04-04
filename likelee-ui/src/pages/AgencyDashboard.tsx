@@ -136,6 +136,7 @@ import {
   Play,
   Library,
   FolderCheck,
+  Gift,
 } from "lucide-react";
 // ----------- LAZY TAB COMPONENTS -----------
 // Each import is split into its own JS chunk by Vite.
@@ -266,6 +267,7 @@ import {
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
   getAgencyBillingStatus,
+  startAgencyProTrial,
   getAgencyBrandLicenseRequests,
 } from "@/api/functions";
 import * as crmApi from "@/api/crm";
@@ -10478,13 +10480,24 @@ const SocialDiscoveryTab = () => (
   </Card>
 );
 
-const MarketplaceTab = () => (
+const MarketplaceTab = ({
+  connectLocked = false,
+  onConnectLocked,
+}: {
+  connectLocked?: boolean;
+  onConnectLocked?: () => void;
+}) => (
   <MarketplaceSection
     title="Likelee Marketplace"
     subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
     enableAgencyContractConnect
+    connectLocked={connectLocked}
+    connectLockedReason={
+      connectLocked ? "Free agencies need a paid plan to connect." : ""
+    }
+    onConnectLocked={onConnectLocked}
   />
 );
 
@@ -17081,21 +17094,39 @@ export default function AgencyDashboard() {
   }, [agencyPlanTier]);
 
   const [agencyBilling, setAgencyBilling] = useState<any>(null);
+  const [agencyBillingLoading, setAgencyBillingLoading] = useState(true);
+  const [startingAgencyTrial, setStartingAgencyTrial] = useState(false);
   const agencyTrialActive = !!agencyBilling?.trial_active;
   const agencyTrialEndsAt = agencyBilling?.trial_ends_at
     ? String(agencyBilling.trial_ends_at)
     : "";
   const agencyTrialStartAt = agencyBilling?.trial_start_at;
+  const agencyHasPaidAccess =
+    agencyBilling?.has_paid_access ?? agencyPlanTier !== "free";
+  const agencyCanConnectMarketplace =
+    agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
+  const agencyCanUseBrandConnections =
+    agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+  const agencyDisplayPlanLabel =
+    String(agencyBilling?.display_plan_label || "").trim() ||
+    (agencyPlanTier === "free"
+      ? "Free"
+      : `${agencyPlanLabel} ${
+          agencyBilling?.plan_interval === "year" ? "Annual" : "Monthly"
+        }`);
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     const loadBilling = async () => {
       try {
+        setAgencyBillingLoading(true);
         const resp = await getAgencyBillingStatus();
         if (!cancelled) setAgencyBilling(resp);
       } catch {
         // ignore
+      } finally {
+        if (!cancelled) setAgencyBillingLoading(false);
       }
     };
     void loadBilling();
@@ -17124,10 +17155,60 @@ export default function AgencyDashboard() {
     return () => window.clearInterval(id);
   }, [agencyPlanTier, agencyTrialActive, agencyTrialEndsAt]);
 
+  const handleStartAgencyTrial = async () => {
+    if (startingAgencyTrial) return;
+
+    setStartingAgencyTrial(true);
+    try {
+      const resp = await startAgencyProTrial();
+      setAgencyBilling((prev: any) => ({
+        ...(prev || {}),
+        ...(resp || {}),
+        has_paid_access: true,
+        has_pro_access: true,
+        can_connect_marketplace_creators: true,
+        can_use_brand_connections: true,
+      }));
+      await agencyProfileQuery.refetch();
+      toast({
+        title: "Pro trial started",
+        description:
+          "Your agency now has 14 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      if (msg.includes("trial_already_active")) {
+        toast({
+          title: "Trial already active",
+          description: "Your agency already has an active Pro trial.",
+        });
+        await agencyProfileQuery.refetch();
+        return;
+      }
+      if (msg.includes("trial_only_available_for_free_accounts")) {
+        toast({
+          title: "Trial unavailable",
+          description:
+            "The Pro trial is only available while your agency is on the Free plan.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      toast({
+        title: "Could not start trial",
+        description: msg || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setStartingAgencyTrial(false);
+    }
+  };
+
   const hasProAccess =
-    agencyPlanTier === "pro" ||
-    agencyPlanTier === "enterprise" ||
-    agencyTrialActive;
+    agencyBilling?.has_pro_access ??
+    (agencyPlanTier === "pro" ||
+      agencyPlanTier === "enterprise" ||
+      agencyTrialActive);
 
   const irlAddonEntitlement = useMemo(() => {
     const queryValue = (agencyProfileQuery.data as any)
@@ -18234,6 +18315,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18313,6 +18396,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18358,43 +18443,75 @@ export default function AgencyDashboard() {
         className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <div
-          className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+          className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => {
             setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
         >
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
-              {profile?.logo_url ? (
-                <img
-                  src={profile.logo_url}
-                  alt={profile.agency_name || "Agency"}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-indigo-600" />
-                </div>
-              )}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
+                {profile?.logo_url ? (
+                  <img
+                    src={profile.logo_url}
+                    alt={profile.agency_name || "Agency"}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
+                    <Building2 className="w-8 h-8 text-indigo-600" />
+                  </div>
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-          </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-                {profile?.agency_name || "Agency Name"}
-              </h2>
-              {agencyKycStatus === "approved" && (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </Badge>
-              )}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+                  {profile?.agency_name || "Agency Name"}
+                </h2>
+                {agencyKycStatus === "approved" && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 font-medium truncate">
+                {profile?.email || user?.email}
+              </p>
+              <div className="mt-1 flex items-center">
+                {agencyBillingLoading ? (
+                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <Badge
+                    className={`border-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      agencyTrialActive
+                        ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                        : "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
+                    }`}
+                  >
+                    {agencyTrialActive ? "PRO TRIAL" : `${agencyDisplayPlanLabel} PLAN`}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-gray-500 font-medium truncate">
-              {profile?.email || user?.email}
-            </p>
           </div>
+
+          {!agencyBillingLoading && !agencyTrialActive && !agencyTrialStartAt && agencyPlanTier === "free" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/AgencySubscribe");
+              }}
+              className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
+              title="Activate 14-Day Free Trial"
+            >
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+              <Gift className="w-5 h-5 text-white" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
@@ -18764,7 +18881,7 @@ export default function AgencyDashboard() {
                           {profile?.agency_name || "Agency Name"}
                         </h3>
                         <p className="text-xs text-gray-500 truncate">
-                          Agency Account
+                          {agencyDisplayPlanLabel}
                         </p>
                       </div>
                     </div>
@@ -18825,7 +18942,7 @@ export default function AgencyDashboard() {
                           Billing & Subscription
                         </p>
                         <p className="text-xs text-gray-500">
-                          Agency {agencyPlanLabel} Plan
+                          {agencyDisplayPlanLabel}
                         </p>
                       </div>
                     </button>
@@ -19017,6 +19134,18 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
+          <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-lg font-black text-gray-900">
+                  Welcome to your agency dashboard
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  This is your main hub for managing your agency.
+                </div>
+              </div>
+            </div>
+          </div>
           <Suspense fallback={<TabSkeleton />}>
             {activeTab === "dashboard" && (
               <AgencyDashboardView
@@ -19088,8 +19217,48 @@ export default function AgencyDashboard() {
                 />
               )}
             {activeTab === "licensing" &&
-              activeSubTab === "Brand Connections" && <BrandConnectionsView />}
-            {activeTab === "brand-connections" && <BrandConnectionsView />}
+              activeSubTab === "Brand Connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "brand-connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "licensing" &&
               activeSubTab === "License Submissions" && (
                 <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
@@ -19243,7 +19412,10 @@ export default function AgencyDashboard() {
             )}
             {activeTab === "settings" &&
               activeSubTab === "General Settings" && (
-                <GeneralSettingsView hasIrlBookingAddon={hasIrlBookingAddon} />
+                <GeneralSettingsView
+                  hasIrlBookingAddon={hasIrlBookingAddon}
+                  hasProAccess={hasProAccess}
+                />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (
               <FileStorageView />
@@ -19265,7 +19437,12 @@ export default function AgencyDashboard() {
                 setProspectToEdit={setProspectToEdit}
               />
             )}
-            {activeTab === "marketplace" && <MarketplaceTab />}
+            {activeTab === "marketplace" && (
+              <MarketplaceTab
+                connectLocked={!agencyCanConnectMarketplace}
+                onConnectLocked={() => navigate("/agencysubscribe")}
+              />
+            )}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (

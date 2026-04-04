@@ -15,3 +15,5 @@ WHERE trial_ends_at IS NULL
 -- Set default for new agency rows so they automatically get a 14-day trial on INSERT.
 ALTER TABLE public.agencies
   ALTER COLUMN trial_ends_at SET DEFAULT (now() + INTERVAL '14 days');
+ALTER TABLE public.agencies
+  ALTER COLUMN trial_ends_at DROP DEFAULT;

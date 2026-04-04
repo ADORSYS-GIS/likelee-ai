@@ -205,6 +205,8 @@ pub async fn create_checkout_session_legacy(
 pub struct AgencyCheckoutAddons {
     #[serde(default)]
     pub irl_booking: bool,
+    #[serde(default)]
+    pub seats_in_plan: bool,
 
     // Optional quantities (0/None means disabled)
     pub deepfake_protection_models: Option<u32>,
@@ -217,12 +219,25 @@ pub struct AgencyCheckoutRequest {
     pub roster_models: u32,
     pub interval: Option<String>,
     #[serde(default)]
+    pub start_trial: bool,
+    #[serde(default)]
+    pub agreement_accepted: bool,
+    #[serde(default)]
     pub addons: AgencyCheckoutAddons,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgencySeatAddonRequest {
+    pub seats: u32,
+    pub plan: Option<String>,
+    pub interval: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct AgencyCheckoutResponse {
     pub checkout_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seats_limit: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -243,6 +258,18 @@ pub struct AgencyPlanChangeResponse {
     pub plan_tier: String,
     pub seats_limit: i64,
     pub addon_irl_booking_enabled: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencySeatAddonChangeResponse {
+    pub seats_limit: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencyTrialStartResponse {
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+    pub display_plan_label: String,
 }
 
 const AGENCY_MIN_SELF_SERVE_ROSTER_MODELS: u32 = 2;
@@ -298,6 +325,16 @@ fn agency_plan_price_ids<'a>(
     }
 }
 
+fn agency_seat_price_id<'a>(
+    state: &'a AppState,
+    plan: &str,
+    interval: Option<&str>,
+) -> Option<(&'a str, &'static str)> {
+    let (_, _, headcount_price_id, _, headcount_env_var) =
+        agency_plan_price_ids(state, plan, interval)?;
+    Some((headcount_price_id, headcount_env_var))
+}
+
 fn recurring_price_line_item(
     price_id: &str,
     quantity: u32,
@@ -325,7 +362,7 @@ fn agency_base_price_id_matches(state: &AppState, price_id: &str) -> bool {
         .any(|candidate| candidate == price_id)
 }
 
-fn agency_headcount_price_id_matches(state: &AppState, price_id: &str) -> bool {
+pub(crate) fn agency_headcount_price_id_matches(state: &AppState, price_id: &str) -> bool {
     let price_id = price_id.trim();
     !price_id.is_empty()
         && [
@@ -466,6 +503,64 @@ async fn agency_roster_count(
     Ok(legacy_rows.len() as u32)
 }
 
+async fn list_customer_subscriptions_for_billing(
+    state: &AppState,
+    customer_id: &str,
+) -> Result<Vec<stripe_sdk::Subscription>, (StatusCode, String)> {
+    let parsed_customer_id = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let params = stripe_sdk::ListSubscriptions {
+        customer: Some(parsed_customer_id),
+        status: Some(stripe_sdk::SubscriptionStatusFilter::All),
+        ..Default::default()
+    };
+
+    stripe_sdk::Subscription::list(&client, &params)
+        .await
+        .map(|list| list.data)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))
+}
+
+fn find_active_seat_addon_subscription<'a>(
+    state: &AppState,
+    subscriptions: &'a [stripe_sdk::Subscription],
+    agency_id: &str,
+) -> Option<&'a stripe_sdk::Subscription> {
+    subscriptions.iter().find(|sub| {
+        let belongs_to_agency = sub
+            .metadata
+            .get("agency_id")
+            .map(|value| value.trim() == agency_id)
+            .unwrap_or(false);
+        if !belongs_to_agency || !crate::payouts::stripe_subscription_is_active(sub) {
+            return false;
+        }
+
+        let is_seat_addon = sub
+            .metadata
+            .get("subscription_kind")
+            .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+            .unwrap_or(false);
+        if is_seat_addon {
+            return true;
+        }
+
+        sub.items.data.iter().any(|item| {
+            item.price
+                .as_ref()
+                .map(|price| price.id.to_string())
+                .map(|price_id| agency_headcount_price_id_matches(state, price_id.as_str()))
+                .unwrap_or(false)
+        })
+    })
+}
+
 struct AgencyBillingContext {
     agency_name: String,
     customer_id: String,
@@ -598,7 +693,7 @@ pub async fn create_agency_subscription_checkout(
             format!("stripe_price_not_configured:{base_plan_env_var}"),
         ));
     }
-    if headcount_price_id.trim().is_empty() {
+    if payload.addons.seats_in_plan && headcount_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             format!("stripe_price_not_configured:{headcount_env_var}"),
@@ -637,6 +732,7 @@ pub async fn create_agency_subscription_checkout(
     }
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
     let is_annual = payload.interval.as_deref().unwrap_or("month").eq_ignore_ascii_case("year");
     let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
         (
@@ -675,8 +771,13 @@ pub async fn create_agency_subscription_checkout(
 
     let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> = vec![
         recurring_price_line_item(base_plan_price_id, 1),
-        recurring_price_line_item(headcount_price_id, payload.roster_models),
     ];
+    if payload.addons.seats_in_plan {
+        line_items.push(recurring_price_line_item(
+            headcount_price_id,
+            payload.roster_models,
+        ));
+    }
     if include_irl_booking {
         line_items.push(recurring_price_line_item(
             irl_booking_price_id,
@@ -698,9 +799,14 @@ pub async fn create_agency_subscription_checkout(
         if is_annual { "year" } else { "month" }.to_string(),
     );
     md.insert(
-        "roster_models".to_string(),
-        payload.roster_models.to_string(),
+        "seats_in_plan".to_string(),
+        if payload.addons.seats_in_plan {
+            "1".to_string()
+        } else {
+            "0".to_string()
+        },
     );
+    md.insert("roster_models".to_string(), payload.roster_models.to_string());
     md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -709,6 +815,25 @@ pub async fn create_agency_subscription_checkout(
             "0".to_string()
         },
     );
+    if payload.start_trial {
+        if access.has_paid_access() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "trial_only_available_for_free_accounts".to_string(),
+            ));
+        }
+        if !payload.agreement_accepted {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "trial_agreement_required".to_string(),
+            ));
+        }
+        md.insert("trial_started_from_checkout".to_string(), "1".to_string());
+        md.insert(
+            "trial_agreement_accepted_at".to_string(),
+            chrono::Utc::now().to_rfc3339(),
+        );
+    }
     cs_params.metadata = Some(md);
 
     // Propagate agency_id onto the Subscription itself so subscription.* webhooks can be correlated.
@@ -722,9 +847,14 @@ pub async fn create_agency_subscription_checkout(
         if is_annual { "year" } else { "month" }.to_string(),
     );
     sub_md.insert(
-        "roster_models".to_string(),
-        payload.roster_models.to_string(),
+        "seats_in_plan".to_string(),
+        if payload.addons.seats_in_plan {
+            "1".to_string()
+        } else {
+            "0".to_string()
+        },
     );
+    sub_md.insert("roster_models".to_string(), payload.roster_models.to_string());
     sub_md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -733,6 +863,13 @@ pub async fn create_agency_subscription_checkout(
             "0".to_string()
         },
     );
+    if payload.start_trial {
+        sub_md.insert("trial_started_from_checkout".to_string(), "1".to_string());
+        sub_md.insert(
+            "trial_agreement_accepted_at".to_string(),
+            chrono::Utc::now().to_rfc3339(),
+        );
+    }
     let deepfake_models = payload.addons.deepfake_protection_models.unwrap_or(0);
     let team_members = payload.addons.additional_team_members.unwrap_or(0);
     // Preserve upcoming add-on quantities for telemetry/debugging while those products remain non-billable.
@@ -746,6 +883,7 @@ pub async fn create_agency_subscription_checkout(
         sub_md.insert("addon_team_members".to_string(), team_members.to_string());
     }
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        trial_period_days: if payload.start_trial { Some(14) } else { None },
         metadata: Some(sub_md),
         ..Default::default()
     });
@@ -768,7 +906,10 @@ pub async fn create_agency_subscription_checkout(
     }
 
     info!(agency_id = %user.id, plan = %normalized_plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
-    Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+    }))
 }
 
 pub async fn change_agency_subscription_plan(
@@ -808,7 +949,7 @@ pub async fn change_agency_subscription_plan(
             format!("stripe_price_not_configured:{base_plan_env_var}"),
         ));
     }
-    if headcount_price_id.trim().is_empty() {
+    if payload.addons.seats_in_plan && headcount_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             format!("stripe_price_not_configured:{headcount_env_var}"),
@@ -927,7 +1068,7 @@ pub async fn change_agency_subscription_plan(
     }
 
     let mut base_item_id: Option<String> = None;
-    let mut headcount_item_id: Option<String> = None;
+    let mut seat_item_id: Option<String> = None;
     let mut irl_item_id: Option<String> = None;
     let mut update_items: Vec<stripe_sdk::UpdateSubscriptionItems> = Vec::new();
 
@@ -944,7 +1085,7 @@ pub async fn change_agency_subscription_plan(
             continue;
         }
         if agency_headcount_price_id_matches(&state, &price_id) {
-            headcount_item_id = Some(item_id);
+            seat_item_id = Some(item_id);
             continue;
         }
         if agency_irl_booking_price_id_matches(&state, &price_id) {
@@ -966,13 +1107,20 @@ pub async fn change_agency_subscription_plan(
         quantity: Some(1),
         ..Default::default()
     });
-    update_items.push(stripe_sdk::UpdateSubscriptionItems {
-        id: headcount_item_id,
-        price: Some(headcount_price_id.to_string()),
-        quantity: Some(u64::from(payload.roster_models)),
-        ..Default::default()
-    });
-
+    if payload.addons.seats_in_plan {
+        update_items.push(stripe_sdk::UpdateSubscriptionItems {
+            id: seat_item_id,
+            price: Some(headcount_price_id.to_string()),
+            quantity: Some(u64::from(payload.roster_models)),
+            ..Default::default()
+        });
+    } else if let Some(existing_seat_item_id) = seat_item_id {
+        update_items.push(stripe_sdk::UpdateSubscriptionItems {
+            id: Some(existing_seat_item_id),
+            deleted: Some(true),
+            ..Default::default()
+        });
+    }
     if include_irl_booking {
         update_items.push(stripe_sdk::UpdateSubscriptionItems {
             id: irl_item_id,
@@ -997,9 +1145,14 @@ pub async fn change_agency_subscription_plan(
         if is_annual { "year" } else { "month" }.to_string(),
     );
     md.insert(
-        "roster_models".to_string(),
-        payload.roster_models.to_string(),
+        "seats_in_plan".to_string(),
+        if payload.addons.seats_in_plan {
+            "1".to_string()
+        } else {
+            "0".to_string()
+        },
     );
+    md.insert("roster_models".to_string(), payload.roster_models.to_string());
     md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -1042,6 +1195,302 @@ pub async fn change_agency_subscription_plan(
         plan_tier: latest_state.plan_tier,
         seats_limit: latest_state.seats_limit,
         addon_irl_booking_enabled: latest_state.addon_irl_booking_enabled,
+    }))
+}
+
+pub async fn create_or_update_agency_seat_addon(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<AgencySeatAddonRequest>,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if payload.seats < AGENCY_MIN_SELF_SERVE_ROSTER_MODELS {
+        return Err((StatusCode::BAD_REQUEST, "invalid_roster_models".to_string()));
+    }
+
+    let roster_count = agency_roster_count(&state, &user.id).await?;
+    if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("enterprise_contact_sales_roster_limit:{roster_count}"),
+        ));
+    }
+    if payload.seats > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("enterprise_contact_sales_roster_limit:{}", payload.seats),
+        ));
+    }
+    if payload.seats < roster_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("roster_models_below_current_roster:{roster_count}"),
+        ));
+    }
+
+    if state.stripe_checkout_success_url.trim().is_empty()
+        || state.stripe_checkout_cancel_url.trim().is_empty()
+    {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_checkout_urls_not_configured".to_string(),
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let agency_resp = state
+        .pg
+        .from("agencies")
+        .select("plan_tier,plan_interval")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_status = agency_resp.status();
+    let agency_text = agency_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !agency_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
+    let row = rows.first().cloned().unwrap_or_else(|| json!({}));
+    let current_plan_tier = row
+        .get("plan_tier")
+        .and_then(|value| value.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let current_plan_interval = row
+        .get("plan_interval")
+        .and_then(|value| value.as_str())
+        .unwrap_or("month")
+        .trim()
+        .to_lowercase();
+
+    let effective_plan = payload
+        .plan
+        .as_deref()
+        .map(|value| value.trim().to_lowercase())
+        .filter(|value| value == "basic" || value == "pro")
+        .unwrap_or_else(|| {
+            if current_plan_tier == "pro" {
+                "pro".to_string()
+            } else {
+                "basic".to_string()
+            }
+        });
+    let effective_interval = payload
+        .interval
+        .as_deref()
+        .map(|value| value.trim().to_lowercase())
+        .filter(|value| value == "month" || value == "year")
+        .unwrap_or(current_plan_interval.clone());
+    let (seat_price_id, seat_env_var) =
+        agency_seat_price_id(&state, effective_plan.as_str(), Some(effective_interval.as_str()))
+            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    if seat_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_price_not_configured:{seat_env_var}"),
+        ));
+    }
+
+    let subscriptions =
+        list_customer_subscriptions_for_billing(&state, billing_ctx.customer_id.as_str()).await?;
+
+    if let Some(existing_sub) =
+        find_active_seat_addon_subscription(&state, &subscriptions, user.id.as_str())
+    {
+        let mut update_items: Vec<stripe_sdk::UpdateSubscriptionItems> = Vec::new();
+        let mut seat_item_id: Option<String> = None;
+        for item in existing_sub.items.data.iter() {
+            let price_id = item
+                .price
+                .as_ref()
+                .map(|price| price.id.to_string())
+                .unwrap_or_default();
+            if agency_headcount_price_id_matches(&state, price_id.as_str()) {
+                seat_item_id = Some(item.id.to_string());
+                continue;
+            }
+            update_items.push(stripe_sdk::UpdateSubscriptionItems {
+                id: Some(item.id.to_string()),
+                price: Some(price_id),
+                quantity: item.quantity,
+                ..Default::default()
+            });
+        }
+
+        update_items.push(stripe_sdk::UpdateSubscriptionItems {
+            id: seat_item_id,
+            price: Some(seat_price_id.to_string()),
+            quantity: Some(u64::from(payload.seats)),
+            ..Default::default()
+        });
+
+        let mut md = existing_sub.metadata.clone();
+        md.insert("agency_id".to_string(), user.id.clone());
+        md.insert("billing_domain".to_string(), "agency".to_string());
+        md.insert("subscription_kind".to_string(), "seat_addon".to_string());
+        md.insert("plan".to_string(), effective_plan.clone());
+        md.insert("billing_interval".to_string(), effective_interval.clone());
+        md.insert("roster_models".to_string(), payload.seats.to_string());
+
+        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+        let parsed_subscription_id = existing_sub
+            .id
+            .to_string()
+            .parse::<stripe_sdk::SubscriptionId>()
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "invalid_subscription_id".to_string(),
+                )
+            })?;
+        let mut params = stripe_sdk::UpdateSubscription::new();
+        params.items = Some(update_items);
+        params.cancel_at_period_end = Some(false);
+        params.payment_behavior =
+            Some(stripe_sdk::SubscriptionPaymentBehavior::AllowIncomplete);
+        params.proration_behavior = Some(
+            stripe_sdk::generated::billing::subscription::SubscriptionProrationBehavior::AlwaysInvoice,
+        );
+        params.metadata = Some(md);
+
+        stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+        crate::payouts::sync_agency_subscription_from_stripe(
+            &state,
+            &user.id,
+            existing_sub.id.as_str(),
+            Some(billing_ctx.customer_id.as_str()),
+        )
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+
+        let latest_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: String::new(),
+            seats_limit: Some(latest_state.seats_limit),
+        }));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    let success_url = agency_checkout_success_url(state.stripe_checkout_success_url.as_str());
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.line_items = Some(vec![recurring_price_line_item(
+        seat_price_id,
+        payload.seats,
+    )]);
+    cs_params.client_reference_id = Some(user.id.as_str());
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "agency".to_string());
+    md.insert("subscription_kind".to_string(), "seat_addon".to_string());
+    md.insert("plan".to_string(), effective_plan.clone());
+    md.insert("billing_interval".to_string(), effective_interval.clone());
+    md.insert("roster_models".to_string(), payload.seats.to_string());
+    cs_params.metadata = Some(md.clone());
+
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(md),
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|value| value.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+    }))
+}
+
+pub async fn start_agency_pro_trial(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
+    if access.trial_active {
+        return Err((StatusCode::CONFLICT, "trial_already_active".to_string()));
+    }
+    if access.billed_tier != crate::entitlements::PlanTier::Free {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "trial_only_available_for_free_accounts".to_string(),
+        ));
+    }
+
+    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(14);
+    let update = json!({
+        "trial_ends_at": trial_ends_at.to_rfc3339(),
+        "plan_updated_at": chrono::Utc::now().to_rfc3339(),
+        "plan_interval": "month"
+    });
+
+    let resp = state
+        .pg
+        .from("agencies")
+        .eq("id", &user.id)
+        .update(update.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(AgencyTrialStartResponse {
+        trial_active: true,
+        trial_ends_at: Some(trial_ends_at.to_rfc3339()),
+        display_plan_label: "Trial".to_string(),
     }))
 }
 
@@ -1145,7 +1594,10 @@ pub async fn create_agency_irl_booking_addon_checkout(
         agency_name = %billing_ctx.agency_name,
         "created stripe IRL booking addon checkout session"
     );
-    Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+    }))
 }
 
 pub async fn sync_agency_checkout_session(
@@ -1709,10 +2161,18 @@ pub async fn create_campaign_offer_checkout(
 pub struct AgencyBillingStatusResponse {
     pub agency_id: String,
     pub plan_tier: String,
+    pub effective_plan_tier: String,
+    pub display_plan_label: String,
     pub trial_start_at: Option<String>,
     pub trial_active: bool,
     pub trial_ends_at: Option<String>,
     pub subscription_status: String,
+    pub has_paid_access: bool,
+    pub has_pro_access: bool,
+    pub can_apply_for_jobs: bool,
+    pub can_connect_marketplace_creators: bool,
+    pub can_use_brand_connections: bool,
+    pub can_use_calendly: bool,
     pub stripe_customer_id: Option<String>,
     pub stripe_subscription_id: Option<String>,
     pub plan_updated_at: Option<String>,
@@ -1730,6 +2190,7 @@ pub async fn get_agency_billing_status(
     }
 
     let agency_id = user.id.clone();
+    let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
 
     let resp = state
         .pg
@@ -1777,55 +2238,42 @@ pub async fn get_agency_billing_status(
         .unwrap_or("free")
         .to_string();
 
-    let billed_tier = crate::entitlements::PlanTier::from_db(&plan_tier_str);
-
-    // Use trial_ends_at from DB if present; fall back to created_at + 14 days for legacy rows
-    let trial_ends_at_dt: Option<DateTime<Utc>> =
-        if let Some(s) = row.get("trial_ends_at").and_then(|v| v.as_str()) {
-            parse_db_date(s)
-        } else {
-            row.get("created_at")
-                .and_then(|v| v.as_str())
-                .and_then(parse_db_date)
-                .map(|dt| dt + chrono::Duration::days(14))
-        };
-
-    // Trial is only relevant when not on a paid plan
-    let trial_ends_at_active = if billed_tier == crate::entitlements::PlanTier::Free {
-        trial_ends_at_dt
-    } else {
-        None
-    };
-
     let trial_start_at = row
         .get("created_at")
         .and_then(|v| v.as_str())
         .and_then(parse_db_date);
 
-    let trial_active = trial_ends_at_active
-        .map(|dt| dt > Utc::now())
-        .unwrap_or(false);
+    let trial_ends_at_str = access.trial_ends_at.map(|dt| dt.to_rfc3339());
 
-    let trial_ends_at_str = trial_ends_at_active.map(|dt| dt.to_rfc3339());
-
-    let subscription_status = if matches!(
-        billed_tier,
-        crate::entitlements::PlanTier::Basic
-            | crate::entitlements::PlanTier::Pro
-            | crate::entitlements::PlanTier::Enterprise
-    ) {
+    let subscription_status = if access.has_paid_access() {
         "active".to_string()
     } else {
         "inactive".to_string()
     };
 
+    let effective_plan_tier = match access.effective_tier {
+        crate::entitlements::PlanTier::Enterprise => "enterprise",
+        crate::entitlements::PlanTier::Pro => "pro",
+        crate::entitlements::PlanTier::Basic => "basic",
+        crate::entitlements::PlanTier::Free => "free",
+    }
+    .to_string();
+
     Ok(Json(AgencyBillingStatusResponse {
         agency_id,
         plan_tier: plan_tier_str,
+        effective_plan_tier,
+        display_plan_label: access.display_plan_label(),
         trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
-        trial_active,
+        trial_active: access.trial_active,
         trial_ends_at: trial_ends_at_str,
         subscription_status,
+        has_paid_access: access.has_paid_access(),
+        has_pro_access: access.has_pro_access(),
+        can_apply_for_jobs: access.has_paid_access(),
+        can_connect_marketplace_creators: access.has_paid_access(),
+        can_use_brand_connections: access.has_paid_access(),
+        can_use_calendly: access.has_pro_access() && access.addon_irl_booking_enabled,
         stripe_customer_id: row
             .get("stripe_customer_id")
             .and_then(|v| v.as_str())
@@ -1906,6 +2354,7 @@ pub async fn create_agency_billing_portal(
     match stripe_sdk::BillingPortalSession::create(&client, params).await {
         Ok(session) => Ok(Json(AgencyCheckoutResponse {
             checkout_url: session.url,
+            seats_limit: None,
         })),
         Err(e) => {
             warn!(error = %e, agency_id = %agency_id, "failed to create stripe billing portal session");
