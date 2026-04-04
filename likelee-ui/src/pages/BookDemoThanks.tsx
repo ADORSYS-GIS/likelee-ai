@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 import {
   DemoBookingContext,
-  extractDemoBookingContext,
   readDemoBookingContextFromSearch,
   readStoredDemoBookingContext,
 } from "@/utils/bookDemo";
@@ -29,12 +28,10 @@ function mergeBookingContext(
   searchContext: DemoBookingContext | null,
   stateContext: DemoBookingContext | null,
   storedContext: DemoBookingContext | null,
-  payloadContext: DemoBookingContext | null,
 ) {
   return {
     ...(storedContext || {}),
     ...(stateContext || {}),
-    ...(payloadContext || {}),
     ...(searchContext || {}),
   };
 }
@@ -46,15 +43,6 @@ export default function BookDemoThanks() {
 
   const bookingContext = useMemo(() => {
     const searchContext = readDemoBookingContextFromSearch(searchParams);
-    const payloadContext =
-      location.state &&
-      typeof location.state === "object" &&
-      "calendlyPayload" in location.state
-        ? extractDemoBookingContext(
-            searchParams.get("source")?.trim() || undefined,
-            (location.state as any).calendlyPayload,
-          )
-        : null;
     const stateContext =
       location.state &&
       typeof location.state === "object" &&
@@ -63,12 +51,7 @@ export default function BookDemoThanks() {
         : null;
     const storedContext = readStoredDemoBookingContext();
 
-    return mergeBookingContext(
-      searchContext,
-      stateContext,
-      storedContext,
-      payloadContext,
-    );
+    return mergeBookingContext(searchContext, stateContext, storedContext);
   }, [location.state, searchParams]);
 
   const formattedStartTime = formatEventDate(bookingContext.eventStartTime);
