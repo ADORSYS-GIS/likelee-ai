@@ -265,7 +265,11 @@ fn billing_error_msg(status: StatusCode, code: &str, message: String) -> (Status
 }
 
 fn map_postgrest_transport_error(e: impl std::fmt::Display) -> (StatusCode, String) {
-    billing_error_msg(StatusCode::INTERNAL_SERVER_ERROR, "database_error", e.to_string())
+    billing_error_msg(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "database_error",
+        e.to_string(),
+    )
 }
 
 fn normalize_interval(value: Option<&str>) -> Result<String, (StatusCode, String)> {
@@ -308,7 +312,9 @@ fn normalize_self_serve_plan(value: &str) -> Result<String, (StatusCode, String)
     }
 }
 
-fn normalize_optional_self_serve_plan(value: Option<&str>) -> Result<Option<String>, (StatusCode, String)> {
+fn normalize_optional_self_serve_plan(
+    value: Option<&str>,
+) -> Result<Option<String>, (StatusCode, String)> {
     match value {
         None => Ok(None),
         Some(v) => Ok(Some(normalize_self_serve_plan(v)?)),
@@ -559,7 +565,10 @@ async fn agency_roster_count(
         .await
         .map_err(map_postgrest_transport_error)?;
     if !rel_status.is_success() {
-        return Err(crate::errors::sanitize_db_error(rel_status.as_u16(), rel_text));
+        return Err(crate::errors::sanitize_db_error(
+            rel_status.as_u16(),
+            rel_text,
+        ));
     }
     let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
     if !rel_rows.is_empty() {
@@ -723,7 +732,9 @@ async fn get_or_create_agency_billing_context(
 
         let cust = stripe_sdk::Customer::create(&client, params)
             .await
-            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+            .map_err(|e| {
+                billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string())
+            })?;
 
         let cust_id = cust.id.to_string();
 
@@ -778,8 +789,9 @@ pub async fn create_agency_subscription_checkout(
     let interval = normalize_interval(payload.interval.as_deref())?;
 
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
-        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str()))
-            .ok_or_else(|| billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."))?;
+        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str())).ok_or_else(
+            || billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."),
+        )?;
     if base_plan_price_id.trim().is_empty() {
         return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
@@ -1017,7 +1029,9 @@ pub async fn create_agency_subscription_checkout(
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_interval, normalize_optional_self_serve_plan, normalize_self_serve_plan};
+    use super::{
+        normalize_interval, normalize_optional_self_serve_plan, normalize_self_serve_plan,
+    };
 
     #[test]
     fn normalize_interval_defaults_to_month() {
@@ -1036,7 +1050,7 @@ mod tests {
     #[test]
     fn normalize_interval_rejects_other_values() {
         assert!(normalize_interval(Some("weekly")).is_err());
-        assert!(normalize_interval(Some("")) .is_err());
+        assert!(normalize_interval(Some("")).is_err());
     }
 
     #[test]
@@ -1096,8 +1110,9 @@ pub async fn change_agency_subscription_plan(
     let interval = normalize_interval(payload.interval.as_deref())?;
 
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
-        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str()))
-            .ok_or_else(|| billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."))?;
+        agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str())).ok_or_else(
+            || billing_error(StatusCode::BAD_REQUEST, "invalid_plan", "Invalid plan."),
+        )?;
     if base_plan_price_id.trim().is_empty() {
         return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
@@ -1560,7 +1575,9 @@ pub async fn create_or_update_agency_seat_addon(
 
         stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
             .await
-            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+            .map_err(|e| {
+                billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string())
+            })?;
 
         crate::payouts::sync_agency_subscription_from_stripe(
             &state,
@@ -1685,10 +1702,7 @@ pub async fn start_agency_pro_trial(
         .await
         .map_err(map_postgrest_transport_error)?;
     let status = resp.status();
-    let text = resp
-        .text()
-        .await
-        .map_err(map_postgrest_transport_error)?;
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
@@ -2052,22 +2066,13 @@ pub async fn create_campaign_offer_checkout(
     let offer_status = offer_resp.status();
     if !offer_status.is_success() {
         let err = offer_resp.text().await.unwrap_or_default();
-        return Err(crate::errors::sanitize_db_error(
-            offer_status.as_u16(),
-            err,
-        ));
+        return Err(crate::errors::sanitize_db_error(offer_status.as_u16(), err));
     }
     let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
     let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
-    let offer = offer_rows
-        .first()
-        .ok_or_else(|| {
-            billing_error(
-                StatusCode::NOT_FOUND,
-                "offer_not_found",
-                "Offer not found.",
-            )
-        })?;
+    let offer = offer_rows.first().ok_or_else(|| {
+        billing_error(StatusCode::NOT_FOUND, "offer_not_found", "Offer not found.")
+    })?;
 
     let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
     if offer_status != "contract_fully_signed" {
@@ -2468,10 +2473,7 @@ pub async fn get_agency_billing_status(
         .map_err(map_postgrest_transport_error)?;
 
     let status = resp.status();
-    let text = resp
-        .text()
-        .await
-        .map_err(map_postgrest_transport_error)?;
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
