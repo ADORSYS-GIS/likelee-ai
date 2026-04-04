@@ -4124,25 +4124,25 @@ export default function CreatorDashboard() {
             <div className="relative flex justify-between items-start mb-6">
               <div className="flex items-end -mt-16 mb-4">
                 <div className="relative">
-                <div
-                  className="relative cursor-zoom-in hover:scale-105 transition-transform"
-                  onClick={() => setShowPhotoFull(true)}
-                >
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={
-                        profile?.profile_photo_url ||
-                        creator.profile_photo ||
-                        user?.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name && data.first_name[0] !== "["
-                        ? data.first_name[0].toUpperCase()
-                        : user?.email?.[0].toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                  <div
+                    className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                    onClick={() => setShowPhotoFull(true)}
+                  >
+                    <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                      <AvatarImage
+                        src={
+                          profile?.profile_photo_url ||
+                          creator.profile_photo ||
+                          user?.user_metadata?.avatar_url
+                        }
+                      />
+                      <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                        {data.first_name && data.first_name[0] !== "["
+                          ? data.first_name[0].toUpperCase()
+                          : user?.email?.[0].toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
                 <div className="ml-6 mb-2">
                   <div className="flex items-center gap-3 mb-1">
