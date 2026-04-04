@@ -18491,27 +18491,32 @@ export default function AgencyDashboard() {
                         : "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
                     }`}
                   >
-                    {agencyTrialActive ? "PRO TRIAL" : `${agencyDisplayPlanLabel} PLAN`}
+                    {agencyTrialActive
+                      ? "PRO TRIAL"
+                      : `${agencyDisplayPlanLabel} PLAN`}
                   </Badge>
                 )}
               </div>
             </div>
           </div>
 
-          {!agencyBillingLoading && !agencyTrialActive && !agencyTrialStartAt && agencyPlanTier === "free" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate("/AgencySubscribe");
-              }}
-              className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
-              title="Activate 14-Day Free Trial"
-            >
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-              <Gift className="w-5 h-5 text-white" />
-            </button>
-          )}
+          {!agencyBillingLoading &&
+            !agencyTrialActive &&
+            !agencyTrialStartAt &&
+            agencyPlanTier === "free" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/AgencySubscribe");
+                }}
+                className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
+                title="Activate 14-Day Free Trial"
+              >
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+                <Gift className="w-5 h-5 text-white" />
+              </button>
+            )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">

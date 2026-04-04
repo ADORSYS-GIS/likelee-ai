@@ -186,7 +186,9 @@ export default function AgencySubscribe() {
       try {
         const resp = (await getAgencyProfile()) as any;
         const tier = resp?.plan_tier || "free";
-        const trialEndsAt = resp?.trial_ends_at ? String(resp.trial_ends_at) : null;
+        const trialEndsAt = resp?.trial_ends_at
+          ? String(resp.trial_ends_at)
+          : null;
         const seats = Math.max(
           MIN_ROSTER_MODELS,
           Number(resp?.seats_limit || DEFAULT_ROSTER_MODELS),
@@ -659,13 +661,15 @@ export default function AgencySubscribe() {
       currentPlanTier === targetPlan &&
       currentPlanInterval === "year" &&
       billingInterval === "month"
-    ) return true;
+    )
+      return true;
     // Disable: already on this exact plan
     if (
       currentPlanTier === targetPlan &&
       currentPlanInterval === billingInterval &&
       !(includeSeatsInPlan && seatCountChanged)
-    ) return true;
+    )
+      return true;
     return false;
   };
 
@@ -679,7 +683,11 @@ export default function AgencySubscribe() {
     const isCurrentTier = currentPlanTier === targetPlan;
     const isCurrentInterval = currentPlanInterval === billingInterval;
 
-    if (isCurrentTier && isCurrentInterval && !(includeSeatsInPlan && seatCountChanged)) {
+    if (
+      isCurrentTier &&
+      isCurrentInterval &&
+      !(includeSeatsInPlan && seatCountChanged)
+    ) {
       return "Current Plan";
     }
     if (currentPlanTier === "free" || currentPlanTier === null) {
@@ -689,7 +697,9 @@ export default function AgencySubscribe() {
       return "Upgrade to Pro";
     }
     if (isCurrentTier && !isCurrentInterval) {
-      return billingInterval === "year" ? "Switch to Annual" : "Switch to Monthly";
+      return billingInterval === "year"
+        ? "Switch to Annual"
+        : "Switch to Monthly";
     }
     return "Select Plan";
   };
@@ -723,7 +733,8 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) return "Agency account required";
     if (isDowngradeSelection || alreadySubscribedToPlan) return "Current Plan";
     if (checkingOut) return "Processing...";
-    if (currentPlanTier === "free" || currentPlanTier === null) return "Get Started";
+    if (currentPlanTier === "free" || currentPlanTier === null)
+      return "Get Started";
     if (includeSeatsInPlan && seatCountChanged) return "Update Plan";
     return "Upgrade Plan";
   })();
@@ -898,58 +909,68 @@ export default function AgencySubscribe() {
           </div>
         </div>
 
-        {currentPlanTier === "free" && currentTrialEndsAt === null && !success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="mt-10 overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-r from-[#0F172A] via-[#102A43] to-[#0B9DA2] text-white shadow-[0_24px_80px_rgba(11,157,162,0.16)]"
-          >
-            <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  animate={{ y: [0, -5, 0], rotate: [0, -4, 4, 0] }}
-                  transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur"
-                >
-                  <Gift className="h-7 w-7 text-[#9FF5D6]" />
-                </motion.div>
-                <div className="max-w-3xl">
-                  <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#C8FFF0]">
-                    Optional Pro Trial
+        {currentPlanTier === "free" &&
+          currentTrialEndsAt === null &&
+          !success && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="mt-10 overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-r from-[#0F172A] via-[#102A43] to-[#0B9DA2] text-white shadow-[0_24px_80px_rgba(11,157,162,0.16)]"
+            >
+              <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start gap-4">
+                  <motion.div
+                    animate={{ y: [0, -5, 0], rotate: [0, -4, 4, 0] }}
+                    transition={{
+                      duration: 3.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur"
+                  >
+                    <Gift className="h-7 w-7 text-[#9FF5D6]" />
+                  </motion.div>
+                  <div className="max-w-3xl">
+                    <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#C8FFF0]">
+                      Optional Pro Trial
+                    </div>
+                    <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
+                      Start a 14-day Pro trial only when you are ready
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
+                      Your agency stays on the Free plan by default. If you want
+                      full Pro access, start the trial from here and move into a
+                      Pro setup flow only when you choose it.
+                    </p>
                   </div>
-                  <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
-                    Start a 14-day Pro trial only when you are ready
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
-                    Your agency stays on the Free plan by default. If you want full Pro access, start the trial from here and move into a Pro setup flow only when you choose it.
-                  </p>
+                </div>
+                <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C8FFF0]">
+                    Trial Offer
+                  </div>
+                  <div className="mt-3 space-y-2 text-sm text-white/85">
+                    <div>14 days of Pro access</div>
+                    <div>Instant access with no payment step</div>
+                    <div>Falls back to Free automatically after the trial</div>
+                  </div>
+                  <Button
+                    type="button"
+                    className="mt-4 w-full rounded-2xl bg-white text-[#102A43] hover:bg-[#E8FFFA] font-black"
+                    disabled={startingTrial}
+                    onClick={() => {
+                      void onStartTrial();
+                    }}
+                  >
+                    {startingTrial
+                      ? "Starting Trial..."
+                      : "Start 14-Day Pro Trial"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C8FFF0]">
-                  Trial Offer
-                </div>
-                <div className="mt-3 space-y-2 text-sm text-white/85">
-                  <div>14 days of Pro access</div>
-                  <div>Instant access with no payment step</div>
-                  <div>Falls back to Free automatically after the trial</div>
-                </div>
-                <Button
-                  type="button"
-                  className="mt-4 w-full rounded-2xl bg-white text-[#102A43] hover:bg-[#E8FFFA] font-black"
-                  disabled={startingTrial}
-                  onClick={() => {
-                    void onStartTrial();
-                  }}
-                >
-                  {startingTrial ? "Starting Trial..." : "Start 14-Day Pro Trial"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
         <div className="mt-12">
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
@@ -1048,19 +1069,27 @@ export default function AgencySubscribe() {
           {/* Card 1: Free */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8">
-              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Free</span>
+              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Free
+              </span>
             </div>
-            
+
             <div className="mt-8 pt-4">
-              <div className="text-3xl font-black font-display text-gray-900">Free</div>
+              <div className="text-3xl font-black font-display text-gray-900">
+                Free
+              </div>
               <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
                 Start with core agency setup
               </div>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2 text-gray-900">
-               <span className="text-5xl font-black font-display tracking-tight text-gray-900">$0</span>
-               <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">per month</span>
+              <span className="text-5xl font-black font-display tracking-tight text-gray-900">
+                $0
+              </span>
+              <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
+                per month
+              </span>
             </div>
 
             <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
@@ -1070,11 +1099,15 @@ export default function AgencySubscribe() {
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
-                <span className="text-gray-900 font-semibold">Not included</span>
+                <span className="text-gray-900 font-semibold">
+                  Not included
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking</span>
-                <span className="text-gray-900 font-semibold">Not included</span>
+                <span className="text-gray-900 font-semibold">
+                  Not included
+                </span>
               </div>
             </div>
 
@@ -1095,36 +1128,44 @@ export default function AgencySubscribe() {
             </div>
 
             <hr className="my-8 border-gray-100" />
-            
+
             <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
               Included
             </div>
             <div className="space-y-4 flex-grow">
-                {[
-                  "Agency dashboard access",
-                  "Agency profile and organization setup",
-                  "Read-only platform exploration",
-                ].map((label) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
-                    </div>
-                    <div className="leading-snug text-sm text-gray-600">{label}</div>
+              {[
+                "Agency dashboard access",
+                "Agency profile and organization setup",
+                "Read-only platform exploration",
+              ].map((label) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
                   </div>
-                ))}
+                  <div className="leading-snug text-sm text-gray-600">
+                    {label}
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 
           {/* Card 2: Basic */}
           <Card className="rounded-2xl border-none bg-[#0B1828] text-white p-8 relative flex flex-col shadow-xl">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
-              <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Basic</span>
-              <span className="px-2 py-1 bg-[#1A2E44] text-white font-bold text-[10px] tracking-[0.15em] rounded uppercase">Most Popular</span>
+              <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Basic
+              </span>
+              <span className="px-2 py-1 bg-[#1A2E44] text-white font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Most Popular
+              </span>
             </div>
-            
+
             <div className="mt-8 pt-4 flex justify-between items-start">
               <div className="pr-4">
-                <div className="text-3xl font-black font-display text-white">Basic</div>
+                <div className="text-3xl font-black font-display text-white">
+                  Basic
+                </div>
                 <div className="text-gray-300 mt-2 text-sm leading-relaxed min-h-[40px]">
                   Get started with licensing
                 </div>
@@ -1135,19 +1176,27 @@ export default function AgencySubscribe() {
             </div>
 
             <div className="mt-6 flex flex-col gap-1">
-               <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-                 <span className="text-5xl font-black font-display tracking-tight text-white">${formatNumber(displayedMonthlyBasic)}</span>
-                 <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">per month</span>
-               </div>
-               {billingInterval === "year" && (
-                  <div className="text-emerald-400 text-xs font-bold mt-1">Billed annually (20% discount applied)</div>
-               )}
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <span className="text-5xl font-black font-display tracking-tight text-white">
+                  ${formatNumber(displayedMonthlyBasic)}
+                </span>
+                <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">
+                  per month
+                </span>
+              </div>
+              {billingInterval === "year" && (
+                <div className="text-emerald-400 text-xs font-bold mt-1">
+                  Billed annually (20% discount applied)
+                </div>
+              )}
             </div>
 
             <div className="mt-6 text-sm text-gray-400 font-medium space-y-2">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span className="text-white font-semibold">${formatNumber(basePlanBasic)}</span>
+                <span className="text-white font-semibold">
+                  ${formatNumber(basePlanBasic)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
@@ -1159,7 +1208,9 @@ export default function AgencySubscribe() {
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking</span>
-                <span className="text-white font-semibold">{irlAddonLineItemLabel}</span>
+                <span className="text-white font-semibold">
+                  {irlAddonLineItemLabel}
+                </span>
               </div>
             </div>
 
@@ -1171,7 +1222,9 @@ export default function AgencySubscribe() {
                     ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-none"
                     : "bg-white text-[#0B1828] hover:bg-gray-100 shadow-sm"
                 }`}
-                onClick={() => { void onSelectPlan("basic"); }}
+                onClick={() => {
+                  void onSelectPlan("basic");
+                }}
                 disabled={
                   checkoutDisabled ||
                   (!requiresContactSales &&
@@ -1198,38 +1251,44 @@ export default function AgencySubscribe() {
               Included
             </div>
             <div className="space-y-4 flex-grow">
-                {[
-                  "Roster Management & Performance Tiers",
-                  "Licensing Requests",
-                  "Active Licenses",
-                  "License Templates",
-                  "Basic Analytics Dashboard",
-                  "Invoice Generation & Management",
-                  "Payment Tracking",
-                  "Talent Statements",
-                ].map((label) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#0B1828]" strokeWidth={3} />
-                    </div>
-                    <div className="leading-snug text-sm text-gray-200">{label}</div>
+              {[
+                "Roster Management & Performance Tiers",
+                "Licensing Requests",
+                "Active Licenses",
+                "License Templates",
+                "Basic Analytics Dashboard",
+                "Invoice Generation & Management",
+                "Payment Tracking",
+                "Talent Statements",
+              ].map((label) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-[#0B1828]" strokeWidth={3} />
                   </div>
-                ))}
+                  <div className="leading-snug text-sm text-gray-200">
+                    {label}
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="mt-6 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-               10% fee applied on all licensing bookings
+              10% fee applied on all licensing bookings
             </div>
           </Card>
 
           {/* Card 3: Pro */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8">
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">Pro</span>
+              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Pro
+              </span>
             </div>
-            
+
             <div className="mt-8 pt-4 flex justify-between items-start">
               <div className="pr-4">
-                <div className="text-3xl font-black font-display text-gray-900">Pro</div>
+                <div className="text-3xl font-black font-display text-gray-900">
+                  Pro
+                </div>
                 <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
                   Full licensing power
                 </div>
@@ -1240,19 +1299,27 @@ export default function AgencySubscribe() {
             </div>
 
             <div className="mt-6 flex flex-col gap-1">
-               <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-                 <span className="text-5xl font-black font-display tracking-tight text-gray-900">${formatNumber(displayedMonthlyPro)}</span>
-                 <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">per month</span>
-               </div>
-               {billingInterval === "year" && (
-                  <div className="text-emerald-600 text-xs font-bold mt-1">Billed annually (20% discount applied)</div>
-               )}
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <span className="text-5xl font-black font-display tracking-tight text-gray-900">
+                  ${formatNumber(displayedMonthlyPro)}
+                </span>
+                <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
+                  per month
+                </span>
+              </div>
+              {billingInterval === "year" && (
+                <div className="text-emerald-600 text-xs font-bold mt-1">
+                  Billed annually (20% discount applied)
+                </div>
+              )}
             </div>
 
             <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span className="text-gray-900 font-semibold">${formatNumber(basePlanPro)}</span>
+                <span className="text-gray-900 font-semibold">
+                  ${formatNumber(basePlanPro)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
@@ -1264,7 +1331,9 @@ export default function AgencySubscribe() {
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking</span>
-                <span className="text-gray-900 font-semibold">{irlAddonLineItemLabel}</span>
+                <span className="text-gray-900 font-semibold">
+                  {irlAddonLineItemLabel}
+                </span>
               </div>
             </div>
 
@@ -1277,7 +1346,9 @@ export default function AgencySubscribe() {
                     ? "bg-slate-50 text-slate-400 cursor-default"
                     : ""
                 }`}
-                onClick={() => { void onSelectPlan("pro"); }}
+                onClick={() => {
+                  void onSelectPlan("pro");
+                }}
                 disabled={
                   checkoutDisabled ||
                   (!requiresContactSales &&
@@ -1298,27 +1369,29 @@ export default function AgencySubscribe() {
             </div>
 
             <hr className="my-8 border-gray-100" />
-            
+
             <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
               Everything in Basic, plus
             </div>
             <div className="space-y-4 flex-grow">
-                {[
-                  "Advanced Analytics",
-                  "Royalties & Payouts Dashboard",
-                  "Financial Reports & Expense Tracking",
-                  "Calendly integration"
-                ].map((label) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
-                    </div>
-                    <div className="leading-snug text-sm text-gray-600">{label}</div>
+              {[
+                "Advanced Analytics",
+                "Royalties & Payouts Dashboard",
+                "Financial Reports & Expense Tracking",
+                "Calendly integration",
+              ].map((label) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
                   </div>
-                ))}
+                  <div className="leading-snug text-sm text-gray-600">
+                    {label}
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="mt-6 text-[#3B82F6] font-bold text-xs uppercase tracking-wider">
-               Only 5% fee on licensing bookings
+              Only 5% fee on licensing bookings
             </div>
           </Card>
         </div>
@@ -1424,9 +1497,7 @@ export default function AgencySubscribe() {
                   className="mt-5 w-full rounded-2xl font-black"
                   variant={seatCountChanged ? "default" : "outline"}
                   disabled={
-                    checkoutDisabled ||
-                    includeSeatsInPlan ||
-                    !seatCountChanged
+                    checkoutDisabled || includeSeatsInPlan || !seatCountChanged
                   }
                   onClick={() => {
                     void onCheckoutSeats();

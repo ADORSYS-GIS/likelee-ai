@@ -733,7 +733,11 @@ pub async fn create_agency_subscription_checkout(
 
     let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
     let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
-    let is_annual = payload.interval.as_deref().unwrap_or("month").eq_ignore_ascii_case("year");
+    let is_annual = payload
+        .interval
+        .as_deref()
+        .unwrap_or("month")
+        .eq_ignore_ascii_case("year");
     let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
         (
             state.stripe_agency_irl_booking_annual_price_id.as_str(),
@@ -769,9 +773,8 @@ pub async fn create_agency_subscription_checkout(
         )
     })?);
 
-    let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> = vec![
-        recurring_price_line_item(base_plan_price_id, 1),
-    ];
+    let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> =
+        vec![recurring_price_line_item(base_plan_price_id, 1)];
     if payload.addons.seats_in_plan {
         line_items.push(recurring_price_line_item(
             headcount_price_id,
@@ -779,10 +782,7 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
     if include_irl_booking {
-        line_items.push(recurring_price_line_item(
-            irl_booking_price_id,
-            1,
-        ));
+        line_items.push(recurring_price_line_item(irl_booking_price_id, 1));
     }
 
     cs_params.line_items = Some(line_items);
@@ -806,7 +806,10 @@ pub async fn create_agency_subscription_checkout(
             "0".to_string()
         },
     );
-    md.insert("roster_models".to_string(), payload.roster_models.to_string());
+    md.insert(
+        "roster_models".to_string(),
+        payload.roster_models.to_string(),
+    );
     md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -854,7 +857,10 @@ pub async fn create_agency_subscription_checkout(
             "0".to_string()
         },
     );
-    sub_md.insert("roster_models".to_string(), payload.roster_models.to_string());
+    sub_md.insert(
+        "roster_models".to_string(),
+        payload.roster_models.to_string(),
+    );
     sub_md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -1015,8 +1021,7 @@ pub async fn change_agency_subscription_plan(
         if !agency_status.is_success() {
             return Err((StatusCode::INTERNAL_SERVER_ERROR, agency_text));
         }
-        let rows: Vec<serde_json::Value> =
-            serde_json::from_str(&agency_text).unwrap_or_default();
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
         let row = rows.first().cloned().unwrap_or_else(|| json!({}));
         (
             row.get("stripe_subscription_id")
@@ -1060,7 +1065,10 @@ pub async fn change_agency_subscription_plan(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
 
     let include_irl_booking = payload.addons.irl_booking || billing_ctx.addon_irl_booking_enabled;
-    if payload.addons.irl_booking && !billing_ctx.addon_irl_booking_enabled && irl_booking_price_id.trim().is_empty() {
+    if payload.addons.irl_booking
+        && !billing_ctx.addon_irl_booking_enabled
+        && irl_booking_price_id.trim().is_empty()
+    {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             format!("stripe_price_not_configured:{irl_booking_env_var}"),
@@ -1152,7 +1160,10 @@ pub async fn change_agency_subscription_plan(
             "0".to_string()
         },
     );
-    md.insert("roster_models".to_string(), payload.roster_models.to_string());
+    md.insert(
+        "roster_models".to_string(),
+        payload.roster_models.to_string(),
+    );
     md.insert(
         "addon_irl_booking".to_string(),
         if include_irl_booking {
@@ -1165,7 +1176,12 @@ pub async fn change_agency_subscription_plan(
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let parsed_subscription_id = subscription_id
         .parse::<stripe_sdk::SubscriptionId>()
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_subscription_id".to_string()))?;
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_subscription_id".to_string(),
+            )
+        })?;
 
     let mut params = stripe_sdk::UpdateSubscription::new();
     params.items = Some(update_items);
@@ -1298,9 +1314,12 @@ pub async fn create_or_update_agency_seat_addon(
         .map(|value| value.trim().to_lowercase())
         .filter(|value| value == "month" || value == "year")
         .unwrap_or(current_plan_interval.clone());
-    let (seat_price_id, seat_env_var) =
-        agency_seat_price_id(&state, effective_plan.as_str(), Some(effective_interval.as_str()))
-            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    let (seat_price_id, seat_env_var) = agency_seat_price_id(
+        &state,
+        effective_plan.as_str(),
+        Some(effective_interval.as_str()),
+    )
+    .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
     if seat_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
@@ -1363,8 +1382,7 @@ pub async fn create_or_update_agency_seat_addon(
         let mut params = stripe_sdk::UpdateSubscription::new();
         params.items = Some(update_items);
         params.cancel_at_period_end = Some(false);
-        params.payment_behavior =
-            Some(stripe_sdk::SubscriptionPaymentBehavior::AllowIncomplete);
+        params.payment_behavior = Some(stripe_sdk::SubscriptionPaymentBehavior::AllowIncomplete);
         params.proration_behavior = Some(
             stripe_sdk::generated::billing::subscription::SubscriptionProrationBehavior::AlwaysInvoice,
         );
@@ -2344,11 +2362,19 @@ pub async fn create_agency_billing_portal(
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = customer_id_str
         .parse::<stripe_sdk::CustomerId>()
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_customer_id".to_string()))?;
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id".to_string(),
+            )
+        })?;
 
     let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
     // Use the AgencySubscribe page as return URL so they come back to the pricing view
-    let return_url = format!("{}/agency/subscribe", state.frontend_url.trim_end_matches('/'));
+    let return_url = format!(
+        "{}/agency/subscribe",
+        state.frontend_url.trim_end_matches('/')
+    );
     params.return_url = Some(&return_url);
 
     match stripe_sdk::BillingPortalSession::create(&client, params).await {

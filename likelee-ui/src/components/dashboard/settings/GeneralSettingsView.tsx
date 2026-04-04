@@ -2549,7 +2549,9 @@ const GeneralSettingsView = ({
                           : "Locked"}
                       </span>
                       <Switch
-                        checked={hasCalendlyAccess && calendlySettings.is_enabled}
+                        checked={
+                          hasCalendlyAccess && calendlySettings.is_enabled
+                        }
                         disabled={!hasCalendlyAccess}
                         onCheckedChange={(checked) =>
                           setCalendlySettings((p) => ({

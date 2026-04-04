@@ -137,15 +137,23 @@ async fn main() {
         stripe_licensing_pro_price_id: cfg.stripe_licensing_pro_price_id.clone(),
         stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
-        stripe_agency_basic_base_annual_price_id: cfg.stripe_agency_basic_base_annual_price_id.clone(),
+        stripe_agency_basic_base_annual_price_id: cfg
+            .stripe_agency_basic_base_annual_price_id
+            .clone(),
         stripe_agency_basic_headcount_price_id: cfg.stripe_agency_basic_headcount_price_id.clone(),
-        stripe_agency_basic_headcount_annual_price_id: cfg.stripe_agency_basic_headcount_annual_price_id.clone(),
+        stripe_agency_basic_headcount_annual_price_id: cfg
+            .stripe_agency_basic_headcount_annual_price_id
+            .clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
         stripe_agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
         stripe_agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
-        stripe_agency_pro_headcount_annual_price_id: cfg.stripe_agency_pro_headcount_annual_price_id.clone(),
+        stripe_agency_pro_headcount_annual_price_id: cfg
+            .stripe_agency_pro_headcount_annual_price_id
+            .clone(),
         stripe_agency_irl_booking_price_id: cfg.stripe_agency_irl_booking_price_id.clone(),
-        stripe_agency_irl_booking_annual_price_id: cfg.stripe_agency_irl_booking_annual_price_id.clone(),
+        stripe_agency_irl_booking_annual_price_id: cfg
+            .stripe_agency_irl_booking_annual_price_id
+            .clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",

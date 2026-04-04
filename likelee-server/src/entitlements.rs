@@ -79,22 +79,18 @@ impl AgencyAccessState {
 }
 
 fn parse_trial_datetime(value: Option<&str>) -> Option<chrono::DateTime<chrono::Utc>> {
-    value
-        .and_then(|s| {
-            chrono::DateTime::parse_from_rfc3339(s)
-                .ok()
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .or_else(|| {
-                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
-                        .ok()
-                        .map(|ndt| {
-                            chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                                ndt,
-                                chrono::Utc,
-                            )
-                        })
-                })
-        })
+    value.and_then(|s| {
+        chrono::DateTime::parse_from_rfc3339(s)
+            .ok()
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+            .or_else(|| {
+                chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                    .ok()
+                    .map(|ndt| {
+                        chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(ndt, chrono::Utc)
+                    })
+            })
+    })
 }
 
 pub async fn get_agency_access_state(
@@ -134,7 +130,9 @@ pub async fn get_agency_access_state(
         row.and_then(|o| o.get("trial_ends_at"))
             .and_then(|v| v.as_str()),
     );
-    let trial_active = trial_ends_at.map(|dt| dt > chrono::Utc::now()).unwrap_or(false);
+    let trial_active = trial_ends_at
+        .map(|dt| dt > chrono::Utc::now())
+        .unwrap_or(false);
     let effective_tier = if trial_active && billed_tier == PlanTier::Free {
         PlanTier::Pro
     } else {
@@ -186,7 +184,9 @@ pub async fn get_agency_plan_tier(
     state: &AppState,
     agency_id: &str,
 ) -> Result<PlanTier, (StatusCode, String)> {
-    Ok(get_agency_access_state(state, agency_id).await?.effective_tier)
+    Ok(get_agency_access_state(state, agency_id)
+        .await?
+        .effective_tier)
 }
 
 pub fn docuseal_template_limit(tier: PlanTier) -> Option<usize> {

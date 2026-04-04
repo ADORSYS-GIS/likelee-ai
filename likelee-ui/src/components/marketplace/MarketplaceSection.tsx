@@ -947,10 +947,10 @@ export function MarketplaceSection({
                             ? "Sending..."
                             : connectLocked
                               ? "Upgrade to Connect"
-                            : connectionStatus === "pending" ||
-                                connectionStatus === "waiting"
-                              ? `Waiting for ${entityLabel} response`
-                              : "Connect"}
+                              : connectionStatus === "pending" ||
+                                  connectionStatus === "waiting"
+                                ? `Waiting for ${entityLabel} response`
+                                : "Connect"}
                         </Button>
                         {connectLockedReason ? (
                           <span className="text-[10px] font-semibold text-amber-700">

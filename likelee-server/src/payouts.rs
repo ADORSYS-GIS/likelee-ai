@@ -3734,18 +3734,16 @@ fn aggregate_agency_subscription_state(
         .sum::<i64>();
 
     let (plan_tier, plan_interval, seats_limit, primary_subscription_id) = match best_plan {
-        Some((tier, interval, roster_models, subscription_id)) => {
-            (
-                tier,
-                interval,
-                if aggregated_seat_quantity > 0 {
-                    aggregated_seat_quantity
-                } else {
-                    roster_models
-                },
-                subscription_id,
-            )
-        }
+        Some((tier, interval, roster_models, subscription_id)) => (
+            tier,
+            interval,
+            if aggregated_seat_quantity > 0 {
+                aggregated_seat_quantity
+            } else {
+                roster_models
+            },
+            subscription_id,
+        ),
         None => {
             let addon_subscription_id = active_subscriptions
                 .iter()
@@ -3810,10 +3808,10 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
-    let trial_ends_at =
-        sub.trial_end
-            .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
-            .map(|dt| dt.to_rfc3339());
+    let trial_ends_at = sub
+        .trial_end
+        .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
+        .map(|dt| dt.to_rfc3339());
     let aggregated = if let Some(cust) = customer_id.filter(|cust| !cust.trim().is_empty()) {
         match list_customer_subscriptions(state, cust).await {
             Ok(subscriptions) => {
