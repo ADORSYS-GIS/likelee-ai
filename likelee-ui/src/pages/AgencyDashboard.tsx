@@ -19415,6 +19415,7 @@ export default function AgencyDashboard() {
                 <GeneralSettingsView
                   hasIrlBookingAddon={hasIrlBookingAddon}
                   hasProAccess={hasProAccess}
+                  agencyDisplayPlanLabel={agencyDisplayPlanLabel}
                 />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (

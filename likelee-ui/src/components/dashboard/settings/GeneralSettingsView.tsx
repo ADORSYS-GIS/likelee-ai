@@ -72,6 +72,12 @@ import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
 
+type GeneralSettingsViewProps = {
+  hasIrlBookingAddon: boolean;
+  hasProAccess: boolean;
+  agencyDisplayPlanLabel?: string;
+};
+
 const InviteTeamMemberModal = ({
   open,
   onOpenChange,
@@ -345,11 +351,8 @@ const GeneralSettingsView = ({
   kycStatus,
   hasIrlBookingAddon = false,
   hasProAccess = false,
-}: {
-  kycStatus?: string;
-  hasIrlBookingAddon?: boolean;
-  hasProAccess?: boolean;
-}) => {
+  agencyDisplayPlanLabel,
+}: GeneralSettingsViewProps & { kycStatus?: string }) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -558,6 +561,14 @@ const GeneralSettingsView = ({
     if (planTier === "enterprise") return "Enterprise";
     return "Free";
   }, [planTier]);
+
+  const currentPlanDisplay = useMemo(() => {
+    const label = String(agencyDisplayPlanLabel || "").trim();
+    if (label) {
+      return label;
+    }
+    return planLabel;
+  }, [agencyDisplayPlanLabel, planLabel]);
 
   useEffect(() => {
     if (activeTab !== "Integrations") return;
@@ -1382,7 +1393,7 @@ const GeneralSettingsView = ({
                         planTier === "pro" ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {planLabel}
+                      {currentPlanDisplay}
                     </div>
                     <Badge
                       variant="outline"
