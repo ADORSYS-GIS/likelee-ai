@@ -213,6 +213,7 @@ export default function TalentPortal({
   const agencyName = agencyUser?.agency_name as string | undefined;
   const profilePhotoUrl = (agencyUser?.profile_photo_url ||
     agencyUser?.profile_photo ||
+    profile?.profile_photo_url ||
     profile?.profile_photo) as string | undefined;
   const email = (agencyUser?.email || profile?.email) as string | undefined;
   const talentName =
@@ -3804,10 +3805,21 @@ export default function TalentPortal({
               </Card>
             </div>
           )}
-        </>
-      )}
-    </>
-  );
+        <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+          <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+              <img
+                src={profilePhotoUrl || "https://placehold.co/800"}
+                className="h-full w-full object-contain"
+                alt={talentName}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    )}
+  </>
+);
 
   if (embedded) {
     return <div className="space-y-8">{portalContent}</div>;
@@ -3872,23 +3884,6 @@ export default function TalentPortal({
                   </div>
                 </div>
 
-                <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
-                  <DialogContent className="max-w-2xl p-0 bg-transparent border-none shadow-none flex items-center justify-center">
-                    <div className="relative group">
-                      <img
-                        src={profilePhotoUrl || "https://placehold.co/800"}
-                        className="max-h-[85vh] rounded-lg shadow-2xl"
-                        alt={talentName}
-                      />
-                      <button
-                        onClick={() => setShowPhotoFull(false)}
-                        className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
-                      >
-                        Close X
-                      </button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
                 <div className="min-w-0">
                   <div className="text-[17px] font-bold text-[#1A1C1E] truncate leading-tight">
                     {talentName}
