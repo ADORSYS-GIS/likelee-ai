@@ -725,7 +725,7 @@ export default function AgencySubscribe() {
 
     if (currentPlanTier === "free" || currentPlanTier === null) {
       if (authenticated && isAgencyUser) {
-        return targetPlan === plan ? "Selected Plan" : "Select Plan";
+        return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
       }
       return targetPlan === "basic" ? "Checkout Basic" : "Checkout Pro";
     }
@@ -848,16 +848,18 @@ export default function AgencySubscribe() {
       return;
     }
     setPlan(targetPlan);
-    if (currentPlanTier && currentPlanTier !== "free") {
-      setPendingPlanChange({
-        plan: targetPlan,
-        interval: billingInterval,
-        rosterModels,
-        includeIrlBooking: shouldBillIrlBookingInPlan,
-        includeSeatsInPlan,
-      });
+    if (!currentPlanTier || currentPlanTier === "free") {
+      void onCheckout(targetPlan);
       return;
     }
+
+    setPendingPlanChange({
+      plan: targetPlan,
+      interval: billingInterval,
+      rosterModels,
+      includeIrlBooking: shouldBillIrlBookingInPlan,
+      includeSeatsInPlan,
+    });
   };
 
   return (
@@ -1377,6 +1379,7 @@ export default function AgencySubscribe() {
                   "Advanced Analytics",
                   "Royalties & Payouts Dashboard",
                   "Financial Reports & Expense Tracking",
+                  "Calendly integration",
                 ].map((label) => (
                   <div key={label} className="flex items-start gap-3">
                     <div className="mt-[2px] w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -1687,60 +1690,17 @@ export default function AgencySubscribe() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <div className="text-gray-500 font-bold">Estimated total</div>
-            <div className="text-4xl font-black font-display">
-              {requiresContactSales
-                ? "Custom pricing"
-                : `$${formatNumber(
-                    plan === "basic" ? totalMonthlyBasic : totalMonthlyPro,
-                  )}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
+        <div className="mt-10 flex justify-center">
+          {currentPlanTier === "free" && isAgencyUser && (
             <Button
               type="button"
               variant="outline"
-              className="rounded-2xl"
-              onClick={onBack}
+              className="rounded-2xl font-bold bg-white text-gray-600 px-6 py-2 border-gray-200 hover:bg-gray-50"
+              onClick={() => navigate("/AgencyDashboard")}
             >
-              {isAgencyUser ? "Back to Dashboard" : "Back to Home"}
+              Skip Trial for Now
             </Button>
-            <Button
-              type="button"
-              className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
-              disabled={
-                checkoutDisabled ||
-                alreadySubscribedToPlan ||
-                isDowngradeSelection
-              }
-              onClick={() => {
-                if (requiresContactSales) {
-                  onContact();
-                  return;
-                }
-                if (currentPlanTier === "free" || currentPlanTier === null) {
-                  void onCheckout(plan);
-                  return;
-                }
-                void onSelectPlan(plan);
-              }}
-            >
-              {footerCtaLabel}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            {currentPlanTier === "free" && isAgencyUser && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="rounded-2xl font-bold text-gray-600"
-                onClick={() => navigate("/AgencyDashboard")}
-              >
-                Skip Trial for Now
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="mt-10">
