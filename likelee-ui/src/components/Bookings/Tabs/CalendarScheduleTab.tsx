@@ -11,6 +11,7 @@ import {
 import { Calendar, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,12 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { ManageAvailabilityModal } from "../Modals/ManageAvailabilityModal";
 import { NewBookingModal } from "../Modals/NewBookingModal";
 import { BookingDetailsModal } from "../Modals/BookingDetailsModal";
@@ -141,6 +136,13 @@ export const CalendarScheduleTab = ({
       const nextDay = Math.min(currentDay, maxDayInTargetMonth);
       return new Date(year, monthIndex, nextDay);
     });
+  };
+
+  const handleDateInputChange = (value: string) => {
+    if (!value) return;
+    const nextDate = new Date(`${value}T12:00:00`);
+    if (isNaN(nextDate.getTime())) return;
+    setCurrentDate(nextDate);
   };
 
   useEffect(() => {
@@ -387,32 +389,16 @@ export const CalendarScheduleTab = ({
               </Button>
             </div>
 
-            {/* Date Picker Trigger */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[130px] sm:w-[140px] justify-start text-left font-normal border-gray-200 shrink-0"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {currentDate ? (
-                    format(currentDate, "MM/dd/yyyy")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker
-                  mode="single"
-                  selected={currentDate}
-                  onSelect={(date) => date && setCurrentDate(date)}
-                  initialFocus
-                  className=""
-                  classNames={{}}
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="relative shrink-0">
+              <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <Input
+                type="date"
+                value={format(currentDate, "yyyy-MM-dd")}
+                onChange={(e) => handleDateInputChange(e.target.value)}
+                className="w-[150px] pl-9"
+                aria-label="Select date"
+              />
+            </div>
           </div>
 
           <div className="flex w-full xl:w-auto items-center gap-2 overflow-x-auto pb-1 flex-nowrap">

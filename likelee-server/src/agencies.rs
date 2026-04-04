@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
 
-async fn resolve_effective_agency_id(
+pub(crate) async fn resolve_effective_agency_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -67,7 +67,7 @@ async fn resolve_effective_agency_id(
     Ok(agency_id)
 }
 
-async fn resolve_effective_agency_talent_id(
+pub(crate) async fn resolve_effective_agency_talent_id(
     state: &AppState,
     agency_id: &str,
     input_id: &str,

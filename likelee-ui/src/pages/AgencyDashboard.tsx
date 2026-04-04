@@ -4,6 +4,7 @@ import React, {
   startTransition,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { format, addDays } from "date-fns";
@@ -40,12 +41,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { parseBackendError } from "@/utils/errorParser";
 import { useToast } from "@/components/ui/use-toast";
@@ -128,6 +131,7 @@ import {
   MapPin,
   Star,
   Menu,
+  PanelRight,
   ImageIcon,
   Loader2,
   Mic,
@@ -137,8 +141,15 @@ import {
   Library,
   FolderCheck,
   Gift,
+  MessageSquare,
 } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/useChat";
 // ----------- LAZY TAB COMPONENTS -----------
+const CommunicationHub = lazy(() =>
+  import("@/components/chat/CommunicationHub").then((m) => ({
+    default: m.CommunicationHub,
+  })),
+);
 // Each import is split into its own JS chunk by Vite.
 // The browser only downloads these when the user navigates to that tab.
 const AgencyDeliverablesView = lazy(() =>
@@ -236,6 +247,7 @@ import {
   getAgencyLicensingPipeline,
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
+  getAgencyBrandLicenseRequests,
   updateAgencyLicensingRequestsStatus,
   sendLicensingRequestPaymentLink,
   listBookings,
@@ -16611,10 +16623,13 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const normalizeSubTab = (value: string | null | undefined) =>
-    String(value || "")
+  const normalizeSubTab = (value: string | null | undefined) => {
+    const cleaned = String(value || "")
       .trim()
       .replace(/\/+$/g, "");
+    if (cleaned === "Protect & Usage") return "Protection & Usage";
+    return cleaned;
+  };
 
   // Sensible default sub-tab based on tab
   const getDefaultSubTab = (tab: string) => {
@@ -16626,7 +16641,7 @@ export default function AgencyDashboard() {
       case "jobs":
         return "Job Invites";
       case "protection":
-        return "Protect & Usage";
+        return "Protection & Usage";
       case "analytics":
         return "Analytics Dashboard";
       case "bookings":
@@ -16667,6 +16682,15 @@ export default function AgencyDashboard() {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
   });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("agency-sidebar-width");
+    return saved ? parseInt(saved, 10) : 280;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("agency-sidebar-width", sidebarWidth.toString());
+  }, [sidebarWidth]);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
     if (!license.template_id) {
       toast({
@@ -16869,23 +16893,44 @@ export default function AgencyDashboard() {
   });
 
   const pendingLicensingRequestsCount = useMemo(() => {
-    const requests = Array.isArray(brandLicenseRequestsQuery.data)
-      ? brandLicenseRequestsQuery.data.filter(
-          (r: any) => r?.status === "pending",
-        ).length
+    // 1. Regular Requests
+    const d: any = licensingRequestsCountQuery.data;
+    const regReqs = d?.requests ?? d?.data ?? d;
+    const regPending = Array.isArray(regReqs)
+      ? regReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    // Use seen count from localStorage
-    const saved = localStorage.getItem("brand_licensing_seen_count");
-    const seenCount = saved ? parseInt(saved, 10) : 0;
+    // 2. Brand Requests
+    const brandReqs = brandLicenseRequestsQuery.data;
+    const brandPending = Array.isArray(brandReqs)
+      ? brandReqs.filter((r: any) => r?.status === "pending").length
+      : 0;
+
+    // seen counts from localStorage
+    const regSeen = parseInt(
+      localStorage.getItem("regular_licensing_seen_count") || "0",
+      10,
+    );
+    const brandSeen = parseInt(
+      localStorage.getItem("brand_licensing_seen_count") || "0",
+      10,
+    );
 
     // If currently on the licensing requests tab, we clear it visually
     if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
       return 0;
     }
 
-    return Math.max(0, requests - seenCount);
-  }, [brandLicenseRequestsQuery.data, activeTab, activeSubTab]);
+    const regUnseen = Math.max(0, regPending - regSeen);
+    const brandUnseen = Math.max(0, brandPending - brandSeen);
+
+    return regUnseen + brandUnseen;
+  }, [
+    licensingRequestsCountQuery.data,
+    brandLicenseRequestsQuery.data,
+    activeTab,
+    activeSubTab,
+  ]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17236,6 +17281,134 @@ export default function AgencyDashboard() {
   const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
+  const isMobile = useIsMobile();
+  const SIDEBAR_MIN_WIDTH = 80;
+  const SIDEBAR_MAX_WIDTH = 280;
+  const SIDEBAR_EXPANDED_WIDTH = 256;
+  const SIDEBAR_COLLAPSE_THRESHOLD = 140;
+  const SIDEBAR_FADE_START = 220;
+  const isSidebarCollapsed =
+    !isMobile && sidebarWidth <= SIDEBAR_COLLAPSE_THRESHOLD;
+  const labelOpacity = isMobile
+    ? 1
+    : Math.min(
+        1,
+        Math.max(
+          0,
+          (sidebarWidth - SIDEBAR_COLLAPSE_THRESHOLD) /
+            (SIDEBAR_FADE_START - SIDEBAR_COLLAPSE_THRESHOLD),
+        ),
+      );
+  const showLabels = isMobile || sidebarWidth > SIDEBAR_COLLAPSE_THRESHOLD;
+  const showSubItems = isMobile || sidebarWidth >= 200;
+  const sidebarNavRef = useRef<HTMLElement | null>(null);
+  const collapsedItemButtonRefs = useRef<
+    Record<string, HTMLButtonElement | null>
+  >({});
+  const collapsedPopoutHideTimeoutRef = useRef<number | null>(null);
+  const [collapsedPopout, setCollapsedPopout] = useState<{
+    itemId: string;
+    top: number;
+  } | null>(null);
+  const [openCollapsedSubmenu, setOpenCollapsedSubmenu] = useState<
+    string | null
+  >(null);
+
+  const clearCollapsedPopoutHideTimeout = () => {
+    if (collapsedPopoutHideTimeoutRef.current !== null) {
+      window.clearTimeout(collapsedPopoutHideTimeoutRef.current);
+      collapsedPopoutHideTimeoutRef.current = null;
+    }
+  };
+
+  const closeCollapsedPopout = (opts?: { immediate?: boolean }) => {
+    const immediate = !!opts?.immediate;
+    clearCollapsedPopoutHideTimeout();
+    if (immediate) {
+      setCollapsedPopout(null);
+      return;
+    }
+    collapsedPopoutHideTimeoutRef.current = window.setTimeout(() => {
+      setCollapsedPopout(null);
+    }, 180);
+  };
+
+  const openCollapsedPopout = (itemId: string) => {
+    clearCollapsedPopoutHideTimeout();
+    if (!isSidebarCollapsed) return;
+    const navEl = sidebarNavRef.current;
+    const btnEl = collapsedItemButtonRefs.current[itemId];
+    if (!navEl || !btnEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideEl = navEl.parentElement;
+    if (!asideEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideRect = asideEl.getBoundingClientRect();
+    const btnRect = btnEl.getBoundingClientRect();
+    const top = Math.max(0, btnRect.top - asideRect.top);
+    setCollapsedPopout({ itemId, top });
+  };
+  const toggleSidebarCollapsed = () => {
+    if (isMobile) return;
+    setSidebarWidth((prev) =>
+      prev <= SIDEBAR_COLLAPSE_THRESHOLD
+        ? SIDEBAR_EXPANDED_WIDTH
+        : SIDEBAR_MIN_WIDTH,
+    );
+  };
+
+  const handleSidebarDragStart = (event: React.MouseEvent) => {
+    if (isMobile) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+    const handleMove = (event: MouseEvent) => {
+      const nextWidth = Math.min(
+        SIDEBAR_MAX_WIDTH,
+        Math.max(SIDEBAR_MIN_WIDTH, event.clientX),
+      );
+      setSidebarWidth(nextWidth);
+    };
+    const handleUp = () => {
+      setIsResizingSidebar(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [
+    isResizingSidebar,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_COLLAPSE_THRESHOLD,
+  ]);
+
+  useEffect(() => {
+    if (effectiveAgencyMode !== "AI") return;
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      ["roster", "licensing", "protection", "analytics"].forEach((id) =>
+        next.add(id),
+      );
+      return Array.from(next);
+    });
+  }, [effectiveAgencyMode]);
 
   useEffect(() => {
     if (activeSubTab === "All Talent" && isSportsAgency) {
@@ -18106,13 +18279,37 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const filteredNotifications = notifications.filter(
+  const chatUnreadCount = useUnreadMessages(profile?.id);
+
+  const allNotifications = useMemo(() => {
+    const chatNotification =
+      chatUnreadCount > 0
+        ? {
+            id: `chat_unread_${chatUnreadCount}`,
+            title: "Messages",
+            message: `You have ${chatUnreadCount} unread message(s).`,
+            time: "New message",
+            color: "blue",
+            isSummary: true,
+            read: false,
+          }
+        : null;
+
+    return chatNotification
+      ? [chatNotification, ...notifications]
+      : notifications;
+  }, [chatUnreadCount, notifications]);
+
+  const unreadCount =
+    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+  const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
 
   const markAllAsRead = () => {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    const unreadIds = allNotifications
+      .filter((n: any) => !n.read)
+      .map((n: any) => n.id);
     setDismissedNotificationIds((prev) =>
       Array.from(new Set([...prev, ...unreadIds])),
     );
@@ -18268,13 +18465,19 @@ export default function AgencyDashboard() {
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
           {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+          },
+          {
             id: "licensing",
             label: "Licensing",
             icon: FileText,
             subItems: [
               "Licensing Requests",
-              "License Submissions",
               "Active Licenses",
+              "License Submissions",
               "License Templates",
             ],
             badge:
@@ -18294,10 +18497,7 @@ export default function AgencyDashboard() {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            badge: "Coming soon",
           },
           {
             id: "analytics",
@@ -18345,6 +18545,12 @@ export default function AgencyDashboard() {
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+          },
+          {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18440,33 +18646,50 @@ export default function AgencyDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        style={{ width: isMobile ? "16rem" : `${sidebarWidth}px` }}
       >
         <div
-          className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+            isSidebarCollapsed
+              ? "p-4 flex items-center justify-center"
+              : "p-6 flex items-center gap-3"
+          }`}
           onClick={() => {
             setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
+          title={
+            isSidebarCollapsed ? profile?.agency_name || "Agency" : undefined
+          }
         >
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
-                {profile?.logo_url ? (
-                  <img
-                    src={profile.logo_url}
-                    alt={profile.agency_name || "Agency"}
-                    className="w-full h-full object-contain"
+          <div className="relative">
+            <div
+              className={`${
+                isSidebarCollapsed ? "w-12 h-12" : "w-16 h-16"
+              } rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden`}
+            >
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.agency_name || "Agency"}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
+                  <Building2
+                    className={`${isSidebarCollapsed ? "w-6 h-6" : "w-8 h-8"} text-indigo-600`}
                   />
-                ) : (
-                  <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-indigo-600" />
-                  </div>
-                )}
-              </div>
-              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col min-w-0">
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
+          {showLabels && (
+            <div
+              className="flex flex-col min-w-0 transition-opacity duration-150"
+              style={{ opacity: labelOpacity }}
+            >
               <div className="flex items-center gap-2 min-w-0">
                 <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
                   {profile?.agency_name || "Agency Name"}
@@ -18498,81 +18721,65 @@ export default function AgencyDashboard() {
                 )}
               </div>
             </div>
-          </div>
-
-          {!agencyBillingLoading &&
-            !agencyTrialActive &&
-            !agencyTrialStartAt &&
-            agencyPlanTier === "free" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate("/AgencySubscribe");
-                }}
-                className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
-                title="Activate 14-Day Free Trial"
-              >
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-                <Gift className="w-5 h-5 text-white" />
-              </button>
-            )}
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
-          {agencyPlanTier === "free" && agencyTrialActive && (
-            <div className="mb-6 mx-2 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
-                  <Crown className="w-5 h-5 font-bold" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-amber-900 leading-tight">
-                    Pro Free Trial
-                  </p>
-                  <p className="text-[11px] text-amber-700 font-medium">
-                    All features unlocked
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[11px] text-amber-800 font-bold mb-1">
-                  <span>Expires in {agencyTrialCountdown}</span>
-                  <span>
-                    {Math.max(
-                      0,
-                      14 -
-                        (agencyTrialCountdown
-                          ? parseInt(agencyTrialCountdown)
-                          : 0),
-                    )}
-                    /14 Days
-                  </span>
-                </div>
-                <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-amber-500 h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${Math.max(5, (1 - (agencyTrialCountdown ? parseInt(agencyTrialCountdown) : 0) / 14) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={() => navigate("/AgencySubscribe")}
-                  className="w-full mt-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors shadow-sm"
-                >
-                  Upgrade to Keep Access
-                </button>
-              </div>
             </div>
           )}
+        </div>
+
+        {!agencyBillingLoading &&
+          !agencyTrialActive &&
+          !agencyTrialStartAt &&
+          agencyPlanTier === "free" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/AgencySubscribe");
+              }}
+              className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
+              title="Activate 14-Day Free Trial"
+            >
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+              <Gift className="w-5 h-5 text-white" />
+            </button>
+          )}
+        </div>
+
+        <nav
+          ref={(node) => {
+            sidebarNavRef.current = node;
+          }}
+          className={`relative flex-1 py-4 overflow-x-hidden ${
+            isSidebarCollapsed
+              ? "px-2 overflow-y-hidden"
+              : "px-4 overflow-y-auto"
+          }`}
+        >
           {sidebarItems.map((item) => (
-            <div key={item.id} className="mb-2">
+            <div
+              key={item.id}
+              className={isSidebarCollapsed ? "mb-1" : "mb-2"}
+              onMouseEnter={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                openCollapsedPopout(item.id);
+              }}
+              onMouseLeave={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                closeCollapsedPopout();
+              }}
+            >
               <button
+                ref={(node) => {
+                  collapsedItemButtonRefs.current[item.id] = node;
+                }}
                 onClick={() => {
                   if (item.disabled) {
                     navigate("/AgencySubscribe");
                     setSidebarOpen(false);
+                    return;
+                  }
+                  if (isSidebarCollapsed && item.subItems) {
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
                     return;
                   }
                   if (item.subItems) {
@@ -18584,118 +18791,351 @@ export default function AgencyDashboard() {
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
+                    if (isSidebarCollapsed) {
+                      setOpenCollapsedSubmenu(null);
+                    }
                   }
                 }}
                 title={
                   item.disabled
                     ? item.disabledReason || "Requires Pro"
-                    : undefined
+                    : isSidebarCollapsed
+                      ? item.label
+                      : undefined
                 }
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                onFocus={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  openCollapsedPopout(item.id);
+                }}
+                onBlur={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (openCollapsedSubmenu === item.id) return;
+                  closeCollapsedPopout();
+                }}
+                onKeyDown={(event) => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setOpenCollapsedSubmenu(null);
+                    closeCollapsedPopout({ immediate: true });
+                    return;
+                  }
+                  if (event.key === "ArrowRight" || event.key === "Enter") {
+                    event.preventDefault();
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
+                  }
+                }}
+                className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
+                  isSidebarCollapsed
+                    ? "justify-center px-2 py-1.5 relative"
+                    : "gap-3 px-3 py-2.5"
+                } ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                } ${
+                  isSidebarCollapsed &&
+                  !!item.subItems &&
+                  (collapsedPopout?.itemId === item.id ||
+                    openCollapsedSubmenu === item.id)
+                    ? "bg-gray-50 text-gray-900"
+                    : ""
                 } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`${
+                    isSidebarCollapsed ? "w-5 h-5" : "w-5 h-5"
+                  } ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"}`}
                 />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    {item.badge}
+                {isSidebarCollapsed && item.subItems && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="absolute right-1.5 h-5 w-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openCollapsedPopout(item.id);
+                      setOpenCollapsedSubmenu(item.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openCollapsedPopout(item.id);
+                        setOpenCollapsedSubmenu(item.id);
+                      }
+                    }}
+                    aria-label={`Open ${item.label} submenu`}
+                  >
+                    <ChevronRight className="h-3 w-3" />
                   </span>
                 )}
-                {item.disabled && (
-                  <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    Pro
-                  </span>
-                )}
-                {item.subItems && (
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
-                  />
+                {showLabels && (
+                  <>
+                    <div
+                      className="flex-1 text-left leading-snug transition-opacity duration-150"
+                      style={{ opacity: labelOpacity }}
+                    >
+                      <span className="block whitespace-normal break-words">
+                        {item.label}
+                      </span>
+                      {typeof item.badge === "string" && (
+                        <span className="inline-flex mt-1 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    {item.badge !== undefined &&
+                      typeof item.badge !== "string" && (
+                        <span
+                          className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                          style={{ opacity: labelOpacity }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    {item.disabled && (
+                      <span
+                        className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        style={{ opacity: labelOpacity }}
+                      >
+                        Pro
+                      </span>
+                    )}
+                    {item.subItems && (
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
+                        style={{ opacity: labelOpacity }}
+                      />
+                    )}
+                  </>
                 )}
               </button>
 
               {/* Sub-items */}
-              {item.subItems && expandedItems.includes(item.id) && (
-                <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                  {item.subItems.map((subItem) => (
-                    <button
-                      key={subItem}
-                      onClick={() => {
-                        if (
+              {item.subItems &&
+                expandedItems.includes(item.id) &&
+                showSubItems &&
+                showLabels && (
+                  <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                        }}
+                        title={
                           item.disabledSubItems &&
                           item.disabledSubItems[subItem]
-                        ) {
-                          navigate("/AgencySubscribe");
-                          setSidebarOpen(false);
-                          return;
+                            ? "Requires Pro"
+                            : undefined
                         }
-                        if (
-                          item.id === "jobs" &&
-                          subItem === "Open Job Board"
-                        ) {
-                          navigate(
-                            `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
-                              `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
-                            )}`,
-                          );
-                          setSidebarOpen(false);
-                          return;
-                        }
-                        setActiveView(item.id, subItem);
-                        setSidebarOpen(false);
-                      }}
-                      title={
-                        item.disabledSubItems && item.disabledSubItems[subItem]
-                          ? "Requires Pro"
-                          : undefined
-                      }
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="truncate">{subItem}</span>
-                      <span className="flex items-center gap-2">
-                        {item.disabledSubItems &&
-                          item.disabledSubItems[subItem] && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                              Pro
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
                             </span>
                           )}
-                        {item.badges && item.badges[subItem] && (
-                          <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                            {item.badges[subItem]}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
           ))}
+
+          {/* Items are rendered above */}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4">
           <button
             onClick={() => logout()}
-            className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50"
+            className={`flex items-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full rounded-lg hover:bg-red-50 ${
+              isSidebarCollapsed
+                ? "justify-center px-2 py-2"
+                : "gap-2 px-3 py-2"
+            }`}
+            title={isSidebarCollapsed ? "Sign Out" : undefined}
           >
             <LogOut className="w-5 h-5" />
-            Sign Out
+            {showLabels && (
+              <span
+                className="transition-opacity duration-150"
+                style={{ opacity: labelOpacity }}
+              >
+                Sign Out
+              </span>
+            )}
           </button>
         </div>
+
+        {!isMobile && (
+          <button
+            onClick={toggleSidebarCollapsed}
+            className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+          >
+            <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+          </button>
+        )}
+
+        {!isMobile && (
+          <div
+            onMouseDown={handleSidebarDragStart}
+            className="absolute inset-y-0 right-0 w-2 cursor-ew-resize"
+            title="Resize sidebar"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Collapsed sub-items popout (single instance, anchored to hovered item) */}
+        {/* Rendered outside the <nav> to avoid clipping by overflow-x-hidden */}
+        <AnimatePresence>
+          {isSidebarCollapsed &&
+            collapsedPopout &&
+            (() => {
+              const item = sidebarItems.find(
+                (i) => i.id === collapsedPopout.itemId,
+              );
+              if (!item?.subItems || item.subItems.length === 0) return null;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute left-full z-50 w-64 pl-2 -ml-px"
+                  style={{ top: collapsedPopout.top }}
+                  onMouseEnter={() => {
+                    clearCollapsedPopoutHideTimeout();
+                  }}
+                  onMouseLeave={() => {
+                    closeCollapsedPopout();
+                  }}
+                >
+                  <div
+                    className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2"
+                    role="menu"
+                    aria-label={`${item.label} submenu`}
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        setOpenCollapsedSubmenu(null);
+                        closeCollapsedPopout({ immediate: true });
+                      }
+                    }}
+                  >
+                    <div className="absolute -left-1.5 top-3 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        role="menuitem"
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                          setOpenCollapsedSubmenu(null);
+                          closeCollapsedPopout({ immediate: true });
+                        }}
+                        title={
+                          item.disabledSubItems &&
+                          item.disabledSubItems[subItem]
+                            ? "Requires Pro"
+                            : undefined
+                        }
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
+        </AnimatePresence>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden">
+      <div
+        className="flex-1 flex flex-col ml-0 overflow-hidden"
+        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
+      >
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
@@ -19298,72 +19738,16 @@ export default function AgencyDashboard() {
                   }}
                 />
               )}
-            {activeTab === "protection" &&
-              activeSubTab === "Protect & Usage" &&
-              (hasProAccess ? (
-                <ProtectionUsageView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Protection & Usage is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "protection" &&
-              activeSubTab === "Compliance Hub" &&
-              (hasProAccess ? (
-                <ComplianceHubView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Compliance Hub is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "protection" &&
-              activeSubTab === "Protect & Usage" && (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Coming soon
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Protection & Usage is coming soon.
-                  </div>
-                </Card>
-              )}
-            {activeTab === "protection" &&
-              activeSubTab === "Compliance Hub" && (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Coming soon
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Compliance Hub is coming soon.
-                  </div>
-                </Card>
-              )}
+            {activeTab === "protection" && (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Coming soon
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Protection & Usage is coming soon.
+                </div>
+              </Card>
+            )}
             {activeTab === "analytics" &&
               activeSubTab === "Analytics Dashboard" &&
               (effectiveAgencyMode === "IRL" ? (
@@ -19443,12 +19827,19 @@ export default function AgencyDashboard() {
                 setProspectToEdit={setProspectToEdit}
               />
             )}
+            {activeTab === "talent-packages" && (
+              <TalentPackagesView
+                isSportsAgency={isSportsAgency}
+                agencyId={profile?.id}
+              />
+            )}
             {activeTab === "marketplace" && (
               <MarketplaceTab
                 connectLocked={!agencyCanConnectMarketplace}
                 onConnectLocked={() => navigate("/agencysubscribe")}
               />
             )}
+            {activeTab === "messages" && <CommunicationHub />}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (
