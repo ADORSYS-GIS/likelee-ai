@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useAuth } from "@/auth/AuthProvider";
+import { useRef } from "react";
 
 const DEFAULT_ROSTER_MODELS = 10;
 const MIN_ROSTER_MODELS = 2;
@@ -149,6 +150,7 @@ export default function AgencySubscribe() {
   } | null>(null);
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
+  const hasAutoOpenedSeatBreakdown = useRef(false);
 
   const rosterRateBasic =
     billingInterval === "year" ? BASIC_ROSTER_RATE * 0.8 : BASIC_ROSTER_RATE;
@@ -206,6 +208,14 @@ export default function AgencySubscribe() {
       .getElementById("agency-plan-cards")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  React.useEffect(() => {
+    if (hasAutoOpenedSeatBreakdown.current) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("seatBreakdown") !== "1") return;
+    hasAutoOpenedSeatBreakdown.current = true;
+    void openSeatBreakdown();
+  }, [location.search]);
 
   const syncRosterModels = (nextValue: number) => {
     const clamped = clampRosterModels(
@@ -1609,9 +1619,10 @@ export default function AgencySubscribe() {
                         onClick={() => {
                           void openSeatBreakdown();
                         }}
-                        className="text-xs font-black uppercase tracking-[0.18em] text-[#0B9DA2] hover:text-[#0A7F83]"
+                        className="group inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.18em] text-[#0B9DA2] hover:text-[#0A7F83]"
                       >
                         View details
+                        <ArrowRight className="h-3 w-3 text-[#0B9DA2] group-hover:text-[#0A7F83]" />
                       </button>
                     </div>
                   </div>

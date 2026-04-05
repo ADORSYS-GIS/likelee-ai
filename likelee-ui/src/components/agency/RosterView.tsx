@@ -962,12 +962,16 @@ const RosterView = ({
                   : "Stripe Not Connected"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-400" />
-            <span className="font-medium">
+          <button
+            type="button"
+            onClick={() => navigate("/agencysubscribe?seatBreakdown=1")}
+            className="group flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-gray-50"
+          >
+            <Users className="w-4 h-4 text-gray-400 group-hover:text-[#0B9DA2]" />
+            <span className="font-medium group-hover:text-[#0B9DA2]">
               {rosterData.length} / {seatsLimit || 0} seats used
             </span>
-          </div>
+          </button>
         </div>
       </Card>
 
