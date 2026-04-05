@@ -187,6 +187,22 @@ export const createOrUpdateAgencySeatAddon = (data: {
     invoice_url?: string;
   }>(`/api/agency/billing/addons/seats`, data);
 
+export const getAgencySeatBreakdown = () =>
+  base44Client.get<{
+    total_active_seats: number;
+    annual_seats: number;
+    monthly_seats: number;
+    items: Array<{
+      source: "in_plan" | "seat_addon";
+      interval: "month" | "year";
+      seats: number;
+      status: string;
+      subscription_id: string;
+      current_period_start?: string | null;
+      current_period_end?: string | null;
+    }>;
+  }>(`/api/agency/billing/addons/seats/breakdown`);
+
 export const createAgencyBillingPortal = () =>
   base44Client.post(`/api/agency/billing/portal`, {});
 

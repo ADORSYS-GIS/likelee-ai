@@ -10505,9 +10505,7 @@ const MarketplaceTab = ({
     queryScope="scouting-marketplace"
     enableAgencyContractConnect
     connectLocked={connectLocked}
-    connectLockedReason={
-      connectLocked ? "Free agencies need a paid plan to connect." : ""
-    }
+    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
     onConnectLocked={onConnectLocked}
   />
 );

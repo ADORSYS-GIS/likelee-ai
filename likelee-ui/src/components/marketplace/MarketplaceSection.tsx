@@ -961,7 +961,7 @@ export function MarketplaceSection({
                     )}
                     {profile.talent_ownership === "agency_owned" && (
                       <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
-                        Automatically connected (Created by you)
+                        external talent
                       </p>
                     )}
                   </div>

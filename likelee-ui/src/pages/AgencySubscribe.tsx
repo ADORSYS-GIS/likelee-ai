@@ -21,6 +21,8 @@ import {
   createAgencyIrlBookingAddonCheckout,
   createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
+  createAgencyBillingPortal,
+  getAgencySeatBreakdown,
   getAgencyProfile,
   startAgencyProTrial,
 } from "@/api/functions";
@@ -92,6 +94,10 @@ export default function AgencySubscribe() {
     "month" | "year"
   >("month");
 
+  const [seatBillingInterval, setSeatBillingInterval] = React.useState<
+    "month" | "year"
+  >("month");
+
   const [plan, setPlan] = React.useState<"basic" | "pro">("pro");
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
     null,
@@ -126,6 +132,23 @@ export default function AgencySubscribe() {
   const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
   const [checkingOutSeats, setCheckingOutSeats] = React.useState(false);
   const [startingTrial, setStartingTrial] = React.useState(false);
+  const [seatBreakdownOpen, setSeatBreakdownOpen] = React.useState(false);
+  const [seatBreakdownLoading, setSeatBreakdownLoading] = React.useState(false);
+  const [seatBreakdown, setSeatBreakdown] = React.useState<{
+    total_active_seats: number;
+    annual_seats: number;
+    monthly_seats: number;
+    items: Array<{
+      source: "in_plan" | "seat_addon";
+      interval: "month" | "year";
+      seats: number;
+      status: string;
+      subscription_id: string;
+      current_period_start?: string | null;
+      current_period_end?: string | null;
+    }>;
+  } | null>(null);
+  const [openingBillingPortal, setOpeningBillingPortal] = React.useState(false);
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
 
@@ -135,6 +158,18 @@ export default function AgencySubscribe() {
     billingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
   const rosterCostBasic = Math.round(rosterModels * rosterRateBasic);
   const rosterCostPro = Math.round(rosterModels * rosterRatePro);
+
+  const seatRosterRateBasic =
+    seatBillingInterval === "year"
+      ? BASIC_ROSTER_RATE * 0.8
+      : BASIC_ROSTER_RATE;
+  const seatRosterRatePro =
+    seatBillingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
+  const additionalSeatCount = Math.max(0, rosterModels - currentSeatsLimit);
+  const seatRosterCostBasic = Math.round(
+    additionalSeatCount * seatRosterRateBasic,
+  );
+  const seatRosterCostPro = Math.round(additionalSeatCount * seatRosterRatePro);
   const irlBookingCost = Math.round(
     billingInterval === "year" ? IRL_BOOKING_COST * 0.8 : IRL_BOOKING_COST,
   );
@@ -167,6 +202,12 @@ export default function AgencySubscribe() {
     : shouldBillIrlBookingInPlan
       ? `+$${formatNumber(irlBookingCost)}`
       : "Not selected";
+
+  const scrollToPlanCards = () => {
+    document
+      .getElementById("agency-plan-cards")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const syncRosterModels = (nextValue: number) => {
     const clamped = clampRosterModels(
@@ -289,10 +330,15 @@ export default function AgencySubscribe() {
 
   const rosterRate = plan === "basic" ? rosterRateBasic : rosterRatePro;
   const rosterCost = plan === "basic" ? rosterCostBasic : rosterCostPro;
+  const seatRosterRate =
+    plan === "basic" ? seatRosterRateBasic : seatRosterRatePro;
+  const seatRosterCost =
+    plan === "basic" ? seatRosterCostBasic : seatRosterCostPro;
   const currentPlanRank = planRank(currentPlanTier);
   const selectedPlanRank = planRank(plan);
-  const seatCountChanged =
-    currentPlanTier !== null && rosterModels !== currentSeatsLimit;
+  const seatCountChanged = includeSeatsInPlan
+    ? rosterModels !== currentSeatsLimit
+    : rosterModels !== currentSeatsLimit;
   const isDowngradeSelection =
     (currentPlanTier === "pro" && plan === "basic") ||
     (currentPlanTier === plan &&
@@ -560,6 +606,62 @@ export default function AgencySubscribe() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const openSeatBreakdown = async () => {
+    setSeatBreakdownOpen(true);
+    if (!initialized || profileLoading) return;
+    if (!authenticated) return;
+    if (!isAgencyUser) return;
+
+    setSeatBreakdownLoading(true);
+    try {
+      const resp = (await getAgencySeatBreakdown()) as any;
+      setSeatBreakdown({
+        total_active_seats: Number(resp?.total_active_seats || 0),
+        annual_seats: Number(resp?.annual_seats || 0),
+        monthly_seats: Number(resp?.monthly_seats || 0),
+        items: Array.isArray(resp?.items) ? resp.items : [],
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      toast({
+        title: "Could not load seat breakdown",
+        description: msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSeatBreakdownLoading(false);
+    }
+  };
+
+  const onOpenBillingPortal = async () => {
+    if (!initialized || profileLoading) return;
+    if (!authenticated) return;
+    if (!isAgencyUser) return;
+    setOpeningBillingPortal(true);
+    try {
+      const resp = (await createAgencyBillingPortal()) as any;
+      const url = String(resp?.checkout_url || "").trim();
+      if (!url) {
+        toast({
+          title: "Billing portal unavailable",
+          description: "No billing portal URL returned.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      toast({
+        title: "Billing portal unavailable",
+        description: msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setOpeningBillingPortal(false);
+    }
+  };
+
   const onCheckoutSeats = async () => {
     if (!initialized || profileLoading) {
       return;
@@ -599,7 +701,7 @@ export default function AgencySubscribe() {
       const resp = await createOrUpdateAgencySeatAddon({
         seats: rosterModels,
         plan: currentPlanTier === "pro" ? "pro" : plan,
-        interval: currentPlanInterval || billingInterval,
+        interval: seatBillingInterval,
       });
       const url = (resp as any)?.checkout_url as string | undefined;
       const nextSeats = Number((resp as any)?.seats_limit || rosterModels);
@@ -695,6 +797,10 @@ export default function AgencySubscribe() {
     if (requiresContactSales) return "Contact Sales";
     if (!authenticated || !isAgencyUser) {
       return targetPlan === "basic" ? "Get Basic" : "Get Pro";
+    }
+
+    if (isPlanDisabled(targetPlan) && currentPlanTier === targetPlan) {
+      return "Current Plan";
     }
 
     const isCurrentTier = currentPlanTier === targetPlan;
@@ -926,6 +1032,36 @@ export default function AgencySubscribe() {
           </div>
         </div>
 
+        {authenticated &&
+          isAgencyUser &&
+          currentPlanTier === "free" &&
+          !success && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="mt-8 flex justify-center"
+            >
+              <motion.div
+                animate={{ y: [0, -4, 0] }}
+                transition={{
+                  duration: 1.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="h-12 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-8 shadow-lg"
+                  onClick={scrollToPlanCards}
+                >
+                  Upgrade plan
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+
         {currentPlanTier === "free" &&
           currentTrialEndsAt === null &&
           !success && (
@@ -1082,7 +1218,10 @@ export default function AgencySubscribe() {
           </Card>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div
+          id="agency-plan-cards"
+          className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-8"
+        >
           {/* Card 1: Free */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8">
@@ -1132,6 +1271,12 @@ export default function AgencySubscribe() {
               <Button
                 type="button"
                 className="w-full h-12 rounded-lg font-bold bg-[#00BFA5] hover:bg-[#00A18B] text-white transition-colors"
+                disabled={
+                  authenticated &&
+                  isAgencyUser &&
+                  !!currentPlanTier &&
+                  currentPlanTier !== "free"
+                }
                 onClick={() => {
                   if (authenticated && isAgencyUser) {
                     navigate("/AgencyDashboard");
@@ -1140,7 +1285,14 @@ export default function AgencySubscribe() {
                   navigate("/Login?role=agency");
                 }}
               >
-                {currentPlanTier === "free" ? "Current Plan" : "Continue Free"}
+                {authenticated &&
+                isAgencyUser &&
+                !!currentPlanTier &&
+                currentPlanTier !== "free"
+                  ? "Plan active"
+                  : currentPlanTier === "free"
+                    ? "Current Plan"
+                    : "Continue Free"}
               </Button>
             </div>
 
@@ -1244,6 +1396,7 @@ export default function AgencySubscribe() {
                 }}
                 disabled={
                   checkoutDisabled ||
+                  isPlanDisabled("basic") ||
                   (!requiresContactSales &&
                     currentPlanTier === "basic" &&
                     currentPlanInterval === billingInterval) ||
@@ -1436,12 +1589,62 @@ export default function AgencySubscribe() {
                     aria-label="Toggle roster seats into plan checkout"
                   />
                 </div>
+
+                {!includeSeatsInPlan && (
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
+                      Seat billing
+                    </div>
+                    <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setSeatBillingInterval("month")}
+                        className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.18em] transition-colors ${
+                          seatBillingInterval === "month"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:text-gray-900"
+                        }`}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSeatBillingInterval("year")}
+                        className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.18em] transition-colors ${
+                          seatBillingInterval === "year"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:text-gray-900"
+                        }`}
+                      >
+                        Annual
+                      </button>
+                    </div>
+                    {seatBillingInterval === "year" && (
+                      <Badge className="border border-emerald-200 bg-emerald-100 text-emerald-700">
+                        SAVE 20%
+                      </Badge>
+                    )}
+                  </div>
+                )}
                 <div className="mt-5 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                    Current billed seats:{" "}
-                    <span className="font-bold text-gray-900">
-                      {formatNumber(currentSeatsLimit)}
-                    </span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>
+                        Current billed seats:{" "}
+                        <span className="font-bold text-gray-900">
+                          {formatNumber(currentSeatsLimit)}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void openSeatBreakdown();
+                        }}
+                        className="text-xs font-black uppercase tracking-[0.18em] text-[#0B9DA2] hover:text-[#0A7F83]"
+                      >
+                        View details
+                      </button>
+                    </div>
                   </div>
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
@@ -1476,13 +1679,13 @@ export default function AgencySubscribe() {
                   </div>
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                     Seat pricing follows your{" "}
-                    {currentPlanTier === "free" || currentPlanTier === null
+                    {includeSeatsInPlan
                       ? billingInterval === "year"
                         ? "selected annual"
                         : "selected monthly"
-                      : currentPlanInterval === "year"
-                        ? "active annual"
-                        : "active monthly"}{" "}
+                      : seatBillingInterval === "year"
+                        ? "selected annual"
+                        : "selected monthly"}{" "}
                     billing interval.
                   </div>
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
@@ -1501,11 +1704,23 @@ export default function AgencySubscribe() {
                   Seat total
                 </div>
                 <div className="mt-3 text-4xl font-black font-display text-[#1B1C23]">
-                  ${formatNumber(rosterCost)}
+                  $
+                  {formatNumber(
+                    includeSeatsInPlan ? rosterCost : seatRosterCost,
+                  )}
                 </div>
                 <div className="mt-1 text-sm text-gray-500">
-                  {formatNumber(rosterModels)} seats × ${rosterRate}/mo
+                  {includeSeatsInPlan
+                    ? `${formatNumber(rosterModels)} seats × $${formatNumber(rosterRate)}/mo`
+                    : `${formatNumber(additionalSeatCount)} additional seats × $${formatNumber(
+                        seatRosterRate,
+                      )}/mo`}
                 </div>
+                {!includeSeatsInPlan && seatBillingInterval === "year" && (
+                  <div className="mt-1 text-emerald-600 text-xs font-bold">
+                    Billed annually (20% discount applied)
+                  </div>
+                )}
                 <div className="mt-4 text-xs leading-5 text-gray-500">
                   {includeSeatsInPlan
                     ? "These seats will be charged inside the selected plan checkout."
@@ -1816,6 +2031,117 @@ export default function AgencySubscribe() {
               }}
             >
               {checkingOut ? "Processing payment..." : "Confirm and Pay"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={seatBreakdownOpen} onOpenChange={setSeatBreakdownOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Seat Breakdown</DialogTitle>
+            <DialogDescription>
+              Your total seats can come from annual and monthly subscriptions.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Total active
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.total_active_seats || 0)}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Annual
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.annual_seats || 0)}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Monthly
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.monthly_seats || 0)}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="grid grid-cols-12 gap-2 bg-gray-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                <div className="col-span-2">Interval</div>
+                <div className="col-span-2">Source</div>
+                <div className="col-span-2 text-right">Seats</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-4">Renews/Ends</div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {(seatBreakdown?.items || []).length === 0 ? (
+                  <div className="px-4 py-6 text-sm text-gray-500">
+                    {seatBreakdownLoading
+                      ? "Loading…"
+                      : "No active seat subscriptions found."}
+                  </div>
+                ) : (
+                  (seatBreakdown?.items || []).map((item) => (
+                    <div
+                      key={item.subscription_id}
+                      className="grid grid-cols-12 gap-2 px-4 py-3 text-sm"
+                    >
+                      <div className="col-span-2 font-bold text-gray-900">
+                        {item.interval === "year" ? "Annual" : "Monthly"}
+                      </div>
+                      <div className="col-span-2 text-gray-600">
+                        {item.source === "seat_addon" ? "Add-on" : "In plan"}
+                      </div>
+                      <div className="col-span-2 text-right font-bold text-gray-900">
+                        {formatNumber(item.seats)}
+                      </div>
+                      <div className="col-span-2 text-gray-600">
+                        {String(item.status || "").toLowerCase()}
+                      </div>
+                      <div className="col-span-4 text-gray-600">
+                        {item.current_period_end
+                          ? new Date(
+                              item.current_period_end,
+                            ).toLocaleDateString()
+                          : "—"}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSeatBreakdownOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                void onOpenBillingPortal();
+              }}
+              disabled={openingBillingPortal}
+            >
+              {openingBillingPortal ? "Opening…" : "Manage billing"}
             </Button>
           </DialogFooter>
         </DialogContent>
