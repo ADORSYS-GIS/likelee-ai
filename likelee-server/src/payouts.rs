@@ -1608,6 +1608,13 @@ pub async fn stripe_webhook(
                 })
                 .unwrap_or("")
                 .to_string();
+            let subscription_kind = obj
+                .get("metadata")
+                .and_then(|m| m.get("subscription_kind"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
             let subscription_id = obj
                 .get("subscription")
                 .and_then(|v| v.as_str())
@@ -1640,6 +1647,10 @@ pub async fn stripe_webhook(
             }
 
             if !agency_id.is_empty() && !subscription_id.is_empty() {
+                if subscription_kind.eq_ignore_ascii_case("seat_addon") {
+                    // Strict policy: do not grant seats on checkout completion. Wait for invoice.paid.
+                    return (StatusCode::OK, Json(json!({"status":"ok"})));
+                }
                 tracing::info!(
                     agency_id = %agency_id,
                     subscription_id = %subscription_id,
@@ -1720,8 +1731,19 @@ pub async fn stripe_webhook(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            let subscription_kind = obj
+                .get("metadata")
+                .and_then(|m| m.get("subscription_kind"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
 
             if !agency_id.is_empty() && !subscription_id.trim().is_empty() {
+                if subscription_kind.eq_ignore_ascii_case("seat_addon") {
+                    // Strict policy: seat add-ons only apply after invoice.paid.
+                    return (StatusCode::OK, Json(json!({"status":"ok"})));
+                }
                 let _ = sync_agency_subscription_from_stripe(
                     &state,
                     &agency_id,
@@ -3667,6 +3689,13 @@ fn aggregate_agency_subscription_state(
     subscriptions: &[stripe_sdk::Subscription],
     fallback_subscription: &stripe_sdk::Subscription,
 ) -> AggregatedAgencySubscriptionState {
+    fn is_seat_addon_subscription(sub: &stripe_sdk::Subscription) -> bool {
+        sub.metadata
+            .get("subscription_kind")
+            .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+            .unwrap_or(false)
+    }
+
     let exact_matches: Vec<&stripe_sdk::Subscription> = subscriptions
         .iter()
         .filter(|sub| {
@@ -3700,6 +3729,9 @@ fn aggregate_agency_subscription_state(
 
     let mut best_plan: Option<(&'static str, &'static str, i64, String)> = None;
     for sub in &active_subscriptions {
+        if is_seat_addon_subscription(sub) {
+            continue;
+        }
         let Some(tier) = stripe_subscription_to_plan_tier(state, sub) else {
             continue;
         };
@@ -3794,6 +3826,12 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
 ) -> Result<(), String> {
     let sub = fetch_subscription(state, subscription_id).await?;
 
+    let is_seat_addon_subscription = sub
+        .metadata
+        .get("subscription_kind")
+        .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+        .unwrap_or(false);
+
     // For audit/debug we still store the first item price ID (if any), but tier mapping scans all items.
     let price_id = sub
         .items
@@ -3839,28 +3877,34 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
 
     // Update agency profile
     let mut update = serde_json::Map::new();
-    update.insert("plan_tier".into(), json!(aggregated.plan_tier));
-    update.insert("plan_interval".into(), json!(aggregated.plan_interval));
+    if !is_seat_addon_subscription {
+        update.insert("plan_tier".into(), json!(aggregated.plan_tier));
+        update.insert("plan_interval".into(), json!(aggregated.plan_interval));
+    }
     update.insert("seats_limit".into(), json!(aggregated.seats_limit));
     update.insert(
         "addon_irl_booking_enabled".into(),
         json!(aggregated.addon_irl_booking_enabled),
     );
-    update.insert(
-        "stripe_subscription_id".into(),
-        json!(aggregated.primary_subscription_id),
-    );
+    if !is_seat_addon_subscription {
+        update.insert(
+            "stripe_subscription_id".into(),
+            json!(aggregated.primary_subscription_id),
+        );
+    }
     update.insert(
         "plan_updated_at".into(),
         json!(chrono::Utc::now().to_rfc3339()),
     );
-    update.insert(
-        "trial_ends_at".into(),
-        match status.as_str() {
-            "trialing" => trial_ends_at.map_or(serde_json::Value::Null, |value| json!(value)),
-            _ => serde_json::Value::Null,
-        },
-    );
+    if !is_seat_addon_subscription {
+        update.insert(
+            "trial_ends_at".into(),
+            match status.as_str() {
+                "trialing" => trial_ends_at.map_or(serde_json::Value::Null, |value| json!(value)),
+                _ => serde_json::Value::Null,
+            },
+        );
+    }
     if let Some(cust) = customer_id {
         if !cust.trim().is_empty() {
             update.insert("stripe_customer_id".into(), json!(cust));

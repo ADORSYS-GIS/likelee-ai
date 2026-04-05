@@ -182,6 +182,9 @@ export const createOrUpdateAgencySeatAddon = (data: {
   base44Client.post<{
     checkout_url: string;
     seats_limit?: number;
+    invoice_id?: string;
+    invoice_status?: string;
+    invoice_url?: string;
   }>(`/api/agency/billing/addons/seats`, data);
 
 export const createAgencyBillingPortal = () =>

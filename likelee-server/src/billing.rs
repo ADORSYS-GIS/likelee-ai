@@ -326,6 +326,12 @@ pub struct AgencyCheckoutResponse {
     pub checkout_url: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub seats_limit: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invoice_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invoice_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invoice_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -550,6 +556,21 @@ async fn agency_roster_count(
     state: &AppState,
     agency_id: &str,
 ) -> Result<u32, (StatusCode, String)> {
+    fn is_missing_postgrest_table(status: StatusCode, body: &str) -> bool {
+        if status != StatusCode::NOT_FOUND {
+            return false;
+        }
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(body) else {
+            return false;
+        };
+        let code = v.get("code").and_then(|c| c.as_str()).unwrap_or("");
+        if code == "PGRST205" {
+            return true;
+        }
+        let msg = v.get("message").and_then(|m| m.as_str()).unwrap_or("");
+        msg.contains("Could not find the table")
+    }
+
     let rel_resp = state
         .pg
         .from("agency_roster")
@@ -565,6 +586,9 @@ async fn agency_roster_count(
         .await
         .map_err(map_postgrest_transport_error)?;
     if !rel_status.is_success() {
+        if is_missing_postgrest_table(rel_status, &rel_text) {
+            return legacy_agency_roster_count(state, agency_id).await;
+        }
         return Err(crate::errors::sanitize_db_error(
             rel_status.as_u16(),
             rel_text,
@@ -575,6 +599,13 @@ async fn agency_roster_count(
         return Ok(rel_rows.len() as u32);
     }
 
+    legacy_agency_roster_count(state, agency_id).await
+}
+
+async fn legacy_agency_roster_count(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<u32, (StatusCode, String)> {
     let legacy_resp = state
         .pg
         .from("agency_users")
@@ -1024,6 +1055,9 @@ pub async fn create_agency_subscription_checkout(
     Ok(Json(AgencyCheckoutResponse {
         checkout_url: url,
         seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
     }))
 }
 
@@ -1518,6 +1552,8 @@ pub async fn create_or_update_agency_seat_addon(
     if let Some(existing_sub) =
         find_active_seat_addon_subscription(&state, &subscriptions, user.id.as_str())
     {
+        let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+
         let mut update_items: Vec<stripe_sdk::UpdateSubscriptionItems> = Vec::new();
         let mut seat_item_id: Option<String> = None;
         for item in existing_sub.items.data.iter() {
@@ -1573,11 +1609,45 @@ pub async fn create_or_update_agency_seat_addon(
         );
         params.metadata = Some(md);
 
-        stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
+        let updated_sub = stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
             .await
-            .map_err(|e| {
-                billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string())
-            })?;
+            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+        let mut invoice_id: Option<String> = None;
+        let mut invoice_status: Option<String> = None;
+        let mut invoice_url: Option<String> = None;
+
+        if let Some(latest_invoice) = updated_sub.latest_invoice.as_ref() {
+            let id = match latest_invoice {
+                stripe_sdk::Expandable::Id(id) => Some(id.to_string()),
+                stripe_sdk::Expandable::Object(obj) => Some(obj.id.to_string()),
+            };
+            if let Some(id) = id {
+                invoice_id = Some(id.clone());
+                if let Ok(parsed_invoice_id) = id.parse::<stripe_sdk::InvoiceId>() {
+                    if let Ok(invoice) = stripe_sdk::Invoice::retrieve(&client, &parsed_invoice_id, &[]).await {
+                        invoice_status = invoice.status.as_ref().map(|v| v.to_string());
+                        invoice_url = invoice.hosted_invoice_url.as_ref().map(|v| v.to_string());
+                    }
+                }
+            }
+        }
+
+        // Strict policy: only grant increased seats after the invoice is paid.
+        let invoice_paid = invoice_status
+            .as_deref()
+            .map(|v| v.eq_ignore_ascii_case("paid"))
+            .unwrap_or(false);
+
+        if !invoice_paid {
+            return Ok(Json(AgencyCheckoutResponse {
+                checkout_url: String::new(),
+                seats_limit: Some(current_state.seats_limit),
+                invoice_id,
+                invoice_status,
+                invoice_url,
+            }));
+        }
 
         crate::payouts::sync_agency_subscription_from_stripe(
             &state,
@@ -1592,6 +1662,9 @@ pub async fn create_or_update_agency_seat_addon(
         return Ok(Json(AgencyCheckoutResponse {
             checkout_url: String::new(),
             seats_limit: Some(latest_state.seats_limit),
+            invoice_id,
+            invoice_status,
+            invoice_url,
         }));
     }
 
@@ -1648,6 +1721,9 @@ pub async fn create_or_update_agency_seat_addon(
     Ok(Json(AgencyCheckoutResponse {
         checkout_url: url,
         seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
     }))
 }
 
@@ -1827,6 +1903,9 @@ pub async fn create_agency_irl_booking_addon_checkout(
     Ok(Json(AgencyCheckoutResponse {
         checkout_url: url,
         seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
     }))
 }
 
@@ -2634,6 +2713,9 @@ pub async fn create_agency_billing_portal(
         Ok(session) => Ok(Json(AgencyCheckoutResponse {
             checkout_url: session.url,
             seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
         })),
         Err(e) => {
             warn!(error = %e, agency_id = %agency_id, "failed to create stripe billing portal session");

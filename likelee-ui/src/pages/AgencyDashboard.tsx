@@ -18456,6 +18456,8 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
@@ -18468,6 +18470,8 @@ export default function AgencyDashboard() {
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "licensing",
@@ -18538,6 +18542,8 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
@@ -18550,6 +18556,8 @@ export default function AgencyDashboard() {
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18706,17 +18714,24 @@ export default function AgencyDashboard() {
                 {agencyBillingLoading ? (
                   <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <Badge
-                    className={`border-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      agencyTrialActive
-                        ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                        : "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
-                    }`}
-                  >
-                    {agencyTrialActive
-                      ? "PRO TRIAL"
-                      : `${agencyDisplayPlanLabel} PLAN`}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      className={`border-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        agencyTrialActive
+                          ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                          : "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
+                      }`}
+                    >
+                      {agencyTrialActive
+                        ? "PRO TRIAL"
+                        : `${agencyDisplayPlanLabel} PLAN`}
+                    </Badge>
+                    {agencyTrialActive && agencyTrialCountdown ? (
+                      <span className="text-[11px] font-semibold text-amber-700">
+                        {agencyTrialCountdown} left
+                      </span>
+                    ) : null}
+                  </div>
                 )}
               </div>
             </div>
@@ -18725,7 +18740,7 @@ export default function AgencyDashboard() {
 
         {!agencyBillingLoading &&
           !agencyTrialActive &&
-          !agencyTrialStartAt &&
+          !agencyTrialEndsAt &&
           agencyPlanTier === "free" && (
             <button
               onClick={(e) => {
@@ -19645,7 +19660,26 @@ export default function AgencyDashboard() {
               <PerformanceTiers isSportsAgency={isSportsAgency} />
             )}
             {activeTab === "jobs" && activeSubTab === "Job Invites" && (
-              <AgencyJobInvitesView />
+              hasProAccess ? (
+                <AgencyJobInvitesView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Jobs are available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              )
             )}
             {activeTab === "licensing" &&
               activeSubTab === "Licensing Requests" && (
@@ -19836,7 +19870,27 @@ export default function AgencyDashboard() {
                 onConnectLocked={() => navigate("/agencysubscribe")}
               />
             )}
-            {activeTab === "messages" && <CommunicationHub />}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Messaging is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (

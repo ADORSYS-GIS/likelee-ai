@@ -25,6 +25,7 @@ import {
   startAgencyProTrial,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { useAuth } from "@/auth/AuthProvider";
 
 const DEFAULT_ROSTER_MODELS = 10;
@@ -602,6 +603,8 @@ export default function AgencySubscribe() {
       });
       const url = (resp as any)?.checkout_url as string | undefined;
       const nextSeats = Number((resp as any)?.seats_limit || rosterModels);
+      const invoiceUrl = (resp as any)?.invoice_url as string | undefined;
+      const invoiceStatus = (resp as any)?.invoice_status as string | undefined;
       if (url) {
         window.location.href = url;
         return;
@@ -610,7 +613,19 @@ export default function AgencySubscribe() {
       setIncludeSeatsInPlan(false);
       toast({
         title: "Seat add-on updated",
-        description: `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats.`,
+        description:
+          invoiceStatus && invoiceStatus.trim().length > 0
+            ? `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats. Invoice status: ${invoiceStatus}.`
+            : `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats.`,
+        action:
+          invoiceUrl && invoiceUrl.trim().length > 0 ? (
+            <ToastAction
+              altText="View invoice"
+              onClick={() => window.open(invoiceUrl, "_blank", "noopener,noreferrer")}
+            >
+              View invoice
+            </ToastAction>
+          ) : undefined,
       });
     } catch (e: any) {
       const msg = String(e?.message || e || "");
@@ -1375,6 +1390,8 @@ export default function AgencySubscribe() {
             </div>
             <div className="space-y-4 flex-grow">
               {[
+                "Job invites & applications",
+                "Direct messaging with talents",
                 "Advanced Analytics",
                 "Royalties & Payouts Dashboard",
                 "Financial Reports & Expense Tracking",
