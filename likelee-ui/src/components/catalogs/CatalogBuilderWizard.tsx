@@ -461,8 +461,9 @@ export function CatalogBuilderWizard({
           {step === "select-request" && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 font-medium">
-                Select a paid licensing request to link this catalog to. This
-                will also populate a receipt for the client.
+                Select a signed licensing request to link this catalog to. Paid
+                and unpaid requests are both allowed. We will show the payment
+                status so you can decide whether to send the catalog yet.
               </p>
               {eligibleQuery.isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -470,12 +471,15 @@ export function CatalogBuilderWizard({
                 </div>
               ) : eligibleRequests.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No paid licensing requests available. You can still create a
+                  No signed licensing requests available. You can still create a
                   catalog without linking a request.
                 </div>
               ) : (
                 eligibleRequests.map((req: any) => {
                   const selected = sourceId === req.id;
+                  const isPaid =
+                    req.is_paid === true ||
+                    String(req.payment_status || "").toLowerCase() === "paid";
                   return (
                     <button
                       key={req.id}
@@ -499,9 +503,26 @@ export function CatalogBuilderWizard({
                           {req.total_amount_cents && (
                             <Badge
                               variant="secondary"
-                              className="bg-green-50 text-green-700"
+                              className={
+                                isPaid
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }
                             >
-                              ${(req.total_amount_cents / 100).toFixed(2)} Paid
+                              ${(req.total_amount_cents / 100).toFixed(2)}{" "}
+                              {isPaid ? "Paid" : "Unpaid"}
+                            </Badge>
+                          )}
+                          {!req.total_amount_cents && (
+                            <Badge
+                              variant="secondary"
+                              className={
+                                isPaid
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }
+                            >
+                              {isPaid ? "Paid" : "Unpaid"}
                             </Badge>
                           )}
                           {selected && (
@@ -511,16 +532,26 @@ export function CatalogBuilderWizard({
                           )}
                         </div>
                       </div>
-                      {req.paid_at && (
-                        <p className="text-[11px] text-gray-400 mt-1.5">
-                          Paid{" "}
-                          {new Date(req.paid_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                      <div className="mt-1.5 space-y-1">
+                        <p className="text-[11px] text-gray-400">
+                          Contract signed and eligible for catalog delivery.
                         </p>
-                      )}
+                        {req.paid_at ? (
+                          <p className="text-[11px] text-green-600">
+                            Paid{" "}
+                            {new Date(req.paid_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-amber-600">
+                            Unpaid request. You can still create the catalog,
+                            but payment has not been recorded yet.
+                          </p>
+                        )}
+                      </div>
                     </button>
                   );
                 })
