@@ -21,7 +21,6 @@ import {
   createAgencyIrlBookingAddonCheckout,
   createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
-  createAgencyBillingPortal,
   getAgencySeatBreakdown,
   getAgencyProfile,
   startAgencyProTrial,
@@ -148,7 +147,6 @@ export default function AgencySubscribe() {
       current_period_end?: string | null;
     }>;
   } | null>(null);
-  const [openingBillingPortal, setOpeningBillingPortal] = React.useState(false);
   const isAgencyUser = profile?.role === "agency";
   const profileLoading = initialized && authenticated && !profile;
 
@@ -630,35 +628,6 @@ export default function AgencySubscribe() {
       });
     } finally {
       setSeatBreakdownLoading(false);
-    }
-  };
-
-  const onOpenBillingPortal = async () => {
-    if (!initialized || profileLoading) return;
-    if (!authenticated) return;
-    if (!isAgencyUser) return;
-    setOpeningBillingPortal(true);
-    try {
-      const resp = (await createAgencyBillingPortal()) as any;
-      const url = String(resp?.checkout_url || "").trim();
-      if (!url) {
-        toast({
-          title: "Billing portal unavailable",
-          description: "No billing portal URL returned.",
-          variant: "destructive",
-        });
-        return;
-      }
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      const msg = String(e?.message || e || "");
-      toast({
-        title: "Billing portal unavailable",
-        description: msg || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setOpeningBillingPortal(false);
     }
   };
 
@@ -2133,15 +2102,6 @@ export default function AgencySubscribe() {
               onClick={() => setSeatBreakdownOpen(false)}
             >
               Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                void onOpenBillingPortal();
-              }}
-              disabled={openingBillingPortal}
-            >
-              {openingBillingPortal ? "Opening…" : "Manage billing"}
             </Button>
           </DialogFooter>
         </DialogContent>
