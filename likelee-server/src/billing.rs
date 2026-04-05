@@ -815,6 +815,7 @@ async fn list_customer_subscriptions_for_billing(
         .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))
 }
 
+#[allow(dead_code)]
 fn find_active_seat_addon_subscription<'a>(
     state: &AppState,
     subscriptions: &'a [stripe_sdk::Subscription],
@@ -1728,7 +1729,7 @@ pub async fn create_or_update_agency_seat_addon(
         .unwrap_or("free")
         .trim()
         .to_lowercase();
-    let current_plan_interval = row
+    let _current_plan_interval = row
         .get("plan_interval")
         .and_then(|value| value.as_str())
         .unwrap_or("month")
