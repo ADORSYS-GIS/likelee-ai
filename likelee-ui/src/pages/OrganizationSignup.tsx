@@ -25,7 +25,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
+import { AgencyTermsContent } from "@/components/AgencyTermsContent";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -2705,7 +2705,7 @@ export default function OrganizationSignup() {
               </div>
 
               <ScrollArea className="h-72 border-2 border-gray-200 rounded-none p-4 bg-gray-50">
-                <PrivacyPolicyContent />
+                <AgencyTermsContent />
               </ScrollArea>
 
               <div className="flex items-start space-x-3 p-4 border-2 border-black bg-gray-50 rounded-none">
