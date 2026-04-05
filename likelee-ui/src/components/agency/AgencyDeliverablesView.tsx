@@ -171,6 +171,15 @@ export function AgencyDeliverablesView() {
     { url: string; type: "image" | "video" | "file"; caption: string }[]
   >([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [notSignedDialog, setNotSignedDialog] = useState<{
+    open: boolean;
+    offerId: string;
+  }>({ open: false, offerId: "" });
+  const [unpaidSubmitDialog, setUnpaidSubmitDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    submitting: boolean;
+  }>({ open: false, offerId: "", submitting: false });
   const { toast } = useToast();
   const confirmUnassign = async () => {
     if (unassignDialog.submitting) return;
@@ -854,6 +863,30 @@ export function AgencyDeliverablesView() {
 
   const handleSubmitDrafts = async (offerId: string) => {
     if (!offerId) return;
+
+    const offer = offers.find((o: any) => String(o?.id || "") === offerId);
+    const status = String(offer?.status || "").trim().toLowerCase();
+    const isSigned = [
+      "contract_fully_signed",
+      "signed",
+      "in_execution",
+      "deliverables_submitted",
+      "in_review",
+      "changes_requested",
+      "approved",
+      "completed",
+    ].includes(status);
+    if (!isSigned) {
+      setNotSignedDialog({ open: true, offerId });
+      return;
+    }
+
+    const isPaid = String(offer?.payment_status || "").trim().toLowerCase() === "paid";
+    if (!isPaid) {
+      setUnpaidSubmitDialog({ open: true, offerId, submitting: false });
+      return;
+    }
+
     setSubmittingDrafts((prev) => ({ ...prev, [offerId]: true }));
     try {
       await submitAllDraftDeliverables(offerId);
@@ -1018,6 +1051,19 @@ export function AgencyDeliverablesView() {
           );
           const isOfferPaid =
             String(offer?.payment_status || "").toLowerCase() === "paid";
+          const isOfferSigned = (() => {
+            const st = String(offer?.status || "").trim().toLowerCase();
+            return [
+              "contract_fully_signed",
+              "signed",
+              "in_execution",
+              "deliverables_submitted",
+              "in_review",
+              "changes_requested",
+              "approved",
+              "completed",
+            ].includes(st);
+          })();
           const offerAssignmentsLocked = (() => {
             const status = String(offer?.status || "")
               .trim()
@@ -1063,13 +1109,18 @@ export function AgencyDeliverablesView() {
                           {offerStatusLabel(offer?.status) ||
                             String(offer?.status || "")}
                         </Badge>
-                        {offer?.status === "contract_fully_signed" && (
+                        <Badge
+                          className={`text-[10px] py-0 ${isOfferSigned ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}
+                        >
+                          {isOfferSigned ? "Signed" : "Not signed"}
+                        </Badge>
+                        {isOfferSigned ? (
                           <Badge
                             className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
                           >
                             {isOfferPaid ? "Paid" : "Awaiting Payment"}
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1115,8 +1166,9 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      ⏳ Awaiting brand payment before deliverables can be
-                      uploaded or submitted.
+                      ⏳ Brand payment is still pending. You can upload and
+                      submit deliverables now, but you’ll need to confirm the
+                      unpaid status before submitting.
                     </span>
                   </div>
                 )}
@@ -1282,10 +1334,7 @@ export function AgencyDeliverablesView() {
                                   className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
-                                    submittingDrafts[offerId] ||
-                                    (offer?.status ===
-                                      "contract_fully_signed" &&
-                                      !isOfferPaid)
+                                    submittingDrafts[offerId]
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
@@ -1296,10 +1345,6 @@ export function AgencyDeliverablesView() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  disabled={
-                                    offer?.status === "contract_fully_signed" &&
-                                    !isOfferPaid
-                                  }
                                   onClick={() =>
                                     setUploadDialog({
                                       open: true,
@@ -1560,6 +1605,113 @@ export function AgencyDeliverablesView() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={notSignedDialog.open}
+        onOpenChange={(open) => {
+          setNotSignedDialog((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Offer not signed yet</AlertDialogTitle>
+            <AlertDialogDescription>
+              The offer must be fully signed before you can submit deliverables.
+              Once signed, you can submit even if payment is still pending (with
+              confirmation).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() =>
+                setNotSignedDialog({ open: false, offerId: "" })
+              }
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={unpaidSubmitDialog.open}
+        onOpenChange={(open) => {
+          if (unpaidSubmitDialog.submitting) return;
+          setUnpaidSubmitDialog((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit deliverables before payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The brand has not paid for this offer yet. You can still submit
+              deliverables now, but payment is required before escrow release.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unpaidSubmitDialog.submitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={unpaidSubmitDialog.submitting}
+              onClick={async () => {
+                const offerId = unpaidSubmitDialog.offerId;
+                if (!offerId) return;
+
+                const offer = offers.find(
+                  (o: any) => String(o?.id || "") === offerId,
+                );
+                const status = String(offer?.status || "")
+                  .trim()
+                  .toLowerCase();
+                const isSigned = [
+                  "contract_fully_signed",
+                  "signed",
+                  "in_execution",
+                  "deliverables_submitted",
+                  "in_review",
+                  "changes_requested",
+                  "approved",
+                  "completed",
+                ].includes(status);
+                if (!isSigned) {
+                  setUnpaidSubmitDialog((prev) => ({
+                    ...prev,
+                    open: false,
+                    offerId: "",
+                    submitting: false,
+                  }));
+                  setNotSignedDialog({ open: true, offerId });
+                  return;
+                }
+
+                setUnpaidSubmitDialog((prev) => ({ ...prev, submitting: true }));
+                try {
+                  await submitAllDraftDeliverables(offerId, {
+                    confirm_unpaid: true,
+                  });
+                  await loadDeliverables(offerId);
+                  toast({ title: "Submitted to brand" });
+                  setUnpaidSubmitDialog({
+                    open: false,
+                    offerId: "",
+                    submitting: false,
+                  });
+                } catch (e: any) {
+                  toast({
+                    title: "Submit failed",
+                    description: e?.message || "Please try again.",
+                    variant: "destructive",
+                  });
+                  setUnpaidSubmitDialog((prev) => ({ ...prev, submitting: false }));
+                }
+              }}
+            >
+              Submit anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={assignConfirmOpen}

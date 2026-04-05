@@ -827,8 +827,16 @@ export const uploadOfferDeliverable = (
   );
 };
 
-export const submitAllDraftDeliverables = (offerId: string) =>
-  base44Client.post(`/api/campaign-offers/${offerId}/deliverables/submit`);
+export const submitAllDraftDeliverables = (
+  offerId: string,
+  data?: {
+    confirm_unpaid?: boolean;
+  },
+) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/submit`,
+    data,
+  );
 
 export const submitOfferDeliverable = (
   offerId: string,
@@ -840,6 +848,7 @@ export const submitOfferDeliverable = (
     creator_id?: string;
     asset_request_id?: string;
     meta?: any;
+    confirm_unpaid?: boolean;
   },
 ) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
 

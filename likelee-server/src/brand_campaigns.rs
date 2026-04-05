@@ -27,6 +27,28 @@ fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
     st == "completed" || st == "signed"
 }
 
+fn offer_status_is_signed(value: &serde_json::Value) -> bool {
+    let st = value
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    // NOTE: offer.status advances during deliverables/review; treat any post-signature status as signed.
+    matches!(
+        st.as_str(),
+        "contract_fully_signed"
+            | "signed"
+            | "in_execution"
+            | "deliverables_submitted"
+            | "in_review"
+            | "changes_requested"
+            | "approved"
+            | "completed"
+    )
+}
+
 async fn attach_is_fully_signed_to_offers(
     state: &AppState,
     offers: &mut [serde_json::Value],
@@ -281,6 +303,12 @@ pub struct SubmitDeliverableRequest {
     pub creator_id: Option<String>,
     pub asset_request_id: Option<String>,
     pub meta: Option<serde_json::Value>,
+    pub confirm_unpaid: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SubmitDraftDeliverablesRequest {
+    pub confirm_unpaid: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -5271,13 +5299,22 @@ pub async fn submit_offer_deliverable(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    // Payment gate: do not allow campaign deliverables to be submitted until the offer is paid.
+    // Payment gate: by default do not allow campaign deliverables to be submitted until the offer
+    // is paid. Agencies may override this with an explicit confirmation flag.
     let payment_status = _offer
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
-        return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        let confirm_unpaid = payload.confirm_unpaid.unwrap_or(false);
+        if user.role != "agency" || !confirm_unpaid {
+            return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        }
+
+        // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
+        if !offer_status_is_signed(&_offer) {
+            return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
     }
 
     let offer_brand_id = _offer
@@ -5591,7 +5628,7 @@ pub async fn upload_offer_deliverable(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" {
+    if payment_status != "paid" && user.role != "agency" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -6036,7 +6073,7 @@ pub async fn upload_offer_deliverable_form(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" {
+    if payment_status != "paid" && user.role != "agency" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -6394,6 +6431,7 @@ pub async fn submit_draft_deliverables(
     State(state): State<AppState>,
     user: AuthUser,
     Path(OfferPath { offer_id }): Path<OfferPath>,
+    payload: Option<Json<SubmitDraftDeliverablesRequest>>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
@@ -6405,7 +6443,18 @@ pub async fn submit_draft_deliverables(
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
-        return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        let confirm_unpaid = payload
+            .as_ref()
+            .and_then(|p| p.confirm_unpaid)
+            .unwrap_or(false);
+        if user.role != "agency" || !confirm_unpaid {
+            return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        }
+
+        // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
+        if !offer_status_is_signed(&_offer) {
+            return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
     }
 
     let resp = state
