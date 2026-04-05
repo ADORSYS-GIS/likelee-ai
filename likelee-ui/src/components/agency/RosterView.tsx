@@ -1845,6 +1845,9 @@ const RosterView = ({
         onOpenChange={setShowCompCardModal}
         talents={filteredTalent}
         agencyName={agencyName}
+        agencyEmail={agencyEmail}
+        agencyWebsite={agencyWebsite}
+        logoUrl={logoUrl}
       />
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
