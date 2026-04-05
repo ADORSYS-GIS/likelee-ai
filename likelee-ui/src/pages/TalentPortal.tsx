@@ -2485,31 +2485,7 @@ export default function TalentPortal({
                         />
                       </div>
 
-                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            Public Profile Visibility
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            Show in marketplace search results
-                          </div>
-                        </div>
-                        <Switch
-                          checked={
-                            (portalSettings as any)?.public_profile_visible ===
-                            undefined
-                              ? true
-                              : !!(portalSettings as any)
-                                  ?.public_profile_visible
-                          }
-                          onCheckedChange={(checked: boolean) =>
-                            updatePortalSettingsMutation.mutate({
-                              public_profile_visible: checked,
-                            })
-                          }
-                          disabled={updatePortalSettingsMutation.isPending}
-                        />
-                      </div>
+
                     </div>
                   </Card>
                 </>
@@ -3770,39 +3746,6 @@ export default function TalentPortal({
                 </div>
               </Card>
 
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Privacy Controls
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Public Profile Visibility
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        When enabled, your profile will be searchable by brands
-                        in the Likelee marketplace.
-                      </div>
-                    </div>
-                    <Switch
-                      checked={
-                        (portalSettings as any)?.public_profile_visible ===
-                        undefined
-                          ? true
-                          : !!(portalSettings as any)?.public_profile_visible
-                      }
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          public_profile_visible: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-                </div>
-              </Card>
             </div>
           )}
           <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
