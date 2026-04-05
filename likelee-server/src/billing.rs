@@ -1609,9 +1609,12 @@ pub async fn create_or_update_agency_seat_addon(
         );
         params.metadata = Some(md);
 
-        let updated_sub = stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
-            .await
-            .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+        let updated_sub =
+            stripe_sdk::Subscription::update(&client, &parsed_subscription_id, params)
+                .await
+                .map_err(|e| {
+                    billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string())
+                })?;
 
         let mut invoice_id: Option<String> = None;
         let mut invoice_status: Option<String> = None;
@@ -1625,7 +1628,9 @@ pub async fn create_or_update_agency_seat_addon(
             if let Some(id) = id {
                 invoice_id = Some(id.clone());
                 if let Ok(parsed_invoice_id) = id.parse::<stripe_sdk::InvoiceId>() {
-                    if let Ok(invoice) = stripe_sdk::Invoice::retrieve(&client, &parsed_invoice_id, &[]).await {
+                    if let Ok(invoice) =
+                        stripe_sdk::Invoice::retrieve(&client, &parsed_invoice_id, &[]).await
+                    {
                         invoice_status = invoice.status.as_ref().map(|v| v.to_string());
                         invoice_url = invoice.hosted_invoice_url.as_ref().map(|v| v.to_string());
                     }
