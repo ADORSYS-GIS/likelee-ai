@@ -1028,9 +1028,8 @@ export default function AgencySubscribe() {
         {authenticated &&
           isAgencyUser &&
           currentPlanTier === "free" &&
-          !success && (
-            null
-          )}
+          !success &&
+          null}
 
         {currentPlanTier === "free" &&
           currentTrialEndsAt === null &&
