@@ -3826,6 +3826,16 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
 ) -> Result<(), String> {
     let sub = fetch_subscription(state, subscription_id).await?;
 
+    let seat_charge_mode = sub
+        .metadata
+        .get("seat_charge_mode")
+        .map(|v| v.trim().to_lowercase())
+        .unwrap_or_default();
+    let roster_models_total: Option<i64> = sub
+        .metadata
+        .get("roster_models_total")
+        .and_then(|v| v.trim().parse::<i64>().ok());
+
     let is_seat_addon_subscription = sub
         .metadata
         .get("subscription_kind")
@@ -3881,7 +3891,15 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
         update.insert("plan_tier".into(), json!(aggregated.plan_tier));
         update.insert("plan_interval".into(), json!(aggregated.plan_interval));
     }
-    update.insert("seats_limit".into(), json!(aggregated.seats_limit));
+    let seats_limit = if !is_seat_addon_subscription
+        && seat_charge_mode == "delta"
+        && roster_models_total.unwrap_or(0) > 0
+    {
+        roster_models_total.unwrap_or(aggregated.seats_limit)
+    } else {
+        aggregated.seats_limit
+    };
+    update.insert("seats_limit".into(), json!(seats_limit));
     update.insert(
         "addon_irl_booking_enabled".into(),
         json!(aggregated.addon_irl_booking_enabled),

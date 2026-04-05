@@ -1122,13 +1122,38 @@ pub async fn create_agency_subscription_checkout(
         )
     })?);
 
+    let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let current_paid_seats = current_state.seats_limit.max(0);
+
+    let mut seat_charge_mode = "total".to_string();
+    let mut roster_models_delta: u32 = payload.roster_models;
+    if payload.addons.seats_in_plan {
+        let requested_total_seats_i64 = i64::from(payload.roster_models);
+        if requested_total_seats_i64 < current_paid_seats {
+            return Err(billing_error(
+                StatusCode::BAD_REQUEST,
+                "roster_models_below_current_seats",
+                format!(
+                    "Roster models cannot be below current paid seats ({current_paid_seats})."
+                )
+                .as_str(),
+            ));
+        }
+
+        let delta_i64 = requested_total_seats_i64.saturating_sub(current_paid_seats);
+        roster_models_delta = u32::try_from(delta_i64).unwrap_or(0);
+        seat_charge_mode = "delta".to_string();
+    }
+
     let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> =
         vec![recurring_price_line_item(base_plan_price_id, 1)];
     if payload.addons.seats_in_plan {
-        line_items.push(recurring_price_line_item(
-            headcount_price_id,
-            payload.roster_models,
-        ));
+        if roster_models_delta > 0 {
+            line_items.push(recurring_price_line_item(
+                headcount_price_id,
+                roster_models_delta,
+            ));
+        }
     }
     if include_irl_booking {
         line_items.push(recurring_price_line_item(irl_booking_price_id, 1));
@@ -1158,6 +1183,15 @@ pub async fn create_agency_subscription_checkout(
     md.insert(
         "roster_models".to_string(),
         payload.roster_models.to_string(),
+    );
+    md.insert("seat_charge_mode".to_string(), seat_charge_mode.clone());
+    md.insert(
+        "roster_models_total".to_string(),
+        payload.roster_models.to_string(),
+    );
+    md.insert(
+        "roster_models_delta".to_string(),
+        roster_models_delta.to_string(),
     );
     md.insert(
         "addon_irl_booking".to_string(),
@@ -1211,6 +1245,15 @@ pub async fn create_agency_subscription_checkout(
     sub_md.insert(
         "roster_models".to_string(),
         payload.roster_models.to_string(),
+    );
+    sub_md.insert("seat_charge_mode".to_string(), seat_charge_mode);
+    sub_md.insert(
+        "roster_models_total".to_string(),
+        payload.roster_models.to_string(),
+    );
+    sub_md.insert(
+        "roster_models_delta".to_string(),
+        roster_models_delta.to_string(),
     );
     sub_md.insert(
         "addon_irl_booking".to_string(),

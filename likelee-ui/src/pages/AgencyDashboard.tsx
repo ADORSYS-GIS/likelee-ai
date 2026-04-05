@@ -19599,6 +19599,18 @@ export default function AgencyDashboard() {
                   This is your main hub for managing your agency.
                 </div>
               </div>
+              {!agencyBillingLoading &&
+                agencyPlanTier === "free" &&
+                !agencyTrialActive && (
+                  <Button
+                    type="button"
+                    className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
+                    Upgrade plan
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
             </div>
           </div>
           <Suspense fallback={<TabSkeleton />}>

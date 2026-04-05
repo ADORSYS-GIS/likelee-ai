@@ -156,8 +156,22 @@ export default function AgencySubscribe() {
     billingInterval === "year" ? BASIC_ROSTER_RATE * 0.8 : BASIC_ROSTER_RATE;
   const rosterRatePro =
     billingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
-  const rosterCostBasic = Math.round(rosterModels * rosterRateBasic);
-  const rosterCostPro = Math.round(rosterModels * rosterRatePro);
+
+  const isAgencyAuthed = initialized && authenticated && isAgencyUser;
+  const hasExistingBilledSeats =
+    isAgencyAuthed && currentSeatsLimit > minimumRosterModels;
+  const effectiveSeatMin = hasExistingBilledSeats
+    ? Math.max(minimumRosterModels, currentSeatsLimit)
+    : minimumRosterModels;
+
+  const inPlanSeatCount = includeSeatsInPlan
+    ? hasExistingBilledSeats
+      ? Math.max(0, rosterModels - currentSeatsLimit)
+      : rosterModels
+    : 0;
+
+  const rosterCostBasic = Math.round(inPlanSeatCount * rosterRateBasic);
+  const rosterCostPro = Math.round(inPlanSeatCount * rosterRatePro);
 
   const seatRosterRateBasic =
     seatBillingInterval === "year"
@@ -188,12 +202,12 @@ export default function AgencySubscribe() {
   );
   const totalMonthlyBasic = basePlanBasic + selectedIrlBookingCost;
   const totalMonthlyPro = basePlanPro + selectedIrlBookingCost;
-  const bundledSeatCostBasic = includeSeatsInPlan ? rosterCostBasic : 0;
-  const bundledSeatCostPro = includeSeatsInPlan ? rosterCostPro : 0;
+  const bundledSeatCostBasic = rosterCostBasic;
+  const bundledSeatCostPro = rosterCostPro;
   const displayedMonthlyBasic = totalMonthlyBasic + bundledSeatCostBasic;
   const displayedMonthlyPro = totalMonthlyPro + bundledSeatCostPro;
   const requiresContactSales = rosterModels > MAX_ROSTER_MODELS;
-  const sliderMin = requiresContactSales ? rosterModels : minimumRosterModels;
+  const sliderMin = requiresContactSales ? rosterModels : effectiveSeatMin;
   const maxRosterModels = requiresContactSales
     ? rosterModels
     : MAX_ROSTER_MODELS;
@@ -220,7 +234,7 @@ export default function AgencySubscribe() {
   const syncRosterModels = (nextValue: number) => {
     const clamped = clampRosterModels(
       nextValue,
-      minimumRosterModels,
+      effectiveSeatMin,
       maxRosterModels,
     );
     setRosterModels(clamped);
@@ -1015,30 +1029,7 @@ export default function AgencySubscribe() {
           isAgencyUser &&
           currentPlanTier === "free" &&
           !success && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="mt-8 flex justify-center"
-            >
-              <motion.div
-                animate={{ y: [0, -4, 0] }}
-                transition={{
-                  duration: 1.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="h-12 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-8 shadow-lg"
-                  onClick={scrollToPlanCards}
-                >
-                  Upgrade plan
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </motion.div>
-            </motion.div>
+            null
           )}
 
         {currentPlanTier === "free" &&
@@ -1134,7 +1125,7 @@ export default function AgencySubscribe() {
                     setRosterModels(
                       clampRosterModels(
                         parsed,
-                        minimumRosterModels,
+                        effectiveSeatMin,
                         maxRosterModels,
                       ),
                     );
@@ -1155,7 +1146,7 @@ export default function AgencySubscribe() {
                 step={1}
                 disabled={requiresContactSales}
                 onValueChange={(value) =>
-                  syncRosterModels(value[0] ?? minimumRosterModels)
+                  syncRosterModels(value[0] ?? effectiveSeatMin)
                 }
                 aria-label="Roster size slider"
               />
@@ -1350,7 +1341,7 @@ export default function AgencySubscribe() {
                 <span>Roster seats</span>
                 <span className="text-emerald-300 font-semibold">
                   {includeSeatsInPlan
-                    ? `$${formatNumber(rosterCostBasic)} in plan`
+                    ? `${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostBasic)} in plan`
                     : "Billed separately"}
                 </span>
               </div>
@@ -1474,7 +1465,7 @@ export default function AgencySubscribe() {
                 <span>Roster seats</span>
                 <span className="text-[#3B82F6] font-semibold">
                   {includeSeatsInPlan
-                    ? `$${formatNumber(rosterCostPro)} in plan`
+                    ? `${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostPro)} in plan`
                     : "Billed separately"}
                 </span>
               </div>
@@ -1646,7 +1637,7 @@ export default function AgencySubscribe() {
                           setRosterModels(
                             clampRosterModels(
                               parsed,
-                              minimumRosterModels,
+                              effectiveSeatMin,
                               maxRosterModels,
                             ),
                           );
@@ -1691,7 +1682,7 @@ export default function AgencySubscribe() {
                 </div>
                 <div className="mt-1 text-sm text-gray-500">
                   {includeSeatsInPlan
-                    ? `${formatNumber(rosterModels)} seats × $${formatNumber(rosterRate)}/mo`
+                    ? `${formatNumber(inPlanSeatCount)} seats × $${formatNumber(rosterRate)}/mo`
                     : `${formatNumber(additionalSeatCount)} additional seats × $${formatNumber(
                         seatRosterRate,
                       )}/mo`}

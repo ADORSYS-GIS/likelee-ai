@@ -968,6 +968,13 @@ const RosterView = ({
           </div>
           <div className="flex gap-3">
             <Button
+              type="button"
+              className="bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2"
+              onClick={() => navigate("/agencysubscribe")}
+            >
+              Upgrade plan
+            </Button>
+            <Button
               variant="outline"
               className="text-gray-700 border-gray-300 gap-2"
               onClick={() => onEditProfile?.()}
