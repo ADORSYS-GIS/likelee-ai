@@ -13,7 +13,6 @@ fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     if raw.is_empty() {
         return None;
     }
-
     for pair in raw.split(',') {
         let pair = pair.trim();
         if pair.is_empty() {
@@ -35,6 +34,148 @@ fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     }
 
     None
+}
+
+fn stripe_seat_quantity_for_subscription(state: &AppState, sub: &stripe_sdk::Subscription) -> i64 {
+    sub.items
+        .data
+        .iter()
+        .filter_map(|item| {
+            let price_id = item
+                .price
+                .as_ref()
+                .map(|price| price.id.to_string())
+                .unwrap_or_default();
+            if agency_headcount_price_id_matches(state, price_id.as_str()) {
+                item.quantity.and_then(|q| i64::try_from(q).ok())
+            } else {
+                None
+            }
+        })
+        .sum::<i64>()
+}
+
+fn stripe_subscription_interval(sub: &stripe_sdk::Subscription) -> String {
+    if let Some(v) = sub.metadata.get("billing_interval") {
+        let trimmed = v.trim().to_lowercase();
+        if trimmed == "month" || trimmed == "year" {
+            return trimmed;
+        }
+    }
+
+    for item in sub.items.data.iter() {
+        if let Some(price) = item.price.as_ref() {
+            if let Some(rec) = price.recurring.as_ref() {
+                let interval = rec.interval.to_string().to_lowercase();
+                if interval == "month" || interval == "year" {
+                    return interval;
+                }
+            }
+        }
+    }
+
+    "month".to_string()
+}
+
+fn ts_to_rfc3339(ts: i64) -> Option<String> {
+    DateTime::<Utc>::from_timestamp(ts, 0).map(|dt| dt.to_rfc3339())
+}
+
+pub async fn get_agency_seat_breakdown(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencySeatBreakdownResponse>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "agency_only",
+            "Only agency accounts can perform this action.",
+        ));
+    }
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let subscriptions =
+        list_customer_subscriptions_for_billing(&state, billing_ctx.customer_id.as_str()).await?;
+
+    let mut items: Vec<AgencySeatBreakdownItem> = Vec::new();
+    for sub in subscriptions.iter() {
+        let belongs_to_agency = sub
+            .metadata
+            .get("agency_id")
+            .map(|value| value.trim() == user.id.as_str())
+            .unwrap_or(false);
+        if !belongs_to_agency {
+            continue;
+        }
+        if !crate::payouts::stripe_subscription_is_active(sub) {
+            continue;
+        }
+
+        let seat_qty = stripe_seat_quantity_for_subscription(&state, sub);
+        if seat_qty <= 0 {
+            continue;
+        }
+
+        let subscription_kind = sub
+            .metadata
+            .get("subscription_kind")
+            .map(|value| value.trim().to_string())
+            .unwrap_or_default();
+        let seats_in_plan = sub
+            .metadata
+            .get("seats_in_plan")
+            .map(|value| value.trim() == "1")
+            .unwrap_or(false);
+
+        let source = if subscription_kind.eq_ignore_ascii_case("seat_addon") {
+            "seat_addon"
+        } else if seats_in_plan {
+            "in_plan"
+        } else {
+            // Non-seat_addon subscription with headcount price but no explicit metadata.
+            "in_plan"
+        };
+
+        let interval = stripe_subscription_interval(sub);
+        let current_period_start = ts_to_rfc3339(sub.current_period_start);
+        let current_period_end = ts_to_rfc3339(sub.current_period_end);
+
+        items.push(AgencySeatBreakdownItem {
+            source: source.to_string(),
+            interval,
+            seats: seat_qty,
+            status: sub.status.to_string(),
+            subscription_id: sub.id.to_string(),
+            current_period_start,
+            current_period_end,
+        });
+    }
+
+    let mut total_active_seats = 0_i64;
+    let mut annual_seats = 0_i64;
+    let mut monthly_seats = 0_i64;
+    for item in items.iter() {
+        total_active_seats = total_active_seats.saturating_add(item.seats);
+        if item.interval.eq_ignore_ascii_case("year") {
+            annual_seats = annual_seats.saturating_add(item.seats);
+        } else {
+            monthly_seats = monthly_seats.saturating_add(item.seats);
+        }
+    }
+
+    Ok(Json(AgencySeatBreakdownResponse {
+        total_active_seats,
+        annual_seats,
+        monthly_seats,
+        items,
+    }))
 }
 
 fn studio_price_id_for_plan(
@@ -357,6 +498,25 @@ pub struct AgencyPlanChangeResponse {
 #[derive(Debug, Serialize)]
 pub struct AgencySeatAddonChangeResponse {
     pub seats_limit: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencySeatBreakdownItem {
+    pub source: String,   // "in_plan" | "seat_addon"
+    pub interval: String, // "month" | "year"
+    pub seats: i64,
+    pub status: String,
+    pub subscription_id: String,
+    pub current_period_start: Option<String>,
+    pub current_period_end: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgencySeatBreakdownResponse {
+    pub total_active_seats: i64,
+    pub annual_seats: i64,
+    pub monthly_seats: i64,
+    pub items: Vec<AgencySeatBreakdownItem>,
 }
 
 #[derive(Debug, Serialize)]
@@ -818,6 +978,57 @@ pub async fn create_agency_subscription_checkout(
 
     let normalized_plan = normalize_self_serve_plan(payload.plan.as_str())?;
     let interval = normalize_interval(payload.interval.as_deref())?;
+
+    // Prevent Basic annual -> Basic monthly downgrade via direct checkout creation.
+    // (Plan changes should be upgrades only; downgrades require support intervention.)
+    {
+        let agency_resp = state
+            .pg
+            .from("agencies")
+            .select("plan_tier,plan_interval")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(map_postgrest_transport_error)?;
+        let agency_status = agency_resp.status();
+        let agency_text = agency_resp
+            .text()
+            .await
+            .map_err(map_postgrest_transport_error)?;
+        if !agency_status.is_success() {
+            return Err(crate::errors::sanitize_db_error(
+                agency_status.as_u16(),
+                agency_text,
+            ));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
+        let row = rows.first().cloned().unwrap_or_else(|| json!({}));
+        let current_plan_tier = row
+            .get("plan_tier")
+            .and_then(|value| value.as_str())
+            .unwrap_or("free")
+            .trim()
+            .to_lowercase();
+        let current_plan_interval = row
+            .get("plan_interval")
+            .and_then(|value| value.as_str())
+            .unwrap_or("month")
+            .trim()
+            .to_lowercase();
+
+        if normalized_plan == "basic"
+            && current_plan_tier == "basic"
+            && current_plan_interval == "year"
+            && interval == "month"
+        {
+            return Err(billing_error(
+                StatusCode::BAD_REQUEST,
+                "downgrade_not_allowed",
+                "Downgrades are not allowed from this endpoint.",
+            ));
+        }
+    }
 
     let (_plan_name, base_plan_price_id, headcount_price_id, base_plan_env_var, headcount_env_var) =
         agency_plan_price_ids(&state, &normalized_plan, Some(interval.as_str())).ok_or_else(
@@ -1531,7 +1742,9 @@ pub async fn create_or_update_agency_seat_addon(
             "basic".to_string()
         }
     });
-    let effective_interval = requested_interval.unwrap_or(current_plan_interval.clone());
+    // Seat add-ons should not inherit the base plan billing cadence by default.
+    // Default to monthly unless the client explicitly requests an interval.
+    let effective_interval = requested_interval.unwrap_or_else(|| "month".to_string());
     let (seat_price_id, seat_env_var) = agency_seat_price_id(
         &state,
         effective_plan.as_str(),
@@ -1549,13 +1762,72 @@ pub async fn create_or_update_agency_seat_addon(
     let subscriptions =
         list_customer_subscriptions_for_billing(&state, billing_ctx.customer_id.as_str()).await?;
 
-    if let Some(existing_sub) =
-        find_active_seat_addon_subscription(&state, &subscriptions, user.id.as_str())
-    {
-        let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let already_billed_seats = current_state.seats_limit;
+    let requested_total_seats = payload.seats;
+    let requested_total_seats_i64 = i64::from(requested_total_seats);
+    if requested_total_seats_i64 <= already_billed_seats {
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: String::new(),
+            seats_limit: Some(already_billed_seats),
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        }));
+    }
+    let additional_seats_i64 = requested_total_seats_i64.saturating_sub(already_billed_seats);
+    let additional_seats: u32 = u32::try_from(additional_seats_i64).unwrap_or(0);
 
+    // Case A: allow multiple concurrent seat add-on subscriptions (e.g. annual + monthly).
+    // We only update a seat add-on subscription when it matches the requested interval.
+    // If no matching subscription exists, we create a new subscription via Checkout.
+    let matching_interval_sub = subscriptions.iter().find(|sub| {
+        let belongs_to_agency = sub
+            .metadata
+            .get("agency_id")
+            .map(|value| value.trim() == user.id.as_str())
+            .unwrap_or(false);
+        if !belongs_to_agency || !crate::payouts::stripe_subscription_is_active(sub) {
+            return false;
+        }
+
+        let is_seat_addon = sub
+            .metadata
+            .get("subscription_kind")
+            .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+            .unwrap_or(false);
+
+        let has_seat_price = sub.items.data.iter().any(|item| {
+            item.price
+                .as_ref()
+                .map(|p| p.id.to_string())
+                .map(|pid| pid == seat_price_id)
+                .unwrap_or(false)
+        });
+
+        let meta_interval_match = sub
+            .metadata
+            .get("billing_interval")
+            .map(|v| v.trim().eq_ignore_ascii_case(effective_interval.as_str()))
+            .unwrap_or(false);
+
+        // Backward compatibility: subscriptions with headcount prices but missing metadata.
+        let looks_like_seat_addon = is_seat_addon
+            || sub.items.data.iter().any(|item| {
+                item.price
+                    .as_ref()
+                    .map(|price| price.id.to_string())
+                    .map(|price_id| agency_headcount_price_id_matches(&state, price_id.as_str()))
+                    .unwrap_or(false)
+            });
+
+        looks_like_seat_addon && (meta_interval_match || has_seat_price)
+    });
+
+    if let Some(existing_sub) = matching_interval_sub {
         let mut update_items: Vec<stripe_sdk::UpdateSubscriptionItems> = Vec::new();
         let mut seat_item_id: Option<String> = None;
+        let mut current_seat_item_qty: u64 = 0;
         for item in existing_sub.items.data.iter() {
             let price_id = item
                 .price
@@ -1564,6 +1836,7 @@ pub async fn create_or_update_agency_seat_addon(
                 .unwrap_or_default();
             if agency_headcount_price_id_matches(&state, price_id.as_str()) {
                 seat_item_id = Some(item.id.to_string());
+                current_seat_item_qty = item.quantity.unwrap_or(0);
                 continue;
             }
             update_items.push(stripe_sdk::UpdateSubscriptionItems {
@@ -1574,10 +1847,12 @@ pub async fn create_or_update_agency_seat_addon(
             });
         }
 
+        let next_seat_item_qty = current_seat_item_qty.saturating_add(u64::from(additional_seats));
+
         update_items.push(stripe_sdk::UpdateSubscriptionItems {
             id: seat_item_id,
             price: Some(seat_price_id.to_string()),
-            quantity: Some(u64::from(payload.seats)),
+            quantity: Some(next_seat_item_qty),
             ..Default::default()
         });
 
@@ -1587,7 +1862,7 @@ pub async fn create_or_update_agency_seat_addon(
         md.insert("subscription_kind".to_string(), "seat_addon".to_string());
         md.insert("plan".to_string(), effective_plan.clone());
         md.insert("billing_interval".to_string(), effective_interval.clone());
-        md.insert("roster_models".to_string(), payload.seats.to_string());
+        md.insert("roster_models".to_string(), next_seat_item_qty.to_string());
 
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
         let parsed_subscription_id = existing_sub
@@ -1647,7 +1922,7 @@ pub async fn create_or_update_agency_seat_addon(
         if !invoice_paid {
             return Ok(Json(AgencyCheckoutResponse {
                 checkout_url: String::new(),
-                seats_limit: Some(current_state.seats_limit),
+                seats_limit: Some(already_billed_seats),
                 invoice_id,
                 invoice_status,
                 invoice_url,
@@ -1688,7 +1963,7 @@ pub async fn create_or_update_agency_seat_addon(
     })?);
     cs_params.line_items = Some(vec![recurring_price_line_item(
         seat_price_id,
-        payload.seats,
+        additional_seats,
     )]);
     cs_params.client_reference_id = Some(user.id.as_str());
 
@@ -1698,7 +1973,7 @@ pub async fn create_or_update_agency_seat_addon(
     md.insert("subscription_kind".to_string(), "seat_addon".to_string());
     md.insert("plan".to_string(), effective_plan.clone());
     md.insert("billing_interval".to_string(), effective_interval.clone());
-    md.insert("roster_models".to_string(), payload.seats.to_string());
+    md.insert("roster_models".to_string(), additional_seats.to_string());
     cs_params.metadata = Some(md.clone());
 
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {

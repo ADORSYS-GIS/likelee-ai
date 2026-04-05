@@ -1190,6 +1190,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_or_update_agency_seat_addon),
         )
         .route(
+            "/api/agency/billing/addons/seats/breakdown",
+            get(crate::billing::get_agency_seat_breakdown),
+        )
+        .route(
             "/api/agency/billing/start-trial",
             post(crate::billing::start_agency_pro_trial),
         )
