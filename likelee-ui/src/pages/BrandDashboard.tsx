@@ -3933,6 +3933,10 @@ export default function BrandDashboard() {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     const status = String(deliverable?.status || "").toLowerCase();
+    const offer = brandOfferItems.find((o: any) => String(o?.id || "") === offerId);
+    const isPaid = String(offer?.payment_status || "")
+      .trim()
+      .toLowerCase() === "paid";
     const approvedForDownload = [
       "approved",
       "accepted",
@@ -3950,6 +3954,15 @@ export default function BrandDashboard() {
       toast({
         title: "Download unavailable",
         description: "Approve this deliverable to unlock downloads.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!isPaid) {
+      toast({
+        title: "Payment required",
+        description:
+          "Payment has not been received for this offer. Please complete payment to download deliverables.",
         variant: "destructive" as any,
       });
       return;
@@ -4024,6 +4037,19 @@ export default function BrandDashboard() {
   ) => {
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
+    const offer = brandOfferItems.find((o: any) => String(o?.id || "") === String(offerId));
+    const isPaid =
+      String(offer?.payment_status || "").trim().toLowerCase() === "paid";
+    if (!isPaid) {
+      toast({
+        title: "Payment required",
+        description:
+          "You can’t approve or review deliverables until payment for this offer is completed.",
+        variant: "destructive" as any,
+      });
+      deliverableReviewBusyRef.current.delete(deliverableId);
+      return;
+    }
     try {
       setReviewing(deliverableId);
       const result = await reviewOfferDeliverable(offerId, deliverableId, {
@@ -4869,8 +4895,8 @@ export default function BrandDashboard() {
                                     payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
-                                    After you approve a deliverable, the
-                                    Download button appears. Approvals are final
+                                    After you approve a deliverable,
+                                    Downloading will be enabled. Approvals are final
                                     and can’t be undone.
                                   </p>
                                 </div>
@@ -4929,9 +4955,13 @@ export default function BrandDashboard() {
                                                   className="w-full h-full object-cover"
                                                 />
                                               ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                                  <Video className="w-12 h-12 text-white/20" />
-                                                </div>
+                                                <video
+                                                  src={getPublicUrl(del)}
+                                                  muted
+                                                  playsInline
+                                                  preload="metadata"
+                                                  className="w-full h-full object-cover bg-gray-900"
+                                                />
                                               )}
                                               {isApproved && (
                                                 <div className="absolute top-3 right-3">

@@ -6037,6 +6037,12 @@ pub async fn list_offer_deliverables(
     Path(OfferPath { offer_id }): Path<OfferPath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
     let resp = state
         .pg
         .from("campaign_offer_deliverables")
@@ -6054,7 +6060,23 @@ pub async fn list_offer_deliverables(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
+    // for approval/download. Preview is allowed to support review workflows.
+    if user.role == "brand" && payment_status != "paid" {
+        for row in rows.iter_mut() {
+            if let Some(obj) = row.as_object_mut() {
+                let meta = obj
+                    .get("meta")
+                    .cloned()
+                    .unwrap_or_else(|| json!({}));
+                let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
+                meta_obj.insert("payment_required".to_string(), json!(true));
+                obj.insert("meta".to_string(), serde_json::Value::Object(meta_obj));
+            }
+        }
+    }
     Ok(Json(json!({"deliverables": rows})))
 }
 
@@ -6606,6 +6628,22 @@ pub async fn serve_offer_deliverable(
         .map(|v| v.trim().to_lowercase())
         .map(|v| matches!(v.as_str(), "1" | "true" | "t" | "yes" | "y" | "on"))
         .unwrap_or(false);
+
+    // Brands can preview deliverables, but must pay before downloading them.
+    if is_download && user.role == "brand" {
+        let payment_status = _offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        if payment_status != "paid" {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                "payment_required_to_download_deliverables".to_string(),
+            ));
+        }
+    }
     if is_download && user.role == "brand" {
         let approved = deliverable_status == "brand_approved"
             || deliverable_status == "approved"
@@ -6696,6 +6734,20 @@ pub async fn review_offer_deliverable(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    if user.role == "brand" {
+        let payment_status = _offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        if payment_status != "paid" {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                "payment_required_before_reviewing_deliverables".to_string(),
+            ));
+        }
+    }
     let action = payload.action.trim().to_lowercase();
     let now = chrono::Utc::now().to_rfc3339();
 
