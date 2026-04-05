@@ -621,7 +621,9 @@ export default function AgencySubscribe() {
           invoiceUrl && invoiceUrl.trim().length > 0 ? (
             <ToastAction
               altText="View invoice"
-              onClick={() => window.open(invoiceUrl, "_blank", "noopener,noreferrer")}
+              onClick={() =>
+                window.open(invoiceUrl, "_blank", "noopener,noreferrer")
+              }
             >
               View invoice
             </ToastAction>

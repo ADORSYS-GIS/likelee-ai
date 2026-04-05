@@ -19659,8 +19659,9 @@ export default function AgencyDashboard() {
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
               <PerformanceTiers isSportsAgency={isSportsAgency} />
             )}
-            {activeTab === "jobs" && activeSubTab === "Job Invites" && (
-              hasProAccess ? (
+            {activeTab === "jobs" &&
+              activeSubTab === "Job Invites" &&
+              (hasProAccess ? (
                 <AgencyJobInvitesView />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
@@ -19679,8 +19680,7 @@ export default function AgencyDashboard() {
                     </Button>
                   </div>
                 </Card>
-              )
-            )}
+              ))}
             {activeTab === "licensing" &&
               activeSubTab === "Licensing Requests" && (
                 <LicensingRequestsView
