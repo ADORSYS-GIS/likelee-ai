@@ -1145,13 +1145,11 @@ pub async fn create_agency_subscription_checkout(
 
     let mut line_items: Vec<stripe_sdk::CreateCheckoutSessionLineItems> =
         vec![recurring_price_line_item(base_plan_price_id, 1)];
-    if payload.addons.seats_in_plan {
-        if roster_models_delta > 0 {
-            line_items.push(recurring_price_line_item(
-                headcount_price_id,
-                roster_models_delta,
-            ));
-        }
+    if payload.addons.seats_in_plan && roster_models_delta > 0 {
+        line_items.push(recurring_price_line_item(
+            headcount_price_id,
+            roster_models_delta,
+        ));
     }
     if include_irl_booking {
         line_items.push(recurring_price_line_item(irl_booking_price_id, 1));
