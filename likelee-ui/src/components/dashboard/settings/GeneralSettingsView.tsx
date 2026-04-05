@@ -51,7 +51,6 @@ import {
   Check,
   Info,
 } from "lucide-react";
-import { ensureHexColor } from "@/utils/color";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -528,8 +527,6 @@ const GeneralSettingsView = ({
   const [secondaryColor, setSecondaryColor] = useState(
     profile?.secondary_color || "#10B981",
   );
-  const primaryColorInputRef = useRef<HTMLInputElement>(null);
-  const secondaryColorInputRef = useRef<HTMLInputElement>(null);
   const [prodKey, setProdKey] = useState("pk_live_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [testKey, setTestKey] = useState("pk_test_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [showProdKey, setShowProdKey] = useState(false);
@@ -1981,73 +1978,6 @@ const GeneralSettingsView = ({
                       )}
                       {isUploading ? "Uploading..." : "Upload New Logo"}
                     </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                  <div className="space-y-3 sm:space-y-4">
-                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                      Primary Brand Color
-                    </Label>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                        <input
-                          type="color"
-                          value={ensureHexColor(primaryColor, "#4F46E5")}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="absolute inset-0 w-full h-full cursor-pointer"
-                          style={{
-                            opacity: 0,
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{ backgroundColor: primaryColor }}
-                        />
-                      </div>
-                      <Input
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3 sm:space-y-4">
-                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                      Secondary Brand Color
-                    </Label>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                        <input
-                          type="color"
-                          value={ensureHexColor(secondaryColor, "#10B981")}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          className="absolute inset-0 w-full h-full cursor-pointer"
-                          style={{
-                            opacity: 0,
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{ backgroundColor: secondaryColor }}
-                        />
-                      </div>
-                      <Input
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                      />
-                    </div>
                   </div>
                 </div>
 
