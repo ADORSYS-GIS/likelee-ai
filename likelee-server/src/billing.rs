@@ -1133,10 +1133,8 @@ pub async fn create_agency_subscription_checkout(
             return Err(billing_error(
                 StatusCode::BAD_REQUEST,
                 "roster_models_below_current_seats",
-                format!(
-                    "Roster models cannot be below current paid seats ({current_paid_seats})."
-                )
-                .as_str(),
+                format!("Roster models cannot be below current paid seats ({current_paid_seats}).")
+                    .as_str(),
             ));
         }
 
