@@ -3988,6 +3988,145 @@ pub async fn list_offer_contracts(
     Ok(Json(json!({ "contracts": rows })))
 }
 
+pub async fn download_offer_contract_document(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferContractPath {
+        offer_id,
+        contract_id,
+    }): Path<OfferContractPath>,
+) -> Result<Response, (StatusCode, String)> {
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    let resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*")
+        .eq("offer_id", &offer_id)
+        .eq("id", &contract_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let contract = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
+
+    let mut document_url = contract
+        .get("signed_document_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            contract
+                .get("meta")
+                .and_then(|v| v.as_object())
+                .and_then(|m| m.get("docuseal_document_url"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        });
+
+    if document_url.is_none() {
+        let submission_id = contract
+            .get("docuseal_submission_id")
+            .and_then(|v| v.as_i64())
+            .unwrap_or_default();
+        if submission_id > 0 && !state.docuseal_api_key.trim().is_empty() {
+            let docuseal = DocuSealClient::new(
+                state.docuseal_api_key.clone(),
+                state.docuseal_api_url.clone(),
+            );
+            if let Ok(details) = docuseal.get_submission(submission_id as i32).await {
+                if let Some(url) = details.documents.first().map(|doc| doc.url.trim().to_string()) {
+                    if !url.is_empty() {
+                        document_url = Some(url);
+                    }
+                }
+            }
+        }
+    }
+
+    let document_url = document_url.ok_or((
+        StatusCode::NOT_FOUND,
+        "Signed contract PDF is not available yet.".to_string(),
+    ))?;
+
+    let upstream = Client::new()
+        .get(&document_url)
+        .header("X-Auth-Token", state.docuseal_api_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to fetch contract PDF: {e}")))?;
+
+    if !upstream.status().is_success() {
+        let upstream_status = upstream.status();
+        let upstream_body = upstream.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!(
+                "DocuSeal rejected the contract download ({}): {}",
+                upstream_status,
+                upstream_body
+            ),
+        ));
+    }
+
+    let content_type = upstream
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/pdf")
+        .to_string();
+    let bytes = upstream
+        .bytes()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to read contract PDF: {e}")))?;
+
+    let filename = contract
+        .get("title")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or("signed-contract")
+        .trim()
+        .replace(['\r', '\n'], " ")
+        .replace('"', "'");
+    let filename = if filename.to_lowercase().ends_with(".pdf") {
+        filename
+    } else {
+        format!("{filename}.pdf")
+    };
+
+    let mut response = Response::new(Body::from(bytes));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(&content_type)
+            .unwrap_or_else(|_| HeaderValue::from_static("application/pdf")),
+    );
+    if let Ok(value) =
+        HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+    {
+        response
+            .headers_mut()
+            .insert(header::CONTENT_DISPOSITION, value);
+    }
+
+    Ok(response)
+}
+
 pub async fn sync_offer_contract(
     State(state): State<AppState>,
     user: AuthUser,

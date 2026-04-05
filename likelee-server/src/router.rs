@@ -845,6 +845,10 @@ pub fn build_router(state: AppState) -> Router {
             delete(crate::brand_campaigns::delete_offer_contract),
         )
         .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/download",
+            get(crate::brand_campaigns::download_offer_contract_document),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/contracts/send",
             post(crate::brand_campaigns::send_offer_contract),
         )
