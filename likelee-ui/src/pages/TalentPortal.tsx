@@ -2484,8 +2484,6 @@ export default function TalentPortal({
                           disabled={updatePortalSettingsMutation.isPending}
                         />
                       </div>
-
-
                     </div>
                   </Card>
                 </>
@@ -3745,7 +3743,6 @@ export default function TalentPortal({
                   </div>
                 </div>
               </Card>
-
             </div>
           )}
           <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
