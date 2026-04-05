@@ -207,7 +207,7 @@ export default function AgencySubscribe() {
   const displayedMonthlyBasic = totalMonthlyBasic + bundledSeatCostBasic;
   const displayedMonthlyPro = totalMonthlyPro + bundledSeatCostPro;
   const requiresContactSales = rosterModels > MAX_ROSTER_MODELS;
-  const sliderMin = requiresContactSales ? rosterModels : effectiveSeatMin;
+  const sliderMin = requiresContactSales ? rosterModels : minimumRosterModels;
   const maxRosterModels = requiresContactSales
     ? rosterModels
     : MAX_ROSTER_MODELS;
@@ -1122,13 +1122,7 @@ export default function AgencySubscribe() {
                     setRosterInput(nextValue);
                     const parsed = parsePositiveInteger(nextValue);
                     if (parsed == null) return;
-                    setRosterModels(
-                      clampRosterModels(
-                        parsed,
-                        effectiveSeatMin,
-                        maxRosterModels,
-                      ),
-                    );
+                    syncRosterModels(parsed);
                   }}
                   onBlur={() => setRosterInput(String(rosterModels))}
                   aria-label="Roster size"
@@ -1634,13 +1628,7 @@ export default function AgencySubscribe() {
                           setRosterInput(nextValue);
                           const parsed = parsePositiveInteger(nextValue);
                           if (parsed == null) return;
-                          setRosterModels(
-                            clampRosterModels(
-                              parsed,
-                              effectiveSeatMin,
-                              maxRosterModels,
-                            ),
-                          );
+                          syncRosterModels(parsed);
                         }}
                         onBlur={() => setRosterInput(String(rosterModels))}
                         aria-label="Selected seat count"
