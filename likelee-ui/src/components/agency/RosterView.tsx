@@ -1100,7 +1100,9 @@ const RosterView = ({
                       </div>
                       <div className="col-span-4 text-gray-600">
                         {item.current_period_end
-                          ? new Date(item.current_period_end).toLocaleDateString()
+                          ? new Date(
+                              item.current_period_end,
+                            ).toLocaleDateString()
                           : "—"}
                       </div>
                     </div>
