@@ -449,8 +449,12 @@ pub async fn get_roster(
                 if !photo_urls.is_empty() && !ai_usage.contains(&"Image".to_string()) {
                     ai_usage.push("Image".to_string());
                 }
-                if item.get("agency_users").and_then(|v| v.get("voice_sample_url")).is_some()
-                    && !ai_usage.contains(&"Voice".to_string()) {
+                if item
+                    .get("agency_users")
+                    .and_then(|v| v.get("voice_sample_url"))
+                    .is_some()
+                    && !ai_usage.contains(&"Voice".to_string())
+                {
                     ai_usage.push("Voice".to_string());
                 }
             }
