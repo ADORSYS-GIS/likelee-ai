@@ -19592,7 +19592,8 @@ export default function AgencyDashboard() {
                           ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
                           : agencyPlanTier === "pro"
                             ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
-                            : agencyPlanTier === "basic" || agencyPlanTier === "agency"
+                            : agencyPlanTier === "basic" ||
+                                agencyPlanTier === "agency"
                               ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
                               : agencyPlanTier === "enterprise"
                                 ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
