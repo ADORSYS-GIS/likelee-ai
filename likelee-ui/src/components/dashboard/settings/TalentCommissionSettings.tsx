@@ -19,14 +19,9 @@ import {
   Info,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { clampAndSnapCommissionPct } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const clampAndSnapCommissionPct = (value: number): number => {
-  if (!Number.isFinite(value)) return 0;
-  const clamped = Math.max(0, Math.min(100, value));
-  return Math.round(clamped / 5) * 5;
-};
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
 import { getAgencyPayoutsAccountStatus } from "@/api/functions";
 import { RefreshCw } from "lucide-react";
 import {
@@ -195,12 +195,6 @@ const CalendlyAutosaveStatus = ({
       Save failed
     </span>
   );
-};
-
-const clampAndSnapCommissionPct = (value: number): number => {
-  if (!Number.isFinite(value)) return 0;
-  const clamped = Math.max(0, Math.min(100, value));
-  return Math.round(clamped / 5) * 5;
 };
 
 const InviteTeamMemberModal = ({
