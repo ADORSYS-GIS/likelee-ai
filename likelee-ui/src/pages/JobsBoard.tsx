@@ -76,7 +76,6 @@ export default function JobsBoard() {
   const { toast } = useToast();
   const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
-  const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const backTo = searchParams.get("backTo");
   const [jobs, setJobs] = useState<any[]>([]);
