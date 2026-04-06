@@ -167,7 +167,7 @@ type StorageFile = {
   created_at: string;
 };
 
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024; // 100MB
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024; // 500MB
 
 const isPreviewableImage = (mimeType: string | null) => {
   if (!mimeType) return false;
@@ -1252,7 +1252,7 @@ const FileStorageView = () => {
       toast({
         title: "Upload failed",
         description:
-          `File too large. Max file size is 100MB. ${tooLargeNames ? `Too large: ${tooLargeNames}` : ""}`.trim(),
+          `File too large. Max file size is 500MB. ${tooLargeNames ? `Too large: ${tooLargeNames}` : ""}`.trim(),
         variant: "destructive" as any,
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
