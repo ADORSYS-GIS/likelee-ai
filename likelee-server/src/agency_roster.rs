@@ -404,21 +404,41 @@ pub async fn get_roster(
                 .unwrap_or(0);
             let followers = format_number(followers_val);
 
-            let mut assets = get_field("total_assets")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0) as i32;
+            let photo_urls: Vec<String> = item
+                .get("agency_users")
+                .and_then(|v| v.get("photo_urls"))
+                .map(parse_string_array_value)
+                .unwrap_or_default();
+            let profile_photo = get_field("profile_photo_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            let video_url_val = get_field("video_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            let voice_sample_url_val = get_field("voice_sample_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
 
-            // Increment assets for video and voice if they are distinct from photo gallery
-            if let Some(v) = get_field("video_url").and_then(|v| v.as_str()) {
-                if !v.trim().is_empty() {
-                    assets += 1;
+            let mut unique_assets: std::collections::HashSet<String> = std::collections::HashSet::new();
+            if !profile_photo.is_empty() {
+                unique_assets.insert(normalize_asset_url(profile_photo));
+            }
+            for url in photo_urls.iter() {
+                if !url.trim().is_empty() {
+                    unique_assets.insert(normalize_asset_url(url));
                 }
             }
-            if let Some(v) = get_field("voice_sample_url").and_then(|v| v.as_str()) {
-                if !v.trim().is_empty() {
-                    assets += 1;
-                }
+            if !video_url_val.is_empty() {
+                unique_assets.insert(normalize_asset_url(video_url_val));
             }
+            if !voice_sample_url_val.is_empty() {
+                unique_assets.insert(normalize_asset_url(voice_sample_url_val));
+            }
+
+            let assets = unique_assets.len() as i32;
             let top_brand = get_field("top_brand")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
