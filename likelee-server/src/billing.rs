@@ -1279,7 +1279,7 @@ pub async fn create_agency_subscription_checkout(
         sub_md.insert("addon_team_members".to_string(), team_members.to_string());
     }
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
-        trial_period_days: if payload.start_trial { Some(14) } else { None },
+        trial_period_days: if payload.start_trial { Some(30) } else { None },
         metadata: Some(sub_md),
         ..Default::default()
     });
@@ -1909,7 +1909,7 @@ pub async fn start_agency_pro_trial(
         ));
     }
 
-    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(14);
+    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(30);
     let update = json!({
         "trial_ends_at": trial_ends_at.to_rfc3339(),
         "plan_updated_at": chrono::Utc::now().to_rfc3339(),
