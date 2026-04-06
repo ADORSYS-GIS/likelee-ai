@@ -748,11 +748,17 @@ export const listAgencyStorageFoldersPaged = (params?: {
 export const deleteAgencyStorageFolder = (folder_id: string) =>
   base44Client.delete(`/agency/storage/folders/${folder_id}`);
 
+export const updateAgencyStorageFolder = (
+  folder_id: string,
+  data: { name: string },
+) => base44Client.put(`/agency/storage/folders/${folder_id}`, data);
+
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });
 
 export const listAgencyStorageFilesPaged = (params?: {
   folder_id?: string;
+  root_only?: boolean;
   limit?: number;
   offset?: number;
 }) => base44Client.get(`/agency/storage/files`, { params: params || {} });
@@ -830,8 +836,16 @@ export const uploadOfferDeliverable = (
   );
 };
 
-export const submitAllDraftDeliverables = (offerId: string) =>
-  base44Client.post(`/api/campaign-offers/${offerId}/deliverables/submit`);
+export const submitAllDraftDeliverables = (
+  offerId: string,
+  data?: {
+    confirm_unpaid?: boolean;
+  },
+) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/submit`,
+    data,
+  );
 
 export const submitOfferDeliverable = (
   offerId: string,
@@ -843,6 +857,7 @@ export const submitOfferDeliverable = (
     creator_id?: string;
     asset_request_id?: string;
     meta?: any;
+    confirm_unpaid?: boolean;
   },
 ) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
 

@@ -958,6 +958,52 @@ const BrandConnectionsView = () => {
     }
   };
 
+  const handleDownloadContract = async (
+    offerId: string,
+    contractId: string,
+    fileName?: string,
+  ) => {
+    if (busyIds.has(contractId)) return;
+    setBusyIds((prev) => new Set(prev).add(contractId));
+    try {
+      const response = await base44.getRaw(
+        `/api/campaign-offers/${offerId}/contracts/${contractId}/download`,
+      );
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to download contract.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download =
+        fileName && fileName.trim()
+          ? fileName.toLowerCase().endsWith(".pdf")
+            ? fileName.trim()
+            : `${fileName.trim()}.pdf`
+          : "signed-contract.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({
+        title: "Download failed",
+        description:
+          err?.message || "We couldn't download the signed contract.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(contractId);
+        return next;
+      });
+    }
+  };
+
   const handleDeleteContract = async (offerId: string, contractId: string) => {
     if (!confirm("Are you sure you want to delete this contract draft?"))
       return;
@@ -2523,9 +2569,13 @@ const BrandConnectionsView = () => {
                                                           variant="outline"
                                                           className="border-gray-200 hover:bg-gray-50"
                                                           onClick={() =>
-                                                            window.open(
-                                                              downloadUrl,
-                                                              "_blank",
+                                                            void handleDownloadContract(
+                                                              selectedOfferId,
+                                                              cId,
+                                                              String(
+                                                                c?.title ||
+                                                                  "signed-contract",
+                                                              ),
                                                             )
                                                           }
                                                           disabled={isBusy}
