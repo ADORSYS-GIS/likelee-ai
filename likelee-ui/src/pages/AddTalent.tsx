@@ -169,14 +169,15 @@ export default function AddTalent() {
     if (file) {
       setUploading(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           hero_media: {
             url: URL.createObjectURL(file),
             type: file.type.includes("video") ? "video" : "image",
             name: file.name,
+            file,
           },
-        });
+        }));
         setUploading(false);
       }, 1000);
     }
@@ -214,13 +215,14 @@ export default function AddTalent() {
     if (file) {
       setUploadingVoice(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           voice_sample: {
             url: URL.createObjectURL(file),
             name: file.name,
+            file,
           },
-        });
+        }));
         setUploadingVoice(false);
       }, 1000);
     }
@@ -294,7 +296,6 @@ export default function AddTalent() {
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
-      console.log("Submitting talent data:", formData);
 
       if (!isAtLeast18(formData.birthdate)) {
         toast({
@@ -307,6 +308,8 @@ export default function AddTalent() {
 
       let profilePhotoUrl = "";
       let galleryPhotoUrls: string[] = [];
+
+      // Upload Gallery Photos if exist
       const photoFiles: File[] = Array.isArray(formData.photos)
         ? (formData.photos
             .map((p: any) => p?.file)
@@ -354,6 +357,109 @@ export default function AddTalent() {
         }
       }
 
+      // Upload Hero Media if exists
+      let heroMediaUrl = "";
+      if (
+        formData.hero_media &&
+        formData.hero_media.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.hero_media.file;
+          const safeName = (file.name || "hero")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : file.type?.includes("video")
+              ? "mp4"
+              : "jpg";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/hero_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          heroMediaUrl = data.publicUrl || "";
+
+          // If hero media is an image and we don't have a profile photo yet, use it
+          if (!profilePhotoUrl && formData.hero_media.type === "image") {
+            profilePhotoUrl = heroMediaUrl;
+          }
+        } catch (e: any) {
+          const msg = e?.message || String(e);
+          console.error("Hero media upload failed:", msg, e);
+          toast({
+            title: "⚠️ Hero media upload failed",
+            description: `Could not upload hero video/image: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Upload Voice Sample if exists
+      let voiceSampleUrl = "";
+      if (
+        formData.voice_sample &&
+        formData.voice_sample.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.voice_sample.file;
+          const safeName = (file.name || "voice")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : "mp3";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/voice_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "audio/mpeg",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          voiceSampleUrl = data.publicUrl || "";
+        } catch (e: any) {
+          const msg = e?.message || String(e);
+          console.error("Voice sample upload failed:", msg, e);
+          toast({
+            title: "⚠️ Voice sample upload failed",
+            description: `Could not upload voice sample: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      const aiUsage: string[] = [];
+      if (formData.hero_media) {
+        if (formData.hero_media.type === "video") aiUsage.push("Video");
+        if (formData.hero_media.type === "image") aiUsage.push("Image");
+      }
+      if (formData.photos && formData.photos.length > 0) {
+        if (!aiUsage.includes("Image")) aiUsage.push("Image");
+      }
+      if (formData.voice_sample) {
+        if (!aiUsage.includes("Voice")) aiUsage.push("Voice");
+      }
+
       // Map frontend form data to backend expected format
       // Note: Ideally we upload images to S3/Storage first and get a URL.
       // For this demo, we'll use a placeholder if it's a local blob URL.
@@ -368,8 +474,11 @@ export default function AddTalent() {
         instagram_handle: formData.instagram_handle,
         instagram_followers: 0,
         engagement_rate: 0,
-        profile_photo_url: profilePhotoUrl,
+        profile_photo_url: profilePhotoUrl || heroMediaUrl,
         photo_urls: galleryPhotoUrls,
+        video_url:
+          formData.hero_media?.type === "video" ? heroMediaUrl : undefined,
+        voice_sample_url: voiceSampleUrl,
         bio: formData.bio,
         special_skills: formData.special_skills,
 
@@ -414,6 +523,7 @@ export default function AddTalent() {
         ),
         accept_negotiations: !!formData.accept_negotiations,
         rate_currency: "USD",
+        ai_usage: aiUsage,
       };
 
       await createAgencyTalent(payload);

@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { clampAndSnapCommissionPct } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

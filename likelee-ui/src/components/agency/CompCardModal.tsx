@@ -694,7 +694,7 @@ const CompCardModal = ({
                         previewTalentComputed.img ||
                         previewTalentComputed.profile_photo_url
                       }
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                       alt={previewTalentComputed.name}
                       crossOrigin="anonymous"
                     />
