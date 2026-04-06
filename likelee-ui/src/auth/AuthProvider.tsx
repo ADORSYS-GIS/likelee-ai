@@ -39,6 +39,9 @@ interface AuthContextValue {
 export interface Profile {
   id: string;
   email: string;
+  role?: string;
+  creator_type?: string;
+  agency_type?: string;
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
@@ -58,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const userRef = React.useRef<User | null>(null);
   const profileRef = React.useRef<Profile | null | undefined>(undefined);
+  const fetchingRef = React.useRef<string | null>(null);
 
   const getUserRoleHint = (user: User | null): string => {
     if (!user) return "";
@@ -97,6 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role?: string,
     isOAuthUser?: boolean,
   ) => {
+    if (fetchingRef.current === userId) {
+      console.log(
+        "[AuthProvider] fetchProfile ALREADY IN PROGRESS for:",
+        userId,
+      );
+      return;
+    }
+    fetchingRef.current = userId;
+
     console.log("[AuthProvider] fetchProfile START", {
       userId,
       userEmail,
@@ -183,7 +196,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         console.log("[AuthProvider] Setting profile with role:", resolvedRole);
-        setProfile({ ...data, role: resolvedRole || (data as any)?.role });
+        const nextProfile = {
+          ...data,
+          role: resolvedRole || (data as any)?.role,
+        };
+        profileRef.current = nextProfile;
+        setProfile(nextProfile);
       } else {
         // No profile found yet. Let the onboarding flow create the record explicitly.
         console.log(
@@ -194,6 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             table,
           },
         );
+        profileRef.current = null;
         setProfile(null);
       }
 
@@ -202,6 +221,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (err) {
       console.error("[AuthProvider] Error fetching/creating profile:", err);
+    } finally {
+      if (fetchingRef.current === userId) {
+        fetchingRef.current = null;
+      }
     }
   };
 
