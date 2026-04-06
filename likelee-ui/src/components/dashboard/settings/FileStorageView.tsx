@@ -3,12 +3,12 @@ import {
   Folder,
   FolderPlus,
   Upload,
+  Plus,
   Search,
   Grid,
   List,
   HardDrive,
   MoreVertical,
-  FolderOpen,
   Edit,
   Trash2,
   FileText,
@@ -124,14 +124,20 @@ const fileExtension = (name: string) => {
   return base.slice(idx + 1).toLowerCase();
 };
 
-const bytesToHuman = (bytes: number) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+const bytesToHuman = (bytes: unknown) => {
+  const n =
+    typeof bytes === "number"
+      ? bytes
+      : typeof bytes === "string"
+        ? Number(bytes)
+        : 0;
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.min(
     units.length - 1,
-    Math.floor(Math.log(bytes) / Math.log(1024)),
+    Math.floor(Math.log(n) / Math.log(1024)),
   );
-  const v = bytes / Math.pow(1024, i);
+  const v = n / Math.pow(1024, i);
   const rounded = i === 0 ? Math.round(v) : Math.round(v * 10) / 10;
   return `${rounded} ${units[i]}`;
 };
@@ -234,10 +240,12 @@ const MOCK_FILES: FileItem[] = [
 const FolderCard = ({
   folder,
   onOpen,
+  onUpload,
   onDelete,
 }: {
   folder: FolderItem;
   onOpen: () => void;
+  onUpload: () => void;
   onDelete: () => void;
 }) => {
   const getFolderColor = (type: string) => {
@@ -292,44 +300,58 @@ const FolderCard = ({
             />
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem
-              className="font-bold text-gray-700 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpen();
-              }}
-            >
-              <FolderOpen className="w-4 h-4 mr-2" /> Open
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="font-bold text-gray-700 cursor-pointer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Edit className="w-4 h-4 mr-2" /> Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="font-bold text-red-600 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="w-8 h-8 rounded-lg text-gray-300 hover:text-indigo-600 hover:bg-indigo-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpload();
+            }}
+            aria-label={`Upload files to ${folder.name}`}
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 rounded-xl">
+              <DropdownMenuItem
+                className="font-bold text-gray-700 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpload();
+                }}
+              >
+                <Upload className="w-4 h-4 mr-2" /> Upload
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="font-bold text-gray-700 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Edit className="w-4 h-4 mr-2" /> Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="font-bold text-red-600 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="relative z-10">
@@ -909,6 +931,12 @@ const FileStorageView = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadTargetFolderIdRef = useRef<string | null>(null);
+
+  const activeFolderName = useMemo(() => {
+    if (!activeFolderId) return null;
+    return folders.find((f) => f.id === activeFolderId)?.name || "Folder";
+  }, [activeFolderId, folders]);
 
   const FOLDERS_PAGE_SIZE = 5;
   const FILES_PAGE_SIZE = 10;
@@ -923,11 +951,16 @@ const FileStorageView = () => {
     return m;
   }, [folders]);
 
+  const filesForViewBase = useMemo(() => {
+    if (activeFolderId) return files;
+    return files.filter((f) => f.folder_id === null || f.folder_id === undefined);
+  }, [activeFolderId, files]);
+
   const filteredFiles = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return files;
-    return files.filter((f) => f.file_name.toLowerCase().includes(q));
-  }, [files, searchTerm]);
+    if (!q) return filesForViewBase;
+    return filesForViewBase.filter((f) => f.file_name.toLowerCase().includes(q));
+  }, [filesForViewBase, searchTerm]);
 
   const isFileTooLargeError = (msg: string) => {
     const lowered = msg.toLowerCase();
@@ -992,6 +1025,7 @@ const FileStorageView = () => {
         listAgencyStorageFoldersPaged({ limit: FOLDERS_PAGE_SIZE, offset: 0 }),
         listAgencyStorageFilesPaged({
           folder_id: folderId || undefined,
+          root_only: folderId ? undefined : true,
           limit: FILES_PAGE_SIZE,
           offset: 0,
         }),
@@ -1050,6 +1084,7 @@ const FileStorageView = () => {
     try {
       const page = (await listAgencyStorageFilesPaged({
         folder_id: activeFolderId || undefined,
+        root_only: activeFolderId ? undefined : true,
         limit: FILES_PAGE_SIZE,
         offset: filesOffset,
       })) as any;
@@ -1093,12 +1128,22 @@ const FileStorageView = () => {
   };
 
   const onPickFiles = () => {
+    uploadTargetFolderIdRef.current =
+      uploadTargetFolderIdRef.current ?? activeFolderId;
     fileInputRef.current?.click();
+  };
+
+  const openFolderAndPickFiles = (folderId: string) => {
+    uploadTargetFolderIdRef.current = folderId;
+    setActiveFolderId(folderId);
+    onPickFiles();
   };
 
   const onUploadFiles = async (picked: FileList | null) => {
     if (!picked || picked.length === 0) return;
     const filesArr = Array.from(picked);
+    const uploadFolderId = uploadTargetFolderIdRef.current ?? activeFolderId;
+    uploadTargetFolderIdRef.current = null;
     const tooLarge = filesArr.filter((file) => file.size > MAX_UPLOAD_BYTES);
     if (tooLarge.length > 0) {
       const tooLargeNames = tooLarge
@@ -1119,10 +1164,10 @@ const FileStorageView = () => {
       for (const file of filesArr) {
         await uploadAgencyStorageFile({
           file,
-          folder_id: activeFolderId || undefined,
+          folder_id: uploadFolderId || undefined,
         });
       }
-      await loadInitial(activeFolderId);
+      await loadInitial(uploadFolderId);
       toast({
         title: "Upload complete",
         description: `${picked.length} file(s) uploaded.`,
@@ -1305,24 +1350,6 @@ const FileStorageView = () => {
             Organize and manage your agency files
           </p>
         </div>
-        <div className="flex gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsNewFolderModalOpen(true)}
-            className="h-9 px-3 sm:h-11 sm:px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2 text-xs sm:text-sm"
-          >
-            <FolderPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-            New Folder
-          </Button>
-          <Button
-            onClick={onPickFiles}
-            disabled={isUploading}
-            className="h-9 px-3 sm:h-11 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 text-xs sm:text-sm"
-          >
-            <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
-            {isUploading ? "Uploading..." : "Upload Files"}
-          </Button>
-        </div>
       </div>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
@@ -1408,55 +1435,120 @@ const FileStorageView = () => {
       </div>
 
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-          <Button
-            variant="ghost"
-            className="font-bold text-gray-600"
-            onClick={() => setActiveFolderId(null)}
-          >
-            All
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-          {folders.map((folder) => (
-            <FolderCard
-              key={folder.id}
-              folder={{
-                id: folder.id,
-                name: folder.name,
-                fileCount: files.filter((f) => f.folder_id === folder.id)
-                  .length,
-                totalSize: "",
-                type: "others",
-              }}
-              onOpen={() => setActiveFolderId(folder.id)}
-              onDelete={() => openDeleteFolderDialog(folder)}
-            />
-          ))}
-        </div>
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            className="h-10 px-5 rounded-xl font-bold"
-            onClick={loadMoreFolders}
-            disabled={!hasMoreFolders || isLoadingMoreFolders}
-          >
-            {isLoadingMoreFolders
-              ? "Loading..."
-              : hasMoreFolders
-                ? "Load more folders"
-                : "No more folders"}
-          </Button>
-        </div>
+        {activeFolderId ? (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button
+                variant="outline"
+                className="h-9 px-3 rounded-xl font-bold"
+                onClick={() => setActiveFolderId(null)}
+              >
+                Back
+              </Button>
+              <h3 className="text-lg font-bold text-gray-900 truncate">
+                {activeFolderName}
+              </h3>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+              <Button
+                variant="ghost"
+                className="font-bold text-gray-600"
+                onClick={() => setActiveFolderId(null)}
+              >
+                All
+              </Button>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsNewFolderModalOpen(true)}
+                className="h-9 px-3 rounded-xl border-gray-200 font-bold flex items-center gap-2 text-xs sm:text-sm"
+              >
+                <FolderPlus className="w-4 h-4" />
+                New Folder
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <button
+                type="button"
+                onClick={() => setIsNewFolderModalOpen(true)}
+                className="text-left"
+              >
+                <Card className="p-6 bg-white border border-dashed border-gray-200 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors cursor-pointer h-full">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-14 h-14 bg-indigo-50/50 rounded-2xl flex items-center justify-center shadow-sm border border-white/50">
+                      <Plus className="w-7 h-7 text-indigo-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-gray-900 mb-1">
+                      New folder
+                    </h4>
+                    <div className="text-xs text-gray-500 font-medium">
+                      Click to create
+                    </div>
+                  </div>
+                </Card>
+              </button>
+              {folders.map((folder) => (
+                <FolderCard
+                  key={folder.id}
+                  folder={{
+                    id: folder.id,
+                    name: folder.name,
+                    fileCount:
+                      typeof (folder as any).file_count === "number"
+                        ? (folder as any).file_count
+                        : files.filter((f) => f.folder_id === folder.id).length,
+                    totalSize: "",
+                    type: "others",
+                  }}
+                  onOpen={() => setActiveFolderId(folder.id)}
+                  onUpload={() => openFolderAndPickFiles(folder.id)}
+                  onDelete={() => openDeleteFolderDialog(folder)}
+                />
+              ))}
+            </div>
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                className="h-10 px-5 rounded-xl font-bold"
+                onClick={loadMoreFolders}
+                disabled={!hasMoreFolders || isLoadingMoreFolders}
+              >
+                {isLoadingMoreFolders
+                  ? "Loading..."
+                  : hasMoreFolders
+                    ? "Load more folders"
+                    : "No more folders"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Files</h3>
-          <span className="text-sm text-gray-500 font-medium">
-            {filteredFiles.length} files
-          </span>
+          <h3 className="text-lg font-bold text-gray-900">
+            {activeFolderId ? "" : "Files"}
+          </h3>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500 font-medium">
+              {activeFolderId ? filteredFiles.length : `${filteredFiles.length} files`}
+            </span>
+            <Button
+              onClick={onPickFiles}
+              disabled={isUploading}
+              className="h-9 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 text-xs sm:text-sm"
+            >
+              <Upload className="w-4 h-4" />
+              {isUploading ? "Uploading..." : "Upload Files"}
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -1465,6 +1557,26 @@ const FileStorageView = () => {
           </Card>
         ) : viewMode === "list" ? (
           <div className="space-y-3">
+            {activeFolderId ? (
+              <button
+                type="button"
+                onClick={onPickFiles}
+                disabled={isUploading}
+                className="w-full text-left"
+              >
+                <div className="flex items-center justify-between p-4 bg-white border border-dashed border-gray-200 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div className="font-bold text-gray-900">
+                      {isUploading ? "Uploading..." : "Upload"}
+                    </div>
+                  </div>
+                  <Upload className="w-4 h-4 text-gray-400" />
+                </div>
+              </button>
+            ) : null}
             {filteredFiles.map((f) => (
               <div
                 key={f.id}
@@ -1503,6 +1615,38 @@ const FileStorageView = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {activeFolderId ? (
+              <button
+                type="button"
+                onClick={onPickFiles}
+                disabled={isUploading}
+                className="text-left"
+              >
+                <Card className="p-4 bg-white border border-dashed border-gray-200 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors h-full">
+                  <div className="aspect-video bg-gray-50 rounded-xl overflow-hidden mb-3 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                        <Plus className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase text-gray-400">
+                        {isUploading ? "Uploading" : "Upload"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        Add file
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium mt-1">
+                        Click to upload
+                      </p>
+                    </div>
+                    <Upload className="w-4 h-4 text-gray-400" />
+                  </div>
+                </Card>
+              </button>
+            ) : null}
             {filteredFiles.map((f) => (
               <Card
                 key={f.id}

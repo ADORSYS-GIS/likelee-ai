@@ -753,6 +753,7 @@ export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
 
 export const listAgencyStorageFilesPaged = (params?: {
   folder_id?: string;
+  root_only?: boolean;
   limit?: number;
   offset?: number;
 }) => base44Client.get(`/agency/storage/files`, { params: params || {} });
