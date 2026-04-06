@@ -13,6 +13,9 @@ WHERE trial_ends_at IS NULL
   AND created_at IS NOT NULL;
 
 -- Set default for new agency rows so they automatically get a 14-day trial on INSERT.
+-- NOTE: We set the default temporarily for backfill compatibility, then immediately
+-- drop it so new registrations do NOT auto-start trials unless explicitly enabled
+-- by application logic.
 ALTER TABLE public.agencies
   ALTER COLUMN trial_ends_at SET DEFAULT (now() + INTERVAL '14 days');
 ALTER TABLE public.agencies
