@@ -832,6 +832,10 @@ const GeneralSettingsView = ({
   };
 
   useEffect(() => {
+    void fetchTeamContext();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "Team") {
       void fetchTeamContext();
       void fetchTeamAuditLogs();
@@ -2006,7 +2010,7 @@ const GeneralSettingsView = ({
                     </Badge>
                   </div>
                 </div>
-                {teamContext?.permissions?.includes("manage_billing") && (
+                {(!teamContext || teamContext.permissions?.includes("manage_billing")) && (
                   <Button
                     asChild
                     variant={
