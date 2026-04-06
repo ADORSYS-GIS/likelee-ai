@@ -18813,7 +18813,7 @@ export default function AgencyDashboard() {
             }`}
             title={isSidebarCollapsed ? "Sign Out" : undefined}
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5 transform -scale-x-100" />
             {showLabels && (
               <span
                 className="transition-opacity duration-150"
@@ -19255,7 +19255,7 @@ export default function AgencyDashboard() {
                       onClick={() => logout()}
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition-colors text-left text-red-600"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 transform -scale-x-100" />
                       <span className="text-sm font-bold">Sign Out</span>
                     </button>
                   </div>
