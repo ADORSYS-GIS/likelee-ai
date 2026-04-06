@@ -5409,8 +5409,8 @@ export default function CreatorDashboard() {
           : Sparkles;
     const bannerClassName =
       hasPendingFollowUp || isRejected
-        ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
-        : "rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
+        ? "mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
+        : "mb-6 rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
 
     const title = hasPendingFollowUp
       ? t(
