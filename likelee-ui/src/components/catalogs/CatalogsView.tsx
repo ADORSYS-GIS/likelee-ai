@@ -157,7 +157,7 @@ export function CatalogsView({
         </Card>
       ) : (
         <div className="grid gap-4">
-          {catalogs.map((catalog: any) => (
+          {catalogs.map((catalog: any) =>
             (() => {
               const isExpired = isExpiredCatalog(catalog);
               const isPaid =
@@ -193,17 +193,22 @@ export function CatalogsView({
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Created{" "}
-                        {new Date(catalog.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {new Date(catalog.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
                         {catalog.expires_at && (
                           <>
                             {" • "}
                             <span className="text-orange-500 font-medium">
                               Expires{" "}
-                              {new Date(catalog.expires_at).toLocaleDateString()}
+                              {new Date(
+                                catalog.expires_at,
+                              ).toLocaleDateString()}
                             </span>
                           </>
                         )}
@@ -234,7 +239,11 @@ export function CatalogsView({
                             : "bg-amber-50 text-amber-700 border-amber-100"
                       }
                     >
-                      {isExpired ? "Expired" : catalog.sent_at ? "Sent" : "Draft"}
+                      {isExpired
+                        ? "Expired"
+                        : catalog.sent_at
+                          ? "Sent"
+                          : "Draft"}
                     </Badge>
                     <Button
                       size="sm"
@@ -262,8 +271,8 @@ export function CatalogsView({
                   </div>
                 </Card>
               );
-            })()
-          ))}
+            })(),
+          )}
         </div>
       )}
 

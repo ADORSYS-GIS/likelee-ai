@@ -327,9 +327,9 @@ export function MarketplaceSection({
     selectedProfile?.profile_type === "creator" &&
     Boolean(
       effectiveLicensingAgencyId &&
-        (selectedProfile?.is_licensable !== false ||
-          detailsQuery.data?.is_licensable === true ||
-          detailProfile?.is_licensable === true),
+      (selectedProfile?.is_licensable !== false ||
+        detailsQuery.data?.is_licensable === true ||
+        detailProfile?.is_licensable === true),
     );
 
   useEffect(() => {

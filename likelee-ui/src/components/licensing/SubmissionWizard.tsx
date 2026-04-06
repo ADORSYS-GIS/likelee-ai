@@ -765,7 +765,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 htmlFor="allow-brand-change-wizard"
                                 className="text-xs text-gray-500 cursor-pointer"
                               >
-                                Send to  connected brands
+                                Send to connected brands
                               </Label>
                               <Switch
                                 id="allow-brand-change-wizard"

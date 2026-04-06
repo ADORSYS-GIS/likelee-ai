@@ -369,14 +369,16 @@ export const LicenseSubmissionsTab = ({
                               ) : (
                                 sub.status !== "completed" &&
                                 sub.status !== "signed" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  title="Resend"
-                                  disabled={isBlockingResend}
-                                  onClick={() => resendMutation.mutate(sub.id)}
-                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    title="Resend"
+                                    disabled={isBlockingResend}
+                                    onClick={() =>
+                                      resendMutation.mutate(sub.id)
+                                    }
+                                  >
                                     {resendingSubmissionId === sub.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                                     ) : (
@@ -500,7 +502,9 @@ export const LicenseSubmissionsTab = ({
                                     sub.status !== "signed" && (
                                       <DropdownMenuItem
                                         disabled={isBlockingResend}
-                                        onClick={() => resendMutation.mutate(sub.id)}
+                                        onClick={() =>
+                                          resendMutation.mutate(sub.id)
+                                        }
                                       >
                                         {resendingSubmissionId === sub.id ? (
                                           <Loader2 className="mr-2 h-4 w-4 animate-spin text-blue-600" />

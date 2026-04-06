@@ -1868,10 +1868,10 @@ export default function BrandDashboard() {
     ).trim();
     const isLicensable = Boolean(
       agencyId &&
-        (details?.is_licensable === true ||
-          detailProfile?.is_licensable === true ||
-          creator.is_licensable === undefined ||
-          creator.is_licensable),
+      (details?.is_licensable === true ||
+        detailProfile?.is_licensable === true ||
+        creator.is_licensable === undefined ||
+        creator.is_licensable),
     );
     if (!isLicensable) {
       toast({
@@ -3974,10 +3974,13 @@ export default function BrandDashboard() {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     const status = String(deliverable?.status || "").toLowerCase();
-    const offer = brandOfferItems.find((o: any) => String(o?.id || "") === offerId);
-    const isPaid = String(offer?.payment_status || "")
-      .trim()
-      .toLowerCase() === "paid";
+    const offer = brandOfferItems.find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const isPaid =
+      String(offer?.payment_status || "")
+        .trim()
+        .toLowerCase() === "paid";
     const approvedForDownload = [
       "approved",
       "accepted",
@@ -4078,9 +4081,13 @@ export default function BrandDashboard() {
   ) => {
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
-    const offer = brandOfferItems.find((o: any) => String(o?.id || "") === String(offerId));
+    const offer = brandOfferItems.find(
+      (o: any) => String(o?.id || "") === String(offerId),
+    );
     const isPaid =
-      String(offer?.payment_status || "").trim().toLowerCase() === "paid";
+      String(offer?.payment_status || "")
+        .trim()
+        .toLowerCase() === "paid";
     if (!isPaid) {
       toast({
         title: "Payment required",
@@ -4936,9 +4943,9 @@ export default function BrandDashboard() {
                                     payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
-                                    After you approve a deliverable,
-                                    Downloading will be enabled. Approvals are final
-                                    and can’t be undone.
+                                    After you approve a deliverable, Downloading
+                                    will be enabled. Approvals are final and
+                                    can’t be undone.
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&

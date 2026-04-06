@@ -865,7 +865,9 @@ export function AgencyDeliverablesView() {
     if (!offerId) return;
 
     const offer = offers.find((o: any) => String(o?.id || "") === offerId);
-    const status = String(offer?.status || "").trim().toLowerCase();
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
     const isSigned = [
       "contract_fully_signed",
       "signed",
@@ -881,7 +883,10 @@ export function AgencyDeliverablesView() {
       return;
     }
 
-    const isPaid = String(offer?.payment_status || "").trim().toLowerCase() === "paid";
+    const isPaid =
+      String(offer?.payment_status || "")
+        .trim()
+        .toLowerCase() === "paid";
     if (!isPaid) {
       setUnpaidSubmitDialog({ open: true, offerId, submitting: false });
       return;
@@ -1052,7 +1057,9 @@ export function AgencyDeliverablesView() {
           const isOfferPaid =
             String(offer?.payment_status || "").toLowerCase() === "paid";
           const isOfferSigned = (() => {
-            const st = String(offer?.status || "").trim().toLowerCase();
+            const st = String(offer?.status || "")
+              .trim()
+              .toLowerCase();
             return [
               "contract_fully_signed",
               "signed",
@@ -1623,9 +1630,7 @@ export function AgencyDeliverablesView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction
-              onClick={() =>
-                setNotSignedDialog({ open: false, offerId: "" })
-              }
+              onClick={() => setNotSignedDialog({ open: false, offerId: "" })}
             >
               OK
             </AlertDialogAction>
@@ -1642,7 +1647,9 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit deliverables before payment?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Submit deliverables before payment?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               The brand has not paid for this offer yet. You can still submit
               deliverables now, but payment is required before escrow release.
@@ -1685,7 +1692,10 @@ export function AgencyDeliverablesView() {
                   return;
                 }
 
-                setUnpaidSubmitDialog((prev) => ({ ...prev, submitting: true }));
+                setUnpaidSubmitDialog((prev) => ({
+                  ...prev,
+                  submitting: true,
+                }));
                 try {
                   await submitAllDraftDeliverables(offerId, {
                     confirm_unpaid: true,
@@ -1703,7 +1713,10 @@ export function AgencyDeliverablesView() {
                     description: e?.message || "Please try again.",
                     variant: "destructive",
                   });
-                  setUnpaidSubmitDialog((prev) => ({ ...prev, submitting: false }));
+                  setUnpaidSubmitDialog((prev) => ({
+                    ...prev,
+                    submitting: false,
+                  }));
                 }
               }}
             >
