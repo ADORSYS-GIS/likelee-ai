@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, team::{resolve_effective_agency_id, resolve_effective_brand_id}};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -367,13 +367,20 @@ pub async fn create_session(
     user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    // Agencies should not be able to create sessions on behalf of arbitrary organization ids.
-    let requested_profile_id = if user.role == "agency" {
-        &user.id
+    // For agencies and brands, resolve the effective organization ID so team members
+    // can create KYC sessions for their organization (not just their own user ID).
+    // This ensures team members share the same KYC verification as the organization owner.
+    let profile_id = if user.role == "agency" {
+        // Use resolved organization ID for agencies (team members get org ID)
+        resolve_effective_agency_id(&state, &user).await?
+    } else if user.role == "brand" {
+        // For brands, also resolve organization ID
+        resolve_effective_brand_id(&state, &user).await?
     } else {
-        req.organization_id.as_ref().unwrap_or(&user.id)
+        // For creators and other roles, use the requested or user ID
+        let requested = req.organization_id.as_ref().unwrap_or(&user.id);
+        resolve_profile_id_for_role(&state, &user, requested).await?
     };
-    let profile_id = resolve_profile_id_for_role(&state, &user, requested_profile_id).await?;
 
     let current_status = get_current_kyc_status(&state, &profile_id, &user.role).await?;
     if current_status
@@ -479,10 +486,11 @@ pub async fn create_session(
     };
     info!(%session_id, "Veriff session created");
 
-    // Track usage (agency monthly caps)
+    // Track usage (agency monthly caps) - use resolved organization ID
+    // so that team members' KYC sessions count against the org's cap
     if user.role == "agency" && !session_id.is_empty() {
         let row = json!({
-            "agency_id": user.id,
+            "agency_id": profile_id,
             "veriff_session_id": session_id,
         });
         let _ = state
@@ -528,8 +536,16 @@ pub async fn get_status(
     user: AuthUser,
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let requested_profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
-    let profile_id = resolve_profile_id_for_role(&state, &user, requested_profile_id).await?;
+    // For agencies and brands, resolve the effective organization ID so team members
+    // can view the organization's KYC status (not their own, which doesn't exist).
+    let profile_id = if user.role == "agency" {
+        resolve_effective_agency_id(&state, &user).await?
+    } else if user.role == "brand" {
+        resolve_effective_brand_id(&state, &user).await?
+    } else {
+        let requested = q.organization_id.as_ref().unwrap_or(&user.id);
+        resolve_profile_id_for_role(&state, &user, requested).await?
+    };
     let table = match user.role.as_str() {
         "agency" => "agencies",
         "brand" => "brands",

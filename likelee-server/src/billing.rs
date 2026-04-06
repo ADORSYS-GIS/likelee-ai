@@ -5,7 +5,14 @@ use std::str::FromStr;
 use std::time::Duration;
 use tracing::{info, warn};
 
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{
+        self,
+        permissions::Permission,
+    },
+};
 
 fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     let raw = raw.trim();
@@ -488,9 +495,9 @@ pub async fn create_agency_subscription_checkout(
     user: AuthUser,
     Json(payload): Json<AgencyCheckoutRequest>,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
@@ -526,7 +533,7 @@ pub async fn create_agency_subscription_checkout(
             format!("stripe_price_not_configured:{headcount_env_var}"),
         ));
     }
-    let roster_count = agency_roster_count(&state, &user.id).await?;
+    let roster_count = agency_roster_count(&state, &agency_id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -558,7 +565,7 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
     let include_irl_booking = payload.addons.irl_booking && !billing_ctx.addon_irl_booking_enabled;
     if include_irl_booking && state.stripe_agency_irl_booking_price_id.trim().is_empty() {
         return Err((
@@ -595,11 +602,11 @@ pub async fn create_agency_subscription_checkout(
 
     cs_params.line_items = Some(line_items);
 
-    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.client_reference_id = Some(agency_id.as_str());
 
     // Also add metadata for redundancy.
     let mut md = std::collections::HashMap::new();
-    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
     md.insert("plan".to_string(), normalized_plan.clone());
     md.insert(
@@ -619,7 +626,7 @@ pub async fn create_agency_subscription_checkout(
     // Propagate agency_id onto the Subscription itself so subscription.* webhooks can be correlated.
     // (Stripe does not automatically copy Checkout Session metadata to the Subscription.)
     let mut sub_md = std::collections::HashMap::new();
-    sub_md.insert("agency_id".to_string(), user.id.clone());
+    sub_md.insert("agency_id".to_string(), agency_id.clone());
     sub_md.insert("billing_domain".to_string(), "agency".to_string());
     sub_md.insert("plan".to_string(), normalized_plan.clone());
     sub_md.insert(
@@ -668,7 +675,7 @@ pub async fn create_agency_subscription_checkout(
         ));
     }
 
-    info!(agency_id = %user.id, plan = %normalized_plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
+    info!(agency_id = %agency_id, plan = %normalized_plan, roster_models = payload.roster_models, "created stripe subscription checkout session");
     Ok(Json(AgencyCheckoutResponse { checkout_url: url }))
 }
 
@@ -676,9 +683,9 @@ pub async fn create_agency_irl_booking_addon_checkout(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
@@ -701,7 +708,7 @@ pub async fn create_agency_irl_booking_addon_checkout(
         ));
     }
 
-    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
     if billing_ctx.addon_irl_booking_enabled {
         return Err((
             StatusCode::CONFLICT,
@@ -725,10 +732,10 @@ pub async fn create_agency_irl_booking_addon_checkout(
         state.stripe_agency_irl_booking_price_id.as_str(),
         1,
     )]);
-    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.client_reference_id = Some(agency_id.as_str());
 
     let mut md = std::collections::HashMap::new();
-    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
     md.insert(
         "subscription_kind".to_string(),
@@ -738,7 +745,7 @@ pub async fn create_agency_irl_booking_addon_checkout(
     cs_params.metadata = Some(md);
 
     let mut sub_md = std::collections::HashMap::new();
-    sub_md.insert("agency_id".to_string(), user.id.clone());
+    sub_md.insert("agency_id".to_string(), agency_id.clone());
     sub_md.insert("billing_domain".to_string(), "agency".to_string());
     sub_md.insert(
         "subscription_kind".to_string(),
@@ -768,7 +775,7 @@ pub async fn create_agency_irl_booking_addon_checkout(
     }
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         agency_name = %billing_ctx.agency_name,
         "created stripe IRL booking addon checkout session"
     );
@@ -780,9 +787,9 @@ pub async fn sync_agency_checkout_session(
     user: AuthUser,
     Json(payload): Json<AgencyCheckoutSessionSyncRequest>,
 ) -> Result<Json<AgencyCheckoutSessionSyncResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
@@ -797,7 +804,7 @@ pub async fn sync_agency_checkout_session(
             .pg
             .from("agencies")
             .select("stripe_subscription_id,stripe_customer_id")
-            .eq("id", &user.id)
+            .eq("id", &agency_id)
             .limit(1)
             .execute()
             .await
@@ -826,13 +833,13 @@ pub async fn sync_agency_checkout_session(
 
         if subscription_id.is_empty() {
             return Ok(Json(
-                fetch_agency_checkout_sync_state(&state, &user.id).await?,
+                fetch_agency_checkout_sync_state(&state, &agency_id).await?,
             ));
         }
 
         crate::payouts::sync_agency_subscription_from_stripe(
             &state,
-            &user.id,
+            &agency_id,
             subscription_id.as_str(),
             customer_id.as_deref(),
         )
@@ -840,7 +847,7 @@ pub async fn sync_agency_checkout_session(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
 
         return Ok(Json(
-            fetch_agency_checkout_sync_state(&state, &user.id).await?,
+            fetch_agency_checkout_sync_state(&state, &agency_id).await?,
         ));
     }
 
@@ -865,7 +872,7 @@ pub async fn sync_agency_checkout_session(
         .unwrap_or("")
         .trim()
         .to_string();
-    if session_agency_id.is_empty() || session_agency_id != user.id {
+    if session_agency_id.is_empty() || session_agency_id != agency_id {
         return Err((
             StatusCode::FORBIDDEN,
             "checkout_session_not_owned".to_string(),
@@ -922,14 +929,14 @@ pub async fn sync_agency_checkout_session(
     for attempt in 0..4 {
         crate::payouts::sync_agency_subscription_from_stripe(
             &state,
-            &user.id,
+            &agency_id,
             subscription_id.as_str(),
             customer_id.as_deref(),
         )
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
 
-        latest_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+        latest_state = fetch_agency_checkout_sync_state(&state, &agency_id).await?;
 
         let plan_ready = expected_plan_tier
             .as_deref()
@@ -961,9 +968,9 @@ pub async fn create_campaign_offer_checkout(
     user: AuthUser,
     axum::extract::Path(offer_id): axum::extract::Path<String>,
 ) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
-    }
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
+    let brand_id = brand_access.organization_id;
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
@@ -978,7 +985,7 @@ pub async fn create_campaign_offer_checkout(
         .from("campaign_offers")
         .select("id,status,payment_status,target_type,target_id,billing_request_id,budget_snapshot")
         .eq("id", &offer_id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .limit(1)
         .execute()
         .await
@@ -1265,14 +1272,14 @@ pub async fn create_campaign_offer_checkout(
     cs_params.success_url = Some(success_url.as_str());
     cs_params.cancel_url = Some(cancel_url.as_str());
     cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
-    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.client_reference_id = Some(brand_id.as_str());
 
     let mut md = std::collections::HashMap::new();
     md.insert("billing_domain".to_string(), "campaign_offer".to_string());
     md.insert("offer_id".to_string(), offer_id.clone());
     md.insert("target_type".to_string(), target_type.to_string());
     md.insert("target_id".to_string(), target_id.to_string());
-    md.insert("brand_id".to_string(), user.id.clone());
+    md.insert("brand_id".to_string(), brand_id.clone());
 
     if target_type == "agency" {
         md.insert("agency_id".to_string(), target_id.to_string());

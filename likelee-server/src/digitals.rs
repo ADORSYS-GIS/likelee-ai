@@ -476,11 +476,14 @@ pub async fn list_agency_digitals(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<DigitalRow>>, (StatusCode, String)> {
+    let access = crate::team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+    
     let talent_resp = state
         .pg
         .from("agency_users")
         .select("id")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("role", "talent")
         .execute()
         .await
@@ -540,6 +543,9 @@ pub async fn send_digitals_reminders(
     user: AuthUser,
     Json(payload): Json<SendDigitalsRemindersRequest>,
 ) -> Result<Json<SendDigitalsRemindersResponse>, (StatusCode, String)> {
+    let access = crate::team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+    
     let requested = payload.talent_ids.len();
     if requested == 0 {
         return Ok(Json(SendDigitalsRemindersResponse {
@@ -555,7 +561,7 @@ pub async fn send_digitals_reminders(
         .pg
         .from("agency_users")
         .select("id,full_legal_name,stage_name,full_name,email")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("role", "talent")
         .in_("id", ids)
         .execute()

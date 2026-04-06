@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, team::{permissions::Permission, require_agency_permission}};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -18,6 +18,8 @@ pub async fn update_campaign_split(
     Path(id): Path<String>,
     Json(payload): Json<UpdateCampaignSplitRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
     // Ensure this campaign row is within the agency scope.
     // Scope is determined by the talent record (campaigns.talent_id -> agency_users.agency_id).
     let campaign_resp = state
@@ -60,7 +62,7 @@ pub async fn update_campaign_split(
         .from("agency_users")
         .select("id")
         .eq("id", &talent_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("role", "talent")
         .limit(1)
         .execute()

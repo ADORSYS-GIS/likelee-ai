@@ -1,9 +1,14 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_permission},
+};
 
 #[derive(Deserialize)]
 pub struct CreateBrandLicenseRequest {
@@ -175,7 +180,7 @@ pub async fn create(
     }
 
     let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+        crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     tracing::info!(
         "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
@@ -280,7 +285,10 @@ pub async fn create(
         if conn_status != "active" && conn_status != "accepted" {
             return Err((
                 StatusCode::FORBIDDEN,
-                format!("Connection exists but is not active (status: {}). Please ensure the connection is accepted.", conn_status),
+                format!(
+                    "Connection exists but is not active (status: {}). Please ensure the connection is accepted.",
+                    conn_status
+                ),
             ));
         }
     } else {
@@ -321,6 +329,7 @@ pub async fn create(
                         "Successfully auto-created brand_agency_connection: {}",
                         text
                     );
+                    crate::team::invalidate_brand_agency_connection_cache(&state, &effective_brand_id, &agency_id);
                 } else if crate::face_profiles::is_missing_relation_error(
                     &text,
                     "brand_agency_connections",
@@ -506,11 +515,10 @@ pub async fn list_for_agency(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<BrandLicenseRequestListResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
-    tracing::info!("Fetching brand license requests for agency_id: {}", user.id);
+    tracing::info!("Fetching brand license requests for agency_id: {}", agency_id);
 
     // First, let's check if ANY brand license requests exist at all
     let all_requests_resp = state
@@ -526,7 +534,7 @@ pub async fn list_for_agency(
     if let Ok(resp) = all_requests_resp {
         if let Ok(text) = resp.text().await {
             tracing::info!("ALL brand license requests in database (last 10): {}", text);
-            tracing::info!("Current agency user ID: {}", user.id);
+            tracing::info!("Current agency ID: {}", agency_id);
         }
     }
 
@@ -535,7 +543,7 @@ pub async fn list_for_agency(
         .from("brand_license_requests")
         .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS for debugging
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands(company_name,email),creators(full_name,email,profile_photo_url)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -575,9 +583,8 @@ pub async fn update_status_for_agency(
     user: AuthUser,
     Json(payload): Json<UpdateBrandLicenseRequestStatus>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
     if payload.brand_request_ids.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "No brand_request_ids".to_string()));
     }
@@ -607,7 +614,7 @@ pub async fn update_status_for_agency(
         .from("brand_license_requests")
         .update(serde_json::Value::Object(update).to_string())
         .in_("id", ids)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

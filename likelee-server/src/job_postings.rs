@@ -182,7 +182,7 @@ pub async fn update_job(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+        crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg
@@ -434,7 +434,7 @@ pub async fn create_job(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+        crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let status = payload
         .status
@@ -1055,7 +1055,7 @@ pub async fn list_jobs(
             let brand_id = row.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
             brand_id == user.id
                 || brand_id
-                    == crate::face_profiles::resolve_effective_brand_id(&state, &user)
+                    == crate::team::resolve_effective_brand_id(&state, &user)
                         .await
                         .unwrap_or_default()
         } else {
@@ -1142,7 +1142,7 @@ pub async fn list_my_jobs(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+        crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let resp = state
         .pg
@@ -1569,7 +1569,7 @@ pub async fn list_job_applications(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+        crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg

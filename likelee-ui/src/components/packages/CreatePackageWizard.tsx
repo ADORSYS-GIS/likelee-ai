@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Copy,
   ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -54,6 +55,7 @@ import { Switch } from "@/components/ui/switch";
 import { AssetSelector } from "./AssetSelector";
 import { ensureHexColor } from "@/utils/color";
 import { base44 } from "@/api/base44Client";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export type CreatePackageWizardMode =
   | "template"
@@ -81,6 +83,8 @@ export function CreatePackageWizard({
   isSportsAgency = false,
   offerContext = null,
 }: CreatePackageWizardProps) {
+  const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
+  const canViewConnections = hasPermission("view_brand_connections");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
@@ -183,7 +187,7 @@ export function CreatePackageWizard({
         allow_callbacks: packageToEdit.allow_callbacks ?? true,
         consent_items:
           Array.isArray(packageToEdit.consent_items) &&
-          packageToEdit.consent_items.length > 0
+            packageToEdit.consent_items.length > 0
             ? packageToEdit.consent_items
             : initialFormData.consent_items,
         password_protected: packageToEdit.password_protected || false,
@@ -809,16 +813,16 @@ export function CreatePackageWizard({
                           const tid = String(item?.talent_id || "").trim();
                           const resolvedTalent = item?.talent ||
                             (tid ? talentById.get(tid) : null) || {
-                              id: tid,
-                              full_name: item?.talent_name || "Talent",
-                            };
+                            id: tid,
+                            full_name: item?.talent_name || "Talent",
+                          };
                           const talentName = String(
                             resolvedTalent?.stage_name ||
-                              resolvedTalent?.name ||
-                              resolvedTalent?.full_legal_name ||
-                              resolvedTalent?.full_name ||
-                              item?.talent_name ||
-                              "Talent",
+                            resolvedTalent?.name ||
+                            resolvedTalent?.full_legal_name ||
+                            resolvedTalent?.full_name ||
+                            item?.talent_name ||
+                            "Talent",
                           ).trim();
                           const photo = String(
                             resolvedTalent?.profile_photo_url || "",
@@ -1110,29 +1114,41 @@ export function CreatePackageWizard({
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                             Recipient Brand *
                           </Label>
-                          <select
-                            value={selectedBrandId}
-                            onChange={(e) => setSelectedBrandId(e.target.value)}
-                            className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                          >
-                            <option value="">Select a brand…</option>
-                            {(Array.isArray(connectedBrands)
-                              ? connectedBrands
-                              : []
-                            ).map((c: any) => {
-                              const id = String(c?.brand_id || "").trim();
-                              const label =
-                                String(c?.brands?.company_name || "").trim() ||
-                                String(c?.brands?.email || "").trim() ||
-                                id;
-                              if (!id) return null;
-                              return (
-                                <option key={id} value={id}>
-                                  {label}
-                                </option>
-                              );
-                            })}
-                          </select>
+                          {canViewConnections ? (
+                            <select
+                              value={selectedBrandId}
+                              onChange={(e) => setSelectedBrandId(e.target.value)}
+                              className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                            >
+                              <option value="">Select a brand…</option>
+                              {(Array.isArray(connectedBrands)
+                                ? connectedBrands
+                                : []
+                              ).map((c: any) => {
+                                const id = String(c?.brand_id || "").trim();
+                                const label =
+                                  String(
+                                    c?.brands?.company_name || "",
+                                  ).trim() ||
+                                  String(c?.brands?.email || "").trim() ||
+                                  id;
+                                if (!id) return null;
+                                return (
+                                  <option key={id} value={id}>
+                                    {label}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          ) : (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center gap-3">
+                              <Lock className="w-5 h-5 text-red-600" />
+                              <p className="text-sm text-red-700 font-medium">
+                                Permission Required: You do not have access to
+                                view brand connections.
+                              </p>
+                            </div>
+                          )}
                           <p className="text-xs text-gray-500 font-medium">
                             This package will be delivered to the brand’s
                             dashboard inbox for this offer.

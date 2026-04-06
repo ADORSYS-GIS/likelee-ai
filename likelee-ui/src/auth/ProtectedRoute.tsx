@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { getOnboardingPath, isOnboardingIncomplete } from "./onboarding";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -22,13 +23,29 @@ const LoadingSpinner = () => (
 export default function ProtectedRoute({
   children,
   allowedRoles,
+  requiredPermissions,
 }: {
   children: React.ReactNode;
   allowedRoles?: string[];
+  requiredPermissions?: string[];
 }) {
   const { initialized, authenticated, profile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const normalizedRole = String(
+    (profile as any)?.organization_type || profile?.role || "",
+  )
+    .trim()
+    .toLowerCase();
+  const isTeamScopedRole =
+    normalizedRole === "agency" || normalizedRole === "brand";
+  const {
+    loading: loadingTeamAccess,
+    hasPermission,
+    error: teamAccessError,
+  } = useTeamAccess(
+    isTeamScopedRole ? (normalizedRole as "agency" | "brand") : undefined,
+  );
 
   const effectiveRoles = React.useMemo(() => {
     if (!profile?.role) return [];
@@ -39,6 +56,12 @@ export default function ProtectedRoute({
     () => getOnboardingPath(profile),
     [profile],
   );
+  const missingRequiredPermission = React.useMemo(() => {
+    if (!requiredPermissions?.length || !isTeamScopedRole) {
+      return false;
+    }
+    return !requiredPermissions.every((permission) => hasPermission(permission));
+  }, [hasPermission, isTeamScopedRole, requiredPermissions]);
 
   // Handle role-based redirect with useEffect to prevent content flash
   React.useEffect(() => {
@@ -49,6 +72,21 @@ export default function ProtectedRoute({
         !allowedRoles.some((r) => effectiveRoles.includes(r))
       ) {
         navigate("/Unauthorized", { replace: true });
+        return;
+      }
+
+      if (
+        requiredPermissions?.length &&
+        isTeamScopedRole &&
+        !loadingTeamAccess &&
+        missingRequiredPermission
+      ) {
+        navigate("/Unauthorized", {
+          replace: true,
+          state: {
+            reason: teamAccessError || "Missing required team permission.",
+          },
+        });
         return;
       }
 
@@ -66,6 +104,11 @@ export default function ProtectedRoute({
     authenticated,
     profile,
     allowedRoles,
+    requiredPermissions,
+    loadingTeamAccess,
+    missingRequiredPermission,
+    teamAccessError,
+    isTeamScopedRole,
     location.pathname,
     navigate,
     onboardingPath,
@@ -85,8 +128,20 @@ export default function ProtectedRoute({
     return <LoadingSpinner />;
   }
 
+  if (requiredPermissions?.length && isTeamScopedRole && loadingTeamAccess) {
+    return <LoadingSpinner />;
+  }
+
   // Show loading spinner during role check and redirect
   if (allowedRoles && !allowedRoles.some((r) => effectiveRoles.includes(r))) {
+    return <LoadingSpinner />;
+  }
+
+  if (
+    requiredPermissions?.length &&
+    isTeamScopedRole &&
+    missingRequiredPermission
+  ) {
     return <LoadingSpinner />;
   }
 

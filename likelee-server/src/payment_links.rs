@@ -1,4 +1,8 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_permission},
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -74,10 +78,8 @@ pub async fn generate_payment_link(
     user: AuthUser,
     Json(payload): Json<GeneratePaymentLinkRequest>,
 ) -> Result<Json<PaymentLinkResponse>, (StatusCode, String)> {
-    // Verify agency role
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if payload.licensing_request_ids.is_empty() {
         return Err((
@@ -91,7 +93,7 @@ pub async fn generate_payment_link(
         .pg
         .from("agencies")
         .select("stripe_connect_account_id")
-        .eq("id", &user.id)
+        .eq("id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -136,7 +138,7 @@ pub async fn generate_payment_link(
         .pg
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .in_("id", ids.clone())
         .execute()
         .await
@@ -180,7 +182,7 @@ pub async fn generate_payment_link(
         .pg
         .from("license_submissions")
         .select("licensing_request_id,license_fee")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("licensing_request_id", ids.clone())
         .execute()
         .await
@@ -234,7 +236,7 @@ pub async fn generate_payment_link(
             .pg
             .from("licensing_requests")
             .select("id,submission_id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", &agency_id)
             .in_("id", missing_refs)
             .execute()
             .await
@@ -274,7 +276,7 @@ pub async fn generate_payment_link(
                 .pg
                 .from("license_submissions")
                 .select("id,license_fee")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id)
                 .in_("id", s_refs)
                 .execute()
                 .await
@@ -351,7 +353,7 @@ pub async fn generate_payment_link(
     }
 
     // Platform fee based on agency plan tier
-    let tier = get_agency_plan_tier(&state, &user.id).await?;
+    let tier = get_agency_plan_tier(&state, &agency_id).await?;
     let fee_pct: f64 = match tier {
         PlanTier::Free => 0.08,
         PlanTier::Basic => 0.05,
@@ -498,7 +500,7 @@ pub async fn generate_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .in_("tier_name", tn_refs)
                 .execute()
                 .await;
@@ -526,7 +528,7 @@ pub async fn generate_payment_link(
             .pg
             .from("agencies")
             .select("performance_commission_config")
-            .eq("id", &user.id)
+            .eq("id", agency_id)
             .limit(1)
             .execute()
             .await;
@@ -565,7 +567,7 @@ pub async fn generate_payment_link(
                 .pg
                 .from("agency_creator_commissions")
                 .select("creator_id,commission_rate")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .in_("creator_id", creator_id_refs)
                 .execute()
                 .await;
@@ -994,9 +996,8 @@ pub async fn send_payment_link_email(
     user: AuthUser,
     Json(payload): Json<SendPaymentLinkEmailRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // Fetch payment link
     let pl_resp = state
@@ -1004,7 +1005,7 @@ pub async fn send_payment_link_email(
         .from("agency_payment_links")
         .select("*,licensing_requests(campaign_title,brand_id,brands(company_name))")
         .eq("id", &payload.payment_link_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .single()
         .execute()
         .await
@@ -1145,15 +1146,14 @@ pub async fn list_payment_links(
     user: AuthUser,
     Query(query): Query<ListPaymentLinksQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let mut request = state
         .pg
         .from("agency_payment_links")
         .select("*")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc");
 
     if let Some(lr_id) = query.licensing_request_id {
@@ -1195,9 +1195,8 @@ pub async fn cancel_payment_link(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // Fetch the payment link to get Stripe ID
     let pl_resp = state
@@ -1205,7 +1204,7 @@ pub async fn cancel_payment_link(
         .from("agency_payment_links")
         .select("stripe_payment_link_id,status")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .single()
         .execute()
         .await
@@ -1293,16 +1292,15 @@ pub async fn get_payment_link(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
         .from("agency_payment_links")
         .select("*")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .single()
         .execute()
         .await

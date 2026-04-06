@@ -1,5 +1,6 @@
 use crate::email::{send_email_core_with_from_name, EmailSendOptions};
 use crate::errors::sanitize_db_error;
+use crate::team::{permissions::Permission, require_agency_permission};
 use crate::{
     auth::{AuthUser, RoleGuard},
     config::AppState,
@@ -27,12 +28,14 @@ pub async fn list_agency_clients(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
         .from("agency_clients")
         .select("*")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -77,6 +80,8 @@ pub async fn share_comp_card(
     Json(payload): Json<ShareCompCardRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let agency_id = &access.organization_id;
 
     if payload.client_ids.is_empty() {
         return Err((
@@ -95,7 +100,7 @@ pub async fn share_comp_card(
         .pg
         .from("agencies")
         .select("agency_name")
-        .eq("id", &user.id)
+        .eq("id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -127,7 +132,7 @@ pub async fn share_comp_card(
         .pg
         .from("agency_clients")
         .select("*")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("id", ids)
         .execute()
         .await

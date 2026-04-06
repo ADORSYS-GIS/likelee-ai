@@ -55,14 +55,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
   const queryClient = useQueryClient();
+  const { hasPermission } = useTeamAccess("agency");
+  const canApproveDeliverables = hasPermission("approve_deliverables");
+  const canViewDeliverables = hasPermission("view_deliverables");
+  const isReadOnly = canViewDeliverables && !canApproveDeliverables;
   const [expandedOfferId, setExpandedOfferId] = useState<string>("");
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [assignmentsByOffer, setAssignmentsByOffer] = useState<
@@ -651,63 +662,102 @@ export function AgencyDeliverablesView() {
           {options?.showActions && options?.offerId && (
             <div className="grid grid-cols-2 gap-2 pt-1">
               {isBrandApproved && (
-                <Button
-                  size="sm"
-                  className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white col-span-2"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setReviewDialog({
-                      open: true,
-                      offerId: options.offerId || "",
-                      deliverableId: String(deliverable?.id || ""),
-                      action: "final_approve",
-                      note: "",
-                      submitting: false,
-                    });
-                  }}
-                  disabled={isFinalized}
-                >
-                  Approve
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          size="sm"
+                          className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white col-span-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setReviewDialog({
+                              open: true,
+                              offerId: options.offerId || "",
+                              deliverableId: String(deliverable?.id || ""),
+                              action: "final_approve",
+                              note: "",
+                              submitting: false,
+                            });
+                          }}
+                          disabled={isFinalized || !canApproveDeliverables}
+                        >
+                          Approve
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!canApproveDeliverables && (
+                      <TooltipContent>
+                        <p>Your role cannot approve deliverables</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className={`h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50 ${isBrandApproved ? "col-span-1" : "col-span-2"}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setReviewDialog({
-                    open: true,
-                    offerId: options.offerId || "",
-                    deliverableId: String(deliverable?.id || ""),
-                    action: "changes_requested",
-                    note: "",
-                    submitting: false,
-                  });
-                }}
-                disabled={isFinalized}
-              >
-                Revise
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="col-span-2 h-8 rounded-full font-semibold text-rose-600 hover:bg-rose-50"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setReviewDialog({
-                    open: true,
-                    offerId: options.offerId || "",
-                    deliverableId: String(deliverable?.id || ""),
-                    action: "reject",
-                    note: "",
-                    submitting: false,
-                  });
-                }}
-                disabled={isFinalized}
-              >
-                Reject
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={isBrandApproved ? "col-span-1" : "col-span-2"}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setReviewDialog({
+                            open: true,
+                            offerId: options.offerId || "",
+                            deliverableId: String(deliverable?.id || ""),
+                            action: "changes_requested",
+                            note: "",
+                            submitting: false,
+                          });
+                        }}
+                        disabled={isFinalized || !canApproveDeliverables}
+                      >
+                        Revise
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canApproveDeliverables && (
+                    <TooltipContent>
+                      <p>Your role cannot revise deliverables</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="col-span-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="col-span-2 h-8 rounded-full font-semibold text-rose-600 hover:bg-rose-50 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setReviewDialog({
+                            open: true,
+                            offerId: options.offerId || "",
+                            deliverableId: String(deliverable?.id || ""),
+                            action: "reject",
+                            note: "",
+                            submitting: false,
+                          });
+                        }}
+                        disabled={isFinalized || !canApproveDeliverables}
+                      >
+                        Reject
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canApproveDeliverables && (
+                    <TooltipContent>
+                      <p>Your role cannot reject deliverables</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
 
@@ -854,6 +904,14 @@ export function AgencyDeliverablesView() {
 
   const handleSubmitDrafts = async (offerId: string) => {
     if (!offerId) return;
+    if (!canApproveDeliverables) {
+      toast({
+        title: "Permission required",
+        description: "Your role cannot submit deliverables for approval.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmittingDrafts((prev) => ({ ...prev, [offerId]: true }));
     try {
       await submitAllDraftDeliverables(offerId);
@@ -873,6 +931,14 @@ export function AgencyDeliverablesView() {
   const handleReviewDeliverable = async () => {
     if (!reviewDialog.offerId || !reviewDialog.deliverableId) return;
     if (reviewDialog.submitting) return;
+    if (!canApproveDeliverables) {
+      toast({
+        title: "Permission required",
+        description: "Your role cannot review deliverables.",
+        variant: "destructive",
+      });
+      return;
+    }
     setReviewDialog((prev) => ({ ...prev, submitting: true }));
     try {
       await reviewOfferDeliverable(
@@ -943,6 +1009,17 @@ export function AgencyDeliverablesView() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <Eye className="w-5 h-5 text-amber-600" />
+          <div>
+            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="text-sm text-amber-700">
+              Your role allows viewing deliverables but not approving or managing them.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white shadow-xl">
         <div className="relative z-10 flex items-center justify-between">
           <div>
@@ -1283,6 +1360,7 @@ export function AgencyDeliverablesView() {
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
                                     submittingDrafts[offerId] ||
+                                    !canApproveDeliverables ||
                                     (offer?.status ===
                                       "contract_fully_signed" &&
                                       !isOfferPaid)

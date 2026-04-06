@@ -1,8 +1,9 @@
 use crate::{
-    agencies::{resolve_effective_agency_id, resolve_effective_agency_talent_id},
+    agencies::resolve_effective_agency_talent_id,
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
+    team::resolve_effective_agency_id,
 };
 use axum::extract::Multipart;
 use axum::{

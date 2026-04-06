@@ -44,6 +44,7 @@ import {
   Wand2,
   AlertCircle,
   ArrowRight,
+  Lock,
 } from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,11 +52,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
+  const canViewConnections = hasPermission("view_brand_connections");
+  const canManageConnections = hasPermission("manage_brand_connections");
+  const isReadOnly = canViewConnections && !canManageConnections;
+
   const [activeTab, setActiveTab] = useState<
     | "connections"
     | "requests"
@@ -1091,8 +1104,52 @@ const BrandConnectionsView = () => {
   const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
   const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
 
+  if (accessLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
+        <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">Verifying access...</p>
+      </div>
+    );
+  }
+
+  if (!canViewConnections) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
+          <p className="text-gray-600">Access Restricted</p>
+        </div>
+        <Card className="p-12 flex flex-col items-center justify-center text-center border-dashed border-2">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Permission Required
+          </h3>
+          <p className="text-gray-600 max-w-sm">
+            You do not have the required permissions to view brand connections.
+            Please contact your agency administrator if you believe this is an
+            error.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <Eye className="w-5 h-5 text-amber-600" />
+          <div>
+            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="text-sm text-amber-700">
+              Your role allows viewing brand connections but not managing them.
+            </p>
+          </div>
+        </div>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
         <p className="text-gray-600">
@@ -1190,8 +1247,8 @@ const BrandConnectionsView = () => {
                   const brandId = String(connection?.brand_id || "").trim();
                   const connectedAt = connection?.connected_at
                     ? new Date(
-                        String(connection.connected_at),
-                      ).toLocaleDateString()
+                      String(connection.connected_at),
+                    ).toLocaleDateString()
                     : "—";
                   const isBusy = busyIds.has(brandId);
                   return (
@@ -1210,16 +1267,29 @@ const BrandConnectionsView = () => {
                         </p>
                       </div>
                       <div className="text-right flex items-center gap-3">
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          disabled={!brandId || isBusy}
-                          onClick={() => disconnectBrand(brandId)}
-                          aria-label="Disconnect from brand"
-                          title="Disconnect"
-                        >
-                          <Link2Off className="h-4 w-4" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  disabled={!brandId || isBusy || !canManageConnections}
+                                  onClick={() => disconnectBrand(brandId)}
+                                  aria-label="Disconnect from brand"
+                                  className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Link2Off className="h-4 w-4" />
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageConnections && (
+                              <TooltipContent>
+                                <p>Your role cannot disconnect brands</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                         <div>
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
                             Connected
@@ -1307,21 +1377,47 @@ const BrandConnectionsView = () => {
                         </p>
                       )}
                       <div className="flex gap-3">
-                        <Button
-                          onClick={() => updateStatus(requestId, "accept")}
-                          disabled={isBusy}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          {isBusy ? "Working..." : "Accept"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => updateStatus(requestId, "decline")}
-                          disabled={isBusy}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          Decline
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  onClick={() => updateStatus(requestId, "accept")}
+                                  disabled={isBusy || !canManageConnections}
+                                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isBusy ? "Working..." : "Accept"}
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageConnections && (
+                              <TooltipContent>
+                                <p>Your role cannot accept requests</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => updateStatus(requestId, "decline")}
+                                  disabled={isBusy || !canManageConnections}
+                                  className="border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Decline
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageConnections && (
+                              <TooltipContent>
+                                <p>Your role cannot decline requests</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   );
@@ -1404,21 +1500,19 @@ const BrandConnectionsView = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge
-                              className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                                isAccepted
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              }`}
+                              className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${isAccepted
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                }`}
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
                             {isFullySigned && (
                               <Badge
-                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                                  offer?.payment_status === "paid"
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                    : "bg-amber-100 text-amber-800 border-amber-200"
-                                }`}
+                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${offer?.payment_status === "paid"
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  : "bg-amber-100 text-amber-800 border-amber-200"
+                                  }`}
                               >
                                 {offer?.payment_status === "paid"
                                   ? "Paid"
@@ -1429,32 +1523,58 @@ const BrandConnectionsView = () => {
                         </div>
                       </div>
 
-                      <div className="p-6 md:p-8 space-y-8">
-                        {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
-                          {isPending && (
-                            <>
-                              <Button
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6"
-                                disabled={busyIds.has(selectedOfferId)}
-                                onClick={() =>
-                                  respondToOffer(selectedOfferId, "accept")
-                                }
-                              >
-                                Accept Offer
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                                disabled={busyIds.has(selectedOfferId)}
-                                onClick={() =>
-                                  respondToOffer(selectedOfferId, "decline")
-                                }
-                              >
-                                Decline
-                              </Button>
-                            </>
-                          )}
+                        <div className="p-6 md:p-8 space-y-8">
+                         {/* Action Bar */}
+                         <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
+                           {isPending && (
+                             <>
+                               <TooltipProvider>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <span>
+                                       <Button
+                                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                         disabled={busyIds.has(selectedOfferId) || !canManageConnections}
+                                         onClick={() =>
+                                           respondToOffer(selectedOfferId, "accept")
+                                         }
+                                       >
+                                         Accept Offer
+                                       </Button>
+                                     </span>
+                                   </TooltipTrigger>
+                                   {!canManageConnections && (
+                                     <TooltipContent>
+                                       <p>Your role cannot accept offers</p>
+                                     </TooltipContent>
+                                   )}
+                                 </Tooltip>
+                               </TooltipProvider>
+                               <TooltipProvider>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <span>
+                                       <Button
+                                         variant="outline"
+                                         className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                         disabled={busyIds.has(selectedOfferId) || !canManageConnections}
+                                         onClick={() =>
+                                           respondToOffer(selectedOfferId, "decline")
+                                         }
+                                       >
+                                         Decline
+                                       </Button>
+                                     </span>
+                                   </TooltipTrigger>
+                                   {!canManageConnections && (
+                                     <TooltipContent>
+                                       <p>Your role cannot decline offers</p>
+                                     </TooltipContent>
+                                   )}
+                                 </Tooltip>
+                               </TooltipProvider>
+                             </>
+                           )}
                           {isAccepted && (
                             <>
                               {(() => {
@@ -1656,7 +1776,7 @@ const BrandConnectionsView = () => {
 
                         {/* Full brief — shown directly, no duplicate summary */}
                         {offer?.brief_snapshot &&
-                        typeof offer.brief_snapshot === "object" ? (
+                          typeof offer.brief_snapshot === "object" ? (
                           <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                             <CampaignBriefView
                               brief={offer.brief_snapshot}
@@ -1699,7 +1819,7 @@ const BrandConnectionsView = () => {
 
                     const bs =
                       offer?.brief_snapshot &&
-                      typeof offer.brief_snapshot === "object"
+                        typeof offer.brief_snapshot === "object"
                         ? offer.brief_snapshot
                         : null;
                     const briefVal = (key: string, fallback = "") => {
@@ -1740,21 +1860,19 @@ const BrandConnectionsView = () => {
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
                             <Badge
-                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                                isAccepted
-                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                  : "bg-indigo-100 text-indigo-700 border-indigo-200"
-                              }`}
+                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${isAccepted
+                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                                }`}
                             >
                               {status.replace(/_/g, " ")}
                             </Badge>
                             {isFullySigned && (
                               <Badge
-                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                                  offer?.payment_status === "paid"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}
+                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${offer?.payment_status === "paid"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                                  }`}
                               >
                                 {offer?.payment_status === "paid"
                                   ? "Paid"
@@ -1763,29 +1881,55 @@ const BrandConnectionsView = () => {
                             )}
                             {isPending && (
                               <>
-                                <Button
-                                  size="sm"
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                                  disabled={busyIds.has(offerId)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    respondToOffer(offerId, "accept");
-                                  }}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                                  disabled={busyIds.has(offerId)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    respondToOffer(offerId, "decline");
-                                  }}
-                                >
-                                  Decline
-                                </Button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          disabled={busyIds.has(offerId) || !canManageConnections}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            respondToOffer(offerId, "accept");
+                                          }}
+                                        >
+                                          Accept
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    {!canManageConnections && (
+                                      <TooltipContent>
+                                        <p>Your role cannot accept offers</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          disabled={busyIds.has(offerId) || !canManageConnections}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            respondToOffer(offerId, "decline");
+                                          }}
+                                        >
+                                          Decline
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    {!canManageConnections && (
+                                      <TooltipContent>
+                                        <p>Your role cannot decline offers</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
                               </>
                             )}
                             {isAccepted &&
@@ -2047,11 +2191,10 @@ const BrandConnectionsView = () => {
                       <div
                         key={offerId}
                         onClick={() => setSelectedOfferId(offerId)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50 shadow-sm"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
-                        }`}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+                          }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <p
@@ -2069,10 +2212,10 @@ const BrandConnectionsView = () => {
                           Brand:{" "}
                           {String(
                             offer?.brands?.company_name ||
-                              offer?.brands?.name ||
-                              offer?.brand_campaigns?.brands?.company_name ||
-                              offer?.brand_campaigns?.brands?.name ||
-                              "Unknown",
+                            offer?.brands?.name ||
+                            offer?.brand_campaigns?.brands?.company_name ||
+                            offer?.brand_campaigns?.brands?.name ||
+                            "Unknown",
                           )}
                         </p>
                       </div>
@@ -2186,136 +2329,136 @@ const BrandConnectionsView = () => {
                                 c?.docuseal_status === "draft" ||
                                 !c?.docuseal_status,
                             ) && (
-                              <section className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Contract Templates
-                                  </h5>
-                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                                    Ready to Prepare
-                                  </span>
-                                </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                      <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
-                                        </th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {(offerContractsQuery.data || [])
-                                        .filter(
-                                          (c: any) =>
-                                            c?.docuseal_status === "draft" ||
-                                            !c?.docuseal_status,
-                                        )
-                                        .map((c: any) => {
-                                          const cId = String(c?.id);
-                                          const isBusy = busyIds.has(cId);
-                                          const statusRaw = String(
-                                            c?.docuseal_status || "sent",
-                                          ).toLowerCase();
-                                          const statusLabel =
-                                            statusRaw === "signed"
-                                              ? "completed"
-                                              : statusRaw;
-                                          return (
-                                            <tr
-                                              key={cId}
-                                              className="hover:bg-gray-50/50 transition-colors"
-                                            >
-                                              <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                                                    <FileText className="w-5 h-5 text-blue-500" />
-                                                  </div>
-                                                  <div>
-                                                    <p className="text-sm font-bold text-gray-900">
-                                                      {String(
-                                                        c?.title ||
+                                <section className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                      Contract Templates
+                                    </h5>
+                                    <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                                      Ready to Prepare
+                                    </span>
+                                  </div>
+                                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <table className="w-full text-left">
+                                      <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                            Title
+                                          </th>
+                                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
+                                            Actions
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-100">
+                                        {(offerContractsQuery.data || [])
+                                          .filter(
+                                            (c: any) =>
+                                              c?.docuseal_status === "draft" ||
+                                              !c?.docuseal_status,
+                                          )
+                                          .map((c: any) => {
+                                            const cId = String(c?.id);
+                                            const isBusy = busyIds.has(cId);
+                                            const statusRaw = String(
+                                              c?.docuseal_status || "sent",
+                                            ).toLowerCase();
+                                            const statusLabel =
+                                              statusRaw === "signed"
+                                                ? "completed"
+                                                : statusRaw;
+                                            return (
+                                              <tr
+                                                key={cId}
+                                                className="hover:bg-gray-50/50 transition-colors"
+                                              >
+                                                <td className="px-6 py-4">
+                                                  <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                                      <FileText className="w-5 h-5 text-blue-500" />
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-sm font-bold text-gray-900">
+                                                        {String(
+                                                          c?.title ||
                                                           "Contract Draft",
-                                                      )}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      Template ID:{" "}
-                                                      {String(
-                                                        c?.docuseal_template_id ||
+                                                        )}
+                                                      </p>
+                                                      <p className="text-[10px] text-gray-400 mt-0.5">
+                                                        Template ID:{" "}
+                                                        {String(
+                                                          c?.docuseal_template_id ||
                                                           "N/A",
-                                                      )}
-                                                    </p>
+                                                        )}
+                                                      </p>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              </td>
-                                              <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                    onClick={() =>
-                                                      handlePrepareContract(
-                                                        selectedOfferId,
-                                                        cId,
-                                                      )
-                                                    }
-                                                    disabled={
-                                                      isBusy ||
-                                                      !hasAssignedTalent
-                                                    }
-                                                  >
-                                                    <Wand2 className="w-4 h-4 mr-2" />
-                                                    Prepare
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="default"
-                                                    className="bg-blue-600 hover:bg-blue-700 h-9"
-                                                    onClick={() =>
-                                                      attemptSendContract(
-                                                        selectedOfferId,
-                                                        cId,
-                                                      )
-                                                    }
-                                                    disabled={isBusy}
-                                                  >
-                                                    {isBusy ? (
-                                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                      <>
-                                                        <Send className="w-4 h-4 mr-2" />
-                                                        Send
-                                                      </>
-                                                    )}
-                                                  </Button>
-                                                  <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="text-red-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() =>
-                                                      handleDeleteContract(
-                                                        selectedOfferId,
-                                                        cId,
-                                                      )
-                                                    }
-                                                    disabled={isBusy}
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </Button>
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </section>
-                            )}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                  <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                      onClick={() =>
+                                                        handlePrepareContract(
+                                                          selectedOfferId,
+                                                          cId,
+                                                        )
+                                                      }
+                                                      disabled={
+                                                        isBusy ||
+                                                        !hasAssignedTalent
+                                                      }
+                                                    >
+                                                      <Wand2 className="w-4 h-4 mr-2" />
+                                                      Prepare
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="default"
+                                                      className="bg-blue-600 hover:bg-blue-700 h-9"
+                                                      onClick={() =>
+                                                        attemptSendContract(
+                                                          selectedOfferId,
+                                                          cId,
+                                                        )
+                                                      }
+                                                      disabled={isBusy}
+                                                    >
+                                                      {isBusy ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                      ) : (
+                                                        <>
+                                                          <Send className="w-4 h-4 mr-2" />
+                                                          Send
+                                                        </>
+                                                      )}
+                                                    </Button>
+                                                    <Button
+                                                      size="icon"
+                                                      variant="ghost"
+                                                      className="text-red-400 hover:text-red-500 hover:bg-red-50"
+                                                      onClick={() =>
+                                                        handleDeleteContract(
+                                                          selectedOfferId,
+                                                          cId,
+                                                        )
+                                                      }
+                                                      disabled={isBusy}
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </section>
+                              )}
 
                             {/* Submissions Section */}
                             {(offerContractsQuery.data || []).some(
@@ -2323,250 +2466,249 @@ const BrandConnectionsView = () => {
                                 c?.docuseal_status &&
                                 c?.docuseal_status !== "draft",
                             ) && (
-                              <section className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Sent Submissions
-                                  </h5>
-                                  <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">
-                                    Active Submissions
-                                  </span>
-                                </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                      <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
-                                        </th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Status
-                                        </th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {(offerContractsQuery.data || [])
-                                        .filter(
-                                          (c: any) =>
-                                            c?.docuseal_status &&
-                                            c?.docuseal_status !== "draft",
-                                        )
-                                        .map((c: any) => {
-                                          const cId = String(c?.id);
-                                          const isBusy = busyIds.has(cId);
-                                          const statusRaw = String(
-                                            c?.docuseal_status || "sent",
-                                          ).toLowerCase();
-                                          const statusLabel =
-                                            statusRaw === "signed"
-                                              ? "completed"
-                                              : statusRaw;
-                                          return (
-                                            <tr
-                                              key={cId}
-                                              className="hover:bg-gray-50/50 transition-colors"
-                                            >
-                                              <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                                                    <FileText className="w-5 h-5 text-green-500" />
-                                                  </div>
-                                                  <div>
-                                                    <p className="text-sm font-bold text-gray-900">
-                                                      {String(
-                                                        c?.title ||
+                                <section className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                      Sent Submissions
+                                    </h5>
+                                    <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">
+                                      Active Submissions
+                                    </span>
+                                  </div>
+                                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <table className="w-full text-left">
+                                      <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                            Title
+                                          </th>
+                                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                            Status
+                                          </th>
+                                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
+                                            Actions
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-100">
+                                        {(offerContractsQuery.data || [])
+                                          .filter(
+                                            (c: any) =>
+                                              c?.docuseal_status &&
+                                              c?.docuseal_status !== "draft",
+                                          )
+                                          .map((c: any) => {
+                                            const cId = String(c?.id);
+                                            const isBusy = busyIds.has(cId);
+                                            const statusRaw = String(
+                                              c?.docuseal_status || "sent",
+                                            ).toLowerCase();
+                                            const statusLabel =
+                                              statusRaw === "signed"
+                                                ? "completed"
+                                                : statusRaw;
+                                            return (
+                                              <tr
+                                                key={cId}
+                                                className="hover:bg-gray-50/50 transition-colors"
+                                              >
+                                                <td className="px-6 py-4">
+                                                  <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                                                      <FileText className="w-5 h-5 text-green-500" />
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-sm font-bold text-gray-900">
+                                                        {String(
+                                                          c?.title ||
                                                           "Contract Submission",
-                                                      )}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      ID: {cId.slice(0, 8)}...
-                                                    </p>
+                                                        )}
+                                                      </p>
+                                                      <p className="text-[10px] text-gray-400 mt-0.5">
+                                                        ID: {cId.slice(0, 8)}...
+                                                      </p>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              </td>
-                                              <td className="px-6 py-4">
-                                                <Badge
-                                                  variant="secondary"
-                                                  className={`capitalize ${
-                                                    statusLabel ===
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className={`capitalize ${statusLabel ===
                                                       "completed" ||
-                                                    c?.docuseal_status ===
+                                                      c?.docuseal_status ===
                                                       "fully_signed"
                                                       ? "bg-green-100 text-green-700 hover:bg-green-200"
                                                       : statusLabel === "sent"
                                                         ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                                         : statusLabel ===
-                                                            "agency_pending"
+                                                          "agency_pending"
                                                           ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                                                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                                  }`}
-                                                >
-                                                  {statusLabel}
-                                                </Badge>
-                                              </td>
-                                              <td className="px-6 py-4 text-right">
-                                                {(() => {
-                                                  const agencySignUrl =
-                                                    String(
-                                                      c?.meta
-                                                        ?.agency_signing_url ||
+                                                      }`}
+                                                  >
+                                                    {statusLabel}
+                                                  </Badge>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                  {(() => {
+                                                    const agencySignUrl =
+                                                      String(
+                                                        c?.meta
+                                                          ?.agency_signing_url ||
                                                         "",
-                                                    ).trim() ||
-                                                    String(
-                                                      c?.meta
-                                                        ?.docuseal_signing_url ||
+                                                      ).trim() ||
+                                                      String(
+                                                        c?.meta
+                                                          ?.docuseal_signing_url ||
                                                         "",
-                                                    ).trim();
-                                                  const agencyStatus = String(
-                                                    c?.meta
-                                                      ?.agency_submitter_status ||
+                                                      ).trim();
+                                                    const agencyStatus = String(
+                                                      c?.meta
+                                                        ?.agency_submitter_status ||
                                                       "",
-                                                  ).toLowerCase();
-                                                  const agencySigned = [
-                                                    "completed",
-                                                    "signed",
-                                                    "done",
-                                                  ].includes(agencyStatus);
-                                                  const brandSignUrl = String(
-                                                    c?.meta
-                                                      ?.brand_signing_url || "",
-                                                  ).trim();
-                                                  const canCopyBrand =
-                                                    agencySigned &&
-                                                    Boolean(brandSignUrl);
-                                                  const downloadUrl =
-                                                    String(
+                                                    ).toLowerCase();
+                                                    const agencySigned = [
+                                                      "completed",
+                                                      "signed",
+                                                      "done",
+                                                    ].includes(agencyStatus);
+                                                    const brandSignUrl = String(
                                                       c?.meta
-                                                        ?.docuseal_document_url ||
-                                                        "",
-                                                    ).trim() ||
-                                                    String(
-                                                      c?.signed_document_url ||
-                                                        "",
+                                                        ?.brand_signing_url || "",
                                                     ).trim();
-                                                  return (
-                                                    <div className="flex items-center justify-end gap-2">
-                                                      {String(
-                                                        c?.docuseal_status ||
+                                                    const canCopyBrand =
+                                                      agencySigned &&
+                                                      Boolean(brandSignUrl);
+                                                    const downloadUrl =
+                                                      String(
+                                                        c?.meta
+                                                          ?.docuseal_document_url ||
+                                                        "",
+                                                      ).trim() ||
+                                                      String(
+                                                        c?.signed_document_url ||
+                                                        "",
+                                                      ).trim();
+                                                    return (
+                                                      <div className="flex items-center justify-end gap-2">
+                                                        {String(
+                                                          c?.docuseal_status ||
                                                           "",
-                                                      ).toLowerCase() ===
-                                                        "agency_pending" &&
-                                                      agencySignUrl ? (
-                                                        <Button
-                                                          size="sm"
-                                                          variant="outline"
-                                                          className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                          onClick={() =>
-                                                            window.open(
-                                                              agencySignUrl,
-                                                              "_blank",
-                                                            )
-                                                          }
-                                                          disabled={isBusy}
-                                                        >
-                                                          <FileText className="w-4 h-4 mr-2" />
-                                                          Sign now
-                                                        </Button>
-                                                      ) : (
-                                                        <Button
-                                                          size="sm"
-                                                          variant="outline"
-                                                          className="border-gray-200 hover:bg-gray-50"
-                                                          onClick={() => {
-                                                            const subId =
-                                                              canCopyBrand
-                                                                ? brandSignUrl
-                                                                : c?.docuseal_slug ||
-                                                                  c?.docuseal_submission_id;
-                                                            if (subId) {
-                                                              const url =
-                                                                canCopyBrand
-                                                                  ? subId
-                                                                  : `https://docuseal.com/s/${subId}`;
-                                                              navigator.clipboard.writeText(
-                                                                url,
-                                                              );
-                                                              toast({
-                                                                title:
-                                                                  "Link Copied",
-                                                                description:
-                                                                  "Signing link copied to clipboard.",
-                                                              });
-                                                            } else {
-                                                              toast({
-                                                                title:
-                                                                  "Link Unavailable",
-                                                                description:
-                                                                  "No submission found for this contract.",
-                                                                variant:
-                                                                  "destructive",
-                                                              });
+                                                        ).toLowerCase() ===
+                                                          "agency_pending" &&
+                                                          agencySignUrl ? (
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                            onClick={() =>
+                                                              window.open(
+                                                                agencySignUrl,
+                                                                "_blank",
+                                                              )
                                                             }
-                                                          }}
-                                                          disabled={
-                                                            isBusy ||
-                                                            (!c?.docuseal_slug &&
-                                                              !c?.docuseal_submission_id &&
-                                                              !canCopyBrand)
-                                                          }
-                                                        >
-                                                          <FileText className="w-4 h-4 mr-2" />
-                                                          Copy Link
-                                                        </Button>
-                                                      )}
-                                                      {downloadUrl ? (
+                                                            disabled={isBusy}
+                                                          >
+                                                            <FileText className="w-4 h-4 mr-2" />
+                                                            Sign now
+                                                          </Button>
+                                                        ) : (
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-gray-200 hover:bg-gray-50"
+                                                            onClick={() => {
+                                                              const subId =
+                                                                canCopyBrand
+                                                                  ? brandSignUrl
+                                                                  : c?.docuseal_slug ||
+                                                                  c?.docuseal_submission_id;
+                                                              if (subId) {
+                                                                const url =
+                                                                  canCopyBrand
+                                                                    ? subId
+                                                                    : `https://docuseal.com/s/${subId}`;
+                                                                navigator.clipboard.writeText(
+                                                                  url,
+                                                                );
+                                                                toast({
+                                                                  title:
+                                                                    "Link Copied",
+                                                                  description:
+                                                                    "Signing link copied to clipboard.",
+                                                                });
+                                                              } else {
+                                                                toast({
+                                                                  title:
+                                                                    "Link Unavailable",
+                                                                  description:
+                                                                    "No submission found for this contract.",
+                                                                  variant:
+                                                                    "destructive",
+                                                                });
+                                                              }
+                                                            }}
+                                                            disabled={
+                                                              isBusy ||
+                                                              (!c?.docuseal_slug &&
+                                                                !c?.docuseal_submission_id &&
+                                                                !canCopyBrand)
+                                                            }
+                                                          >
+                                                            <FileText className="w-4 h-4 mr-2" />
+                                                            Copy Link
+                                                          </Button>
+                                                        )}
+                                                        {downloadUrl ? (
+                                                          <Button
+                                                            size="icon"
+                                                            variant="outline"
+                                                            className="border-gray-200 hover:bg-gray-50"
+                                                            onClick={() =>
+                                                              window.open(
+                                                                downloadUrl,
+                                                                "_blank",
+                                                              )
+                                                            }
+                                                            disabled={isBusy}
+                                                            title="Download"
+                                                          >
+                                                            <Download className="w-4 h-4" />
+                                                          </Button>
+                                                        ) : null}
                                                         <Button
-                                                          size="icon"
+                                                          size="sm"
                                                           variant="outline"
                                                           className="border-gray-200 hover:bg-gray-50"
                                                           onClick={() =>
-                                                            window.open(
-                                                              downloadUrl,
-                                                              "_blank",
+                                                            handleSyncContract(
+                                                              selectedOfferId,
+                                                              cId,
                                                             )
                                                           }
                                                           disabled={isBusy}
-                                                          title="Download"
                                                         >
-                                                          <Download className="w-4 h-4" />
+                                                          {isBusy ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                          ) : (
+                                                            <>
+                                                              <RefreshCw className="w-4 h-4 mr-2" />
+                                                              Sync
+                                                            </>
+                                                          )}
                                                         </Button>
-                                                      ) : null}
-                                                      <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="border-gray-200 hover:bg-gray-50"
-                                                        onClick={() =>
-                                                          handleSyncContract(
-                                                            selectedOfferId,
-                                                            cId,
-                                                          )
-                                                        }
-                                                        disabled={isBusy}
-                                                      >
-                                                        {isBusy ? (
-                                                          <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                          <>
-                                                            <RefreshCw className="w-4 h-4 mr-2" />
-                                                            Sync
-                                                          </>
-                                                        )}
-                                                      </Button>
-                                                    </div>
-                                                  );
-                                                })()}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </section>
-                            )}
+                                                      </div>
+                                                    );
+                                                  })()}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </section>
+                              )}
                           </div>
                         )}
                       </TabsContent>
@@ -2620,11 +2762,10 @@ const BrandConnectionsView = () => {
                                 />
                                 <label
                                   htmlFor="contract-pdf-upload"
-                                  className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center ${
-                                    hasAssignedTalent
-                                      ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
-                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                  }`}
+                                  className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center ${hasAssignedTalent
+                                    ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                    }`}
                                 >
                                   <FileText className="w-5 h-5 mr-3" />
                                   Choose PDF File
@@ -2801,15 +2942,13 @@ const BrandConnectionsView = () => {
                             : [...prev, id],
                         );
                       }}
-                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                        assignmentLockedForOffer
-                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                          : "cursor-pointer"
-                      } ${
-                        isSelected
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${assignmentLockedForOffer
+                        ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                        : "cursor-pointer"
+                        } ${isSelected
                           ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
                           : "border-gray-50 hover:border-gray-100 bg-white"
-                      }`}
+                        }`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
                         <Avatar className="w-16 h-16 rounded-2xl">
@@ -2838,11 +2977,10 @@ const BrandConnectionsView = () => {
                             </Badge>
                           )}
                           <Badge
-                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                              talent?.has_creator_account
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
+                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${talent?.has_creator_account
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                              }`}
                           >
                             {talent?.has_creator_account
                               ? "Dashboard Access"

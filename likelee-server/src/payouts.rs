@@ -11,6 +11,7 @@ use tracing::{error, info, warn};
 use crate::auth::AuthUser;
 use crate::auth::RoleGuard;
 use crate::config::AppState;
+use crate::team::{permissions::Permission, require_agency_permission};
 use std::str::FromStr;
 // use stripe_sdk; // Implicitly available
 
@@ -3829,12 +3830,18 @@ pub async fn get_agency_balance(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await {
+        Ok(access) => access.organization_id,
+        Err((code, msg)) => {
+            return (code, Json(json!({"status":"error","error": msg})));
+        }
+    };
     // Get available balance from agency_balances table
     let balance_resp = match state
         .pg
         .from("agency_balances")
         .select("available_cents,earned_cents,currency,updated_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -3861,7 +3868,7 @@ pub async fn get_agency_balance(
                 .pg
                 .from("agency_balances")
                 .select("available_cents,currency,updated_at")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id)
                 .limit(1)
                 .execute()
                 .await
@@ -3909,7 +3916,7 @@ pub async fn get_agency_balance(
         .pg
         .from("agencies")
         .select("stripe_connect_account_id")
-        .eq("id", &user.id)
+        .eq("id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -4392,11 +4399,17 @@ pub async fn get_agency_payout_history(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await {
+        Ok(access) => access.organization_id,
+        Err((code, msg)) => {
+            return (code, Json(json!({"status":"error","error": msg})));
+        }
+    };
     let resp = match state
         .pg
         .from("agency_payout_requests")
         .select("id,amount_cents,currency,payout_method,status,requested_at,processed_at,stripe_transfer_id,stripe_payout_id,failure_reason")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .order("requested_at.desc")
         .execute()
         .await

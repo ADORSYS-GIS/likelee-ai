@@ -39,6 +39,9 @@ interface AuthContextValue {
 export interface Profile {
   id: string;
   email: string;
+  role?: string;
+  agency_type?: string;
+  creator_type?: string;
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
@@ -120,6 +123,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { data, error };
       };
 
+      const tryFetchMembership = async () => {
+        const { data, error } = await supabase
+          .from("organization_memberships")
+          .select("organization_type, organization_id, role, status, email")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+        return { data, error };
+      };
+
+      // IMPORTANT: Check for organization membership FIRST for agency/brand roles.
+      // Team members should NOT have their own agency/brand profile row - they share
+      // the organization's profile. This ensures team members get the same subscriptions,
+      // plan_tier, and settings as the organization owner.
+      if (roleHint === "agency" || roleHint === "brand") {
+        const membershipResp = await tryFetchMembership();
+        if (membershipResp.data && !membershipResp.error) {
+          const membership = membershipResp.data as any;
+          const organizationType = String(
+            membership.organization_type || roleHint || "",
+          ).trim();
+          const organizationId = String(membership.organization_id || "").trim();
+          let organizationName = "";
+
+          if (organizationType && organizationId) {
+            const organizationTable =
+              organizationType === "brand" ? "brands" : "agencies";
+            const organizationLabelColumn =
+              organizationType === "brand" ? "company_name" : "agency_name";
+            
+            // Fetch the organization's profile data (owner's profile)
+            const { data: orgData } = await supabase
+              .from(organizationTable)
+              .select("*")
+              .eq("id", organizationId)
+              .maybeSingle();
+            
+            organizationName = String(
+              (orgData as any)?.[organizationLabelColumn] || "",
+            ).trim();
+
+            // Set profile with the organization's data plus membership info
+            // This gives team members access to the same data as the owner
+            console.log("[AuthProvider] Found membership, using organization profile");
+            setProfile({
+              ...(orgData || {}),
+              id: userId,
+              email:
+                String(membership.email || userEmail || "").trim().toLowerCase() ||
+                userEmail ||
+                "",
+              full_name: userFullName,
+              role: organizationType || roleHint,
+              organization_type: organizationType,
+              organization_id: organizationId,
+              organization_name: organizationName,
+              membership_role: membership.role,
+              onboarding_step: null,
+            });
+            return;
+          }
+        }
+      }
+
       let table = roleToTable[roleHint] || "";
       let data: any = null;
       let error: any = null;
@@ -185,6 +253,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("[AuthProvider] Setting profile with role:", resolvedRole);
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
       } else {
+        // Fallback to membership check for non-agency/brand roles
+        const membershipResp = await tryFetchMembership();
+        if (membershipResp.data && !membershipResp.error) {
+          const membership = membershipResp.data as any;
+          const organizationType = String(
+            membership.organization_type || roleHint || "",
+          ).trim();
+          const organizationId = String(membership.organization_id || "").trim();
+          let organizationName = "";
+
+          if (organizationType && organizationId) {
+            const organizationTable =
+              organizationType === "brand" ? "brands" : "agencies";
+            const organizationLabelColumn =
+              organizationType === "brand" ? "company_name" : "agency_name";
+            const { data: orgData } = await supabase
+              .from(organizationTable)
+              .select(organizationLabelColumn)
+              .eq("id", organizationId)
+              .maybeSingle();
+            organizationName = String(
+              (orgData as any)?.[organizationLabelColumn] || "",
+            ).trim();
+          }
+
+          setProfile({
+            id: userId,
+            email:
+              String(membership.email || userEmail || "").trim().toLowerCase() ||
+              userEmail ||
+              "",
+            full_name: userFullName,
+            role: organizationType || roleHint,
+            organization_type: organizationType,
+            organization_id: organizationId,
+            organization_name: organizationName,
+            membership_role: membership.role,
+            onboarding_step: null,
+          });
+          return;
+        }
+
         // No profile found yet. Let the onboarding flow create the record explicitly.
         console.log(
           "[AuthProvider] No profile found, setting profile to null",

@@ -1,4 +1,12 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{
+        self,
+        permissions::Permission,
+    },
+};
 use axum::{
     extract::{Multipart, Path, State},
     http::StatusCode,
@@ -160,13 +168,16 @@ async fn verify_agency_campaign(
     state: &AppState,
     user: &AuthUser,
     campaign_id: &str,
-) -> Result<(), (StatusCode, String)> {
+) -> Result<String, (StatusCode, String)> {
+    let agency_access =
+        team::require_agency_permission(state, user, Permission::ApproveDeliverables).await?;
+    let agency_id = agency_access.organization_id;
     let resp = state
         .pg
         .from("bookings_campaigns")
         .select("id")
         .eq("id", campaign_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -180,7 +191,7 @@ async fn verify_agency_campaign(
             "Campaign not found or not yours".into(),
         ));
     }
-    Ok(())
+    Ok(agency_id)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -239,8 +250,8 @@ pub async fn upload_deliverable(
     // Resolve permissions
     let (agency_id, creator_id, booking_id): (String, Option<String>, Option<String>) =
         if user.role == "agency" {
-            verify_agency_campaign(&state, &user, &campaign_id).await?;
-            (user.id.clone(), None, None)
+            let agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
+            (agency_id, None, None)
         } else if is_creator_like(&user.role) {
             let (aid, cid, bid) = resolve_creator_for_campaign(&state, &user, &campaign_id).await?;
             (aid, Some(cid), bid)
@@ -355,7 +366,7 @@ pub async fn list_deliverables(
 
     if user.role == "agency" {
         // Agency must own the campaign
-        verify_agency_campaign(&state, &user, &campaign_id).await?;
+        let _ = verify_agency_campaign(&state, &user, &campaign_id).await?;
     } else if is_creator_like(&user.role) {
         // Creator can only see their own deliverables
         req = req.eq("creator_id", &user.id);
@@ -448,7 +459,7 @@ pub async fn review_deliverable(
         return Err((StatusCode::BAD_REQUEST, "Invalid status".into()));
     }
 
-    verify_agency_campaign(&state, &user, &campaign_id).await?;
+    let _agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
 
     let mut update = serde_json::Map::new();
     update.insert("status".into(), json!(payload.status));
@@ -507,7 +518,7 @@ pub async fn delete_deliverable(
         .eq("booking_campaign_id", &campaign_id);
 
     if user.role == "agency" {
-        verify_agency_campaign(&state, &user, &campaign_id).await?;
+        let _ = verify_agency_campaign(&state, &user, &campaign_id).await?;
     } else if is_creator_like(&user.role) {
         req = req.eq("creator_id", &user.id).eq("status", "draft");
     } else {
@@ -552,7 +563,17 @@ pub async fn serve_deliverable_file(
         .limit(1);
 
     if user.role == "agency" {
-        req = req.eq("agency_id", &user.id);
+        let agency_id = match verify_agency_campaign(&state, &user, &campaign_id).await {
+            Ok(agency_id) => agency_id,
+            Err(_) => {
+                return (
+                    StatusCode::FORBIDDEN,
+                    [("content-type", "application/json")],
+                    axum::body::Bytes::from(r#"{"error":"Forbidden"}"#),
+                );
+            }
+        };
+        req = req.eq("agency_id", &agency_id);
     } else if is_creator_like(&user.role) {
         req = req.eq("creator_id", &user.id);
     } else {
@@ -661,7 +682,7 @@ pub async fn submit_to_brand(
     }
 
     // 1. Verify agency owns the campaign
-    verify_agency_campaign(&state, &user, &campaign_id).await?;
+    let agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
 
     // 2. Load the brand offer to get brand_id and brand_campaign_id
     let offer_resp = state
@@ -670,7 +691,7 @@ pub async fn submit_to_brand(
         .select("id,brand_id,brand_campaign_id")
         .eq("id", &payload.brand_offer_id)
         .eq("target_type", "agency")
-        .eq("target_id", &user.id)
+        .eq("target_id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -712,7 +733,7 @@ pub async fn submit_to_brand(
                 .collect::<Vec<_>>(),
         )
         .eq("booking_campaign_id", &campaign_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .eq("status", "approved")
         .execute()
         .await
@@ -741,7 +762,7 @@ pub async fn submit_to_brand(
             "offer_id": payload.brand_offer_id,
             "brand_campaign_id": brand_campaign_id,
             "brand_id": brand_id,
-            "agency_id": user.id,
+            "agency_id": agency_id,
             "creator_id": del.get("creator_id"),
             "submitted_by_role": "agency",
             "submitted_by": user.id,
@@ -785,7 +806,7 @@ pub async fn submit_to_brand(
         .await;
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         brand_id = %brand_id,
         offer_id = %payload.brand_offer_id,
         count = %brand_deliverables.len(),

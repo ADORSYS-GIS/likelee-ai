@@ -1,70 +1,14 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_access, require_agency_permission},
+};
 use axum::{
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
 use serde::{Deserialize, Serialize};
-
-async fn resolve_effective_agency_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    let by_id_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    let by_user_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_user_status = by_user_resp.status();
-    let by_user_text = by_user_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_user_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
-    }
-    let by_user_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_user_text).unwrap_or_default();
-    let agency_id = by_user_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if agency_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Agency profile not found".to_string(),
-        ));
-    }
-    Ok(agency_id)
-}
 
 async fn resolve_effective_agency_talent_id(
     state: &AppState,
@@ -278,11 +222,13 @@ pub async fn list_packages(
     user: AuthUser,
     Query(query): Query<ListPackagesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let mut db_query = state
         .pg
         .from("agency_talent_packages")
         .select("*, items:agency_talent_package_items(id), stats:agency_talent_package_stats(*)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc");
 
     if let Some(is_template) = query.is_template {
@@ -326,7 +272,8 @@ pub async fn create_package(
     // Helper to treat empty strings as None
     let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
-    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
 
     if payload.password_protected.unwrap_or(false) {
         let pwd_ok = payload
@@ -611,7 +558,8 @@ pub async fn update_package(
     Path(id): Path<String>,
     Json(payload): Json<CreatePackageRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
 
     // 1. Verify ownership and existence
     let exists_resp = state
@@ -619,7 +567,7 @@ pub async fn update_package(
         .from("agency_talent_packages")
         .select("id,password_protected,password_hash")
         .eq("id", &id)
-        .eq("agency_id", &agency_id)
+        .eq("agency_id", agency_id)
         .single()
         .execute()
         .await
@@ -1097,11 +1045,13 @@ pub async fn get_package(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("agency_talent_packages")
         .select("*, items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*), interactions:agency_talent_package_interactions(*)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("id", &id)
         .single()
         .execute()
@@ -1136,11 +1086,13 @@ pub async fn delete_package(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
     state
         .pg
         .from("agency_talent_packages")
         .delete()
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("id", &id)
         .execute()
         .await
@@ -1153,12 +1105,14 @@ pub async fn get_dashboard_stats(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     // 1. Get total packages and active shares
     let packages_resp = state
         .pg
         .from("agency_talent_packages")
         .select("id,expires_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

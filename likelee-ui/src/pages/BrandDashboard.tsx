@@ -114,6 +114,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import {
   LineChart,
   Line,
@@ -933,6 +935,9 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const { hasPermission } = useTeamAccess("brand");
+  const canApproveDeliverables = hasPermission("approve_deliverables");
+  const canViewDeliverables = hasPermission("view_deliverables");
 
   const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
@@ -4022,6 +4027,14 @@ export default function BrandDashboard() {
     action: string,
     note?: string,
   ) => {
+    if (!canApproveDeliverables) {
+      toast({
+        title: "Permission required",
+        description: "Your role cannot approve or request changes on deliverables.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
     try {
@@ -4990,7 +5003,7 @@ export default function BrandDashboard() {
                                                   size="sm"
                                                   className="flex-1 h-8 rounded-none font-bold bg-gray-900"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved || isBusy || !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -5009,7 +5022,7 @@ export default function BrandDashboard() {
                                                   variant="outline"
                                                   className="flex-1 h-8 rounded-none font-bold"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved || isBusy || !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -8539,67 +8552,11 @@ export default function BrandDashboard() {
         </div>
       </Card>
 
-      {/* Team Management */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
-          Team Management
-        </h3>
-        <p className="text-gray-600 mb-4">
-          Manage your team ({brand.team_seats} / 5 seats used)
-        </p>
-
-        <div className="space-y-3 mb-6">
-          {[
-            {
-              name: "John Smith",
-              email: "john@urbanapparel.com",
-              role: "Admin",
-            },
-            {
-              name: "Sarah Jones",
-              email: "sarah@urbanapparel.com",
-              role: "Project Manager",
-            },
-            {
-              name: "Mike Chen",
-              email: "mike@urbanapparel.com",
-              role: "Reviewer",
-            },
-          ].map((member, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-gray-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">{member.name}</p>
-                  <p className="text-sm text-gray-600">{member.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                  {member.role}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-gray-300"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Invite Team Member
-        </Button>
-      </Card>
+      <TeamManagementCard
+        organizationType="brand"
+        description="Invite members, assign roles, and review team activity for your brand."
+        accentClassName="bg-[#F7B750] hover:bg-[#E6A640] text-white"
+      />
 
       {/* Billing Information */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -11567,7 +11524,7 @@ export default function BrandDashboard() {
               <Button
                 className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
-                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId
+                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId || !canApproveDeliverables
                 }
                 onClick={() =>
                   handleDeliverableReview(

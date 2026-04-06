@@ -11,9 +11,17 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
+  Lock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import {
   getAgencyActiveLicenses,
@@ -35,6 +43,11 @@ const ActiveLicensesView = ({
   const [selectedLicense, setSelectedLicense] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+  const { hasPermission, loading: accessLoading, context } = useTeamAccess("agency");
+  const canViewLicenses = hasPermission("view_licenses");
+  const canManageLicenses = hasPermission("manage_licenses");
+  const isReadOnly = canViewLicenses && !canManageLicenses;
+
   const handleViewDetails = (license: any) => {
     setSelectedLicense(license);
     setIsDetailsOpen(true);
@@ -53,12 +66,14 @@ const ActiveLicensesView = ({
         if (searchTerm) params.search = searchTerm;
         return await getAgencyActiveLicenses(params);
       },
+      enabled: canViewLicenses,
     },
   );
 
   const { data: stats } = useQuery({
     queryKey: ["agency", "active-licenses", "stats"],
     queryFn: () => getAgencyActiveLicensesStats(),
+    enabled: canViewLicenses,
   });
 
   const statusColor = (status: string) => {
@@ -83,8 +98,44 @@ const ActiveLicensesView = ({
     }).format(val);
   };
 
+  if (accessLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!canViewLicenses) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+          <Lock className="w-10 h-10 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">
+          Access Restricted
+        </h2>
+        <p className="text-gray-500 font-medium max-w-md mx-auto">
+          You do not have the required permissions to view active licenses.
+          Please contact your administrator if you believe this is an error.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <Eye className="w-5 h-5 text-amber-600" />
+          <div>
+            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="text-sm text-amber-700">
+              Your role allows viewing licenses but not managing them.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h2 className="text-3xl font-black text-gray-900 mb-2">
@@ -338,12 +389,26 @@ const ActiveLicensesView = ({
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
                       {String(lic.status).includes("Expiring") && (
-                        <Button
-                          className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95"
-                          onClick={() => handleRenew(lic)}
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" /> Renew
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  onClick={() => handleRenew(lic)}
+                                  disabled={!canManageLicenses}
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" /> Renew
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageLicenses && (
+                              <TooltipContent>
+                                <p>Your role cannot renew licenses</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                       <Button
                         variant="outline"

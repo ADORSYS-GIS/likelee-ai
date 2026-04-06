@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, team::{permissions::Permission, require_agency_permission}};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -19,13 +19,15 @@ pub async fn list(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
     // List campaigns owned by this agency
     // We join with bookings to see which ones are linked to this campaign
     let resp = state
         .pg
         .from("bookings_campaigns")
         .select("*, bookings(id, talent_id, talent_name, client_name, agency_users!talent_id(profile_photo_url))")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -49,8 +51,10 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CampaignPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
     let row = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "name": payload.name,
         "status": payload.status.unwrap_or_else(|| "created".to_string()),
         "duration_days": payload.duration_days,
@@ -92,13 +96,15 @@ pub async fn update(
     Path(id): Path<String>,
     Json(payload): Json<UpdateCampaignPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
     // Check ownership
     let campaign_check = state
         .pg
         .from("bookings_campaigns")
         .select("id, agency_id, status, start_date")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -177,13 +183,15 @@ pub async fn delete_campaign(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let agency_id = &access.organization_id;
     // Check ownership
     let campaign_check = state
         .pg
         .from("bookings_campaigns")
         .select("id")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
