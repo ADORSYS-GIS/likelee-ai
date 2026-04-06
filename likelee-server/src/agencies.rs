@@ -1,7 +1,9 @@
 use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
-use axum::extract::Multipart;
-use axum::extract::Query;
-use axum::{extract::Path, extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Multipart, Path, Query, State},
+    http::StatusCode,
+    Json,
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -655,6 +657,11 @@ pub struct ListAgencyFoldersQuery {
     pub offset: Option<u32>,
 }
 
+#[derive(Deserialize)]
+pub struct UpdateAgencyFolderIn {
+    pub name: Option<String>,
+}
+
 async fn ensure_storage_settings_row(
     state: &AppState,
     agency_id: &str,
@@ -1119,6 +1126,49 @@ pub async fn delete_agency_folder(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn update_agency_folder(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(folder_id): Path<String>,
+    Json(body): Json<UpdateAgencyFolderIn>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let name = body
+        .name
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if name.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "name is required".into()));
+    }
+
+    let update = serde_json::json!({ "name": name });
+    let resp = state
+        .pg
+        .from("agency_folders")
+        .update(update.to_string())
+        .eq("id", &folder_id)
+        .eq("agency_id", &user.id)
+        .select("id,agency_id,parent_id,name,created_at")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
 }
 
 pub async fn list_agency_files(

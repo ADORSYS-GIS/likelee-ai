@@ -604,7 +604,8 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/storage/folders/:folder_id",
             delete(crate::agencies::delete_agency_folder)
-                .patch(crate::agencies::update_agency_folder),
+                .patch(crate::agencies::update_agency_folder)
+                .put(crate::agencies::update_agency_folder),
         )
         .route(
             "/api/agency/storage/files",

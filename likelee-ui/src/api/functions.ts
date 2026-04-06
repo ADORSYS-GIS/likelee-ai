@@ -748,6 +748,11 @@ export const listAgencyStorageFoldersPaged = (params?: {
 export const deleteAgencyStorageFolder = (folder_id: string) =>
   base44Client.delete(`/agency/storage/folders/${folder_id}`);
 
+export const updateAgencyStorageFolder = (
+  folder_id: string,
+  data: { name: string },
+) => base44Client.put(`/agency/storage/folders/${folder_id}`, data);
+
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });
 

@@ -66,6 +66,7 @@ import {
   getAgencyStorageUsage,
   listAgencyStorageFilesPaged,
   listAgencyStorageFoldersPaged,
+  updateAgencyStorageFolder,
   uploadAgencyStorageFile,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
@@ -93,6 +94,62 @@ type StorageUsage = {
   used_bytes: number;
   limit_bytes: number;
 };
+
+const RenameFolderModal = ({
+  isOpen,
+  onClose,
+  folderName,
+  onFolderNameChange,
+  onRename,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  folderName: string;
+  onFolderNameChange: (v: string) => void;
+  onRename: () => void;
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+      <DialogHeader className="p-6 border-b border-gray-100 bg-white">
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Rename Folder
+        </DialogTitle>
+        <DialogDescription className="text-gray-500 font-medium">
+          Enter a new name for the folder.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="p-6 bg-white">
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700 ml-1">
+            Folder name
+          </Label>
+          <Input
+            value={folderName}
+            onChange={(e) => onFolderNameChange(e.target.value)}
+            className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
+            placeholder="Folder name"
+            autoFocus
+          />
+        </div>
+      </div>
+      <DialogFooter className="p-6 pt-0 gap-2 bg-white">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onRename}
+          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+        >
+          Rename
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
 
 type StorageFolder = {
   id: string;
@@ -241,11 +298,13 @@ const FolderCard = ({
   folder,
   onOpen,
   onUpload,
+  onRename,
   onDelete,
 }: {
   folder: FolderItem;
   onOpen: () => void;
   onUpload: () => void;
+  onRename: () => void;
   onDelete: () => void;
 }) => {
   const getFolderColor = (type: string) => {
@@ -336,7 +395,10 @@ const FolderCard = ({
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="font-bold text-gray-700 cursor-pointer"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRename();
+                }}
               >
                 <Edit className="w-4 h-4 mr-2" /> Rename
               </DropdownMenuItem>
@@ -906,6 +968,7 @@ const FileStorageView = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
+  const [isRenameFolderModalOpen, setIsRenameFolderModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFileForPreview, setSelectedFileForPreview] =
     useState<FileItem | null>(null);
@@ -930,6 +993,10 @@ const FileStorageView = () => {
   const [isLoadingMoreFiles, setIsLoadingMoreFiles] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [renameFolderName, setRenameFolderName] = useState("");
+  const [folderToRename, setFolderToRename] = useState<StorageFolder | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadTargetFolderIdRef = useRef<string | null>(null);
 
@@ -1121,6 +1188,39 @@ const FileStorageView = () => {
     } catch (e: any) {
       toast({
         title: "Failed to create folder",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const closeRenameFolderModal = () => {
+    setIsRenameFolderModalOpen(false);
+    setFolderToRename(null);
+  };
+
+  const openRenameFolder = (folder: StorageFolder) => {
+    setFolderToRename(folder);
+    setRenameFolderName(folder.name || "");
+    setIsRenameFolderModalOpen(true);
+  };
+
+  const onRenameFolder = async () => {
+    const folder = folderToRename;
+    if (!folder) return;
+    const name = renameFolderName.trim();
+    if (!name) return;
+    try {
+      await updateAgencyStorageFolder(folder.id, { name });
+      closeRenameFolderModal();
+      await loadInitial(activeFolderId);
+      toast({
+        title: "Folder renamed",
+        description: name,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to rename folder",
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -1500,15 +1600,13 @@ const FileStorageView = () => {
                   folder={{
                     id: folder.id,
                     name: folder.name,
-                    fileCount:
-                      typeof (folder as any).file_count === "number"
-                        ? (folder as any).file_count
-                        : files.filter((f) => f.folder_id === folder.id).length,
+                    fileCount: (folder as any).file_count ?? 0,
                     totalSize: "",
-                    type: "others",
+                    type: "default",
                   }}
                   onOpen={() => setActiveFolderId(folder.id)}
                   onUpload={() => openFolderAndPickFiles(folder.id)}
+                  onRename={() => openRenameFolder(folder)}
                   onDelete={() => openDeleteFolderDialog(folder)}
                 />
               ))}
@@ -1736,6 +1834,13 @@ const FileStorageView = () => {
         folderName={newFolderName}
         onFolderNameChange={setNewFolderName}
         onCreate={onCreateFolder}
+      />
+      <RenameFolderModal
+        isOpen={isRenameFolderModalOpen}
+        onClose={closeRenameFolderModal}
+        folderName={renameFolderName}
+        onFolderNameChange={setRenameFolderName}
+        onRename={onRenameFolder}
       />
       <UploadFilesModal
         isOpen={isUploadModalOpen}
