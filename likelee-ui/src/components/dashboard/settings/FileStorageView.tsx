@@ -1019,13 +1019,17 @@ const FileStorageView = () => {
 
   const filesForViewBase = useMemo(() => {
     if (activeFolderId) return files;
-    return files.filter((f) => f.folder_id === null || f.folder_id === undefined);
+    return files.filter(
+      (f) => f.folder_id === null || f.folder_id === undefined,
+    );
   }, [activeFolderId, files]);
 
   const filteredFiles = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return filesForViewBase;
-    return filesForViewBase.filter((f) => f.file_name.toLowerCase().includes(q));
+    return filesForViewBase.filter((f) =>
+      f.file_name.toLowerCase().includes(q),
+    );
   }, [filesForViewBase, searchTerm]);
 
   const isFileTooLargeError = (msg: string) => {
@@ -1635,7 +1639,9 @@ const FileStorageView = () => {
           </h3>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 font-medium">
-              {activeFolderId ? filteredFiles.length : `${filteredFiles.length} files`}
+              {activeFolderId
+                ? filteredFiles.length
+                : `${filteredFiles.length} files`}
             </span>
             <Button
               onClick={onPickFiles}
