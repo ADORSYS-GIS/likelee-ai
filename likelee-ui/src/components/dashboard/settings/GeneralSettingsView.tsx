@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
 import { getAgencyPayoutsAccountStatus } from "@/api/functions";
 import { RefreshCw } from "lucide-react";
 import {
