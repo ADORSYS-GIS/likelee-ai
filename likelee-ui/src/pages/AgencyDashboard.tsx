@@ -19573,30 +19573,57 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
-          <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-lg font-black text-gray-900">
-                  Welcome to your agency dashboard
+          {activeTab === "dashboard" && (
+            <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-lg font-black text-gray-900">
+                    Welcome to your agency dashboard
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    This is your main hub for managing your agency.
+                  </div>
                 </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  This is your main hub for managing your agency.
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  {!agencyBillingLoading && (
+                    <div
+                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                        agencyTrialActive
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                          : agencyPlanTier === "pro"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                            : agencyPlanTier === "basic" || agencyPlanTier === "agency"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                              : agencyPlanTier === "enterprise"
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                : "bg-white text-gray-900 ring-gray-200"
+                      }`}
+                      title="Current plan"
+                    >
+                      {agencyTrialActive
+                        ? "PRO TRIAL"
+                        : String(agencyDisplayPlanLabel || "")
+                            .trim()
+                            .toUpperCase()}
+                    </div>
+                  )}
+
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <Button
+                        type="button"
+                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        Upgrade
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               </div>
-              {!agencyBillingLoading &&
-                agencyPlanTier === "free" &&
-                !agencyTrialActive && (
-                  <Button
-                    type="button"
-                    className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    Upgrade plan
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
             </div>
-          </div>
+          )}
           <Suspense fallback={<TabSkeleton />}>
             {activeTab === "dashboard" && (
               <AgencyDashboardView
