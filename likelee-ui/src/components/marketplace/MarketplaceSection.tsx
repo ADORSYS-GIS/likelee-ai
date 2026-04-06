@@ -761,10 +761,10 @@ export function MarketplaceSection({
                       <img
                         src={profile.profile_photo_url}
                         alt={profile.display_name}
-                        className="w-full aspect-[4/3] object-cover bg-slate-100"
+                        className="w-full aspect-[3/4] object-cover object-center bg-slate-100"
                       />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                      <div className="w-full aspect-[3/4] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
                         <User className="w-9 h-9 text-slate-400" />
                       </div>
                     )}

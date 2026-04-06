@@ -52,11 +52,10 @@ export default function ProtectedRoute({
         return;
       }
 
-      // Redirect incomplete onboarding to signup
       if (
         onboardingPath &&
         isOnboardingIncomplete(profile) &&
-        location.pathname !== onboardingPath.split("?")[0]
+        window.location.pathname !== onboardingPath.split("?")[0]
       ) {
         navigate(onboardingPath, { replace: true });
       }

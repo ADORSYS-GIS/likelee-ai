@@ -93,17 +93,21 @@ export function normalizeOrganizationSignupType(
 
 export function isOrganizationOnboardingIncomplete(profile?: Profile | null) {
   if (!profile || !isOrganizationRole(profile.role)) return false;
-  return !!profile.onboarding_step && profile.onboarding_step !== "complete";
+  const step = String(profile.onboarding_step || "")
+    .trim()
+    .toLowerCase();
+  return !!step && step !== "complete";
 }
 
 export function isOnboardingIncomplete(profile?: Profile | null) {
   if (!profile) return false;
-  return !!profile.onboarding_step && profile.onboarding_step !== "complete";
+  const step = String(profile.onboarding_step || "")
+    .trim()
+    .toLowerCase();
+  return !!step && step !== "complete";
 }
 
-export function getOrganizationSignupType(
-  profile?: Pick<Profile, "role" | "agency_type"> | null,
-) {
+export function getOrganizationSignupType(profile?: Profile | null) {
   if (!profile) return null;
   if (profile.role === "brand") return "brand_company";
   if (profile.role === "agency")
@@ -111,9 +115,7 @@ export function getOrganizationSignupType(
   return null;
 }
 
-export function getOrganizationSignupPath(
-  profile?: Pick<Profile, "role" | "agency_type"> | null,
-) {
+export function getOrganizationSignupPath(profile?: Profile | null) {
   const type = getOrganizationSignupType(profile);
   if (!type) return "/organization-signup";
   return `/OrganizationSignup?type=${encodeURIComponent(type)}`;
@@ -171,9 +173,7 @@ export function getLoginPathForRole(
   return query ? `/login?${query}` : "/login";
 }
 
-export function getOnboardingPath(
-  profile?: Pick<Profile, "role" | "agency_type" | "creator_type"> | null,
-) {
+export function getOnboardingPath(profile?: Profile | null) {
   if (!profile?.role) return null;
 
   if (profile.role === "brand" || profile.role === "agency") {
@@ -188,7 +188,7 @@ export function getOnboardingPath(
 }
 
 export function getDashboardPath(
-  profile?: Pick<Profile, "role"> | null,
+  profile?: Profile | null,
   fallback = "/CreatorDashboard",
 ) {
   if (!profile?.role) return fallback;
