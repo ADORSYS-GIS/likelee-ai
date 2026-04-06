@@ -820,6 +820,7 @@ Agencies can invite talent to join their roster:
 ### Data Model Updates
 
 #### `messages`
+
 - `is_deleted` (boolean, default `false`)
 - `edited_at` (timestamptz, nullable)
 
@@ -1187,28 +1188,28 @@ See [ER Diagram – HB-13 Addendum](./er-diagram.md#two-way-messaging-hub-addend
 
 **Migration**: `supabase/migrations/2026-04-02_messaging_hub.sql`
 
-| Table | Key constraints |
-|---|---|
-| `conversations` | `UNIQUE(agency_id, creator_id)` prevents duplicate threads |
-| `messages` | RLS restricts access to participants only; `REPLICA IDENTITY FULL` for Realtime |
+| Table           | Key constraints                                                                 |
+| --------------- | ------------------------------------------------------------------------------- |
+| `conversations` | `UNIQUE(agency_id, creator_id)` prevents duplicate threads                      |
+| `messages`      | RLS restricts access to participants only; `REPLICA IDENTITY FULL` for Realtime |
 
 ### API Endpoints
 
-| Method | Route | Handler | Description |
-|---|---|---|---|
-| `GET` | `/api/conversations` | `messages::list_conversations` | List all threads for the auth user with participant metadata |
-| `POST` | `/api/conversations/start` | `messages::start_conversation` | Idempotent upsert — creates or resumes a thread |
-| `GET` | `/api/conversations/:id/messages` | `messages::list_messages` | Paginated message history; marks received messages as read |
-| `POST` | `/api/messages/send` | `messages::send_message` | Send a message; validates participation before insert |
+| Method | Route                             | Handler                        | Description                                                  |
+| ------ | --------------------------------- | ------------------------------ | ------------------------------------------------------------ |
+| `GET`  | `/api/conversations`              | `messages::list_conversations` | List all threads for the auth user with participant metadata |
+| `POST` | `/api/conversations/start`        | `messages::start_conversation` | Idempotent upsert — creates or resumes a thread              |
+| `GET`  | `/api/conversations/:id/messages` | `messages::list_messages`      | Paginated message history; marks received messages as read   |
+| `POST` | `/api/messages/send`              | `messages::send_message`       | Send a message; validates participation before insert        |
 
 ### Frontend Components
 
-| File | Purpose |
-|---|---|
-| `src/hooks/useChat.ts` | Supabase Realtime subscription, optimistic sends, conversation management |
-| `src/components/chat/ThreadList.tsx` | Left panel with avatars, last-seen timestamps, active thread highlight |
-| `src/components/chat/ChatWindow.tsx` | Premium bubble UI with sender/receiver avatars, read receipts (✓/✓✓) |
-| `src/components/chat/CommunicationHub.tsx` | Drop-in container to embed in `AgencyDashboard` and `TalentPortal` |
+| File                                       | Purpose                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `src/hooks/useChat.ts`                     | Supabase Realtime subscription, optimistic sends, conversation management |
+| `src/components/chat/ThreadList.tsx`       | Left panel with avatars, last-seen timestamps, active thread highlight    |
+| `src/components/chat/ChatWindow.tsx`       | Premium bubble UI with sender/receiver avatars, read receipts (✓/✓✓)      |
+| `src/components/chat/CommunicationHub.tsx` | Drop-in container to embed in `AgencyDashboard` and `TalentPortal`        |
 
 ### Realtime
 
