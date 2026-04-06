@@ -98,12 +98,7 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    tracing::info!(
-        "Agency roster lookup for creator {}: status={}, response={}",
-        creator_id,
-        roster_status,
-        roster_text
-    );
+
 
     if !roster_status.is_success() {
         return Err(sanitize_db_error(
@@ -148,12 +143,7 @@ pub async fn create(
         .unwrap_or("")
         .to_string();
 
-    tracing::info!(
-        "Selected agency_id {} for creator {} from {} roster entries",
-        agency_id,
-        creator_id,
-        roster_rows.len()
-    );
+
     let talent_id = talent_row
         .get("id")
         .and_then(|v| v.as_str())
@@ -177,13 +167,7 @@ pub async fn create(
     let effective_brand_id =
         crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
-    tracing::info!(
-        "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
-        user.id,
-        user.role,
-        effective_brand_id,
-        agency_id
-    );
+
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
@@ -203,11 +187,7 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    tracing::info!(
-        "brand_agency_connections query status: {}, response: {}",
-        connected_status,
-        connected_text
-    );
+
 
     let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
         serde_json::from_str(&connected_text).unwrap_or_default()
@@ -235,11 +215,7 @@ pub async fn create(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        tracing::info!(
-            "brand_agency_connection_requests query status: {}, response: {}",
-            fb_status,
-            fb_text
-        );
+
 
         if !fb_status.is_success() {
             return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
@@ -249,7 +225,7 @@ pub async fn create(
         return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
     };
 
-    tracing::info!("Found {} connection rows", connected_rows.len());
+
 
     // Debug: List all connections for this brand
     if connected_rows.is_empty() {
@@ -274,7 +250,7 @@ pub async fn create(
             .get("status")
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        tracing::info!("Found connection with status: {}", conn_status);
+
 
         // Accept both "active" and "accepted" statuses
         if conn_status != "active" && conn_status != "accepted" {
@@ -285,11 +261,7 @@ pub async fn create(
         }
     } else {
         // No connection found - auto-create a connection request
-        tracing::info!(
-            "No connection found between brand {} and agency {}, auto-creating connection",
-            effective_brand_id,
-            agency_id
-        );
+
 
         let connection_payload = json!({
             "brand_id": effective_brand_id,
@@ -300,7 +272,7 @@ pub async fn create(
             "updated_at": chrono::Utc::now().to_rfc3339()
         });
 
-        tracing::info!("Creating connection with payload: {}", connection_payload);
+
 
         // Try to create in brand_agency_connections first
         let create_conn_resp = state
@@ -419,10 +391,7 @@ pub async fn create(
         "status": "pending",
     });
 
-    tracing::info!(
-        "Creating brand license request with payload: {}",
-        insert_payload
-    );
+
 
     let create_resp = state
         .pg
@@ -510,8 +479,6 @@ pub async fn list_for_agency(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    tracing::info!("Fetching brand license requests for agency_id: {}", user.id);
-
 
 
     let resp = state
@@ -549,7 +516,7 @@ pub async fn list_for_agency(
         )
     })?;
 
-    tracing::info!("Found {} brand license requests for agency", rows.len());
+
 
     Ok(Json(BrandLicenseRequestListResponse { requests: rows }))
 }

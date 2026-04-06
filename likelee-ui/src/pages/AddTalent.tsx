@@ -296,7 +296,6 @@ export default function AddTalent() {
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
-      console.log("Submitting talent data:", formData);
 
       if (!isAtLeast18(formData.birthdate)) {
         toast({
@@ -526,7 +525,6 @@ export default function AddTalent() {
         rate_currency: "USD",
         ai_usage: aiUsage,
       };
-
 
       await createAgencyTalent(payload);
 

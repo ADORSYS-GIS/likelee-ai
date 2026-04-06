@@ -422,8 +422,6 @@ pub async fn get_roster(
                 .unwrap_or("")
                 .trim();
 
-
-
             let mut unique_assets: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
             if !profile_photo.is_empty() {
