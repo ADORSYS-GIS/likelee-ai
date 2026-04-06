@@ -66,34 +66,27 @@ pub async fn create(
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| territory.clone());
 
-    // ── Step 1: Auto-resolve agency_id from the creator's active roster entry ──
-    // If the caller supplied an agency_id hint we use it to narrow the lookup;
-    // otherwise we just find any active agency for this creator.
+    // ── Step 1: Resolve agency_id from the creator's active roster entry ──
+    // If the caller supplied an agency_id hint it must match an active roster row.
+    // We must not silently reroute the request to a different agency.
     let agency_id_hint: Option<String> = payload
         .get("agency_id")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let mut roster_query = state
+    let all_roster_resp = state
         .pg
         .from("agency_users")
         .select("id,full_legal_name,stage_name,agency_id,created_at")
         .eq("creator_id", &creator_id)
         .eq("role", "talent")
-        .eq("status", "active");
-
-    if let Some(ref hint) = agency_id_hint {
-        roster_query = roster_query.eq("agency_id", hint);
-    }
-
-    // Don't limit yet - let's see all active entries first
-    let roster_resp = roster_query
+        .eq("status", "active")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let roster_status = roster_resp.status();
-    let roster_text = roster_resp
+    let roster_status = all_roster_resp.status();
+    let roster_text = all_roster_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -125,19 +118,54 @@ pub async fn create(
         ));
     }
 
-    // If multiple active entries, warn and pick the most recent
+    if let Some(ref hint) = agency_id_hint {
+        roster_rows.retain(|row| {
+            row.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|v| v == hint)
+                .unwrap_or(false)
+        });
+
+        if roster_rows.is_empty() {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "This creator is not currently represented by the selected agency."
+                    .to_string(),
+            ));
+        }
+    }
+
     if roster_rows.len() > 1 {
-        tracing::warn!(
-            "Creator {} has {} active agency associations! This should not happen. Picking most recent.",
-            creator_id,
-            roster_rows.len()
-        );
-        // Sort by created_at descending to get most recent
         roster_rows.sort_by(|a, b| {
             let a_date = a.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
             let b_date = b.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
             b_date.cmp(a_date)
         });
+
+        let distinct_agencies: std::collections::HashSet<String> = roster_rows
+            .iter()
+            .filter_map(|row| row.get("agency_id").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .collect();
+
+        if agency_id_hint.is_none() && distinct_agencies.len() > 1 {
+            tracing::warn!(
+                creator_id = %creator_id,
+                agency_count = distinct_agencies.len(),
+                "Rejecting brand license request because creator has multiple active agency associations and no agency hint was supplied"
+            );
+            return Err((
+                StatusCode::CONFLICT,
+                "This creator is linked to multiple active agencies. Please request the license from the represented agency profile."
+                    .to_string(),
+            ));
+        }
+
+        tracing::warn!(
+            creator_id = %creator_id,
+            roster_count = roster_rows.len(),
+            "Multiple active roster rows found for creator; using the most recent matching entry"
+        );
     }
 
     let talent_row = &roster_rows[0];

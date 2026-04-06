@@ -761,6 +761,10 @@ pub async fn search_marketplace_profiles(
                 "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
                 "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
                 "agency_id": agency_by_creator_id.get(creator_id).map(|s| serde_json::json!(s)).unwrap_or(serde_json::Value::Null),
+                "is_licensable": agency_by_creator_id
+                    .get(creator_id)
+                    .map(|agency_id| !agency_id.trim().is_empty())
+                    .unwrap_or(false),
             }));
         }
     } else {
@@ -1275,6 +1279,7 @@ pub async fn get_marketplace_profile_details(
         "rates": serde_json::json!([]),
         "portfolio": serde_json::json!([]),
         "campaigns": serde_json::json!([]),
+        "represented_agency": serde_json::Value::Null,
         "connection_status": "none",
         "marketplace_contract": serde_json::Value::Null,
     });
@@ -1282,6 +1287,7 @@ pub async fn get_marketplace_profile_details(
     if profile_type == "creator" {
         let creator_id_for_connection: Option<String> = Some(profile_id.clone());
         let mut talent_ids_for_assets: Vec<String> = Vec::new();
+        let mut licensing_agency_id: Option<String> = None;
         let creator_resp = state
             .pg
             .from("creators")
@@ -1348,9 +1354,11 @@ pub async fn get_marketplace_profile_details(
         let talent_ids_resp = state
             .pg
             .from("agency_users")
-            .select("id")
+            .select("id,agency_id")
             .eq("creator_id", &profile_id)
             .eq("role", "talent")
+            .eq("status", "active")
+            .order("updated_at.desc")
             .limit(30)
             .execute()
             .await
@@ -1363,11 +1371,67 @@ pub async fn get_marketplace_profile_details(
         if talent_ids_status.is_success() {
             let rows: Vec<serde_json::Value> =
                 serde_json::from_str(&talent_ids_text).unwrap_or_default();
+            licensing_agency_id = rows
+                .iter()
+                .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()))
+                .map(str::trim)
+                .find(|s| !s.is_empty())
+                .map(|s| s.to_string());
             talent_ids_for_assets = rows
                 .iter()
                 .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
                 .map(|s| s.to_string())
                 .collect();
+        }
+
+        if let Some(profile_obj) = response["profile"].as_object_mut() {
+            profile_obj.insert(
+                "agency_id".to_string(),
+                licensing_agency_id
+                    .as_ref()
+                    .map(|s| serde_json::json!(s))
+                    .unwrap_or(serde_json::Value::Null),
+            );
+            profile_obj.insert(
+                "is_licensable".to_string(),
+                serde_json::json!(licensing_agency_id.is_some()),
+            );
+        }
+        response["agency_id"] = licensing_agency_id
+            .as_ref()
+            .map(|s| serde_json::json!(s))
+            .unwrap_or(serde_json::Value::Null);
+        response["is_licensable"] = serde_json::json!(licensing_agency_id.is_some());
+
+        if let Some(agency_id) = licensing_agency_id.as_ref() {
+            let agency_resp = state
+                .pg
+                .from("agencies")
+                .select("id,agency_name,logo_url,city,state,country")
+                .eq("id", agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let agency_status = agency_resp.status();
+            let agency_text = agency_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if agency_status.is_success() {
+                let agency_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&agency_text).unwrap_or_default();
+                if let Some(agency_row) = agency_rows.first() {
+                    response["represented_agency"] = serde_json::json!({
+                        "id": agency_row.get("id").cloned().unwrap_or(serde_json::Value::Null),
+                        "name": agency_row.get("agency_name").cloned().unwrap_or(serde_json::Value::Null),
+                        "logo_url": agency_row.get("logo_url").cloned().unwrap_or(serde_json::Value::Null),
+                        "city": agency_row.get("city").cloned().unwrap_or(serde_json::Value::Null),
+                        "state": agency_row.get("state").cloned().unwrap_or(serde_json::Value::Null),
+                        "country": agency_row.get("country").cloned().unwrap_or(serde_json::Value::Null),
+                    });
+                }
+            }
         }
 
         if !talent_ids_for_assets.is_empty() {

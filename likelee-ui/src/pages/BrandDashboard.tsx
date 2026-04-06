@@ -1855,6 +1855,19 @@ export default function BrandDashboard() {
 
   const handleOpenLicenseRequest = (creator: MarketplaceProfile | null) => {
     if (!creator) return;
+    const agencyId = String(creator.agency_id || "").trim();
+    const isLicensable = Boolean(
+      agencyId && (creator.is_licensable === undefined || creator.is_licensable),
+    );
+    if (!isLicensable) {
+      toast({
+        title: "Licensing unavailable",
+        description:
+          "This creator is not currently represented by an agency, so the request cannot be sent.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedLicenseCreator(creator);
     setLicenseRequestForm((prev) => ({
       ...prev,
@@ -1920,10 +1933,12 @@ export default function BrandDashboard() {
     const fee = Number(licenseRequestForm.license_fee || 0);
     setCreatingLicenseRequest(true);
     try {
-      const agencyId =
-        selectedLicenseCreator.agency_id ||
-        selectedLicenseCreator.agency ||
-        undefined;
+      const agencyId = String(selectedLicenseCreator.agency_id || "").trim();
+      if (!agencyId) {
+        throw new Error(
+          "This creator is not currently represented by an active agency.",
+        );
+      }
 
       await createAgencyBrandLicensingRequest({
         creator_id: selectedLicenseCreator.id,

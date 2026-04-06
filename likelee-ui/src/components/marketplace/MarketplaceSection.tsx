@@ -7,6 +7,7 @@ import {
   Loader2,
   Globe,
   ShieldCheck,
+  Building2,
   User,
   Image as ImageIcon,
   AlertTriangle,
@@ -79,6 +80,8 @@ export type MarketplaceProfile = {
   updated_at?: string | null;
   talent_ownership?: "agency_owned" | "regular" | null;
   marketplace_contract?: MarketplaceContractSummary | null;
+  agency_id?: string | null;
+  is_licensable?: boolean;
 };
 
 type MarketplaceProfileDetails = {
@@ -88,6 +91,16 @@ type MarketplaceProfileDetails = {
   rates: Array<Record<string, any>>;
   portfolio: Array<Record<string, any>>;
   campaigns: Array<Record<string, any>>;
+  agency_id?: string | null;
+  is_licensable?: boolean;
+  represented_agency?: {
+    id?: string | null;
+    name?: string | null;
+    logo_url?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+  } | null;
   connection_status:
     | "none"
     | "waiting"
@@ -287,6 +300,37 @@ export function MarketplaceSection({
     staleWhileRevalidate: true,
     enabled: canFetchDetails,
   });
+  const detailProfile = detailsQuery.data?.profile || null;
+  const representedAgency = detailsQuery.data?.represented_agency || null;
+  const effectiveLicensingAgencyId = String(
+    selectedProfile?.agency_id ||
+      detailsQuery.data?.agency_id ||
+      detailProfile?.agency_id ||
+      "",
+  ).trim();
+  const representedAgencyName = String(
+    representedAgency?.name || "Represented Agency",
+  ).trim();
+  const representedAgencyLogo = String(
+    representedAgency?.logo_url || "",
+  ).trim();
+  const representedAgencyLocation = [
+    representedAgency?.city,
+    representedAgency?.state,
+    representedAgency?.country,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ");
+  const selectedCreatorIsLicensable =
+    selectedProfile?.profile_type === "creator" &&
+    Boolean(
+      effectiveLicensingAgencyId &&
+        (selectedProfile?.is_licensable !== false ||
+          detailsQuery.data?.is_licensable === true ||
+          detailProfile?.is_licensable === true),
+    );
 
   useEffect(() => {
     if (!marketplaceQuery.error) return;
@@ -1549,19 +1593,38 @@ export function MarketplaceSection({
                   </Card>
                 )}
                 {showRequestLicense &&
-                  selectedProfile?.profile_type === "creator" && (
-                    <Card className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                          <h4 className="text-sm font-bold text-amber-900">
-                            Ready to license this talent?
-                          </h4>
-                          <p className="text-xs text-amber-700 mt-1">
-                            Send a licensing request to the represented agency.
-                          </p>
+                  selectedProfile?.profile_type === "creator" &&
+                  selectedCreatorIsLicensable && (
+                    <Card className="overflow-hidden border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 rounded-xl shadow-sm">
+                      <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-12 w-12 rounded-xl border border-amber-200 bg-white shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            {representedAgencyLogo ? (
+                              <img
+                                src={representedAgencyLogo}
+                                alt={representedAgencyName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-amber-600" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-amber-900">
+                              Ready to license this talent?
+                            </h4>
+                            <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              {representedAgencyName}
+                            </p>
+                            <p className="text-xs text-amber-700 mt-1">
+                              {representedAgencyLocation
+                                ? `${representedAgencyLocation} • Send your licensing request directly to this agency.`
+                                : "Send your licensing request directly to this represented agency."}
+                            </p>
+                          </div>
                         </div>
                         <Button
-                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-sm"
                           onClick={() => {
                             if (!selectedProfile) return;
                             onRequestLicense?.(
@@ -1572,6 +1635,22 @@ export function MarketplaceSection({
                         >
                           Request License
                         </Button>
+                      </div>
+                    </Card>
+                  )}
+                {showRequestLicense &&
+                  selectedProfile?.profile_type === "creator" &&
+                  !selectedCreatorIsLicensable && (
+                    <Card className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-slate-900">
+                          Licensing unavailable
+                        </h4>
+                        <p className="text-xs text-slate-600">
+                          This creator is not currently represented by an active
+                          agency roster entry, so licensing requests can’t be
+                          sent from marketplace right now.
+                        </p>
                       </div>
                     </Card>
                   )}
