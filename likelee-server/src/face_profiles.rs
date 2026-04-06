@@ -131,6 +131,95 @@ fn resolve_weekly_rate_cents(
         .map(|v| ((v as f64) / 4.345).round() as i64)
 }
 
+fn marketplace_profile_dedupe_key(row: &serde_json::Value) -> Option<String> {
+    let profile_type = row
+        .get("profile_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if profile_type != "creator" {
+        return None;
+    }
+
+    let display_name = row
+        .get("display_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let full_name = row
+        .get("full_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let profile_photo_url = row
+        .get("profile_photo_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let location = row
+        .get("location")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let tagline = row
+        .get("tagline")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    let resolved_name = if !display_name.is_empty() {
+        display_name
+    } else {
+        full_name
+    };
+
+    if resolved_name.is_empty() {
+        return None;
+    }
+
+    if !profile_photo_url.is_empty() {
+        return Some(format!(
+            "creator:{}|photo:{}|location:{}",
+            resolved_name, profile_photo_url, location
+        ));
+    }
+
+    Some(format!(
+        "creator:{}|location:{}|tagline:{}",
+        resolved_name, location, tagline
+    ))
+}
+
+fn marketplace_profile_richness_score(row: &serde_json::Value) -> usize {
+    let fields = [
+        row.get("bio").and_then(|v| v.as_str()),
+        row.get("tagline").and_then(|v| v.as_str()),
+        row.get("profile_photo_url").and_then(|v| v.as_str()),
+        row.get("agency_id").and_then(|v| v.as_str()),
+    ];
+
+    let filled_text_fields = fields
+        .iter()
+        .filter(|value| value.map(|v| !v.trim().is_empty()).unwrap_or(false))
+        .count();
+
+    let numeric_fields = [
+        row.get("followers").and_then(|v| v.as_i64()).is_some(),
+        row.get("engagement_rate").and_then(|v| v.as_f64()).is_some(),
+    ]
+    .into_iter()
+    .filter(|v| *v)
+    .count();
+
+    filled_text_fields + numeric_fields
+}
+
 pub async fn search_faces(
     State(state): State<AppState>,
     Query(q): Query<SearchFacesQuery>,
@@ -965,7 +1054,47 @@ pub async fn search_marketplace_profiles(
         }
     }
 
-    results.sort_by(|a, b| {
+    let mut deduped_results: Vec<serde_json::Value> = Vec::new();
+    let mut dedupe_index_by_key: HashMap<String, usize> = HashMap::new();
+
+    for row in results {
+        let Some(dedupe_key) = marketplace_profile_dedupe_key(&row) else {
+            deduped_results.push(row);
+            continue;
+        };
+
+        if let Some(existing_index) = dedupe_index_by_key.get(&dedupe_key).copied() {
+            let replace_existing = {
+                let existing = &deduped_results[existing_index];
+                let existing_score = marketplace_profile_richness_score(existing);
+                let candidate_score = marketplace_profile_richness_score(&row);
+
+                if candidate_score != existing_score {
+                    candidate_score > existing_score
+                } else {
+                    let existing_updated = existing
+                        .get("updated_at")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let candidate_updated = row
+                        .get("updated_at")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    candidate_updated > existing_updated
+                }
+            };
+
+            if replace_existing {
+                deduped_results[existing_index] = row;
+            }
+            continue;
+        }
+
+        dedupe_index_by_key.insert(dedupe_key, deduped_results.len());
+        deduped_results.push(row);
+    }
+
+    deduped_results.sort_by(|a, b| {
         let au = a
             .get("updated_at")
             .and_then(|v| v.as_str())
@@ -979,11 +1108,11 @@ pub async fn search_marketplace_profiles(
         bu.cmp(&au)
     });
 
-    if results.len() > limit {
-        results.truncate(limit);
+    if deduped_results.len() > limit {
+        deduped_results.truncate(limit);
     }
 
-    Ok(Json(serde_json::Value::Array(results)))
+    Ok(Json(serde_json::Value::Array(deduped_results)))
 }
 
 pub(crate) async fn resolve_effective_agency_id(

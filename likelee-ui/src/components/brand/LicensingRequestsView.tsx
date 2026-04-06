@@ -165,6 +165,24 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
             if (submissions && !Array.isArray(submissions)) {
               submissions = [submissions];
             }
+            const directSubmission = req?.license_submission;
+            if (directSubmission) {
+              const directSubmissionList = Array.isArray(directSubmission)
+                ? directSubmission
+                : [directSubmission];
+              const existingIds = new Set(
+                (submissions || [])
+                  .map((sub: any) => String(sub?.id || "").trim())
+                  .filter(Boolean),
+              );
+              submissions = [
+                ...directSubmissionList.filter((sub: any) => {
+                  const id = String(sub?.id || "").trim();
+                  return id ? !existingIds.has(id) : true;
+                }),
+                ...(submissions || []),
+              ];
+            }
 
             // Find the best submission for signing:
             // 1. Prioritize submissions with client_submitter_slug or docuseal_slug

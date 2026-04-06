@@ -368,8 +368,8 @@ export function CatalogBuilderWizard({
   // -------------------------------- Render -----------------------------------
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl w-full rounded-2xl p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogContent className="max-w-4xl w-full h-[min(92vh,860px)] rounded-2xl p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
             Create Asset Catalog
           </DialogTitle>
@@ -379,7 +379,7 @@ export function CatalogBuilderWizard({
         </DialogHeader>
 
         {/* Step indicator */}
-        <div className="flex items-center gap-1 px-6 pt-4">
+        <div className="shrink-0 flex items-center gap-1 px-6 pt-4">
           {STEPS.map((s, i) => (
             <React.Fragment key={s.id}>
               <div
@@ -412,7 +412,7 @@ export function CatalogBuilderWizard({
         </div>
 
         {/* Step content */}
-        <div className="px-6 py-5 min-h-[400px] overflow-y-auto max-h-[650px]">
+        <div className="flex-1 min-h-0 px-6 py-5 overflow-y-auto">
           {/* ---- Step: Info ---- */}
           {step === "info" && (
             <div className="space-y-4">
@@ -911,7 +911,7 @@ export function CatalogBuilderWizard({
         </div>
 
         {/* Footer nav */}
-        <div className="px-6 pb-6 flex items-center justify-between border-t border-gray-100 pt-4">
+        <div className="shrink-0 px-6 pb-6 flex items-center justify-between border-t border-gray-100 pt-4 bg-white">
           <Button
             variant="outline"
             onClick={stepIndex === 0 ? onClose : goPrev}

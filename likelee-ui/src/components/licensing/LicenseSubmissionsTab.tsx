@@ -44,6 +44,7 @@ import {
   Link2,
   Copy,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -55,6 +56,9 @@ export const LicenseSubmissionsTab = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [resendingSubmissionId, setResendingSubmissionId] = useState<
+    string | null
+  >(null);
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["license-submissions"],
@@ -63,7 +67,18 @@ export const LicenseSubmissionsTab = ({
 
   const resendMutation = useMutation({
     mutationFn: resendLoginSubmission,
-    onSuccess: () => {
+    onMutate: async (submissionId: string) => {
+      setResendingSubmissionId(submissionId);
+      await queryClient.cancelQueries({ queryKey: ["license-submissions"] });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["license-submissions"],
+      });
+      await queryClient.refetchQueries({
+        queryKey: ["license-submissions"],
+        type: "active",
+      });
       toast({
         title: "Email Resent",
         description: "The license submission email has been resent.",
@@ -75,6 +90,9 @@ export const LicenseSubmissionsTab = ({
         description: "Failed to resend email.",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      setResendingSubmissionId(null);
     },
   });
 
@@ -206,8 +224,25 @@ export const LicenseSubmissionsTab = ({
     }
   };
 
+  const isBlockingResend = resendMutation.isPending;
+
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {isBlockingResend && (
+        <div className="absolute inset-0 z-30 rounded-2xl bg-white/75 backdrop-blur-[2px] flex items-center justify-center">
+          <div className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-5 py-4 shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-900">
+                Resending contract email
+              </p>
+              <p className="text-xs text-slate-500">
+                Refreshing submissions so the updated send appears here.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold tracking-tight">
@@ -334,16 +369,19 @@ export const LicenseSubmissionsTab = ({
                               ) : (
                                 sub.status !== "completed" &&
                                 sub.status !== "signed" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    title="Resend"
-                                    onClick={() =>
-                                      resendMutation.mutate(sub.id)
-                                    }
-                                  >
-                                    <RotateCcw className="h-4 w-4 text-blue-600" />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title="Resend"
+                                  disabled={isBlockingResend}
+                                  onClick={() => resendMutation.mutate(sub.id)}
+                                >
+                                    {resendingSubmissionId === sub.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                                    ) : (
+                                      <RotateCcw className="h-4 w-4 text-blue-600" />
+                                    )}
                                   </Button>
                                 )
                               )}
@@ -461,11 +499,14 @@ export const LicenseSubmissionsTab = ({
                                   {sub.status !== "completed" &&
                                     sub.status !== "signed" && (
                                       <DropdownMenuItem
-                                        onClick={() =>
-                                          resendMutation.mutate(sub.id)
-                                        }
+                                        disabled={isBlockingResend}
+                                        onClick={() => resendMutation.mutate(sub.id)}
                                       >
-                                        <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                                        {resendingSubmissionId === sub.id ? (
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-blue-600" />
+                                        ) : (
+                                          <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                                        )}
                                         Resend Email
                                       </DropdownMenuItem>
                                     )}
