@@ -17150,12 +17150,16 @@ export default function AgencyDashboard() {
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
   const agencyDisplayPlanLabel =
-    String(agencyBilling?.display_plan_label || "").trim() ||
-    (agencyPlanTier === "free"
-      ? "Free"
-      : `${agencyPlanLabel} ${
-          agencyBilling?.plan_interval === "year" ? "Annual" : "Monthly"
-        }`);
+    (() => {
+      const raw = String(agencyBilling?.display_plan_label || "").trim();
+      const normalized = raw
+        .replace(/\b(annual|monthly)\b/gi, "")
+        .replace(/\bplan\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (normalized) return normalized;
+      return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+    })();
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   useEffect(() => {
@@ -18708,51 +18712,9 @@ export default function AgencyDashboard() {
               <p className="text-sm text-gray-500 font-medium truncate">
                 {profile?.email || user?.email}
               </p>
-              <div className="mt-1 flex items-center">
-                {agencyBillingLoading ? (
-                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      className={`border-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        agencyTrialActive
-                          ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                          : "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
-                      }`}
-                    >
-                      {agencyTrialActive
-                        ? "PRO TRIAL"
-                        : `${agencyDisplayPlanLabel} PLAN`}
-                    </Badge>
-                    {agencyTrialActive && agencyTrialCountdown ? (
-                      <span className="text-[11px] font-semibold text-amber-700">
-                        {agencyTrialCountdown} left
-                      </span>
-                    ) : null}
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
-
-        {!agencyBillingLoading &&
-          !agencyTrialActive &&
-          !agencyTrialEndsAt &&
-          agencyPlanTier === "free" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate("/AgencySubscribe");
-              }}
-              className="relative shrink-0 ml-3 p-2 bg-gradient-to-br from-amber-400 to-amber-500 shadow-md rounded-xl hover:scale-105 transition-transform animate-bounce hover:animate-none border border-amber-300 group"
-              title="Activate 14-Day Free Trial"
-            >
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-              <Gift className="w-5 h-5 text-white" />
-            </button>
-          )}
 
         <nav
           ref={(node) => {
@@ -19157,7 +19119,47 @@ export default function AgencyDashboard() {
             <Menu className="w-6 h-6" />
           </Button>
 
+          {!agencyBillingLoading && (agencyTrialActive || agencyPlanTier !== "free") && (
+            <div className="ml-3 hidden sm:flex items-center gap-2">
+              <Badge
+                className={`border-none px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-full ${
+                  agencyTrialActive
+                    ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                    : "bg-indigo-100 text-indigo-800 hover:bg-indigo-100"
+                }`}
+              >
+                {agencyTrialActive ? "PRO TRIAL" : "PRO"}
+              </Badge>
+              {agencyTrialActive && agencyTrialCountdown ? (
+                <span className="text-[11px] font-semibold text-amber-700">
+                  {agencyTrialCountdown} left
+                </span>
+              ) : null}
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
+            {!agencyBillingLoading &&
+              !agencyTrialActive &&
+              !agencyTrialEndsAt &&
+              agencyPlanTier === "free" && (
+                <motion.button
+                  type="button"
+                  onClick={() => navigate("/AgencySubscribe")}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-xs font-black text-amber-900 shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
+                  title="Activate Pro Trial"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-inner">
+                    <Gift className="h-4 w-4 text-white" />
+                  </span>
+                  <span className="uppercase tracking-wide">PRO</span>
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-80" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-60 animate-ping" />
+                </motion.button>
+              )}
+
             <Button
               variant="outline"
               size="sm"
@@ -19335,9 +19337,11 @@ export default function AgencyDashboard() {
                         <h3 className="font-bold text-gray-900 truncate">
                           {profile?.agency_name || "Agency Name"}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          {agencyDisplayPlanLabel}
-                        </p>
+                        <div className="mt-1 flex items-center">
+                          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                            {agencyDisplayPlanLabel}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {agencyKycStatus === "approved" && (

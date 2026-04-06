@@ -90,9 +90,9 @@ export default function AgencySubscribe() {
   const billingParam = String(searchParams.get("billing") || "").trim();
   const postSignup = searchParams.get("post_signup") === "1";
 
-  const [billingInterval, setBillingInterval] = React.useState<"month" | "year">(
-    "month",
-  );
+  const [billingInterval, setBillingInterval] = React.useState<
+    "month" | "year"
+  >("month");
 
   const [plan, setPlan] = React.useState<"basic" | "pro">("pro");
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
@@ -171,9 +171,7 @@ export default function AgencySubscribe() {
   const rosterCostPro = Math.round(inPlanSeatCount * rosterRatePro);
 
   const seatRosterRateBasic =
-    billingInterval === "year"
-      ? BASIC_ROSTER_RATE * 0.8
-      : BASIC_ROSTER_RATE;
+    billingInterval === "year" ? BASIC_ROSTER_RATE * 0.8 : BASIC_ROSTER_RATE;
   const seatRosterRatePro =
     billingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
   const additionalSeatCount = Math.max(0, rosterModels - currentSeatsLimit);
@@ -783,7 +781,7 @@ export default function AgencySubscribe() {
     }
 
     if (isPlanDisabled(targetPlan) && currentPlanTier === targetPlan) {
-      return "Current Plan";
+      return "Current";
     }
 
     const isCurrentTier = currentPlanTier === targetPlan;
@@ -794,7 +792,7 @@ export default function AgencySubscribe() {
       isCurrentInterval &&
       !(includeSeatsInPlan && seatCountChanged)
     ) {
-      return "Current Plan";
+      return "Current";
     }
     if (currentPlanTier === "free" || currentPlanTier === null) {
       return targetPlan === "basic" ? "Get Basic" : "Get Pro";
@@ -807,7 +805,7 @@ export default function AgencySubscribe() {
         ? "Switch to Annual"
         : "Switch to Monthly";
     }
-    return "Select Plan";
+    return "Select";
   };
 
   const checkoutDisabled =
@@ -1231,9 +1229,9 @@ export default function AgencySubscribe() {
                 isAgencyUser &&
                 !!currentPlanTier &&
                 currentPlanTier !== "free"
-                  ? "Plan active"
+                  ? "Active"
                   : currentPlanTier === "free"
-                    ? "Current Plan"
+                    ? "Current"
                     : "Continue Free"}
               </Button>
             </div>
@@ -1347,7 +1345,7 @@ export default function AgencySubscribe() {
                 currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2 text-white">
                     <Check className="w-5 h-5 text-white" />
-                    Current Plan
+                    Current
                   </span>
                 ) : (
                   getPlanCtaLabel("basic")
@@ -1468,7 +1466,7 @@ export default function AgencySubscribe() {
                 currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2 text-gray-500">
                     <Check className="w-5 h-5 text-gray-400" />
-                    Current Plan
+                    Current
                   </span>
                 ) : (
                   getPlanCtaLabel("pro")
@@ -1518,25 +1516,33 @@ export default function AgencySubscribe() {
 
             <div className="mt-4 grid gap-3 text-sm text-gray-700">
               <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <span className="font-bold text-gray-500">Current billed seats</span>
+                <span className="font-bold text-gray-500">
+                  Current billed seats
+                </span>
                 <span className="font-black text-gray-900">
                   {formatNumber(currentSeatsLimit)}
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <span className="font-bold text-gray-500">Selected total seats</span>
+                <span className="font-bold text-gray-500">
+                  Selected total seats
+                </span>
                 <span className="font-black text-gray-900">
                   {formatNumber(rosterModels)}
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <span className="font-bold text-gray-500">Additional seats to bill</span>
+                <span className="font-bold text-gray-500">
+                  Additional seats to bill
+                </span>
                 <span className="font-black text-gray-900">
                   {formatNumber(additionalSeatCount)}
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <span className="font-bold text-gray-500">Billing interval</span>
+                <span className="font-bold text-gray-500">
+                  Billing interval
+                </span>
                 <span className="font-black text-gray-900">
                   {billingInterval === "year" ? "Annual" : "Monthly"}
                 </span>
@@ -1570,7 +1576,9 @@ export default function AgencySubscribe() {
               <Button
                 type="button"
                 className="rounded-2xl font-black"
-                disabled={checkoutDisabled || !seatCountChanged || checkingOutSeats}
+                disabled={
+                  checkoutDisabled || !seatCountChanged || checkingOutSeats
+                }
                 onClick={() => {
                   void onCheckoutSeats();
                 }}

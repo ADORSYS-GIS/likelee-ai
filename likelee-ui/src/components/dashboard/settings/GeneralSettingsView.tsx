@@ -845,9 +845,12 @@ const GeneralSettingsView = ({
 
   const currentPlanDisplay = useMemo(() => {
     const label = String(agencyDisplayPlanLabel || "").trim();
-    if (label) {
-      return label;
-    }
+    const normalized = label
+      .replace(/\b(annual|monthly)\b/gi, "")
+      .replace(/\bplan\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (normalized) return normalized;
     return planLabel;
   }, [agencyDisplayPlanLabel, planLabel]);
 
@@ -1735,20 +1738,6 @@ const GeneralSettingsView = ({
                     >
                       {currentPlanDisplay}
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`font-black uppercase tracking-wider px-2 py-0.5 text-[10px] border-none ${
-                        planTier === "pro"
-                          ? "bg-indigo-500 text-white"
-                          : planTier === "basic" || planTier === "agency"
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : planTier === "enterprise"
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {planTier}
-                    </Badge>
                   </div>
                 </div>
                 <Button
