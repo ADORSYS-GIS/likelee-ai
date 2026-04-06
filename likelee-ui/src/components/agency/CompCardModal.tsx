@@ -57,9 +57,7 @@ const CompCardModal = ({
   const selectedCount = selectedTalentIds.length;
 
   const toggleTalent = (id: string) => {
-    setSelectedTalentIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+    setSelectedTalentIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const selectAll = () => {
@@ -505,26 +503,6 @@ const CompCardModal = ({
                 <label className="text-sm font-bold text-gray-900">
                   Select Talent
                 </label>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAll}
-                    className="h-7 text-xs"
-                  >
-                    {selectedTalentIds.length === talents.length
-                      ? "Deselect All"
-                      : "Select All"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearSelected}
-                    className="h-7 text-xs"
-                  >
-                    Clear
-                  </Button>
-                </div>
               </div>
 
               <ScrollArea className="h-56 sm:h-64 rounded-xl border border-gray-200 p-2">
