@@ -138,6 +138,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [allowBrandChange, setAllowBrandChange] = useState(false);
   const [talentPopoverOpen, setTalentPopoverOpen] = useState(false);
+  const [talentSearchQuery, setTalentSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: brandConnectionsData } = useQuery({
@@ -640,108 +641,129 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 <CommandInput
                                   placeholder={`Search ${entitySingularLower}...`}
                                   className="border-none focus:ring-0 h-12"
+                                  value={talentSearchQuery}
+                                  onValueChange={setTalentSearchQuery}
                                 />
                                 <CommandList className="max-h-[300px]">
                                   <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
                                     {`No ${entitySingularLower} found.`}
                                   </CommandEmpty>
                                   <CommandGroup>
-                                    {talents.map((t) => {
-                                      const talentName =
-                                        t.full_name ||
-                                        t.stage_name ||
-                                        t.full_legal_name ||
-                                        t.email ||
-                                        `Unknown ${entitySingularTitle}`;
-                                      const isSelected = formData.talent_name
-                                        ? formData.talent_name
-                                            .split(", ")
-                                            .includes(talentName)
-                                        : false;
-                                      return (
-                                        <CommandItem
-                                          key={t.id}
-                                          value={talentName}
-                                          onSelect={() => {
-                                            const currentNames =
-                                              formData.talent_name
-                                                ? formData.talent_name.split(
-                                                    ", ",
-                                                  )
-                                                : [];
-                                            let updatedNames;
-                                            let updatedIds = [
-                                              ...selectedTalentIds,
-                                            ];
+                                    {talents
+                                      .filter((t) => {
+                                        const talentName =
+                                          t.full_name ||
+                                          t.stage_name ||
+                                          t.full_legal_name ||
+                                          t.email ||
+                                          `Unknown ${entitySingularTitle}`;
+                                        if (!talentSearchQuery) return true;
+                                        return talentName
+                                          .toLowerCase()
+                                          .includes(
+                                            talentSearchQuery.toLowerCase(),
+                                          );
+                                      })
+                                      .map((t) => {
+                                        const talentName =
+                                          t.full_name ||
+                                          t.stage_name ||
+                                          t.full_legal_name ||
+                                          t.email ||
+                                          `Unknown ${entitySingularTitle}`;
+                                        const isSelected = formData.talent_name
+                                          ? formData.talent_name
+                                              .split(", ")
+                                              .includes(talentName)
+                                          : false;
+                                        return (
+                                          <CommandItem
+                                            key={t.id}
+                                            value={talentName}
+                                            onSelect={() => {
+                                              const currentNames =
+                                                formData.talent_name
+                                                  ? formData.talent_name.split(
+                                                      ", ",
+                                                    )
+                                                  : [];
+                                              let updatedNames;
+                                              let updatedIds = [
+                                                ...selectedTalentIds,
+                                              ];
 
-                                            if (isSelected) {
-                                              updatedNames =
-                                                currentNames.filter(
-                                                  (n) => n !== talentName,
-                                                );
-                                              // Remove ID
-                                              if (t.id) {
-                                                updatedIds = updatedIds.filter(
-                                                  (id) => id !== t.id,
-                                                );
-                                              }
-                                            } else {
-                                              if (talentName) {
-                                                updatedNames = [
-                                                  ...currentNames,
-                                                  talentName,
-                                                ];
+                                              if (isSelected) {
+                                                updatedNames =
+                                                  currentNames.filter(
+                                                    (n) => n !== talentName,
+                                                  );
+                                                // Remove ID
+                                                if (t.id) {
+                                                  updatedIds =
+                                                    updatedIds.filter(
+                                                      (id) => id !== t.id,
+                                                    );
+                                                }
                                               } else {
-                                                updatedNames = currentNames;
+                                                if (talentName) {
+                                                  updatedNames = [
+                                                    ...currentNames,
+                                                    talentName,
+                                                  ];
+                                                } else {
+                                                  updatedNames = currentNames;
+                                                }
+                                                // Add ID
+                                                if (
+                                                  t.id &&
+                                                  !updatedIds.includes(t.id)
+                                                ) {
+                                                  updatedIds.push(t.id);
+                                                }
                                               }
-                                              // Add ID
-                                              if (
-                                                t.id &&
-                                                !updatedIds.includes(t.id)
-                                              ) {
-                                                updatedIds.push(t.id);
-                                              }
-                                            }
-                                            setSelectedTalentIds(updatedIds);
-                                            setValue(
-                                              "talent_name",
-                                              updatedNames.join(", "),
-                                            );
-                                          }}
-                                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
-                                        >
-                                          <div className="relative">
-                                            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                                              <AvatarImage
-                                                src={t.profile_photo_url}
-                                              />
-                                              <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
-                                                {t.full_name?.substring(0, 2) ||
-                                                  "UT"}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            {isSelected && (
-                                              <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
-                                                <Check className="h-2.5 w-2.5 text-white" />
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <span
-                                              className={cn(
-                                                "font-bold text-slate-900",
-                                                isSelected && "text-indigo-600",
+                                              setSelectedTalentIds(updatedIds);
+                                              setValue(
+                                                "talent_name",
+                                                updatedNames.join(", "),
+                                              );
+                                            }}
+                                            className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                                          >
+                                            <div className="relative">
+                                              <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                                <AvatarImage
+                                                  src={t.profile_photo_url}
+                                                />
+                                                <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                                  {t.full_name?.substring(
+                                                    0,
+                                                    2,
+                                                  ) || "UT"}
+                                                </AvatarFallback>
+                                              </Avatar>
+                                              {isSelected && (
+                                                <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                                  <Check className="h-2.5 w-2.5 text-white" />
+                                                </div>
                                               )}
-                                            >
-                                              {talentName}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                              {`Agency ${entitySingularTitle}`}
-                                            </span>
-                                          </div>
-                                        </CommandItem>
-                                      );
-                                    })}
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span
+                                                className={cn(
+                                                  "font-bold text-slate-900",
+                                                  isSelected &&
+                                                    "text-indigo-600",
+                                                )}
+                                              >
+                                                {talentName}
+                                              </span>
+                                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                {`Agency ${entitySingularTitle}`}
+                                              </span>
+                                            </div>
+                                          </CommandItem>
+                                        );
+                                      })}
                                   </CommandGroup>
                                 </CommandList>
                               </Command>
@@ -756,8 +778,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between ml-1">
-                          <Label className="text-sm font-bold text-slate-800">
-                            Client Email *
+                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                            Client Email*
                           </Label>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
