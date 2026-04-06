@@ -645,6 +645,7 @@ export default function CreatorDashboard() {
     agency_name?: string;
     marketplace_contract?: CreatorAgencyConnection["marketplace_contract"];
   } | null>(null);
+  const [showPhotoFull, setShowPhotoFull] = useState(false);
   const IMAGE_SECTIONS = getImageSections(t);
 
   const fullySignedOfferStatuses = useMemo(
@@ -4123,20 +4124,25 @@ export default function CreatorDashboard() {
             <div className="relative flex justify-between items-start mb-6">
               <div className="flex items-end -mt-16 mb-4">
                 <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={
-                        profile?.profile_photo_url ||
-                        creator.profile_photo ||
-                        user?.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name && data.first_name[0] !== "["
-                        ? data.first_name[0].toUpperCase()
-                        : user?.email?.[0].toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div
+                    className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                    onClick={() => setShowPhotoFull(true)}
+                  >
+                    <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                      <AvatarImage
+                        src={
+                          profile?.profile_photo_url ||
+                          creator.profile_photo ||
+                          user?.user_metadata?.avatar_url
+                        }
+                      />
+                      <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                        {data.first_name && data.first_name[0] !== "["
+                          ? data.first_name[0].toUpperCase()
+                          : user?.email?.[0].toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
                 <div className="ml-6 mb-2">
                   <div className="flex items-center gap-3 mb-1">
@@ -6562,26 +6568,11 @@ export default function CreatorDashboard() {
 
                 {!recording.voiceProfileCreated && recording.accessible && (
                   <Button
-                    onClick={() => createVoiceProfile(recording)}
-                    disabled={
-                      generatingVoiceId !== null &&
-                      generatingVoiceId !==
-                        (recording?.server_recording_id ?? recording?.id)
-                    }
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    disabled={true}
+                    className="w-full bg-gray-400 cursor-not-allowed text-white"
                   >
-                    {generatingVoiceId ===
-                    (recording?.server_recording_id ?? recording?.id) ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t("creatorDashboard.voice.library.creatingProfile")}
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.voice.library.createProfile")}
-                      </>
-                    )}
+                    <PlayCircle className="w-4 h-4 mr-2" />
+                    Coming Soon
                   </Button>
                 )}
               </div>
@@ -10253,11 +10244,16 @@ export default function CreatorDashboard() {
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
-                <img
-                  src={profile?.profile_photo_url || creator.profile_photo}
-                  alt={creator.name}
-                  className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
-                />
+                <div
+                  className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                  onClick={() => setShowPhotoFull(true)}
+                >
+                  <img
+                    src={profile?.profile_photo_url || creator.profile_photo}
+                    alt={creator.name}
+                    className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
+                  />
+                </div>
                 <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
                   <Edit className="w-4 h-4 text-gray-600" />
                   <input
@@ -10605,10 +10601,10 @@ export default function CreatorDashboard() {
             </h3>
 
             <div className="space-y-6">
-              <div className="flex items-center justify-between py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between py-4">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.visibleToBrands")}
+                    Marketplace Visibility
                   </Label>
                   <p className="text-sm text-gray-600">
                     {t(
@@ -10622,42 +10618,12 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, is_public_brands: checked });
                     await handleSaveRules(
                       checked
-                        ? "Profile is now visible to brands."
-                        : "Profile is now hidden from brands.",
+                        ? "Profile is now visible in the marketplace."
+                        : "Profile is now hidden from the marketplace.",
                       { is_public_brands: checked },
                     );
                   }}
                 />
-              </div>
-
-              <div className="flex items-center justify-between py-4 border-b border-gray-200">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.enableLicensing")}
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.enableLicensingDesc",
-                    )}
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between py-4">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotifications",
-                    )}
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotificationsDesc",
-                    )}
-                  </p>
-                </div>
-                <Switch defaultChecked />
               </div>
             </div>
           </Card>
@@ -13378,6 +13344,22 @@ export default function CreatorDashboard() {
                 : `Yes, ${jobInviteConfirmAction}`}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+            <img
+              src={
+                profile?.profile_photo_url ||
+                creator.profile_photo ||
+                user?.user_metadata?.avatar_url
+              }
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
