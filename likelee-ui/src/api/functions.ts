@@ -459,6 +459,9 @@ export const createAgencyTalent = (data: any) =>
 export const updateAgencyTalent = (id: string, data: any) =>
   base44Client.post(`/agency/talent/${id}`, data);
 
+export const uploadTalentAsset = (id: string, fd: FormData) =>
+  base44Client.post(`/api/agency/talents/${id}/assets/upload`, fd);
+
 export const getAgencyDigitals = () => base44Client.get("/agency/digitals");
 
 export const getTalentDigitals = (talentId: string) =>

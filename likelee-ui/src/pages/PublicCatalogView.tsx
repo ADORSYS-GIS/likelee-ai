@@ -34,44 +34,34 @@ type Category = "images" | "videos" | "voice";
 /* ─── Likelee Logo ─── */
 function LikeleeLogoMark({ className = "h-8" }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <svg
-        width="36"
-        height="24"
-        viewBox="0 0 36 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M7.5 12L1.5 17.5V6.5L7.5 12Z" fill="#4DD0E1" />
-        <path
-          d="M34.5 12C34.5 12 28.5 22 18.5 22C8.5 22 7.5 12 7.5 12C7.5 12 8.5 2 18.5 2C28.5 2 34.5 12 34.5 12Z"
-          fill="url(#fishGrad)"
-        />
-        <circle cx="18.5" cy="12" r="5" fill="white" />
-        <path
-          d="M18.5 9.5L19.4265 11.3765L21.5 11.6765L20 13.1385L20.3541 15.2045L18.5 14.2295L16.6459 15.2045L17 13.1385L15.5 11.6765L17.5735 11.3765L18.5 9.5Z"
-          fill="#FF8A65"
-        />
-        <defs>
-          <linearGradient
-            id="fishGrad"
-            x1="7.5"
-            y1="12"
-            x2="34.5"
-            y2="12"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#4DD0E1" />
-            <stop offset="0.4" stopColor="#FFD54F" />
-            <stop offset="1" stopColor="#FF8A65" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <span className="text-2xl font-black text-[#1A1F2C] tracking-tighter">
-        Likelee
-      </span>
+    <div className={`flex items-center ${className}`}>
+      <img
+        src="/likelee-logo.png"
+        alt="Likelee"
+        className="h-full w-auto object-contain"
+      />
     </div>
   );
+}
+
+// Downloads a cross-origin file by fetching it as a blob first,
+// which bypasses browser restrictions on the `download` attribute for Supabase URLs.
+async function downloadFile(url: string, filename?: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename || url.split("/").pop() || "download";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    // Fallback: open in new tab
+    window.open(url, "_blank");
+  }
 }
 
 /* ─── Main Component ─── */
@@ -944,6 +934,69 @@ export default function PublicCatalogView() {
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : "bg-gray-900 text-white hover:bg-black"
               }`}
+              onClick={async (e) => {
+                const btn = e.currentTarget;
+                btn.textContent = "Packing…";
+                btn.setAttribute("disabled", "true");
+
+                try {
+                  const JSZip = (await import("jszip")).default;
+                  const zip = new JSZip();
+
+                  const assets =
+                    activeCategory === "images"
+                      ? talentImages
+                      : activeCategory === "videos"
+                        ? talentVideos
+                        : talentVoice;
+
+                  // Fetch all files in parallel
+                  await Promise.all(
+                    assets.map(async (asset: any, i: number) => {
+                      const url =
+                        activeCategory === "voice"
+                          ? (asset.signed_url ?? "")
+                          : (asset.url ?? asset.thumbnail_url ?? "");
+
+                      const ext =
+                        activeCategory === "voice"
+                          ? "mp3"
+                          : activeCategory === "videos"
+                            ? "mp4"
+                            : "jpg";
+
+                      const filename =
+                        activeCategory === "voice"
+                          ? `${(asset.emotion_tag ?? `vocal_${i + 1}`).replace(/\s+/g, "_")}.${ext}`
+                          : `${activeCategory}_${String(i + 1).padStart(3, "0")}.${ext}`;
+
+                      if (!url) return;
+                      try {
+                        const res = await fetch(url);
+                        const blob = await res.blob();
+                        zip.file(filename, blob);
+                      } catch {
+                        // Skip files that can't be fetched
+                      }
+                    }),
+                  );
+
+                  const zipBlob = await zip.generateAsync({ type: "blob" });
+                  const objectUrl = URL.createObjectURL(zipBlob);
+                  const a = document.createElement("a");
+                  a.href = objectUrl;
+                  a.download = `${selectedItem?.talent_stage_name ?? selectedItem?.talent_name ?? "catalog"}_${activeCategory}.zip`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(objectUrl);
+                } finally {
+                  btn.innerHTML =
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Repository';
+                  btn.removeAttribute("disabled");
+                }
+              }}
+              className="hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-60 disabled:cursor-wait"
             >
               <Download className="w-5 h-5" /> Download Repository
             </button>
@@ -998,6 +1051,19 @@ export default function PublicCatalogView() {
                         <Download className="w-5 h-5 text-indigo-600" />
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadFile(
+                          asset.url || asset.thumbnail_url,
+                          `image_${idx + 1}`,
+                        );
+                      }}
+                      className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 bg-white shadow-2xl rounded-2xl flex items-center justify-center hover:scale-110"
+                    >
+                      <Download className="w-5 h-5 text-indigo-600" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1047,6 +1113,15 @@ export default function PublicCatalogView() {
                           <Download className="w-6 h-6" />
                         </a>
                       )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadFile(asset.url, `video_${idx + 1}`)
+                        }
+                        className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[20px] flex items-center justify-center transition-all"
+                      >
+                        <Download className="w-6 h-6" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1203,7 +1278,7 @@ export default function PublicCatalogView() {
       <footer className="border-t border-gray-50 mt-20 py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="mb-10 opacity-20 hover:opacity-100 transition-opacity duration-500">
-            <LikeleeLogoMark className="justify-center grayscale" />
+            <LikeleeLogoMark className="justify-center" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-300 mb-10">
             Premium Talent Repository
@@ -1266,6 +1341,16 @@ export default function PublicCatalogView() {
                 <Download className="w-6 h-6" /> Download Original Content
               </a>
             )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadFile(lightboxUrl, "original_content");
+              }}
+              className="flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-[24px] font-black shadow-2xl hover:bg-black transition-all scale-100 hover:scale-105 active:scale-95"
+            >
+              <Download className="w-6 h-6" /> Download Original Content
+            </button>
           </div>
         </div>
       )}

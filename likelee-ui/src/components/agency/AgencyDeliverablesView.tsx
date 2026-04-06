@@ -1792,7 +1792,7 @@ export function AgencyDeliverablesView() {
         open={requestDialog.open}
         onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl flex flex-col max-h-[85vh]">
           {(() => {
             const assigned = assignmentsByOffer[requestDialog.offerId] || [];
             const assignment = assigned.find(
@@ -1824,7 +1824,7 @@ export function AgencyDeliverablesView() {
                     </p>
                   </DialogHeader>
                 </div>
-                <div className="p-8 space-y-6 bg-white">
+                <div className="p-8 space-y-6 bg-white flex-1 overflow-y-auto">
                   {requestTalent && (
                     <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <Avatar className="w-10 h-10">
@@ -1907,19 +1907,20 @@ export function AgencyDeliverablesView() {
                         {requestDialog.file?.name || "No file selected"}
                       </span>
                     </div>
-
-                    <Button
-                      onClick={handleRequestAsset}
-                      disabled={requestDialog.sending}
-                      className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
-                    >
-                      {requestDialog.sending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Send Request"
-                      )}
-                    </Button>
                   </div>
+                </div>
+                <div className="bg-white border-t border-gray-200 px-8 py-4">
+                  <Button
+                    onClick={handleRequestAsset}
+                    disabled={requestDialog.sending}
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
+                  >
+                    {requestDialog.sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Send Request"
+                    )}
+                  </Button>
                 </div>
               </>
             );
@@ -1931,11 +1932,14 @@ export function AgencyDeliverablesView() {
         open={uploadDialog.open}
         onOpenChange={(open) => setUploadDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="rounded-lg">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[520px] w-full rounded-lg p-6">
+          <DialogHeader className="space-y-1">
             <DialogTitle>Upload Deliverable</DialogTitle>
+            <p className="text-xs text-gray-500">
+              Add a caption and upload one or more files.
+            </p>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Input
               placeholder="Caption"
               value={uploadDialog.caption}
@@ -1981,7 +1985,7 @@ export function AgencyDeliverablesView() {
                 !uploadDialog.files ||
                 uploadDialog.files.length === 0
               }
-              className="rounded-lg"
+              className="rounded-lg h-11"
             >
               {uploadDialog.sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
