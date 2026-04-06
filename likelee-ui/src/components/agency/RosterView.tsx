@@ -1354,7 +1354,7 @@ const RosterView = ({
                           <img
                             src={talent.img || "https://placehold.co/150"}
                             alt={talent.name}
-                            className="w-12 h-12 rounded-lg object-cover"
+                            className="w-12 h-12 rounded-lg object-contain bg-gray-50"
                           />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1">
@@ -1530,7 +1530,7 @@ const RosterView = ({
                               <img
                                 src={talent.img || "https://placehold.co/150"}
                                 alt={talent.name}
-                                className="w-10 h-10 rounded-lg object-cover"
+                                className="w-10 h-10 rounded-lg object-contain bg-gray-50"
                               />
                               <div>
                                 <div className="flex items-center gap-1">
@@ -2005,6 +2005,9 @@ const RosterView = ({
         onOpenChange={setShowCompCardModal}
         talents={filteredTalent}
         agencyName={agencyName}
+        agencyEmail={agencyEmail}
+        agencyWebsite={agencyWebsite}
+        logoUrl={logoUrl}
       />
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
