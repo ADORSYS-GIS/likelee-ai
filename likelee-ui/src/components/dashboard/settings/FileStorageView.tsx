@@ -343,12 +343,13 @@ const FolderCard = ({
 
   return (
     <Card
-      className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+      className="p-6 bg-gradient-to-b from-indigo-50/60 to-white border border-indigo-100/70 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
       onClick={onOpen}
     >
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-400/60 via-sky-400/50 to-purple-400/60" />
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div
-          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
+          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/80 ring-1 ring-indigo-100/60`}
         >
           <div className="relative">
             <Folder
@@ -425,9 +426,7 @@ const FolderCard = ({
             {folder.fileCount} files
           </span>
           <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500 font-bold">
-            {folder.totalSize}
-          </span>
+          <span className="text-xs text-gray-500 font-bold">Folder</span>
         </div>
       </div>
     </Card>
@@ -1572,13 +1571,13 @@ const FileStorageView = () => {
                 New Folder
               </Button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-3 rounded-3xl bg-indigo-50/40 border border-indigo-100/60">
               <button
                 type="button"
                 onClick={() => setIsNewFolderModalOpen(true)}
                 className="text-left"
               >
-                <Card className="p-6 bg-white border border-dashed border-gray-200 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors cursor-pointer h-full">
+                <Card className="p-6 bg-white/80 border border-dashed border-indigo-200/70 rounded-2xl hover:border-indigo-300 hover:bg-white transition-colors cursor-pointer h-full">
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-14 h-14 bg-indigo-50/50 rounded-2xl flex items-center justify-center shadow-sm border border-white/50">
                       <Plus className="w-7 h-7 text-indigo-600" />
