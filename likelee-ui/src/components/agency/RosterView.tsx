@@ -33,6 +33,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Mail,
+  Video,
+  Mic,
 } from "lucide-react";
 import { format } from "date-fns";
 import CompCardBanner from "./CompCardBanner";
@@ -1581,16 +1583,23 @@ const RosterView = ({
                               <td className="px-6 py-4 text-sm font-medium">
                                 {talent.status}
                               </td>
-                              <td className="px-6 py-4 flex gap-1">
-                                {talent.ai_usage?.map((u: string) => (
-                                  <Badge
-                                    key={u}
-                                    variant="secondary"
-                                    className="text-[10px] font-bold"
-                                  >
-                                    {u}
-                                  </Badge>
-                                ))}
+                              <td className="px-6 py-4 flex flex-nowrap items-center gap-2">
+                                {talent.ai_usage?.map((u: string) => {
+                                  let Icon = null;
+                                  if (u === "Video") Icon = Video;
+                                  else if (u === "Image") Icon = ImageIcon;
+                                  else if (u === "Voice") Icon = Mic;
+                                  return (
+                                    <Badge
+                                      key={u}
+                                      variant="outline"
+                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-gray-900 border border-gray-200 shadow-sm"
+                                    >
+                                      {Icon && <Icon className="w-3.5 h-3.5" />}
+                                      {u}
+                                    </Badge>
+                                  );
+                                })}
                               </td>
                             </>
                           )}

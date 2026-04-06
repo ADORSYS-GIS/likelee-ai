@@ -66,44 +66,30 @@ pub async fn create(
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| territory.clone());
 
-    // ── Step 1: Auto-resolve agency_id from the creator's active roster entry ──
-    // If the caller supplied an agency_id hint we use it to narrow the lookup;
-    // otherwise we just find any active agency for this creator.
+    // ── Step 1: Resolve agency_id from the creator's active roster entry ──
+    // If the caller supplied an agency_id hint it must match an active roster row.
+    // We must not silently reroute the request to a different agency.
     let agency_id_hint: Option<String> = payload
         .get("agency_id")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let mut roster_query = state
+    let all_roster_resp = state
         .pg
         .from("agency_users")
         .select("id,full_legal_name,stage_name,agency_id,created_at")
         .eq("creator_id", &creator_id)
         .eq("role", "talent")
-        .eq("status", "active");
-
-    if let Some(ref hint) = agency_id_hint {
-        roster_query = roster_query.eq("agency_id", hint);
-    }
-
-    // Don't limit yet - let's see all active entries first
-    let roster_resp = roster_query
+        .eq("status", "active")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let roster_status = roster_resp.status();
-    let roster_text = roster_resp
+    let roster_status = all_roster_resp.status();
+    let roster_text = all_roster_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    tracing::info!(
-        "Agency roster lookup for creator {}: status={}, response={}",
-        creator_id,
-        roster_status,
-        roster_text
-    );
 
     if !roster_status.is_success() {
         return Err(sanitize_db_error(
@@ -125,19 +111,53 @@ pub async fn create(
         ));
     }
 
-    // If multiple active entries, warn and pick the most recent
+    if let Some(ref hint) = agency_id_hint {
+        roster_rows.retain(|row| {
+            row.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|v| v == hint)
+                .unwrap_or(false)
+        });
+
+        if roster_rows.is_empty() {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "This creator is not currently represented by the selected agency.".to_string(),
+            ));
+        }
+    }
+
     if roster_rows.len() > 1 {
-        tracing::warn!(
-            "Creator {} has {} active agency associations! This should not happen. Picking most recent.",
-            creator_id,
-            roster_rows.len()
-        );
-        // Sort by created_at descending to get most recent
         roster_rows.sort_by(|a, b| {
             let a_date = a.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
             let b_date = b.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
             b_date.cmp(a_date)
         });
+
+        let distinct_agencies: std::collections::HashSet<String> = roster_rows
+            .iter()
+            .filter_map(|row| row.get("agency_id").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .collect();
+
+        if agency_id_hint.is_none() && distinct_agencies.len() > 1 {
+            tracing::warn!(
+                creator_id = %creator_id,
+                agency_count = distinct_agencies.len(),
+                "Rejecting brand license request because creator has multiple active agency associations and no agency hint was supplied"
+            );
+            return Err((
+                StatusCode::CONFLICT,
+                "This creator is linked to multiple active agencies. Please request the license from the represented agency profile."
+                    .to_string(),
+            ));
+        }
+
+        tracing::warn!(
+            creator_id = %creator_id,
+            roster_count = roster_rows.len(),
+            "Multiple active roster rows found for creator; using the most recent matching entry"
+        );
     }
 
     let talent_row = &roster_rows[0];
@@ -148,12 +168,6 @@ pub async fn create(
         .unwrap_or("")
         .to_string();
 
-    tracing::info!(
-        "Selected agency_id {} for creator {} from {} roster entries",
-        agency_id,
-        creator_id,
-        roster_rows.len()
-    );
     let talent_id = talent_row
         .get("id")
         .and_then(|v| v.as_str())
@@ -176,14 +190,6 @@ pub async fn create(
 
     let effective_brand_id =
         crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
-
-    tracing::info!(
-        "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
-        user.id,
-        user.role,
-        effective_brand_id,
-        agency_id
-    );
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
@@ -209,47 +215,52 @@ pub async fn create(
         connected_text
     );
 
-    let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
-        serde_json::from_str(&connected_text).unwrap_or_default()
-    } else if crate::face_profiles::is_missing_relation_error(
-        &connected_text,
-        "brand_agency_connections",
-    ) {
-        tracing::info!(
+    let (connection_table, connected_rows): (&str, Vec<serde_json::Value>) =
+        if connected_status.is_success() {
+            (
+                "brand_agency_connections",
+                serde_json::from_str(&connected_text).unwrap_or_default(),
+            )
+        } else if crate::face_profiles::is_missing_relation_error(
+            &connected_text,
+            "brand_agency_connections",
+        ) {
+            tracing::info!(
             "brand_agency_connections table not found, checking brand_agency_connection_requests"
         );
-        // Fallback: check connection requests table
-        let fallback_resp = state
-            .pg
-            .from("brand_agency_connection_requests")
-            .select("id,status,brand_id,agency_id")
-            .eq("brand_id", &effective_brand_id)
-            .eq("agency_id", &agency_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let fb_status = fallback_resp.status();
-        let fb_text = fallback_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            // Fallback: check connection requests table
+            let fallback_resp = state
+                .pg
+                .from("brand_agency_connection_requests")
+                .select("id,status,brand_id,agency_id")
+                .eq("brand_id", &effective_brand_id)
+                .eq("agency_id", &agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let fb_status = fallback_resp.status();
+            let fb_text = fallback_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        tracing::info!(
-            "brand_agency_connection_requests query status: {}, response: {}",
-            fb_status,
-            fb_text
-        );
+            tracing::info!(
+                "brand_agency_connection_requests query status: {}, response: {}",
+                fb_status,
+                fb_text
+            );
 
-        if !fb_status.is_success() {
-            return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
-        }
-        serde_json::from_str(&fb_text).unwrap_or_default()
-    } else {
-        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
-    };
-
-    tracing::info!("Found {} connection rows", connected_rows.len());
+            if !fb_status.is_success() {
+                return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
+            }
+            (
+                "brand_agency_connection_requests",
+                serde_json::from_str(&fb_text).unwrap_or_default(),
+            )
+        } else {
+            return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+        };
 
     // Debug: List all connections for this brand
     if connected_rows.is_empty() {
@@ -268,28 +279,84 @@ pub async fn create(
         }
     }
 
-    // Check if connection exists with any status (active or accepted)
+    // A brand should be able to initiate licensing even if a prior connection
+    // row exists in an inactive state. If we find one, try to restore it so the
+    // surrounding CRM state stays aligned with the licensing request.
     if !connected_rows.is_empty() {
         let conn_status = connected_rows[0]
             .get("status")
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        tracing::info!("Found connection with status: {}", conn_status);
 
-        // Accept both "active" and "accepted" statuses
         if conn_status != "active" && conn_status != "accepted" {
-            return Err((
-                StatusCode::FORBIDDEN,
-                format!("Connection exists but is not active (status: {}). Please ensure the connection is accepted.", conn_status),
-            ));
+            let connection_id = connected_rows[0]
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            tracing::info!(
+                connection_id = %connection_id,
+                connection_table = %connection_table,
+                previous_status = %conn_status,
+                "Existing brand-agency connection is inactive; restoring it as part of the licensing request flow"
+            );
+
+            if !connection_id.is_empty() {
+                let restore_payload = match connection_table {
+                    "brand_agency_connections" => json!({
+                        "status": "active",
+                        "connected_at": chrono::Utc::now().to_rfc3339(),
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    }),
+                    _ => json!({
+                        "status": "accepted",
+                        "message": "Reactivated via license request",
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    }),
+                };
+
+                let restore_result = state
+                    .pg
+                    .from(connection_table)
+                    .auth(state.supabase_service_key.clone())
+                    .update(restore_payload.to_string())
+                    .eq("id", &connection_id)
+                    .execute()
+                    .await;
+
+                match restore_result {
+                    Ok(resp) if resp.status().is_success() => {
+                        tracing::info!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            "Successfully restored existing brand-agency connection for licensing request"
+                        );
+                    }
+                    Ok(resp) => {
+                        let status = resp.status();
+                        let body = resp.text().await.unwrap_or_default();
+                        tracing::warn!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            restore_status = %status,
+                            restore_body = %body,
+                            "Failed to restore existing brand-agency connection; continuing with licensing request creation"
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            error = %e,
+                            "Error restoring existing brand-agency connection; continuing with licensing request creation"
+                        );
+                    }
+                }
+            }
         }
     } else {
         // No connection found - auto-create a connection request
-        tracing::info!(
-            "No connection found between brand {} and agency {}, auto-creating connection",
-            effective_brand_id,
-            agency_id
-        );
 
         let connection_payload = json!({
             "brand_id": effective_brand_id,
@@ -299,8 +366,6 @@ pub async fn create(
             "created_at": chrono::Utc::now().to_rfc3339(),
             "updated_at": chrono::Utc::now().to_rfc3339()
         });
-
-        tracing::info!("Creating connection with payload: {}", connection_payload);
 
         // Try to create in brand_agency_connections first
         let create_conn_resp = state
@@ -419,11 +484,6 @@ pub async fn create(
         "status": "pending",
     });
 
-    tracing::info!(
-        "Creating brand license request with payload: {}",
-        insert_payload
-    );
-
     let create_resp = state
         .pg
         .from("brand_license_requests")
@@ -473,7 +533,8 @@ pub async fn list_for_brand(
     let resp = state
         .pg
         .from("brand_license_requests")
-        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status)")
+        .auth(state.supabase_service_key.clone())
+        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
         .eq("brand_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -510,26 +571,6 @@ pub async fn list_for_agency(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    tracing::info!("Fetching brand license requests for agency_id: {}", user.id);
-
-    // First, let's check if ANY brand license requests exist at all
-    let all_requests_resp = state
-        .pg
-        .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())
-        .select("id,agency_id,brand_id,creator_id,campaign_title,status,created_at")
-        .order("created_at.desc")
-        .limit(10)
-        .execute()
-        .await;
-
-    if let Ok(resp) = all_requests_resp {
-        if let Ok(text) = resp.text().await {
-            tracing::info!("ALL brand license requests in database (last 10): {}", text);
-            tracing::info!("Current agency user ID: {}", user.id);
-        }
-    }
-
     let resp = state
         .pg
         .from("brand_license_requests")
@@ -564,8 +605,6 @@ pub async fn list_for_agency(
             format!("JSON parse error: {}", e),
         )
     })?;
-
-    tracing::info!("Found {} brand license requests for agency", rows.len());
 
     Ok(Json(BrandLicenseRequestListResponse { requests: rows }))
 }

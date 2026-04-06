@@ -13,11 +13,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Layout, Check } from "lucide-react";
-import { toJpeg } from "html-to-image";
-import { jsPDF } from "jspdf";
 import { supabase } from "@/lib/supabase";
 import { listAgencyClients, shareCompCard } from "@/api/functions";
 import { toast } from "@/components/ui/use-toast";
+import {
+  generateAndUploadCompCard,
+  renderNodeToJpegDataUrl,
+  renderNodeToPdfBlob,
+} from "@/lib/compCardEngine";
 
 interface CompCardModalProps {
   open: boolean;
@@ -89,45 +92,12 @@ const CompCardModal = ({
     );
   };
 
-  const renderPreviewToPdfBlob = async () => {
-    const dataUrl = await renderPreviewToJpeg(3);
-
-    const img = new Image();
-    const imgLoaded = new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load exported image"));
-    });
-    img.src = dataUrl;
-    await imgLoaded;
-
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "pt",
-      format: "a4",
-    });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-
-    const margin = 36;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
-
-    const imgW = img.width;
-    const imgH = img.height;
-    const scale = Math.min(maxW / imgW, maxH / imgH);
-    const drawW = imgW * scale;
-    const drawH = imgH * scale;
-    const x = (pageW - drawW) / 2;
-    const y = (pageH - drawH) / 2;
-
-    doc.addImage(dataUrl, "JPEG", x, y, drawW, drawH, undefined, "FAST");
-    const blob = doc.output("blob");
-    return blob;
-  };
-
   const uploadCompCardPublic = async (format: "jpeg" | "pdf") => {
     if (!previewTalentComputed) throw new Error("Missing selected talent");
     if (!supabase) throw new Error("Supabase not configured");
+
+    const node = previewNodeRef.current;
+    if (!node) throw new Error("Missing preview element");
 
     let user = null as any;
     {
@@ -169,26 +139,19 @@ const CompCardModal = ({
       user = u;
     }
 
-    const blob =
-      format === "pdf"
-        ? await renderPreviewToPdfBlob()
-        : await dataUrlToBlob(await renderPreviewToJpeg(2));
-    const id =
-      (globalThis as any)?.crypto?.randomUUID?.() ||
-      `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
     const talentId = String((previewTalentComputed as any)?.id || "unknown");
-    const ext = format === "pdf" ? "pdf" : "jpg";
-    const contentType = format === "pdf" ? "application/pdf" : "image/jpeg";
-    const path = `agency/${user.id}/comp_cards/${talentId}/${id}.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from("likelee-public")
-      .upload(path, blob, { upsert: true, contentType });
-    if (uploadErr) throw uploadErr;
-    const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
-    const url = data?.publicUrl || "";
-    if (!url) throw new Error("Failed to create public comp card URL");
-    return url;
+    const baseName = getExportBaseName(previewTalentComputed);
+    const meta = await generateAndUploadCompCard({
+      supabase,
+      node,
+      format,
+      userId: String(user.id),
+      talentId,
+      filenameBase: baseName,
+      prefix: "agency",
+    });
+
+    return meta.url;
   };
 
   const onShareSend = async () => {
@@ -355,30 +318,13 @@ const CompCardModal = ({
     return name.replace(/\s+/g, "_");
   };
 
-  const renderPreviewToJpeg = async (pixelRatio: number) => {
-    const node = previewNodeRef.current;
-    if (!node) throw new Error("Missing preview element");
-    return await toJpeg(node, {
-      quality: 0.95,
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      pixelRatio,
-      // Prevent CSP-blocked Google font fetch attempts during export.
-      fontEmbedCSS: "",
-      preferredFontFormat: undefined,
-    });
-  };
-
-  const dataUrlToBlob = async (dataUrl: string) => {
-    const resp = await fetch(dataUrl);
-    return await resp.blob();
-  };
-
   const exportJpeg = async () => {
     if (!previewTalentComputed || selectedCount < 1) return;
     setExporting("jpeg");
     try {
-      const dataUrl = await renderPreviewToJpeg(2);
+      const node = previewNodeRef.current;
+      if (!node) throw new Error("Missing preview element");
+      const dataUrl = await renderNodeToJpegDataUrl(node, 2);
       const base = getExportBaseName(previewTalentComputed);
       downloadDataUrl(dataUrl, `${base}_CompCard(1).jpg`);
     } finally {
@@ -390,7 +336,9 @@ const CompCardModal = ({
     if (!previewTalentComputed || selectedCount < 1) return;
     setExporting("pdf");
     try {
-      const blob = await renderPreviewToPdfBlob();
+      const node = previewNodeRef.current;
+      if (!node) throw new Error("Missing preview element");
+      const blob = await renderNodeToPdfBlob(node);
       const url = URL.createObjectURL(blob);
       const base = getExportBaseName(previewTalentComputed);
       downloadDataUrl(url, `${base}_CompCard(1).pdf`);
@@ -746,7 +694,7 @@ const CompCardModal = ({
                         previewTalentComputed.img ||
                         previewTalentComputed.profile_photo_url
                       }
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                       alt={previewTalentComputed.name}
                       crossOrigin="anonymous"
                     />

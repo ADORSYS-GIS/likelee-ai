@@ -44,6 +44,7 @@ import { createPageUrl } from "@/utils";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useAuth } from "@/auth/AuthProvider";
 import { getAgencyBillingStatus } from "@/api/functions";
+import CompCardAttachModal from "@/components/jobs/CompCardAttachModal";
 
 const PAGE_SIZE = 10;
 
@@ -75,6 +76,7 @@ export default function JobsBoard() {
   const { toast } = useToast();
   const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const backTo = searchParams.get("backTo");
   const [jobs, setJobs] = useState<any[]>([]);
@@ -98,6 +100,7 @@ export default function JobsBoard() {
   const [compCardFiles, setCompCardFiles] = useState<File[]>([]);
   const [compCardUploading, setCompCardUploading] = useState(false);
   const [compCardMetas, setCompCardMetas] = useState<any[]>([]);
+  const [compCardAttachOpen, setCompCardAttachOpen] = useState(false);
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
     null,
   );
@@ -130,6 +133,31 @@ export default function JobsBoard() {
       cancelled = true;
     };
   }, [isAgencyUser]);
+
+  const applicantTalent = useMemo(() => {
+    if (!profile) return null;
+    const id = String((profile as any)?.id || "");
+    if (!id) return null;
+    return {
+      id,
+      name: (profile as any)?.full_name || (profile as any)?.display_name,
+      full_name: (profile as any)?.full_name,
+      display_name: (profile as any)?.display_name,
+      profile_photo_url: (profile as any)?.profile_photo_url,
+      gender_identity: (profile as any)?.gender_identity,
+      height_feet: (profile as any)?.height_feet,
+      height_inches: (profile as any)?.height_inches,
+      height: (profile as any)?.height,
+      bust_inches: (profile as any)?.bust_inches,
+      waist_inches: (profile as any)?.waist_inches,
+      hips_inches: (profile as any)?.hips_inches,
+      measurements: (profile as any)?.measurements,
+      eye_color: (profile as any)?.eye_color,
+      hair_color: (profile as any)?.hair_color,
+      email: (profile as any)?.email,
+      phone: (profile as any)?.phone,
+    };
+  }, [profile]);
 
   const resolveAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -945,6 +973,20 @@ export default function JobsBoard() {
                     />
                     <div className="space-y-2">
                       {compCardMetas.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setCompCardAttachOpen(true)}
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400"
+                        >
+                          Generate comp card
+                        </button>
+                      )}
+                      {compCardMetas.length === 0 && (
+                        <div className="text-[11px] text-gray-500">
+                          Or upload an existing PDF/image comp card.
+                        </div>
+                      )}
+                      {compCardMetas.length === 0 && (
                         <label
                           htmlFor="job-comp-card-upload"
                           className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
@@ -1564,6 +1606,22 @@ export default function JobsBoard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CompCardAttachModal
+        open={compCardAttachOpen}
+        onOpenChange={setCompCardAttachOpen}
+        mode={
+          String((profile as any)?.role || "").toLowerCase() === "agency"
+            ? "agency"
+            : "self"
+        }
+        talent={applicantTalent}
+        onAttached={(meta) => {
+          setCompCardFiles([]);
+          setCompCardMetas([meta]);
+          if (compCardInputRef.current) compCardInputRef.current.value = "";
+        }}
+      />
     </>
   );
 }

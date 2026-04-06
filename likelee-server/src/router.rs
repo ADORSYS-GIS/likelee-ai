@@ -603,7 +603,9 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/storage/folders/:folder_id",
-            delete(crate::agencies::delete_agency_folder),
+            delete(crate::agencies::delete_agency_folder)
+                .patch(crate::agencies::update_agency_folder)
+                .put(crate::agencies::update_agency_folder),
         )
         .route(
             "/api/agency/storage/files",
@@ -843,6 +845,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id",
             delete(crate::brand_campaigns::delete_offer_contract),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/download",
+            get(crate::brand_campaigns::download_offer_contract_document),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/send",
@@ -1218,7 +1224,7 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(100 * 1024 * 1024)) // 100MB limit
+        .layer(DefaultBodyLimit::max(500 * 1024 * 1024)) // 500MB limit
         .layer(cors)
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))

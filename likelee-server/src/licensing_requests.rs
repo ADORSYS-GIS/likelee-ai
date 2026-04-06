@@ -170,7 +170,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
@@ -258,7 +258,7 @@ pub async fn list_for_agency(
             brand_id
         };
         let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-        let status = r
+        let raw_status = r
             .get("status")
             .and_then(|v| v.as_str())
             .unwrap_or("pending")
@@ -284,6 +284,17 @@ pub async fn list_for_agency(
 
         // Try to get client info from license_submissions first, then brands, then direct fields
         let license_submission = r.get("license_submissions");
+        let submission_status = license_submission
+            .and_then(|ls| ls.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let status = if submission_status == "completed" || submission_status == "signed" {
+            "approved".to_string()
+        } else {
+            raw_status
+        };
 
         let brand_email = license_submission
             .and_then(|ls| ls.get("client_email"))

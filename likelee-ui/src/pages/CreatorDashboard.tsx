@@ -10861,7 +10861,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
                     <span className="text-xl">/</span>
-                    <span className="text-base">week</span>
+                    <span className="text-base">month</span>
                   </div>
                 </div>
               </div>

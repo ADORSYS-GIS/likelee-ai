@@ -619,7 +619,7 @@ export default function Layout({ children, currentPageName }) {
                           className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                           title={t("common.logout")}
                         >
-                          <LogOut className="w-5 h-5" />
+                          <LogOut className="w-5 h-5 transform -scale-x-100" />
                         </button>
                       </div>
                     )}
@@ -723,7 +723,7 @@ export default function Layout({ children, currentPageName }) {
                           }}
                           className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
                         >
-                          <LogOut className="w-5 h-5" />
+                          <LogOut className="w-5 h-5 transform -scale-x-100" />
                           {t("common.logout")}
                         </button>
                       </div>
