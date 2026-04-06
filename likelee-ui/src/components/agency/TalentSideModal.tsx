@@ -321,12 +321,6 @@ const TalentSideModal = ({
         ) : (
           <div className="space-y-6">
             <div className="flex gap-5 items-start">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                <img
-                  src={talent.img || "https://placehold.co/150"}
-                  className="w-full h-full object-contain"
-                  alt={talent.name}
-                />
               <div className="relative shrink-0">
                 <div
                   className="w-24 h-24 bg-gray-100 rounded-xl overflow-hidden relative group cursor-zoom-in border border-gray-200"
