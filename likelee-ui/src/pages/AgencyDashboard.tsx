@@ -17149,17 +17149,16 @@ export default function AgencyDashboard() {
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
-  const agencyDisplayPlanLabel =
-    (() => {
-      const raw = String(agencyBilling?.display_plan_label || "").trim();
-      const normalized = raw
-        .replace(/\b(annual|monthly)\b/gi, "")
-        .replace(/\bplan\b/gi, "")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (normalized) return normalized;
-      return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
-    })();
+  const agencyDisplayPlanLabel = (() => {
+    const raw = String(agencyBilling?.display_plan_label || "").trim();
+    const normalized = raw
+      .replace(/\b(annual|monthly)\b/gi, "")
+      .replace(/\bplan\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (normalized) return normalized;
+    return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+  })();
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   useEffect(() => {
@@ -19119,24 +19118,25 @@ export default function AgencyDashboard() {
             <Menu className="w-6 h-6" />
           </Button>
 
-          {!agencyBillingLoading && (agencyTrialActive || agencyPlanTier !== "free") && (
-            <div className="ml-3 hidden sm:flex items-center gap-2">
-              <Badge
-                className={`border-none px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-full ${
-                  agencyTrialActive
-                    ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                    : "bg-indigo-100 text-indigo-800 hover:bg-indigo-100"
-                }`}
-              >
-                {agencyTrialActive ? "PRO TRIAL" : "PRO"}
-              </Badge>
-              {agencyTrialActive && agencyTrialCountdown ? (
-                <span className="text-[11px] font-semibold text-amber-700">
-                  {agencyTrialCountdown} left
-                </span>
-              ) : null}
-            </div>
-          )}
+          {!agencyBillingLoading &&
+            (agencyTrialActive || agencyPlanTier !== "free") && (
+              <div className="ml-3 hidden sm:flex items-center gap-2">
+                <Badge
+                  className={`border-none px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-full ${
+                    agencyTrialActive
+                      ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                      : "bg-indigo-100 text-indigo-800 hover:bg-indigo-100"
+                  }`}
+                >
+                  {agencyTrialActive ? "PRO TRIAL" : "PRO"}
+                </Badge>
+                {agencyTrialActive && agencyTrialCountdown ? (
+                  <span className="text-[11px] font-semibold text-amber-700">
+                    {agencyTrialCountdown} left
+                  </span>
+                ) : null}
+              </div>
+            )}
 
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
             {!agencyBillingLoading &&
