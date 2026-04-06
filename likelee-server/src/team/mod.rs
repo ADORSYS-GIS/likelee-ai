@@ -1118,7 +1118,31 @@ async fn resolve_scope(
         .map(map_membership_record)
         .collect::<Result<Vec<_>, _>>()?;
 
-    if memberships.len() == 1 {
+    // If multiple memberships found, prioritize by role: owner > admin > member
+    if memberships.len() > 1 {
+        // Sort by role priority (owner=0, admin=1, member=2)
+        memberships.sort_by_key(|m| {
+            match m.role.as_str() {
+                "owner" => 0,
+                "admin" => 1,
+                "member" => 2,
+                _ => 3,
+            }
+        });
+        
+        // If the top two have the same role, we can't auto-select
+        if memberships.len() >= 2 && memberships[0].role == memberships[1].role {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Multiple active organizations found; specify organization_type and organization_id"
+                    .to_string(),
+            ));
+        }
+        
+        // Otherwise, use the highest priority membership (owner takes precedence)
+    }
+
+    if memberships.len() >= 1 {
         let membership = memberships.remove(0);
         let organization_type = OrganizationType::parse(membership.organization_type.as_str()).ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -1149,14 +1173,6 @@ async fn resolve_scope(
         }
         
         return Ok(scope);
-    }
-    
-    if memberships.len() > 1 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Multiple active organizations found; specify organization_type and organization_id"
-                .to_string(),
-        ));
     }
     
     // No membership found - check if this is a legacy owner (user.id == org.id or org.user_id == user.id)
