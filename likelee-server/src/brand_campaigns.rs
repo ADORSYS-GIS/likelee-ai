@@ -4051,7 +4051,11 @@ pub async fn download_offer_contract_document(
                 state.docuseal_api_url.clone(),
             );
             if let Ok(details) = docuseal.get_submission(submission_id as i32).await {
-                if let Some(url) = details.documents.first().map(|doc| doc.url.trim().to_string()) {
+                if let Some(url) = details
+                    .documents
+                    .first()
+                    .map(|doc| doc.url.trim().to_string())
+                {
                     if !url.is_empty() {
                         document_url = Some(url);
                     }
@@ -4070,7 +4074,12 @@ pub async fn download_offer_contract_document(
         .header("X-Auth-Token", state.docuseal_api_key.clone())
         .send()
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to fetch contract PDF: {e}")))?;
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Failed to fetch contract PDF: {e}"),
+            )
+        })?;
 
     if !upstream.status().is_success() {
         let upstream_status = upstream.status();
@@ -4079,8 +4088,7 @@ pub async fn download_offer_contract_document(
             StatusCode::BAD_GATEWAY,
             format!(
                 "DocuSeal rejected the contract download ({}): {}",
-                upstream_status,
-                upstream_body
+                upstream_status, upstream_body
             ),
         ));
     }
@@ -4091,10 +4099,12 @@ pub async fn download_offer_contract_document(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("application/pdf")
         .to_string();
-    let bytes = upstream
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to read contract PDF: {e}")))?;
+    let bytes = upstream.bytes().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read contract PDF: {e}"),
+        )
+    })?;
 
     let filename = contract
         .get("title")
@@ -4116,9 +4126,7 @@ pub async fn download_offer_contract_document(
         HeaderValue::from_str(&content_type)
             .unwrap_or_else(|_| HeaderValue::from_static("application/pdf")),
     );
-    if let Ok(value) =
-        HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
-    {
+    if let Ok(value) = HeaderValue::from_str(&format!("attachment; filename=\"{filename}\"")) {
         response
             .headers_mut()
             .insert(header::CONTENT_DISPOSITION, value);
@@ -6206,10 +6214,7 @@ pub async fn list_offer_deliverables(
     if user.role == "brand" && payment_status != "paid" {
         for row in rows.iter_mut() {
             if let Some(obj) = row.as_object_mut() {
-                let meta = obj
-                    .get("meta")
-                    .cloned()
-                    .unwrap_or_else(|| json!({}));
+                let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
                 meta_obj.insert("payment_required".to_string(), json!(true));
                 obj.insert("meta".to_string(), serde_json::Value::Object(meta_obj));

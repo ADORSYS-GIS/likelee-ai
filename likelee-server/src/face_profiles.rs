@@ -211,7 +211,9 @@ fn marketplace_profile_richness_score(row: &serde_json::Value) -> usize {
 
     let numeric_fields = [
         row.get("followers").and_then(|v| v.as_i64()).is_some(),
-        row.get("engagement_rate").and_then(|v| v.as_f64()).is_some(),
+        row.get("engagement_rate")
+            .and_then(|v| v.as_f64())
+            .is_some(),
     ]
     .into_iter()
     .filter(|v| *v)
@@ -1076,10 +1078,8 @@ pub async fn search_marketplace_profiles(
                         .get("updated_at")
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
-                    let candidate_updated = row
-                        .get("updated_at")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("");
+                    let candidate_updated =
+                        row.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
                     candidate_updated > existing_updated
                 }
             };

@@ -129,8 +129,7 @@ pub async fn create(
         if roster_rows.is_empty() {
             return Err((
                 StatusCode::UNPROCESSABLE_ENTITY,
-                "This creator is not currently represented by the selected agency."
-                    .to_string(),
+                "This creator is not currently represented by the selected agency.".to_string(),
             ));
         }
     }
@@ -237,51 +236,52 @@ pub async fn create(
         connected_text
     );
 
-    let (connection_table, connected_rows): (&str, Vec<serde_json::Value>) = if connected_status.is_success() {
-        (
+    let (connection_table, connected_rows): (&str, Vec<serde_json::Value>) =
+        if connected_status.is_success() {
+            (
+                "brand_agency_connections",
+                serde_json::from_str(&connected_text).unwrap_or_default(),
+            )
+        } else if crate::face_profiles::is_missing_relation_error(
+            &connected_text,
             "brand_agency_connections",
-            serde_json::from_str(&connected_text).unwrap_or_default(),
-        )
-    } else if crate::face_profiles::is_missing_relation_error(
-        &connected_text,
-        "brand_agency_connections",
-    ) {
-        tracing::info!(
+        ) {
+            tracing::info!(
             "brand_agency_connections table not found, checking brand_agency_connection_requests"
         );
-        // Fallback: check connection requests table
-        let fallback_resp = state
-            .pg
-            .from("brand_agency_connection_requests")
-            .select("id,status,brand_id,agency_id")
-            .eq("brand_id", &effective_brand_id)
-            .eq("agency_id", &agency_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let fb_status = fallback_resp.status();
-        let fb_text = fallback_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            // Fallback: check connection requests table
+            let fallback_resp = state
+                .pg
+                .from("brand_agency_connection_requests")
+                .select("id,status,brand_id,agency_id")
+                .eq("brand_id", &effective_brand_id)
+                .eq("agency_id", &agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let fb_status = fallback_resp.status();
+            let fb_text = fallback_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        tracing::info!(
-            "brand_agency_connection_requests query status: {}, response: {}",
-            fb_status,
-            fb_text
-        );
+            tracing::info!(
+                "brand_agency_connection_requests query status: {}, response: {}",
+                fb_status,
+                fb_text
+            );
 
-        if !fb_status.is_success() {
-            return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
-        }
-        (
-            "brand_agency_connection_requests",
-            serde_json::from_str(&fb_text).unwrap_or_default(),
-        )
-    } else {
-        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
-    };
+            if !fb_status.is_success() {
+                return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
+            }
+            (
+                "brand_agency_connection_requests",
+                serde_json::from_str(&fb_text).unwrap_or_default(),
+            )
+        } else {
+            return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+        };
 
     tracing::info!("Found {} connection rows", connected_rows.len());
 

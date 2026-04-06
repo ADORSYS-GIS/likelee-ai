@@ -250,10 +250,7 @@ pub async fn list_eligible_requests(
     let mut all_talent_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for row in lr_rows {
-        let lrid = row
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let lrid = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
         let submission = row.get("license_submissions");
         let submission_status = submission
@@ -471,8 +468,7 @@ pub async fn create_catalog(
             if submission_status != "completed" && submission_status != "signed" {
                 return Err((
                     StatusCode::UNPROCESSABLE_ENTITY,
-                    "Linked licensing request must be signed before creating a catalog"
-                        .to_string(),
+                    "Linked licensing request must be signed before creating a catalog".to_string(),
                 ));
             }
         }
@@ -801,7 +797,10 @@ pub async fn get_public_catalog(
                         .unwrap_or("unpaid")
                         .trim()
                         .to_lowercase();
-                    paid_at_value = pay.get("paid_at").cloned().unwrap_or(serde_json::Value::Null);
+                    paid_at_value = pay
+                        .get("paid_at")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
                 } else {
                     payment_status = "unpaid".to_string();
                 }

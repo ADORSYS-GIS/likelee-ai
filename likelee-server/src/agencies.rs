@@ -2139,10 +2139,16 @@ pub async fn list_talents(
                 existing.is_connected_creator = true;
             }
 
-            let existing_uses_creator_id =
-                existing.creator_id.as_ref().map(|cid| cid == &existing.id).unwrap_or(false);
-            let incoming_uses_agency_user_id =
-                t.creator_id.as_ref().map(|cid| cid != &t.id).unwrap_or(false);
+            let existing_uses_creator_id = existing
+                .creator_id
+                .as_ref()
+                .map(|cid| cid == &existing.id)
+                .unwrap_or(false);
+            let incoming_uses_agency_user_id = t
+                .creator_id
+                .as_ref()
+                .map(|cid| cid != &t.id)
+                .unwrap_or(false);
             if existing_uses_creator_id && incoming_uses_agency_user_id {
                 existing.id = t.id.clone();
             }
