@@ -17181,7 +17181,7 @@ export default function AgencyDashboard() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (agencyPlanTier !== "free" || !agencyTrialActive || !agencyTrialEndsAt) {
+    if (!agencyTrialActive || !agencyTrialEndsAt) {
       setAgencyTrialCountdown("");
       return;
     }
@@ -17198,7 +17198,7 @@ export default function AgencyDashboard() {
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [agencyPlanTier, agencyTrialActive, agencyTrialEndsAt]);
+  }, [agencyTrialActive, agencyTrialEndsAt]);
 
   const handleStartAgencyTrial = async () => {
     if (startingAgencyTrial) return;
@@ -19601,11 +19601,20 @@ export default function AgencyDashboard() {
                       }`}
                       title="Current plan"
                     >
-                      {agencyTrialActive
-                        ? "PRO TRIAL"
-                        : String(agencyDisplayPlanLabel || "")
-                            .trim()
-                            .toUpperCase()}
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>PRO TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
                     </div>
                   )}
 
