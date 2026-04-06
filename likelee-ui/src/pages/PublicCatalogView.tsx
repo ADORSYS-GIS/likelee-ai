@@ -80,6 +80,7 @@ export default function PublicCatalogView() {
     {},
   );
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
+  const [isPackingRepository, setIsPackingRepository] = useState(false);
   const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
 
   const { data, isLoading, isError } = useQuery({
@@ -105,6 +106,44 @@ export default function PublicCatalogView() {
     setDownloadMessage(
       "You have not yet paid for the licensing request attached to this catalog. Downloads will be enabled after payment is received.",
     );
+  };
+
+  const handleDownloadRepository = async () => {
+    if (downloadsLocked) return;
+
+    setIsPackingRepository(true);
+    try {
+      const assets =
+        activeCategory === "images"
+          ? talentImages
+          : activeCategory === "videos"
+            ? talentVideos
+            : talentVoice;
+
+      for (const [i, asset] of assets.entries()) {
+        const url =
+          activeCategory === "voice"
+            ? (asset.signed_url ?? "")
+            : (asset.url ?? asset.thumbnail_url ?? "");
+
+        const ext =
+          activeCategory === "voice"
+            ? "mp3"
+            : activeCategory === "videos"
+              ? "mp4"
+              : "jpg";
+
+        const filename =
+          activeCategory === "voice"
+            ? `${(asset.emotion_tag ?? `vocal_${i + 1}`).replace(/\s+/g, "_")}.${ext}`
+            : `${activeCategory}_${String(i + 1).padStart(3, "0")}.${ext}`;
+
+        if (!url) continue;
+        await downloadFile(url, filename);
+      }
+    } finally {
+      setIsPackingRepository(false);
+    }
   };
 
   /* ── audio ── */
@@ -928,77 +967,23 @@ export default function PublicCatalogView() {
               </div>
             </div>
             <button
-              onClick={downloadsLocked ? handleLockedDownload : undefined}
-              className={`hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-gray-200 ${
+              onClick={downloadsLocked ? handleLockedDownload : handleDownloadRepository}
+              disabled={isPackingRepository || downloadsLocked}
+              className={`hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-gray-200 disabled:opacity-60 disabled:cursor-wait ${
                 downloadsLocked
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : "bg-gray-900 text-white hover:bg-black"
               }`}
-              onClick={async (e) => {
-                const btn = e.currentTarget;
-                btn.textContent = "Packing…";
-                btn.setAttribute("disabled", "true");
-
-                try {
-                  const JSZip = (await import("jszip")).default;
-                  const zip = new JSZip();
-
-                  const assets =
-                    activeCategory === "images"
-                      ? talentImages
-                      : activeCategory === "videos"
-                        ? talentVideos
-                        : talentVoice;
-
-                  // Fetch all files in parallel
-                  await Promise.all(
-                    assets.map(async (asset: any, i: number) => {
-                      const url =
-                        activeCategory === "voice"
-                          ? (asset.signed_url ?? "")
-                          : (asset.url ?? asset.thumbnail_url ?? "");
-
-                      const ext =
-                        activeCategory === "voice"
-                          ? "mp3"
-                          : activeCategory === "videos"
-                            ? "mp4"
-                            : "jpg";
-
-                      const filename =
-                        activeCategory === "voice"
-                          ? `${(asset.emotion_tag ?? `vocal_${i + 1}`).replace(/\s+/g, "_")}.${ext}`
-                          : `${activeCategory}_${String(i + 1).padStart(3, "0")}.${ext}`;
-
-                      if (!url) return;
-                      try {
-                        const res = await fetch(url);
-                        const blob = await res.blob();
-                        zip.file(filename, blob);
-                      } catch {
-                        // Skip files that can't be fetched
-                      }
-                    }),
-                  );
-
-                  const zipBlob = await zip.generateAsync({ type: "blob" });
-                  const objectUrl = URL.createObjectURL(zipBlob);
-                  const a = document.createElement("a");
-                  a.href = objectUrl;
-                  a.download = `${selectedItem?.talent_stage_name ?? selectedItem?.talent_name ?? "catalog"}_${activeCategory}.zip`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(objectUrl);
-                } finally {
-                  btn.innerHTML =
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Repository';
-                  btn.removeAttribute("disabled");
-                }
-              }}
-              className="hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-60 disabled:cursor-wait"
             >
-              <Download className="w-5 h-5" /> Download Repository
+              {isPackingRepository ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Preparing downloads...
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5" /> Download Repository
+                </>
+              )}
             </button>
           </div>
 
@@ -1032,37 +1017,30 @@ export default function PublicCatalogView() {
                         <ZoomIn className="w-7 h-7 text-gray-900" />
                       </div>
                     </div>
-                    {downloadsLocked ? (
-                      <button
-                        onClick={handleLockedDownload}
-                        className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 bg-gray-100 shadow-2xl rounded-2xl flex items-center justify-center cursor-not-allowed"
-                      >
-                        <Download className="w-5 h-5 text-gray-400" />
-                      </button>
-                    ) : (
-                      <a
-                        href={asset.url || asset.thumbnail_url}
-                        download
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 bg-white shadow-2xl rounded-2xl flex items-center justify-center hover:scale-110"
-                      >
-                        <Download className="w-5 h-5 text-indigo-600" />
-                      </a>
-                    )}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (downloadsLocked) {
+                          handleLockedDownload(e);
+                          return;
+                        }
                         downloadFile(
                           asset.url || asset.thumbnail_url,
                           `image_${idx + 1}`,
                         );
                       }}
-                      className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 bg-white shadow-2xl rounded-2xl flex items-center justify-center hover:scale-110"
+                      className={`absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all w-12 h-12 shadow-2xl rounded-2xl flex items-center justify-center ${
+                        downloadsLocked
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : "bg-white hover:scale-110"
+                      }`}
                     >
-                      <Download className="w-5 h-5 text-indigo-600" />
+                      <Download
+                        className={`w-5 h-5 ${
+                          downloadsLocked ? "text-gray-400" : "text-indigo-600"
+                        }`}
+                      />
                     </button>
                   </div>
                 ))}
@@ -1097,28 +1075,20 @@ export default function PublicCatalogView() {
                           VOD_COLLECTION_{idx + 1}
                         </p>
                       </div>
-                      {downloadsLocked ? (
-                        <button
-                          onClick={handleLockedDownload}
-                          className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-300 cursor-not-allowed rounded-[20px] flex items-center justify-center transition-all"
-                        >
-                          <Download className="w-6 h-6" />
-                        </button>
-                      ) : (
-                        <a
-                          href={asset.url}
-                          download
-                          className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[20px] flex items-center justify-center transition-all"
-                        >
-                          <Download className="w-6 h-6" />
-                        </a>
-                      )}
                       <button
                         type="button"
-                        onClick={() =>
-                          downloadFile(asset.url, `video_${idx + 1}`)
-                        }
-                        className="w-14 h-14 bg-gray-50 border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[20px] flex items-center justify-center transition-all"
+                        onClick={(e) => {
+                          if (downloadsLocked) {
+                            handleLockedDownload(e);
+                            return;
+                          }
+                          downloadFile(asset.url, `video_${idx + 1}`);
+                        }}
+                        className={`w-14 h-14 bg-gray-50 border rounded-[20px] flex items-center justify-center transition-all ${
+                          downloadsLocked
+                            ? "border-gray-100 text-gray-300 cursor-not-allowed"
+                            : "border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100"
+                        }`}
                       >
                         <Download className="w-6 h-6" />
                       </button>
@@ -1230,23 +1200,29 @@ export default function PublicCatalogView() {
                         </button>
 
                         {/* Download */}
-                        {downloadsLocked ? (
-                          <button
-                            onClick={handleLockedDownload}
-                            className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 cursor-not-allowed transition-all"
-                          >
-                            <Download className="w-5 h-5" />
-                          </button>
-                        ) : (
-                          <a
-                            href={signedUrl}
-                            download={`${emotion.replace(/\s+/g, "_")}.mp3`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-100 transition-all"
-                          >
-                            <Download className="w-5 h-5" />
-                          </a>
-                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (downloadsLocked) {
+                              handleLockedDownload(e);
+                              return;
+                            }
+                            if (signedUrl) {
+                              downloadFile(
+                                signedUrl,
+                                `${emotion.replace(/\s+/g, "_")}.mp3`,
+                              );
+                            }
+                          }}
+                          className={`w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center transition-all ${
+                            downloadsLocked
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-gray-400 hover:text-indigo-600 hover:border-indigo-100"
+                          }`}
+                        >
+                          <Download className="w-5 h-5" />
+                        </button>
                       </div>
 
                       <audio
@@ -1324,32 +1300,26 @@ export default function PublicCatalogView() {
               className="max-w-full max-h-[80vh] rounded-[48px] shadow-[0_80px_160px_-40px_rgba(0,0,0,0.2)] object-contain mb-10"
               onClick={(e) => e.stopPropagation()}
             />
-            {downloadsLocked ? (
-              <button
-                className="flex items-center gap-3 px-10 py-4 bg-gray-200 text-gray-500 rounded-[24px] font-black shadow-2xl cursor-not-allowed"
-                onClick={handleLockedDownload}
-              >
-                <Download className="w-6 h-6" /> Download Locked
-              </button>
-            ) : (
-              <a
-                href={lightboxUrl}
-                download
-                className="flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-[24px] font-black shadow-2xl hover:bg-black transition-all scale-100 hover:scale-105 active:scale-95"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Download className="w-6 h-6" /> Download Original Content
-              </a>
-            )}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                if (downloadsLocked) {
+                  handleLockedDownload(e);
+                  return;
+                }
                 downloadFile(lightboxUrl, "original_content");
               }}
-              className="flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-[24px] font-black shadow-2xl hover:bg-black transition-all scale-100 hover:scale-105 active:scale-95"
+              className={`flex items-center gap-3 px-10 py-4 rounded-[24px] font-black shadow-2xl transition-all scale-100 active:scale-95 ${
+                downloadsLocked
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-gray-900 text-white hover:bg-black hover:scale-105"
+              }`}
             >
-              <Download className="w-6 h-6" /> Download Original Content
+              <Download className="w-6 h-6" />{" "}
+              {downloadsLocked
+                ? "Download Locked"
+                : "Download Original Content"}
             </button>
           </div>
         </div>
