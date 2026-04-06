@@ -10251,7 +10251,7 @@ export default function CreatorDashboard() {
                   <img
                     src={profile?.profile_photo_url || creator.profile_photo}
                     alt={creator.name}
-                    className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
+                    className={`w-32 h-32 rounded-full object-cover object-top border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
                   />
                 </div>
                 <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
