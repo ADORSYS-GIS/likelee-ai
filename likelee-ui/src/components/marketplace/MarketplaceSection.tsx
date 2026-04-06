@@ -84,7 +84,7 @@ export type MarketplaceProfile = {
   is_licensable?: boolean;
 };
 
-type MarketplaceProfileDetails = {
+export type MarketplaceProfileDetails = {
   profile_type: "creator" | "agency";
   profile: Record<string, any> | null;
   availability: Record<string, any>;

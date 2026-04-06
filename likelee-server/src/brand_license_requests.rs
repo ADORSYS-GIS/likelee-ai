@@ -237,8 +237,11 @@ pub async fn create(
         connected_text
     );
 
-    let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
-        serde_json::from_str(&connected_text).unwrap_or_default()
+    let (connection_table, connected_rows): (&str, Vec<serde_json::Value>) = if connected_status.is_success() {
+        (
+            "brand_agency_connections",
+            serde_json::from_str(&connected_text).unwrap_or_default(),
+        )
     } else if crate::face_profiles::is_missing_relation_error(
         &connected_text,
         "brand_agency_connections",
@@ -272,7 +275,10 @@ pub async fn create(
         if !fb_status.is_success() {
             return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
         }
-        serde_json::from_str(&fb_text).unwrap_or_default()
+        (
+            "brand_agency_connection_requests",
+            serde_json::from_str(&fb_text).unwrap_or_default(),
+        )
     } else {
         return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
     };
@@ -296,7 +302,9 @@ pub async fn create(
         }
     }
 
-    // Check if connection exists with any status (active or accepted)
+    // A brand should be able to initiate licensing even if a prior connection
+    // row exists in an inactive state. If we find one, try to restore it so the
+    // surrounding CRM state stays aligned with the licensing request.
     if !connected_rows.is_empty() {
         let conn_status = connected_rows[0]
             .get("status")
@@ -304,12 +312,72 @@ pub async fn create(
             .unwrap_or("");
         tracing::info!("Found connection with status: {}", conn_status);
 
-        // Accept both "active" and "accepted" statuses
         if conn_status != "active" && conn_status != "accepted" {
-            return Err((
-                StatusCode::FORBIDDEN,
-                format!("Connection exists but is not active (status: {}). Please ensure the connection is accepted.", conn_status),
-            ));
+            let connection_id = connected_rows[0]
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            tracing::info!(
+                connection_id = %connection_id,
+                connection_table = %connection_table,
+                previous_status = %conn_status,
+                "Existing brand-agency connection is inactive; restoring it as part of the licensing request flow"
+            );
+
+            if !connection_id.is_empty() {
+                let restore_payload = match connection_table {
+                    "brand_agency_connections" => json!({
+                        "status": "active",
+                        "connected_at": chrono::Utc::now().to_rfc3339(),
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    }),
+                    _ => json!({
+                        "status": "accepted",
+                        "message": "Reactivated via license request",
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    }),
+                };
+
+                let restore_result = state
+                    .pg
+                    .from(connection_table)
+                    .auth(state.supabase_service_key.clone())
+                    .update(restore_payload.to_string())
+                    .eq("id", &connection_id)
+                    .execute()
+                    .await;
+
+                match restore_result {
+                    Ok(resp) if resp.status().is_success() => {
+                        tracing::info!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            "Successfully restored existing brand-agency connection for licensing request"
+                        );
+                    }
+                    Ok(resp) => {
+                        let status = resp.status();
+                        let body = resp.text().await.unwrap_or_default();
+                        tracing::warn!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            restore_status = %status,
+                            restore_body = %body,
+                            "Failed to restore existing brand-agency connection; continuing with licensing request creation"
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            connection_id = %connection_id,
+                            connection_table = %connection_table,
+                            error = %e,
+                            "Error restoring existing brand-agency connection; continuing with licensing request creation"
+                        );
+                    }
+                }
+            }
         }
     } else {
         // No connection found - auto-create a connection request

@@ -78,7 +78,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
-import { MarketplaceProfile } from "@/components/marketplace/MarketplaceSection";
+import {
+  MarketplaceProfile,
+  MarketplaceProfileDetails,
+} from "@/components/marketplace/MarketplaceSection";
 import {
   Dialog,
   DialogContent,
@@ -1853,11 +1856,22 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
-  const handleOpenLicenseRequest = (creator: MarketplaceProfile | null) => {
+  const handleOpenLicenseRequest = (
+    creator: MarketplaceProfile | null,
+    details?: MarketplaceProfileDetails,
+  ) => {
     if (!creator) return;
-    const agencyId = String(creator.agency_id || "").trim();
+    const detailProfile = details?.profile || null;
+    const representedAgency = details?.represented_agency || null;
+    const agencyId = String(
+      creator.agency_id || details?.agency_id || detailProfile?.agency_id || "",
+    ).trim();
     const isLicensable = Boolean(
-      agencyId && (creator.is_licensable === undefined || creator.is_licensable),
+      agencyId &&
+        (details?.is_licensable === true ||
+          detailProfile?.is_licensable === true ||
+          creator.is_licensable === undefined ||
+          creator.is_licensable),
     );
     if (!isLicensable) {
       toast({
@@ -1868,7 +1882,19 @@ export default function BrandDashboard() {
       });
       return;
     }
-    setSelectedLicenseCreator(creator);
+    setSelectedLicenseCreator({
+      ...creator,
+      agency_id: agencyId,
+      is_licensable: isLicensable,
+      agency_name:
+        representedAgency?.name ||
+        detailProfile?.agency_name ||
+        creator.agency_name,
+      agency_logo_url:
+        representedAgency?.logo_url ||
+        detailProfile?.agency_logo_url ||
+        creator.agency_logo_url,
+    });
     setLicenseRequestForm((prev) => ({
       ...prev,
       start_date: new Date().toISOString().slice(0, 10),
@@ -11102,7 +11128,9 @@ export default function BrandDashboard() {
               verifiedBadgeLabel=""
               queryScope="brand-creator-marketplace"
               showRequestLicense
-              onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
+              onRequestLicense={(profile, details) =>
+                handleOpenLicenseRequest(profile, details)
+              }
             />
           )}
           {activeSection === "marketplace-agencies" &&
