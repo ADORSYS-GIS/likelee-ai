@@ -169,15 +169,15 @@ export default function AddTalent() {
     if (file) {
       setUploading(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           hero_media: {
             url: URL.createObjectURL(file),
             type: file.type.includes("video") ? "video" : "image",
             name: file.name,
             file,
           },
-        });
+        }));
         setUploading(false);
       }, 1000);
     }
@@ -215,14 +215,14 @@ export default function AddTalent() {
     if (file) {
       setUploadingVoice(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           voice_sample: {
             url: URL.createObjectURL(file),
             name: file.name,
             file,
           },
-        });
+        }));
         setUploadingVoice(false);
       }, 1000);
     }
@@ -397,7 +397,13 @@ export default function AddTalent() {
             profilePhotoUrl = heroMediaUrl;
           }
         } catch (e: any) {
-          console.error("Hero media upload failed:", e);
+          const msg = e?.message || String(e);
+          console.error("Hero media upload failed:", msg, e);
+          toast({
+            title: "⚠️ Hero media upload failed",
+            description: `Could not upload hero video/image: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
         }
       }
 
@@ -433,7 +439,13 @@ export default function AddTalent() {
             .getPublicUrl(path);
           voiceSampleUrl = data.publicUrl || "";
         } catch (e: any) {
-          console.error("Voice sample upload failed:", e);
+          const msg = e?.message || String(e);
+          console.error("Voice sample upload failed:", msg, e);
+          toast({
+            title: "⚠️ Voice sample upload failed",
+            description: `Could not upload voice sample: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
         }
       }
 
@@ -514,6 +526,14 @@ export default function AddTalent() {
         rate_currency: "USD",
         ai_usage: aiUsage,
       };
+
+      console.log("[AddTalent] Final payload:", {
+        video_url: payload.video_url,
+        voice_sample_url: payload.voice_sample_url,
+        photo_urls: payload.photo_urls,
+        profile_photo_url: payload.profile_photo_url,
+        ai_usage: payload.ai_usage,
+      });
 
       await createAgencyTalent(payload);
 

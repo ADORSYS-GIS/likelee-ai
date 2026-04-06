@@ -422,6 +422,14 @@ pub async fn get_roster(
                 .unwrap_or("")
                 .trim();
 
+            tracing::info!(
+                "[get_roster] talent_id={} video_url={:?} voice_sample_url={:?} photo_urls_count={}",
+                talent_id_raw,
+                video_url_val,
+                voice_sample_url_val,
+                photo_urls.len()
+            );
+
             let mut unique_assets: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
             if !profile_photo.is_empty() {
@@ -518,6 +526,16 @@ pub async fn get_roster(
                     let t = u.trim();
                     if !t.is_empty() {
                         entry.insert(normalize_asset_url(t));
+                    }
+                }
+                if let Some(ref v) = video_url {
+                    if !v.trim().is_empty() {
+                        entry.insert(normalize_asset_url(v.trim()));
+                    }
+                }
+                if let Some(ref v) = voice_sample_url {
+                    if !v.trim().is_empty() {
+                        entry.insert(normalize_asset_url(v.trim()));
                     }
                 }
             }
@@ -1755,6 +1773,14 @@ pub async fn create_talent(
         "id": talent_id,
         "status": "ok"
     });
+
+    tracing::info!(
+        "[create_talent] saved talent_id={} video_url={:?} voice_sample_url={:?} ai_usage={:?}",
+        talent_id,
+        payload.video_url,
+        payload.voice_sample_url,
+        payload.ai_usage
+    );
 
     tracing::info!("Successfully created talent: {}", payload.full_name);
 
