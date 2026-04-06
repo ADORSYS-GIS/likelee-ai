@@ -664,40 +664,42 @@ const CompCardModal = ({
               >
                 {/* === CLASSIC LAYOUT === */}
                 {selectedTemplate === "classic" && (
-                  <div className="grid grid-cols-2 h-full">
-                    {/* Main Left Image */}
-                    <div className="col-span-1 h-full relative border-r border-white/10">
-                      <img
-                        src={
-                          previewTalentComputed.img ||
-                          previewTalentComputed.profile_photo_url
-                        }
-                        className="w-full h-full object-cover"
-                        alt={previewTalentComputed.name}
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                    {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
-                    <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
-                      {[...Array(4)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="relative border-b border-r border-white/10 overflow-hidden"
-                        >
-                          <img
-                            src={
-                              previewTalentComputed.img ||
-                              previewTalentComputed.profile_photo_url
-                            }
-                            className="w-full h-full object-cover opacity-90"
-                            alt=""
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      ))}
+                  <div className="flex flex-col h-full bg-white">
+                    <div className="grid grid-cols-2 flex-grow overflow-hidden relative">
+                      {/* Main Left Image */}
+                      <div className="col-span-1 h-full relative border-r border-white/10">
+                        <img
+                          src={
+                            previewTalentComputed.img ||
+                            previewTalentComputed.profile_photo_url
+                          }
+                          className="w-full h-full object-cover object-top"
+                          alt={previewTalentComputed.name}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                      {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
+                      <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
+                        {[...Array(4)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="relative border-b border-r border-white/10 overflow-hidden"
+                          >
+                            <img
+                              src={
+                                previewTalentComputed.img ||
+                                previewTalentComputed.profile_photo_url
+                              }
+                              className="w-full h-full object-cover object-top opacity-90"
+                              alt=""
+                              crossOrigin="anonymous"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     {/* Footer Info */}
-                    <div className="absolute bottom-0 w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end">
+                    <div className="w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end shrink-0">
                       <div>
                         <h2 className="font-black text-2xl uppercase tracking-tighter leading-none">
                           {previewTalentComputed.name}
