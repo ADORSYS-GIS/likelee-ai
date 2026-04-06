@@ -967,7 +967,11 @@ export default function PublicCatalogView() {
               </div>
             </div>
             <button
-              onClick={downloadsLocked ? handleLockedDownload : handleDownloadRepository}
+              onClick={
+                downloadsLocked
+                  ? handleLockedDownload
+                  : handleDownloadRepository
+              }
               disabled={isPackingRepository || downloadsLocked}
               className={`hidden md:flex items-center gap-3 px-8 py-3.5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-gray-200 disabled:opacity-60 disabled:cursor-wait ${
                 downloadsLocked
@@ -977,7 +981,8 @@ export default function PublicCatalogView() {
             >
               {isPackingRepository ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Preparing downloads...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Preparing
+                  downloads...
                 </>
               ) : (
                 <>
