@@ -77,6 +77,7 @@ import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
 
+<<<<<<< agencyTrial
 type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
   hasProAccess?: boolean;
@@ -89,6 +90,8 @@ const clampAndSnapCommissionPct = (value: number): number => {
   const clamped = Math.max(0, Math.min(100, value));
   return Math.round(clamped / 5) * 5;
 };
+=======
+>>>>>>> main
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
 const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
 const CALENDLY_BOOKING_TYPE_OPTIONS = [
