@@ -98,8 +98,6 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-
-
     if !roster_status.is_success() {
         return Err(sanitize_db_error(
             roster_status.as_u16(),
@@ -143,7 +141,6 @@ pub async fn create(
         .unwrap_or("")
         .to_string();
 
-
     let talent_id = talent_row
         .get("id")
         .and_then(|v| v.as_str())
@@ -167,8 +164,6 @@ pub async fn create(
     let effective_brand_id =
         crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
-
-
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
     let connected_resp = state
@@ -186,8 +181,6 @@ pub async fn create(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-
 
     let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
         serde_json::from_str(&connected_text).unwrap_or_default()
@@ -215,8 +208,6 @@ pub async fn create(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-
-
         if !fb_status.is_success() {
             return Err(sanitize_db_error(fb_status.as_u16(), fb_text));
         }
@@ -224,8 +215,6 @@ pub async fn create(
     } else {
         return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
     };
-
-
 
     // Debug: List all connections for this brand
     if connected_rows.is_empty() {
@@ -251,7 +240,6 @@ pub async fn create(
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
-
         // Accept both "active" and "accepted" statuses
         if conn_status != "active" && conn_status != "accepted" {
             return Err((
@@ -262,7 +250,6 @@ pub async fn create(
     } else {
         // No connection found - auto-create a connection request
 
-
         let connection_payload = json!({
             "brand_id": effective_brand_id,
             "agency_id": agency_id,
@@ -271,8 +258,6 @@ pub async fn create(
             "created_at": chrono::Utc::now().to_rfc3339(),
             "updated_at": chrono::Utc::now().to_rfc3339()
         });
-
-
 
         // Try to create in brand_agency_connections first
         let create_conn_resp = state
@@ -391,8 +376,6 @@ pub async fn create(
         "status": "pending",
     });
 
-
-
     let create_resp = state
         .pg
         .from("brand_license_requests")
@@ -479,8 +462,6 @@ pub async fn list_for_agency(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-
-
     let resp = state
         .pg
         .from("brand_license_requests")
@@ -515,8 +496,6 @@ pub async fn list_for_agency(
             format!("JSON parse error: {}", e),
         )
     })?;
-
-
 
     Ok(Json(BrandLicenseRequestListResponse { requests: rows }))
 }
