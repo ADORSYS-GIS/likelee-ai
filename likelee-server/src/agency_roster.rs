@@ -422,13 +422,7 @@ pub async fn get_roster(
                 .unwrap_or("")
                 .trim();
 
-            tracing::info!(
-                "[get_roster] talent_id={} video_url={:?} voice_sample_url={:?} photo_urls_count={}",
-                talent_id_raw,
-                video_url_val,
-                voice_sample_url_val,
-                photo_urls.len()
-            );
+
 
             let mut unique_assets: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
@@ -1773,14 +1767,6 @@ pub async fn create_talent(
         "id": talent_id,
         "status": "ok"
     });
-
-    tracing::info!(
-        "[create_talent] saved talent_id={} video_url={:?} voice_sample_url={:?} ai_usage={:?}",
-        talent_id,
-        payload.video_url,
-        payload.voice_sample_url,
-        payload.ai_usage
-    );
 
     tracing::info!("Successfully created talent: {}", payload.full_name);
 

@@ -512,23 +512,7 @@ pub async fn list_for_agency(
 
     tracing::info!("Fetching brand license requests for agency_id: {}", user.id);
 
-    // First, let's check if ANY brand license requests exist at all
-    let all_requests_resp = state
-        .pg
-        .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())
-        .select("id,agency_id,brand_id,creator_id,campaign_title,status,created_at")
-        .order("created_at.desc")
-        .limit(10)
-        .execute()
-        .await;
 
-    if let Ok(resp) = all_requests_resp {
-        if let Ok(text) = resp.text().await {
-            tracing::info!("ALL brand license requests in database (last 10): {}", text);
-            tracing::info!("Current agency user ID: {}", user.id);
-        }
-    }
 
     let resp = state
         .pg

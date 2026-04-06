@@ -527,13 +527,6 @@ export default function AddTalent() {
         ai_usage: aiUsage,
       };
 
-      console.log("[AddTalent] Final payload:", {
-        video_url: payload.video_url,
-        voice_sample_url: payload.voice_sample_url,
-        photo_urls: payload.photo_urls,
-        profile_photo_url: payload.profile_photo_url,
-        ai_usage: payload.ai_usage,
-      });
 
       await createAgencyTalent(payload);
 
