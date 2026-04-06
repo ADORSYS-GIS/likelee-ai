@@ -417,6 +417,40 @@ const TalentSideModal = ({
               </div>
             )}
 
+            {/* Media (Video/Voice) */}
+            {(talent.video_url || talent.voice_sample_url) && (
+              <div className="space-y-4">
+                {talent.video_url && (
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
+                      Hero Video
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-gray-100 bg-black shadow-sm">
+                      <video
+                        src={talent.video_url}
+                        controls
+                        className="w-full aspect-video"
+                      />
+                    </div>
+                  </div>
+                )}
+                {talent.voice_sample_url && (
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
+                      Voice Sample
+                    </div>
+                    <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex flex-col gap-2 shadow-sm">
+                      <audio
+                        src={talent.voice_sample_url}
+                        controls
+                        className="w-full h-8"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {galleryUrls.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -432,7 +466,7 @@ const TalentSideModal = ({
                     <button
                       key={u}
                       type="button"
-                      className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
+                      className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow"
                       onClick={() => window.open(u, "_blank")}
                     >
                       <img

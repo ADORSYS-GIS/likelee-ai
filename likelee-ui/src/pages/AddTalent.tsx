@@ -175,6 +175,7 @@ export default function AddTalent() {
             url: URL.createObjectURL(file),
             type: file.type.includes("video") ? "video" : "image",
             name: file.name,
+            file,
           },
         });
         setUploading(false);
@@ -219,6 +220,7 @@ export default function AddTalent() {
           voice_sample: {
             url: URL.createObjectURL(file),
             name: file.name,
+            file,
           },
         });
         setUploadingVoice(false);
@@ -307,6 +309,8 @@ export default function AddTalent() {
 
       let profilePhotoUrl = "";
       let galleryPhotoUrls: string[] = [];
+
+      // Upload Gallery Photos if exist
       const photoFiles: File[] = Array.isArray(formData.photos)
         ? (formData.photos
             .map((p: any) => p?.file)
@@ -354,18 +358,95 @@ export default function AddTalent() {
         }
       }
 
+      // Upload Hero Media if exists
+      let heroMediaUrl = "";
+      if (
+        formData.hero_media &&
+        formData.hero_media.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.hero_media.file;
+          const safeName = (file.name || "hero")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : file.type?.includes("video")
+              ? "mp4"
+              : "jpg";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/hero_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          heroMediaUrl = data.publicUrl || "";
+
+          // If hero media is an image and we don't have a profile photo yet, use it
+          if (!profilePhotoUrl && formData.hero_media.type === "image") {
+            profilePhotoUrl = heroMediaUrl;
+          }
+        } catch (e: any) {
+          console.error("Hero media upload failed:", e);
+        }
+      }
+
+      // Upload Voice Sample if exists
+      let voiceSampleUrl = "";
+      if (
+        formData.voice_sample &&
+        formData.voice_sample.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.voice_sample.file;
+          const safeName = (file.name || "voice")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : "mp3";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/voice_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "audio/mpeg",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          voiceSampleUrl = data.publicUrl || "";
+        } catch (e: any) {
+          console.error("Voice sample upload failed:", e);
+        }
+      }
+
       const aiUsage: string[] = [];
       if (formData.hero_media) {
-        if ((formData.hero_media as any).type === "video")
-          aiUsage.push("Video");
-        if ((formData.hero_media as any).type === "image")
-          aiUsage.push("Image");
+        if (formData.hero_media.type === "video") aiUsage.push("Video");
+        if (formData.hero_media.type === "image") aiUsage.push("Image");
       }
       if (formData.photos && formData.photos.length > 0) {
         if (!aiUsage.includes("Image")) aiUsage.push("Image");
       }
       if (formData.voice_sample) {
-        aiUsage.push("Voice");
+        if (!aiUsage.includes("Voice")) aiUsage.push("Voice");
       }
 
       // Map frontend form data to backend expected format
@@ -382,8 +463,11 @@ export default function AddTalent() {
         instagram_handle: formData.instagram_handle,
         instagram_followers: 0,
         engagement_rate: 0,
-        profile_photo_url: profilePhotoUrl,
+        profile_photo_url: profilePhotoUrl || heroMediaUrl,
         photo_urls: galleryPhotoUrls,
+        video_url:
+          formData.hero_media?.type === "video" ? heroMediaUrl : undefined,
+        voice_sample_url: voiceSampleUrl,
         bio: formData.bio,
         special_skills: formData.special_skills,
 

@@ -165,6 +165,8 @@ pub struct TalentRow {
     pub sports: String,
     pub last_updated: String,
     pub special_skills: String,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
     pub date_of_birth: Option<String>,
     pub gender_identity: Option<String>,
     pub height_feet: Option<i32>,
@@ -402,9 +404,21 @@ pub async fn get_roster(
                 .unwrap_or(0);
             let followers = format_number(followers_val);
 
-            let assets = get_field("total_assets")
+            let mut assets = get_field("total_assets")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0) as i32;
+
+            // Increment assets for video and voice if they are distinct from photo gallery
+            if let Some(v) = get_field("video_url").and_then(|v| v.as_str()) {
+                if !v.trim().is_empty() {
+                    assets += 1;
+                }
+            }
+            if let Some(v) = get_field("voice_sample_url").and_then(|v| v.as_str()) {
+                if !v.trim().is_empty() {
+                    assets += 1;
+                }
+            }
             let top_brand = get_field("top_brand")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
@@ -437,25 +451,40 @@ pub async fn get_roster(
                 .map(parse_string_array_value)
                 .unwrap_or_default();
 
+            let video_url = get_field("video_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let voice_sample_url = get_field("voice_sample_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
             if ai_usage.is_empty() {
+                if let Some(ref v) = video_url {
+                    if !v.is_empty() {
+                        ai_usage.push("Video".to_string());
+                    }
+                }
+                if let Some(ref v) = voice_sample_url {
+                    if !v.is_empty() {
+                        ai_usage.push("Voice".to_string());
+                    }
+                }
+
                 if !img.trim().is_empty() {
                     let lower = img.to_lowercase();
                     if lower.contains(".mp4") || lower.contains(".webm") || lower.contains(".mov") {
-                        ai_usage.push("Video".to_string());
+                        if !ai_usage.contains(&"Video".to_string()) {
+                            ai_usage.push("Video".to_string());
+                        }
                     } else {
-                        ai_usage.push("Image".to_string());
+                        if !ai_usage.contains(&"Image".to_string()) {
+                            ai_usage.push("Image".to_string());
+                        }
                     }
                 }
+
                 if !photo_urls.is_empty() && !ai_usage.contains(&"Image".to_string()) {
                     ai_usage.push("Image".to_string());
-                }
-                if item
-                    .get("agency_users")
-                    .and_then(|v| v.get("voice_sample_url"))
-                    .is_some()
-                    && !ai_usage.contains(&"Voice".to_string())
-                {
-                    ai_usage.push("Voice".to_string());
                 }
             }
 
@@ -606,6 +635,8 @@ pub async fn get_roster(
                 sports,
                 last_updated,
                 special_skills,
+                video_url,
+                voice_sample_url,
                 date_of_birth,
                 gender_identity,
                 height_feet,
@@ -1275,6 +1306,9 @@ pub struct CreateTalentRequest {
     pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
+    pub ai_usage: Option<Vec<String>>,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1318,6 +1352,9 @@ pub struct UpdateTalentRequest {
     pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
+    pub ai_usage: Option<Vec<String>>,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
 }
 
 use serde_json::json;
@@ -1587,6 +1624,9 @@ pub async fn create_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
+        "ai_usage": payload.ai_usage,
+        "video_url": payload.video_url,
+        "voice_sample_url": payload.voice_sample_url,
     });
 
     if let serde_json::Value::Object(ref mut map) = identity_payload {
@@ -1798,6 +1838,9 @@ pub async fn update_talent(
         "photo_urls": payload.photo_urls,
         "bio_notes": payload.bio,
         "special_skills": special_skills,
+        "ai_usage": payload.ai_usage,
+        "video_url": payload.video_url,
+        "voice_sample_url": payload.voice_sample_url,
         "instagram_handle": payload.instagram_handle,
         "instagram_followers": payload.instagram_followers,
         "engagement_rate": payload.engagement_rate,
