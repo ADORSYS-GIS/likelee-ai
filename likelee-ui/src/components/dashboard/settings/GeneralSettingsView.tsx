@@ -2006,29 +2006,31 @@ const GeneralSettingsView = ({
                     </Badge>
                   </div>
                 </div>
-                <Button
-                  asChild
-                  variant={
-                    planTier === "pro" ||
-                    planTier === "basic" ||
-                    planTier === "enterprise"
-                      ? "default"
-                      : "outline"
-                  }
-                  className={`rounded-xl font-bold ${
-                    planTier === "pro"
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-                      : planTier === "basic" || planTier === "agency"
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                        : planTier === "enterprise"
-                          ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <a href={createPageUrl("AgencySubscribe")}>
-                    Billing & Subscription
-                  </a>
-                </Button>
+                {teamContext?.permissions?.includes("manage_billing") && (
+                  <Button
+                    asChild
+                    variant={
+                      planTier === "pro" ||
+                      planTier === "basic" ||
+                      planTier === "enterprise"
+                        ? "default"
+                        : "outline"
+                    }
+                    className={`rounded-xl font-bold ${
+                      planTier === "pro"
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                        : planTier === "basic" || planTier === "agency"
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                          : planTier === "enterprise"
+                            ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <a href={createPageUrl("AgencySubscribe")}>
+                      Billing & Subscription
+                    </a>
+                  </Button>
+                )}
               </div>
             </Card>
 

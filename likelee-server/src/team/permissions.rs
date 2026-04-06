@@ -98,6 +98,7 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewDeliverables,
             Permission::ViewTeamMembers,
             Permission::ViewBrandConnections,
+            Permission::ManageBrandConnections,
             Permission::ViewLicenses,
             Permission::ManageLicenses,
         ],
