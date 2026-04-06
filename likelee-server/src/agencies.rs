@@ -872,7 +872,10 @@ pub async fn list_agency_folders(
             file_count = files_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
         }
 
-        obj.insert("file_count".to_string(), serde_json::Value::from(file_count));
+        obj.insert(
+            "file_count".to_string(),
+            serde_json::Value::from(file_count),
+        );
         enriched.push(serde_json::Value::Object(obj));
     }
 
@@ -919,10 +922,7 @@ pub async fn create_agency_folder(
 
     for row in rows {
         let mut obj = row.as_object().cloned().unwrap_or_default();
-        let size_bytes = obj
-            .get("size_bytes")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
+        let size_bytes = obj.get("size_bytes").and_then(|v| v.as_i64()).unwrap_or(0);
 
         if size_bytes <= 0 {
             let file_id = obj
@@ -994,10 +994,7 @@ pub async fn create_agency_folder(
                         }
 
                         if let Some(len) = discovered_len {
-                            obj.insert(
-                                "size_bytes".to_string(),
-                                serde_json::Value::from(len),
-                            );
+                            obj.insert("size_bytes".to_string(), serde_json::Value::from(len));
 
                             // Best-effort persist the discovered size to DB.
                             let update = serde_json::json!({ "size_bytes": len });
@@ -1134,11 +1131,7 @@ pub async fn update_agency_folder(
     Path(folder_id): Path<String>,
     Json(body): Json<UpdateAgencyFolderIn>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let name = body
-        .name
-        .unwrap_or_default()
-        .trim()
-        .to_string();
+    let name = body.name.unwrap_or_default().trim().to_string();
     if name.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "name is required".into()));
     }
@@ -1162,7 +1155,8 @@ pub async fn update_agency_folder(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
