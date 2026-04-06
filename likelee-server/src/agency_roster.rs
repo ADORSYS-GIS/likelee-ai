@@ -386,7 +386,7 @@ pub async fn get_roster(
                 .unwrap_or("missing")
                 .to_string();
 
-            let ai_usage: Vec<String> = get_field("ai_usage")
+            let mut ai_usage: Vec<String> = get_field("ai_usage")
                 .and_then(|v| v.as_array())
                 .map(|arr| {
                     arr.iter()
@@ -436,6 +436,24 @@ pub async fn get_roster(
                 .and_then(|v| v.get("photo_urls"))
                 .map(parse_string_array_value)
                 .unwrap_or_default();
+
+            if ai_usage.is_empty() {
+                if !img.trim().is_empty() {
+                    let lower = img.to_lowercase();
+                    if lower.contains(".mp4") || lower.contains(".webm") || lower.contains(".mov") {
+                        ai_usage.push("Video".to_string());
+                    } else {
+                        ai_usage.push("Image".to_string());
+                    }
+                }
+                if !photo_urls.is_empty() && !ai_usage.contains(&"Image".to_string()) {
+                    ai_usage.push("Image".to_string());
+                }
+                if item.get("agency_users").and_then(|v| v.get("voice_sample_url")).is_some()
+                    && !ai_usage.contains(&"Voice".to_string()) {
+                    ai_usage.push("Voice".to_string());
+                }
+            }
 
             if !id.is_empty() {
                 let entry = asset_urls_by_talent.entry(id.clone()).or_default();

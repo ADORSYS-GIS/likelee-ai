@@ -354,6 +354,20 @@ export default function AddTalent() {
         }
       }
 
+      const aiUsage: string[] = [];
+      if (formData.hero_media) {
+        if ((formData.hero_media as any).type === "video")
+          aiUsage.push("Video");
+        if ((formData.hero_media as any).type === "image")
+          aiUsage.push("Image");
+      }
+      if (formData.photos && formData.photos.length > 0) {
+        if (!aiUsage.includes("Image")) aiUsage.push("Image");
+      }
+      if (formData.voice_sample) {
+        aiUsage.push("Voice");
+      }
+
       // Map frontend form data to backend expected format
       // Note: Ideally we upload images to S3/Storage first and get a URL.
       // For this demo, we'll use a placeholder if it's a local blob URL.
@@ -414,6 +428,7 @@ export default function AddTalent() {
         ),
         accept_negotiations: !!formData.accept_negotiations,
         rate_currency: "USD",
+        ai_usage: aiUsage,
       };
 
       await createAgencyTalent(payload);
