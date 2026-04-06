@@ -57,9 +57,7 @@ const CompCardModal = ({
   const selectedCount = selectedTalentIds.length;
 
   const toggleTalent = (id: string) => {
-    setSelectedTalentIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+    setSelectedTalentIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const selectAll = () => {
@@ -505,26 +503,6 @@ const CompCardModal = ({
                 <label className="text-sm font-bold text-gray-900">
                   Select Talent
                 </label>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAll}
-                    className="h-7 text-xs"
-                  >
-                    {selectedTalentIds.length === talents.length
-                      ? "Deselect All"
-                      : "Select All"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearSelected}
-                    className="h-7 text-xs"
-                  >
-                    Clear
-                  </Button>
-                </div>
               </div>
 
               <ScrollArea className="h-56 sm:h-64 rounded-xl border border-gray-200 p-2">
@@ -664,40 +642,42 @@ const CompCardModal = ({
               >
                 {/* === CLASSIC LAYOUT === */}
                 {selectedTemplate === "classic" && (
-                  <div className="grid grid-cols-2 h-full">
-                    {/* Main Left Image */}
-                    <div className="col-span-1 h-full relative border-r border-white/10">
-                      <img
-                        src={
-                          previewTalentComputed.img ||
-                          previewTalentComputed.profile_photo_url
-                        }
-                        className="w-full h-full object-cover"
-                        alt={previewTalentComputed.name}
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                    {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
-                    <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
-                      {[...Array(4)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="relative border-b border-r border-white/10 overflow-hidden"
-                        >
-                          <img
-                            src={
-                              previewTalentComputed.img ||
-                              previewTalentComputed.profile_photo_url
-                            }
-                            className="w-full h-full object-cover opacity-90"
-                            alt=""
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      ))}
+                  <div className="flex flex-col h-full bg-white">
+                    <div className="grid grid-cols-2 flex-grow overflow-hidden relative">
+                      {/* Main Left Image */}
+                      <div className="col-span-1 h-full relative border-r border-white/10">
+                        <img
+                          src={
+                            previewTalentComputed.img ||
+                            previewTalentComputed.profile_photo_url
+                          }
+                          className="w-full h-full object-cover object-top"
+                          alt={previewTalentComputed.name}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                      {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
+                      <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
+                        {[...Array(4)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="relative border-b border-r border-white/10 overflow-hidden"
+                          >
+                            <img
+                              src={
+                                previewTalentComputed.img ||
+                                previewTalentComputed.profile_photo_url
+                              }
+                              className="w-full h-full object-cover object-top opacity-90"
+                              alt=""
+                              crossOrigin="anonymous"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     {/* Footer Info */}
-                    <div className="absolute bottom-0 w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end">
+                    <div className="w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end shrink-0">
                       <div>
                         <h2 className="font-black text-2xl uppercase tracking-tighter leading-none">
                           {previewTalentComputed.name}

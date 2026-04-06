@@ -333,7 +333,7 @@ const TalentSideModal = ({
                       talent.img ||
                       "https://placehold.co/150"
                     }
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     alt={talent.name}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -438,7 +438,7 @@ const TalentSideModal = ({
                       <img
                         src={u}
                         alt="Gallery"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   ))}
