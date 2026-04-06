@@ -777,8 +777,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         )}
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between ml-1">
-                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                        <div className="flex items-start justify-between ml-1 gap-2">
+                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
                             Client Email*
                           </Label>
                           {brandOptions.length > 0 && (

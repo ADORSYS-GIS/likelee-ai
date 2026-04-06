@@ -2333,6 +2333,14 @@ pub async fn handle_webhook(
                     {
                         info!("Contract signed for brand_license_request: {} - status remains unchanged", brand_request_id);
                     }
+
+                    // Mark linked licensing requests as approved so they appear in Active Licenses
+                    let _ = pg
+                        .from("licensing_requests")
+                        .update(json!({ "status": "approved" }).to_string())
+                        .eq("submission_id", sub_id)
+                        .execute()
+                        .await;
                 }
                 "submission.declined" | "form.declined" => {
                     update_map.insert("status".to_string(), json!("declined"));
