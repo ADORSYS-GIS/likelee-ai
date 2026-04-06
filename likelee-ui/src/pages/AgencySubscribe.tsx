@@ -581,7 +581,7 @@ export default function AgencySubscribe() {
       toast({
         title: "Pro trial started",
         description:
-          "Your 14-day Pro trial is now active. After it ends, your account will automatically return to the Free plan.",
+          "Your 30-day Pro trial is now active. After it ends, your account will automatically return to the Free plan.",
       });
       navigate("/AgencyDashboard");
     } catch (e: any) {
@@ -1046,7 +1046,7 @@ export default function AgencySubscribe() {
                       Optional Pro Trial
                     </div>
                     <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
-                      Start a 14-day Pro trial only when you are ready
+                      Start a 30-day Pro trial only when you are ready
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
                       Your agency stays on the Free plan by default. If you want
@@ -1060,7 +1060,7 @@ export default function AgencySubscribe() {
                     Trial Offer
                   </div>
                   <div className="mt-3 space-y-2 text-sm text-white/85">
-                    <div>14 days of Pro access</div>
+                    <div>30 days of Pro access</div>
                     <div>Instant access with no payment step</div>
                     <div>Falls back to Free automatically after the trial</div>
                   </div>
@@ -1074,7 +1074,7 @@ export default function AgencySubscribe() {
                   >
                     {startingTrial
                       ? "Starting Trial..."
-                      : "Start 14-Day Pro Trial"}
+                      : "Start 30-Day Pro Trial"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>

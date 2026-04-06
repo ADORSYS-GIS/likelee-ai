@@ -17218,7 +17218,7 @@ export default function AgencyDashboard() {
       toast({
         title: "Pro trial started",
         description:
-          "Your agency now has 14 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+          "Your agency now has 30 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
       });
     } catch (e: any) {
       const msg = String(e?.message || e || "");
