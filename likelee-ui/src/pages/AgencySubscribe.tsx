@@ -90,13 +90,9 @@ export default function AgencySubscribe() {
   const billingParam = String(searchParams.get("billing") || "").trim();
   const postSignup = searchParams.get("post_signup") === "1";
 
-  const [billingInterval, setBillingInterval] = React.useState<
-    "month" | "year"
-  >("month");
-
-  const [seatBillingInterval, setSeatBillingInterval] = React.useState<
-    "month" | "year"
-  >("month");
+  const [billingInterval, setBillingInterval] = React.useState<"month" | "year">(
+    "month",
+  );
 
   const [plan, setPlan] = React.useState<"basic" | "pro">("pro");
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
@@ -120,7 +116,7 @@ export default function AgencySubscribe() {
   const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
   const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
     React.useState(false);
-  const [includeSeatsInPlan, setIncludeSeatsInPlan] = React.useState(true);
+  const includeSeatsInPlan = true;
   const [pendingPlanChange, setPendingPlanChange] = React.useState<{
     plan: "basic" | "pro";
     interval: "month" | "year";
@@ -134,6 +130,7 @@ export default function AgencySubscribe() {
   const [startingTrial, setStartingTrial] = React.useState(false);
   const [seatBreakdownOpen, setSeatBreakdownOpen] = React.useState(false);
   const [seatBreakdownLoading, setSeatBreakdownLoading] = React.useState(false);
+  const [seatAddonModalOpen, setSeatAddonModalOpen] = React.useState(false);
   const [seatBreakdown, setSeatBreakdown] = React.useState<{
     total_active_seats: number;
     annual_seats: number;
@@ -174,11 +171,11 @@ export default function AgencySubscribe() {
   const rosterCostPro = Math.round(inPlanSeatCount * rosterRatePro);
 
   const seatRosterRateBasic =
-    seatBillingInterval === "year"
+    billingInterval === "year"
       ? BASIC_ROSTER_RATE * 0.8
       : BASIC_ROSTER_RATE;
   const seatRosterRatePro =
-    seatBillingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
+    billingInterval === "year" ? PRO_ROSTER_RATE * 0.8 : PRO_ROSTER_RATE;
   const additionalSeatCount = Math.max(0, rosterModels - currentSeatsLimit);
   const seatRosterCostBasic = Math.round(
     additionalSeatCount * seatRosterRateBasic,
@@ -271,7 +268,6 @@ export default function AgencySubscribe() {
           parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
         setIncludeIrlBookingInPlan(false);
-        setIncludeSeatsInPlan(true);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
       }
@@ -293,7 +289,6 @@ export default function AgencySubscribe() {
     setRosterInput(String(DEFAULT_ROSTER_MODELS));
     setHasIrlBookingAddon(false);
     setIncludeIrlBookingInPlan(false);
-    setIncludeSeatsInPlan(true);
   }, [authenticated, initialized, isAgencyUser]);
 
   React.useEffect(() => {
@@ -358,9 +353,7 @@ export default function AgencySubscribe() {
     plan === "basic" ? seatRosterCostBasic : seatRosterCostPro;
   const currentPlanRank = planRank(currentPlanTier);
   const selectedPlanRank = planRank(plan);
-  const seatCountChanged = includeSeatsInPlan
-    ? rosterModels !== currentSeatsLimit
-    : rosterModels !== currentSeatsLimit;
+  const seatCountChanged = rosterModels !== currentSeatsLimit;
   const isDowngradeSelection =
     (currentPlanTier === "pro" && plan === "basic") ||
     (currentPlanTier === plan &&
@@ -622,10 +615,8 @@ export default function AgencySubscribe() {
     }
   };
 
-  const scrollToSeatsSection = () => {
-    document
-      .getElementById("roster-seats")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openSeatAddonModal = () => {
+    setSeatAddonModalOpen(true);
   };
 
   const openSeatBreakdown = async () => {
@@ -694,7 +685,7 @@ export default function AgencySubscribe() {
       const resp = await createOrUpdateAgencySeatAddon({
         seats: rosterModels,
         plan: currentPlanTier === "pro" ? "pro" : plan,
-        interval: seatBillingInterval,
+        interval: billingInterval,
       });
       const url = (resp as any)?.checkout_url as string | undefined;
       const nextSeats = Number((resp as any)?.seats_limit || rosterModels);
@@ -705,7 +696,6 @@ export default function AgencySubscribe() {
         return;
       }
       setCurrentSeatsLimit(nextSeats);
-      setIncludeSeatsInPlan(false);
       toast({
         title: "Seat add-on updated",
         description:
@@ -1153,31 +1143,20 @@ export default function AgencySubscribe() {
               <div className="text-left text-[#4B4AE6] font-black font-display">
                 {requiresContactSales
                   ? "More than 1,000 models requires custom pricing."
-                  : `${includeSeatsInPlan ? "In-plan seat preview" : "Seat add-on preview"}: ${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
-              </div>
-              <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 shrink-0">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                  {includeSeatsInPlan ? "In Plan" : "Off"}
-                </span>
-                <Switch
-                  checked={includeSeatsInPlan}
-                  onCheckedChange={setIncludeSeatsInPlan}
-                  aria-label="Toggle roster seats into plan checkout"
-                />
+                  : `In-plan seat preview: ${formatNumber(rosterModels)} models × $${rosterRate}/mo = $${formatNumber(rosterCost)}/mo ${billingInterval === "year" ? "(billed annually)" : ""}`}
               </div>
             </div>
-            {!includeSeatsInPlan && (
-              <div className="mt-6 flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-2xl font-black"
-                  onClick={scrollToSeatsSection}
-                >
-                  Buy Seats Separately
-                </Button>
-              </div>
-            )}
+
+            <div className="mt-6 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl font-black"
+                onClick={openSeatAddonModal}
+              >
+                Buy Seats Separately
+              </Button>
+            </div>
           </Card>
         </div>
 
@@ -1333,9 +1312,7 @@ export default function AgencySubscribe() {
               <div className="flex justify-between">
                 <span>Roster seats</span>
                 <span className="text-emerald-300 font-semibold">
-                  {includeSeatsInPlan
-                    ? `${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostBasic)} in plan`
-                    : "Billed separately"}
+                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostBasic)} in plan`}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1457,9 +1434,7 @@ export default function AgencySubscribe() {
               <div className="flex justify-between">
                 <span>Roster seats</span>
                 <span className="text-[#3B82F6] font-semibold">
-                  {includeSeatsInPlan
-                    ? `${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostPro)} in plan`
-                    : "Billed separately"}
+                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostPro)} in plan`}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1530,183 +1505,81 @@ export default function AgencySubscribe() {
             </div>
           </Card>
         </div>
-        <div id="roster-seats" className="mt-10">
-          <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-2xl font-black font-display">
-                  Roster Seats
-                </div>
-                <div className="mt-2 text-gray-500">
-                  Seat billing scales with the number of talent profiles you
-                  manage. Choose whether to include seats in the selected plan
-                  checkout or buy them separately as their own recurring add-on.
-                </div>
-                <div className="mt-5 flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 w-fit">
-                  <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                    {includeSeatsInPlan ? "In Plan" : "Off"}
-                  </span>
-                  <Switch
-                    checked={includeSeatsInPlan}
-                    onCheckedChange={setIncludeSeatsInPlan}
-                    aria-label="Toggle roster seats into plan checkout"
-                  />
-                </div>
+        <Dialog open={seatAddonModalOpen} onOpenChange={setSeatAddonModalOpen}>
+          <DialogContent className="max-w-lg rounded-[28px]">
+            <DialogHeader>
+              <DialogTitle className="font-display font-black text-2xl">
+                Buy seats separately
+              </DialogTitle>
+              <DialogDescription>
+                Review what you’ll pay before continuing to Stripe.
+              </DialogDescription>
+            </DialogHeader>
 
-                {!includeSeatsInPlan && (
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">
-                      Seat billing
-                    </div>
-                    <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-1">
-                      <button
-                        type="button"
-                        onClick={() => setSeatBillingInterval("month")}
-                        className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.18em] transition-colors ${
-                          seatBillingInterval === "month"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-900"
-                        }`}
-                      >
-                        Monthly
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSeatBillingInterval("year")}
-                        className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.18em] transition-colors ${
-                          seatBillingInterval === "year"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-900"
-                        }`}
-                      >
-                        Annual
-                      </button>
-                    </div>
-                    {seatBillingInterval === "year" && (
-                      <Badge className="border border-emerald-200 bg-emerald-100 text-emerald-700">
-                        SAVE 20%
-                      </Badge>
-                    )}
-                  </div>
-                )}
-                <div className="mt-5 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span>
-                        Current billed seats:{" "}
-                        <span className="font-bold text-gray-900">
-                          {formatNumber(currentSeatsLimit)}
-                        </span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void openSeatBreakdown();
-                        }}
-                        className="group inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.18em] text-[#0B9DA2] hover:text-[#0A7F83]"
-                      >
-                        View details
-                        <ArrowRight className="h-3 w-3 text-[#0B9DA2] group-hover:text-[#0A7F83]" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Selected seats:</span>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={rosterInput}
-                        disabled={requiresContactSales}
-                        onChange={(event) => {
-                          const nextValue = event.target.value.replace(
-                            /[^\d]/g,
-                            "",
-                          );
-                          setRosterInput(nextValue);
-                          const parsed = parsePositiveInteger(nextValue);
-                          if (parsed == null) return;
-                          syncRosterModels(parsed);
-                        }}
-                        onBlur={() => setRosterInput(String(rosterModels))}
-                        aria-label="Selected seat count"
-                        className="h-10 w-24 rounded-xl border-gray-200 bg-white text-right font-black text-gray-900"
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                    Seat pricing follows your{" "}
-                    {includeSeatsInPlan
-                      ? billingInterval === "year"
-                        ? "selected annual"
-                        : "selected monthly"
-                      : seatBillingInterval === "year"
-                        ? "selected annual"
-                        : "selected monthly"}{" "}
-                    billing interval.
-                  </div>
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                    {currentPlanTier === "free"
-                      ? includeSeatsInPlan
-                        ? "Your selected trial or checkout will start with this seat count included in plan."
-                        : "Buy seats separately from this section anytime."
-                      : includeSeatsInPlan
-                        ? "Updating the selected plan will include these seats directly on the plan subscription."
-                        : "Buying seats here creates or updates a separate recurring seat add-on."}
-                  </div>
-                </div>
+            <div className="mt-4 grid gap-3 text-sm text-gray-700">
+              <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <span className="font-bold text-gray-500">Current billed seats</span>
+                <span className="font-black text-gray-900">
+                  {formatNumber(currentSeatsLimit)}
+                </span>
               </div>
-              <div className="w-full max-w-sm rounded-[24px] border border-[#D9E4F1] bg-[#F6F8FB] p-5">
-                <div className="text-sm font-bold uppercase tracking-[0.18em] text-gray-500">
-                  Seat total
+              <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <span className="font-bold text-gray-500">Selected total seats</span>
+                <span className="font-black text-gray-900">
+                  {formatNumber(rosterModels)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <span className="font-bold text-gray-500">Additional seats to bill</span>
+                <span className="font-black text-gray-900">
+                  {formatNumber(additionalSeatCount)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <span className="font-bold text-gray-500">Billing interval</span>
+                <span className="font-black text-gray-900">
+                  {billingInterval === "year" ? "Annual" : "Monthly"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-[#D9E4F1] bg-[#F6F8FB] px-4 py-4">
+                <span className="font-bold text-gray-500">Total</span>
+                <span className="font-black text-[#1B1C23] text-lg">
+                  ${formatNumber(seatRosterCost)}
+                </span>
+              </div>
+              {billingInterval === "year" && (
+                <div className="text-emerald-600 text-xs font-bold">
+                  Billed annually (20% discount applied)
                 </div>
-                <div className="mt-3 text-4xl font-black font-display text-[#1B1C23]">
-                  $
-                  {formatNumber(
-                    includeSeatsInPlan ? rosterCost : seatRosterCost,
-                  )}
-                </div>
-                <div className="mt-1 text-sm text-gray-500">
-                  {includeSeatsInPlan
-                    ? `${formatNumber(inPlanSeatCount)} seats × $${formatNumber(rosterRate)}/mo`
-                    : `${formatNumber(additionalSeatCount)} additional seats × $${formatNumber(
-                        seatRosterRate,
-                      )}/mo`}
-                </div>
-                {!includeSeatsInPlan && seatBillingInterval === "year" && (
-                  <div className="mt-1 text-emerald-600 text-xs font-bold">
-                    Billed annually (20% discount applied)
-                  </div>
-                )}
-                <div className="mt-4 text-xs leading-5 text-gray-500">
-                  {includeSeatsInPlan
-                    ? "These seats will be charged inside the selected plan checkout."
-                    : "Seats are charged on a separate recurring Stripe subscription."}
-                </div>
-                <Button
-                  type="button"
-                  className="mt-5 w-full rounded-2xl font-black"
-                  variant={seatCountChanged ? "default" : "outline"}
-                  disabled={
-                    checkoutDisabled || includeSeatsInPlan || !seatCountChanged
-                  }
-                  onClick={() => {
-                    void onCheckoutSeats();
-                  }}
-                >
-                  {includeSeatsInPlan
-                    ? "Included In Plan Checkout"
-                    : checkingOutSeats
-                      ? "Processing..."
-                      : seatCountChanged
-                        ? "Buy Seats"
-                        : "Seats Up to Date"}
-                </Button>
+              )}
+              <div className="text-xs leading-5 text-gray-500">
+                Seats are charged on a separate recurring Stripe subscription.
               </div>
             </div>
-          </Card>
-        </div>
+
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                disabled={checkingOutSeats}
+                onClick={() => setSeatAddonModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="rounded-2xl font-black"
+                disabled={checkoutDisabled || !seatCountChanged || checkingOutSeats}
+                onClick={() => {
+                  void onCheckoutSeats();
+                }}
+              >
+                {checkingOutSeats ? "Processing..." : "Pay"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="mt-12">
           <div className="text-center text-3xl font-black font-display">
@@ -1937,9 +1810,9 @@ export default function AgencySubscribe() {
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
               <span className="font-bold text-gray-500">Seats add-on</span>
               <span className="font-black text-[#1B1C23]">
-                {pendingPlanChange?.includeSeatsInPlan
+                {pendingPlanChange
                   ? `${formatNumber(pendingPlanChange.rosterModels)} seats in plan`
-                  : "Purchased separately"}
+                  : ""}
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
@@ -1963,9 +1836,6 @@ export default function AgencySubscribe() {
             <div className="mt-2">
               By confirming, you authorize Likelee to switch your existing
               subscription to the selected plan and billing interval.
-              {pendingPlanChange?.includeSeatsInPlan
-                ? " The selected seat count will also be billed inside that plan."
-                : " Roster seats remain managed as a separate add-on."}
             </div>
           </div>
 
