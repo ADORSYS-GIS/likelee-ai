@@ -2,8 +2,8 @@ import React from "react";
 
 export function AgencyTermsContent() {
   return (
-    <div className="space-y-4 text-sm text-gray-700 font-medium pb-8">
-      <h2 className="text-lg font-bold text-gray-900 mb-4">
+    <div className="space-y-4 text-base text-gray-700 font-medium pb-8">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
         LIKELEE AI — Creator & Talent Terms and Conditions
       </h2>
 
