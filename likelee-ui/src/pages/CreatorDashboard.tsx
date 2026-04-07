@@ -2709,6 +2709,40 @@ export default function CreatorDashboard() {
   // Sync creator state when auth profile changes
   useEffect(() => {
     if (profile) {
+      const pricingUpdatedAt = profile.pricing_updated_at;
+      const createdAt = profile.created_at;
+      const weeklyCents =
+        typeof profile.base_weekly_price_cents === "number"
+          ? profile.base_weekly_price_cents
+          : null;
+      const monthlyCents =
+        typeof profile.base_monthly_price_cents === "number"
+          ? profile.base_monthly_price_cents
+          : null;
+      const pricingTimestamp =
+        typeof pricingUpdatedAt === "string"
+          ? Date.parse(pricingUpdatedAt)
+          : NaN;
+      const createdTimestamp =
+        typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
+      const pricingDeltaMs =
+        Number.isFinite(pricingTimestamp) && Number.isFinite(createdTimestamp)
+          ? pricingTimestamp - createdTimestamp
+          : NaN;
+      const hasExplicitPricingUpdate =
+        Number.isFinite(pricingTimestamp) &&
+        Number.isFinite(createdTimestamp) &&
+        Number.isFinite(pricingDeltaMs) &&
+        pricingDeltaMs > 60_000;
+      const isDefaultPricing =
+        !hasExplicitPricingUpdate &&
+        ((typeof weeklyCents === "number" &&
+          weeklyCents === MIN_BASE_WEEKLY_CENTS) ||
+          (typeof monthlyCents === "number" &&
+            monthlyCents === MIN_BASE_MONTHLY_CENTS));
+      const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+      const isPublicBrands =
+        resolvedVisibility || (!resolvedVisibility && isDefaultPricing);
       setCreator((prev: any) => ({
         ...prev,
         name: profile.full_name || user?.user_metadata?.full_name || prev.name,
@@ -2733,7 +2767,7 @@ export default function CreatorDashboard() {
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
         vibes: profile.vibes ?? prev.vibes,
-        is_public_brands: resolvePublicBrandsVisibility(profile),
+        is_public_brands: isPublicBrands,
       }));
     }
   }, [profile]);
