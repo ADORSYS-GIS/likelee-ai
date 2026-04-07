@@ -48,6 +48,7 @@ pub mod packages;
 pub mod payment_links;
 pub mod payouts;
 pub mod performance_tiers;
+pub mod pricing_defaults;
 pub mod reference_images;
 pub mod router;
 pub mod scouting;

@@ -140,6 +140,11 @@ import {
 } from "recharts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+  isDefaultPricing,
+  MIN_BASE_MONTHLY_CENTS,
+  shouldDefaultVisibilityOn,
+} from "@/utils/pricingDefaults";
 import { supabase } from "@/lib/supabase";
 import { DocusealForm } from "@docuseal/react";
 
@@ -901,9 +906,6 @@ export default function CreatorDashboard() {
     }
     return Number.isFinite(fallback) ? fallback : 0;
   };
-  const MIN_BASE_MONTHLY_CENTS = 15000;
-  const MIN_BASE_WEEKLY_CENTS = Math.round(MIN_BASE_MONTHLY_CENTS / 4.345);
-
   const [creator, setCreator] = useState<any>({
     name: profile?.full_name || user?.user_metadata?.full_name || "",
     email: profile?.email || user?.email || "",
@@ -2709,8 +2711,6 @@ export default function CreatorDashboard() {
   // Sync creator state when auth profile changes
   useEffect(() => {
     if (profile) {
-      const pricingUpdatedAt = profile.pricing_updated_at;
-      const createdAt = profile.created_at;
       const weeklyCents =
         typeof profile.base_weekly_price_cents === "number"
           ? profile.base_weekly_price_cents
@@ -2719,30 +2719,10 @@ export default function CreatorDashboard() {
         typeof profile.base_monthly_price_cents === "number"
           ? profile.base_monthly_price_cents
           : null;
-      const pricingTimestamp =
-        typeof pricingUpdatedAt === "string"
-          ? Date.parse(pricingUpdatedAt)
-          : NaN;
-      const createdTimestamp =
-        typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
-      const pricingDeltaMs =
-        Number.isFinite(pricingTimestamp) && Number.isFinite(createdTimestamp)
-          ? pricingTimestamp - createdTimestamp
-          : NaN;
-      const hasExplicitPricingUpdate =
-        Number.isFinite(pricingTimestamp) &&
-        Number.isFinite(createdTimestamp) &&
-        Number.isFinite(pricingDeltaMs) &&
-        pricingDeltaMs > 60_000;
-      const isDefaultPricing =
-        !hasExplicitPricingUpdate &&
-        ((typeof weeklyCents === "number" &&
-          weeklyCents === MIN_BASE_WEEKLY_CENTS) ||
-          (typeof monthlyCents === "number" &&
-            monthlyCents === MIN_BASE_MONTHLY_CENTS));
       const resolvedVisibility = resolvePublicBrandsVisibility(profile);
       const isPublicBrands =
-        resolvedVisibility || (!resolvedVisibility && isDefaultPricing);
+        resolvedVisibility ||
+        (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
       setCreator((prev: any) => ({
         ...prev,
         name: profile.full_name || user?.user_metadata?.full_name || prev.name,
@@ -3387,8 +3367,6 @@ export default function CreatorDashboard() {
       try {
         const json = await base44.get("/dashboard");
         const profile = json.profile || {};
-        const pricingUpdatedAt = profile.pricing_updated_at;
-        const createdAt = profile.created_at;
         const weeklyCents =
           typeof profile.base_weekly_price_cents === "number"
             ? profile.base_weekly_price_cents
@@ -3403,29 +3381,10 @@ export default function CreatorDashboard() {
             : typeof weeklyCents === "number"
               ? Math.round((weeklyCents / 100) * 4.345)
               : undefined;
-        const pricingTimestamp =
-          typeof pricingUpdatedAt === "string"
-            ? Date.parse(pricingUpdatedAt)
-            : NaN;
-        const createdTimestamp =
-          typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
-        const pricingDeltaMs =
-          Number.isFinite(pricingTimestamp) && Number.isFinite(createdTimestamp)
-            ? pricingTimestamp - createdTimestamp
-            : NaN;
-        const hasExplicitPricingUpdate =
-          Number.isFinite(pricingTimestamp) &&
-          Number.isFinite(createdTimestamp) &&
-          Number.isFinite(pricingDeltaMs) &&
-          pricingDeltaMs > 60_000;
         const hasExplicitBaseRate =
-          hasExplicitPricingUpdate ||
-          (typeof weeklyCents === "number" &&
-            weeklyCents > 0 &&
-            weeklyCents !== MIN_BASE_WEEKLY_CENTS) ||
-          (typeof monthlyCents === "number" &&
-            monthlyCents > 0 &&
-            monthlyCents !== MIN_BASE_MONTHLY_CENTS);
+          !isDefaultPricing(profile) &&
+          ((typeof weeklyCents === "number" && weeklyCents > 0) ||
+            (typeof monthlyCents === "number" && monthlyCents > 0));
         const resolvedPricePerMonth = hasExplicitBaseRate
           ? typeof monthlyFromProfile === "number"
             ? monthlyFromProfile
@@ -3434,11 +3393,9 @@ export default function CreatorDashboard() {
         baseRateRef.current = resolvedPricePerMonth;
         const visibilityField = String(profile?.visibility || "").trim();
         const resolvedVisibility = resolvePublicBrandsVisibility(profile);
-        const isNewProfile =
-          Number.isFinite(createdTimestamp) &&
-          (!Number.isFinite(pricingDeltaMs) || pricingDeltaMs <= 60_000);
         const isPublicBrands =
-          resolvedVisibility || (!resolvedVisibility && isNewProfile);
+          resolvedVisibility ||
+          (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -10942,7 +10899,7 @@ export default function CreatorDashboard() {
                     <span className="text-xl font-medium text-gray-900">$</span>
                     <Input
                       type="number"
-                      value={creator.price_per_month || ""}
+                      value={creator.price_per_month ?? ""}
                       onChange={(e) =>
                         setCreator({
                           ...creator,

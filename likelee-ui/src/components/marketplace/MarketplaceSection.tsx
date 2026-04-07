@@ -49,6 +49,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceConnectContractModal from "@/components/marketplace/MarketplaceConnectContractModal";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { isDefaultPricing } from "@/utils/pricingDefaults";
 import {
   approveAgencyCreatorDisconnectRequest,
   rejectAgencyCreatorDisconnectRequest,
@@ -205,7 +206,6 @@ export function MarketplaceSection({
   const queryClient = useQueryClient();
   const entityLabel = entityType === "agency" ? "agency" : "creator";
   const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
-  const MIN_BASE_MONTHLY_CENTS = 15000;
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
@@ -1088,31 +1088,9 @@ export function MarketplaceSection({
                   const rawBaseRateCents = Number(
                     profile?.base_monthly_price_cents || 0,
                   );
-                  const pricingUpdatedAt = profile?.pricing_updated_at;
-                  const createdAt = profile?.created_at;
-                  const pricingTimestamp =
-                    typeof pricingUpdatedAt === "string"
-                      ? Date.parse(pricingUpdatedAt)
-                      : NaN;
-                  const createdTimestamp =
-                    typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
-                  const pricingDeltaMs =
-                    Number.isFinite(pricingTimestamp) &&
-                    Number.isFinite(createdTimestamp)
-                      ? pricingTimestamp - createdTimestamp
-                      : NaN;
-                  const hasExplicitPricingUpdate =
-                    Number.isFinite(pricingTimestamp) &&
-                    Number.isFinite(createdTimestamp) &&
-                    Number.isFinite(pricingDeltaMs) &&
-                    pricingDeltaMs > 60_000;
-                  const hasExplicitBaseRate =
-                    hasExplicitPricingUpdate ||
-                    (rawBaseRateCents > 0 &&
-                      rawBaseRateCents !== MIN_BASE_MONTHLY_CENTS);
-                  const baseRateCents = hasExplicitBaseRate
-                    ? rawBaseRateCents
-                    : 0;
+                  const baseRateCents = isDefaultPricing(profile)
+                    ? 0
+                    : rawBaseRateCents;
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
                   const isAgencyProfile =

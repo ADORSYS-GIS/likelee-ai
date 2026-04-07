@@ -1,6 +1,7 @@
 use crate::brand_campaigns::{
     log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
 };
+use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
 use crate::{auth::AuthUser, auth::RoleGuard};
@@ -14,56 +15,6 @@ use std::collections::{HashMap, HashSet};
 use tracing::info;
 use uuid::Uuid;
 
-const MIN_BASE_MONTHLY_CENTS: i64 = 15_000;
-const MIN_BASE_WEEKLY_CENTS: i64 = ((MIN_BASE_MONTHLY_CENTS as f64) / 4.345).round() as i64;
-const DEFAULT_PRICING_GRACE_SECONDS: i64 = 60;
-
-fn parse_rfc3339(value: Option<&str>) -> Option<chrono::DateTime<chrono::FixedOffset>> {
-    value.and_then(|v| chrono::DateTime::parse_from_rfc3339(v).ok())
-}
-
-fn is_default_pricing(row: &serde_json::Value) -> bool {
-    let monthly = row.get("base_monthly_price_cents").and_then(|v| v.as_i64());
-    let weekly = row.get("base_weekly_price_cents").and_then(|v| v.as_i64());
-
-    let matches_min = monthly == Some(MIN_BASE_MONTHLY_CENTS)
-        || weekly
-            .map(|v| (v - MIN_BASE_WEEKLY_CENTS).abs() <= 5)
-            .unwrap_or(false);
-    if !matches_min {
-        return false;
-    }
-
-    let created_at = parse_rfc3339(row.get("created_at").and_then(|v| v.as_str()));
-    let pricing_updated_at = parse_rfc3339(row.get("pricing_updated_at").and_then(|v| v.as_str()));
-    if pricing_updated_at.is_none() {
-        return true;
-    }
-    match (created_at, pricing_updated_at) {
-        (Some(created), Some(pricing)) => {
-            (pricing - created).num_seconds() <= DEFAULT_PRICING_GRACE_SECONDS
-        }
-        _ => true,
-    }
-}
-
-fn should_default_visibility_on(row: &serde_json::Value) -> bool {
-    let public_visible = row.get("public_profile_visible").and_then(|v| v.as_bool());
-    let visibility = row
-        .get("visibility")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
-
-    if public_visible != Some(false) {
-        return false;
-    }
-    if !(visibility.is_empty() || visibility == "private") {
-        return false;
-    }
-    is_default_pricing(row)
-}
 
 #[derive(Deserialize, Serialize)]
 pub struct FaceProfilePayload {
