@@ -1608,6 +1608,13 @@ pub async fn stripe_webhook(
                 })
                 .unwrap_or("")
                 .to_string();
+            let subscription_kind = obj
+                .get("metadata")
+                .and_then(|m| m.get("subscription_kind"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
             let subscription_id = obj
                 .get("subscription")
                 .and_then(|v| v.as_str())
@@ -1640,6 +1647,10 @@ pub async fn stripe_webhook(
             }
 
             if !agency_id.is_empty() && !subscription_id.is_empty() {
+                if subscription_kind.eq_ignore_ascii_case("seat_addon") {
+                    // Strict policy: do not grant seats on checkout completion. Wait for invoice.paid.
+                    return (StatusCode::OK, Json(json!({"status":"ok"})));
+                }
                 tracing::info!(
                     agency_id = %agency_id,
                     subscription_id = %subscription_id,
@@ -1720,8 +1731,19 @@ pub async fn stripe_webhook(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            let subscription_kind = obj
+                .get("metadata")
+                .and_then(|m| m.get("subscription_kind"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
 
             if !agency_id.is_empty() && !subscription_id.trim().is_empty() {
+                if subscription_kind.eq_ignore_ascii_case("seat_addon") {
+                    // Strict policy: seat add-ons only apply after invoice.paid.
+                    return (StatusCode::OK, Json(json!({"status":"ok"})));
+                }
                 let _ = sync_agency_subscription_from_stripe(
                     &state,
                     &agency_id,
@@ -3514,8 +3536,75 @@ fn stripe_subscription_has_irl_booking_addon(
     })
 }
 
-fn stripe_subscription_is_active(sub: &stripe_sdk::Subscription) -> bool {
+fn stripe_subscription_plan_interval(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> &'static str {
+    match sub
+        .metadata
+        .get("billing_interval")
+        .map(|value| value.trim().to_lowercase())
+        .as_deref()
+    {
+        Some("year") | Some("annual") | Some("annually") => return "year",
+        Some("month") | Some("monthly") => return "month",
+        _ => {}
+    }
+
+    for item in sub.items.data.iter() {
+        let price_id = item
+            .price
+            .as_ref()
+            .map(|price| price.id.to_string())
+            .unwrap_or_default();
+        if price_id.is_empty() {
+            continue;
+        }
+
+        if price_id == state.stripe_agency_basic_base_annual_price_id
+            || price_id == state.stripe_agency_basic_headcount_annual_price_id
+            || price_id == state.stripe_agency_pro_base_annual_price_id
+            || price_id == state.stripe_agency_pro_headcount_annual_price_id
+            || price_id == state.stripe_agency_irl_booking_annual_price_id
+        {
+            return "year";
+        }
+    }
+
+    "month"
+}
+
+pub(crate) fn stripe_subscription_is_active(sub: &stripe_sdk::Subscription) -> bool {
     matches!(sub.status.as_str(), "active" | "trialing")
+}
+
+fn stripe_subscription_seat_quantity(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> Option<i64> {
+    let quantity = sub
+        .items
+        .data
+        .iter()
+        .filter_map(|item| {
+            let price_id = item
+                .price
+                .as_ref()
+                .map(|price| price.id.to_string())
+                .unwrap_or_default();
+            if crate::billing::agency_headcount_price_id_matches(state, price_id.as_str()) {
+                item.quantity.and_then(|value| i64::try_from(value).ok())
+            } else {
+                None
+            }
+        })
+        .sum::<i64>();
+
+    if quantity > 0 {
+        Some(quantity)
+    } else {
+        stripe_subscription_roster_models(sub)
+    }
 }
 
 fn agency_plan_tier_rank(tier: &str) -> i32 {
@@ -3529,6 +3618,7 @@ fn agency_plan_tier_rank(tier: &str) -> i32 {
 
 struct AggregatedAgencySubscriptionState {
     plan_tier: &'static str,
+    plan_interval: &'static str,
     seats_limit: i64,
     addon_irl_booking_enabled: bool,
     primary_subscription_id: String,
@@ -3560,7 +3650,7 @@ fn stripe_subscription_to_plan_tier(
     None
 }
 
-async fn fetch_subscription(
+pub(crate) async fn fetch_subscription(
     state: &AppState,
     subscription_id: &str,
 ) -> Result<stripe_sdk::Subscription, String> {
@@ -3599,6 +3689,13 @@ fn aggregate_agency_subscription_state(
     subscriptions: &[stripe_sdk::Subscription],
     fallback_subscription: &stripe_sdk::Subscription,
 ) -> AggregatedAgencySubscriptionState {
+    fn is_seat_addon_subscription(sub: &stripe_sdk::Subscription) -> bool {
+        sub.metadata
+            .get("subscription_kind")
+            .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+            .unwrap_or(false)
+    }
+
     let exact_matches: Vec<&stripe_sdk::Subscription> = subscriptions
         .iter()
         .filter(|sub| {
@@ -3630,46 +3727,77 @@ fn aggregate_agency_subscription_state(
         .filter(|sub| stripe_subscription_is_active(sub))
         .collect();
 
-    let mut best_plan: Option<(&'static str, i64, String)> = None;
+    let mut best_plan: Option<(&'static str, &'static str, i64, String)> = None;
     for sub in &active_subscriptions {
+        if is_seat_addon_subscription(sub) {
+            continue;
+        }
         let Some(tier) = stripe_subscription_to_plan_tier(state, sub) else {
             continue;
         };
-        let roster_models = stripe_subscription_roster_models(sub).unwrap_or(186);
+        let plan_interval = stripe_subscription_plan_interval(state, sub);
+        let roster_models = stripe_subscription_seat_quantity(state, sub).unwrap_or(1);
 
         let replace = match &best_plan {
             None => true,
-            Some((current_tier, current_roster, _)) => {
+            Some((current_tier, current_interval, current_roster, _)) => {
                 let next_rank = agency_plan_tier_rank(tier);
                 let current_rank = agency_plan_tier_rank(current_tier);
                 next_rank > current_rank
-                    || (next_rank == current_rank && roster_models > *current_roster)
+                    || (next_rank == current_rank
+                        && (roster_models > *current_roster
+                            || (roster_models == *current_roster
+                                && plan_interval == "year"
+                                && *current_interval != "year")))
             }
         };
 
         if replace {
-            best_plan = Some((tier, roster_models, sub.id.to_string()));
+            best_plan = Some((tier, plan_interval, roster_models, sub.id.to_string()));
         }
     }
 
     let addon_irl_booking_enabled = active_subscriptions
         .iter()
         .any(|sub| stripe_subscription_has_irl_booking_addon(state, sub));
+    let aggregated_seat_quantity = active_subscriptions
+        .iter()
+        .filter_map(|sub| stripe_subscription_seat_quantity(state, sub))
+        .sum::<i64>();
 
-    let (plan_tier, seats_limit, primary_subscription_id) = match best_plan {
-        Some((tier, roster_models, subscription_id)) => (tier, roster_models, subscription_id),
+    let (plan_tier, plan_interval, seats_limit, primary_subscription_id) = match best_plan {
+        Some((tier, interval, roster_models, subscription_id)) => (
+            tier,
+            interval,
+            if aggregated_seat_quantity > 0 {
+                aggregated_seat_quantity
+            } else {
+                roster_models
+            },
+            subscription_id,
+        ),
         None => {
             let addon_subscription_id = active_subscriptions
                 .iter()
                 .find(|sub| stripe_subscription_has_irl_booking_addon(state, sub))
                 .map(|sub| sub.id.to_string())
                 .unwrap_or_else(|| fallback_subscription.id.to_string());
-            ("free", 1, addon_subscription_id)
+            (
+                "free",
+                "month",
+                if aggregated_seat_quantity > 0 {
+                    aggregated_seat_quantity
+                } else {
+                    1
+                },
+                addon_subscription_id,
+            )
         }
     };
 
     AggregatedAgencySubscriptionState {
         plan_tier,
+        plan_interval,
         seats_limit,
         addon_irl_booking_enabled,
         primary_subscription_id,
@@ -3698,6 +3826,22 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
 ) -> Result<(), String> {
     let sub = fetch_subscription(state, subscription_id).await?;
 
+    let seat_charge_mode = sub
+        .metadata
+        .get("seat_charge_mode")
+        .map(|v| v.trim().to_lowercase())
+        .unwrap_or_default();
+    let roster_models_total: Option<i64> = sub
+        .metadata
+        .get("roster_models_total")
+        .and_then(|v| v.trim().parse::<i64>().ok());
+
+    let is_seat_addon_subscription = sub
+        .metadata
+        .get("subscription_kind")
+        .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
+        .unwrap_or(false);
+
     // For audit/debug we still store the first item price ID (if any), but tier mapping scans all items.
     let price_id = sub
         .items
@@ -3712,6 +3856,10 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
+    let trial_ends_at = sub
+        .trial_end
+        .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
+        .map(|dt| dt.to_rfc3339());
     let aggregated = if let Some(cust) = customer_id.filter(|cust| !cust.trim().is_empty()) {
         match list_customer_subscriptions(state, cust).await {
             Ok(subscriptions) => {
@@ -3739,25 +3887,114 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
 
     // Update agency profile
     let mut update = serde_json::Map::new();
-    update.insert("plan_tier".into(), json!(aggregated.plan_tier));
-    update.insert("seats_limit".into(), json!(aggregated.seats_limit));
+    if !is_seat_addon_subscription {
+        update.insert("plan_tier".into(), json!(aggregated.plan_tier));
+        update.insert("plan_interval".into(), json!(aggregated.plan_interval));
+    }
+    let seats_limit = if !is_seat_addon_subscription
+        && seat_charge_mode == "delta"
+        && roster_models_total.unwrap_or(0) > 0
+    {
+        roster_models_total.unwrap_or(aggregated.seats_limit)
+    } else {
+        aggregated.seats_limit
+    };
+    update.insert("seats_limit".into(), json!(seats_limit));
     update.insert(
         "addon_irl_booking_enabled".into(),
         json!(aggregated.addon_irl_booking_enabled),
     );
-    update.insert(
-        "stripe_subscription_id".into(),
-        json!(aggregated.primary_subscription_id),
-    );
+    if !is_seat_addon_subscription {
+        update.insert(
+            "stripe_subscription_id".into(),
+            json!(aggregated.primary_subscription_id),
+        );
+    }
     update.insert(
         "plan_updated_at".into(),
         json!(chrono::Utc::now().to_rfc3339()),
     );
+    if !is_seat_addon_subscription {
+        update.insert(
+            "trial_ends_at".into(),
+            match status.as_str() {
+                "trialing" => trial_ends_at.map_or(serde_json::Value::Null, |value| json!(value)),
+                _ => serde_json::Value::Null,
+            },
+        );
+    }
     if let Some(cust) = customer_id {
         if !cust.trim().is_empty() {
             update.insert("stripe_customer_id".into(), json!(cust));
         }
     }
+
+    // Before writing the new subscription ID, check if the agency already has a different
+    // active subscription that would result in double-billing.
+    let old_subscription_id: Option<String> = async {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("stripe_subscription_id")
+            .eq("id", agency_id)
+            .limit(1)
+            .execute()
+            .await
+            .ok()?;
+        let text = resp.text().await.ok()?;
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
+        rows.first()
+            .and_then(|row| row.get("stripe_subscription_id"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    }
+    .await;
+
+    if let Some(ref old_sub_id) = old_subscription_id {
+        let is_different = old_sub_id != subscription_id;
+        let is_not_seat_addon = !aggregated.primary_subscription_id.is_empty()
+            && old_sub_id != &aggregated.primary_subscription_id;
+        if is_different && is_not_seat_addon {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            match old_sub_id.parse::<stripe_sdk::SubscriptionId>() {
+                Ok(parsed_old_id) => {
+                    match stripe_sdk::Subscription::cancel(
+                        &client,
+                        &parsed_old_id,
+                        stripe_sdk::CancelSubscription::default(),
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            info!(
+                                agency_id = %agency_id,
+                                old_subscription_id = %old_sub_id,
+                                new_subscription_id = %subscription_id,
+                                "cancelled superseded agency subscription to prevent double-billing"
+                            );
+                        }
+                        Err(e) => {
+                            warn!(
+                                agency_id = %agency_id,
+                                old_subscription_id = %old_sub_id,
+                                error = %e,
+                                "failed to cancel superseded agency subscription (best-effort)"
+                            );
+                        }
+                    }
+                }
+                Err(_) => {
+                    warn!(
+                        agency_id = %agency_id,
+                        old_subscription_id = %old_sub_id,
+                        "could not parse old subscription id for cancellation"
+                    );
+                }
+            }
+        }
+    }
+
     let _ = state
         .pg
         .from("agencies")

@@ -140,6 +140,7 @@ import {
   Play,
   Library,
   FolderCheck,
+  Gift,
   MessageSquare,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
@@ -246,7 +247,6 @@ import {
   getAgencyLicensingPipeline,
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
-  getAgencyBrandLicenseRequests,
   updateAgencyLicensingRequestsStatus,
   sendLicensingRequestPaymentLink,
   listBookings,
@@ -277,6 +277,9 @@ import {
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
+  getAgencyBillingStatus,
+  startAgencyProTrial,
+  getAgencyBrandLicenseRequests,
 } from "@/api/functions";
 import * as crmApi from "@/api/crm";
 
@@ -10488,13 +10491,22 @@ const SocialDiscoveryTab = () => (
   </Card>
 );
 
-const MarketplaceTab = () => (
+const MarketplaceTab = ({
+  connectLocked = false,
+  onConnectLocked,
+}: {
+  connectLocked?: boolean;
+  onConnectLocked?: () => void;
+}) => (
   <MarketplaceSection
     title="Likelee Marketplace"
     subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
     enableAgencyContractConnect
+    connectLocked={connectLocked}
+    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
+    onConnectLocked={onConnectLocked}
   />
 );
 
@@ -17123,8 +17135,126 @@ export default function AgencyDashboard() {
     return "Free";
   }, [agencyPlanTier]);
 
+  const [agencyBilling, setAgencyBilling] = useState<any>(null);
+  const [agencyBillingLoading, setAgencyBillingLoading] = useState(true);
+  const [startingAgencyTrial, setStartingAgencyTrial] = useState(false);
+  const agencyTrialActive = !!agencyBilling?.trial_active;
+  const agencyTrialEndsAt = agencyBilling?.trial_ends_at
+    ? String(agencyBilling.trial_ends_at)
+    : "";
+  const agencyTrialStartAt = agencyBilling?.trial_start_at;
+  const agencyHasPaidAccess =
+    agencyBilling?.has_paid_access ?? agencyPlanTier !== "free";
+  const agencyCanConnectMarketplace =
+    agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
+  const agencyCanUseBrandConnections =
+    agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+  const agencyDisplayPlanLabel = (() => {
+    const raw = String(agencyBilling?.display_plan_label || "").trim();
+    const normalized = raw
+      .replace(/\b(annual|monthly)\b/gi, "")
+      .replace(/\bplan\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (normalized) return normalized;
+    return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+  })();
+  const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadBilling = async () => {
+      try {
+        setAgencyBillingLoading(true);
+        const resp = await getAgencyBillingStatus();
+        if (!cancelled) setAgencyBilling(resp);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setAgencyBillingLoading(false);
+      }
+    };
+    void loadBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!agencyTrialActive || !agencyTrialEndsAt) {
+      setAgencyTrialCountdown("");
+      return;
+    }
+    const compute = () => {
+      const end = new Date(agencyTrialEndsAt).getTime();
+      const ms = Math.max(0, end - Date.now());
+      if (ms <= 0) {
+        setAgencyTrialCountdown("Trial ended");
+        return;
+      }
+      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+      setAgencyTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+    };
+    compute();
+    const id = window.setInterval(compute, 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [agencyTrialActive, agencyTrialEndsAt]);
+
+  const handleStartAgencyTrial = async () => {
+    if (startingAgencyTrial) return;
+
+    setStartingAgencyTrial(true);
+    try {
+      const resp = await startAgencyProTrial();
+      setAgencyBilling((prev: any) => ({
+        ...(prev || {}),
+        ...(resp || {}),
+        has_paid_access: true,
+        has_pro_access: true,
+        can_connect_marketplace_creators: true,
+        can_use_brand_connections: true,
+      }));
+      await agencyProfileQuery.refetch();
+      toast({
+        title: "Pro trial started",
+        description:
+          "Your agency now has 30 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      if (msg.includes("trial_already_active")) {
+        toast({
+          title: "Trial already active",
+          description: "Your agency already has an active Pro trial.",
+        });
+        await agencyProfileQuery.refetch();
+        return;
+      }
+      if (msg.includes("trial_only_available_for_free_accounts")) {
+        toast({
+          title: "Trial unavailable",
+          description:
+            "The Pro trial is only available while your agency is on the Free plan.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      toast({
+        title: "Could not start trial",
+        description: msg || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setStartingAgencyTrial(false);
+    }
+  };
+
   const hasProAccess =
-    agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+    agencyBilling?.has_pro_access ??
+    (agencyPlanTier === "pro" ||
+      agencyPlanTier === "enterprise" ||
+      agencyTrialActive);
+
   const irlAddonEntitlement = useMemo(() => {
     const queryValue = (agencyProfileQuery.data as any)
       ?.addon_irl_booking_enabled;
@@ -17147,8 +17277,8 @@ export default function AgencyDashboard() {
 
     return null;
   }, [agencyProfileQuery.data, profile]);
-  const hasIrlBookingAddon = irlAddonEntitlement === true;
-  const irlAddonLocked = irlAddonEntitlement === false;
+  const hasIrlBookingAddon = irlAddonEntitlement === true || agencyTrialActive;
+  const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
   const isMobile = useIsMobile();
@@ -17873,7 +18003,9 @@ export default function AgencyDashboard() {
   ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
     const resolvedMode =
-      mode === "IRL" && irlAddonEntitlement === false ? "AI" : mode;
+      mode === "IRL" && irlAddonEntitlement === false && !agencyTrialActive
+        ? "AI"
+        : mode;
     setAgencyModeState(resolvedMode);
     setSearchParams(
       (prev) => {
@@ -17892,7 +18024,7 @@ export default function AgencyDashboard() {
   }, [effectiveAgencyMode, activeTab]);
 
   useEffect(() => {
-    if (irlAddonEntitlement !== false) return;
+    if (irlAddonEntitlement !== false || agencyTrialActive) return;
     if (agencyMode !== "IRL") return;
     setAgencyModeState("AI");
     setSearchParams(
@@ -17908,7 +18040,13 @@ export default function AgencyDashboard() {
       description:
         "Enable the IRL Booking add-on to access IRL mode in the agency dashboard.",
     });
-  }, [agencyMode, irlAddonEntitlement, setSearchParams, toast]);
+  }, [
+    agencyMode,
+    irlAddonEntitlement,
+    agencyTrialActive,
+    setSearchParams,
+    toast,
+  ]);
 
   const setActiveTab = (tab: string) => {
     startTransition(() => {
@@ -18319,6 +18457,8 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
@@ -18331,6 +18471,8 @@ export default function AgencyDashboard() {
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "licensing",
@@ -18377,6 +18519,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18399,6 +18543,8 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
@@ -18411,6 +18557,8 @@ export default function AgencyDashboard() {
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18462,6 +18610,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18969,6 +19119,27 @@ export default function AgencyDashboard() {
           </Button>
 
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
+            {!agencyBillingLoading &&
+              !agencyTrialActive &&
+              !agencyTrialEndsAt &&
+              agencyPlanTier === "free" && (
+                <motion.button
+                  type="button"
+                  onClick={() => navigate("/AgencySubscribe")}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-xs font-black text-amber-900 shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
+                  title="Activate Pro Trial"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-inner">
+                    <Gift className="h-4 w-4 text-white" />
+                  </span>
+                  <span className="uppercase tracking-wide">PRO</span>
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-80" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-60 animate-ping" />
+                </motion.button>
+              )}
+
             <Button
               variant="outline"
               size="sm"
@@ -19146,9 +19317,11 @@ export default function AgencyDashboard() {
                         <h3 className="font-bold text-gray-900 truncate">
                           {profile?.agency_name || "Agency Name"}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          Agency Account
-                        </p>
+                        <div className="mt-1 flex items-center">
+                          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                            {agencyDisplayPlanLabel}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {agencyKycStatus === "approved" && (
@@ -19208,7 +19381,7 @@ export default function AgencyDashboard() {
                           Billing & Subscription
                         </p>
                         <p className="text-xs text-gray-500">
-                          Agency {agencyPlanLabel} Plan
+                          {agencyDisplayPlanLabel}
                         </p>
                       </div>
                     </button>
@@ -19400,6 +19573,67 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
+          {activeTab === "dashboard" && (
+            <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-lg font-black text-gray-900">
+                    Welcome to your agency dashboard
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    This is your main hub for managing your agency.
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  {!agencyBillingLoading && (
+                    <div
+                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                        agencyTrialActive
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                          : agencyPlanTier === "pro"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                            : agencyPlanTier === "basic" ||
+                                agencyPlanTier === "agency"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                              : agencyPlanTier === "enterprise"
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                : "bg-white text-gray-900 ring-gray-200"
+                      }`}
+                      title="Current plan"
+                    >
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>PRO TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
+                    </div>
+                  )}
+
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <Button
+                        type="button"
+                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        Upgrade
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
+              </div>
+            </div>
+          )}
           <Suspense fallback={<TabSkeleton />}>
             {activeTab === "dashboard" && (
               <AgencyDashboardView
@@ -19456,9 +19690,28 @@ export default function AgencyDashboard() {
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
               <PerformanceTiers isSportsAgency={isSportsAgency} />
             )}
-            {activeTab === "jobs" && activeSubTab === "Job Invites" && (
-              <AgencyJobInvitesView />
-            )}
+            {activeTab === "jobs" &&
+              activeSubTab === "Job Invites" &&
+              (hasProAccess ? (
+                <AgencyJobInvitesView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Jobs are available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "licensing" &&
               activeSubTab === "Licensing Requests" && (
                 <LicensingRequestsView
@@ -19471,8 +19724,48 @@ export default function AgencyDashboard() {
                 />
               )}
             {activeTab === "licensing" &&
-              activeSubTab === "Brand Connections" && <BrandConnectionsView />}
-            {activeTab === "brand-connections" && <BrandConnectionsView />}
+              activeSubTab === "Brand Connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "brand-connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "licensing" &&
               activeSubTab === "License Submissions" && (
                 <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
@@ -19570,7 +19863,11 @@ export default function AgencyDashboard() {
             )}
             {activeTab === "settings" &&
               activeSubTab === "General Settings" && (
-                <GeneralSettingsView hasIrlBookingAddon={hasIrlBookingAddon} />
+                <GeneralSettingsView
+                  hasIrlBookingAddon={hasIrlBookingAddon}
+                  hasProAccess={hasProAccess}
+                  agencyDisplayPlanLabel={agencyDisplayPlanLabel}
+                />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (
               <FileStorageView />
@@ -19592,8 +19889,39 @@ export default function AgencyDashboard() {
                 setProspectToEdit={setProspectToEdit}
               />
             )}
-            {activeTab === "marketplace" && <MarketplaceTab />}
-            {activeTab === "messages" && <CommunicationHub />}
+            {activeTab === "talent-packages" && (
+              <TalentPackagesView
+                isSportsAgency={isSportsAgency}
+                agencyId={profile?.id}
+              />
+            )}
+            {activeTab === "marketplace" && (
+              <MarketplaceTab
+                connectLocked={!agencyCanConnectMarketplace}
+                onConnectLocked={() => navigate("/agencysubscribe")}
+              />
+            )}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Messaging is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "client-crm" && <ClientCRMView />}
             {activeTab === "file-storage" && <FileStorageView />}
             {activeTab === "bookings" && (

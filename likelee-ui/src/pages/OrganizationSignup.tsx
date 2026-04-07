@@ -916,7 +916,7 @@ export default function OrganizationSignup() {
         return;
       }
       if (flow === "agency") {
-        navigate("/AgencyDashboard", { replace: true });
+        navigate("/AgencySubscribe", { replace: true });
         return;
       }
       setSubmitted(true);

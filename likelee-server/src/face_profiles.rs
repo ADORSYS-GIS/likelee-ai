@@ -2109,6 +2109,12 @@ pub async fn create_marketplace_connection_request(
             ));
         }
         let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+        crate::entitlements::require_agency_paid_access(
+            &state,
+            &effective_agency_id,
+            "paid_plan_required_for_marketplace_connections",
+        )
+        .await?;
 
         let connected_resp = state
             .pg
@@ -2569,6 +2575,12 @@ pub async fn list_agency_brand_connection_requests(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg
@@ -2610,6 +2622,12 @@ pub async fn list_agency_brand_connections(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg
@@ -2650,6 +2668,12 @@ pub async fn accept_agency_brand_connection_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let pending_resp = state
         .pg
@@ -2768,6 +2792,12 @@ pub async fn decline_agency_brand_connection_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let pending_resp = state
         .pg
@@ -2892,6 +2922,12 @@ pub async fn disconnect_brand_agency_connection_as_agency(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg

@@ -46,6 +46,7 @@ import {
   createAgencyTalentInvite,
   getAgencyDigitals,
   getAgencyPayoutsAccountStatus,
+  getAgencySeatBreakdown,
   listAgencyTalentInvites,
   revokeAgencyTalentInvite,
   getTalentDigitals,
@@ -116,10 +117,54 @@ const RosterView = ({
 }: RosterViewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [seatBreakdownOpen, setSeatBreakdownOpen] = useState(false);
+  const [seatBreakdownLoading, setSeatBreakdownLoading] = useState(false);
+  const [seatBreakdown, setSeatBreakdown] = useState<{
+    total_active_seats: number;
+    annual_seats: number;
+    monthly_seats: number;
+    items: Array<{
+      source: "in_plan" | "seat_addon";
+      interval: "month" | "year";
+      seats: number;
+      status: string;
+      subscription_id: string;
+      current_period_start?: string | null;
+      current_period_end?: string | null;
+    }>;
+  } | null>(null);
   const [rosterTab, setRosterTab] = useState("roster");
   const [selectedTalent, setSelectedTalent] = useState<any | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showCompCardModal, setShowCompCardModal] = useState(false);
+
+  const formatNumber = (value: number) =>
+    new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
+      Number.isFinite(value) ? value : 0,
+    );
+
+  const openSeatBreakdown = async () => {
+    setSeatBreakdownOpen(true);
+    setSeatBreakdownLoading(true);
+    try {
+      const resp = (await getAgencySeatBreakdown()) as any;
+      setSeatBreakdown({
+        total_active_seats: Number(resp?.total_active_seats || 0),
+        annual_seats: Number(resp?.annual_seats || 0),
+        monthly_seats: Number(resp?.monthly_seats || 0),
+        items: Array.isArray(resp?.items) ? resp.items : [],
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      toast({
+        title: "Could not load seat breakdown",
+        description: msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSeatBreakdownLoading(false);
+    }
+  };
   const [digitalsFilter, setDigitalsFilter] = useState("All Talent");
   const [showInsufficientSeatsModal, setShowInsufficientSeatsModal] =
     useState(false);
@@ -925,6 +970,13 @@ const RosterView = ({
           </div>
           <div className="flex gap-3">
             <Button
+              type="button"
+              className="bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2"
+              onClick={() => navigate("/agencysubscribe")}
+            >
+              Upgrade plan
+            </Button>
+            <Button
               variant="outline"
               className="text-gray-700 border-gray-300 gap-2"
               onClick={() => onEditProfile?.()}
@@ -964,14 +1016,122 @@ const RosterView = ({
                   : "Stripe Not Connected"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-400" />
-            <span className="font-medium">
+          <button
+            type="button"
+            onClick={() => {
+              void openSeatBreakdown();
+            }}
+            className="group flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-gray-50"
+          >
+            <Users className="w-4 h-4 text-gray-400 group-hover:text-[#0B9DA2]" />
+            <span className="font-medium group-hover:text-[#0B9DA2]">
               {rosterData.length} / {seatsLimit || 0} seats used
             </span>
-          </div>
+          </button>
         </div>
       </Card>
+
+      <Dialog open={seatBreakdownOpen} onOpenChange={setSeatBreakdownOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Seat Breakdown</DialogTitle>
+            <DialogDescription>
+              Your total seats can come from annual and monthly subscriptions.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Total active
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.total_active_seats || 0)}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Annual
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.annual_seats || 0)}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                  Monthly
+                </div>
+                <div className="mt-1 text-2xl font-black text-gray-900">
+                  {seatBreakdownLoading
+                    ? "…"
+                    : formatNumber(seatBreakdown?.monthly_seats || 0)}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="grid grid-cols-12 gap-2 bg-gray-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                <div className="col-span-2">Interval</div>
+                <div className="col-span-2">Source</div>
+                <div className="col-span-2 text-right">Seats</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-4">Renews/Ends</div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {(seatBreakdown?.items || []).length === 0 ? (
+                  <div className="px-4 py-6 text-sm text-gray-500">
+                    {seatBreakdownLoading
+                      ? "Loading…"
+                      : "No active seat subscriptions found."}
+                  </div>
+                ) : (
+                  (seatBreakdown?.items || []).map((item) => (
+                    <div
+                      key={item.subscription_id}
+                      className="grid grid-cols-12 gap-2 px-4 py-3 text-sm"
+                    >
+                      <div className="col-span-2 font-bold text-gray-900">
+                        {item.interval === "year" ? "Annual" : "Monthly"}
+                      </div>
+                      <div className="col-span-2 text-gray-600">
+                        {item.source === "seat_addon" ? "Add-on" : "In plan"}
+                      </div>
+                      <div className="col-span-2 text-right font-bold text-gray-900">
+                        {formatNumber(item.seats)}
+                      </div>
+                      <div className="col-span-2 text-gray-600">
+                        {String(item.status || "").toLowerCase()}
+                      </div>
+                      <div className="col-span-4 text-gray-600">
+                        {item.current_period_end
+                          ? new Date(
+                              item.current_period_end,
+                            ).toLocaleDateString()
+                          : "—"}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSeatBreakdownOpen(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

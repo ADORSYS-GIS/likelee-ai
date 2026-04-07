@@ -1180,12 +1180,36 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_agency_subscription_checkout),
         )
         .route(
+            "/api/agency/billing/change-plan",
+            post(crate::billing::change_agency_subscription_plan),
+        )
+        .route(
             "/api/agency/billing/checkout/sync",
             post(crate::billing::sync_agency_checkout_session),
         )
         .route(
             "/api/agency/billing/addons/irl-booking/checkout",
             post(crate::billing::create_agency_irl_booking_addon_checkout),
+        )
+        .route(
+            "/api/agency/billing/addons/seats",
+            post(crate::billing::create_or_update_agency_seat_addon),
+        )
+        .route(
+            "/api/agency/billing/addons/seats/breakdown",
+            get(crate::billing::get_agency_seat_breakdown),
+        )
+        .route(
+            "/api/agency/billing/start-trial",
+            post(crate::billing::start_agency_pro_trial),
+        )
+        .route(
+            "/api/agency/billing/status",
+            get(crate::billing::get_agency_billing_status),
+        )
+        .route(
+            "/api/agency/billing/portal",
+            post(crate::billing::create_agency_billing_portal),
         )
         .route(
             "/api/licenses/activated",
