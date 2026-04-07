@@ -413,7 +413,11 @@ const ActiveLicensesView = ({
         license={selectedLicense}
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        onRenew={selectedLicense && canRenewLicense(selectedLicense) ? handleRenew : undefined}
+        onRenew={
+          selectedLicense && canRenewLicense(selectedLicense)
+            ? handleRenew
+            : undefined
+        }
         isSportsAgency={isSportsAgency}
       />
     </div>
