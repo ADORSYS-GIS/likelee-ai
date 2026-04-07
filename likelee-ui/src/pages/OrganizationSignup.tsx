@@ -24,6 +24,8 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AgencyTermsContent } from "@/components/AgencyTermsContent";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -228,6 +230,7 @@ export default function OrganizationSignup() {
   const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -265,7 +268,7 @@ export default function OrganizationSignup() {
   // For OAuth users: 2 steps (org basics + type-specific details)
   // For non-OAuth users: 2 steps (email/password + org basics, then type-specific details)
   // Same number of steps, but different field requirements
-  const totalSteps = 2;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   const [emailVerificationPending, setEmailVerificationPending] =
@@ -1072,7 +1075,7 @@ export default function OrganizationSignup() {
 
   const canSubmitAgencyStep2 = agencyStep2MissingFields().length === 0;
 
-  const handleSubmit = () => {
+  const handleStep2Next = () => {
     if (flow === "agency" && step === 2) {
       const missing = agencyStep2MissingFields();
       if (missing.length > 0) {
@@ -1083,6 +1086,25 @@ export default function OrganizationSignup() {
         });
         return;
       }
+    }
+    // Move to the final Agreements step
+    setStep(3);
+  };
+
+  const handleFinalSubmit = () => {
+    if (!agreedToTerms) {
+      toast({
+        title: t(
+          "organizationSignup.terms.mustAgreeTitle",
+          "Agreement Required",
+        ),
+        description: t(
+          "organizationSignup.terms.mustAgree",
+          "You must agree to the privacy policy to complete your registration.",
+        ),
+        variant: "destructive",
+      });
+      return;
     }
     // Submit the full formData to update the profile
     updateProfileMutation.mutate(formData);
@@ -1645,13 +1667,13 @@ export default function OrganizationSignup() {
                   {t("organizationSignup.back")}
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleStep2Next}
                   disabled={updateProfileMutation.isPending}
                   className={`w-1/2 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
                     ? t("organizationSignup.submitting")
-                    : t("organizationSignup.completeSignUp")}
+                    : t("organizationSignup.continue")}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -1920,7 +1942,7 @@ export default function OrganizationSignup() {
                   {t("organizationSignup.back")}
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleStep2Next}
                   disabled={
                     updateProfileMutation.isPending || !canSubmitAgencyStep2
                   } // Disable while submitting
@@ -1928,7 +1950,7 @@ export default function OrganizationSignup() {
                 >
                   {updateProfileMutation.isPending
                     ? t("organizationSignup.submitting")
-                    : t("organizationSignup.completeSignUp")}{" "}
+                    : t("organizationSignup.continue")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
@@ -2169,7 +2191,7 @@ export default function OrganizationSignup() {
                   {t("organizationSignup.back")}
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleStep2Next}
                   disabled={
                     updateProfileMutation.isPending || !canSubmitAgencyStep2
                   } // Disable while submitting
@@ -2177,7 +2199,7 @@ export default function OrganizationSignup() {
                 >
                   {updateProfileMutation.isPending
                     ? t("organizationSignup.submitting")
-                    : t("organizationSignup.completeSignUp")}{" "}
+                    : t("organizationSignup.continue")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
@@ -2424,7 +2446,7 @@ export default function OrganizationSignup() {
                   {t("organizationSignup.back")}
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleStep2Next}
                   disabled={
                     updateProfileMutation.isPending || !canSubmitAgencyStep2
                   } // Disable while submitting
@@ -2432,7 +2454,7 @@ export default function OrganizationSignup() {
                 >
                   {updateProfileMutation.isPending
                     ? t("organizationSignup.submitting")
-                    : t("organizationSignup.completeSignUp")}{" "}
+                    : t("organizationSignup.continue")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
@@ -2652,7 +2674,7 @@ export default function OrganizationSignup() {
                   Back
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleStep2Next}
                   disabled={
                     updateProfileMutation.isPending || !canSubmitAgencyStep2
                   } // Disable while submitting
@@ -2660,13 +2682,83 @@ export default function OrganizationSignup() {
                 >
                   {updateProfileMutation.isPending
                     ? t("organizationSignup.submitting")
-                    : t("organizationSignup.completeSignUp")}{" "}
+                    : t("organizationSignup.continue")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </div>
           )}
+          {/* Step 3: Terms & Agreements */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {t("organizationSignup.terms.title", "Terms & Agreements")}
+                </h3>
+                <p className="text-gray-600">
+                  {t(
+                    "organizationSignup.terms.subtitle",
+                    "Please review and agree to our policies to complete your registration.",
+                  )}
+                </p>
+              </div>
+
+              <ScrollArea className="h-[600px] border-2 border-gray-200 rounded-none p-4 bg-gray-50">
+                <AgencyTermsContent />
+              </ScrollArea>
+
+              <div className="flex items-start space-x-3 p-4 border-2 border-black bg-gray-50 rounded-none">
+                <Checkbox
+                  id="org-agree-terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) =>
+                    setAgreedToTerms(checked === true)
+                  }
+                  className="border-2 border-gray-900 mt-0.5"
+                />
+                <label
+                  htmlFor="org-agree-terms"
+                  className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                >
+                  {t("organizationSignup.terms.agreeTo", "I agree to the")}{" "}
+                  <span className="font-semibold underline">
+                    {t("organizationSignup.terms.policyLink", "Privacy Policy")}
+                  </span>{" "}
+                  {t(
+                    "organizationSignup.terms.andTerms",
+                    "and Terms of Service",
+                  )}
+                  .
+                </label>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => setStep(2)}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  {t("organizationSignup.back")}
+                </Button>
+                <Button
+                  onClick={handleFinalSubmit}
+                  disabled={!agreedToTerms || updateProfileMutation.isPending}
+                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  {updateProfileMutation.isPending
+                    ? t("organizationSignup.submitting")
+                    : t(
+                        "organizationSignup.terms.completeRegistration",
+                        "Complete Registration",
+                      )}{" "}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Fallback for invalid state */}
           {step === 2 &&
             ![

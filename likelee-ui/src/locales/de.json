@@ -1979,6 +1979,16 @@
     "back": "Zurück",
     "submitting": "Wird eingereicht...",
     "completeSignUp": "Anmeldung abschließen",
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "subtitle": "Bitte lesen und stimmen Sie unseren Richtlinien zu, um Ihre Registrierung abzuschließen.",
+      "agreeTo": "Ich stimme der",
+      "policyLink": "Datenschutzrichtlinie",
+      "andTerms": "und den Nutzungsbedingungen zu",
+      "mustAgreeTitle": "Zustimmung erforderlich",
+      "mustAgree": "Sie müssen der Datenschutzrichtlinie zustimmen, um Ihre Registrierung abzuschließen.",
+      "completeRegistration": "Registrierung abschließen"
+    },
     "industries": {
       "fashion": "Mode",
       "beauty": "Schönheit",
