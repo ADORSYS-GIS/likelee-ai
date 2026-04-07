@@ -1538,7 +1538,7 @@
         "languages": "e.g., English, Spanish",
         "confirmPassword": "••••••••",
         "handle": "@yourhandle",
-        "price": "150",
+        "price": "",
         "headshot": "Image URL",
         "specify": "Please specify..."
       },

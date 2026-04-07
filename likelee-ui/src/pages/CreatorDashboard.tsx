@@ -901,6 +901,8 @@ export default function CreatorDashboard() {
     }
     return Number.isFinite(fallback) ? fallback : 0;
   };
+  const MIN_BASE_MONTHLY_CENTS = 15000;
+  const MIN_BASE_WEEKLY_CENTS = Math.round(MIN_BASE_MONTHLY_CENTS / 4.345);
 
   const [creator, setCreator] = useState<any>({
     name: profile?.full_name || user?.user_metadata?.full_name || "",
@@ -3350,6 +3352,30 @@ export default function CreatorDashboard() {
       try {
         const json = await base44.get("/dashboard");
         const profile = json.profile || {};
+        const pricingUpdatedAt = profile.pricing_updated_at;
+        const weeklyCents =
+          typeof profile.base_weekly_price_cents === "number"
+            ? profile.base_weekly_price_cents
+            : null;
+        const monthlyCents =
+          typeof profile.base_monthly_price_cents === "number"
+            ? profile.base_monthly_price_cents
+            : null;
+        const monthlyFromProfile =
+          typeof monthlyCents === "number"
+            ? Math.round(monthlyCents / 100)
+            : typeof weeklyCents === "number"
+              ? Math.round((weeklyCents / 100) * 4.345)
+              : undefined;
+        const hasExplicitBaseRate =
+          (typeof pricingUpdatedAt === "string" &&
+            pricingUpdatedAt.trim().length > 0) ||
+          (typeof weeklyCents === "number" &&
+            weeklyCents > 0 &&
+            weeklyCents !== MIN_BASE_WEEKLY_CENTS) ||
+          (typeof monthlyCents === "number" &&
+            monthlyCents > 0 &&
+            monthlyCents !== MIN_BASE_MONTHLY_CENTS);
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -3382,12 +3408,13 @@ export default function CreatorDashboard() {
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Canonical rate is weekly; fall back to legacy monthly when needed.
-          price_per_month:
-            typeof profile.base_weekly_price_cents === "number"
-              ? Math.round(profile.base_weekly_price_cents / 100)
-              : typeof profile.base_monthly_price_cents === "number"
-                ? Math.round(profile.base_monthly_price_cents / 100 / 4.345)
-                : (prev.price_per_month ?? 0),
+          // If pricing was never explicitly set, keep it blank (0) instead of
+          // showing the platform minimum default.
+          price_per_month: hasExplicitBaseRate
+            ? typeof monthlyFromProfile === "number"
+              ? monthlyFromProfile
+              : (prev.price_per_month ?? 0)
+            : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
@@ -5234,9 +5261,11 @@ export default function CreatorDashboard() {
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
-      base_weekly_price_cents: (creator.price_per_month || 0) * 100,
       base_monthly_price_cents: Math.round(
-        (creator.price_per_month || 0) * 100 * 4.345,
+        (creator.price_per_month || 0) * 100,
+      ),
+      base_weekly_price_cents: Math.round(
+        ((creator.price_per_month || 0) / 4.345) * 100,
       ),
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
@@ -5343,11 +5372,11 @@ export default function CreatorDashboard() {
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),
           price_per_month:
-            typeof savedProfile.base_weekly_price_cents === "number"
-              ? Math.round(savedProfile.base_weekly_price_cents / 100)
-              : savedProfile.base_monthly_price_cents
+            typeof savedProfile.base_monthly_price_cents === "number"
+              ? Math.round(savedProfile.base_monthly_price_cents / 100)
+              : typeof savedProfile.base_weekly_price_cents === "number"
                 ? Math.round(
-                    savedProfile.base_monthly_price_cents / 100 / 4.345,
+                    (savedProfile.base_weekly_price_cents / 100) * 4.345,
                   )
                 : prev.price_per_month,
         }));
@@ -10844,7 +10873,7 @@ export default function CreatorDashboard() {
                     <span className="text-xl font-medium text-gray-900">$</span>
                     <Input
                       type="number"
-                      value={creator.price_per_month || 0}
+                      value={creator.price_per_month || ""}
                       onChange={(e) =>
                         setCreator({
                           ...creator,

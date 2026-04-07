@@ -205,6 +205,7 @@ export function MarketplaceSection({
   const queryClient = useQueryClient();
   const entityLabel = entityType === "agency" ? "agency" : "creator";
   const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
+  const MIN_BASE_MONTHLY_CENTS = 15000;
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
@@ -1084,9 +1085,18 @@ export function MarketplaceSection({
                   const industries = Array.isArray(profile?.industries)
                     ? profile.industries
                     : [];
-                  const baseRateCents = Number(
+                  const rawBaseRateCents = Number(
                     profile?.base_monthly_price_cents || 0,
                   );
+                  const pricingUpdatedAt = profile?.pricing_updated_at;
+                  const hasExplicitBaseRate =
+                    (typeof pricingUpdatedAt === "string" &&
+                      pricingUpdatedAt.trim().length > 0) ||
+                    (rawBaseRateCents > 0 &&
+                      rawBaseRateCents !== MIN_BASE_MONTHLY_CENTS);
+                  const baseRateCents = hasExplicitBaseRate
+                    ? rawBaseRateCents
+                    : 0;
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
                   const isAgencyProfile =
