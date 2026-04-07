@@ -362,10 +362,7 @@ pub async fn list(
                 .license_submissions
                 .as_ref()
                 .and_then(|s| s.client_email.clone()),
-            duration_days: r
-                .license_submissions
-                .as_ref()
-                .and_then(|s| s.duration_days),
+            duration_days: r.license_submissions.as_ref().and_then(|s| s.duration_days),
             start_date: r
                 .license_submissions
                 .as_ref()
