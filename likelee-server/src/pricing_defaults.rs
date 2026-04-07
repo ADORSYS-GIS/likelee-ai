@@ -6,9 +6,7 @@ fn parse_rfc3339(value: Option<&str>) -> Option<chrono::DateTime<chrono::FixedOf
 }
 
 pub fn is_default_pricing(row: &serde_json::Value) -> bool {
-    let monthly = row
-        .get("base_monthly_price_cents")
-        .and_then(|v| v.as_i64());
+    let monthly = row.get("base_monthly_price_cents").and_then(|v| v.as_i64());
     let matches_min = monthly == Some(MIN_BASE_MONTHLY_CENTS);
     if !matches_min {
         return false;
@@ -28,9 +26,7 @@ pub fn is_default_pricing(row: &serde_json::Value) -> bool {
 }
 
 pub fn should_default_visibility_on(row: &serde_json::Value) -> bool {
-    let public_visible = row
-        .get("public_profile_visible")
-        .and_then(|v| v.as_bool());
+    let public_visible = row.get("public_profile_visible").and_then(|v| v.as_bool());
     let visibility = row
         .get("visibility")
         .and_then(|v| v.as_str())
