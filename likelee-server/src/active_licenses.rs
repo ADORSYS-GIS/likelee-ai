@@ -165,7 +165,7 @@ pub async fn list(
 
     let select = "id,created_at,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
 
-    let mut query = state
+    let query = state
         .pg
         .from("licensing_requests")
         .select(select)
@@ -173,35 +173,7 @@ pub async fn list(
         .eq("status", "approved");
 
     let today = Utc::now().date_naive();
-    let today_str = today.to_string();
     let expiring_threshold = today + chrono::Duration::days(5); // Changed from 30 to 5 days
-    let threshold_str = expiring_threshold.to_string();
-
-    // Database-level status filtering
-    if let Some(s) = &q.status {
-        match s.to_lowercase().as_str() {
-            "active" => {
-                // Active: (end_date is null OR end_date >= today)
-                query = query.or(format!(
-                    "license_end_date.is.null,license_end_date.gte.{}",
-                    today_str
-                ));
-            }
-            "expiring" => {
-                // Expiring: today <= end_date <= threshold (5 days)
-                query = query
-                    .gte("license_end_date", &today_str)
-                    .lte("license_end_date", &threshold_str);
-            }
-            "expired" => {
-                // Expired: end_date < today
-                query = query.lt("license_end_date", &today_str);
-            }
-            _ => {
-                // "all" or unknown: no additional filter (already eq("status", "approved"))
-            }
-        }
-    }
 
     let resp = query
         .order("created_at.desc")
@@ -345,6 +317,19 @@ pub async fn list(
                 } else if end_date <= expiring_threshold {
                     status = "Expiring".to_string();
                 }
+            }
+        }
+
+        if let Some(filter_status) = &q.status {
+            let matches_status = match filter_status.to_lowercase().as_str() {
+                "active" => status == "Active",
+                "expiring" => status == "Expiring",
+                "expired" => status == "Expired",
+                _ => true,
+            };
+
+            if !matches_status {
+                continue;
             }
         }
 
