@@ -2704,7 +2704,7 @@ export default function OrganizationSignup() {
                 </p>
               </div>
 
-              <ScrollArea className="h-72 border-2 border-gray-200 rounded-none p-4 bg-gray-50">
+              <ScrollArea className="h-96 border-2 border-gray-200 rounded-none p-4 bg-gray-50">
                 <AgencyTermsContent />
               </ScrollArea>
 
