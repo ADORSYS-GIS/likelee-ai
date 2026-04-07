@@ -6,6 +6,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +24,14 @@ import {
   RefreshCw,
   Pencil,
   X,
+  Maximize2,
 } from "lucide-react";
 
 import {
   createAgencyTalentInvite,
   getTalentCampaigns,
   updateAgencyTalent,
+  uploadTalentAsset,
 } from "@/api/functions";
 
 interface TalentSideModalProps {
@@ -61,6 +64,7 @@ const TalentSideModal = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
@@ -133,6 +137,42 @@ const TalentSideModal = ({
     setEditForm(buildEditForm());
     setIsEditing(false);
   }, [talent?.id]);
+
+  const [showPhotoFull, setShowPhotoFull] = useState(false);
+  const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalPhotoUrl(null); // Reset when talent changes
+  }, [talent?.id]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !talent?.id) return;
+
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res: any = await uploadTalentAsset(talent.id, fd);
+      const newImg = res?.public_url || res?.url || "";
+      if (newImg) {
+        await updateAgencyTalent(talent.id, { profile_photo_url: newImg });
+        setLocalPhotoUrl(newImg);
+        toast({ title: "Photo updated successfully" });
+        onSaved?.();
+      } else {
+        throw new Error("No URL returned from upload");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Photo upload failed",
+        description: err.message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -280,15 +320,62 @@ const TalentSideModal = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Profile Header */}
             <div className="flex gap-5 items-start">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                <img
-                  src={talent.img || "https://placehold.co/150"}
-                  className="w-full h-full object-cover"
-                  alt={talent.name}
-                />
+              <div className="relative shrink-0">
+                <div
+                  className="w-24 h-24 bg-gray-100 rounded-xl overflow-hidden relative group cursor-zoom-in border border-gray-200"
+                  onClick={() => setShowPhotoFull(true)}
+                >
+                  <img
+                    src={
+                      localPhotoUrl ||
+                      talent.profile_photo_url ||
+                      talent.img ||
+                      "https://placehold.co/150"
+                    }
+                    className="w-full h-full object-contain"
+                    alt={talent.name}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+
+                {/* Obvious Change button */}
+                <label className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors group">
+                  {uploadingPhoto ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#32C8D1]" />
+                  ) : (
+                    <Pencil className="w-3.5 h-3.5 text-gray-600 group-hover:text-[#32C8D1]" />
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
               </div>
+
+              {/* Full Photo Dialog */}
+              <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+                <DialogContent className="max-w-2xl p-0 bg-transparent border-none shadow-none flex items-center justify-center">
+                  <div className="relative group">
+                    <img
+                      src={talent.img || "https://placehold.co/800"}
+                      className="max-h-[85vh] rounded-lg shadow-2xl"
+                      alt={talent.name}
+                    />
+                    <button
+                      onClick={() => setShowPhotoFull(false)}
+                      className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
+                    >
+                      Close X
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -330,6 +417,40 @@ const TalentSideModal = ({
               </div>
             )}
 
+            {/* Media (Video/Voice) */}
+            {(talent.video_url || talent.voice_sample_url) && (
+              <div className="space-y-4">
+                {talent.video_url && (
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
+                      Hero Video
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-gray-100 bg-black shadow-sm">
+                      <video
+                        src={talent.video_url}
+                        controls
+                        className="w-full aspect-video"
+                      />
+                    </div>
+                  </div>
+                )}
+                {talent.voice_sample_url && (
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
+                      Voice Sample
+                    </div>
+                    <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex flex-col gap-2 shadow-sm">
+                      <audio
+                        src={talent.voice_sample_url}
+                        controls
+                        className="w-full h-8"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {galleryUrls.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -345,13 +466,13 @@ const TalentSideModal = ({
                     <button
                       key={u}
                       type="button"
-                      className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
+                      className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow"
                       onClick={() => window.open(u, "_blank")}
                     >
                       <img
                         src={u}
                         alt="Gallery"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   ))}

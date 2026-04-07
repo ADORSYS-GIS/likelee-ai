@@ -1464,6 +1464,12 @@ pub async fn apply_job(
                 }
             }
         }
+        crate::entitlements::require_agency_paid_access(
+            &state,
+            &applicant_id,
+            "paid_plan_required_for_job_applications",
+        )
+        .await?;
     } else if applicant_role == "creator" || applicant_role == "ai_artist" {
         let mut req = state.pg.from("creators").select("id,email");
         if let Some(email) = user

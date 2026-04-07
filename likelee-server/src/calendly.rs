@@ -868,6 +868,29 @@ pub async fn get_agency_calendly_settings(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({ "status": "error", "error": error })));
+        }
+    };
+
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "status": "error",
+                "error": "irl_booking_addon_required_for_calendly"
+            })),
+        );
+    }
+
     match load_agency_calendly_settings(&state, &user.id).await {
         Ok(Some(settings)) => (
             StatusCode::OK,
@@ -880,11 +903,18 @@ pub async fn get_agency_calendly_settings(
             StatusCode::OK,
             Json(json!({
                 "status": "success",
-                "data": build_serializable_calendly_settings(&user.id, &AgencyCalendlySettingsRecord::default()),
+                "data": build_serializable_calendly_settings(
+                    &user.id,
+                    &AgencyCalendlySettingsRecord::default(),
+                ),
             })),
         ),
         Err(error) => {
-            error!(agency_id = %user.id, error = %error.message, "Failed to fetch Calendly settings");
+            error!(
+                agency_id = %user.id,
+                error = %error.message,
+                "Failed to fetch Calendly settings"
+            );
             calendly_error_response(error)
         }
     }
@@ -896,6 +926,29 @@ pub async fn update_agency_calendly_settings(
     user: AuthUser,
     Json(payload): Json<serde_json::Value>,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({ "status": "error", "error": error })));
+        }
+    };
+
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "status": "error",
+                "error": "irl_booking_addon_required_for_calendly"
+            })),
+        );
+    }
+
     let existing_settings = match load_agency_calendly_settings(&state, &user.id).await {
         Ok(settings) => settings,
         Err(error) => return calendly_error_response(error),
@@ -1055,6 +1108,29 @@ pub async fn get_calendly_event_types(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let access = match crate::entitlements::require_agency_pro_access(
+        &state,
+        &user.id,
+        "pro_plan_required_for_calendly",
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err((status, error)) => {
+            return (status, Json(json!({ "status": "error", "error": error })));
+        }
+    };
+
+    if !access.addon_irl_booking_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "status": "error",
+                "error": "irl_booking_addon_required_for_calendly"
+            })),
+        );
+    }
+
     let settings = match load_agency_calendly_settings(&state, &user.id).await {
         Ok(Some(settings)) => settings,
         Ok(None) => {

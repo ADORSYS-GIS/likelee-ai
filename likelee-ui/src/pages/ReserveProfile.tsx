@@ -418,7 +418,11 @@ export default function ReserveProfile() {
       return;
     }
 
-    if (profile.creator_type && profile.creator_type !== creatorType) {
+    if (
+      profile.creator_type &&
+      profile.creator_type !== creatorType &&
+      window.location.pathname === "/ReserveProfile"
+    ) {
       navigate(
         `/ReserveProfile?type=${encodeURIComponent(profile.creator_type)}&mode=signup`,
         { replace: true },
@@ -476,7 +480,13 @@ export default function ReserveProfile() {
     }));
 
     if (!isOnboardingIncomplete(profile)) {
-      navigate(getDashboardPath(profile), { replace: true });
+      const dashboardPath = getDashboardPath(profile);
+      if (
+        !profileSaveLoading &&
+        window.location.pathname !== dashboardPath.split("?")[0]
+      ) {
+        navigate(dashboardPath, { replace: true });
+      }
       return;
     }
 

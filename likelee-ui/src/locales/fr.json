@@ -362,6 +362,16 @@
     "back": "Retour",
     "submitting": "Envoi en cours...",
     "completeSignUp": "Terminer l'inscription",
+    "terms": {
+      "title": "Conditions générales",
+      "subtitle": "Veuillez lire et accepter nos politiques pour finaliser votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de confidentialité",
+      "andTerms": "et les Conditions d'utilisation",
+      "mustAgreeTitle": "Accord requis",
+      "mustAgree": "Vous devez accepter la politique de confidentialité pour finaliser votre inscription.",
+      "completeRegistration": "Finaliser l'inscription"
+    },
     "industries": {
       "fashion": "Mode",
       "beauty": "Beauté",

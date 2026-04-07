@@ -153,8 +153,12 @@ export const getAgencyProfile = () => base44Client.get(`/agency-profile/user`);
 export const createAgencySubscriptionCheckout = (data: {
   plan: "basic" | "pro" | "enterprise";
   roster_models: number;
+  interval?: "month" | "year";
+  start_trial?: boolean;
+  agreement_accepted?: boolean;
   addons?: {
     irl_booking?: boolean;
+    seats_in_plan?: boolean;
     deepfake_protection_models?: number;
     additional_team_members?: number;
   };
@@ -162,6 +166,62 @@ export const createAgencySubscriptionCheckout = (data: {
 
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
+
+export const startAgencyProTrial = () =>
+  base44Client.post<{
+    trial_active: boolean;
+    trial_ends_at?: string | null;
+    display_plan_label: string;
+  }>(`/api/agency/billing/start-trial`, {});
+
+export const createOrUpdateAgencySeatAddon = (data: {
+  seats: number;
+  plan?: "basic" | "pro";
+  interval?: "month" | "year";
+}) =>
+  base44Client.post<{
+    checkout_url: string;
+    seats_limit?: number;
+    invoice_id?: string;
+    invoice_status?: string;
+    invoice_url?: string;
+  }>(`/api/agency/billing/addons/seats`, data);
+
+export const getAgencySeatBreakdown = () =>
+  base44Client.get<{
+    total_active_seats: number;
+    annual_seats: number;
+    monthly_seats: number;
+    items: Array<{
+      source: "in_plan" | "seat_addon";
+      interval: "month" | "year";
+      seats: number;
+      status: string;
+      subscription_id: string;
+      current_period_start?: string | null;
+      current_period_end?: string | null;
+    }>;
+  }>(`/api/agency/billing/addons/seats/breakdown`);
+
+export const createAgencyBillingPortal = () =>
+  base44Client.post(`/api/agency/billing/portal`, {});
+
+export const changeAgencySubscriptionPlan = (data: {
+  plan: "basic" | "pro" | "enterprise";
+  roster_models: number;
+  interval?: "month" | "year";
+  addons?: {
+    irl_booking?: boolean;
+    seats_in_plan?: boolean;
+    deepfake_protection_models?: number;
+    additional_team_members?: number;
+  };
+}) =>
+  base44Client.post<{
+    plan_tier: string;
+    seats_limit: number;
+    addon_irl_booking_enabled: boolean;
+  }>(`/api/agency/billing/change-plan`, data);
 
 export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
   base44Client.post<{
@@ -458,6 +518,9 @@ export const createAgencyTalent = (data: any) =>
 
 export const updateAgencyTalent = (id: string, data: any) =>
   base44Client.post(`/agency/talent/${id}`, data);
+
+export const uploadTalentAsset = (id: string, fd: FormData) =>
+  base44Client.post(`/api/agency/talents/${id}/assets/upload`, fd);
 
 export const getAgencyDigitals = () => base44Client.get("/agency/digitals");
 
@@ -760,11 +823,17 @@ export const listAgencyStorageFoldersPaged = (params?: {
 export const deleteAgencyStorageFolder = (folder_id: string) =>
   base44Client.delete(`/agency/storage/folders/${folder_id}`);
 
+export const updateAgencyStorageFolder = (
+  folder_id: string,
+  data: { name: string },
+) => base44Client.put(`/agency/storage/folders/${folder_id}`, data);
+
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });
 
 export const listAgencyStorageFilesPaged = (params?: {
   folder_id?: string;
+  root_only?: boolean;
   limit?: number;
   offset?: number;
 }) => base44Client.get(`/agency/storage/files`, { params: params || {} });
@@ -842,8 +911,16 @@ export const uploadOfferDeliverable = (
   );
 };
 
-export const submitAllDraftDeliverables = (offerId: string) =>
-  base44Client.post(`/api/campaign-offers/${offerId}/deliverables/submit`);
+export const submitAllDraftDeliverables = (
+  offerId: string,
+  data?: {
+    confirm_unpaid?: boolean;
+  },
+) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/submit`,
+    data,
+  );
 
 export const submitOfferDeliverable = (
   offerId: string,
@@ -855,6 +932,7 @@ export const submitOfferDeliverable = (
     creator_id?: string;
     asset_request_id?: string;
     meta?: any;
+    confirm_unpaid?: boolean;
   },
 ) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
 
@@ -1034,3 +1112,27 @@ export const updateAgencyBrandLicenseRequestStatus = (payload: {
   status: string;
   decline_reason?: string;
 }) => base44Client.post("/api/agency/brand-license-requests/status", payload);
+
+export const getAgencyBillingStatus = () =>
+  base44Client.get<{
+    agency_id: string;
+    plan_tier: string;
+    effective_plan_tier: string;
+    display_plan_label: string;
+    trial_start_at?: string | null;
+    trial_active: boolean;
+    trial_ends_at?: string | null;
+    subscription_status: string;
+    has_paid_access: boolean;
+    has_pro_access: boolean;
+    can_apply_for_jobs: boolean;
+    can_connect_marketplace_creators: boolean;
+    can_use_brand_connections: boolean;
+    can_use_calendly: boolean;
+    stripe_customer_id?: string | null;
+    stripe_subscription_id?: string | null;
+    plan_updated_at?: string | null;
+    plan_interval: string;
+    stripe_current_period_end?: string | null;
+    stripe_cancel_at_period_end: boolean;
+  }>(`/api/agency/billing/status`);

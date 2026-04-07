@@ -712,6 +712,16 @@
     "back": "Back",
     "submitting": "Submitting...",
     "completeSignUp": "Complete Sign Up",
+    "terms": {
+      "title": "Terms & Agreements",
+      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "andTerms": "and Terms of Service",
+      "mustAgreeTitle": "Agreement Required",
+      "mustAgree": "You must agree to the privacy policy to complete your registration.",
+      "completeRegistration": "Complete Registration"
+    },
     "industries": {
       "fashion": "Fashion",
       "beauty": "Beauty",

@@ -129,14 +129,29 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID", default = "")]
     pub stripe_agency_basic_headcount_price_id: String,
 
+    #[envconfig(from = "STRIPE_AGENCY_BASIC_BASE_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_basic_base_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_BASIC_HEADCOUNT_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_basic_headcount_annual_price_id: String,
+
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
 
     #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID", default = "")]
     pub stripe_agency_pro_headcount_price_id: String,
 
+    #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_pro_base_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_pro_headcount_annual_price_id: String,
+
     #[envconfig(from = "STRIPE_AGENCY_IRL_BOOKING_PRICE_ID", default = "")]
     pub stripe_agency_irl_booking_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_IRL_BOOKING_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_irl_booking_annual_price_id: String,
 
     #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
     pub stripe_checkout_success_url: String,
@@ -286,10 +301,15 @@ pub struct AppState {
     pub stripe_licensing_enterprise_price_id: String,
 
     pub stripe_agency_basic_base_price_id: String,
+    pub stripe_agency_basic_base_annual_price_id: String,
     pub stripe_agency_basic_headcount_price_id: String,
+    pub stripe_agency_basic_headcount_annual_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
+    pub stripe_agency_pro_base_annual_price_id: String,
     pub stripe_agency_pro_headcount_price_id: String,
+    pub stripe_agency_pro_headcount_annual_price_id: String,
     pub stripe_agency_irl_booking_price_id: String,
+    pub stripe_agency_irl_booking_annual_price_id: String,
     pub stripe_checkout_success_url: String,
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,

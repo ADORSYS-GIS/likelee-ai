@@ -919,6 +919,16 @@ export default function BrandCampaignDashboard({
       });
       await refreshSelectedCampaignDetails();
     } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (e?.status === 402 || msg.includes("payment_required")) {
+        toast({
+          title: "Payment required",
+          description:
+            "You can’t approve deliverables until payment for this offer is completed.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
       toast({
         title: "Update failed",
         description: e?.message || "Please try again.",
@@ -999,6 +1009,15 @@ export default function BrandCampaignDashboard({
         `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file?download=true`,
       );
       if (!response.ok) {
+        if (response.status === 402) {
+          toast({
+            title: "Payment required",
+            description:
+              "Payment has not been received for this offer. Please complete payment to download deliverables.",
+            variant: "destructive" as any,
+          });
+          return;
+        }
         throw new Error("Failed to fetch deliverable file.");
       }
       const blob = await response.blob();
@@ -1796,12 +1815,12 @@ export default function BrandCampaignDashboard({
           return;
         }
 
+        await loadCampaignCards();
+        resetCampaignBuilder();
         toast({
           title: "Offers sent",
           description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
         });
-        await loadCampaignCards();
-        resetCampaignBuilder();
         return;
       }
 
@@ -1834,12 +1853,12 @@ export default function BrandCampaignDashboard({
           },
           message: campaignForm.custom_terms || null,
         });
+        await loadCampaignCards();
+        resetCampaignBuilder();
         toast({
           title: "Offer sent",
           description: "Offer sent to the selected agency.",
         });
-        await loadCampaignCards();
-        resetCampaignBuilder();
       } catch (e: any) {
         const msg = String(e?.message || "");
         toast({
@@ -3930,12 +3949,13 @@ export default function BrandCampaignDashboard({
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <div className="flex flex-col items-center gap-2">
-                                        <Play className="w-8 h-8 text-gray-300" />
-                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">
-                                          Video Content
-                                        </span>
-                                      </div>
+                                      <video
+                                        src={deliverablePreviewSrc(deliverable)}
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        className="w-full h-full object-cover bg-gray-900"
+                                      />
                                     )}
                                   </div>
                                   <div className="flex-1">

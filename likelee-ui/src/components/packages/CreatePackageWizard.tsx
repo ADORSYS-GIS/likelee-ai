@@ -56,6 +56,8 @@ import { AssetSelector } from "./AssetSelector";
 import { ensureHexColor } from "@/utils/color";
 import { base44 } from "@/api/base44Client";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/auth/AuthProvider";
 
 export type CreatePackageWizardMode =
   | "template"
@@ -83,6 +85,7 @@ export function CreatePackageWizard({
   isSportsAgency = false,
   offerContext = null,
 }: CreatePackageWizardProps) {
+  const { user } = useAuth();
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
   const canViewConnections = hasPermission("view_brand_connections");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
@@ -138,6 +141,75 @@ export function CreatePackageWizard({
     client_name: "",
     client_email: "",
     items: [] as any[],
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e?.target;
+    const file = (input?.files?.[0] as File | undefined) ?? undefined;
+    if (input) input.value = "";
+    if (!file) return;
+
+    if (!supabase || !user?.id) {
+      toast({
+        title: "Upload unavailable",
+        description: "Please sign in again and retry the upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type?.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please choose an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const safeName = (file.name || "cover")
+        .toString()
+        .replace(/[^a-zA-Z0-9_.-]/g, "_");
+      const ext = safeName.includes(".")
+        ? safeName.split(".").pop()
+        : file.type?.includes("png")
+          ? "png"
+          : "jpg";
+      const rand =
+        (globalThis as any)?.crypto?.randomUUID?.() ||
+        `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const path = `agency/${user.id}/packages/covers/cover_${rand}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("likelee-public")
+        .upload(path, file, {
+          upsert: true,
+          contentType: file.type || "image/jpeg",
+        });
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from("likelee-public")
+        .getPublicUrl(path);
+      const publicUrl = data?.publicUrl || "";
+      if (!publicUrl) {
+        throw new Error("missing_public_url");
+      }
+
+      setFormData((prev) => ({ ...prev, cover_image_url: publicUrl }));
+      toast({ title: "Cover image uploaded" });
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      toast({
+        title: "Cover upload failed",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingCover(false);
+    }
   };
 
   const [formData, setFormData] = useState(initialFormData);

@@ -10,9 +10,11 @@ use crate::{
         OrganizationType,
     },
 };
-use axum::extract::Multipart;
-use axum::extract::Query;
-use axum::{extract::Path, extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Multipart, Path, Query, State},
+    http::StatusCode,
+    Json,
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -387,6 +389,7 @@ pub async fn register(
         "website": payload.website,
         "phone_number": payload.phone_number,
         "plan_tier": "free",
+        "trial_ends_at": serde_json::Value::Null,
         "seats_limit": 1,
         "status": "waitlist",
         "onboarding_step": "email_verification"
@@ -604,6 +607,7 @@ pub struct CreateAgencyFolderIn {
 #[derive(Deserialize)]
 pub struct ListAgencyFilesQuery {
     pub folder_id: Option<String>,
+    pub root_only: Option<bool>,
     pub limit: Option<u32>,
     pub offset: Option<u32>,
 }
@@ -612,6 +616,11 @@ pub struct ListAgencyFilesQuery {
 pub struct ListAgencyFoldersQuery {
     pub limit: Option<u32>,
     pub offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateAgencyFolderIn {
+    pub name: Option<String>,
 }
 
 async fn ensure_storage_settings_row(
@@ -790,7 +799,52 @@ pub async fn list_agency_folders(
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+
+    let Some(rows) = v.as_array() else {
+        return Ok(Json(v));
+    };
+
+    let mut enriched = Vec::with_capacity(rows.len());
+    for row in rows {
+        let mut obj = row.as_object().cloned().unwrap_or_default();
+        let folder_id = obj
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let mut file_count = 0i64;
+        if !folder_id.is_empty() {
+            let resp = state
+                .pg
+                .from("agency_files")
+                .select("id")
+                .eq("agency_id", &user.id)
+                .eq("folder_id", &folder_id)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let status = resp.status();
+            let text = resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !status.is_success() {
+                return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+            }
+            let files_json: serde_json::Value =
+                serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+            file_count = files_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
+        }
+
+        obj.insert(
+            "file_count".to_string(),
+            serde_json::Value::from(file_count),
+        );
+        enriched.push(serde_json::Value::Object(obj));
+    }
+
+    Ok(Json(serde_json::Value::Array(enriched)))
 }
 
 pub async fn create_agency_folder(
@@ -822,9 +876,113 @@ pub async fn create_agency_folder(
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+
+    let Some(rows) = v.as_array() else {
+        return Ok(Json(v));
+    };
+
+    let http = reqwest::Client::new();
+    let mut patched: Vec<serde_json::Value> = Vec::with_capacity(rows.len());
+
+    for row in rows {
+        let mut obj = row.as_object().cloned().unwrap_or_default();
+        let size_bytes = obj.get("size_bytes").and_then(|v| v.as_i64()).unwrap_or(0);
+
+        if size_bytes <= 0 {
+            let file_id = obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let bucket = obj
+                .get("storage_bucket")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let path = obj
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if !file_id.is_empty() && !bucket.is_empty() && !path.is_empty() {
+                let storage_url = format!(
+                    "{}/storage/v1/object/{}/{}",
+                    state.supabase_url, bucket, path
+                );
+                let head = http
+                    .head(&storage_url)
+                    .header(
+                        "Authorization",
+                        format!("Bearer {}", state.supabase_service_key),
+                    )
+                    .header("apikey", state.supabase_service_key.clone())
+                    .send()
+                    .await;
+
+                if let Ok(resp) = head {
+                    if resp.status().is_success() {
+                        let mut discovered_len = resp
+                            .headers()
+                            .get(reqwest::header::CONTENT_LENGTH)
+                            .and_then(|v| v.to_str().ok())
+                            .and_then(|s| s.parse::<i64>().ok());
+
+                        if discovered_len.is_none() {
+                            // Some storage gateways omit Content-Length on HEAD.
+                            // Fallback to a ranged GET and parse Content-Range: "bytes 0-0/12345".
+                            let ranged = http
+                                .get(&storage_url)
+                                .header(
+                                    "Authorization",
+                                    format!("Bearer {}", state.supabase_service_key),
+                                )
+                                .header("apikey", state.supabase_service_key.clone())
+                                .header(reqwest::header::RANGE, "bytes=0-0")
+                                .send()
+                                .await;
+
+                            if let Ok(r) = ranged {
+                                if r.status().is_success() || r.status().as_u16() == 206 {
+                                    if let Some(cr) = r
+                                        .headers()
+                                        .get(reqwest::header::CONTENT_RANGE)
+                                        .and_then(|v| v.to_str().ok())
+                                    {
+                                        if let Some(total) = cr.split('/').nth(1) {
+                                            discovered_len = total.trim().parse::<i64>().ok();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some(len) = discovered_len {
+                            obj.insert("size_bytes".to_string(), serde_json::Value::from(len));
+
+                            // Best-effort persist the discovered size to DB.
+                            let update = serde_json::json!({ "size_bytes": len });
+                            let _ = state
+                                .pg
+                                .from("agency_files")
+                                .update(update.to_string())
+                                .eq("id", &file_id)
+                                .eq("agency_id", &user.id)
+                                .execute()
+                                .await;
+                        }
+                    }
+                }
+            }
+        }
+
+        patched.push(serde_json::Value::Object(obj));
+    }
+
+    Ok(Json(serde_json::Value::Array(patched)))
 }
 
 pub async fn delete_agency_folder(
@@ -936,6 +1094,46 @@ pub async fn delete_agency_folder(
     Ok(StatusCode::NO_CONTENT)
 }
 
+pub async fn update_agency_folder(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(folder_id): Path<String>,
+    Json(body): Json<UpdateAgencyFolderIn>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let name = body.name.unwrap_or_default().trim().to_string();
+    if name.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "name is required".into()));
+    }
+
+    let update = serde_json::json!({ "name": name });
+    let resp = state
+        .pg
+        .from("agency_folders")
+        .update(update.to_string())
+        .eq("id", &folder_id)
+        .eq("agency_id", &user.id)
+        .select("id,agency_id,parent_id,name,created_at")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
 pub async fn list_agency_files(
     State(state): State<AppState>,
     user: AuthUser,
@@ -951,6 +1149,8 @@ pub async fn list_agency_files(
         .order("created_at.desc");
     if let Some(folder_id) = q.folder_id.as_ref().filter(|s| !s.is_empty()) {
         req = req.eq("folder_id", folder_id);
+    } else if q.root_only.unwrap_or(true) {
+        req = req.is("folder_id", "null");
     }
     if q.limit.is_some() || q.offset.is_some() {
         let limit = q.limit.unwrap_or(50) as usize;
@@ -1850,6 +2050,7 @@ pub async fn upload_client_file(
 #[derive(Serialize)]
 pub struct TalentItem {
     pub id: String,
+    pub creator_id: Option<String>,
     pub full_name: Option<String>,
     pub profile_photo_url: Option<String>,
     pub is_connected_creator: bool,
@@ -1927,6 +2128,11 @@ pub async fn list_talents(
                 .map(|s| s.to_string());
             TalentItem {
                 id,
+                creator_id: if creator_id.is_empty() {
+                    None
+                } else {
+                    Some(creator_id.clone())
+                },
                 full_name,
                 profile_photo_url: photo,
                 is_connected_creator: !creator_id.is_empty(),
@@ -2014,6 +2220,11 @@ pub async fn list_talents(
                 .map(|s| s.to_string());
             connected_items.push(TalentItem {
                 id,
+                creator_id: r
+                    .get("creator_id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
                 full_name,
                 profile_photo_url: photo,
                 is_connected_creator: true,
@@ -2064,6 +2275,11 @@ pub async fn list_talents(
                 .map(|s| s.to_string());
             connected_items.push(TalentItem {
                 id,
+                creator_id: r
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
                 full_name,
                 profile_photo_url: photo,
                 is_connected_creator: true,
@@ -2072,14 +2288,54 @@ pub async fn list_talents(
     }
 
     let mut combined: Vec<TalentItem> = vec![];
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     for t in talents.into_iter().chain(connected_items.into_iter()) {
         if t.id.trim().is_empty() {
             continue;
         }
-        if seen.insert(t.id.clone()) {
-            combined.push(t);
+
+        let dedupe_key = t
+            .creator_id
+            .as_ref()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| t.id.clone());
+
+        if let Some(existing_index) = seen.get(&dedupe_key).copied() {
+            let existing = &mut combined[existing_index];
+
+            if existing.creator_id.is_none() && t.creator_id.is_some() {
+                existing.creator_id = t.creator_id.clone();
+            }
+            if existing.full_name.is_none() && t.full_name.is_some() {
+                existing.full_name = t.full_name.clone();
+            }
+            if existing.profile_photo_url.is_none() && t.profile_photo_url.is_some() {
+                existing.profile_photo_url = t.profile_photo_url.clone();
+            }
+            if !existing.is_connected_creator && t.is_connected_creator {
+                existing.is_connected_creator = true;
+            }
+
+            let existing_uses_creator_id = existing
+                .creator_id
+                .as_ref()
+                .map(|cid| cid == &existing.id)
+                .unwrap_or(false);
+            let incoming_uses_agency_user_id = t
+                .creator_id
+                .as_ref()
+                .map(|cid| cid != &t.id)
+                .unwrap_or(false);
+            if existing_uses_creator_id && incoming_uses_agency_user_id {
+                existing.id = t.id.clone();
+            }
+
+            continue;
         }
+
+        seen.insert(dedupe_key, combined.len());
+        combined.push(t);
     }
 
     if let Some(q) = params.q.as_ref().filter(|s| !s.trim().is_empty()) {
