@@ -25,7 +25,6 @@ export interface ActiveLicense {
   usage_scope: string;
   value: number;
   status: "Active" | "Expiring" | "Expired";
-  is_renewed?: boolean;
 }
 
 export interface ActiveLicensesStats {

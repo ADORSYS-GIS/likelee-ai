@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,7 +32,6 @@ pub struct ActiveLicense {
     pub usage_scope: String,
     pub value: f64,
     pub status: String, // "Active", "Expiring", "Expired"
-    pub is_renewed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,7 +76,6 @@ struct CampaignEmbed {
 #[derive(Deserialize)]
 struct LicensingRequestRow {
     id: String,
-    created_at: Option<String>,
     submission_id: Option<String>,
     brand_id: Option<String>,
     talent_id: Option<String>,
@@ -123,37 +121,6 @@ struct TemplateEmbed {
     modifications_allowed: Option<String>,
 }
 
-fn renewal_key(
-    template_id: Option<&str>,
-    talent_id: Option<&str>,
-    brand_id: Option<&str>,
-    client_name: Option<&str>,
-) -> Option<String> {
-    let template_id = template_id?.trim();
-    let talent_id = talent_id?.trim();
-    if template_id.is_empty() || talent_id.is_empty() {
-        return None;
-    }
-
-    let brand_part = brand_id
-        .map(|s| s.trim().to_lowercase())
-        .filter(|s| !s.is_empty())
-        .or_else(|| {
-            client_name
-                .map(|s| s.trim().to_lowercase())
-                .filter(|s| !s.is_empty())
-        })
-        .unwrap_or_default();
-
-    Some(format!("{}|{}|{}", template_id, talent_id, brand_part))
-}
-
-fn parse_created_at(value: Option<&str>) -> Option<DateTime<Utc>> {
-    value
-        .and_then(|raw| chrono::DateTime::parse_from_rfc3339(raw).ok())
-        .map(|dt| dt.with_timezone(&Utc))
-}
-
 pub async fn list(
     State(state): State<AppState>,
     user: AuthUser,
@@ -163,7 +130,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,created_at,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
+    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
 
     let query = state
         .pg
@@ -204,46 +171,6 @@ pub async fn list(
         "Fetched licensing_requests with status=approved"
     );
 
-    let mut newest_license_by_key: std::collections::HashMap<
-        String,
-        (String, Option<DateTime<Utc>>),
-    > = std::collections::HashMap::new();
-
-    for r in &rows {
-        let key = renewal_key(
-            r.license_submissions
-                .as_ref()
-                .and_then(|s| s.template_id.as_deref()),
-            r.talent_id.as_deref(),
-            r.brand_id.as_deref(),
-            r.license_submissions
-                .as_ref()
-                .and_then(|s| s.client_name.as_deref())
-                .or(r.client_name.as_deref()),
-        );
-
-        let Some(key) = key else {
-            continue;
-        };
-
-        let created_at = parse_created_at(r.created_at.as_deref());
-        match newest_license_by_key.get(&key) {
-            Some((_, existing_created_at)) => {
-                let keep_existing = match (existing_created_at, created_at) {
-                    (Some(existing), Some(current)) => existing >= &current,
-                    (Some(_), None) => true,
-                    _ => false,
-                };
-                if keep_existing {
-                    continue;
-                }
-            }
-            _ => {
-                newest_license_by_key.insert(key, (r.id.clone(), created_at));
-            }
-        }
-    }
-
     let mut licenses = Vec::new();
 
     for r in rows {
@@ -272,23 +199,6 @@ pub async fn list(
             .unwrap_or_else(|| "Unknown Brand".to_string());
 
         let usage_scope = r.usage_scope.clone().unwrap_or_default();
-        let renewal_key = renewal_key(
-            r.license_submissions
-                .as_ref()
-                .and_then(|s| s.template_id.as_deref()),
-            r.talent_id.as_deref(),
-            r.brand_id.as_deref(),
-            r.license_submissions
-                .as_ref()
-                .and_then(|s| s.client_name.as_deref())
-                .or(r.client_name.as_deref()),
-        );
-        let is_renewed = renewal_key
-            .as_ref()
-            .and_then(|key| newest_license_by_key.get(key))
-            .map(|(latest_id, _)| latest_id != &r.id)
-            .unwrap_or(false);
-
         let value = r
             .campaigns
             .as_ref()
@@ -400,7 +310,6 @@ pub async fn list(
             usage_scope,
             value,
             status,
-            is_renewed,
         });
     }
 

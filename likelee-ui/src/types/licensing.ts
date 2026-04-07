@@ -10,7 +10,6 @@ export interface ComplianceRenewableLicense {
   client_email?: string | null;
   brand?: string;
   end_date?: string;
-  is_renewed?: boolean;
 }
 
 export interface RenewalLaunchContext {
