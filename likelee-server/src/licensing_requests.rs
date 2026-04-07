@@ -170,7 +170,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,payment_amount,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
@@ -270,11 +270,24 @@ pub async fn list_for_agency(
             .to_string();
 
         let campaign_title = value_to_non_empty_string(r.get("campaign_title"));
+        let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
+        let campaign = campaigns_arr.and_then(|a| a.first());
         let license_fee = r
             .get("license_submissions")
             .and_then(|ls| ls.get("license_fee"))
             .and_then(value_to_f64)
-            .map(|v| v / 100.0); // Convert cents to dollars for UI
+            .map(|v| v / 100.0)
+            .or_else(|| {
+                campaign
+                    .and_then(|c| c.get("payment_amount"))
+                    .and_then(value_to_f64)
+            })
+            .or_else(|| {
+                // Requests created via the submission flow persist payment_amount in cents.
+                r.get("payment_amount")
+                    .and_then(value_to_f64)
+                    .map(|v| v / 100.0)
+            });
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
@@ -338,9 +351,6 @@ pub async fn list_for_agency(
             .filter(|s| !s.trim().is_empty())
             .or(talent_name_field)
             .unwrap_or_else(|| "Assigned Talent".to_string());
-
-        let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
-        let campaign = campaigns_arr.and_then(|a| a.first());
 
         let key = created_at_group_key(brand_key, &created_at);
 
