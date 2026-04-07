@@ -114,6 +114,7 @@ export const previewLicenseSubmission = async (
     duration_days?: number;
     start_date?: string;
     custom_terms?: string;
+    requires_agency_signature?: boolean;
   },
 ): Promise<{
   preview_url: string;

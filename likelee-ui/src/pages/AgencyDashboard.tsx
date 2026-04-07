@@ -16700,9 +16700,19 @@ export default function AgencyDashboard() {
 
     setRenewalLaunchContext({
       templateId: license.template_id,
+      brandId: license.brand_id || undefined,
+      talentId: license.talent_id || undefined,
       clientName: license.client_name || license.brand || "",
       clientEmail: license.client_email || "",
       talentName: license.talent_name || "",
+      durationDays: license.duration_days,
+      startDate: license.start_date,
+      customTerms: license.custom_terms || undefined,
+      requiresAgencySignature: license.requires_agency_signature,
+      territory: license.territory || undefined,
+      exclusivity: license.exclusivity || undefined,
+      modificationsAllowed: license.modifications_allowed || undefined,
+      licenseFee: typeof license.value === "number" ? license.value : undefined,
     });
 
     setActiveTabState("licensing");
@@ -19781,6 +19791,10 @@ export default function AgencyDashboard() {
               activeSubTab === "License Templates" && (
                 <LicenseTemplatesTab
                   isSportsAgency={isSportsAgency}
+                  renewalLaunchContext={renewalLaunchContext}
+                  onRenewalLaunchHandled={() => {
+                    setRenewalLaunchContext(null);
+                  }}
                   brandRequestContext={
                     brandRequestContext
                       ? {

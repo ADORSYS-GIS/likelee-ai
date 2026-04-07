@@ -44,6 +44,11 @@ const ActiveLicensesView = ({
     onRenew(license);
   };
 
+  const canRenewLicense = (license: any) => {
+    const status = String(license?.status || "");
+    return status === "Expiring" || status === "Expired";
+  };
+
   const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
     {
       queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
@@ -381,7 +386,7 @@ const ActiveLicensesView = ({
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {String(lic.status).includes("Expiring") && (
+                      {canRenewLicense(lic) && (
                         <Button
                           className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95"
                           onClick={() => handleRenew(lic)}
@@ -408,7 +413,11 @@ const ActiveLicensesView = ({
         license={selectedLicense}
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        onRenew={handleRenew}
+        onRenew={
+          selectedLicense && canRenewLicense(selectedLicense)
+            ? handleRenew
+            : undefined
+        }
         isSportsAgency={isSportsAgency}
       />
     </div>

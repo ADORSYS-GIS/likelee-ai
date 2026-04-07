@@ -36,6 +36,7 @@ import {
   Check,
   FileText,
   Layout,
+  RefreshCw,
   ChevronsUpDown,
   X,
 } from "lucide-react";
@@ -65,6 +66,22 @@ interface SubmissionWizardProps {
   template: LicenseTemplate;
   onComplete: () => void;
   isSportsAgency?: boolean;
+  initialValues?: {
+    client_name?: string;
+    client_email?: string;
+    talent_name?: string;
+    brand_id?: string;
+    talent_id?: string;
+    duration_days?: number;
+    license_fee?: number;
+    start_date?: string;
+    custom_terms?: string;
+    requires_agency_signature?: boolean;
+    territory?: string;
+    exclusivity?: string;
+    modifications_allowed?: string;
+  } | null;
+  isRenewalPrefill?: boolean;
   brandRequestContext?: {
     brand_id: string;
     brand_name?: string;
@@ -117,6 +134,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   template,
   onComplete,
   isSportsAgency = false,
+  initialValues,
+  isRenewalPrefill = false,
   brandRequestContext,
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
@@ -191,30 +210,37 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
   // Auto-enable dropdown and pre-select brand when coming from brand request
   useEffect(() => {
-    if (isOpen && brandRequestContext?.brand_id && brandOptions.length > 0) {
+    const prefilledBrandId =
+      brandRequestContext?.brand_id || initialValues?.brand_id;
+    const prefilledBrandName =
+      brandRequestContext?.brand_name || initialValues?.client_name;
+    const prefilledBrandEmail =
+      brandRequestContext?.brand_email || initialValues?.client_email;
+
+    if (isOpen && prefilledBrandId && brandOptions.length > 0) {
       setAllowBrandChange(true); // Turn on the toggle
-      const match = brandOptions.find(
-        (b) => b.id === brandRequestContext.brand_id,
-      );
+      const match = brandOptions.find((b) => b.id === prefilledBrandId);
       if (match) {
         setSelectedBrandId(match.id);
         setValue("client_name", match.name);
         if (match.email) setValue("client_email", match.email);
-      } else if (brandRequestContext.brand_id) {
+      } else if (prefilledBrandId) {
         // Brand not in connections, but we have the ID from context
-        setSelectedBrandId(brandRequestContext.brand_id);
-        if (brandRequestContext.brand_name)
-          setValue("client_name", brandRequestContext.brand_name);
-        if (brandRequestContext.brand_email)
-          setValue("client_email", brandRequestContext.brand_email);
+        setSelectedBrandId(prefilledBrandId);
+        if (prefilledBrandName) setValue("client_name", prefilledBrandName);
+        if (prefilledBrandEmail) setValue("client_email", prefilledBrandEmail);
       }
     }
-  }, [isOpen, brandRequestContext, brandOptions, setValue]);
+  }, [isOpen, brandRequestContext, initialValues, brandOptions, setValue]);
 
   useEffect(() => {
     if (isOpen) {
       setStep(1);
-      setRequiresAgencySignature(false);
+      setRequiresAgencySignature(
+        brandRequestContext?.licensing_request_id
+          ? false
+          : Boolean(initialValues?.requires_agency_signature),
+      );
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
@@ -222,20 +248,39 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
       setSelectedTalentIds(
-        brandRequestContext?.talent_id ? [brandRequestContext.talent_id] : [],
+        brandRequestContext?.talent_id
+          ? [brandRequestContext.talent_id]
+          : initialValues?.talent_id
+            ? [initialValues.talent_id]
+            : [],
       );
       reset({
-        client_name: brandRequestContext?.brand_name || "",
-        talent_name: brandRequestContext?.talent_name || "",
-        start_date: new Date().toISOString().split("T")[0],
-        duration_days: template.duration_days || 90,
-        territory: template.territory || "Worldwide",
-        exclusivity: template.exclusivity || "Non-exclusive",
-        modifications_allowed: template.modifications_allowed || "",
-        license_fee: template.license_fee ? template.license_fee / 100 : 0,
-        custom_terms: template.custom_terms || "",
+        client_name:
+          brandRequestContext?.brand_name || initialValues?.client_name || "",
+        talent_name:
+          brandRequestContext?.talent_name || initialValues?.talent_name || "",
+        start_date:
+          initialValues?.start_date ||
+          template.start_date ||
+          new Date().toISOString().split("T")[0],
+        duration_days:
+          initialValues?.duration_days ?? template.duration_days ?? 90,
+        territory:
+          initialValues?.territory || template.territory || "Worldwide",
+        exclusivity:
+          initialValues?.exclusivity || template.exclusivity || "Non-exclusive",
+        modifications_allowed:
+          initialValues?.modifications_allowed ||
+          template.modifications_allowed ||
+          "",
+        license_fee:
+          initialValues?.license_fee ??
+          (template.license_fee ? template.license_fee / 100 : 0),
+        custom_terms:
+          initialValues?.custom_terms || template.custom_terms || "",
         contract_body: template.contract_body || "",
-        client_email: brandRequestContext?.brand_email || "", // Reset for new field
+        client_email:
+          brandRequestContext?.brand_email || initialValues?.client_email || "", // Reset for new field
       });
 
       // Fetch agency talents
@@ -247,7 +292,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           console.error(`Failed to fetch ${entityPluralLower}:`, err);
         });
     }
-  }, [isOpen, template, reset]);
+  }, [isOpen, template, reset, brandRequestContext, initialValues]);
 
   const replacePlaceholders = (text: string, data: any) => {
     return text.replace(/{(\w+)}/g, (match, key) => {
@@ -555,6 +600,24 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
             {step === 1 && (
               <div className="max-w-3xl mx-auto space-y-8 pb-10">
+                {isRenewalPrefill && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 rounded-xl bg-white/80 p-2 text-emerald-600 shadow-sm">
+                        <RefreshCw className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-900">
+                          Renewal Prefill
+                        </p>
+                        <p className="text-sm text-emerald-800">
+                          This renewal was prefilled from the previous license
+                          request. Adjust anything you need before sending.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 mb-2">
