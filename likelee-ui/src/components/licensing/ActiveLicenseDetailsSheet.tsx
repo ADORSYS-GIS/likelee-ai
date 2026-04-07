@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
 import { ActiveLicense } from "@/api/activeLicenses";
 import {
   Calendar,
@@ -40,7 +39,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
-    }).format(val);
+    }).format(val / 100);
   };
 
   const getStatusBadge = (status: string) => {

@@ -16700,7 +16700,6 @@ export default function AgencyDashboard() {
 
     setRenewalLaunchContext({
       templateId: license.template_id,
-      sourceLicenseId: license.id,
       brandId: license.brand_id || undefined,
       talentId: license.talent_id || undefined,
       clientName: license.client_name || license.brand || "",

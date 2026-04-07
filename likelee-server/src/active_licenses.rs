@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -148,6 +148,12 @@ fn renewal_key(
     Some(format!("{}|{}|{}", template_id, talent_id, brand_part))
 }
 
+fn parse_created_at(value: Option<&str>) -> Option<DateTime<Utc>> {
+    value
+        .and_then(|raw| chrono::DateTime::parse_from_rfc3339(raw).ok())
+        .map(|dt| dt.with_timezone(&Utc))
+}
+
 pub async fn list(
     State(state): State<AppState>,
     user: AuthUser,
@@ -226,8 +232,10 @@ pub async fn list(
         "Fetched licensing_requests with status=approved"
     );
 
-    let mut newest_license_by_key: std::collections::HashMap<String, (String, String)> =
-        std::collections::HashMap::new();
+    let mut newest_license_by_key: std::collections::HashMap<
+        String,
+        (String, Option<DateTime<Utc>>),
+    > = std::collections::HashMap::new();
 
     for r in &rows {
         let key = renewal_key(
@@ -246,9 +254,18 @@ pub async fn list(
             continue;
         };
 
-        let created_at = r.created_at.clone().unwrap_or_default();
+        let created_at = parse_created_at(r.created_at.as_deref());
         match newest_license_by_key.get(&key) {
-            Some((_, existing_created_at)) if existing_created_at >= &created_at => {}
+            Some((_, existing_created_at)) => {
+                let keep_existing = match (existing_created_at, created_at) {
+                    (Some(existing), Some(current)) => existing >= &current,
+                    (Some(_), None) => true,
+                    _ => false,
+                };
+                if keep_existing {
+                    continue;
+                }
+            }
             _ => {
                 newest_license_by_key.insert(key, (r.id.clone(), created_at));
             }

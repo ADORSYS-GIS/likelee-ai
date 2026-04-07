@@ -15,7 +15,6 @@ export interface ComplianceRenewableLicense {
 
 export interface RenewalLaunchContext {
   templateId: string;
-  sourceLicenseId?: string;
   brandId?: string;
   talentId?: string;
   clientName: string;
