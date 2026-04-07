@@ -39,10 +39,9 @@ SELECT
     now()
 FROM public.agencies a
 WHERE a.id IS NOT NULL
-  AND COALESCE(a.email, '') <> ''
 ON CONFLICT (organization_type, organization_id, user_id) DO UPDATE
   SET 
-    email = EXCLUDED.email,
+    email = COALESCE(NULLIF(EXCLUDED.email, ''), organization_memberships.email),
     role = EXCLUDED.role,
     status = EXCLUDED.status,
     updated_at = now()
@@ -78,10 +77,9 @@ SELECT
     now()
 FROM public.brands b
 WHERE b.id IS NOT NULL
-  AND COALESCE(b.email, '') <> ''
 ON CONFLICT (organization_type, organization_id, user_id) DO UPDATE
   SET 
-    email = EXCLUDED.email,
+    email = COALESCE(NULLIF(EXCLUDED.email, ''), organization_memberships.email),
     role = EXCLUDED.role,
     status = EXCLUDED.status,
     updated_at = now()

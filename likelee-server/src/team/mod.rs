@@ -686,6 +686,8 @@ pub async fn require_organization_permission(
         tracing::debug!(
             user_id = %user.id,
             org_type = %organization_type.as_str(),
+            membership_role = %cached.membership_role,
+            cached_permissions = ?cached.permissions,
             "Organization access cache hit"
         );
         state.cache_metrics.hit(crate::cache::CacheLevel::L2);
@@ -696,6 +698,13 @@ pub async fn require_organization_permission(
         ))?;
         
         if !has_permission(role, permission) {
+            tracing::warn!(
+                user_id = %user.id,
+                org_type = %organization_type.as_str(),
+                membership_role = %cached.membership_role,
+                required_permission = %permission.as_str(),
+                "Permission denied (cached)"
+            );
             return Err((
                 StatusCode::FORBIDDEN,
                 format!(
@@ -719,6 +728,15 @@ pub async fn require_organization_permission(
         },
     )
     .await?;
+    
+    tracing::debug!(
+        user_id = %user.id,
+        org_type = %organization_type.as_str(),
+        membership_role = %scope.membership.role,
+        required_permission = %permission.as_str(),
+        "Checking permission for resolved scope"
+    );
+    
     ensure_permission(&scope.membership, permission)?;
 
     let access = OrganizationAccess {
@@ -739,6 +757,7 @@ pub async fn require_organization_permission(
     tracing::debug!(
         user_id = %user.id,
         org_type = %organization_type.as_str(),
+        membership_role = %scope.membership.role,
         "Organization access cached"
     );
 
@@ -1118,15 +1137,16 @@ async fn resolve_scope(
         .map(map_membership_record)
         .collect::<Result<Vec<_>, _>>()?;
 
-    // If multiple memberships found, prioritize by role: owner > admin > member
+    // If multiple memberships found, prioritize by role: owner > admin > project_manager > reviewer
     if memberships.len() > 1 {
-        // Sort by role priority (owner=0, admin=1, member=2)
+        // Sort by role priority (owner=0, admin=1, project_manager=2, reviewer=3)
         memberships.sort_by_key(|m| {
             match m.role.as_str() {
                 "owner" => 0,
                 "admin" => 1,
-                "member" => 2,
-                _ => 3,
+                "project_manager" => 2,
+                "reviewer" => 3,
+                _ => 4,
             }
         });
         
@@ -1176,6 +1196,13 @@ async fn resolve_scope(
     }
     
     // No membership found - check if this is a legacy owner (user.id == org.id or org.user_id == user.id)
+    tracing::debug!(
+        user_id = %user.id,
+        user_role = %user.role,
+        org_type_filter = ?query.organization_type,
+        "No membership found in organization_memberships, checking legacy owner pattern"
+    );
+    
     let organization_type_filter = query.organization_type.as_deref().and_then(|t| OrganizationType::parse(t));
     
     if let Some(org_type) = organization_type_filter {
@@ -1245,7 +1272,21 @@ async fn resolve_legacy_owner_membership(
         OrganizationType::Brand => ("brands", "brand"),
     };
     
+    tracing::debug!(
+        user_id = %user.id,
+        user_role = %user.role,
+        expected_role = %role_filter,
+        org_type = %organization_type.as_str(),
+        "Checking legacy owner membership"
+    );
+    
     if user.role != role_filter {
+        tracing::debug!(
+            user_id = %user.id,
+            user_role = %user.role,
+            expected_role = %role_filter,
+            "User role does not match expected role for legacy owner check"
+        );
         return Ok(None);
     }
     
@@ -1325,8 +1366,20 @@ fn ensure_permission(
         "Invalid membership role".to_string(),
     ))?;
     if has_permission(role, permission) {
+        tracing::debug!(
+            membership_role = %membership.role,
+            permission = %permission.as_str(),
+            "Permission check passed"
+        );
         return Ok(());
     }
+    tracing::warn!(
+        membership_role = %membership.role,
+        permission = %permission.as_str(),
+        org_id = %membership.organization_id,
+        user_id = %membership.user_id,
+        "Permission denied"
+    );
     Err((
         StatusCode::FORBIDDEN,
         format!(

@@ -44,6 +44,8 @@ pub enum Permission {
     ManageBrandConnections,
     ViewLicenses,
     ManageLicenses,
+    TransferOwnership,
+    DeleteOrganisation,
 }
 
 impl Permission {
@@ -60,6 +62,8 @@ impl Permission {
             Self::ManageBrandConnections => "manage_brand_connections",
             Self::ViewLicenses => "view_licenses",
             Self::ManageLicenses => "manage_licenses",
+            Self::TransferOwnership => "transfer_ownership",
+            Self::DeleteOrganisation => "delete_organisation",
         }
     }
 }
@@ -78,6 +82,8 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ManageBrandConnections,
             Permission::ViewLicenses,
             Permission::ManageLicenses,
+            Permission::TransferOwnership,
+            Permission::DeleteOrganisation,
         ],
         TeamRole::Admin => vec![
             Permission::CreateCampaigns,
@@ -100,9 +106,9 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewBrandConnections,
             Permission::ManageBrandConnections,
             Permission::ViewLicenses,
-            Permission::ManageLicenses,
         ],
         TeamRole::Reviewer => vec![
+            Permission::ApproveDeliverables,
             Permission::ViewDeliverables,
             Permission::ViewTeamMembers,
             Permission::ViewBrandConnections,

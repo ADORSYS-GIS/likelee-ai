@@ -104,8 +104,9 @@ export function CreatePackageWizard({
     name: string;
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [createdPackage, setCreatedPackage] = useState<any>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
@@ -312,13 +313,13 @@ export function CreatePackageWizard({
         : packageApi.createPackage(payload);
     },
     onSuccess: (data: any) => {
-      setCreatedPackage(data);
-      setShowSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
       if (onSuccess) onSuccess();
+      onOpenChange(false);
+      resetForm();
     },
   });
 
@@ -356,11 +357,11 @@ export function CreatePackageWizard({
       return createResp?.package;
     },
     onSuccess: (pkg: any) => {
-      setCreatedPackage(pkg);
-      setShowSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       if (onSuccess) onSuccess();
+      onOpenChange(false);
+      resetForm();
     },
   });
 
@@ -704,19 +705,87 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        Cover Image URL
+                        Cover Image
                       </Label>
-                      <Input
-                        placeholder="https://images.unsplash.com/..."
-                        value={formData.cover_image_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            cover_image_url: e.target.value,
-                          })
-                        }
-                        className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400"
-                      />
+                      <div className="flex gap-3">
+                        <Input
+                          placeholder="https://images.unsplash.com/..."
+                          value={formData.cover_image_url}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              cover_image_url: e.target.value,
+                            })
+                          }
+                          className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400 flex-1"
+                        />
+                        <label className="h-12 px-4 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg cursor-pointer flex items-center justify-center gap-2 transition-all duration-300 shrink-0">
+                          {coverUploading ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                          ) : (
+                            <ImageIcon className="w-4 h-4 text-gray-500" />
+                          )}
+                          <span className="text-xs font-bold text-gray-600">
+                            {coverUploading ? "Uploading..." : "Upload"}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={coverUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (!file.type.startsWith("image/")) {
+                                toast({
+                                  title: "Invalid file",
+                                  description: "Please select an image file.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setCoverUploading(true);
+                              try {
+                                const fd = new FormData();
+                                fd.append("file", file);
+                                const resp = await base44.post<{ file_url?: string }>(
+                                  "/api/agency/storage/files/upload",
+                                  fd,
+                                );
+                                const url = resp?.file_url;
+                                if (url) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    cover_image_url: url,
+                                  }));
+                                  toast({ title: "Image uploaded" });
+                                }
+                              } catch (err: any) {
+                                toast({
+                                  title: "Upload failed",
+                                  description: err?.message || "Please try again.",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setCoverUploading(false);
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {formData.cover_image_url && (
+                        <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 max-w-[200px]">
+                          <img
+                            src={formData.cover_image_url}
+                            alt="Cover preview"
+                            className="w-full h-24 object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-8 bg-gray-50/50 backdrop-blur-sm rounded-[2rem] border border-gray-100 space-y-8">
@@ -1370,76 +1439,12 @@ export function CreatePackageWizard({
                     </div>
                   </div>
                 )}
-
-                {showSuccess && createdPackage && (
-                  <div className="flex flex-col items-center justify-center p-10 py-20 text-center space-y-8 h-full">
-                    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-12 h-12 text-green-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-                        Package Published!
-                      </h2>
-                      <p className="text-gray-500 font-medium mt-2 max-w-sm mx-auto">
-                        Your curated selection is now live and{" "}
-                        {isOfferMode
-                          ? "has been sent to the brand inbox."
-                          : formData.client_email
-                            ? `an invitation has been sent to ${formData.client_email}.`
-                            : "is ready to be shared."}
-                      </p>
-                    </div>
-
-                    {!isOfferMode && (
-                      <div className="w-full max-w-md p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                          Shareable Link
-                        </p>
-                        <div className="flex gap-2">
-                          <Input
-                            readOnly
-                            value={`${window.location.origin}/share/package/${createdPackage.access_token}`}
-                            className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
-                          />
-                          <Button
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                `${window.location.origin}/share/package/${createdPackage.access_token}`,
-                              );
-                              toast({
-                                title: "Link Copied",
-                                description:
-                                  "The portal address is now in your clipboard.",
-                              });
-                            }}
-                            className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"
-                          >
-                            <Badge className="bg-indigo-50 text-indigo-600 border-none">
-                              Copy
-                            </Badge>
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={() => {
-                        onOpenChange(false);
-                        resetForm();
-                      }}
-                      className="bg-gray-900 text-white rounded-xl h-12 px-10 font-black uppercase text-xs tracking-widest"
-                    >
-                      Done
-                    </Button>
-                  </div>
-                )}
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Footer */}
-          {!showSuccess && (
-            <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <Button
                 variant="ghost"
                 onClick={() => {
@@ -1495,8 +1500,7 @@ export function CreatePackageWizard({
                 )}
               </div>
             </div>
-          )}
-        </DialogContent>
+          </DialogContent>
       </Dialog>
 
       {/* Athlete/Talent Selector Overlay Modal */}

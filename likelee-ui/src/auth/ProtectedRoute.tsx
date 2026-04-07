@@ -41,6 +41,7 @@ export default function ProtectedRoute({
     normalizedRole === "agency" || normalizedRole === "brand";
   const {
     loading: loadingTeamAccess,
+    context,
     hasPermission,
     error: teamAccessError,
   } = useTeamAccess(
@@ -79,6 +80,7 @@ export default function ProtectedRoute({
         requiredPermissions?.length &&
         isTeamScopedRole &&
         !loadingTeamAccess &&
+        context !== null &&
         missingRequiredPermission
       ) {
         navigate("/Unauthorized", {
@@ -112,6 +114,7 @@ export default function ProtectedRoute({
     location.pathname,
     navigate,
     onboardingPath,
+    context,
   ]);
 
   if (!initialized) {
@@ -128,7 +131,11 @@ export default function ProtectedRoute({
     return <LoadingSpinner />;
   }
 
-  if (requiredPermissions?.length && isTeamScopedRole && loadingTeamAccess) {
+  if (
+    requiredPermissions?.length &&
+    isTeamScopedRole &&
+    (loadingTeamAccess || context === null)
+  ) {
     return <LoadingSpinner />;
   }
 
