@@ -4,7 +4,7 @@ export function AgencyTermsContent() {
   return (
     <div className="space-y-4 text-base text-gray-700 font-medium pb-8">
       <h2 className="text-xl font-bold text-gray-900 mb-4">
-        LIKELEE AI — Creator & Talent Terms and Conditions
+        Terms and Conditions
       </h2>
 
       <div className="space-y-2">
@@ -12,22 +12,21 @@ export function AgencyTermsContent() {
           1. Introduction and Acceptance of Terms
         </h3>
         <p>
-          Welcome to Likelee AI ("Likelee," "we," "us," or "our"). These Creator
-          & Talent Terms and Conditions ("Terms") govern your participation on
-          the Likelee AI platform at likelee.ai (the "Platform") as a Creator or
-          talent whose likeness, image, voice, or persona is made available for
-          AI-powered licensing.
+          Welcome to Likelee AI ("Likelee," "we," "us," or "our"). Likelee AI is
+          a B2B SaaS platform that facilitates AI likeness licensing between
+          talent ("Creators") and the brands and agencies (collectively,
+          "Clients") that wish to use those likenesses in AI-generated content.
         </p>
         <p>
-          By creating an account, completing onboarding, or clicking "I Agree,"
-          you ("Creator" or "Talent") agree to be fully bound by these Terms. If
-          you are a minor or are being onboarded by a talent agency or
-          management company on your behalf, your authorized representative must
-          accept these Terms on your behalf and warrants they have the legal
-          authority to do so.
+          By accessing or using the Likelee AI platform at likelee.ai (the
+          "Platform"), creating an account, or clicking "I Agree" during the
+          sign-up process, you ("Agency," "Brand," or "User") agree to be bound
+          by these Terms and Conditions ("Terms"). If you are accepting these
+          Terms on behalf of a company or other legal entity, you represent that
+          you have the authority to bind that entity to these Terms.
         </p>
         <p>
-          If you do not agree to these Terms, do not register or use the
+          If you do not agree to these Terms, you may not access or use the
           Platform.
         </p>
       </div>
@@ -37,566 +36,562 @@ export function AgencyTermsContent() {
         <ul className="list-disc pl-5 space-y-1">
           <li>
             <strong>"Platform"</strong> means the Likelee AI website,
-            applications, APIs, and all related services available at
-            likelee.ai.
-          </li>
-          <li>
-            <strong>"Creator" or "Talent"</strong> means any individual who
-            registers on the Platform to license their Likeness for use in
-            AI-generated commercial content.
-          </li>
-          <li>
-            <strong>"Likeness"</strong> means your name, image, face, voice,
-            persona, signature, photograph, video likeness, or any other
-            identifiable characteristic you upload or make available through the
-            Platform.
-          </li>
-          <li>
-            <strong>"Likeness Assets"</strong> means the photos, videos, audio
-            recordings, or other media files you submit to the Platform
-            representing your Likeness.
-          </li>
-          <li>
-            <strong>"License Agreement"</strong> means the specific agreement
-            between you (or your Agency) and a Brand governing the permitted
-            uses of your Likeness.
-          </li>
-          <li>
-            <strong>"Brand"</strong> means a company, advertiser, or marketing
-            entity that licenses your Likeness through the Platform.
+            applications, APIs, and all related services.
           </li>
           <li>
             <strong>"Agency"</strong> means a talent management firm, modeling
-            agency, sports agency, or similar representation entity that manages
-            your profile on the Platform on your behalf.
+            agency, sports agency, or similar representation entity that uses
+            the Platform to manage its talent roster and likeness licensing.
+          </li>
+          <li>
+            <strong>"Brand"</strong> means a company, advertiser, or marketing
+            entity that uses the Platform to license Creator likenesses for use
+            in campaigns and AI-generated content.
+          </li>
+          <li>
+            <strong>"Creator"</strong> means a talent, influencer, model,
+            athlete, or other individual whose likeness is licensed through the
+            Platform.
+          </li>
+          <li>
+            <strong>"Likeness"</strong> means a Creator's name, image, voice,
+            face, persona, or any other identifiable characteristic made
+            available for licensing through the Platform.
+          </li>
+          <li>
+            <strong>"License Agreement"</strong> means the specific agreement
+            executed between a Brand and a Creator (or their Agency) governing
+            the permitted uses of a Likeness.
           </li>
           <li>
             <strong>"AI-Generated Content"</strong> means any image, video,
             audio, or other media produced using artificial intelligence tools
-            in which your Likeness is used or depicted pursuant to a License
-            Agreement.
+            in which a Creator's Likeness is used or depicted.
           </li>
           <li>
-            <strong>"Earnings"</strong> means compensation owed to you from
-            Brands in exchange for licensing your Likeness, as facilitated
-            through the Platform.
+            <strong>"Subscription Plan"</strong> means the billing tier selected
+            by the Client upon registration, governing access levels and usage
+            limits.
           </li>
         </ul>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          3. Eligibility and Registration
+          3. Eligibility and Account Registration
         </h3>
-        <p>To register as a Creator on the Platform, you must:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            Be at least 18 years of age, or have a parent, legal guardian, or
-            authorized talent representative accept these Terms on your behalf
-          </li>
-          <li>
-            Have the legal right to license your own Likeness or have your
-            authorized representative confirm they hold those rights on your
-            behalf
-          </li>
-          <li>
-            Provide accurate, complete, and current registration information
-          </li>
-          <li>
-            Not be subject to any contractual, legal, or regulatory restriction
-            that would prevent you from licensing your Likeness through the
-            Platform
-          </li>
-        </ul>
         <p>
-          You are responsible for maintaining the confidentiality of your login
-          credentials. Notify Likelee immediately at{" "}
-          <a
-            href="mailto:support@likelee.ai"
-            className="text-indigo-600 underline"
-          >
-            support@likelee.ai
-          </a>{" "}
-          if you suspect unauthorized access to your account.
+          To use the Platform, you must: (a) be a legal entity or individual at
+          least 18 years of age; (b) have the authority to enter into legally
+          binding contracts; and (c) complete the registration process and
+          provide accurate, current, and complete information.
+        </p>
+        <p>
+          You are responsible for maintaining the confidentiality of your
+          account credentials. You agree to notify Likelee immediately of any
+          unauthorized access to or use of your account. Likelee will not be
+          liable for any loss or damage resulting from your failure to safeguard
+          your credentials.
+        </p>
+        <p>
+          Likelee reserves the right to refuse registration, suspend, or
+          terminate accounts at its sole discretion, including for violation of
+          these Terms or applicable law.
         </p>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">
-          4. Likeness Submission and Consent
-        </h3>
+        <h3 className="font-bold text-gray-900">4. Platform Services</h3>
         <h4 className="font-semibold text-gray-800 mt-2">
-          4.1 Consent to License
+          4.1 Services for Agencies
         </h4>
-        <p>
-          By uploading your Likeness Assets to the Platform, you expressly
-          consent to making your Likeness available for licensing by Brands for
-          use in AI-generated commercial content, subject to the terms and
-          restrictions you configure in your Creator profile and any executed
-          License Agreement.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          4.2 Your Control Over Licensing
-        </h4>
-        <p>You retain the right to:</p>
+        <p>Agencies may use the Platform to:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            Set the categories of use you permit (e.g., health and wellness,
-            fashion, technology)
+            Onboard and manage their talent roster, including uploading Creator
+            profiles and Likeness assets
           </li>
-          <li>Define exclusivity windows and geographic restrictions</li>
-          <li>Set your own pricing and minimum licensing fees</li>
-          <li>Approve or decline individual licensing requests from Brands</li>
           <li>
-            Deactivate your profile and remove your Likeness Assets from the
-            marketplace at any time, subject to the terms of any active License
+            Set licensing terms, usage rights, exclusivity windows, and pricing
+            for each Creator
+          </li>
+          <li>
+            Review, approve, or decline Brand licensing requests on behalf of
+            Creators
+          </li>
+          <li>
+            Track active License Agreements, usage campaigns, and payment
+            disbursements
+          </li>
+          <li>
+            Access analytics dashboards showing licensing revenue, campaign
+            performance, and Creator activity
+          </li>
+          <li>
+            Export contracts and licensing documentation for internal records
+          </li>
+        </ul>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          4.2 Services for Brands
+        </h4>
+        <p>Brands may use the Platform to:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            Browse and search the Creator marketplace to discover talent for AI
+            licensing
+          </li>
+          <li>
+            Submit licensing requests specifying use case, campaign duration,
+            platforms, and content type
+          </li>
+          <li>
+            Execute License Agreements directly through the Platform's contract
+            management system
+          </li>
+          <li>
+            Access licensed Likeness assets in accordance with approved License
             Agreements
           </li>
+          <li>
+            Manage active campaigns, track usage rights, and store licensing
+            documentation
+          </li>
+          <li>
+            Receive compliance alerts regarding expiring licenses and applicable
+            regulations
+          </li>
         </ul>
         <h4 className="font-semibold text-gray-800 mt-2">
-          4.3 Accuracy of Likeness Assets
+          4.3 Service Availability
         </h4>
         <p>
-          You represent and warrant that all Likeness Assets you submit are
-          accurate representations of your actual appearance, voice, and
-          persona, and are not altered in a way that would materially mislead
-          Brands or consumers. You agree not to submit Likeness Assets that
-          incorporate another person's likeness without their written consent.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          4.4 Third-Party Rights
-        </h4>
-        <p>
-          You represent and warrant that your Likeness Assets do not infringe
-          any third-party intellectual property rights, including but not
-          limited to copyrights in photographs, music embedded in video
-          submissions, or trademarks depicted in your content.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">5. License Grant to Likelee</h3>
-        <p>
-          By registering on the Platform and uploading Likeness Assets, you
-          grant Likelee AI a non-exclusive, worldwide, royalty-free license to
-          host, display, store, process, and transmit your Likeness Assets
-          solely for the purpose of operating the Platform, facilitating
-          licensing transactions, and providing services to you. Likelee does
-          not claim ownership of your Likeness or Likeness Assets. This license
-          terminates when you remove your Likeness Assets from the Platform,
-          subject to the terms of any active License Agreements.
+          Likelee will use commercially reasonable efforts to maintain Platform
+          availability. However, we do not guarantee uninterrupted or error-free
+          service. Scheduled maintenance, technical issues, or circumstances
+          beyond our control may result in temporary unavailability. Likelee
+          will provide advance notice of scheduled downtime where practicable.
         </p>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          6. License Agreements with Brands
+          5. Subscription Plans, Fees, and Payment
         </h3>
         <h4 className="font-semibold text-gray-800 mt-2">
-          6.1 Your Agreement with Brands
+          5.1 Subscription Plans
         </h4>
         <p>
-          Each time a Brand licenses your Likeness, a License Agreement is
-          formed between you (or your Agency) and that Brand. Likelee
-          facilitates but is not a party to that agreement. You are responsible
-          for reviewing and approving the terms of each License Agreement before
-          it is executed.
+          Likelee offers tiered Subscription Plans for both Agencies and Brands.
+          Current pricing, feature access, and usage limits for each tier are
+          published on the Platform's pricing page and may be updated from time
+          to time with advance notice.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">5.2 Payment Terms</h4>
+        <p>
+          All fees are billed in advance on a monthly or annual basis, depending
+          on the plan selected. By providing payment information, you authorize
+          Likelee to charge the applicable fees to your payment method on a
+          recurring basis. All fees are non-refundable except as expressly
+          stated herein or required by applicable law.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">5.3 Taxes</h4>
+        <p>
+          You are responsible for all applicable taxes, levies, or duties
+          imposed by taxing authorities in connection with your use of the
+          Platform. Likelee will collect applicable taxes where required by law.
         </p>
         <h4 className="font-semibold text-gray-800 mt-2">
-          6.2 Scope of Permitted Use
+          5.4 Late Payment and Suspension
         </h4>
         <p>
-          License Agreements will specify the permitted scope of use, including:
-          campaign type, platforms, geographic territory, duration, content
-          category, and any restrictions on how your Likeness may be depicted.
-          Brands are contractually prohibited from using your Likeness outside
-          of these agreed terms.
+          If payment is not received by the due date, Likelee reserves the right
+          to suspend access to the Platform. Access will be restored upon
+          receipt of all outstanding amounts. Likelee may also charge interest
+          on overdue balances at the rate of 1.5% per month or the maximum rate
+          permitted by law, whichever is lower.
         </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          6.3 Active License Agreements
-        </h4>
+        <h4 className="font-semibold text-gray-800 mt-2">5.5 Plan Changes</h4>
         <p>
-          If you deactivate your profile or request removal of your Likeness
-          Assets while a License Agreement is active, that agreement remains in
-          effect until its expiration or termination date. You will continue to
-          receive Earnings for any active License Agreements during that period.
+          You may upgrade or downgrade your Subscription Plan at any time.
+          Upgrades take effect immediately and are prorated. Downgrades take
+          effect at the start of the next billing period. Likelee reserves the
+          right to modify pricing with 30 days' advance notice to existing
+          subscribers.
         </p>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          7. Earnings, Payments, and Fees
+          6. Likeness Licensing and Intellectual Property
         </h3>
-        <h4 className="font-semibold text-gray-800 mt-2">7.1 Earnings</h4>
+        <h4 className="font-semibold text-gray-800 mt-2">6.1 License Grants</h4>
         <p>
-          You are entitled to receive Earnings from Brands as set forth in each
-          License Agreement. Likelee will facilitate payment disbursement to you
-          through the Platform's payment infrastructure.
+          All Likeness licensing on the Platform is governed by individual
+          License Agreements executed between Brands and Creators (or their
+          Agencies). Likelee facilitates but is not a party to these License
+          Agreements. Likelee does not transfer ownership of any Creator
+          Likeness or intellectual property rights.
         </p>
-        <h4 className="font-semibold text-gray-800 mt-2">7.2 Platform Fee</h4>
+        <h4 className="font-semibold text-gray-800 mt-2">6.2 Permitted Uses</h4>
         <p>
-          Likelee charges a platform service fee on each licensing transaction,
-          which will be clearly disclosed to you during onboarding and on your
-          earnings dashboard. This fee is deducted before Earnings are disbursed
-          to you.
+          Brands may only use a licensed Likeness: (a) in the specific manner,
+          for the specific platforms, and within the specific timeframe set
+          forth in the applicable License Agreement; (b) in compliance with all
+          applicable laws, including synthetic media disclosure and AI
+          transparency requirements; and (c) in a manner that does not
+          misrepresent or defame the Creator.
         </p>
         <h4 className="font-semibold text-gray-800 mt-2">
-          7.3 Payment Schedule
+          6.3 Prohibited Uses
         </h4>
         <p>
-          Earnings are disbursed on the schedule published in your Creator
-          dashboard, typically on a net-30 basis following the completion of a
-          licensing transaction. Likelee reserves the right to adjust payment
-          schedules with reasonable notice.
+          Brands and Agencies expressly agree not to use the Platform or any
+          licensed Likenesses to:
         </p>
-        <h4 className="font-semibold text-gray-800 mt-2">7.4 Taxes</h4>
-        <p>
-          You are solely responsible for all applicable taxes on your Earnings,
-          including income tax and self-employment tax. Likelee may collect
-          required tax documentation (e.g., Form W-9 or W-8BEN) before
-          processing payments. Likelee will issue applicable tax forms (e.g.,
-          Form 1099) as required by law.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          7.5 Disputed Payments
-        </h4>
-        <p>
-          If you believe there is an error in your Earnings, you must notify
-          Likelee at{" "}
-          <a
-            href="mailto:support@likelee.ai"
-            className="text-indigo-600 underline"
-          >
-            support@likelee.ai
-          </a>{" "}
-          within 30 days of the disbursement date. Likelee will investigate and
-          respond within 14 business days.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">
-          8. Creator Responsibilities and Conduct
-        </h3>
-        <p>You agree to:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            Keep your profile, Likeness Assets, and availability status current
-            and accurate
+            Create content that is defamatory, obscene, pornographic, harassing,
+            threatening, or otherwise unlawful
           </li>
           <li>
-            Promptly respond to licensing requests within the timeframe
-            specified in your account settings
-          </li>
-          <li>Honor all executed License Agreements in good faith</li>
-          <li>
-            Notify Likelee immediately if you become aware of any unauthorized
-            use of your Likeness
+            Portray a Creator endorsing a product, candidate, political
+            position, or viewpoint not expressly authorized in the License
+            Agreement
           </li>
           <li>
-            Comply with all applicable laws, including those governing your
-            right of publicity and any contractual obligations with third
-            parties (e.g., existing talent agency exclusivity agreements)
+            Generate deceptive deepfakes, non-consensual intimate imagery, or
+            synthetic content intended to defraud
+          </li>
+          <li>
+            Use a Creator's Likeness beyond the scope, duration, geography, or
+            platforms specified in the License Agreement
+          </li>
+          <li>
+            Sublicense, resell, or transfer any licensed Likeness to a third
+            party without prior written consent
+          </li>
+          <li>
+            Circumvent or interfere with the Platform's licensing management,
+            payment, or compliance tracking systems
           </li>
         </ul>
-        <p>You agree not to:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            Upload Likeness Assets that belong to another person without their
-            express written consent
-          </li>
-          <li>
-            Misrepresent your identity, credentials, or likeness characteristics
-            on the Platform
-          </li>
-          <li>
-            Use the Platform to circumvent or undermine Brand relationships
-            established through the Platform
-          </li>
-          <li>
-            Engage in fraudulent, deceptive, or abusive conduct toward Brands,
-            other Creators, or Likelee
-          </li>
-        </ul>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          6.4 Regulatory Compliance
+        </h4>
+        <p>
+          Clients are solely responsible for ensuring their use of AI-Generated
+          Content and Creator Likenesses complies with all applicable laws and
+          regulations, including but not limited to: the New York AI Synthetic
+          Performer Disclosure Law (effective June 9, 2026); the NO FAKES Act
+          and any successor federal legislation; applicable state
+          right-of-publicity statutes; the FTC's endorsement and disclosure
+          guidelines; and any platform-specific policies governing synthetic
+          media. Likelee may provide compliance tools and alerts as a
+          convenience, but these do not constitute legal advice and do not
+          substitute for independent legal review.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          6.5 Likelee's Intellectual Property
+        </h4>
+        <p>
+          The Platform, including its software, design, branding, and underlying
+          technology, is the exclusive property of Likelee AI and its licensors.
+          These Terms do not grant you any right, title, or interest in the
+          Platform beyond the limited license to use it in accordance with your
+          Subscription Plan and these Terms.
+        </p>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          9. Likelee's Role and Limitations
+          7. Data, Privacy, and Confidentiality
         </h3>
+        <h4 className="font-semibold text-gray-800 mt-2">7.1 Privacy Policy</h4>
         <p>
-          Likelee is a technology platform that facilitates likeness licensing
-          transactions. Likelee is not a talent agency, management company,
-          legal representative, or fiduciary on your behalf. Likelee does not
-          negotiate License Agreement terms on your behalf, provide legal
-          advice, or guarantee any minimum level of licensing activity or
-          Earnings.
+          Your use of the Platform is subject to Likelee's Privacy Policy, which
+          is incorporated by reference into these Terms. By using the Platform,
+          you consent to the collection, use, and sharing of your information as
+          described in the Privacy Policy.
         </p>
+        <h4 className="font-semibold text-gray-800 mt-2">7.2 Creator Data</h4>
         <p>
-          While Likelee provides compliance monitoring tools and alerts as a
-          convenience, these tools do not constitute legal advice and do not
-          guarantee that Brands will use your Likeness in compliance with
-          applicable law or the terms of your License Agreement.
+          Agencies are responsible for ensuring they have obtained all necessary
+          consents from Creators before uploading their Likeness assets,
+          biographical data, or other personal information to the Platform.
+          Agencies represent and warrant that their use of the Platform complies
+          with applicable data protection laws, including but not limited to the
+          CCPA, GDPR, and any state biometric privacy laws.
         </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-bold text-gray-900 uppercase">
-          10. Disclaimer of Liability for Misuse of Likeness
-        </h3>
-        <p className="uppercase font-semibold text-gray-800">
-          LIKELEE AI EXPRESSLY DISCLAIMS ALL LIABILITY FOR THE UNAUTHORIZED,
-          UNLAWFUL, OR OTHERWISE IMPROPER USE OF YOUR LIKENESS BY ANY BRAND,
-          AGENCY, THIRD PARTY, OR ANY OTHER PERSON OR ENTITY OPERATING OUTSIDE
-          OF OR IN VIOLATION OF AN EXECUTED LICENSE AGREEMENT.
+        <h4 className="font-semibold text-gray-800 mt-2">7.3 Brand Data</h4>
+        <p>
+          Brands grant Likelee a non-exclusive, royalty-free license to process
+          campaign data, usage information, and other data submitted through the
+          Platform solely for the purpose of providing the Platform's services,
+          generating analytics, and improving the Platform.
         </p>
-        <p>You acknowledge and agree that:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            Likelee is a marketplace platform and is not responsible for the
-            actions or omissions of Brands or third parties once Likeness Assets
-            are accessed pursuant to a License Agreement
-          </li>
-          <li>
-            Likelee does not monitor, review, or approve every piece of
-            AI-Generated Content produced by Brands using your Likeness
-          </li>
-          <li>
-            Likelee cannot guarantee that Brands will use your Likeness strictly
-            within the permitted scope of any License Agreement
-          </li>
-          <li>
-            Any misuse, unauthorized reproduction, deepfake generation,
-            defamatory depiction, or other improper use of your Likeness by a
-            Brand or third party is the sole legal responsibility of that Brand
-            or third party, not Likelee
-          </li>
-          <li>
-            Your recourse for misuse of your Likeness is against the Brand or
-            infringing party directly, whether through the dispute resolution
-            process, applicable law, or legal counsel
-          </li>
-          <li>
-            Likelee will, where reasonably practicable, assist you by providing
-            records of executed License Agreements, usage data accessible
-            through the Platform, and takedown support in response to confirmed
-            violations. However, this assistance does not constitute legal
-            representation or an assumption of liability by Likelee.
-          </li>
-        </ul>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          7.4 Confidentiality
+        </h4>
+        <p>
+          Each party agrees to maintain the confidentiality of the other party's
+          non-public information disclosed in connection with use of the
+          Platform. This obligation does not apply to information that: (a) is
+          or becomes publicly available through no breach of these Terms; (b)
+          was already known to the receiving party; (c) is independently
+          developed; or (d) must be disclosed by law or court order, provided
+          the disclosing party gives prompt written notice where permitted.
+        </p>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          11. Representations and Warranties
+          8. Representations and Warranties
         </h3>
-        <p>You represent and warrant that:</p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          8.1 Agency Representations
+        </h4>
+        <p>Each Agency represents and warrants that:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            You are the sole owner of, or have full legal authority to license,
-            your Likeness as submitted to the Platform
+            It has the legal authority and all necessary rights to represent
+            each Creator whose profile and Likeness assets it uploads to the
+            Platform
           </li>
           <li>
-            Your registration and use of the Platform does not violate any
-            existing contract, court order, or applicable law
+            Each Creator has provided informed, written consent to license their
+            Likeness for AI-generated commercial content through the Platform
           </li>
           <li>
-            You have not granted any exclusive rights to your Likeness that
-            would conflict with licenses facilitated through the Platform,
-            unless such exclusivity is accurately disclosed in your Creator
-            profile
+            All information uploaded to the Platform, including Creator profiles
+            and licensing terms, is accurate and not misleading
           </li>
           <li>
-            All information you provide to Likelee, including identity
-            verification, tax documentation, and Likeness Assets, is accurate,
-            complete, and not misleading
+            It will promptly update the Platform to reflect changes in
+            representation agreements or Creator consent
+          </li>
+        </ul>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          8.2 Brand Representations
+        </h4>
+        <p>Each Brand represents and warrants that:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            It will use licensed Likenesses only in accordance with the
+            applicable License Agreement and these Terms
           </li>
           <li>
-            You will promptly update the Platform to reflect any material
-            changes to your Likeness, representation status, or licensing
-            restrictions
+            All AI-Generated Content produced using Creator Likenesses will
+            include required disclosures as mandated by applicable law
+          </li>
+          <li>
+            It will not create AI-Generated Content that misrepresents, defames,
+            or endangers any Creator
+          </li>
+          <li>
+            It has obtained or will obtain all other third-party rights (e.g.,
+            music, trademarks) necessary for any content it produces
           </li>
         </ul>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">12. Indemnification</h3>
+        <h3 className="font-bold text-gray-900">9. Indemnification</h3>
         <p>
           You agree to indemnify, defend, and hold harmless Likelee AI, its
           officers, directors, employees, contractors, and agents from and
           against any claims, liabilities, damages, losses, costs, and expenses
           (including reasonable attorneys' fees) arising out of or related to:
-          (a) your breach of these Terms; (b) your violation of any applicable
-          law or third-party right; (c) any inaccuracy in your Likeness Assets
-          or profile information; (d) any dispute between you and a Brand
-          arising from a License Agreement; or (e) your negligent or intentional
-          misconduct.
+          (a) your use of the Platform; (b) your breach of these Terms; (c) your
+          violation of any applicable law or regulation; (d) any claim that your
+          use of a Creator Likeness infringes the rights of any third party; or
+          (e) any dispute between you and a Creator or Agency arising from a
+          License Agreement.
         </p>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-bold text-gray-900 uppercase">
-          13. Limitation of Liability
-        </h3>
-        <p className="uppercase font-semibold text-gray-800">
+        <h3 className="font-bold text-gray-900">10. Limitation of Liability</h3>
+        <p>
           TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, LIKELEE AI AND ITS
           AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AND LICENSORS SHALL NOT BE
           LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE,
-          OR EXEMPLARY DAMAGES, INCLUDING LOSS OF EARNINGS, REPUTATIONAL HARM,
-          EMOTIONAL DISTRESS, OR LOST BUSINESS OPPORTUNITIES, ARISING OUT OF OR
-          RELATED TO YOUR USE OF THE PLATFORM OR THE MISUSE OF YOUR LIKENESS BY
-          ANY THIRD PARTY, EVEN IF LIKELEE HAS BEEN ADVISED OF THE POSSIBILITY
-          OF SUCH DAMAGES.
-        </p>
-        <p className="uppercase font-semibold text-gray-800">
-          LIKELEE'S TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL CLAIMS SHALL NOT
-          EXCEED THE GREATER OF: (A) THE TOTAL PLATFORM FEES DEDUCTED FROM YOUR
-          EARNINGS IN THE THREE (3) MONTHS PRECEDING THE CLAIM; OR (B) ONE
-          HUNDRED DOLLARS ($100).
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-bold text-gray-900 uppercase">
-          14. Disclaimer of Warranties
-        </h3>
-        <p className="uppercase font-semibold text-gray-800">
-          THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
-          OF ANY KIND, EXPRESS OR IMPLIED. LIKELEE DOES NOT WARRANT THAT THE
-          PLATFORM WILL BE UNINTERRUPTED OR ERROR-FREE, THAT LICENSING
-          OPPORTUNITIES WILL BE AVAILABLE, OR THAT ANY BRAND WILL USE YOUR
-          LIKENESS IN THE MANNER AGREED. LIKELEE MAKES NO GUARANTEE REGARDING
-          THE VOLUME, FREQUENCY, OR VALUE OF LICENSING TRANSACTIONS YOU WILL
-          RECEIVE THROUGH THE PLATFORM.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">15. Term and Termination</h3>
-        <p>
-          These Terms remain in effect for as long as you maintain an active
-          Creator account on the Platform. You may terminate your account at any
-          time by deactivating your profile and contacting{" "}
-          <a
-            href="mailto:support@likelee.ai"
-            className="text-indigo-600 underline"
-          >
-            support@likelee.ai
-          </a>
-          , subject to the continuation of any active License Agreements.
+          OR EXEMPLARY DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, DATA,
+          GOODWILL, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR RELATED TO YOUR
+          USE OF THE PLATFORM OR THESE TERMS, EVEN IF LIKELEE HAS BEEN ADVISED
+          OF THE POSSIBILITY OF SUCH DAMAGES.
         </p>
         <p>
-          Likelee may suspend or terminate your account immediately, without
-          notice or liability, if: (a) you materially breach these Terms; (b)
-          you engage in fraudulent, abusive, or illegal activity; (c) your
-          continued participation poses a risk to the integrity of the Platform
-          or harm to third parties; or (d) required by law or regulatory
-          authority.
-        </p>
-        <p>
-          Upon termination, Sections 9, 10, 12, 13, 14, and 16 survive
-          indefinitely.
+          IN NO EVENT SHALL LIKELEE'S TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL
+          CLAIMS ARISING FROM OR RELATED TO THESE TERMS EXCEED THE GREATER OF:
+          (A) THE TOTAL FEES PAID BY YOU TO LIKELEE IN THE THREE (3) MONTHS
+          IMMEDIATELY PRECEDING THE CLAIM; OR (B) ONE HUNDRED DOLLARS ($100).
+          Some jurisdictions do not allow the exclusion or limitation of certain
+          warranties or liabilities. In such jurisdictions, Likelee's liability
+          is limited to the maximum extent permitted by law.
         </p>
       </div>
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">
-          16. Dispute Resolution and Governing Law
+          11. Disclaimer of Warranties
         </h3>
-        <h4 className="font-semibold text-gray-800 mt-2">16.1 Governing Law</h4>
         <p>
-          These Terms are governed by the laws of the State of New York, without
-          regard to conflict of law principles.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          16.2 Informal Resolution
-        </h4>
-        <p>
-          Before initiating formal proceedings, you agree to first contact
-          Likelee at{" "}
-          <a
-            href="mailto:legal@likelee.ai"
-            className="text-indigo-600 underline"
-          >
-            legal@likelee.ai
-          </a>{" "}
-          and attempt to resolve the dispute in good faith within 30 days.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">16.3 Arbitration</h4>
-        <p>
-          Any unresolved dispute shall be submitted to binding arbitration
-          administered by the American Arbitration Association (AAA) under its
-          Commercial Arbitration Rules, conducted in New York, New York.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2 uppercase">
-          16.4 Class Action Waiver
-        </h4>
-        <p className="uppercase font-semibold text-gray-800">
-          TO THE FULLEST EXTENT PERMITTED BY LAW, YOU WAIVE ANY RIGHT TO BRING
-          CLAIMS AS A CLASS, COLLECTIVE, OR REPRESENTATIVE ACTION. ALL CLAIMS
-          MUST BE BROUGHT IN YOUR INDIVIDUAL CAPACITY.
-        </p>
-        <h4 className="font-semibold text-gray-800 mt-2">
-          16.5 Exception for Injunctive Relief
-        </h4>
-        <p>
-          Either party may seek emergency injunctive or equitable relief from a
-          court of competent jurisdiction to prevent irreparable harm, including
-          unauthorized use or distribution of your Likeness.
+          THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
+          OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+          IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+          PURPOSE, TITLE, AND NON-INFRINGEMENT. LIKELEE DOES NOT WARRANT THAT
+          THE PLATFORM WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE, OR THAT ANY
+          DEFECTS WILL BE CORRECTED. LIKELEE MAKES NO WARRANTY REGARDING THE
+          ACCURACY, RELIABILITY, OR COMPLETENESS OF ANY CONTENT ON THE PLATFORM.
         </p>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-bold text-gray-900">17. General Provisions</h3>
+        <h3 className="font-bold text-gray-900">12. Term and Termination</h3>
         <p>
-          <strong>Modifications.</strong> Likelee may update these Terms at any
-          time. Material changes will be communicated via email or Platform
-          notice at least 14 days before taking effect. Continued use of the
-          Platform constitutes acceptance.
+          These Terms remain in effect for the duration of your Subscription
+          Plan and any renewal period. Either party may terminate the agreement
+          by canceling the subscription before the next billing period.
         </p>
         <p>
-          <strong>Entire Agreement.</strong> These Terms, together with the
-          Privacy Policy and any executed License Agreements, constitute the
-          full agreement between you and Likelee regarding your participation as
-          a Creator.
+          Likelee may suspend or terminate your account immediately, without
+          notice or liability, if: (a) you materially breach these Terms; (b)
+          you engage in fraudulent, abusive, or illegal activity; (c) continued
+          provision of service would cause harm to Creators, other users, or
+          third parties; or (d) required by law or regulatory authority.
         </p>
         <p>
-          <strong>Severability.</strong> If any provision is found
-          unenforceable, the remaining provisions remain in full effect.
+          Upon termination: (a) all outstanding License Agreements remain
+          binding on the parties to those agreements; (b) you must immediately
+          cease all use of the Platform; and (c) Likelee may delete your account
+          data in accordance with its data retention policy. Sections 6, 7, 9,
+          10, 11, and 13 survive termination.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-bold text-gray-900">
+          13. Dispute Resolution and Governing Law
+        </h3>
+        <h4 className="font-semibold text-gray-800 mt-2">13.1 Governing Law</h4>
         <p>
-          <strong>Waiver.</strong> Likelee's failure to enforce any provision
-          does not constitute a waiver of future enforcement.
+          These Terms are governed by and construed in accordance with the laws
+          of the State of New York, without regard to its conflict of law
+          provisions.
         </p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          13.2 Informal Resolution
+        </h4>
         <p>
-          <strong>Assignment.</strong> You may not assign these Terms without
-          Likelee's written consent. Likelee may assign freely in connection
-          with a merger, acquisition, or asset sale.
-        </p>
-        <p>
-          <strong>Notices.</strong> Legal notices to Likelee must be sent to{" "}
+          Before initiating formal proceedings, parties agree to attempt
+          good-faith resolution of disputes by contacting Likelee at{" "}
           <a
             href="mailto:legal@likelee.ai"
             className="text-indigo-600 underline"
           >
             legal@likelee.ai
           </a>
-          . Notices to you will be sent to your registered email address.
+          . If the dispute is not resolved within 30 days, either party may
+          proceed with formal dispute resolution.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">13.3 Arbitration</h4>
+        <p>
+          Any dispute, claim, or controversy arising from or relating to these
+          Terms or the Platform that cannot be resolved informally shall be
+          resolved by binding arbitration administered by the American
+          Arbitration Association ("AAA") under its Commercial Arbitration
+          Rules. The arbitration shall be conducted in New York, New York.
+          Judgment on the award may be entered in any court of competent
+          jurisdiction.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          13.4 Class Action Waiver
+        </h4>
+        <p>
+          TO THE FULLEST EXTENT PERMITTED BY LAW, YOU WAIVE ANY RIGHT TO PURSUE
+          DISPUTES ON A CLASS, CONSOLIDATED, OR REPRESENTATIVE BASIS. ALL
+          DISPUTES MUST BE BROUGHT IN YOUR INDIVIDUAL CAPACITY.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          13.5 Exception for Injunctive Relief
+        </h4>
+        <p>
+          Notwithstanding the arbitration provision, either party may seek
+          emergency injunctive or other equitable relief from a court of
+          competent jurisdiction to prevent irreparable harm, including
+          unauthorized use of Likeness or intellectual property.
         </p>
       </div>
 
-      <div className="pt-6 border-t border-gray-200 text-sm text-gray-500 mt-8">
+      <div className="space-y-2">
+        <h3 className="font-bold text-gray-900">14. General Provisions</h3>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          14.1 Modifications to These Terms
+        </h4>
         <p>
-          Questions? Contact us at{" "}
+          Likelee reserves the right to modify these Terms at any time. Material
+          changes will be communicated via email or prominent notice on the
+          Platform at least 14 days before taking effect. Your continued use of
+          the Platform after the effective date constitutes acceptance of the
+          updated Terms.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">
+          14.2 Entire Agreement
+        </h4>
+        <p>
+          These Terms, together with the Privacy Policy and any executed Order
+          Forms or Subscription agreements, constitute the entire agreement
+          between you and Likelee with respect to the Platform and supersede all
+          prior or contemporaneous communications.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">14.3 Severability</h4>
+        <p>
+          If any provision of these Terms is found to be unenforceable, the
+          remaining provisions will continue in full force and effect.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">14.4 Waiver</h4>
+        <p>
+          Likelee's failure to enforce any provision of these Terms will not be
+          deemed a waiver of future enforcement of that or any other provision.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">14.5 Assignment</h4>
+        <p>
+          You may not assign these Terms or any rights or obligations hereunder
+          without Likelee's prior written consent. Likelee may assign these
+          Terms freely, including in connection with a merger, acquisition, or
+          sale of substantially all of its assets.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">14.6 Force Majeure</h4>
+        <p>
+          Likelee will not be liable for any failure or delay in performance
+          resulting from causes beyond its reasonable control, including but not
+          limited to natural disasters, government actions, pandemics, internet
+          outages, or cyberattacks.
+        </p>
+        <h4 className="font-semibold text-gray-800 mt-2">14.7 Notices</h4>
+        <p>
+          Legal notices to Likelee should be sent to{" "}
           <a
-            href="mailto:operations@likelee.ai"
+            href="mailto:legal@likelee.ai"
             className="text-indigo-600 underline"
           >
-            operations@likelee.ai
+            legal@likelee.ai
           </a>
+          . Likelee will send notices to the email address associated with your
+          account. Notices are effective upon transmission.
         </p>
-        <p>likelee.ai | Empowering the Future of Likeness Licensing</p>
       </div>
+
+      <p>
+        Questions? Contact us at{" "}
+        <a
+          href="mailto:operations@likelee.ai"
+          className="text-indigo-600 underline"
+        >
+          operations@likelee.ai
+        </a>
+      </p>
+      <p>likelee.ai | Empowering the Future of Likeness Licensing</p>
     </div>
   );
 }

@@ -53,7 +53,7 @@ import {
   isOnboardingIncomplete,
 } from "@/auth/onboarding";
 
-import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
+import { CreatorTermsContent } from "@/pages/PrivacyPolicy";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
@@ -2250,14 +2250,14 @@ export default function ReserveProfile() {
                 <p className="text-gray-700">
                   {t(
                     "reserveProfile.terms.subtitle",
-                    "Please review and agree to our policies to complete your registration.",
+                    "Please review and agree to the Creator & Talent Terms to complete your registration.",
                   )}
                 </p>
               </div>
 
               <div className="border-2 border-gray-200 bg-white">
                 <ScrollArea className="h-96 p-4">
-                  <PrivacyPolicyContent />
+                  <CreatorTermsContent />
                 </ScrollArea>
               </div>
 
@@ -2276,20 +2276,15 @@ export default function ReserveProfile() {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      {t("reserveProfile.terms.agreeTo", "I agree to the")}{" "}
-                      <a
-                        href="https://likelee.ai/privacypolicy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#32C8D1] hover:underline font-bold"
-                      >
-                        {t("reserveProfile.terms.policyLink", "Privacy Policy")}
-                      </a>
+                      {t(
+                        "reserveProfile.terms.agreeTo",
+                        "I agree to the Creator & Talent Terms and Conditions",
+                      )}
                     </label>
                     <p className="text-sm text-gray-500">
                       {t(
                         "reserveProfile.terms.mustAgree",
-                        "You must agree to the privacy policy to create your account.",
+                        "You must agree to the Creator & Talent Terms to create your account.",
                       )}
                     </p>
                   </div>
