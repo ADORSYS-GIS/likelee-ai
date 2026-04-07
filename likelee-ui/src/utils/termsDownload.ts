@@ -8,8 +8,8 @@ export async function downloadTermsPdf(containerId: string, title: string) {
   const clone = container.cloneNode(true) as HTMLElement;
   clone.style.fontFamily = '"Helvetica Neue", Arial, sans-serif';
   clone.style.color = "#111827";
-  clone.style.fontSize = "12px";
-  clone.style.lineHeight = "1.4";
+  clone.style.fontSize = "13px";
+  clone.style.lineHeight = "1.5";
 
   const setMargins = (el: HTMLElement, margin: string) => {
     el.style.margin = margin;
@@ -17,26 +17,26 @@ export async function downloadTermsPdf(containerId: string, title: string) {
 
   clone.querySelectorAll("h2").forEach((el) => {
     const heading = el as HTMLElement;
-    heading.style.fontSize = "16px";
+    heading.style.fontSize = "18px";
     heading.style.fontWeight = "700";
     setMargins(heading, "0 0 8px");
   });
   clone.querySelectorAll("h3").forEach((el) => {
     const heading = el as HTMLElement;
-    heading.style.fontSize = "14px";
+    heading.style.fontSize = "16px";
     heading.style.fontWeight = "700";
     setMargins(heading, "12px 0 6px");
   });
   clone.querySelectorAll("h4").forEach((el) => {
     const heading = el as HTMLElement;
-    heading.style.fontSize = "12px";
+    heading.style.fontSize = "13px";
     heading.style.fontWeight = "700";
     setMargins(heading, "8px 0 4px");
   });
   clone.querySelectorAll("p").forEach((el) => {
     const paragraph = el as HTMLElement;
-    paragraph.style.fontSize = "12px";
-    paragraph.style.margin = "0 0 6px";
+    paragraph.style.fontSize = "13px";
+    paragraph.style.margin = "0 0 7px";
   });
   clone.querySelectorAll("ul").forEach((el) => {
     const list = el as HTMLElement;
