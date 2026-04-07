@@ -623,8 +623,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                   brand_id: wizardBrandContext.brand_id,
                   brand_name: wizardBrandContext.brand_name,
                   brand_email: wizardBrandContext.brand_email,
-                  licensing_request_id:
-                    wizardBrandContext.licensing_request_id,
+                  licensing_request_id: wizardBrandContext.licensing_request_id,
                   talent_id: wizardBrandContext.talent_id,
                   talent_name: wizardBrandContext.talent_name,
                 }

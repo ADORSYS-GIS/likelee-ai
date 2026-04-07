@@ -210,7 +210,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
   // Auto-enable dropdown and pre-select brand when coming from brand request
   useEffect(() => {
-    const prefilledBrandId = brandRequestContext?.brand_id || initialValues?.brand_id;
+    const prefilledBrandId =
+      brandRequestContext?.brand_id || initialValues?.brand_id;
     const prefilledBrandName =
       brandRequestContext?.brand_name || initialValues?.client_name;
     const prefilledBrandEmail =
