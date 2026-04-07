@@ -14,6 +14,57 @@ use std::collections::{HashMap, HashSet};
 use tracing::info;
 use uuid::Uuid;
 
+const MIN_BASE_MONTHLY_CENTS: i64 = 15_000;
+const MIN_BASE_WEEKLY_CENTS: i64 = ((MIN_BASE_MONTHLY_CENTS as f64) / 4.345).round() as i64;
+const DEFAULT_PRICING_GRACE_SECONDS: i64 = 60;
+
+fn parse_rfc3339(value: Option<&str>) -> Option<chrono::DateTime<chrono::FixedOffset>> {
+    value.and_then(|v| chrono::DateTime::parse_from_rfc3339(v).ok())
+}
+
+fn is_default_pricing(row: &serde_json::Value) -> bool {
+    let monthly = row.get("base_monthly_price_cents").and_then(|v| v.as_i64());
+    let weekly = row.get("base_weekly_price_cents").and_then(|v| v.as_i64());
+
+    let matches_min = monthly == Some(MIN_BASE_MONTHLY_CENTS)
+        || weekly
+            .map(|v| (v - MIN_BASE_WEEKLY_CENTS).abs() <= 5)
+            .unwrap_or(false);
+    if !matches_min {
+        return false;
+    }
+
+    let created_at = parse_rfc3339(row.get("created_at").and_then(|v| v.as_str()));
+    let pricing_updated_at = parse_rfc3339(row.get("pricing_updated_at").and_then(|v| v.as_str()));
+    if pricing_updated_at.is_none() {
+        return true;
+    }
+    match (created_at, pricing_updated_at) {
+        (Some(created), Some(pricing)) => {
+            (pricing - created).num_seconds() <= DEFAULT_PRICING_GRACE_SECONDS
+        }
+        _ => true,
+    }
+}
+
+fn should_default_visibility_on(row: &serde_json::Value) -> bool {
+    let public_visible = row.get("public_profile_visible").and_then(|v| v.as_bool());
+    let visibility = row
+        .get("visibility")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    if public_visible != Some(false) {
+        return false;
+    }
+    if !(visibility.is_empty() || visibility == "private") {
+        return false;
+    }
+    is_default_pricing(row)
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct FaceProfilePayload {
     pub age: Option<i32>,
@@ -654,7 +705,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,currency_code,accept_negotiations")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -747,13 +798,17 @@ pub async fn search_marketplace_profiles(
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
-                visibility.is_empty()
-                    || visibility == "public"
-                    || visibility == "brands"
-                    || visibility == "visible_to_brands"
-                    || visibility == "true"
-            });
+            let is_visible_to_marketplace = match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(&row),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            };
             if !is_visible_to_marketplace {
                 continue;
             }
@@ -798,10 +853,15 @@ pub async fn search_marketplace_profiles(
             } else {
                 format!("{city}, {state}")
             };
-            let base_weekly_price_cents = resolve_weekly_rate_cents(
-                row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
-                row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
-            );
+            let default_pricing = is_default_pricing(&row);
+            let base_weekly_price_cents_value = if default_pricing {
+                serde_json::Value::Null
+            } else {
+                serde_json::json!(resolve_weekly_rate_cents(
+                    row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+                    row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+                ))
+            };
             let marketplace_contract = contract_by_creator_id
                 .get(creator_id)
                 .map(crate::agency_marketplace_contracts::parse_contract_summary)
@@ -846,8 +906,14 @@ pub async fn search_marketplace_profiles(
                 },
                 "verification_source": "kyc",
                 "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
-                "base_weekly_price_cents": base_weekly_price_cents,
-                "base_monthly_price_cents": row.get("base_monthly_price_cents").cloned().unwrap_or(serde_json::Value::Null),
+                "base_weekly_price_cents": base_weekly_price_cents_value,
+                "base_monthly_price_cents": if default_pricing {
+                    serde_json::Value::Null
+                } else {
+                    row.get("base_monthly_price_cents")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null)
+                },
                 "currency_code": row.get("currency_code").cloned().unwrap_or(serde_json::json!("USD")),
                 "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
                 "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
@@ -1420,7 +1486,7 @@ pub async fn get_marketplace_profile_details(
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
             .eq("id", &profile_id)
             .limit(1)
             .execute()
@@ -1447,18 +1513,26 @@ pub async fn get_marketplace_profile_details(
             .unwrap_or("")
             .trim()
             .to_lowercase();
-        let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
-            visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
-        });
+        let is_visible_to_marketplace = match public_profile_visible {
+            Some(true) => true,
+            Some(false) => should_default_visibility_on(&row),
+            None => {
+                visibility.is_empty()
+                    || visibility == "public"
+                    || visibility == "brands"
+                    || visibility == "visible_to_brands"
+                    || visibility == "true"
+            }
+        };
         if !is_visible_to_marketplace {
             return Err((
                 StatusCode::NOT_FOUND,
                 "marketplace profile not found".to_string(),
             ));
+        }
+        let mut row = row;
+        if is_default_pricing(&row) {
+            row["base_monthly_price_cents"] = serde_json::Value::Null;
         }
         response["profile"] = row;
 

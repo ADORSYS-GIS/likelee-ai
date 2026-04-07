@@ -1715,7 +1715,7 @@
         "languages": "par ex. anglais, espagnol",
         "confirmPassword": "********",
         "handle": "@votreidentifiant",
-        "price": "150",
+        "price": "",
         "headshot": "URL de l'image",
         "specify": "Veuillez préciser...",
         "age": "ex: 25"

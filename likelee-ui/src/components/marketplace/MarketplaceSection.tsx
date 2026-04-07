@@ -1089,9 +1089,25 @@ export function MarketplaceSection({
                     profile?.base_monthly_price_cents || 0,
                   );
                   const pricingUpdatedAt = profile?.pricing_updated_at;
+                  const createdAt = profile?.created_at;
+                  const pricingTimestamp =
+                    typeof pricingUpdatedAt === "string"
+                      ? Date.parse(pricingUpdatedAt)
+                      : NaN;
+                  const createdTimestamp =
+                    typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
+                  const pricingDeltaMs =
+                    Number.isFinite(pricingTimestamp) &&
+                    Number.isFinite(createdTimestamp)
+                      ? pricingTimestamp - createdTimestamp
+                      : NaN;
+                  const hasExplicitPricingUpdate =
+                    Number.isFinite(pricingTimestamp) &&
+                    Number.isFinite(createdTimestamp) &&
+                    Number.isFinite(pricingDeltaMs) &&
+                    pricingDeltaMs > 60_000;
                   const hasExplicitBaseRate =
-                    (typeof pricingUpdatedAt === "string" &&
-                      pricingUpdatedAt.trim().length > 0) ||
+                    hasExplicitPricingUpdate ||
                     (rawBaseRateCents > 0 &&
                       rawBaseRateCents !== MIN_BASE_MONTHLY_CENTS);
                   const baseRateCents = hasExplicitBaseRate

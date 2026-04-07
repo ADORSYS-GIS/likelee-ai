@@ -931,6 +931,7 @@ export default function CreatorDashboard() {
     accept_negotiations: true,
     is_public_brands: resolvePublicBrandsVisibility(profile),
   });
+  const baseRateRef = useRef<number | null>(null);
   const [licenses, setLicenses] = useState<any[]>([]);
   const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
@@ -3353,6 +3354,7 @@ export default function CreatorDashboard() {
         const json = await base44.get("/dashboard");
         const profile = json.profile || {};
         const pricingUpdatedAt = profile.pricing_updated_at;
+        const createdAt = profile.created_at;
         const weeklyCents =
           typeof profile.base_weekly_price_cents === "number"
             ? profile.base_weekly_price_cents
@@ -3367,15 +3369,42 @@ export default function CreatorDashboard() {
             : typeof weeklyCents === "number"
               ? Math.round((weeklyCents / 100) * 4.345)
               : undefined;
+        const pricingTimestamp =
+          typeof pricingUpdatedAt === "string"
+            ? Date.parse(pricingUpdatedAt)
+            : NaN;
+        const createdTimestamp =
+          typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
+        const pricingDeltaMs =
+          Number.isFinite(pricingTimestamp) && Number.isFinite(createdTimestamp)
+            ? pricingTimestamp - createdTimestamp
+            : NaN;
+        const hasExplicitPricingUpdate =
+          Number.isFinite(pricingTimestamp) &&
+          Number.isFinite(createdTimestamp) &&
+          Number.isFinite(pricingDeltaMs) &&
+          pricingDeltaMs > 60_000;
         const hasExplicitBaseRate =
-          (typeof pricingUpdatedAt === "string" &&
-            pricingUpdatedAt.trim().length > 0) ||
+          hasExplicitPricingUpdate ||
           (typeof weeklyCents === "number" &&
             weeklyCents > 0 &&
             weeklyCents !== MIN_BASE_WEEKLY_CENTS) ||
           (typeof monthlyCents === "number" &&
             monthlyCents > 0 &&
             monthlyCents !== MIN_BASE_MONTHLY_CENTS);
+        const resolvedPricePerMonth = hasExplicitBaseRate
+          ? typeof monthlyFromProfile === "number"
+            ? monthlyFromProfile
+            : 0
+          : 0;
+        baseRateRef.current = resolvedPricePerMonth;
+        const visibilityField = String(profile?.visibility || "").trim();
+        const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+        const isNewProfile =
+          Number.isFinite(createdTimestamp) &&
+          (!Number.isFinite(pricingDeltaMs) || pricingDeltaMs <= 60_000);
+        const isPublicBrands =
+          resolvedVisibility || (!resolvedVisibility && isNewProfile);
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -3403,18 +3432,17 @@ export default function CreatorDashboard() {
               : prev.height_cm,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
-          is_public_brands: resolvePublicBrandsVisibility(profile),
+          is_public_brands: isPublicBrands,
           instagram_connected: prev.instagram_connected ?? false,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Canonical rate is weekly; fall back to legacy monthly when needed.
           // If pricing was never explicitly set, keep it blank (0) instead of
           // showing the platform minimum default.
-          price_per_month: hasExplicitBaseRate
-            ? typeof monthlyFromProfile === "number"
-              ? monthlyFromProfile
-              : (prev.price_per_month ?? 0)
-            : (prev.price_per_month ?? 0),
+          price_per_month:
+            typeof resolvedPricePerMonth === "number"
+              ? resolvedPricePerMonth
+              : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
@@ -5251,6 +5279,10 @@ export default function CreatorDashboard() {
       const value = Number.parseFloat(text);
       return Number.isFinite(value) ? value : undefined;
     };
+    const nextRate = creator.price_per_month || 0;
+    const prevRate = baseRateRef.current;
+    const rateChanged =
+      typeof prevRate === "number" ? nextRate !== prevRate : nextRate > 0;
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -5267,6 +5299,7 @@ export default function CreatorDashboard() {
       base_weekly_price_cents: Math.round(
         ((creator.price_per_month || 0) / 4.345) * 100,
       ),
+      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
@@ -5340,6 +5373,12 @@ export default function CreatorDashboard() {
       // Update creator state with the saved data from the response
       if (Array.isArray(responseData) && responseData.length > 0) {
         const savedProfile = responseData[0];
+        const savedMonthlyRate =
+          typeof savedProfile.base_monthly_price_cents === "number"
+            ? Math.round(savedProfile.base_monthly_price_cents / 100)
+            : typeof savedProfile.base_weekly_price_cents === "number"
+              ? Math.round((savedProfile.base_weekly_price_cents / 100) * 4.345)
+              : creator.price_per_month || 0;
         setCreator((prev) => ({
           ...prev,
           name: savedProfile.full_name || prev.name,
@@ -5371,15 +5410,11 @@ export default function CreatorDashboard() {
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),
-          price_per_month:
-            typeof savedProfile.base_monthly_price_cents === "number"
-              ? Math.round(savedProfile.base_monthly_price_cents / 100)
-              : typeof savedProfile.base_weekly_price_cents === "number"
-                ? Math.round(
-                    (savedProfile.base_weekly_price_cents / 100) * 4.345,
-                  )
-                : prev.price_per_month,
+          price_per_month: savedMonthlyRate,
         }));
+        if (typeof savedMonthlyRate === "number") {
+          baseRateRef.current = savedMonthlyRate;
+        }
       }
 
       setEditingRules(false);
@@ -13396,6 +13431,12 @@ export default function CreatorDashboard() {
 }
 const resolvePublicBrandsVisibility = (data: any): boolean => {
   if (typeof data?.public_profile_visible === "boolean") {
+    const rawVisibility = String(data?.visibility || "")
+      .trim()
+      .toLowerCase();
+    if (!rawVisibility && data.public_profile_visible === false) {
+      return true;
+    }
     return data.public_profile_visible;
   }
   const rawVisibility = String(data?.visibility || "")
