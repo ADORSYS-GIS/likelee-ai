@@ -8,7 +8,6 @@ import {
   Eye,
   RefreshCw,
   CheckCircle2,
-  Check,
   Clock,
   AlertCircle,
   DollarSign,
@@ -43,6 +42,11 @@ const ActiveLicensesView = ({
 
   const handleRenew = (license: ComplianceRenewableLicense) => {
     onRenew(license);
+  };
+
+  const canRenewLicense = (license: any) => {
+    const status = String(license?.status || "");
+    return status === "Expiring" || status === "Expired";
   };
 
   const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
@@ -382,22 +386,14 @@ const ActiveLicensesView = ({
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {String(lic.status).includes("Expiring") &&
-                        (lic.is_renewed ? (
-                          <Button
-                            disabled
-                            className="h-9 px-4 bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-sm cursor-not-allowed opacity-100"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Renewed
-                          </Button>
-                        ) : (
-                          <Button
-                            className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95"
-                            onClick={() => handleRenew(lic)}
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" /> Renew
-                          </Button>
-                        ))}
+                      {canRenewLicense(lic) && (
+                        <Button
+                          className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95"
+                          onClick={() => handleRenew(lic)}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Renew
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         className="h-9 w-9 p-0 border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 rounded-lg bg-white shadow-sm transition-all active:scale-95"
@@ -417,13 +413,7 @@ const ActiveLicensesView = ({
         license={selectedLicense}
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        onRenew={
-          selectedLicense &&
-          String(selectedLicense.status).includes("Expiring") &&
-          !selectedLicense.is_renewed
-            ? handleRenew
-            : undefined
-        }
+        onRenew={selectedLicense && canRenewLicense(selectedLicense) ? handleRenew : undefined}
         isSportsAgency={isSportsAgency}
       />
     </div>
