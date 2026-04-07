@@ -49,6 +49,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceConnectContractModal from "@/components/marketplace/MarketplaceConnectContractModal";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { isDefaultPricing } from "@/utils/pricingDefaults";
 import {
   approveAgencyCreatorDisconnectRequest,
   rejectAgencyCreatorDisconnectRequest,
@@ -1102,9 +1103,12 @@ export function MarketplaceSection({
                   const industries = Array.isArray(profile?.industries)
                     ? profile.industries
                     : [];
-                  const baseRateCents = Number(
+                  const rawBaseRateCents = Number(
                     profile?.base_monthly_price_cents || 0,
                   );
+                  const baseRateCents = isDefaultPricing(profile)
+                    ? 0
+                    : rawBaseRateCents;
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
                   const isAgencyProfile =
