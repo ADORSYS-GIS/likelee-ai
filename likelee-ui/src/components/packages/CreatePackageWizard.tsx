@@ -54,6 +54,8 @@ import { Switch } from "@/components/ui/switch";
 import { AssetSelector } from "./AssetSelector";
 import { ensureHexColor } from "@/utils/color";
 import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/auth/AuthProvider";
 
 export type CreatePackageWizardMode =
   | "template"
@@ -81,6 +83,7 @@ export function CreatePackageWizard({
   isSportsAgency = false,
   offerContext = null,
 }: CreatePackageWizardProps) {
+  const { user } = useAuth();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
@@ -102,6 +105,8 @@ export function CreatePackageWizard({
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdPackage, setCreatedPackage] = useState<any>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverInputRef = React.useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
@@ -133,6 +138,75 @@ export function CreatePackageWizard({
     client_name: "",
     client_email: "",
     items: [] as any[],
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e?.target;
+    const file = (input?.files?.[0] as File | undefined) ?? undefined;
+    if (input) input.value = "";
+    if (!file) return;
+
+    if (!supabase || !user?.id) {
+      toast({
+        title: "Upload unavailable",
+        description: "Please sign in again and retry the upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type?.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please choose an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const safeName = (file.name || "cover")
+        .toString()
+        .replace(/[^a-zA-Z0-9_.-]/g, "_");
+      const ext = safeName.includes(".")
+        ? safeName.split(".").pop()
+        : file.type?.includes("png")
+          ? "png"
+          : "jpg";
+      const rand =
+        (globalThis as any)?.crypto?.randomUUID?.() ||
+        `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const path = `agency/${user.id}/packages/covers/cover_${rand}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("likelee-public")
+        .upload(path, file, {
+          upsert: true,
+          contentType: file.type || "image/jpeg",
+        });
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from("likelee-public")
+        .getPublicUrl(path);
+      const publicUrl = data?.publicUrl || "";
+      if (!publicUrl) {
+        throw new Error("missing_public_url");
+      }
+
+      setFormData((prev) => ({ ...prev, cover_image_url: publicUrl }));
+      toast({ title: "Cover image uploaded" });
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      toast({
+        title: "Cover upload failed",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingCover(false);
+    }
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -713,6 +787,46 @@ export function CreatePackageWizard({
                         }
                         className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400"
                       />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={isUploadingCover}
+                          className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2 w-full sm:w-auto"
+                        >
+                          {isUploadingCover ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <SwitchCamera className="w-4 h-4" />
+                          )}
+                          {isUploadingCover
+                            ? "Uploading..."
+                            : "Upload from device"}
+                        </Button>
+                        {String(formData.cover_image_url || "").trim() && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                cover_image_url: "",
+                              }))
+                            }
+                            className="h-10 px-3 rounded-xl font-bold text-gray-600 w-full sm:w-auto"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="p-8 bg-gray-50/50 backdrop-blur-sm rounded-[2rem] border border-gray-100 space-y-8">
