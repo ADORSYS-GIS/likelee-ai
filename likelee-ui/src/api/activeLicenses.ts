@@ -2,9 +2,21 @@ import { base44 } from "./base44Client";
 
 export interface ActiveLicense {
   id: string;
+  brand_id?: string;
   talent_id: string;
   talent_name: string;
   talent_avatar?: string;
+  submission_id?: string;
+  template_id?: string;
+  client_name?: string;
+  client_email?: string;
+  duration_days?: number;
+  start_date?: string;
+  custom_terms?: string;
+  requires_agency_signature?: boolean;
+  territory?: string;
+  exclusivity?: string;
+  modifications_allowed?: string;
   license_type: string;
   brand: string;
   start_date?: string;
@@ -13,6 +25,7 @@ export interface ActiveLicense {
   usage_scope: string;
   value: number;
   status: "Active" | "Expiring" | "Expired";
+  is_renewed?: boolean;
 }
 
 export interface ActiveLicensesStats {

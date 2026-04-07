@@ -16,9 +16,9 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  User,
   Briefcase,
   RefreshCw,
+  Check,
 } from "lucide-react";
 
 interface ActiveLicenseDetailsSheetProps {
@@ -40,7 +40,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
-    }).format(val / 100);
+    }).format(val);
   };
 
   const getStatusBadge = (status: string) => {
@@ -182,6 +182,14 @@ export const ActiveLicenseDetailsSheet: React.FC<
               onClick={() => onRenew(license)}
             >
               <RefreshCw className="mr-2 h-4 w-4" /> Renew License
+            </Button>
+          )}
+          {!onRenew && license.is_renewed && (
+            <Button
+              disabled
+              className="w-full bg-emerald-100 text-emerald-700 border border-emerald-200 opacity-100 cursor-not-allowed"
+            >
+              <Check className="mr-2 h-4 w-4" /> Already Renewed
             </Button>
           )}
         </SheetFooter>

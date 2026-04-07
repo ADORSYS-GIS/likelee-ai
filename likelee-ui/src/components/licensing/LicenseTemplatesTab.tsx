@@ -52,6 +52,7 @@ import {
   LicenseTemplate,
   CreateTemplateRequest,
 } from "@/api/licenseTemplates";
+import { RenewalLaunchContext } from "@/types/licensing";
 
 const CATEGORIES = [
   "All Categories",
@@ -62,14 +63,6 @@ const CATEGORIES = [
   "Film & TV",
   "Custom",
 ];
-
-export interface RenewalLaunchContext {
-  templateId: string;
-  sourceLicenseId?: string;
-  clientName?: string;
-  clientEmail?: string;
-  talentName?: string;
-}
 
 interface LicenseTemplatesTabProps {
   renewalLaunchContext?: RenewalLaunchContext | null;
@@ -102,19 +95,30 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   const [hideContractInModal, setHideContractInModal] = useState(false);
   const [editingTemplate, setEditingTemplate] =
     useState<LicenseTemplate | null>(null);
-  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
-  const [sendTemplateId, setSendTemplateId] = useState<string | null>(null);
-  const [sendLicenseFee, setSendLicenseFee] = useState<number | undefined>(
-    undefined,
-  );
-  const [sendDocusealTemplateId, setSendDocusealTemplateId] = useState<
-    number | null
-  >(null);
-  const [sendInitialValues, setSendInitialValues] = useState<{
+  const [wizardInitialValues, setWizardInitialValues] = useState<{
     client_name?: string;
     client_email?: string;
-    talent_names?: string;
+    talent_name?: string;
+    brand_id?: string;
+    talent_id?: string;
+    duration_days?: number;
+    license_fee?: number;
+    start_date?: string;
+    custom_terms?: string;
+    requires_agency_signature?: boolean;
+    territory?: string;
+    exclusivity?: string;
+    modifications_allowed?: string;
   }>({});
+  const [wizardBrandContext, setWizardBrandContext] = useState<{
+    brand_id: string;
+    brand_name?: string;
+    brand_email?: string;
+    licensing_request_id?: string;
+    talent_id?: string;
+    talent_name?: string;
+  } | null>(null);
+  const [wizardIsRenewalPrefill, setWizardIsRenewalPrefill] = useState(false);
   const [isViewOnly, setIsViewOnly] = useState(false);
 
   const [templateToDelete, setTemplateToDelete] = useState<{
@@ -239,36 +243,29 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
 
   // UseTemplate logic:
   const handleUseTemplate = (template: LicenseTemplate) => {
-    console.log(
-      "handleUseTemplate called with brandRequestContext:",
-      brandRequestContext,
-    );
-    setSendTemplateId(template.id);
-    setSendDocusealTemplateId(template.docuseal_template_id ?? null);
-    setSendLicenseFee(template.license_fee);
+    setWizardTemplate(template);
     if (brandRequestContext) {
-      console.log("Setting initial values from brandRequestContext");
-      setSendInitialValues({
+      setWizardIsRenewalPrefill(false);
+      setWizardInitialValues({
         client_name: brandRequestContext.brand_name,
         client_email: brandRequestContext.brand_email,
+        talent_name: brandRequestContext.talent_name,
+        brand_id: brandRequestContext.brand_id,
+        talent_id: brandRequestContext.talent_id,
+      });
+      setWizardBrandContext({
+        brand_id: brandRequestContext.brand_id,
+        brand_name: brandRequestContext.brand_name,
+        brand_email: brandRequestContext.brand_email,
+        licensing_request_id: brandRequestContext.licensing_request_id,
+        talent_id: brandRequestContext.talent_id,
+        talent_name: brandRequestContext.talent_name,
       });
     } else {
-      console.log("No brandRequestContext, using empty initial values");
-      setSendInitialValues({});
+      setWizardIsRenewalPrefill(false);
+      setWizardInitialValues({});
+      setWizardBrandContext(null);
     }
-    setIsSendModalOpen(true);
-  };
-
-  const handleUseSuccess = () => {
-    setIsSendModalOpen(false);
-    setSendTemplateId(null);
-    setSendDocusealTemplateId(null);
-    setSendLicenseFee(undefined);
-    setSendInitialValues({});
-    onBrandRequestContextHandled?.();
-    queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-    queryClient.invalidateQueries({ queryKey: ["license-templates"] });
-    toast({ title: "Sent", description: "Contract sent successfully!" });
   };
 
   useEffect(() => {
@@ -289,15 +286,24 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       return;
     }
 
-    setSendTemplateId(linkedTemplate.id);
-    setSendDocusealTemplateId(linkedTemplate.docuseal_template_id ?? null);
-    setSendLicenseFee(linkedTemplate.license_fee);
-    setSendInitialValues({
+    setWizardTemplate(linkedTemplate);
+    setWizardIsRenewalPrefill(true);
+    setWizardInitialValues({
       client_name: renewalLaunchContext.clientName,
       client_email: renewalLaunchContext.clientEmail,
-      talent_names: renewalLaunchContext.talentName,
+      talent_name: renewalLaunchContext.talentName,
+      brand_id: renewalLaunchContext.brandId,
+      talent_id: renewalLaunchContext.talentId,
+      duration_days: renewalLaunchContext.durationDays,
+      license_fee: renewalLaunchContext.licenseFee,
+      start_date: renewalLaunchContext.startDate,
+      custom_terms: renewalLaunchContext.customTerms,
+      requires_agency_signature: renewalLaunchContext.requiresAgencySignature,
+      territory: renewalLaunchContext.territory,
+      exclusivity: renewalLaunchContext.exclusivity,
+      modifications_allowed: renewalLaunchContext.modificationsAllowed,
     });
-    setIsSendModalOpen(true);
+    setWizardBrandContext(null);
     onRenewalLaunchHandled?.();
   }, [
     renewalLaunchContext,
@@ -568,7 +574,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                         className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 flex items-center justify-center gap-2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setWizardTemplate(template);
+                          handleUseTemplate(template);
                         }}
                       >
                         Use Contract
@@ -598,52 +604,36 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         hideContract={hideContractInModal}
         readOnly={isViewOnly}
       />
-
-      {sendTemplateId && (
-        <SendContractModal
-          isOpen={isSendModalOpen}
-          onClose={() => setIsSendModalOpen(false)}
-          isSportsAgency={isSportsAgency}
-          templateId={sendTemplateId}
-          docusealTemplateId={sendDocusealTemplateId ?? undefined}
-          licenseFee={sendLicenseFee}
-          initialValues={sendInitialValues}
-          brandRequestContext={
-            brandRequestContext
-              ? {
-                  brand_id: brandRequestContext.brand_id,
-                  brand_name: brandRequestContext.brand_name,
-                  brand_email: brandRequestContext.brand_email,
-                  licensing_request_id:
-                    brandRequestContext.licensing_request_id,
-                  talent_id: brandRequestContext.talent_id,
-                  talent_name: brandRequestContext.talent_name,
-                }
-              : undefined
-          }
-          onSuccess={handleUseSuccess}
-        />
-      )}
       {wizardTemplate && (
         <SubmissionWizard
           isOpen={!!wizardTemplate}
-          onClose={() => setWizardTemplate(null)}
+          onClose={() => {
+            setWizardTemplate(null);
+            setWizardInitialValues({});
+            setWizardBrandContext(null);
+            setWizardIsRenewalPrefill(false);
+          }}
           isSportsAgency={isSportsAgency}
           template={wizardTemplate}
+          initialValues={wizardInitialValues}
+          isRenewalPrefill={wizardIsRenewalPrefill}
           brandRequestContext={
-            brandRequestContext
+            wizardBrandContext
               ? {
-                  brand_id: brandRequestContext.brand_id,
-                  brand_name: brandRequestContext.brand_name,
-                  brand_email: brandRequestContext.brand_email,
+                  brand_id: wizardBrandContext.brand_id,
+                  brand_name: wizardBrandContext.brand_name,
+                  brand_email: wizardBrandContext.brand_email,
                   licensing_request_id:
-                    brandRequestContext.licensing_request_id,
-                  talent_id: brandRequestContext.talent_id,
-                  talent_name: brandRequestContext.talent_name,
+                    wizardBrandContext.licensing_request_id,
+                  talent_id: wizardBrandContext.talent_id,
+                  talent_name: wizardBrandContext.talent_name,
                 }
               : undefined
           }
           onComplete={() => {
+            setWizardInitialValues({});
+            setWizardBrandContext(null);
+            setWizardIsRenewalPrefill(false);
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({
               queryKey: ["license-submissions"],

@@ -71,6 +71,7 @@ interface SendContractModalProps {
 interface FormData {
   client_name: string;
   client_email: string;
+  talent_names?: string;
 }
 
 export const SendContractModal: React.FC<SendContractModalProps> = ({
@@ -81,6 +82,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   docusealTemplateId,
   licenseFee,
   initialValues,
+  brandRequestContext,
   onSuccess,
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
@@ -162,6 +164,15 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     }
     if (initialValues?.client_email) {
       setValue("client_email", initialValues.client_email);
+    }
+    if (initialValues?.talent_names && !brandRequestContext?.talent_name) {
+      const parsedNames = String(initialValues.talent_names)
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+      if (parsedNames.length > 0) {
+        setSelectedTalentNames(parsedNames);
+      }
     }
     if (brandRequestContext?.brand_id) {
       const match = brandOptions.find(
@@ -498,7 +509,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                         }
                       }
                     }}
-                    disabled={!allowBrandChange && brandRequestContext}
+                    disabled={!allowBrandChange && !!brandRequestContext}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select brand" />

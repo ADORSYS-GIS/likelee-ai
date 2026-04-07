@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ActiveLicense {
     pub id: String,
+    pub brand_id: Option<String>,
     pub talent_id: String,
     pub talent_name: String,
     pub talent_avatar: Option<String>,
@@ -17,14 +18,21 @@ pub struct ActiveLicense {
     pub template_id: Option<String>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub territory: Option<String>,
+    pub exclusivity: Option<String>,
+    pub modifications_allowed: Option<String>,
     pub license_type: String,
     pub brand: String,
-    pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub days_left: Option<i64>,
     pub usage_scope: String,
     pub value: f64,
     pub status: String, // "Active", "Expiring", "Expired"
+    pub is_renewed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,7 +77,9 @@ struct CampaignEmbed {
 #[derive(Deserialize)]
 struct LicensingRequestRow {
     id: String,
+    created_at: Option<String>,
     submission_id: Option<String>,
+    brand_id: Option<String>,
     talent_id: Option<String>,
     talent_name: Option<String>,
     campaign_title: Option<String>,
@@ -99,6 +109,43 @@ struct SubmissionEmbed {
     client_name: Option<String>,
     client_email: Option<String>,
     license_fee: Option<f64>,
+    duration_days: Option<i32>,
+    start_date: Option<String>,
+    custom_terms: Option<String>,
+    requires_agency_signature: Option<bool>,
+    license_templates: Option<TemplateEmbed>,
+}
+
+#[derive(Deserialize)]
+struct TemplateEmbed {
+    territory: Option<String>,
+    exclusivity: Option<String>,
+    modifications_allowed: Option<String>,
+}
+
+fn renewal_key(
+    template_id: Option<&str>,
+    talent_id: Option<&str>,
+    brand_id: Option<&str>,
+    client_name: Option<&str>,
+) -> Option<String> {
+    let template_id = template_id?.trim();
+    let talent_id = talent_id?.trim();
+    if template_id.is_empty() || talent_id.is_empty() {
+        return None;
+    }
+
+    let brand_part = brand_id
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            client_name
+                .map(|s| s.trim().to_lowercase())
+                .filter(|s| !s.is_empty())
+        })
+        .unwrap_or_default();
+
+    Some(format!("{}|{}|{}", template_id, talent_id, brand_part))
 }
 
 pub async fn list(
@@ -110,7 +157,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(license_fee)";
+    let select = "id,created_at,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
 
     let mut query = state
         .pg
@@ -179,6 +226,35 @@ pub async fn list(
         "Fetched licensing_requests with status=approved"
     );
 
+    let mut newest_license_by_key: std::collections::HashMap<String, (String, String)> =
+        std::collections::HashMap::new();
+
+    for r in &rows {
+        let key = renewal_key(
+            r.license_submissions
+                .as_ref()
+                .and_then(|s| s.template_id.as_deref()),
+            r.talent_id.as_deref(),
+            r.brand_id.as_deref(),
+            r.license_submissions
+                .as_ref()
+                .and_then(|s| s.client_name.as_deref())
+                .or(r.client_name.as_deref()),
+        );
+
+        let Some(key) = key else {
+            continue;
+        };
+
+        let created_at = r.created_at.clone().unwrap_or_default();
+        match newest_license_by_key.get(&key) {
+            Some((_, existing_created_at)) if existing_created_at >= &created_at => {}
+            _ => {
+                newest_license_by_key.insert(key, (r.id.clone(), created_at));
+            }
+        }
+    }
+
     let mut licenses = Vec::new();
 
     for r in rows {
@@ -207,6 +283,22 @@ pub async fn list(
             .unwrap_or_else(|| "Unknown Brand".to_string());
 
         let usage_scope = r.usage_scope.clone().unwrap_or_default();
+        let renewal_key = renewal_key(
+            r.license_submissions
+                .as_ref()
+                .and_then(|s| s.template_id.as_deref()),
+            r.talent_id.as_deref(),
+            r.brand_id.as_deref(),
+            r.license_submissions
+                .as_ref()
+                .and_then(|s| s.client_name.as_deref())
+                .or(r.client_name.as_deref()),
+        );
+        let is_renewed = renewal_key
+            .as_ref()
+            .and_then(|key| newest_license_by_key.get(key))
+            .map(|(latest_id, _)| latest_id != &r.id)
+            .unwrap_or(false);
 
         let value = r
             .campaigns
@@ -252,6 +344,7 @@ pub async fn list(
 
         licenses.push(ActiveLicense {
             id: r.id,
+            brand_id: r.brand_id.clone(),
             talent_id: r.talent_id.unwrap_or_default(),
             talent_name,
             talent_avatar,
@@ -269,14 +362,46 @@ pub async fn list(
                 .license_submissions
                 .as_ref()
                 .and_then(|s| s.client_email.clone()),
+            duration_days: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.duration_days),
+            start_date: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.start_date.clone())
+                .or(r.license_start_date.clone()),
+            custom_terms: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.custom_terms.clone()),
+            requires_agency_signature: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.requires_agency_signature),
+            territory: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.license_templates.as_ref())
+                .and_then(|t| t.territory.clone()),
+            exclusivity: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.license_templates.as_ref())
+                .and_then(|t| t.exclusivity.clone()),
+            modifications_allowed: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.license_templates.as_ref())
+                .and_then(|t| t.modifications_allowed.clone()),
             license_type,
             brand: brand_name,
-            start_date: r.license_start_date,
             end_date: r.license_end_date.or(r.deadline),
             days_left,
             usage_scope,
             value,
             status,
+            is_renewed,
         });
     }
 
