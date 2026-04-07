@@ -23,6 +23,7 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
+  Download,
   XCircle,
   Loader2,
   RefreshCw,
@@ -53,7 +54,8 @@ import {
   isOnboardingIncomplete,
 } from "@/auth/onboarding";
 
-import { CreatorTermsContent } from "@/pages/PrivacyPolicy";
+import { CreatorTermsContent } from "@/components/CreatorTermsContent";
+import { downloadTermsPdf } from "@/utils/termsDownload";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
@@ -1215,6 +1217,17 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
+    if (!agreedToTerms) {
+      toast({
+        variant: "destructive",
+        title: t("reserveProfile.terms.mustAgreeTitle", "Agreement Required"),
+        description: t(
+          "reserveProfile.terms.mustAgree",
+          "You must agree to the Creator & Talent Terms to create your account.",
+        ),
+      });
+      return;
+    }
     try {
       setProfileSaveLoading(true);
       // Mark profile as complete
@@ -2250,15 +2263,34 @@ export default function ReserveProfile() {
                 <p className="text-gray-700">
                   {t(
                     "reserveProfile.terms.subtitle",
-                    "Please review and agree to the Creator & Talent Terms to complete your registration.",
+                    "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
                   )}
                 </p>
               </div>
 
               <div className="border-2 border-gray-200 bg-white">
                 <ScrollArea className="h-96 p-4">
-                  <CreatorTermsContent />
+                  <div id="creator-terms-content">
+                    <CreatorTermsContent />
+                  </div>
                 </ScrollArea>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-2 border-black rounded-none"
+                  onClick={() =>
+                    downloadTermsPdf(
+                      "creator-terms-content",
+                      "Creator & Talent Terms and Conditions",
+                    )
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
               </div>
 
               <div className="p-4 border-2 border-gray-200 bg-gray-50">
@@ -2276,15 +2308,21 @@ export default function ReserveProfile() {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      {t(
-                        "reserveProfile.terms.agreeTo",
-                        "I agree to the Creator & Talent Terms and Conditions",
-                      )}
+                      I agree to the{" "}
+                      <a
+                        href="https://likelee.ai/privacypolicy"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-600 underline"
+                      >
+                        Privacy Policy
+                      </a>{" "}
+                      and Terms of Service.
                     </label>
                     <p className="text-sm text-gray-500">
                       {t(
                         "reserveProfile.terms.mustAgree",
-                        "You must agree to the Creator & Talent Terms to create your account.",
+                        "You must agree to the terms to complete registration.",
                       )}
                     </p>
                   </div>
