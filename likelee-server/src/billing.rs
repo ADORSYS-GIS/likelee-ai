@@ -2763,10 +2763,7 @@ pub async fn start_creator_trial(
     let (creator_id, billed_tier, _) = get_creator_entitlement_tier_for_user(&state, &user).await?;
 
     if billed_tier != PlanTier::Free {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "already_on_paid_plan".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "already_on_paid_plan".to_string()));
     }
 
     // Check if trial already started
@@ -2789,7 +2786,11 @@ pub async fn start_creator_trial(
         .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
         .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
 
-    if row.get("trial_started_at").and_then(|v| v.as_str()).is_some() {
+    if row
+        .get("trial_started_at")
+        .and_then(|v| v.as_str())
+        .is_some()
+    {
         return Err((StatusCode::BAD_REQUEST, "trial_already_started".to_string()));
     }
 
