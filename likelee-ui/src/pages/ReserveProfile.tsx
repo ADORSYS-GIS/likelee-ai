@@ -305,7 +305,13 @@ export default function ReserveProfile() {
 
   const [showWarning, setShowWarning] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(() => {
+    return sessionStorage.getItem("reserve_agreedToTerms") === "true";
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("reserve_agreedToTerms", String(agreedToTerms));
+  }, [agreedToTerms]);
 
   const [profileId, setProfileId] = useState<string | null>(() => {
     return localStorage.getItem("reserve_profileId") || null;
@@ -482,8 +488,16 @@ export default function ReserveProfile() {
 
     if (!isOnboardingIncomplete(profile)) {
       const dashboardPath = getDashboardPath(profile);
+      // Prevent redirecting to dashboard if we are actively trying to agree to terms (step 4)
+      // or if we just returned from the terms page with local state indicating we are on step 4
+      const isActivelyOnboardingLocally = step > 1 && !profileSaveLoading;
+      
+      // We only force you to dashboard if server says completed AND we aren't in the middle
+      // of confirming the final step locally (which can happen on a tab visibility change
+      // before finalizing the profile).
       if (
         !profileSaveLoading &&
+        !isActivelyOnboardingLocally &&
         window.location.pathname !== dashboardPath.split("?")[0]
       ) {
         navigate(dashboardPath, { replace: true });
@@ -1236,6 +1250,7 @@ export default function ReserveProfile() {
       localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      sessionStorage.removeItem("reserve_agreedToTerms");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
       navigate("/CreatorDashboard", { replace: true });
