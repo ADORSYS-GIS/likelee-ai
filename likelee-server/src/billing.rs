@@ -550,6 +550,7 @@ pub struct CreatorCheckoutRequest {
 pub struct CreatorBillingStatusResponse {
     pub creator_id: String,
     pub plan_tier: String,
+    pub entitlement_tier: String,
     pub plan_interval: String,
     pub subscription_status: String,
     pub stripe_customer_id: Option<String>,
@@ -2638,7 +2639,7 @@ pub async fn get_creator_billing_status(
     let resp = state
         .pg
         .from("creators")
-        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at")
+        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at,trial_started_at")
         .eq("id", &creator_id)
         .limit(1)
         .execute()
@@ -2676,11 +2677,11 @@ pub async fn get_creator_billing_status(
             })
     }
 
-    let created_at_str = row.get("created_at").and_then(|v| v.as_str());
-    let trial_start_at = created_at_str.and_then(parse_db_date);
+    let trial_start_at_str = row.get("trial_started_at").and_then(|v| v.as_str());
+    let trial_start_at = trial_start_at_str.and_then(parse_db_date);
 
     let trial_ends_at_dt = if billed_tier == PlanTier::Free {
-        trial_start_at.map(|dt| dt + chrono::Duration::days(14))
+        trial_start_at.map(|dt| dt + chrono::Duration::days(30))
     } else {
         None
     };
@@ -2689,12 +2690,13 @@ pub async fn get_creator_billing_status(
     let trial_active = trial_ends_at_dt.map(|dt| dt > Utc::now()).unwrap_or(false);
 
     Ok(Json(CreatorBillingStatusResponse {
-        creator_id,
+        creator_id: creator_id.clone(),
         plan_tier: row
             .get("plan_tier")
             .and_then(|v| v.as_str())
             .unwrap_or("free")
             .to_string(),
+        entitlement_tier: format!("{:?}", entitlement_tier).to_lowercase(),
         trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
         trial_active,
         trial_ends_at,
@@ -2748,6 +2750,60 @@ pub async fn get_creator_billing_status(
         can_use_campaign_archive: creator_has_campaign_archive_access(entitlement_tier),
         can_use_active_campaigns: creator_has_active_campaigns_access(entitlement_tier),
     }))
+}
+
+pub async fn start_creator_trial(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<StatusCode, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    let (creator_id, billed_tier, _) = get_creator_entitlement_tier_for_user(&state, &user).await?;
+
+    if billed_tier != PlanTier::Free {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "already_on_paid_plan".to_string(),
+        ));
+    }
+
+    // Check if trial already started
+    let resp = state
+        .pg
+        .from("creators")
+        .select("trial_started_at")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
+
+    if row.get("trial_started_at").and_then(|v| v.as_str()).is_some() {
+        return Err((StatusCode::BAD_REQUEST, "trial_already_started".to_string()));
+    }
+
+    // Start trial
+    let _ = state
+        .pg
+        .from("creators")
+        .eq("id", &creator_id)
+        .update(json!({ "trial_started_at": Utc::now().to_rfc3339() }).to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::OK)
 }
 
 #[derive(Debug, Serialize)]

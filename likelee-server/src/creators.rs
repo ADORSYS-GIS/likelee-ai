@@ -3,7 +3,7 @@ use crate::{
     config::AppState,
     entitlements::{
         creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
-        get_creator_plan_tier, PlanTier,
+        get_creator_entitlement_tier_for_user, PlanTier,
     },
 };
 use axum::{
@@ -62,8 +62,8 @@ pub async fn upsert_profile(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Force the ID and email from the authenticated user
     body["id"] = serde_json::Value::String(user.id.clone());
-    if let Some(email) = user.email {
-        body["email"] = serde_json::Value::String(email);
+    if let Some(email) = user.email.as_ref() {
+        body["email"] = serde_json::Value::String(email.clone());
     }
 
     let email = body
@@ -117,9 +117,9 @@ pub async fn upsert_profile(
     }
     sync_public_profile_visibility(&mut body);
 
-    let tier = get_creator_plan_tier(&state, &user.id)
+    let (_, _, tier) = get_creator_entitlement_tier_for_user(&state, &user)
         .await
-        .unwrap_or(PlanTier::Free);
+        .unwrap_or((user.id.clone(), PlanTier::Free, PlanTier::Free));
     if !creator_has_likeness_access(tier) {
         return Err((
             StatusCode::FORBIDDEN,

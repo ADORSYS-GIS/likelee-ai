@@ -1188,6 +1188,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::billing::get_creator_billing_status),
         )
         .route(
+            "/api/creator/billing/start-trial",
+            post(crate::billing::start_creator_trial),
+        )
+        .route(
             "/api/agency/billing/change-plan",
             post(crate::billing::change_agency_subscription_plan),
         )

@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::{auth::AuthUser, config::AppState, face_profiles::resolve_effective_creator_id};
 
-const CREATOR_FULL_ACCESS_TRIAL_DAYS: i64 = 14;
+const CREATOR_FULL_ACCESS_TRIAL_DAYS: i64 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanTier {
@@ -254,14 +254,14 @@ pub async fn get_creator_plan_tier_for_user(
     Ok((creator_id, tier))
 }
 
-async fn get_creator_created_at(
+async fn get_creator_trial_started_at(
     state: &AppState,
     creator_id: &str,
 ) -> Result<Option<DateTime<Utc>>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("creators")
-        .select("created_at")
+        .select("trial_started_at")
         .eq("id", creator_id)
         .limit(1)
         .execute()
@@ -283,7 +283,7 @@ async fn get_creator_created_at(
         .unwrap_or(json!({}));
 
     let dt = row
-        .get("created_at")
+        .get("trial_started_at")
         .and_then(|v| v.as_str())
         .and_then(|s| {
             DateTime::parse_from_rfc3339(s)
@@ -313,12 +313,12 @@ pub async fn get_creator_entitlement_tier(
         return Ok(billed_tier);
     }
 
-    let created_at = get_creator_created_at(state, creator_id).await?;
-    let Some(created_at) = created_at else {
+    let trial_started_at = get_creator_trial_started_at(state, creator_id).await?;
+    let Some(trial_started_at) = trial_started_at else {
         return Ok(PlanTier::Free);
     };
 
-    if Utc::now() - created_at < Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS) {
+    if Utc::now() - trial_started_at < Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS) {
         Ok(PlanTier::Pro)
     } else {
         Ok(PlanTier::Free)

@@ -1,14 +1,24 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, X } from "lucide-react";
+import { Check, ArrowLeft, X, Gift, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import {
   createCreatorSubscriptionCheckout,
   getCreatorBillingStatus,
 } from "@/api/functions";
+import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function CreatorSubscribe() {
   const navigate = useNavigate();
@@ -28,12 +38,48 @@ export default function CreatorSubscribe() {
   const [trialInfo, setTrialInfo] = React.useState<{
     active: boolean;
     endsAt?: string;
+    startAt?: string;
   }>({ active: false });
   const [trialCountdown, setTrialCountdown] = React.useState<string>("");
 
   const [billingInterval, setBillingInterval] = React.useState<
     "month" | "year"
   >("month");
+  const [loading, setLoading] = React.useState(true);
+  const [startingTrial, setStartingTrial] = React.useState(false);
+  const [showActiveTrialModal, setShowActiveTrialModal] = React.useState(false);
+
+  const onStartTrial = async () => {
+    try {
+      setStartingTrial(true);
+      await base44.post("/api/creator/billing/start-trial", {});
+      // Refresh billing status
+      const resp = await getCreatorBillingStatus();
+      const tier = String((resp as any)?.plan_tier || "free");
+      setCurrentPlanTier(tier);
+      setTrialInfo({
+        active: !!(resp as any)?.trial_active,
+        endsAt: (resp as any)?.trial_ends_at ? String((resp as any)?.trial_ends_at) : undefined,
+        startAt: (resp as any)?.trial_start_at,
+      });
+      toast({
+        title: "Trial started!",
+        description: "You now have 30 days of Pro access to explore all features.",
+      });
+    } catch (e: any) {
+      if (e?.message?.includes("trial_already_started") || String(e).includes("trial_already_started")) {
+        setShowActiveTrialModal(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Failed to start trial",
+          description: e?.message || String(e),
+        });
+      }
+    } finally {
+      setStartingTrial(false);
+    }
+  };
 
   const pricing = {
     basic: {
@@ -131,7 +177,11 @@ export default function CreatorSubscribe() {
           plan_interval: (resp as any)?.plan_interval,
         });
 
-        setTrialInfo({ active: trialActive, endsAt: trialEndsAt });
+        setTrialInfo({
+          active: trialActive,
+          endsAt: trialEndsAt,
+          startAt: (resp as any)?.trial_start_at,
+        });
 
         // If they have an active plan, sync the toggle to their current interval
         if (tier !== "free") {
@@ -139,6 +189,8 @@ export default function CreatorSubscribe() {
         }
       } catch (error) {
         console.error("Failed to load creator billing status", error);
+      } finally {
+        setLoading(false);
       }
     }
     void loadStatus();
@@ -259,7 +311,7 @@ export default function CreatorSubscribe() {
               trialInfo.endsAt && (
                 <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
                   <Badge className="border border-amber-200 bg-amber-100 text-amber-800 shadow-none">
-                    14-day trial
+                    30-day trial
                   </Badge>
                   <span className="font-semibold">
                     Full access • {trialCountdown || "Calculating..."}
@@ -415,7 +467,98 @@ export default function CreatorSubscribe() {
           )}
         </div>
 
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {!loading && !trialInfo.startAt && currentPlanTier === "free" && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12 overflow-hidden rounded-[32px] border border-emerald-200/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#042f2e] text-white shadow-[0_32px_64px_-16px_rgba(4,47,46,0.5)]"
+          >
+            <div className="flex flex-col gap-6 p-6 md:p-8 lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10">
+                <motion.div
+                  animate={{
+                    y: [0, -8, 0],
+                    rotate: [0, -5, 5, 0],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl"
+                >
+                  <Gift className="h-8 w-8 text-[#5eead4]" />
+                </motion.div>
+                <div className="max-w-xl">
+                  <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-3">
+                    Limited Time Trial
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight sm:text-3xl leading-tight">
+                    Start Your 30-Day <span className="text-[#5eead4]">Pro</span> Trial
+                  </h2>
+                </div>
+              </div>
+              <div className="w-full lg:w-auto relative z-10">
+                <Button
+                  type="button"
+                  disabled={startingTrial}
+                  onClick={onStartTrial}
+                  className="w-full lg:w-64 h-12 rounded-xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-base shadow-xl group"
+                >
+                  {startingTrial ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      Unlock My Trial
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="mt-10 flex flex-wrap justify-center gap-6 items-stretch">
+          {!trialInfo.startAt && currentPlanTier === "free" && (
+            <Card className="flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all">
+              <Badge className="bg-gray-100 text-gray-600 shadow-none hover:bg-gray-100 mb-4">
+                DEFAULT
+              </Badge>
+              <div className="text-3xl font-black text-[#17315F]">Free</div>
+              <div className="mt-2 text-[15px] leading-6 text-[#6D7F97]">
+                Basic visibility and profile setup.
+              </div>
+              <div className="mt-4 flex items-baseline gap-1 mb-6">
+                <div className="text-[40px] font-black leading-none tracking-[-0.06em] text-[#17315F]">
+                  $0
+                </div>
+                <div className="text-sm font-bold text-[#A9B6C8]">forever</div>
+              </div>
+              <Button
+                className="w-full rounded-xl bg-gray-50 text-[#8E9EB3] font-black"
+                disabled
+              >
+                Current Plan
+              </Button>
+              <div className="mt-6 space-y-3">
+                {[
+                  "Basic profile setup",
+                  "Marketplace visibility",
+                  "Standard support",
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5 text-[#26415F]">
+                    <div className="h-4 w-4 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                      <Check className="h-3 w-3" />
+                    </div>
+                    <span className="text-[14px] font-semibold">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           <Card
             role="button"
             tabIndex={0}
@@ -431,39 +574,30 @@ export default function CreatorSubscribe() {
                 void onCheckout("basic");
               }
             }}
-            className={`rounded-[28px] rounded-tr-none rounded-br-none border border-[#D8E1EC]/60 bg-white p-6 lg:p-8 shadow-[0_14px_40px_rgba(20,37,66,0.06)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15A9AD]/40 focus-visible:ring-offset-2 lg:translate-y-3 ${
+            className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15A9AD]/40 ${
               canSelectBasic
-                ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(20,37,66,0.08)]"
-                : "cursor-default"
+                ? "cursor-pointer hover:shadow-[0_14px_40px_rgba(20,37,66,0.06)]"
+                : "cursor-default border-[#15A9AD]/30 bg-emerald-50/20"
             }`}
           >
-            <div className="flex items-start justify-between gap-6">
-              <div className="max-w-sm">
-                <Badge className="bg-[#DFF7F8] text-[#128C96] shadow-none hover:bg-[#DFF7F8]">
-                  ESSENTIAL
-                </Badge>
-                <div className="mt-5 text-4xl font-black text-[#17315F]">
-                  Basic
+            <div className="flex flex-col h-full">
+              <Badge className="bg-[#DFF7F8] text-[#128C96] shadow-none hover:bg-[#DFF7F8] w-fit mb-4">
+                ESSENTIAL
+              </Badge>
+              <div className="text-3xl font-black text-[#17315F]">Basic</div>
+              <div className="mt-2 text-[15px] leading-6 text-[#6D7F97]">
+                Get verified and start earning.
+              </div>
+              <div className="mt-4 flex items-baseline gap-1 mb-6">
+                <div className="text-[40px] font-black leading-none tracking-[-0.06em] text-[#17315F]">
+                  ${pricing.basic[billingInterval]}
                 </div>
-                <div className="mt-3 text-[17px] leading-7 text-[#6D7F97]">
-                  Get verified, build your likeness profile, and start earning
-                  from licensing deals.
+                <div className="text-sm font-bold text-[#A9B6C8]">
+                  /mo {billingInterval === "year" ? "(annual)" : ""}
                 </div>
               </div>
-              <div className="min-w-[98px] pt-3 text-left">
-                <div className="text-[20px] leading-none text-[#526A8A]">$</div>
-                <div className="-mt-1 text-[58px] font-black leading-none tracking-[-0.06em] text-[#17315F]">
-                  {pricing.basic[billingInterval]}
-                </div>
-                <div className="mt-1 text-[15px] leading-6 text-[#A9B6C8]">
-                  per month{" "}
-                  {billingInterval === "year" ? "(billed annually)" : ""}
-                </div>
-              </div>
-            </div>
-            <div className="mt-8">
               <Button
-                className="w-full rounded-l-2xl rounded-r-none bg-[#15A9AD] text-white font-black hover:bg-[#0F9699]"
+                className="w-full rounded-xl bg-[#15A9AD] text-white font-black hover:bg-[#0F9699]"
                 variant={currentPlanTier === "basic" ? "outline" : "default"}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -472,60 +606,30 @@ export default function CreatorSubscribe() {
                 }}
                 disabled={!canSelectBasic}
               >
-                {currentPlanTier === "basic" ? "Current Plan" : "Basic Plan"}
+                {currentPlanTier === "basic" ? "Current Plan" : "Get Basic"}
               </Button>
-            </div>
-            <div className="mt-8 space-y-7">
-              {basicGroups.map((group) => (
-                <div key={group.title}>
-                  <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA9BC]">
-                    {group.title}
-                  </div>
-                  <div className="pt-4">
-                    <div className="mx-auto mb-4 h-px w-[90%] bg-[#E9EEF5]" />
-                    <div className="space-y-3">
-                      {group.items.map((label) => (
-                        <div
-                          key={label}
-                          className="flex items-start gap-3 text-[#26415F]"
-                        >
-                          <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#E8FAFB] text-[#12A4A9]">
-                            <Check className="h-3.5 w-3.5" />
+              <div className="mt-6 space-y-4">
+                {basicGroups.map((group) => (
+                  <div key={group.title} className="space-y-2">
+                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-[#9AA9BC]">
+                      {group.title}
+                    </div>
+                    <div className="space-y-2">
+                      {group.items.slice(0, 3).map((label) => (
+                        <div key={label} className="flex items-center gap-2.5 text-[#26415F]">
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E8FAFB] text-[#12A4A9]">
+                            <Check className="h-3 w-3" />
                           </div>
-                          <div className="text-[15px] leading-6">{label}</div>
+                          <div className="text-[14px] font-semibold">{label}</div>
                         </div>
                       ))}
+                      {group.items.length > 3 && (
+                         <div className="text-[12px] font-bold text-[#12A4A9] pl-6">+ More features</div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-              <div>
-                <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-[#C0C8D4]">
-                  Not included
-                </div>
-                <div className="pt-4 text-[#B1B8C4]">
-                  <div className="mx-auto mb-4 h-px w-[90%] bg-[#E9EEF5]" />
-                  <div className="space-y-3">
-                    {[
-                      "Voice tools",
-                      "Talent Portal",
-                      "Advanced earnings analytics",
-                    ].map((label) => (
-                      <div key={label} className="flex items-start gap-3">
-                        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#F5F7FA]">
-                          <X className="h-3.5 w-3.5" />
-                        </div>
-                        <div className="text-[15px] leading-6">{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
-            </div>
-            <div className="mt-8 rounded-[24px] border border-[#ACEBF0] bg-[#ECFBFD] p-5 text-[15px] leading-7 text-[#215C70]">
-              Basic is the trust unlock. Without Basic and approved KYC, a
-              creator cannot be visible in the marketplace or be managed by
-              agencies and brands.
             </div>
           </Card>
 
@@ -544,42 +648,35 @@ export default function CreatorSubscribe() {
                 void onCheckout("pro");
               }
             }}
-            className={`rounded-[28px] rounded-tl-none rounded-bl-none border border-[#D8E1EC]/60 bg-[linear-gradient(180deg,#173664_0%,#122C55_58%,#10264A_100%)] p-6 lg:p-8 text-white shadow-[0_14px_40px_rgba(20,37,66,0.06)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F1225] lg:-translate-y-3 ${
+            className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-[linear-gradient(180deg,#173664_0%,#122C55_100%)] p-5 lg:p-6 text-white shadow-[0_14px_40px_rgba(20,37,66,0.1)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
               canSelectPro
-                ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(20,37,66,0.12)]"
-                : "cursor-default"
+                ? "cursor-pointer hover:shadow-[0_18px_48px_rgba(20,37,66,0.15)]"
+                : "cursor-default border-white/20"
             }`}
           >
-            <div className="flex items-start justify-between gap-6">
-              <div className="max-w-sm">
+            <div className="flex flex-col h-full">
+              <div className="flex justify-between items-start mb-4">
                 <Badge className="bg-[#1C5375] text-[#89F4F7] shadow-none hover:bg-[#1C5375]">
                   MOST POPULAR
                 </Badge>
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="text-4xl font-black">Pro</div>
-                  <Badge className="border border-white/10 bg-[#2E4DA4] text-white shadow-none">
-                    Recommended
-                  </Badge>
+                {currentPlanTier !== "pro" && (
+                  <Badge className="bg-[#2E4DA4] text-white text-[10px]">RECOM.</Badge>
+                )}
+              </div>
+              <div className="text-3xl font-black">Pro</div>
+              <div className="mt-2 text-[15px] leading-6 text-[#B8CAE3]">
+                The full premium creator suite.
+              </div>
+              <div className="mt-4 flex items-baseline gap-1 mb-6">
+                <div className="text-[40px] font-black leading-none tracking-[-0.06em] text-white">
+                  ${pricing.pro[billingInterval]}
                 </div>
-                <div className="mt-3 text-[17px] leading-7 text-[#B8CAE3]">
-                  The full creator suite — voice licensing, detection, IRL
-                  bookings, and advanced analytics.
+                <div className="text-sm font-bold text-[#9EB2CA]">
+                  /mo {billingInterval === "year" ? "(annual)" : ""}
                 </div>
               </div>
-              <div className="min-w-[98px] pt-3 text-left">
-                <div className="text-[20px] leading-none text-[#B7C8DD]">$</div>
-                <div className="-mt-1 text-[58px] font-black leading-none tracking-[-0.06em] text-white">
-                  {pricing.pro[billingInterval]}
-                </div>
-                <div className="mt-1 text-[15px] leading-6 text-[#9EB2CA]">
-                  per month{" "}
-                  {billingInterval === "year" ? "(billed annually)" : ""}
-                </div>
-              </div>
-            </div>
-            <div className="mt-8">
               <Button
-                className="w-full rounded-r-2xl rounded-l-none bg-white text-[#17315F] font-black hover:bg-white/95"
+                className="w-full rounded-xl bg-white text-[#17315F] font-black hover:bg-white/95"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!canSelectPro) return;
@@ -587,33 +684,30 @@ export default function CreatorSubscribe() {
                 }}
                 disabled={!canSelectPro}
               >
-                {currentPlanTier === "pro" ? "Current Plan" : "Pro Plan"}
+                {currentPlanTier === "pro" ? "Current Plan" : "Get Pro"}
               </Button>
-            </div>
-            <div className="mt-8 space-y-7">
-              {proGroups.map((group) => (
-                <div key={group.title}>
-                  <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-white/40">
-                    {group.title}
-                  </div>
-                  <div className="pt-4">
-                    <div className="mx-auto mb-4 h-px w-[90%] bg-white/10" />
-                    <div className="space-y-3">
-                      {group.items.map((label) => (
-                        <div
-                          key={label}
-                          className="flex items-start gap-3 text-white/90"
-                        >
-                          <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#1E4D74] text-[#83F5F8]">
-                            <Check className="h-3.5 w-3.5" />
+              <div className="mt-6 space-y-4">
+                {proGroups.map((group) => (
+                  <div key={group.title} className="space-y-2">
+                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40">
+                      {group.title}
+                    </div>
+                    <div className="space-y-2">
+                      {group.items.slice(0, 3).map((label) => (
+                        <div key={label} className="flex items-center gap-2.5 text-white/90">
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[#89F4F7]">
+                            <Check className="h-3 w-3" />
                           </div>
-                          <div className="text-[15px] leading-6">{label}</div>
+                          <div className="text-[14px] font-semibold">{label}</div>
                         </div>
                       ))}
+                       {group.items.length > 3 && (
+                         <div className="text-[12px] font-bold text-[#89F4F7] pl-6">+ More features</div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Card>
         </div>
@@ -688,13 +782,40 @@ export default function CreatorSubscribe() {
 
         <div className="mt-12 flex justify-center">
           <Button
-            variant="outline"
-            onClick={() => navigate("/CreatorDashboard")}
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="text-[#9DB0C2] hover:text-[#17315F] font-bold"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </div>
+
+        <Dialog open={showActiveTrialModal} onOpenChange={setShowActiveTrialModal}>
+          <DialogContent className="sm:max-w-[420px] rounded-[32px] p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 shadow-sm ring-1 ring-emerald-100">
+                <CheckCircle2 className="h-10 w-10" />
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-[#0f172a]">
+                  Pro Trial Active!
+                </DialogTitle>
+                <DialogDescription className="mt-4 text-base leading-relaxed text-[#475569]">
+                  It looks like your 30-day Pro trial has already been activated. You're all set to explore every premium feature on Likelee!
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-8 w-full sm:justify-center">
+                <Button
+                  onClick={() => setShowActiveTrialModal(false)}
+                  className="w-full sm:w-32 h-11 rounded-xl bg-[#0f172a] font-black text-white hover:bg-black transition-all"
+                >
+                  Got it!
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

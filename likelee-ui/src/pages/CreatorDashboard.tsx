@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { DobInput } from "@/components/ui/DobInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -3755,10 +3756,12 @@ export default function CreatorDashboard() {
   }, []);
 
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
+  const trialActive = !!creatorBilling?.trial_active;
+  const effectivePlanTier = trialActive ? "pro" : creatorPlanTier;
 
   const [trialCountdown, setTrialCountdown] = useState<string>("");
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const trialStartAt = creatorBilling?.trial_start_at;
-  const trialActive = !!creatorBilling?.trial_active;
   const trialEndsAt = creatorBilling?.trial_ends_at
     ? String(creatorBilling.trial_ends_at)
     : "";
@@ -3766,6 +3769,7 @@ export default function CreatorDashboard() {
   useEffect(() => {
     if (creatorPlanTier !== "free" || !trialActive || !trialEndsAt) {
       setTrialCountdown("");
+      setDaysLeft(null);
       return;
     }
 
@@ -3775,6 +3779,7 @@ export default function CreatorDashboard() {
       const ms = Math.max(0, end - now);
 
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+      setDaysLeft(days);
       if (ms <= 0) {
         setTrialCountdown("Trial ended");
         return;
@@ -3841,17 +3846,19 @@ export default function CreatorDashboard() {
       ? creatorBilling.can_use_active_campaigns
       : creatorPlanTier === "pro";
   const creatorPlanLabel =
-    creatorPlanTier === "pro"
-      ? "Pro Plan "
-      : creatorPlanTier === "basic"
+    effectivePlanTier === "pro"
+      ? trialActive
+        ? "Trial"
+        : "Pro Plan"
+      : effectivePlanTier === "basic"
         ? "Basic Plan"
         : "Free Plan";
   const creatorPlanBadgeClass =
-    creatorPlanTier === "pro"
-      ? "bg-[#1A2140] text-white border-[#1A2140]"
-      : creatorPlanTier === "basic"
-        ? "bg-[#ECFAFC] text-[#136B86] border-[#BFEAF0]"
-        : "bg-white text-[#5B667A] border-[#E2E8F0]";
+    effectivePlanTier === "pro"
+      ? "bg-gradient-to-br from-[#2B59FF] to-[#3B2BFF] text-white border-0 shadow-[0_2px_10px_rgba(43,89,255,0.3)]"
+      : effectivePlanTier === "basic"
+        ? "bg-gradient-to-br from-[#0D9488] to-[#14B8A6] text-white border-0 shadow-[0_2px_10px_rgba(13,148,136,0.3)]"
+        : "bg-gradient-to-br from-[#64748B] to-[#94A3B8] text-white border-0 shadow-sm";
 
   useEffect(() => {
     const lockedFallback = creatorPlanTier === "free" ? "content" : "dashboard";
@@ -5822,7 +5829,7 @@ export default function CreatorDashboard() {
         ? ShieldAlert
         : isPending
           ? Clock
-          : Sparkles;
+          : Lock;
     const bannerClassName =
       hasPendingFollowUp || isRejected
         ? "mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
@@ -5984,55 +5991,115 @@ export default function CreatorDashboard() {
   };
 
   const renderPlanStatusBar = () => {
-    if (activeSection === "settings" || activeSection === "talent-portal")
+    if (
+      activeSection === "settings" ||
+      activeSection === "talent-portal" ||
+      !creatorBillingLoaded
+    )
       return null;
 
+    const isExpiringSoon = trialActive && daysLeft !== null && daysLeft <= 5;
+
     return (
-      <div className="mb-6 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-50 shadow-sm ring-1 ring-gray-100">
-              <Shield className="h-5 w-5 text-[#32C8D1]" />
+      <div
+        className={`mb-6 rounded-[20px] p-5 transition-all duration-500 overflow-hidden relative ${
+          isExpiringSoon
+            ? "bg-gradient-to-r from-[#FFF1F2] via-white to-[#FFF1F2] border border-red-200/60 shadow-[0_12px_40px_-12px_rgba(220,38,38,0.12)]"
+            : "bg-white border border-[#E2E8F0] shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+        }`}
+      >
+        {isExpiringSoon && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.05, 0.15, 0.05] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 bg-red-500 pointer-events-none"
+          />
+        )}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
+          <div className="flex items-center gap-5">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-colors duration-500 ${
+                isExpiringSoon
+                  ? "bg-red-50 text-red-500"
+                  : "bg-[#F0FDFA] text-[#32C8D1]"
+              }`}
+            >
+              <Crown className="h-6 w-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-gray-900">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <p className="text-base font-black tracking-tight text-[#0F172A]">
                   {creatorPlanLabel}
                 </p>
-                <Badge
-                  className={`text-[10px] px-1.5 py-0 h-4 border leading-none font-medium ${creatorPlanBadgeClass}`}
+                <div
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center min-w-[50px] ${creatorPlanBadgeClass}`}
                 >
-                  {creatorPlanTier.toUpperCase()}
-                </Badge>
+                  {effectivePlanTier}
+                </div>
               </div>
               {creatorPlanTier === "free" && trialActive && trialEndsAt && (
-                <p className="text-xs text-amber-600 font-medium">
-                  {t("creatorDashboard.plan.trialEnds", {
-                    defaultValue: "Pro Trial ends in",
-                  })}{" "}
-                  <span className="font-bold">{trialCountdown}</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
+                    <span className="text-[#94A3B8]">Ends in:</span>
+                    <span
+                      className={`font-black ${
+                        isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
+                      }`}
+                    >
+                      {trialCountdown}
+                    </span>
+                  </div>
                   {trialStartAt && (
-                    <span className="ml-1 text-[10px] text-gray-400 font-normal">
-                      (started {new Date(trialStartAt).toLocaleDateString()})
+                    <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
+                      Started {new Date(trialStartAt).toLocaleDateString()}
                     </span>
                   )}
-                </p>
+                  {isExpiringSoon && (
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      Expiring Soon
+                    </motion.div>
+                  )}
+                </div>
               )}
             </div>
           </div>
           <Button
-            variant="ghost"
+            variant={isExpiringSoon ? "default" : "outline"}
             size="sm"
             onClick={() => {
               setActiveSection("settings");
               setSettingsTab("billing");
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="h-9 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group font-medium"
+            className={`h-11 rounded-xl px-6 font-black text-sm transition-all duration-300 group ${
+              isExpiringSoon
+                ? "bg-[#1E293B] text-white hover:bg-[#0F172A] hover:scale-[1.02] shadow-[0_8px_20px_-6px_rgba(30,41,59,0.4)] border-0"
+                : "border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+            }`}
           >
-            {t("creatorDashboard.plan.manage", {
-              defaultValue: "Manage Subscription",
-            })}
-            <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            {isExpiringSoon && (
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 3 }}
+                className="mr-2"
+              >
+                <Gift className="h-4 w-4 text-[#38BDF8]" />
+              </motion.div>
+            )}
+            {trialActive ? "Manage Subscription" : "Account Settings"}
+            <ChevronRight
+              className={`ml-2 h-4 w-4 transition-transform ${
+                isExpiringSoon
+                  ? "group-hover:translate-x-1"
+                  : "group-hover:translate-x-0.5"
+              }`}
+            />
           </Button>
         </div>
       </div>
@@ -6040,12 +6107,84 @@ export default function CreatorDashboard() {
   };
 
   const renderDashboard = () => {
+    const showTrialGift =
+      creatorPlanTier === "free" && !trialStartAt && creatorBillingLoaded;
+
     const imagesFilled = Object.values(referenceImages).filter(
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {showTrialGift && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="overflow-hidden rounded-[32px] border border-emerald-200/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#042f2e] text-white shadow-[0_32px_64px_-16px_rgba(4,47,46,0.5)]"
+          >
+            <div className="flex flex-col gap-8 p-8 md:p-12 lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32" />
+
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+                <motion.div
+                  animate={{
+                    y: [0, -12, 0],
+                    rotate: [0, -8, 8, 0],
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl shadow-2xl"
+                >
+                  <Gift className="h-10 w-10 text-[#5eead4]" />
+                </motion.div>
+
+                <div className="max-w-xl">
+                  <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-6">
+                    Exclusive Creator Offer
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tight sm:text-4xl leading-tight">
+                    Experience Likelee <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">Pro</span> for 30 Days
+                  </h2>
+                  <p className="mt-4 text-lg text-slate-300 leading-relaxed font-medium">
+                    Unlock professional features including AI Voice profiles, advanced analytics, 
+                    content monitoring, and premium campaign opportunities.
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-full lg:w-auto min-w-[320px] relative z-10">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+                  <div className="space-y-4 mb-8">
+                    {[
+                      "30 Days of Premium Access",
+                      "No credit card required",
+                      "Automated fallback to Free",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 text-slate-200">
+                        <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="text-sm font-semibold">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => navigate("/CreatorSubscribe")}
+                    className="w-full h-14 rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-lg shadow-xl hover:shadow-emerald-500/20 group"
+                  >
+                    Explore Plans & Unlock Trial
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
@@ -11203,9 +11342,9 @@ export default function CreatorDashboard() {
 
             <div className="p-6 pt-2 space-y-8">
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                {creatorPlanTier === "pro"
+                {effectivePlanTier === "pro"
                   ? "Pro creators have unlimited category selection."
-                  : `You are on the ${creatorPlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
+                  : `You are on the ${effectivePlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
               </div>
               {/* Content I'm Open To */}
               <div>
@@ -11476,34 +11615,23 @@ export default function CreatorDashboard() {
                     </h3>
                     <Badge
                       className={
-                        creatorPlanTier === "pro"
+                        effectivePlanTier === "pro"
                           ? "border-0 bg-[#1A2140] text-white"
-                          : creatorPlanTier === "basic"
+                          : effectivePlanTier === "basic"
                             ? "border border-[#BFEAF0] bg-[#ECFAFC] text-[#136B86]"
                             : "border border-[#E2E8F0] bg-white text-[#5B667A]"
                       }
                     >
-                      {creatorPlanTier === "pro"
-                        ? "Pro"
-                        : creatorPlanTier === "basic"
+                      {effectivePlanTier === "pro"
+                        ? trialActive
+                          ? "Pro Trial"
+                          : "Pro"
+                        : effectivePlanTier === "basic"
                           ? "Basic"
                           : "Free"}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-sm text-[#5A6880]">
-                    Manage your creator plan, see what is currently unlocked,
-                    and upgrade when you’re ready for more workflow tools.
-                  </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/CreatorSubscribe")}
-                  className="rounded-full border-[#D5DEEA] bg-white text-[#21314D] hover:bg-[#F6F9FC]"
-                >
-                  {creatorPlanTier === "pro"
-                    ? "Manage subscription"
-                    : "View plans"}
-                </Button>
               </div>
             </div>
 
@@ -11515,23 +11643,13 @@ export default function CreatorDashboard() {
                       Current access
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
-                      {creatorPlanTier === "pro"
-                        ? "Pro creator access"
-                        : creatorPlanTier === "basic"
+                      {effectivePlanTier === "pro"
+                        ? trialActive
+                          ? "Pro Trial access"
+                          : "Pro creator access"
+                        : effectivePlanTier === "basic"
                           ? "Basic creator access"
                           : "Free creator access"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-[#DCE6F2] bg-white px-4 py-3 text-right shadow-sm">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7A889F]">
-                      Plan
-                    </div>
-                    <div className="mt-1 text-3xl font-black text-[#142033]">
-                      {creatorPlanTier === "pro"
-                        ? "Pro"
-                        : creatorPlanTier === "basic"
-                          ? "Basic"
-                          : "Free"}
                     </div>
                   </div>
                 </div>
@@ -11629,43 +11747,53 @@ export default function CreatorDashboard() {
                     Recommended next step
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
-                    {creatorPlanTier === "free"
+                    {effectivePlanTier === "free"
                       ? "Move to Basic"
-                      : creatorPlanTier === "basic"
+                      : effectivePlanTier === "basic"
                         ? "Move to Pro"
                         : "You’re fully unlocked"}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
-                    {creatorPlanTier === "free"
+                    {effectivePlanTier === "free"
                       ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
-                      : creatorPlanTier === "basic"
+                      : effectivePlanTier === "basic"
                         ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
                         : "Your current plan includes the full creator workflow toolset."}
                   </p>
-                  {creatorPlanTier !== "pro" && (
+                  {effectivePlanTier !== "pro" && (
                     <Button
                       className="mt-5 rounded-full bg-[#16324F] px-5 text-white hover:bg-[#10263D]"
                       onClick={() => navigate("/CreatorSubscribe")}
                     >
-                      {creatorPlanTier === "free"
+                      {effectivePlanTier === "free"
                         ? "Upgrade to Basic"
                         : "Upgrade to Pro"}
                     </Button>
                   )}
                 </div>
 
-                <div className="rounded-3xl border border-[#F1E4BA] bg-[#FFFBEF] p-6">
-                  <div className="flex items-center gap-2 text-[#8A6410]">
-                    <Shield className="h-4 w-4" />
-                    <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-                      Visibility reminder
-                    </span>
+                <div className="rounded-3xl border border-[#D1FAE5] bg-gradient-to-br from-[#10192D] to-[#1A2E44] p-8 text-white shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl transition-all group-hover:bg-emerald-500/20"></div>
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                    <div className="max-w-md text-center md:text-left">
+                      <h4 className="text-2xl font-black tracking-tight">
+                        Ready to lock in Pro?
+                      </h4>
+                      <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
+                        Your trial is active, but you can secure your professional
+                        workflow tools today. Get full marketplace priority and
+                        exclusive campaign access.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => navigate("/CreatorSubscribe")}
+                      className="w-full md:w-auto rounded-full bg-[#32C8D1] px-10 py-7 text-xl font-black text-white transition-all hover:scale-105 hover:bg-[#2bb2bb] shadow-[0_12px_24px_-8px_rgba(50,200,209,0.5)] border-0"
+                    >
+                      Subscribe for a plan
+                    </Button>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-[#6F5A23]">
-                    Without Basic and approved KYC, a creator cannot be visible
-                    in the marketplace or be managed by agencies and brands.
-                  </p>
                 </div>
+
               </div>
             </div>
           </Card>
