@@ -138,7 +138,7 @@ pub async fn generate_payment_link(
         .pg
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
-        .eq("agency_id", &agency_id)
+        .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .execute()
         .await
@@ -236,7 +236,7 @@ pub async fn generate_payment_link(
             .pg
             .from("licensing_requests")
             .select("id,submission_id")
-            .eq("agency_id", &agency_id)
+            .eq("agency_id", agency_id)
             .in_("id", missing_refs)
             .execute()
             .await
@@ -276,7 +276,7 @@ pub async fn generate_payment_link(
                 .pg
                 .from("license_submissions")
                 .select("id,license_fee")
-                .eq("agency_id", &agency_id)
+                .eq("agency_id", agency_id)
                 .in_("id", s_refs)
                 .execute()
                 .await
@@ -353,7 +353,7 @@ pub async fn generate_payment_link(
     }
 
     // Platform fee based on agency plan tier
-    let tier = get_agency_plan_tier(&state, &agency_id).await?;
+    let tier = get_agency_plan_tier(&state, agency_id).await?;
     let fee_pct: f64 = match tier {
         PlanTier::Free => 0.08,
         PlanTier::Basic => 0.05,

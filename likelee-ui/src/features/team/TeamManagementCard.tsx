@@ -1,5 +1,16 @@
 import React from "react";
-import { Loader2, Mail, Plus, Shield, History, BadgeCheck, XCircle, Activity, User, Edit2 } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Plus,
+  Shield,
+  History,
+  BadgeCheck,
+  XCircle,
+  Activity,
+  User,
+  Edit2,
+} from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -124,7 +135,9 @@ export function TeamManagementCard({
 }) {
   const { token } = useAuth();
   const { toast } = useToast();
-  const [context, setContext] = React.useState<TeamContextResponse | null>(null);
+  const [context, setContext] = React.useState<TeamContextResponse | null>(
+    null,
+  );
   const [logs, setLogs] = React.useState<TeamAuditLogRecord[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [showInviteModal, setShowInviteModal] = React.useState(false);
@@ -133,12 +146,10 @@ export function TeamManagementCard({
   const [selectedMember, setSelectedMember] =
     React.useState<TeamMemberRecord | null>(null);
   const [inviteEmail, setInviteEmail] = React.useState("");
-  const [inviteRole, setInviteRole] = React.useState<
-    Exclude<TeamRoleValue, "owner">
-  >("reviewer");
-  const [pendingRoleValue, setPendingRoleValue] = React.useState<
-    Exclude<TeamRoleValue, "owner">
-  >("reviewer");
+  const [inviteRole, setInviteRole] =
+    React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
+  const [pendingRoleValue, setPendingRoleValue] =
+    React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [submittingInvite, setSubmittingInvite] = React.useState(false);
   const [updatingRole, setUpdatingRole] = React.useState(false);
 
@@ -154,7 +165,7 @@ export function TeamManagementCard({
     try {
       setLoading(true);
       const resp = await fetch(
-        `/api/team/context?organization_type=${encodeURIComponent(organizationType)}`,
+        `/api/team/context?organization_type=${encodeURIComponent(organizationType)}&include_details=true`,
         { headers: authHeaders },
       );
       const payload = await parseApiResponse(resp);
@@ -184,7 +195,9 @@ export function TeamManagementCard({
       );
       const payload = await parseApiResponse(resp);
       if (!resp.ok) {
-        throw new Error(payload?.message || payload?.error || "Failed to load activity.");
+        throw new Error(
+          payload?.message || payload?.error || "Failed to load activity.",
+        );
       }
       setLogs(Array.isArray(payload) ? (payload as TeamAuditLogRecord[]) : []);
     } catch {
@@ -205,7 +218,9 @@ export function TeamManagementCard({
   );
 
   const handleInvite = async () => {
-    const normalizedEmail = String(inviteEmail || "").trim().toLowerCase();
+    const normalizedEmail = String(inviteEmail || "")
+      .trim()
+      .toLowerCase();
     if (!normalizedEmail) return;
     try {
       setSubmittingInvite(true);
@@ -449,8 +464,9 @@ export function TeamManagementCard({
                 </h4>
                 <Badge variant="secondary">
                   {
-                    (context?.invites || []).filter((invite) => invite.status === "pending")
-                      .length
+                    (context?.invites || []).filter(
+                      (invite) => invite.status === "pending",
+                    ).length
                   }{" "}
                   Pending
                 </Badge>
@@ -464,7 +480,9 @@ export function TeamManagementCard({
                       className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
                     >
                       <div>
-                        <p className="font-semibold text-gray-900">{invite.email}</p>
+                        <p className="font-semibold text-gray-900">
+                          {invite.email}
+                        </p>
                         <p className="text-sm text-gray-600">
                           {formatTeamRoleLabel(invite.role)} · Expires{" "}
                           {new Date(invite.expires_at).toLocaleString()}
@@ -475,8 +493,9 @@ export function TeamManagementCard({
                       </Badge>
                     </div>
                   ))}
-                {(context?.invites || []).filter((invite) => invite.status === "pending")
-                  .length === 0 ? (
+                {(context?.invites || []).filter(
+                  (invite) => invite.status === "pending",
+                ).length === 0 ? (
                   <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
                     No pending invites.
                   </div>
@@ -510,7 +529,9 @@ export function TeamManagementCard({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">User Role</Label>
+              <Label className="text-sm font-bold text-gray-900">
+                User Role
+              </Label>
               <Select
                 value={inviteRole}
                 onValueChange={(value) =>
@@ -575,7 +596,9 @@ export function TeamManagementCard({
           </DialogHeader>
           <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">New Role</Label>
+              <Label className="text-sm font-bold text-gray-900">
+                New Role
+              </Label>
               <Select
                 value={pendingRoleValue}
                 onValueChange={(value) =>
@@ -645,7 +668,9 @@ export function TeamManagementCard({
                       <p className="font-semibold text-gray-900">
                         {activity.label}
                       </p>
-                      <p className="text-sm text-gray-600">{activity.details}</p>
+                      <p className="text-sm text-gray-600">
+                        {activity.details}
+                      </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(log.created_at).toLocaleString()}
                       </p>

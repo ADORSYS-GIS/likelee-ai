@@ -4067,7 +4067,8 @@ pub async fn get_agency_balance(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
-    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await {
+    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await
+    {
         Ok(access) => access.organization_id,
         Err((code, msg)) => {
             return (code, Json(json!({"status":"error","error": msg})));
@@ -4636,7 +4637,8 @@ pub async fn get_agency_payout_history(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
-    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await {
+    let agency_id = match require_agency_permission(&state, &user, Permission::ManageBilling).await
+    {
         Ok(access) => access.organization_id,
         Err((code, msg)) => {
             return (code, Json(json!({"status":"error","error": msg})));

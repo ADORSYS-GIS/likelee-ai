@@ -22,7 +22,7 @@ pub async fn list(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = crate::team::require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    
+
     let mut req = state
         .pg
         .from("agency_expenses")

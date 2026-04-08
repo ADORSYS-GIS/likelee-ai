@@ -206,7 +206,7 @@ where
         // 5. For team members, lookup organization_id from organization_memberships
         let organization_id = if role == "agency" || role == "brand" {
             let org_type = if role == "agency" { "agency" } else { "brand" };
-            
+
             let org_resp = app_state
                 .pg
                 .from("organization_memberships")

@@ -1,4 +1,8 @@
-use crate::{auth::AuthUser, config::AppState, team::{permissions::Permission, require_agency_permission}};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_permission},
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,

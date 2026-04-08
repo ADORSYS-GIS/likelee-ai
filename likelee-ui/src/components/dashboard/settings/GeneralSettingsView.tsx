@@ -3,7 +3,10 @@ import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
-import { getAgencyPayoutsAccountStatus, getTeamAuditLogs } from "@/api/functions";
+import {
+  getAgencyPayoutsAccountStatus,
+  getTeamAuditLogs,
+} from "@/api/functions";
 import { Loader2, RefreshCw } from "lucide-react";
 import {
   Building2,
@@ -618,12 +621,10 @@ const GeneralSettingsView = ({
   const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
   const [isUpdatingTeamRole, setIsUpdatingTeamRole] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
-  const [teamInviteRole, setTeamInviteRole] = useState<
-    Exclude<TeamRoleValue, "owner">
-  >("reviewer");
-  const [pendingRoleValue, setPendingRoleValue] = useState<
-    Exclude<TeamRoleValue, "owner">
-  >("reviewer");
+  const [teamInviteRole, setTeamInviteRole] =
+    useState<Exclude<TeamRoleValue, "owner">>("reviewer");
+  const [pendingRoleValue, setPendingRoleValue] =
+    useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [teamAuditLogs, setTeamAuditLogs] = useState<TeamAuditLogRecord[]>([]);
   const [defaultCommissionRate, setDefaultCommissionRate] =
     useState<number>(20);
@@ -702,11 +703,14 @@ const GeneralSettingsView = ({
   const fetchTeamContext = async () => {
     try {
       setIsLoadingTeamContext(true);
-      const resp = await fetch("/api/team/context?organization_type=agency", {
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
+      const resp = await fetch(
+        "/api/team/context?organization_type=agency&include_details=true",
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
         },
-      });
+      );
       const payload = await parseApiResponse(resp);
       if (!resp.ok) {
         throw new Error(
@@ -749,7 +753,9 @@ const GeneralSettingsView = ({
 
   const handleInviteTeamMember = async () => {
     try {
-      const normalizedEmail = String(teamInviteEmail || "").trim().toLowerCase();
+      const normalizedEmail = String(teamInviteEmail || "")
+        .trim()
+        .toLowerCase();
       if (!normalizedEmail) {
         throw new Error("Email is required.");
       }
@@ -1312,7 +1318,7 @@ const GeneralSettingsView = ({
       // This ensures team members see and modify the organization's settings,
       // not their own (which shouldn't exist for team members).
       const effectiveAgencyId = (profile as any).organization_id || profile.id;
-      
+
       setFormData({
         agency_name: profile.agency_name || "",
         legal_entity_name: profile.legal_entity_name || "",
@@ -2020,7 +2026,8 @@ const GeneralSettingsView = ({
                     </div>
                   </div>
                 </div>
-                {(!teamContext || teamContext.permissions?.includes("manage_billing")) && (
+                {(!teamContext ||
+                  teamContext.permissions?.includes("manage_billing")) && (
                   <Button
                     asChild
                     variant={
@@ -3138,7 +3145,10 @@ const GeneralSettingsView = ({
                                     {formatTeamRoleLabel(invite.role)}
                                   </Badge>
                                   <span>
-                                    Expires {new Date(invite.expires_at).toLocaleString()}
+                                    Expires{" "}
+                                    {new Date(
+                                      invite.expires_at,
+                                    ).toLocaleString()}
                                   </span>
                                 </div>
                               </div>

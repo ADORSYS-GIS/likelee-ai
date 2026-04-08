@@ -181,8 +181,7 @@ pub async fn update_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg
@@ -433,8 +432,7 @@ pub async fn create_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let status = payload
         .status
@@ -1141,8 +1139,7 @@ pub async fn list_my_jobs(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let resp = state
         .pg
@@ -1574,8 +1571,7 @@ pub async fn list_job_applications(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg

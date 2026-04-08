@@ -23,6 +23,10 @@ async function parseApiResponse(resp: Response) {
   }
 }
 
+function getAccessCacheKey(organizationType: string) {
+  return `team_access_context:${organizationType}`;
+}
+
 export function useTeamAccess(explicitOrganizationType?: "agency" | "brand") {
   const { token, profile, initialized, authenticated } = useAuth();
   const organizationType = React.useMemo(() => {
@@ -53,13 +57,24 @@ export function useTeamAccess(explicitOrganizationType?: "agency" | "brand") {
     }
 
     let cancelled = false;
+    const cachedRaw = window.sessionStorage.getItem(
+      getAccessCacheKey(organizationType),
+    );
+    if (cachedRaw) {
+      try {
+        const cached = JSON.parse(cachedRaw) as TeamAccessContext;
+        setContext(cached);
+      } catch {
+        window.sessionStorage.removeItem(getAccessCacheKey(organizationType));
+      }
+    }
 
     const load = async () => {
       try {
-        setLoading(true);
+        setLoading(!cachedRaw);
         setError(null);
         const resp = await fetch(
-          `/api/team/context?organization_type=${encodeURIComponent(organizationType)}`,
+          `/api/team/context?organization_type=${encodeURIComponent(organizationType)}&include_details=false`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -73,11 +88,18 @@ export function useTeamAccess(explicitOrganizationType?: "agency" | "brand") {
           );
         }
         if (!cancelled) {
-          setContext(payload as TeamAccessContext);
+          const nextContext = payload as TeamAccessContext;
+          setContext(nextContext);
+          window.sessionStorage.setItem(
+            getAccessCacheKey(organizationType),
+            JSON.stringify(nextContext),
+          );
         }
       } catch (err: any) {
         if (!cancelled) {
-          setContext(null);
+          if (!cachedRaw) {
+            setContext(null);
+          }
           setError(err?.message || "Failed to load team access.");
         }
       } finally {

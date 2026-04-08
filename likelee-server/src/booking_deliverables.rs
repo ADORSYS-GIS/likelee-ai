@@ -2,10 +2,7 @@ use crate::{
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
-    team::{
-        self,
-        permissions::Permission,
-    },
+    team::{self, permissions::Permission},
 };
 use axum::{
     extract::{Multipart, Path, State},

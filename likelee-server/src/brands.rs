@@ -226,7 +226,7 @@ pub async fn get_by_user(
     // not the team member's user ID. This ensures team members see the same profile data
     // as the organization owner (same subscriptions, plan_tier, etc.)
     let brand_id = resolve_effective_brand_id(&state, &user).await?;
-    
+
     let resp = state
         .pg
         .from("brands")

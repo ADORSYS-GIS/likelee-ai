@@ -520,8 +520,7 @@ pub async fn list_for_brand(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let resp = state
         .pg
@@ -1495,7 +1494,7 @@ pub async fn send_payment_link(
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("id", &id)
-        .eq("agency_id", &agency_id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1527,7 +1526,7 @@ pub async fn send_payment_link(
         .pg
         .from("licensing_requests")
         .eq("id", &id)
-        .eq("agency_id", &agency_id)
+        .eq("agency_id", agency_id)
         .update(update_body.to_string())
         .execute()
         .await
@@ -1564,7 +1563,7 @@ pub async fn send_payment_link(
         .pg
         .from("agencies")
         .select("stripe_connect_account_id")
-        .eq("id", &agency_id)
+        .eq("id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1587,7 +1586,7 @@ pub async fn send_payment_link(
     }
 
     // 5. Platform fee based on subscription plan
-    let tier = get_agency_plan_tier(&state, &agency_id).await?;
+    let tier = get_agency_plan_tier(&state, agency_id).await?;
     let fee_pct: f64 = match tier {
         PlanTier::Free => 0.08,
         PlanTier::Basic => 0.05,

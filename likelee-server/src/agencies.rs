@@ -3,11 +3,8 @@ use crate::{
     config::AppState,
     errors::sanitize_db_error,
     team::{
-        ensure_owner_membership,
-        permissions::Permission,
-        require_agency_access,
-        require_agency_permission,
-        OrganizationType,
+        ensure_owner_membership, permissions::Permission, require_agency_access,
+        require_agency_permission, OrganizationType,
     },
 };
 use axum::{
@@ -492,7 +489,7 @@ pub async fn get_profile(
     // not the team member's user ID. This ensures team members see the same profile data
     // as the organization owner (same subscriptions, plan_tier, etc.)
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    
+
     let resp = state
         .pg
         .from("agencies")

@@ -442,10 +442,8 @@ pub async fn get_roster(
                         if !ai_usage.contains(&"Video".to_string()) {
                             ai_usage.push("Video".to_string());
                         }
-                    } else {
-                        if !ai_usage.contains(&"Image".to_string()) {
-                            ai_usage.push("Image".to_string());
-                        }
+                    } else if !ai_usage.contains(&"Image".to_string()) {
+                        ai_usage.push("Image".to_string());
                     }
                 }
 

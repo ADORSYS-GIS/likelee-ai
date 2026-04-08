@@ -1,4 +1,8 @@
-use crate::{auth::AuthUser, config::AppState, team::{resolve_effective_agency_id, resolve_effective_brand_id}};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{resolve_effective_agency_id, resolve_effective_brand_id},
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,

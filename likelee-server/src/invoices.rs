@@ -328,7 +328,7 @@ async fn get_client_snapshot(
 ) -> Result<serde_json::Value, (StatusCode, String)> {
     let access = crate::team::require_agency_access(state, user).await?;
     let agency_id = &access.organization_id;
-    
+
     let resp = state
         .pg
         .from("agency_clients")
@@ -361,7 +361,7 @@ async fn get_booking(
 ) -> Result<serde_json::Value, (StatusCode, String)> {
     let access = crate::team::require_agency_access(state, user).await?;
     let agency_id = &access.organization_id;
-    
+
     let resp = state
         .pg
         .from("bookings")
@@ -382,9 +382,14 @@ async fn get_booking(
     }
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    let booking = rows.first().ok_or((StatusCode::NOT_FOUND, "Booking not found".to_string()))?;
-    
-    let talent_id = booking.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+    let booking = rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "Booking not found".to_string()))?;
+
+    let talent_id = booking
+        .get("talent_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if !talent_id.is_empty() {
         let talent_resp = state
             .pg
@@ -397,7 +402,10 @@ async fn get_booking(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if !talent_resp.status().is_success() {
-            return Err((StatusCode::FORBIDDEN, "Booking does not belong to this agency".to_string()));
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Booking does not belong to this agency".to_string(),
+            ));
         }
     }
 
@@ -411,7 +419,7 @@ async fn ensure_invoice_owned(
 ) -> Result<serde_json::Value, (StatusCode, String)> {
     let access = crate::team::require_agency_access(state, user).await?;
     let agency_id = &access.organization_id;
-    
+
     let resp = state
         .pg
         .from("agency_invoices")
@@ -766,7 +774,7 @@ pub async fn update(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = crate::team::require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    
+
     if payload
         .invoice_number
         .as_ref()
@@ -1002,7 +1010,7 @@ pub async fn mark_sent(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = crate::team::require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    
+
     let current = ensure_invoice_owned(&state, &user, &id).await?;
     let status = current
         .get("status")
@@ -1158,7 +1166,7 @@ pub async fn mark_paid(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = crate::team::require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    
+
     let current = ensure_invoice_owned(&state, &user, &id).await?;
     let status = current
         .get("status")
@@ -1210,7 +1218,7 @@ pub async fn void_invoice(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = crate::team::require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    
+
     let _ = ensure_invoice_owned(&state, &user, &id).await?;
 
     let body = json!({

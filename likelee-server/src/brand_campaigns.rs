@@ -3,10 +3,7 @@ use crate::{
     config::AppState,
     errors::sanitize_db_error,
     services::docuseal::{DocuSealClient, Submitter},
-    team::{
-        self,
-        permissions::Permission,
-    },
+    team::{self, permissions::Permission},
 };
 use axum::{
     body::Body,
@@ -2564,7 +2561,9 @@ pub async fn list_my_campaign_offers(
         req = req.eq("brand_id", brand_access.organization_id.as_str());
     } else if user.role == "agency" {
         let agency_access = team::require_agency_access(&state, &user).await?;
-        req = req.eq("target_type", "agency").eq("target_id", agency_access.organization_id.as_str());
+        req = req
+            .eq("target_type", "agency")
+            .eq("target_id", agency_access.organization_id.as_str());
     } else if is_creator_like(&user.role) {
         let creator_id = resolve_effective_creator_id(&state, &user).await;
         // Get connected agencies

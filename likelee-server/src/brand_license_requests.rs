@@ -1,4 +1,4 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
@@ -193,8 +193,7 @@ pub async fn create(
         ));
     }
 
-    let effective_brand_id =
-        crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
@@ -391,7 +390,11 @@ pub async fn create(
                         "Successfully auto-created brand_agency_connection: {}",
                         text
                     );
-                    crate::team::invalidate_brand_agency_connection_cache(&state, &effective_brand_id, &agency_id);
+                    crate::team::invalidate_brand_agency_connection_cache(
+                        &state,
+                        &effective_brand_id,
+                        &agency_id,
+                    );
                 } else if crate::face_profiles::is_missing_relation_error(
                     &text,
                     "brand_agency_connections",

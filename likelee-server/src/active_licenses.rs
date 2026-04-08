@@ -1,14 +1,11 @@
 use crate::{
-    auth::AuthUser,
-    config::AppState,
-    errors::sanitize_db_error,
-    team::permissions::Permission,
+    auth::AuthUser, config::AppState, errors::sanitize_db_error, team::permissions::Permission,
     team::require_agency_permission,
 };
 use axum::{
-    Json,
     extract::{Query, State},
     http::StatusCode,
+    Json,
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};

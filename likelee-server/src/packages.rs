@@ -381,7 +381,7 @@ pub async fn create_package(
     if !supplied_talent_ids.is_empty() {
         for requested_id in &supplied_talent_ids {
             if let Err((code, _msg)) =
-                resolve_effective_agency_talent_id(&state, &agency_id, requested_id).await
+                resolve_effective_agency_talent_id(&state, agency_id, requested_id).await
             {
                 tracing::error!(
                     "Invalid talent_id on package create agency_id={} talent_id={} status={}",
@@ -399,7 +399,7 @@ pub async fn create_package(
 
     for (item_idx, item_req) in payload.items.iter().enumerate() {
         let effective_talent_id =
-            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+            resolve_effective_agency_talent_id(&state, agency_id, &item_req.talent_id).await
                 .map_err(|(code, msg)| {
                     tracing::error!(
                         "Failed to resolve talent id during package create agency_id={} talent_id={} status={} msg={}",
@@ -796,7 +796,7 @@ pub async fn update_package(
     // Validate + normalize talent ids before writing
     for item_req in payload.items.iter() {
         if let Err((code, _msg)) =
-            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+            resolve_effective_agency_talent_id(&state, agency_id, &item_req.talent_id).await
         {
             tracing::error!(
                 "Invalid talent_id on package update agency_id={} talent_id={} status={}",
@@ -813,7 +813,7 @@ pub async fn update_package(
 
     for (item_idx, item_req) in payload.items.iter().enumerate() {
         let effective_talent_id =
-            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+            resolve_effective_agency_talent_id(&state, agency_id, &item_req.talent_id).await
                 .map_err(|(code, msg)| {
                     tracing::error!(
                         "Failed to resolve talent id during package update agency_id={} talent_id={} status={} msg={}",

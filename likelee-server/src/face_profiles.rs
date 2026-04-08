@@ -3,14 +3,16 @@ use crate::brand_campaigns::{
 };
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
-use crate::team::permissions::Permission;
-use crate::team::{require_agency_permission, resolve_effective_agency_id, resolve_effective_brand_id};
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
+use crate::team::permissions::Permission;
+use crate::team::{
+    require_agency_permission, resolve_effective_agency_id, resolve_effective_brand_id,
+};
 use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
-    Json,
     extract::{Path, Query, State},
     http::StatusCode,
+    Json,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -2630,7 +2632,7 @@ pub async fn accept_agency_brand_connection_request(
     {
         return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
     }
-    
+
     crate::team::invalidate_brand_agency_connection_cache(&state, &brand_id, &effective_agency_id);
 
     let agency_name = resolve_agency_name(&state, &effective_agency_id)
@@ -2773,7 +2775,7 @@ pub async fn disconnect_brand_agency_connection_as_brand(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    
+
     crate::team::invalidate_brand_agency_connection_cache(&state, &user.id, &agency_id);
 
     Ok(Json(serde_json::json!({"status":"ok"})))
@@ -2813,7 +2815,7 @@ pub async fn disconnect_brand_agency_connection_as_agency(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    
+
     crate::team::invalidate_brand_agency_connection_cache(&state, &brand_id, &effective_agency_id);
 
     Ok(Json(serde_json::json!({"status":"ok"})))
