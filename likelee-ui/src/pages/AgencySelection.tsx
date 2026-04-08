@@ -1,27 +1,66 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  getDashboardPath,
+  getOnboardingPath,
+  getOrganizationSignupPathForType,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+} from "@/auth/onboarding";
 
 export default function AgencySelection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { initialized, authenticated, profile, user } = useAuth();
+  const isSignupMode = React.useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("mode") === "signup";
+  }, [location.search]);
+
+  React.useEffect(() => {
+    if (!initialized || !authenticated) return;
+    if (!profile) {
+      const role = String(
+        user?.user_metadata?.role || user?.app_metadata?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      if (role === "creator" || role === "brand" || role === "agency") {
+        navigate(getSignupPathForRole(role), { replace: true });
+      }
+      return;
+    }
+    const path = isOnboardingIncomplete(profile)
+      ? getOnboardingPath(profile)
+      : getDashboardPath(profile);
+    if (path) {
+      navigate(path, { replace: true });
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
 
   const items = [
     {
       title: t("talentModelingAgency"),
       desc: t("talentModelingAgencyMessage"),
       icon: Users,
-      to: createPageUrl("TalentAgency"),
+      to: isSignupMode
+        ? getOrganizationSignupPathForType("talent_agency")
+        : createPageUrl("TalentAgency"),
     },
     {
       title: t("sportsAgency"),
       desc: t("sportsAgencyMessage"),
       icon: Trophy,
-      to: createPageUrl("SportsAgency"),
+      to: isSignupMode
+        ? getOrganizationSignupPathForType("sports_agency")
+        : createPageUrl("SportsAgency"),
     },
   ];
 

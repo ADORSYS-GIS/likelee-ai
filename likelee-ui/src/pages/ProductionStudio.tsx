@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 
 export default function ProductionStudio() {
   const navigate = useNavigate();
@@ -95,10 +96,7 @@ export default function ProductionStudio() {
             </p>
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") +
-                    "?type=production_studio",
-                )
+                navigate(getOrganizationSignupPathForType("production_studio"))
               }
               className="h-14 px-10 text-base font-medium bg-gradient-to-r from-slate-700 to-gray-800 hover:from-slate-800 hover:to-gray-900 text-white border-2 border-black shadow-lg transition-all hover:shadow-xl hover:scale-105 rounded-none"
             >
@@ -194,7 +192,9 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-4xl font-bold text-gray-900">$199</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $199
+                  </span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
               </div>
@@ -243,8 +243,7 @@ export default function ProductionStudio() {
               <Button
                 onClick={() =>
                   navigate(
-                    createPageUrl("OrganizationSignup") +
-                      "?type=production_studio&plan=studio",
+                    `${getOrganizationSignupPathForType("production_studio")}&plan=studio`,
                   )
                 }
                 className="w-full h-12 bg-gradient-to-r from-slate-700 to-gray-800 hover:opacity-90 text-white border-2 border-black rounded-none"
@@ -268,7 +267,9 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-4xl font-bold text-gray-900">$449</span>
+                  <span className="text-4xl font-bold text-gray-900 font-display">
+                    $449
+                  </span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
               </div>
@@ -323,8 +324,7 @@ export default function ProductionStudio() {
               <Button
                 onClick={() =>
                   navigate(
-                    createPageUrl("OrganizationSignup") +
-                      "?type=production_studio&plan=creative",
+                    `${getOrganizationSignupPathForType("production_studio")}&plan=creative`,
                   )
                 }
                 className="w-full h-12 bg-gradient-to-r from-slate-700 to-gray-800 hover:opacity-90 text-white border-2 border-black rounded-none"
@@ -344,7 +344,7 @@ export default function ProductionStudio() {
 
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-gray-900 font-display">
                     Custom Pricing
                   </span>
                 </div>
@@ -429,10 +429,7 @@ export default function ProductionStudio() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") +
-                    "?type=production_studio",
-                )
+                navigate(getOrganizationSignupPathForType("production_studio"))
               }
               variant="outline"
               className="h-16 px-12 text-lg font-medium bg-transparent hover:bg-white/10 text-white border-2 border-white rounded-none"

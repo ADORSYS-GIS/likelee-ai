@@ -27,6 +27,28 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Messaging Hub ---
+        .route(
+            "/api/conversations",
+            get(crate::messages::list_conversations),
+        )
+        .route(
+            "/api/conversations/contacts",
+            get(crate::messages::list_contacts),
+        )
+        .route(
+            "/api/conversations/start",
+            post(crate::messages::start_conversation),
+        )
+        .route(
+            "/api/conversations/:id/messages",
+            get(crate::messages::list_messages),
+        )
+        .route("/api/messages/send", post(crate::messages::send_message))
+        .route(
+            "/api/messages/:id",
+            put(crate::messages::edit_message).delete(crate::messages::delete_message),
+        )
         // --- Talent Portal ---
         .route("/api/talent/me", get(crate::talent::talent_me))
         .route("/api/talent/profile", post(crate::talent::update_profile))
@@ -580,6 +602,12 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
         )
         .route(
+            "/api/agency/storage/folders/:folder_id",
+            delete(crate::agencies::delete_agency_folder)
+                .patch(crate::agencies::update_agency_folder)
+                .put(crate::agencies::update_agency_folder),
+        )
+        .route(
             "/api/agency/storage/files",
             get(crate::agencies::list_agency_files),
         )
@@ -827,6 +855,10 @@ pub fn build_router(state: AppState) -> Router {
             delete(crate::brand_campaigns::delete_offer_contract),
         )
         .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/download",
+            get(crate::brand_campaigns::download_offer_contract_document),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/contracts/send",
             post(crate::brand_campaigns::send_offer_contract),
         )
@@ -996,14 +1028,6 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::update_face_profile),
         )
         .route("/api/faces/search", get(crate::face_profiles::search_faces))
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
-        )
-        .route(
-            "/api/moderation/image-bytes",
-            post(crate::moderation::moderate_image_bytes),
-        )
         .route("/api/email/available", get(crate::creators::check_email))
         .route(
             "/api/reference-images/upload",
@@ -1058,6 +1082,26 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/creator/agency-connections/:agency_id/disconnect",
             post(crate::creator_agency_connection::disconnect_agency),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/approve",
+            post(crate::creator_agency_connection::approve_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/disconnect/reject",
+            post(crate::creator_agency_connection::reject_disconnect_request),
+        )
+        .route(
+            "/api/agency/creator-connections/:creator_id/contract",
+            get(crate::creator_agency_connection::get_agency_contract_summary),
+        )
+        .route(
+            "/api/marketplace/contracts/:id/sync",
+            post(crate::agency_marketplace_contracts::sync_contract_endpoint),
+        )
+        .route(
+            "/api/marketplace/contracts/:id/finalize",
+            post(crate::agency_marketplace_contracts::finalize_contract_endpoint),
         )
         .route(
             "/api/invites/agency-talent/:token",
@@ -1115,6 +1159,10 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         .route(
+            "/webhooks/docuseal/marketplace-contracts",
+            post(crate::agency_marketplace_contracts::handle_webhook),
+        )
+        .route(
             "/webhooks/docuseal/campaign-contracts",
             post(crate::brand_campaigns::handle_campaign_contract_webhook),
         )
@@ -1132,8 +1180,44 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::email::send_email),
         )
         .route(
+            "/api/integrations/core/send-sales-inquiry",
+            post(crate::email::send_sales_inquiry),
+        )
+        .route(
             "/api/agency/billing/checkout",
             post(crate::billing::create_agency_subscription_checkout),
+        )
+        .route(
+            "/api/agency/billing/change-plan",
+            post(crate::billing::change_agency_subscription_plan),
+        )
+        .route(
+            "/api/agency/billing/checkout/sync",
+            post(crate::billing::sync_agency_checkout_session),
+        )
+        .route(
+            "/api/agency/billing/addons/irl-booking/checkout",
+            post(crate::billing::create_agency_irl_booking_addon_checkout),
+        )
+        .route(
+            "/api/agency/billing/addons/seats",
+            post(crate::billing::create_or_update_agency_seat_addon),
+        )
+        .route(
+            "/api/agency/billing/addons/seats/breakdown",
+            get(crate::billing::get_agency_seat_breakdown),
+        )
+        .route(
+            "/api/agency/billing/start-trial",
+            post(crate::billing::start_agency_pro_trial),
+        )
+        .route(
+            "/api/agency/billing/status",
+            get(crate::billing::get_agency_billing_status),
+        )
+        .route(
+            "/api/agency/billing/portal",
+            post(crate::billing::create_agency_billing_portal),
         )
         .route(
             "/api/licenses/activated",
@@ -1148,7 +1232,7 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
+        .layer(DefaultBodyLimit::max(500 * 1024 * 1024)) // 500MB limit
         .layer(cors)
         .layer(axum::middleware::from_fn(idempotency_layer))
         .layer(axum::middleware::from_fn(cache_layer))

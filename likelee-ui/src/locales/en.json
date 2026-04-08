@@ -712,6 +712,16 @@
     "back": "Back",
     "submitting": "Submitting...",
     "completeSignUp": "Complete Sign Up",
+    "terms": {
+      "title": "Terms & Agreements",
+      "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "andTerms": "and Terms of Service",
+      "mustAgreeTitle": "Agreement Required",
+      "mustAgree": "You must agree to the terms to complete your registration.",
+      "completeRegistration": "Complete Registration"
+    },
     "industries": {
       "fashion": "Fashion",
       "beauty": "Beauty",
@@ -1282,10 +1292,11 @@
     },
     "terms": {
       "title": "Terms & Agreements",
-      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
       "agreeTo": "I agree to the",
       "policyLink": "Privacy Policy",
-      "mustAgree": "You must agree to the privacy policy to create your account.",
+      "mustAgree": "You must agree to the terms to complete registration.",
+      "mustAgreeTitle": "Agreement Required",
       "completeRegistration": "Complete Registration"
     },
     "errors": {
@@ -1538,7 +1549,7 @@
         "languages": "e.g., English, Spanish",
         "confirmPassword": "••••••••",
         "handle": "@yourhandle",
-        "price": "150",
+        "price": "",
         "headshot": "Image URL",
         "specify": "Please specify..."
       },
@@ -1790,9 +1801,9 @@
       "openToWork": "Open to work",
       "industries": "Industries",
       "licensingRate": "Licensing Rate",
-      "baseRateDescription": "Your base weekly licensing rate",
+      "baseRateDescription": "Your base monthly licensing rate",
       "openToNegotiations": "Open to negotiations",
-      "perWeek": "/wk",
+      "perWeek": "/mo",
       "portfolio": "Portfolio",
       "previewNote": "This is a preview of what brands will see. Update your profile details in Settings.",
       "engagement": "Engagement",
@@ -2653,14 +2664,14 @@
     },
     "rules": {
       "modals": {
-        "perWeek": "/wk",
+        "perWeek": "/mo",
         "cancel": "Cancel",
         "save": "Save Rates",
         "saving": "Saving...",
         "contentTitle": "Customize Content Type Rates",
         "industryTitle": "Customize Industry Rates",
-        "contentDesc": "Set specific weekly rates for different content types. If left blank, your base rate ({rate}) will apply.",
-        "industryDesc": "Set specific weekly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "contentDesc": "Set specific monthly rates for different content types. If left blank, your base rate ({rate}) will apply.",
+        "industryDesc": "Set specific monthly rates for different industries. If left blank, your base rate ({rate}) will apply.",
         "noContentTitle": "No content types selected.",
         "noContentMsg": "Please go back to \"My Rules\" and select the content types you re open to first.",
         "noIndustryTitle": "No industries selected.",

@@ -165,6 +165,8 @@ pub struct TalentRow {
     pub sports: String,
     pub last_updated: String,
     pub special_skills: String,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
     pub date_of_birth: Option<String>,
     pub gender_identity: Option<String>,
     pub height_feet: Option<i32>,
@@ -178,7 +180,7 @@ pub struct TalentRow {
     pub race_ethnicity: Vec<String>,
     pub tattoos: Option<bool>,
     pub piercings: Option<bool>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: bool,
     pub rate_currency: String,
 }
@@ -256,11 +258,12 @@ pub async fn get_roster(
     user: AuthUser,
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, &agency_id).await?;
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
         .eq("agency_id", &agency_id)
         .execute()
         .await
@@ -385,7 +388,7 @@ pub async fn get_roster(
                 .unwrap_or("missing")
                 .to_string();
 
-            let ai_usage: Vec<String> = get_field("ai_usage")
+            let mut ai_usage: Vec<String> = get_field("ai_usage")
                 .and_then(|v| v.as_array())
                 .map(|arr| {
                     arr.iter()
@@ -401,9 +404,42 @@ pub async fn get_roster(
                 .unwrap_or(0);
             let followers = format_number(followers_val);
 
-            let assets = get_field("total_assets")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0) as i32;
+            let photo_urls: Vec<String> = item
+                .get("agency_users")
+                .and_then(|v| v.get("photo_urls"))
+                .map(parse_string_array_value)
+                .unwrap_or_default();
+            let profile_photo = get_field("profile_photo_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            let video_url_val = get_field("video_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            let voice_sample_url_val = get_field("voice_sample_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+
+            let mut unique_assets: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+            if !profile_photo.is_empty() {
+                unique_assets.insert(normalize_asset_url(profile_photo));
+            }
+            for url in photo_urls.iter() {
+                if !url.trim().is_empty() {
+                    unique_assets.insert(normalize_asset_url(url));
+                }
+            }
+            if !video_url_val.is_empty() {
+                unique_assets.insert(normalize_asset_url(video_url_val));
+            }
+            if !voice_sample_url_val.is_empty() {
+                unique_assets.insert(normalize_asset_url(voice_sample_url_val));
+            }
+
+            let assets = unique_assets.len() as i32;
             let top_brand = get_field("top_brand")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
@@ -436,6 +472,43 @@ pub async fn get_roster(
                 .map(parse_string_array_value)
                 .unwrap_or_default();
 
+            let video_url = get_field("video_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let voice_sample_url = get_field("voice_sample_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            if ai_usage.is_empty() {
+                if let Some(ref v) = video_url {
+                    if !v.is_empty() {
+                        ai_usage.push("Video".to_string());
+                    }
+                }
+                if let Some(ref v) = voice_sample_url {
+                    if !v.is_empty() {
+                        ai_usage.push("Voice".to_string());
+                    }
+                }
+
+                if !img.trim().is_empty() {
+                    let lower = img.to_lowercase();
+                    if lower.contains(".mp4") || lower.contains(".webm") || lower.contains(".mov") {
+                        if !ai_usage.contains(&"Video".to_string()) {
+                            ai_usage.push("Video".to_string());
+                        }
+                    } else {
+                        if !ai_usage.contains(&"Image".to_string()) {
+                            ai_usage.push("Image".to_string());
+                        }
+                    }
+                }
+
+                if !photo_urls.is_empty() && !ai_usage.contains(&"Image".to_string()) {
+                    ai_usage.push("Image".to_string());
+                }
+            }
+
             if !id.is_empty() {
                 let entry = asset_urls_by_talent.entry(id.clone()).or_default();
                 if !img.trim().is_empty() {
@@ -445,6 +518,16 @@ pub async fn get_roster(
                     let t = u.trim();
                     if !t.is_empty() {
                         entry.insert(normalize_asset_url(t));
+                    }
+                }
+                if let Some(ref v) = video_url {
+                    if !v.trim().is_empty() {
+                        entry.insert(normalize_asset_url(v.trim()));
+                    }
+                }
+                if let Some(ref v) = voice_sample_url {
+                    if !v.trim().is_empty() {
+                        entry.insert(normalize_asset_url(v.trim()));
                     }
                 }
             }
@@ -526,8 +609,8 @@ pub async fn get_roster(
 
             let tattoos = get_field("tattoos").and_then(|v| v.as_bool());
             let piercings = get_field("piercings").and_then(|v| v.as_bool());
-            let licensing_rate_weekly_cents = item
-                .get("licensing_rate_weekly_cents")
+            let licensing_rate_monthly_cents = item
+                .get("licensing_rate_monthly_cents")
                 .and_then(|v| v.as_i64());
             let accept_negotiations = item
                 .get("accept_negotiations")
@@ -583,6 +666,8 @@ pub async fn get_roster(
                 sports,
                 last_updated,
                 special_skills,
+                video_url,
+                voice_sample_url,
                 date_of_birth,
                 gender_identity,
                 height_feet,
@@ -596,7 +681,7 @@ pub async fn get_roster(
                 race_ethnicity,
                 tattoos,
                 piercings,
-                licensing_rate_weekly_cents,
+                licensing_rate_monthly_cents,
                 accept_negotiations,
                 rate_currency,
             };
@@ -1249,9 +1334,12 @@ pub struct CreateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
+    pub ai_usage: Option<Vec<String>>,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1292,9 +1380,12 @@ pub struct UpdateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
-    pub licensing_rate_weekly_cents: Option<i64>,
+    pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: Option<bool>,
     pub rate_currency: Option<String>,
+    pub ai_usage: Option<Vec<String>>,
+    pub video_url: Option<String>,
+    pub voice_sample_url: Option<String>,
 }
 
 use serde_json::json;
@@ -1304,7 +1395,7 @@ struct AgencyTalentConnectionUpsert<'a> {
     talent_id: &'a str,
     creator_id: Option<&'a str>,
     status: &'a str,
-    licensing_rate_weekly_cents: Option<i64>,
+    licensing_rate_monthly_cents: Option<i64>,
     accept_negotiations: bool,
     rate_currency: &'a str,
 }
@@ -1318,7 +1409,7 @@ async fn upsert_agency_talent_connection(
         "talent_id": input.talent_id,
         "creator_id": input.creator_id,
         "status": input.status,
-        "licensing_rate_weekly_cents": input.licensing_rate_weekly_cents,
+        "licensing_rate_monthly_cents": input.licensing_rate_monthly_cents,
         "accept_negotiations": input.accept_negotiations,
         "rate_currency": input.rate_currency,
         "updated_at": chrono::Utc::now().to_rfc3339(),
@@ -1344,11 +1435,11 @@ pub async fn create_talent(
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let licensing_rate_weekly_cents = match payload.licensing_rate_weekly_cents {
+    let licensing_rate_monthly_cents = match payload.licensing_rate_monthly_cents {
         Some(v) if v <= 0 => {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+                "licensing_rate_monthly_cents must be greater than 0".to_string(),
             ));
         }
         Some(v) => Some(v),
@@ -1564,6 +1655,9 @@ pub async fn create_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
+        "ai_usage": payload.ai_usage,
+        "video_url": payload.video_url,
+        "voice_sample_url": payload.voice_sample_url,
     });
 
     if let serde_json::Value::Object(ref mut map) = identity_payload {
@@ -1660,7 +1754,7 @@ pub async fn create_talent(
             talent_id: talent_id.as_str(),
             creator_id: creator_id.as_deref(),
             status: status.as_str(),
-            licensing_rate_weekly_cents,
+            licensing_rate_monthly_cents,
             accept_negotiations,
             rate_currency: rate_currency.as_str(),
         },
@@ -1717,11 +1811,11 @@ pub async fn update_talent(
         .unwrap_or("active")
         .to_string();
 
-    if let Some(v) = payload.licensing_rate_weekly_cents {
+    if let Some(v) = payload.licensing_rate_monthly_cents {
         if v <= 0 {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+                "licensing_rate_monthly_cents must be greater than 0".to_string(),
             ));
         }
     }
@@ -1775,6 +1869,9 @@ pub async fn update_talent(
         "photo_urls": payload.photo_urls,
         "bio_notes": payload.bio,
         "special_skills": special_skills,
+        "ai_usage": payload.ai_usage,
+        "video_url": payload.video_url,
+        "voice_sample_url": payload.voice_sample_url,
         "instagram_handle": payload.instagram_handle,
         "instagram_followers": payload.instagram_followers,
         "engagement_rate": payload.engagement_rate,
@@ -1848,7 +1945,7 @@ pub async fn update_talent(
                 talent_id: &id,
                 creator_id,
                 status: next_status.as_str(),
-                licensing_rate_weekly_cents: payload.licensing_rate_weekly_cents,
+                licensing_rate_monthly_cents: payload.licensing_rate_monthly_cents,
                 accept_negotiations: next_accept_negotiations,
                 rate_currency: next_rate_currency.as_str(),
             },

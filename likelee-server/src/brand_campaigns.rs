@@ -30,6 +30,28 @@ fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
     st == "completed" || st == "signed"
 }
 
+fn offer_status_is_signed(value: &serde_json::Value) -> bool {
+    let st = value
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    // NOTE: offer.status advances during deliverables/review; treat any post-signature status as signed.
+    matches!(
+        st.as_str(),
+        "contract_fully_signed"
+            | "signed"
+            | "in_execution"
+            | "deliverables_submitted"
+            | "in_review"
+            | "changes_requested"
+            | "approved"
+            | "completed"
+    )
+}
+
 async fn attach_is_fully_signed_to_offers(
     state: &AppState,
     offers: &mut [serde_json::Value],
@@ -284,6 +306,12 @@ pub struct SubmitDeliverableRequest {
     pub creator_id: Option<String>,
     pub asset_request_id: Option<String>,
     pub meta: Option<serde_json::Value>,
+    pub confirm_unpaid: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SubmitDraftDeliverablesRequest {
+    pub confirm_unpaid: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -2150,7 +2178,7 @@ pub async fn list_offer_options(
                 || visibility == "true"
         })
         .map(|r| {
-            let weekly = r
+            let monthly = r
                 .get("base_weekly_price_cents")
                 .and_then(|v| v.as_i64())
                 .or_else(|| {
@@ -2165,7 +2193,7 @@ pub async fn list_offer_options(
                 "state": r.get("state").cloned().unwrap_or(serde_json::Value::Null),
                 "profile_photo_url": r.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
                 "creator_type": r.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
-                "base_rate_weekly_cents": weekly,
+                "base_rate_monthly_cents": monthly,
                 "rate_currency": r.get("currency_code").cloned().unwrap_or(json!("USD")),
                 "accept_negotiations": r.get("accept_negotiations").cloned().unwrap_or(json!(true)),
             })
@@ -4096,6 +4124,153 @@ pub async fn list_offer_contracts(
     Ok(Json(json!({ "contracts": rows })))
 }
 
+pub async fn download_offer_contract_document(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferContractPath {
+        offer_id,
+        contract_id,
+    }): Path<OfferContractPath>,
+) -> Result<Response, (StatusCode, String)> {
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    let resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*")
+        .eq("offer_id", &offer_id)
+        .eq("id", &contract_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let contract = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
+
+    let mut document_url = contract
+        .get("signed_document_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            contract
+                .get("meta")
+                .and_then(|v| v.as_object())
+                .and_then(|m| m.get("docuseal_document_url"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        });
+
+    if document_url.is_none() {
+        let submission_id = contract
+            .get("docuseal_submission_id")
+            .and_then(|v| v.as_i64())
+            .unwrap_or_default();
+        if submission_id > 0 && !state.docuseal_api_key.trim().is_empty() {
+            let docuseal = DocuSealClient::new(
+                state.docuseal_api_key.clone(),
+                state.docuseal_api_url.clone(),
+            );
+            if let Ok(details) = docuseal.get_submission(submission_id as i32).await {
+                if let Some(url) = details
+                    .documents
+                    .first()
+                    .map(|doc| doc.url.trim().to_string())
+                {
+                    if !url.is_empty() {
+                        document_url = Some(url);
+                    }
+                }
+            }
+        }
+    }
+
+    let document_url = document_url.ok_or((
+        StatusCode::NOT_FOUND,
+        "Signed contract PDF is not available yet.".to_string(),
+    ))?;
+
+    let upstream = Client::new()
+        .get(&document_url)
+        .header("X-Auth-Token", state.docuseal_api_key.clone())
+        .send()
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Failed to fetch contract PDF: {e}"),
+            )
+        })?;
+
+    if !upstream.status().is_success() {
+        let upstream_status = upstream.status();
+        let upstream_body = upstream.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!(
+                "DocuSeal rejected the contract download ({}): {}",
+                upstream_status, upstream_body
+            ),
+        ));
+    }
+
+    let content_type = upstream
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/pdf")
+        .to_string();
+    let bytes = upstream.bytes().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read contract PDF: {e}"),
+        )
+    })?;
+
+    let filename = contract
+        .get("title")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or("signed-contract")
+        .trim()
+        .replace(['\r', '\n'], " ")
+        .replace('"', "'");
+    let filename = if filename.to_lowercase().ends_with(".pdf") {
+        filename
+    } else {
+        format!("{filename}.pdf")
+    };
+
+    let mut response = Response::new(Body::from(bytes));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(&content_type)
+            .unwrap_or_else(|_| HeaderValue::from_static("application/pdf")),
+    );
+    if let Ok(value) = HeaderValue::from_str(&format!("attachment; filename=\"{filename}\"")) {
+        response
+            .headers_mut()
+            .insert(header::CONTENT_DISPOSITION, value);
+    }
+
+    Ok(response)
+}
+
 pub async fn sync_offer_contract(
     State(state): State<AppState>,
     user: AuthUser,
@@ -5407,13 +5582,22 @@ pub async fn submit_offer_deliverable(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    // Payment gate: do not allow campaign deliverables to be submitted until the offer is paid.
+    // Payment gate: by default do not allow campaign deliverables to be submitted until the offer
+    // is paid. Agencies may override this with an explicit confirmation flag.
     let payment_status = _offer
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
-        return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        let confirm_unpaid = payload.confirm_unpaid.unwrap_or(false);
+        if user.role != "agency" || !confirm_unpaid {
+            return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        }
+
+        // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
+        if !offer_status_is_signed(&_offer) {
+            return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
     }
 
     let offer_brand_id = _offer
@@ -5727,7 +5911,7 @@ pub async fn upload_offer_deliverable(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" {
+    if payment_status != "paid" && user.role != "agency" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -6136,6 +6320,12 @@ pub async fn list_offer_deliverables(
     Path(OfferPath { offer_id }): Path<OfferPath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let payment_status = _offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
     let resp = state
         .pg
         .from("campaign_offer_deliverables")
@@ -6153,7 +6343,20 @@ pub async fn list_offer_deliverables(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
+    // for approval/download. Preview is allowed to support review workflows.
+    if user.role == "brand" && payment_status != "paid" {
+        for row in rows.iter_mut() {
+            if let Some(obj) = row.as_object_mut() {
+                let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
+                let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
+                meta_obj.insert("payment_required".to_string(), json!(true));
+                obj.insert("meta".to_string(), serde_json::Value::Object(meta_obj));
+            }
+        }
+    }
     Ok(Json(json!({"deliverables": rows})))
 }
 
@@ -6172,7 +6375,7 @@ pub async fn upload_offer_deliverable_form(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" {
+    if payment_status != "paid" && user.role != "agency" {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -6530,6 +6733,7 @@ pub async fn submit_draft_deliverables(
     State(state): State<AppState>,
     user: AuthUser,
     Path(OfferPath { offer_id }): Path<OfferPath>,
+    payload: Option<Json<SubmitDraftDeliverablesRequest>>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
@@ -6541,7 +6745,18 @@ pub async fn submit_draft_deliverables(
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
-        return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        let confirm_unpaid = payload
+            .as_ref()
+            .and_then(|p| p.confirm_unpaid)
+            .unwrap_or(false);
+        if user.role != "agency" || !confirm_unpaid {
+            return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
+        }
+
+        // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
+        if !offer_status_is_signed(&_offer) {
+            return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
     }
 
     let resp = state
@@ -6693,6 +6908,22 @@ pub async fn serve_offer_deliverable(
         .map(|v| v.trim().to_lowercase())
         .map(|v| matches!(v.as_str(), "1" | "true" | "t" | "yes" | "y" | "on"))
         .unwrap_or(false);
+
+    // Brands can preview deliverables, but must pay before downloading them.
+    if is_download && user.role == "brand" {
+        let payment_status = _offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        if payment_status != "paid" {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                "payment_required_to_download_deliverables".to_string(),
+            ));
+        }
+    }
     if is_download && user.role == "brand" {
         let approved = deliverable_status == "brand_approved"
             || deliverable_status == "approved"
@@ -6783,6 +7014,20 @@ pub async fn review_offer_deliverable(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    if user.role == "brand" {
+        let payment_status = _offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        if payment_status != "paid" {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                "payment_required_before_reviewing_deliverables".to_string(),
+            ));
+        }
+    }
     let action = payload.action.trim().to_lowercase();
     let now = chrono::Utc::now().to_rfc3339();
 

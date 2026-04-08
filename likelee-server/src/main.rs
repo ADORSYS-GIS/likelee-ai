@@ -1,5 +1,3 @@
-use aws_config::BehaviorVersion;
-use aws_types::region::Region;
 use dotenvy::dotenv;
 use envconfig::Envconfig;
 use postgrest::Postgrest;
@@ -17,7 +15,6 @@ async fn main() {
     let cfg = likelee_server::config::ServerConfig::init_from_env()
         .expect("invalid/missing environment configuration");
     let port = cfg.port;
-    let moderation_enabled = cfg.moderation_enabled != "0";
 
     // Init tracing
     let filter = tracing_subscriber::EnvFilter::try_from_default_env()
@@ -87,21 +84,6 @@ async fn main() {
         }
     }
 
-    let rekog = if moderation_enabled {
-        let region = Region::new(cfg.aws_region.clone());
-        let sdk_config = aws_config::defaults(BehaviorVersion::latest())
-            .region(region)
-            .load()
-            .await;
-        let client = aws_sdk_rekognition::Client::new(&sdk_config);
-        info!(moderation_enabled, "AWS Rekognition client initialized");
-        Some(client)
-    } else {
-        info!("rekognition: disabled (moderation disabled)");
-
-        None
-    };
-
     // Initialize cache layers
     let cache_l2 = Arc::new(likelee_server::cache::SessionCache::new(
         Duration::from_secs(cfg.cache_l2_ttl_secs),
@@ -138,7 +120,6 @@ async fn main() {
             base_url: cfg.duix_base_url,
             auth_token: cfg.duix_auth_token,
         },
-        rekog,
         supabase_url: cfg.supabase_url.clone(),
         supabase_service_key: cfg.supabase_service_key.clone(),
         supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),
@@ -156,7 +137,23 @@ async fn main() {
         stripe_licensing_pro_price_id: cfg.stripe_licensing_pro_price_id.clone(),
         stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
+        stripe_agency_basic_base_annual_price_id: cfg
+            .stripe_agency_basic_base_annual_price_id
+            .clone(),
+        stripe_agency_basic_headcount_price_id: cfg.stripe_agency_basic_headcount_price_id.clone(),
+        stripe_agency_basic_headcount_annual_price_id: cfg
+            .stripe_agency_basic_headcount_annual_price_id
+            .clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+        stripe_agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
+        stripe_agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
+        stripe_agency_pro_headcount_annual_price_id: cfg
+            .stripe_agency_pro_headcount_annual_price_id
+            .clone(),
+        stripe_agency_irl_booking_price_id: cfg.stripe_agency_irl_booking_price_id.clone(),
+        stripe_agency_irl_booking_annual_price_id: cfg
+            .stripe_agency_irl_booking_annual_price_id
+            .clone(),
         stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
         stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
         stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),

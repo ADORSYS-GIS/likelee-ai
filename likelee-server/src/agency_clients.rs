@@ -1,4 +1,4 @@
-use crate::email::send_email_core_with_from_name;
+use crate::email::{send_email_core_with_from_name, EmailSendOptions};
 use crate::errors::sanitize_db_error;
 use crate::{
     auth::{AuthUser, RoleGuard},
@@ -213,9 +213,12 @@ pub async fn share_comp_card(
                 &email,
                 &subject,
                 &body,
-                true,
-                None,
-                Some(&from_name),
+                EmailSendOptions {
+                    is_html: true,
+                    attachments: None,
+                    from_name: Some(&from_name),
+                    reply_to: None,
+                },
             )
             .await
             {

@@ -428,16 +428,20 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             </div>
 
             {/* Contract Editor */}
-            <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
-              <ContractEditor
-                body={contractBodyValue}
-                format={contractFormatValue as any}
-                onChangeBody={(val) => setValue("contract_body", val)}
-                onChangeFormat={(val) => setValue("contract_body_format", val)}
-                variables={AVAILABLE_CONTRACT_VARIABLES}
-                placeholder={CONTRACT_EXAMPLE_PLACEHOLDER}
-                readOnly={readOnly}
-              />
+            <div className="pt-8">
+              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
+                <ContractEditor
+                  body={contractBodyValue}
+                  format={contractFormatValue as any}
+                  onChangeBody={(val) => setValue("contract_body", val)}
+                  onChangeFormat={(val) =>
+                    setValue("contract_body_format", val)
+                  }
+                  variables={AVAILABLE_CONTRACT_VARIABLES}
+                  placeholder={CONTRACT_EXAMPLE_PLACEHOLDER}
+                  readOnly={readOnly}
+                />
+              </div>
             </div>
           </div>
         </form>

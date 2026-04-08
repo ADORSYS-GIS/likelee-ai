@@ -325,7 +325,7 @@ export default function CampaignBriefStep({
                 <img
                   src={img.url}
                   alt={`Style Ref ${idx + 1}`}
-                  className="w-full h-24 object-cover"
+                  className="w-full h-24 object-contain bg-gray-100"
                 />
                 <p className="text-xs text-gray-700 mt-2 truncate">
                   Style Ref {idx + 1}
@@ -351,7 +351,7 @@ export default function CampaignBriefStep({
         </div>
 
         <p className="text-sm font-semibold text-gray-700">
-          Brand Assets Provided
+          Deliverable Expectations &amp; Brand Guidelines (PDFs)
         </p>
         <div className="border-2 border-dashed border-gray-300 rounded-none p-3">
           <div className="flex items-center gap-3">

@@ -41,6 +41,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { createPageUrl } from "@/utils";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { useAuth } from "@/auth/AuthProvider";
+import { getAgencyBillingStatus } from "@/api/functions";
+import CompCardAttachModal from "@/components/jobs/CompCardAttachModal";
 
 const PAGE_SIZE = 10;
 
@@ -70,9 +74,10 @@ const locationOptions = [
 
 export default function JobsBoard() {
   const { toast } = useToast();
+  const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false);
+  const backTo = searchParams.get("backTo");
   const [jobs, setJobs] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [revealingMore, setRevealingMore] = useState(false);
@@ -87,21 +92,71 @@ export default function JobsBoard() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
-  const [githubLink, setGithubLink] = useState("");
-  const [linkedinLink, setLinkedinLink] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeMeta, setResumeMeta] = useState<any | null>(null);
-  const [compCardFile, setCompCardFile] = useState<File | null>(null);
+  const [compCardFiles, setCompCardFiles] = useState<File[]>([]);
   const [compCardUploading, setCompCardUploading] = useState(false);
-  const [compCardMeta, setCompCardMeta] = useState<any | null>(null);
+  const [compCardMetas, setCompCardMetas] = useState<any[]>([]);
+  const [compCardAttachOpen, setCompCardAttachOpen] = useState(false);
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
     null,
   );
+  const [agencyCanApply, setAgencyCanApply] = useState(true);
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const compCardInputRef = useRef<HTMLInputElement>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  const isAgencyUser = authenticated && profile?.role === "agency";
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAgencyBilling = async () => {
+      if (!isAgencyUser) {
+        setAgencyCanApply(true);
+        return;
+      }
+      try {
+        const resp = await getAgencyBillingStatus();
+        if (!cancelled) {
+          setAgencyCanApply(Boolean(resp?.can_apply_for_jobs));
+        }
+      } catch {
+        if (!cancelled) {
+          setAgencyCanApply(false);
+        }
+      }
+    };
+    void loadAgencyBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAgencyUser]);
+
+  const applicantTalent = useMemo(() => {
+    if (!profile) return null;
+    const id = String((profile as any)?.id || "");
+    if (!id) return null;
+    return {
+      id,
+      name: (profile as any)?.full_name || (profile as any)?.display_name,
+      full_name: (profile as any)?.full_name,
+      display_name: (profile as any)?.display_name,
+      profile_photo_url: (profile as any)?.profile_photo_url,
+      gender_identity: (profile as any)?.gender_identity,
+      height_feet: (profile as any)?.height_feet,
+      height_inches: (profile as any)?.height_inches,
+      height: (profile as any)?.height,
+      bust_inches: (profile as any)?.bust_inches,
+      waist_inches: (profile as any)?.waist_inches,
+      hips_inches: (profile as any)?.hips_inches,
+      measurements: (profile as any)?.measurements,
+      eye_color: (profile as any)?.eye_color,
+      hair_color: (profile as any)?.hair_color,
+      email: (profile as any)?.email,
+      phone: (profile as any)?.phone,
+    };
+  }, [profile]);
 
   const resolveAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -204,6 +259,21 @@ export default function JobsBoard() {
     return "Not specified";
   };
 
+  const isJobClosed = (job: any) => {
+    const status = String(
+      job?.status || job?.job_status || job?.state || "",
+    ).toLowerCase();
+    return [
+      "closed",
+      "filled",
+      "inactive",
+      "expired",
+      "cancelled",
+      "canceled",
+      "completed",
+    ].includes(status);
+  };
+
   const queryParams = useMemo(
     () => ({
       search: search || undefined,
@@ -216,35 +286,47 @@ export default function JobsBoard() {
     [search, callType, jobType, location, category],
   );
 
-  const loadJobs = async () => {
-    try {
-      setLoading(true);
-      setVisibleCount(PAGE_SIZE);
+  const jobsQuery = useIndexedDbQuery<{ jobs?: any[] }>({
+    queryKey: ["find-jobs-board", queryParams],
+    queryFn: async () => {
       const res = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: queryParams,
       });
-      const rows = Array.isArray(res?.jobs) ? res.jobs : [];
+      return res;
+    },
+    maxAge: 2 * 60 * 1000,
+    staleWhileRevalidate: true,
+  });
+
+  const loading = jobsQuery.isLoading && !jobsQuery.data;
+
+  useEffect(() => {
+    if (jobsQuery.data) {
+      const rows = Array.isArray(jobsQuery.data.jobs)
+        ? jobsQuery.data.jobs
+        : [];
       setJobs(rows);
-      if (rows.length > 0) {
-        setSelectedJob((prev) => prev || rows[0]);
-      } else {
+      const openRows = rows.filter((job) => !isJobClosed(job));
+      if (openRows.length > 0) {
+        setSelectedJob((prev) => prev || openRows[0]);
+      } else if (rows.length > 0 && !selectedJob) {
+        setSelectedJob(rows[0]);
+      } else if (rows.length === 0) {
         setSelectedJob(null);
       }
-    } catch (e: any) {
+    } else if (jobsQuery.error) {
       setJobs([]);
       setSelectedJob(null);
       toast({
         title: "Unable to load jobs",
-        description: e?.message || "Please try again.",
+        description: jobsQuery.error?.message || "Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [jobsQuery.data, jobsQuery.error]);
 
   useEffect(() => {
-    loadJobs();
+    setVisibleCount(PAGE_SIZE);
   }, [queryParams]);
 
   const loadMore = useCallback(() => {
@@ -256,14 +338,52 @@ export default function JobsBoard() {
     }, 400);
   }, [revealingMore]);
 
-  const visibleJobs = jobs.slice(0, visibleCount);
-  const hasMore = visibleCount < jobs.length;
   const isFiltered =
     search.trim() !== "" ||
     callType !== "all" ||
     jobType !== "all" ||
     location !== "all" ||
     category !== "";
+
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return jobs
+      .filter((job) => !isJobClosed(job))
+      .filter((job) => {
+        if (callType !== "all") {
+          const val = String(
+            job?.call_type || job?.callType || "",
+          ).toLowerCase();
+          if (val !== callType) return false;
+        }
+        if (jobType !== "all") {
+          const val = String(job?.job_type || job?.jobType || "").toLowerCase();
+          if (val !== jobType) return false;
+        }
+        if (location !== "all") {
+          const val = String(
+            job?.location || job?.job_location || job?.location_name || "",
+          ).toLowerCase();
+          if (val !== location.toLowerCase()) return false;
+        }
+        if (category) {
+          const val = String(job?.category || "").toLowerCase();
+          if (val !== category.toLowerCase()) return false;
+        }
+        return true;
+      })
+      .filter((job) => {
+        if (!q) return true;
+        const haystack = [job?.job_title, job?.title]
+          .filter(Boolean)
+          .map((v: any) => String(v).toLowerCase())
+          .join(" ");
+        return haystack.includes(q);
+      });
+  }, [jobs, search, callType, jobType, location, category]);
+
+  const visibleJobs = filteredJobs.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredJobs.length;
 
   // Auto-load next batch when sentinel enters viewport
   useEffect(() => {
@@ -305,8 +425,61 @@ export default function JobsBoard() {
 
   const handleApply = async () => {
     if (!selectedJob?.id) return;
+    if (isAgencyUser && !agencyCanApply) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+        variant: "destructive",
+      });
+      navigate("/agencysubscribe");
+      return;
+    }
+    if (isJobClosed(selectedJob)) {
+      toast({
+        title: "Job closed or no vacancies",
+        description: "This role is no longer accepting applications.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!resumeMeta?.url || (resumeMeta?.size ?? 0) <= 0) {
+      toast({
+        title: "Resume required",
+        description: "Please upload a resume before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const hasCompCard = (compCardMetas || []).some(
+      (m: any) => m?.url && (m?.size ?? 0) > 0,
+    );
+    if (!hasCompCard) {
+      toast({
+        title: "Comp card required",
+        description: "Please upload a comp card before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!portfolioLink.trim()) {
+      toast({
+        title: "Portfolio required",
+        description: "Please provide a portfolio link before applying.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       setApplyLoading(true);
+      const compCardsPayload = (compCardMetas || []).map((m: any) => ({
+        name: m?.name,
+        url: m?.url,
+        path: m?.path,
+        mime_type: m?.mime_type,
+        size: m?.size,
+      }));
+      const firstCompCard = compCardsPayload[0];
       await base44.post(`/api/jobs/${selectedJob.id}/apply`, {
         message: applyMessage || undefined,
         resume_name: resumeMeta?.name,
@@ -314,12 +487,13 @@ export default function JobsBoard() {
         resume_path: resumeMeta?.path,
         resume_mime: resumeMeta?.mime_type,
         resume_size: resumeMeta?.size,
-        comp_card_name: compCardMeta?.name,
-        comp_card_url: compCardMeta?.url,
-        comp_card_path: compCardMeta?.path,
+        // Backward compatible single comp-card fields (first upload)
+        comp_card_name: firstCompCard?.name,
+        comp_card_url: firstCompCard?.url,
+        comp_card_path: firstCompCard?.path,
+        // New multi-upload field
+        comp_cards: compCardsPayload,
         portfolio_link: portfolioLink || undefined,
-        github_link: githubLink || undefined,
-        linkedin_link: linkedinLink || undefined,
       });
       toast({
         title: "Application sent",
@@ -328,12 +502,10 @@ export default function JobsBoard() {
       setApplyOpen(false);
       setApplyMessage("");
       setPortfolioLink("");
-      setGithubLink("");
-      setLinkedinLink("");
       setResumeFile(null);
       setResumeMeta(null);
-      setCompCardFile(null);
-      setCompCardMeta(null);
+      setCompCardFiles([]);
+      setCompCardMetas([]);
     } catch (e: any) {
       toast({
         title: "Apply failed",
@@ -398,10 +570,29 @@ export default function JobsBoard() {
     }
   };
 
-  const handleCompCardUpload = async (file: File | null) => {
-    setCompCardFile(file);
-    setCompCardMeta(null);
-    if (!file) return;
+  const uploadCompCard = async (file: File, userId: string) => {
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `job-comp-cards/${userId}/${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}_${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("likelee-public")
+      .upload(path, file);
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
+    return {
+      name: file.name,
+      size: file.size,
+      url: String(data?.publicUrl || ""),
+      path,
+      mime_type: file.type,
+    };
+  };
+
+  const handleCompCardsUpload = async (files: File[]) => {
+    setCompCardFiles(files);
+    setCompCardMetas([]);
+    if (files.length === 0) return;
     if (!supabase) {
       toast({
         title: "Upload unavailable",
@@ -414,24 +605,12 @@ export default function JobsBoard() {
       setCompCardUploading(true);
       const session = await supabase.auth.getSession();
       const userId = String(session.data.session?.user?.id || "applicant");
-      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `job-comp-cards/${userId}/${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 8)}_${safeName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("likelee-public")
-        .upload(path, file);
-      if (uploadError) throw uploadError;
-      const { data } = supabase.storage
-        .from("likelee-public")
-        .getPublicUrl(path);
-      setCompCardMeta({
-        name: file.name,
-        size: file.size,
-        url: String(data?.publicUrl || ""),
-        path,
-        mime_type: file.type,
-      });
+
+      const metas: any[] = [];
+      for (const f of files) {
+        metas.push(await uploadCompCard(f, userId));
+      }
+      setCompCardMetas(metas);
     } catch (e: any) {
       toast({
         title: "Comp card upload failed",
@@ -443,9 +622,14 @@ export default function JobsBoard() {
     }
   };
 
-  const handleRemoveCompCard = () => {
-    setCompCardFile(null);
-    setCompCardMeta(null);
+  const handleRemoveCompCardAt = (idx: number) => {
+    setCompCardFiles((prev) => prev.filter((_f, i) => i !== idx));
+    setCompCardMetas((prev) => prev.filter((_m, i) => i !== idx));
+  };
+
+  const handleClearCompCards = () => {
+    setCompCardFiles([]);
+    setCompCardMetas([]);
     if (compCardInputRef.current) compCardInputRef.current.value = "";
   };
 
@@ -466,10 +650,14 @@ export default function JobsBoard() {
                 variant="ghost"
                 className="px-2"
                 onClick={() => {
+                  if (backTo) {
+                    navigate(backTo);
+                    return;
+                  }
                   if (window.history.length > 1) {
                     navigate(-1);
                   } else {
-                    navigate(createPageUrl("AgencyDashboard"));
+                    navigate(createPageUrl("CreatorDashboard"));
                   }
                 }}
               >
@@ -483,7 +671,7 @@ export default function JobsBoard() {
             </div>
             <div className="flex items-center gap-2 text-gray-500">
               <Briefcase className="w-5 h-5" />
-              <span className="text-sm">{jobs.length} open roles</span>
+              <span className="text-sm">{filteredJobs.length} open roles</span>
             </div>
           </div>
 
@@ -566,7 +754,7 @@ export default function JobsBoard() {
                   </div>
                 </Card>
               ))}
-            {!loading && jobs.length === 0 && (
+            {!loading && filteredJobs.length === 0 && (
               <div className="col-span-full">
                 <Card className="p-8 text-center">
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -660,10 +848,22 @@ export default function JobsBoard() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedJob(job);
+                      if (isAgencyUser && !agencyCanApply) {
+                        toast({
+                          title: "Upgrade required",
+                          description:
+                            "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+                          variant: "destructive",
+                        });
+                        navigate("/agencysubscribe");
+                        return;
+                      }
                       setApplyOpen(true);
                     }}
                   >
-                    Apply Now
+                    {isAgencyUser && !agencyCanApply
+                      ? "Upgrade to Apply"
+                      : "Apply Now"}
                   </Button>
                 </div>
               </Card>
@@ -762,39 +962,69 @@ export default function JobsBoard() {
                       ref={compCardInputRef}
                       id="job-comp-card-upload"
                       type="file"
+                      multiple
                       accept="image/*,.pdf"
                       className="hidden"
-                      onChange={(e) =>
-                        handleCompCardUpload(e.target.files?.[0] || null)
-                      }
+                      onChange={(e) => {
+                        const arr = Array.from(e.target.files || []) as File[];
+                        void handleCompCardsUpload(arr);
+                      }}
                     />
                     <div className="space-y-2">
-                      {!compCardMeta?.name && (
+                      {compCardMetas.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setCompCardAttachOpen(true)}
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400"
+                        >
+                          Generate comp card
+                        </button>
+                      )}
+                      {compCardMetas.length === 0 && (
+                        <div className="text-[11px] text-gray-500">
+                          Or upload an existing PDF/image comp card.
+                        </div>
+                      )}
+                      {compCardMetas.length === 0 && (
                         <label
                           htmlFor="job-comp-card-upload"
                           className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
                         >
-                          Browse comp card
+                          Browse comp cards
                         </label>
                       )}
                       {compCardUploading && (
                         <p className="text-xs text-gray-500">
-                          Uploading comp card...
+                          Uploading comp cards...
                         </p>
                       )}
-                      {!compCardUploading && compCardMeta?.name && (
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-xs text-gray-700 truncate max-w-[180px]">
-                            {compCardMeta.name}
-                          </span>
+                      {!compCardUploading && compCardMetas.length > 0 && (
+                        <div className="space-y-2">
+                          {compCardMetas.map((m: any, idx: number) => (
+                            <div
+                              key={`${m?.path || m?.name || idx}`}
+                              className="flex items-center gap-2"
+                            >
+                              <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-xs text-gray-700 truncate max-w-[220px]">
+                                {m?.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCompCardAt(idx)}
+                                className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0"
+                                aria-label="Remove comp card"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
                           <button
                             type="button"
-                            onClick={handleRemoveCompCard}
-                            className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0"
-                            aria-label="Remove comp card"
+                            onClick={handleClearCompCards}
+                            className="text-xs font-medium text-gray-500 hover:text-gray-900"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            Clear all
                           </button>
                         </div>
                       )}
@@ -806,7 +1036,7 @@ export default function JobsBoard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Portfolio Link
+                      Portfolio Link *
                     </label>
                     <Input
                       placeholder="https://yourportfolio.com"
@@ -814,26 +1044,6 @@ export default function JobsBoard() {
                       onChange={(e) => setPortfolioLink(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">
-                      LinkedIn Profile
-                    </label>
-                    <Input
-                      placeholder="https://linkedin.com/in/..."
-                      value={linkedinLink}
-                      onChange={(e) => setLinkedinLink(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    GitHub Profile
-                  </label>
-                  <Input
-                    placeholder="https://github.com/..."
-                    value={githubLink}
-                    onChange={(e) => setGithubLink(e.target.value)}
-                  />
                 </div>
               </div>
               <Textarea
@@ -850,7 +1060,14 @@ export default function JobsBoard() {
               <Button
                 className="bg-black text-white"
                 onClick={handleApply}
-                disabled={applyLoading}
+                disabled={
+                  applyLoading ||
+                  resumeUploading ||
+                  compCardUploading ||
+                  !resumeMeta?.url ||
+                  compCardMetas.length === 0 ||
+                  !portfolioLink.trim()
+                }
               >
                 {applyLoading ? "Sending..." : "Send application"}
               </Button>
@@ -1369,15 +1586,41 @@ export default function JobsBoard() {
                 className="bg-black text-white"
                 onClick={() => {
                   setDetailsOpen(false);
+                  if (isAgencyUser && !agencyCanApply) {
+                    toast({
+                      title: "Upgrade required",
+                      description:
+                        "Free agencies cannot apply for jobs. Start a trial or upgrade your plan to continue.",
+                      variant: "destructive",
+                    });
+                    navigate("/agencysubscribe");
+                    return;
+                  }
                   setApplyOpen(true);
                 }}
               >
-                Apply
+                {isAgencyUser && !agencyCanApply ? "Upgrade to Apply" : "Apply"}
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CompCardAttachModal
+        open={compCardAttachOpen}
+        onOpenChange={setCompCardAttachOpen}
+        mode={
+          String((profile as any)?.role || "").toLowerCase() === "agency"
+            ? "agency"
+            : "self"
+        }
+        talent={applicantTalent}
+        onAttached={(meta) => {
+          setCompCardFiles([]);
+          setCompCardMetas([meta]);
+          if (compCardInputRef.current) compCardInputRef.current.value = "";
+        }}
+      />
     </>
   );
 }

@@ -14,48 +14,33 @@ import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from "react-i18next";
-import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
+import { SALES_EMAIL, SALES_EMAIL_MAILTO } from "@/config/public";
 import { toast } from "@/components/ui/use-toast";
 
 export default function SalesInquiry() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<
+    "email_accepted" | "stored_only"
+  >("email_accepted");
   const [formData, setFormData] = useState({
     company_name: "",
     contact_name: "",
     email: "",
     phone: "",
     company_size: "",
-    use_case: "",
     message: "",
   });
 
   const submitInquiry = useMutation({
     mutationFn: (data: typeof formData) => {
-      // In a real app this would call an API endpoint
-      // For now we'll simulate a successful submission logging
-      console.log("Sales Inquiry Submitted:", data);
-
-      return base44.post("/integrations/core/send-email", {
-        to: CONTACT_EMAIL,
-        subject: `Sales Inquiry from ${data.company_name}`,
-        body: `
-New Sales Inquiry:
-
-Company: ${data.company_name}
-Contact: ${data.contact_name}
-Email: ${data.email}
-Phone: ${data.phone}
-Company Size: ${data.company_size}
-Primary Use Case: ${data.use_case}
-
-Message:
-${data.message}
-        `,
-      });
+      return base44.post("/integrations/core/send-sales-inquiry", data);
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
+      setDeliveryMode(
+        result?.delivery === "stored_only" ? "stored_only" : "email_accepted",
+      );
       setSubmitted(true);
     },
     onError: (e) => {
@@ -75,6 +60,13 @@ ${data.message}
   const handleSubmit = (e) => {
     e.preventDefault();
     if (sending) return;
+    if (!formData.company_size) {
+      toast({
+        title: "Company size required",
+        description: "Select your company size before sending your inquiry.",
+      });
+      return;
+    }
     setSending(true);
     submitInquiry.mutate(formData);
   };
@@ -90,14 +82,32 @@ ${data.message}
             {t("salesInquiry.success.title")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {t("salesInquiry.success.message")}
+            {deliveryMode === "stored_only"
+              ? "We received your inquiry and saved it for follow-up, but our email delivery is currently degraded."
+              : t("salesInquiry.success.message")}
           </p>
           <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-3">
-              {t("salesInquiry.success.whatsNextTitle")}
+              {deliveryMode === "stored_only"
+                ? "Direct contact"
+                : t("salesInquiry.success.whatsNextTitle")}
             </h3>
             <p className="text-gray-700 leading-relaxed">
-              {t("salesInquiry.success.whatsNextMessage")}
+              {deliveryMode === "stored_only" ? (
+                <>
+                  Our team can still review the saved inquiry. If this is
+                  urgent, email{" "}
+                  <a
+                    href={SALES_EMAIL_MAILTO}
+                    className="font-semibold underline"
+                  >
+                    {SALES_EMAIL}
+                  </a>{" "}
+                  directly while we sort out delivery.
+                </>
+              ) : (
+                t("salesInquiry.success.whatsNextMessage")
+              )}
             </p>
           </div>
         </Card>
@@ -226,43 +236,6 @@ ${data.message}
 
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
-                {t("salesInquiry.contactInfo.primaryUseCase")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <Select
-                required
-                value={formData.use_case}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, use_case: value })
-                }
-              >
-                <SelectTrigger className="h-12 border-gray-300 rounded-md">
-                  <SelectValue
-                    placeholder={t("salesInquiry.placeholders.selectUseCase")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ecommerce">
-                    {t("salesInquiry.options.useCase_ecommerce")}
-                  </SelectItem>
-                  <SelectItem value="advertising">
-                    {t("salesInquiry.options.useCase_advertising")}
-                  </SelectItem>
-                  <SelectItem value="social">
-                    {t("salesInquiry.options.useCase_social")}
-                  </SelectItem>
-                  <SelectItem value="video">
-                    {t("salesInquiry.options.useCase_video")}
-                  </SelectItem>
-                  <SelectItem value="other">
-                    {t("salesInquiry.options.useCase_other")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
                 {" "}
               </label>
               <Textarea
@@ -288,10 +261,10 @@ ${data.message}
         <p className="text-center text-sm text-gray-600 mt-6">
           {t("salesInquiry.assistance")}{" "}
           <a
-            href={CONTACT_EMAIL_MAILTO}
+            href={SALES_EMAIL_MAILTO}
             className="text-[#F7B750] hover:text-[#FAD54C] font-medium"
           >
-            {CONTACT_EMAIL}
+            {SALES_EMAIL}
           </a>
         </p>
       </div>

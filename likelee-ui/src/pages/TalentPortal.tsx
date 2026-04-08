@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   createTalentBookOut,
   deleteTalentBookOut,
@@ -51,6 +52,8 @@ import {
   uploadOfferDeliverable,
 } from "@/api/functions";
 import { BookingsView } from "@/components/Bookings/BookingsView";
+import { CommunicationHub } from "@/components/chat/CommunicationHub";
+import { useUnreadMessages } from "@/hooks/useChat";
 import {
   BarChart3,
   Briefcase,
@@ -81,6 +84,7 @@ import {
   declineCreatorAgencyInvite,
   disconnectCreatorAgencyConnection,
   listCreatorAgencyConnections,
+  syncCreatorAgencyMarketplaceContract,
 } from "@/api/creatorAgencyConnection";
 
 function useQueryParams() {
@@ -207,7 +211,10 @@ export default function TalentPortal({
     (agencyMe as any)?.agency_user || (baseMe as any)?.agency_user;
   const talentId = agencyUser?.id as string | undefined;
   const agencyName = agencyUser?.agency_name as string | undefined;
-  const profilePhotoUrl = agencyUser?.profile_photo_url as string | undefined;
+  const profilePhotoUrl = (agencyUser?.profile_photo_url ||
+    agencyUser?.profile_photo ||
+    profile?.profile_photo_url ||
+    profile?.profile_photo) as string | undefined;
   const email = (agencyUser?.email || profile?.email) as string | undefined;
   const talentName =
     agencyUser?.stage_name ||
@@ -234,9 +241,12 @@ export default function TalentPortal({
   }, [connectedAgencies]);
 
   const fixedTalent = React.useMemo(() => {
-    if (!talentId) return undefined;
     return { id: talentId, name: String(talentName || "Talent") };
   }, [talentId, talentName]);
+
+  const totalUnreadMessages = useUnreadMessages(profile?.id);
+
+  const [showPhotoFull, setShowPhotoFull] = React.useState(false);
 
   const currentMonth = React.useMemo(() => {
     const d = new Date();
@@ -1127,9 +1137,15 @@ export default function TalentPortal({
   );
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
-  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter(
-    (i) => String(i?.status || "").toLowerCase() === "pending",
-  ).length;
+  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter((i) => {
+    const contractStatus = String(
+      i?.marketplace_contract?.status || "",
+    ).toLowerCase();
+    return (
+      String(i?.status || "").toLowerCase() === "pending" &&
+      contractStatus !== "active"
+    );
+  }).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
     useQuery({
@@ -1260,15 +1276,33 @@ export default function TalentPortal({
   const portalContent = (
     <>
       <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-2xl font-bold text-gray-900">
-              {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div
+              className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in hover:scale-105 transition-transform"
+              onClick={() => setShowPhotoFull(true)}
+            >
+              <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                {profilePhotoUrl ? (
+                  <img
+                    src={profilePhotoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                )}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 mt-1">
-              {mode === "irl"
-                ? "Track your bookings and earnings"
-                : "Manage your AI licensing deals and earnings"}
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                {mode === "irl"
+                  ? "Track your bookings and earnings"
+                  : "Manage your AI licensing deals and earnings"}
+              </div>
             </div>
           </div>
           <div />
@@ -1314,7 +1348,12 @@ export default function TalentPortal({
                   },
                   { id: "portfolio", label: "Portfolio", icon: LucideImage },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  {
+                    id: "messages",
+                    label: "Messages",
+                    icon: MessageSquare,
+                    badge: totalUnreadMessages || undefined,
+                  },
                   { id: "settings", label: "Settings", icon: Settings },
                   {
                     id: "agency_connection",
@@ -1335,7 +1374,12 @@ export default function TalentPortal({
                   { id: "archive", label: "Archive", icon: FolderArchive },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "analytics", label: "Analytics", icon: BarChart3 },
-                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  {
+                    id: "messages",
+                    label: "Messages",
+                    icon: MessageSquare,
+                    badge: totalUnreadMessages || undefined,
+                  },
                   { id: "settings", label: "Settings", icon: Settings },
                 ]
             ).map((item) => {
@@ -2093,105 +2137,7 @@ export default function TalentPortal({
             </div>
           )}
 
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-              <div className="w-[240px]">
-                <Select
-                  value={selectedAgencyId}
-                  onValueChange={setSelectedAgencyId}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="All agencies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All agencies</SelectItem>
-                    {connectedAgencyIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {agencyNameById.get(id) || id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
+          {tab === "messages" && <CommunicationHub />}
 
           {tab === "settings" && (
             <div className="space-y-6">
@@ -2538,32 +2484,6 @@ export default function TalentPortal({
                           disabled={updatePortalSettingsMutation.isPending}
                         />
                       </div>
-
-                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            Public Profile Visibility
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            Show in marketplace search results
-                          </div>
-                        </div>
-                        <Switch
-                          checked={
-                            (portalSettings as any)?.public_profile_visible ===
-                            undefined
-                              ? true
-                              : !!(portalSettings as any)
-                                  ?.public_profile_visible
-                          }
-                          onCheckedChange={(checked: boolean) =>
-                            updatePortalSettingsMutation.mutate({
-                              public_profile_visible: checked,
-                            })
-                          }
-                          disabled={updatePortalSettingsMutation.isPending}
-                        />
-                      </div>
                     </div>
                   </Card>
                 </>
@@ -2639,18 +2559,54 @@ export default function TalentPortal({
                               const agencyLabel =
                                 c.agencies?.agency_name ||
                                 String(c.agency_id || "");
+                              const requiresApproval =
+                                String(
+                                  c?.marketplace_contract?.status || "",
+                                ).toLowerCase() === "active";
+                              const pendingDisconnect =
+                                String(
+                                  c?.marketplace_contract?.disconnect_status ||
+                                    "",
+                                ).toLowerCase() === "pending";
+                              if (pendingDisconnect) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                                return;
+                              }
                               const ok = window.confirm(
-                                `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
+                                requiresApproval
+                                  ? `Request disconnect from ${agencyLabel}? The connection will stay active until the agency approves or the contract expires.`
+                                  : `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
                               );
                               if (!ok) return;
-                              await disconnectAgencyMutation.mutateAsync(
-                                String(c.agency_id),
-                              );
-                              toast({
-                                title: "Disconnected",
-                                description:
-                                  "You have disconnected from the agency.",
-                              });
+                              const result =
+                                await disconnectAgencyMutation.mutateAsync(
+                                  String(c.agency_id),
+                                );
+                              if (result?.status === "disconnect_requested") {
+                                toast({
+                                  title: "Disconnect requested",
+                                  description:
+                                    "The agency has been notified. The connection stays active until they approve or the contract expires.",
+                                });
+                              } else if (
+                                result?.status === "disconnect_pending"
+                              ) {
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "This disconnect request is already awaiting agency approval.",
+                                });
+                              } else {
+                                toast({
+                                  title: "Disconnected",
+                                  description:
+                                    "You have disconnected from the agency.",
+                                });
+                              }
                             } catch (e: any) {
                               toast({
                                 variant: "destructive",
@@ -2660,7 +2616,11 @@ export default function TalentPortal({
                             }
                           }}
                         >
-                          Disconnect
+                          {String(
+                            c?.marketplace_contract?.status || "",
+                          ).toLowerCase() === "active"
+                            ? "Request disconnect"
+                            : "Disconnect"}
                         </Button>
                       </div>
                     ))}
@@ -2686,11 +2646,26 @@ export default function TalentPortal({
                   )}
                 </div>
 
-                {(agencyInvites as any[]).filter((i) => i.status === "pending")
-                  .length > 0 ? (
+                {(agencyInvites as any[]).filter((i) => {
+                  const contractStatus = String(
+                    i?.marketplace_contract?.status || "",
+                  ).toLowerCase();
+                  return (
+                    String(i?.status || "").toLowerCase() === "pending" &&
+                    contractStatus !== "active"
+                  );
+                }).length > 0 ? (
                   <div className="mt-6 space-y-3">
                     {(agencyInvites as any[])
-                      .filter((i) => i.status === "pending")
+                      .filter((i) => {
+                        const contractStatus = String(
+                          i?.marketplace_contract?.status || "",
+                        ).toLowerCase();
+                        return (
+                          String(i?.status || "").toLowerCase() === "pending" &&
+                          contractStatus !== "active"
+                        );
+                      })
                       .map((inv: any) => (
                         <div
                           key={inv.id}
@@ -2752,43 +2727,163 @@ export default function TalentPortal({
                               >
                                 Decline
                               </Button>
-                              <Button
-                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                                disabled={disconnectAgencyMutation.isPending}
-                                onClick={async () => {
-                                  try {
-                                    await acceptCreatorAgencyInvite(
-                                      String(inv.id),
-                                    );
-                                    await Promise.all([
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["creatorAgencyInvites"],
-                                      }),
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["creatorAgencyConnections"],
-                                      }),
-                                      queryClient.invalidateQueries({
-                                        queryKey: ["talentMe"],
-                                      }),
-                                    ]);
-                                    toast({
-                                      title: "Invitation accepted",
-                                      description:
-                                        "You are now connected to the agency.",
-                                    });
-                                  } catch (e: any) {
-                                    toast({
-                                      variant: "destructive",
-                                      title: "Failed to accept",
-                                      description: e?.message || String(e),
-                                    });
-                                  }
-                                }}
-                              >
-                                Accept
-                              </Button>
+                              {inv?.marketplace_contract ? (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        const signUrl =
+                                          inv.marketplace_contract
+                                            ?.creator_sign_url;
+                                        if (!signUrl) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Contract link unavailable",
+                                            description:
+                                              "The signing link is not ready yet. Try syncing again in a moment.",
+                                          });
+                                          return;
+                                        }
+                                        window.open(
+                                          signUrl,
+                                          "_blank",
+                                          "noopener,noreferrer",
+                                        );
+                                        await syncCreatorAgencyMarketplaceContract(
+                                          String(
+                                            inv.marketplace_contract.id || "",
+                                          ),
+                                        );
+                                        await Promise.all([
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["creatorAgencyInvites"],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: [
+                                              "creatorAgencyConnections",
+                                            ],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["talentMe"],
+                                          }),
+                                        ]);
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to open contract",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Review contract
+                                  </Button>
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    disabled={
+                                      disconnectAgencyMutation.isPending
+                                    }
+                                    onClick={async () => {
+                                      try {
+                                        await syncCreatorAgencyMarketplaceContract(
+                                          String(
+                                            inv.marketplace_contract?.id || "",
+                                          ),
+                                        );
+                                        await Promise.all([
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["creatorAgencyInvites"],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: [
+                                              "creatorAgencyConnections",
+                                            ],
+                                          }),
+                                          queryClient.invalidateQueries({
+                                            queryKey: ["talentMe"],
+                                          }),
+                                        ]);
+                                        toast({
+                                          title: "Contract synced",
+                                          description:
+                                            "Invitation status has been refreshed.",
+                                        });
+                                      } catch (e: any) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Failed to sync",
+                                          description: e?.message || String(e),
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Sync
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                  disabled={disconnectAgencyMutation.isPending}
+                                  onClick={async () => {
+                                    try {
+                                      await acceptCreatorAgencyInvite(
+                                        String(inv.id),
+                                      );
+                                      await Promise.all([
+                                        queryClient.invalidateQueries({
+                                          queryKey: ["creatorAgencyInvites"],
+                                        }),
+                                        queryClient.invalidateQueries({
+                                          queryKey: [
+                                            "creatorAgencyConnections",
+                                          ],
+                                        }),
+                                        queryClient.invalidateQueries({
+                                          queryKey: ["talentMe"],
+                                        }),
+                                      ]);
+                                      toast({
+                                        title: "Invitation accepted",
+                                        description:
+                                          "You are now connected to the agency.",
+                                      });
+                                    } catch (e: any) {
+                                      toast({
+                                        variant: "destructive",
+                                        title: "Failed to accept",
+                                        description: e?.message || String(e),
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Accept
+                                </Button>
+                              )}
                             </div>
                           </div>
+                          {inv?.marketplace_contract ? (
+                            <div className="rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                              <div className="font-semibold">
+                                Contract status:{" "}
+                                {String(
+                                  inv.marketplace_contract.status || "pending",
+                                ).replaceAll("_", " ")}
+                              </div>
+                              <div className="mt-1">
+                                Commission:{" "}
+                                {Number(
+                                  inv.marketplace_contract.commission_rate || 0,
+                                ).toFixed(2)}
+                                % • Valid until{" "}
+                                {inv.marketplace_contract.valid_until ||
+                                  "not set"}
+                              </div>
+                            </div>
+                          ) : null}
                           <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
                             <span className="font-semibold">
                               Likelee notice:
@@ -3600,203 +3695,10 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm border border-cyan-200 bg-cyan-50/30">
-                <div className="text-sm font-semibold text-gray-900">
-                  ROI: Traditional UGC vs AI Licensing
-                </div>
-                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="p-5 rounded-xl shadow-sm">
-                    <div className="text-sm font-semibold text-gray-900">
-                      Traditional UGC Model
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Post:</div>
-                        <div className="font-semibold text-gray-900">
-                          {fmtCents(
-                            (analytics as any)?.roi?.traditional
-                              ?.per_post_cents,
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.time_investment || "4-6 hours"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Posts/Month:</div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.posts_per_month || "5-8"}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {(analytics as any)?.roi?.traditional
-                            ?.monthly_earnings_range || "$2,500-$4,000"}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-5 rounded-xl shadow-sm border border-green-200 bg-green-50/40">
-                    <div className="text-sm font-semibold text-gray-900">
-                      AI Licensing Model (You)
-                    </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Per Campaign:</div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.per_campaign_cents,
-                          )}
-                          /mo
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Time Investment:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.time_investment ||
-                            "0 hours/month"}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-600">Active Campaigns:</div>
-                        <div className="font-semibold text-green-700">
-                          {(analytics as any)?.roi?.ai?.active_campaigns ??
-                            (analytics as any)?.kpis?.active_campaigns ??
-                            0}
-                        </div>
-                      </div>
-                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
-                        <div className="text-gray-600 font-semibold">
-                          Monthly Earnings:
-                        </div>
-                        <div className="font-semibold text-green-700">
-                          {fmtCents(
-                            (analytics as any)?.roi?.ai?.monthly_earnings_cents,
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="mt-4 rounded-lg bg-white border border-cyan-200 px-4 py-3 text-sm text-gray-700">
-                  {(analytics as any)?.roi?.message ||
-                    "Your earnings comparison will appear here."}
-                </div>
-              </Card>
             </div>
           )}
 
-          {tab === "messages" && (
-            <div className="space-y-6">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Messages</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Your agency notifications inbox
-                </div>
-              </div>
-              <div className="w-[240px]">
-                <Select
-                  value={selectedAgencyId}
-                  onValueChange={setSelectedAgencyId}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="All agencies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All agencies</SelectItem>
-                    {connectedAgencyIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {agencyNameById.get(id) || id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Communication Hub
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Email notifications sent by your agency
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((n: any) => {
-                      const id = String(n.id);
-                      const from = n.from_label || agencyName || "Agency";
-                      const subject = n.subject || "Notification";
-                      const msg =
-                        typeof n.message === "string" ? n.message : "";
-                      const preview =
-                        msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
-                      const unread = !n.read_at;
-                      const ts = n.created_at
-                        ? new Date(n.created_at).toLocaleString()
-                        : "";
-
-                      return (
-                        <button
-                          key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                            unread
-                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
-                              : "bg-white border-gray-100 hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            if (unread && !markReadMutation.isPending) {
-                              markReadMutation.mutate(id);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-gray-900 truncate">
-                                {from}
-                              </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {subject}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unread && (
-                                <Badge className="bg-blue-600 text-white border-0">
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="mt-2 text-xs text-gray-600 truncate">
-                            {preview}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-500">
-                            {ts}
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      No messages yet.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
+          {tab === "messages" && <CommunicationHub />}
 
           {tab === "settings" && (
             <div className="space-y-6">
@@ -3841,61 +3743,19 @@ export default function TalentPortal({
                   </div>
                 </div>
               </Card>
-
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">
-                  Privacy Controls
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Data Usage for Training
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Allow anonymized data for AI model improvement
-                      </div>
-                    </div>
-                    <Switch
-                      checked={!!(portalSettings as any)?.allow_training}
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          allow_training: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        Public Profile Visibility
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        Show in marketplace search results
-                      </div>
-                    </div>
-                    <Switch
-                      checked={
-                        (portalSettings as any)?.public_profile_visible ===
-                        undefined
-                          ? true
-                          : !!(portalSettings as any)?.public_profile_visible
-                      }
-                      onCheckedChange={(checked: boolean) =>
-                        updatePortalSettingsMutation.mutate({
-                          public_profile_visible: checked,
-                        })
-                      }
-                      disabled={updatePortalSettingsMutation.isPending}
-                    />
-                  </div>
-                </div>
-              </Card>
             </div>
           )}
+          <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+            <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+                <img
+                  src={profilePhotoUrl || "https://placehold.co/800"}
+                  className="h-full w-full object-contain"
+                  alt={talentName}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </>
@@ -3947,7 +3807,10 @@ export default function TalentPortal({
             {/* Profile Section */}
             <div className="p-6 border-b border-gray-50">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0">
+                <div
+                  className="h-14 w-14 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in"
+                  onClick={() => setShowPhotoFull(true)}
+                >
                   <div className="h-full w-full rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
                     {profilePhotoUrl ? (
                       <img
@@ -3960,6 +3823,7 @@ export default function TalentPortal({
                     )}
                   </div>
                 </div>
+
                 <div className="min-w-0">
                   <div className="text-[17px] font-bold text-[#1A1C1E] truncate leading-tight">
                     {talentName}

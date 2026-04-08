@@ -575,15 +575,14 @@ erDiagram
   - Deliverable events (submitted, approved, commented)
   - Job posting events
   - Asset uploads
-  
-- **Activity Event Types**: 
+- **Activity Event Types**:
   - `campaign.created` - Campaign was created
   - `campaign.completed` - Brand marked campaign as done
   - `contract.signed` - Party signed the contract
   - `deliverable.comment` - Comment added to deliverable
   - Additional event types can be added as features are developed
 
-- **RLS Policies**: 
+- **RLS Policies**:
   - Brands can view their own activity events (`brand_id = auth.uid()`)
   - Brands can insert their own activity events (`brand_id = auth.uid()`)
   - Backend uses service role which bypasses RLS
@@ -595,12 +594,14 @@ erDiagram
 ### SQL Functions
 
 **brand_avg_turnaround_hours(p_brand_id uuid, p_month date)**
+
 - Calculates average turnaround time in hours for a brand's campaigns in a given month
 - Formula: `AVG(EXTRACT(EPOCH FROM (completed_at - start_date)) / 3600)`
 - Only includes campaigns with non-null `completed_at`
 - Returns 0 if no completed campaigns exist
 
 **industry_avg_turnaround_hours(p_month date)**
+
 - Calculates industry-wide average turnaround time for a given month
 - Same formula as brand-specific function but across all brands
 - Used for benchmarking
@@ -667,3 +668,50 @@ erDiagram
   BRAND_LICENSE_REQUESTS ||--o{ LICENSE_SUBMISSIONS : brand_request_id
   LICENSE_SUBMISSIONS ||--o{ BRAND_LICENSE_REQUESTS : submission_id
 ```
+
+## Two-Way Messaging Hub Addendum (HB-13, 2026-04-02)
+
+```mermaid
+erDiagram
+  AGENCIES {
+    uuid id PK
+    text agency_name
+    text logo_url
+    text email
+  }
+
+  CREATORS {
+    uuid id PK
+    text full_name
+    text profile_photo_url
+    text email
+  }
+
+  CONVERSATIONS {
+    uuid id PK "DEFAULT gen_random_uuid()"
+    uuid agency_id FK "REFERENCES agencies(id) ON DELETE CASCADE"
+    uuid creator_id FK "REFERENCES creators(id) ON DELETE CASCADE"
+    timestamptz created_at "DEFAULT now()"
+    timestamptz updated_at "DEFAULT now()"
+  }
+
+  MESSAGES {
+    uuid id PK "DEFAULT gen_random_uuid()"
+    uuid conversation_id FK "REFERENCES conversations(id) ON DELETE CASCADE"
+    uuid sender_id FK "REFERENCES auth.users(id) ON DELETE CASCADE"
+    text content "NOT NULL, max 5000 chars"
+    boolean is_read "DEFAULT false"
+    timestamptz created_at "DEFAULT now()"
+  }
+
+  AGENCIES ||--o{ CONVERSATIONS : agency_id
+  CREATORS ||--o{ CONVERSATIONS : creator_id
+  CONVERSATIONS ||--o{ MESSAGES : conversation_id
+```
+
+### RLS & Isolation
+
+- `UNIQUE(agency_id, creator_id)` on `conversations` — one private thread per (Agency, Creator) pair, preventing data leakage between different agencies messaging the same creator.
+- **RLS on `conversations`**: Only the `agency_id` or `creator_id` participant can SELECT. Only the agency (as `agency_id`) can INSERT.
+- **RLS on `messages`**: SELECT and INSERT both require the caller to be a participant in the parent `conversations` row.
+- `REPLICA IDENTITY FULL` on `messages` enables Supabase Realtime push for instant delivery.

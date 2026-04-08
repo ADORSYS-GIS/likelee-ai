@@ -2220,7 +2220,8 @@ pub async fn handle_webhook(
             "id,requires_agency_signature,agency_submitter_id,agency_signed_at,brand_request_id",
         )
         .eq("docuseal_submission_id", submission_id.to_string())
-        .single()
+        .order("updated_at.desc")
+        .limit(2)
         .execute()
         .await
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2236,10 +2237,24 @@ pub async fn handle_webhook(
             .await
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        info!("Found submission record: {}", sub_text);
+        info!("Found submission lookup payload: {}", sub_text);
 
-        let sub: serde_json::Value = serde_json::from_str(&sub_text)
+        let sub_rows: Vec<serde_json::Value> = serde_json::from_str(&sub_text)
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if sub_rows.is_empty() {
+            error!(
+                "No license_submissions row found for docuseal_submission_id: {}",
+                submission_id
+            );
+            return Ok(axum::http::StatusCode::OK);
+        }
+        if sub_rows.len() > 1 {
+            error!(
+                "Multiple license_submissions rows found for docuseal_submission_id: {}. Using the most recently updated row.",
+                submission_id
+            );
+        }
+        let sub = sub_rows.first().cloned().unwrap_or_default();
 
         if let Some(sub_id) = sub["id"].as_str() {
             let requires_agency_signature =
@@ -2318,6 +2333,14 @@ pub async fn handle_webhook(
                     {
                         info!("Contract signed for brand_license_request: {} - status remains unchanged", brand_request_id);
                     }
+
+                    // Mark linked licensing requests as approved so they appear in Active Licenses
+                    let _ = pg
+                        .from("licensing_requests")
+                        .update(json!({ "status": "approved" }).to_string())
+                        .eq("submission_id", sub_id)
+                        .execute()
+                        .await;
                 }
                 "submission.declined" | "form.declined" => {
                     update_map.insert("status".to_string(), json!("declined"));
@@ -2374,9 +2397,13 @@ pub async fn handle_webhook(
             error!("No submission ID found in database response");
         }
     } else {
+        let lookup_status = sub_response.status();
+        let err_body = sub_response.text().await.unwrap_or_default();
         error!(
-            "Failed to find submission with docuseal_submission_id: {}",
-            submission_id
+            "Failed to find submission with docuseal_submission_id: {}. Supabase returned status {} with body: {}",
+            submission_id,
+            lookup_status,
+            err_body
         );
     }
 

@@ -3,7 +3,15 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/components/ui/use-toast";
-import { Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import {
+  getDashboardPath,
+  getOnboardingPath,
+  getSignupPathForRole,
+  readAuthIntent,
+  saveAuthIntent,
+  type AuthIntentRole,
+} from "@/auth/onboarding";
 
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import { Button } from "@/components/ui/button";
@@ -41,41 +49,192 @@ export default function Login() {
     authenticated,
     profile,
     logout,
+    user,
   } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [userType, setUserType] = React.useState("creator");
   const [loginAttempted, setLoginAttempted] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const creatorType = React.useMemo(
-    () => new URLSearchParams(location.search).get("type"),
+  const searchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
     [location.search],
   );
+  const creatorType = searchParams.get("type");
+  const isOauthReturn = searchParams.get("oauth") === "1";
+  const redirectFromQuery = searchParams.get("next");
+  const preferredRoleFromQuery = searchParams.get("role");
+  const redirectFromState = React.useMemo(() => {
+    const from = (location.state as any)?.from;
+    const pathname = typeof from?.pathname === "string" ? from.pathname : "";
+    if (!pathname || pathname.toLowerCase() === "/login") {
+      return null;
+    }
+    const search = typeof from?.search === "string" ? from.search : "";
+    const hash = typeof from?.hash === "string" ? from.hash : "";
+    return `${pathname}${search}${hash}`;
+  }, [location.state]);
+  const redirectTarget = React.useMemo(() => {
+    if (redirectFromQuery && redirectFromQuery.startsWith("/")) {
+      return redirectFromQuery;
+    }
+    return redirectFromState;
+  }, [redirectFromQuery, redirectFromState]);
+  const preferredRole = React.useMemo(() => {
+    if (
+      preferredRoleFromQuery === "creator" ||
+      preferredRoleFromQuery === "brand" ||
+      preferredRoleFromQuery === "agency"
+    ) {
+      return preferredRoleFromQuery;
+    }
+    const fromStateRole = (location.state as any)?.preferredRole;
+    if (
+      fromStateRole === "creator" ||
+      fromStateRole === "brand" ||
+      fromStateRole === "agency"
+    ) {
+      return fromStateRole;
+    }
+    return "creator";
+  }, [location.state, preferredRoleFromQuery]);
 
   // Track if we're about to redirect
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   // Guard against race conditions during logout/tab switch
   const [accessDenied, setAccessDenied] = React.useState(false);
+  const [userType, setUserType] = React.useState(preferredRole);
+  const googleLoginRedirectTo = React.useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("oauth", "1");
+    params.set("role", userType);
+
+    if (creatorType) {
+      params.set("type", creatorType);
+    }
+    if (redirectTarget && redirectTarget.startsWith("/")) {
+      params.set("next", redirectTarget);
+    }
+
+    return `${window.location.origin}/login?${params.toString()}`;
+  }, [creatorType, redirectTarget, userType]);
 
   React.useEffect(() => {
+    setUserType(preferredRole);
+  }, [preferredRole]);
+
+  React.useEffect(() => {
+    console.log("[Login] useEffect START", {
+      authenticated,
+      initialized,
+      profileState:
+        profile === undefined
+          ? "PENDING"
+          : profile === null
+            ? "NO_PROFILE"
+            : "EXISTS",
+      accessDenied,
+    });
+
     // Reset accessDenied once we are fully logged out
     if (!authenticated) {
       setAccessDenied(false);
+      setIsRedirecting(false);
+      return;
+    }
+
+    if (!initialized) return;
+    if (accessDenied) return;
+
+    const authIntent = readAuthIntent();
+    const normalizedUserType = (userType || "").toLowerCase().trim();
+    const creatorSignupPath = getSignupPathForRole(
+      "creator",
+      authIntent?.creatorType || creatorType,
+    );
+    const authUserRole = String(
+      user?.user_metadata?.role || user?.app_metadata?.role || "",
+    )
+      .trim()
+      .toLowerCase();
+    const oauthRoleHint =
+      isOauthReturn &&
+      (preferredRoleFromQuery === "creator" ||
+        preferredRoleFromQuery === "brand" ||
+        preferredRoleFromQuery === "agency")
+        ? preferredRoleFromQuery
+        : null;
+    const signupRoleHint = (() => {
+      if (authIntent?.role) return authIntent.role;
+      if (oauthRoleHint) return oauthRoleHint;
+      if (authUserRole === "creator" || authUserRole === "brand") {
+        return authUserRole;
+      }
+      if (authUserRole === "agency") return "agency";
+      if (authUserRole === "talent") return "creator";
+      return null;
+    })();
+
+    // Check if profile resolution is complete (either profile fetch finished or user has no session)
+    // undefined = fetch not done yet; null = fetch done, no profile; Profile = fetch done, found profile
+    const profileResolved = initialized && (profile !== undefined || !user);
+
+    console.log("[Login] profileResolved:", profileResolved, {
+      initialized,
+      profile:
+        profile === undefined
+          ? "PENDING"
+          : profile === null
+            ? "NO_PROFILE"
+            : "EXISTS",
+      hasUser: !!user,
+    });
+
+    if (!profile) {
+      console.log("[Login] No profile branch", {
+        profileResolved,
+        signupRoleHint,
+        authenticated,
+      });
+
+      if (!profileResolved) {
+        console.log("[Login] Profile not resolved yet, waiting...");
+        return;
+      }
+
+      // For authenticated users without profile, redirect to signup
+      if (signupRoleHint && authenticated) {
+        console.log(
+          "[Login] Redirecting to signup:",
+          getSignupPathForRole(
+            signupRoleHint,
+            authIntent?.creatorType || creatorType,
+          ),
+        );
+        setIsRedirecting(true);
+        navigate(
+          getSignupPathForRole(
+            signupRoleHint,
+            authIntent?.creatorType || creatorType,
+          ),
+          {
+            replace: true,
+          },
+        );
+      }
       return;
     }
 
     if (initialized && authenticated && profile) {
-      // If we already detected a mismatch, don't do anything until logout finishes
-      if (accessDenied) return;
-
-      // Enforce role-based login
+      console.log("[Login] Profile exists, checking role match", {
+        profileRole: profile.role,
+        userType,
+      });
       const normalizedRole = (profile.role || "").toLowerCase().trim();
-      const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
@@ -84,32 +243,35 @@ export default function Login() {
         return;
       }
 
-      const roleMatchesTab =
-        normalizedRole === normalizedUserType ||
-        (normalizedUserType === "creator" && normalizedRole === "talent");
+      // Check if onboarding is complete
+      const isOnboardingComplete =
+        !profile.onboarding_step || profile.onboarding_step === "complete";
 
-      if (!roleMatchesTab) {
-        setError("Account does not exist under this tab, try another");
-        setAccessDenied(true);
-        logout();
+      if (!isOnboardingComplete) {
+        // Redirect to appropriate signup form to complete profile
+        setIsRedirecting(true);
+        const signupPath =
+          getOnboardingPath({
+            role: profile.role,
+            agency_type: profile.agency_type,
+            creator_type:
+              profile.creator_type || authIntent?.creatorType || creatorType,
+          }) ||
+          getSignupPathForRole(
+            profile.role as AuthIntentRole,
+            authIntent?.creatorType || creatorType,
+          );
+        navigate(signupPath, { replace: true });
         return;
       }
 
       // Set redirecting state to hide content during navigation
       setIsRedirecting(true);
 
-      if (creatorType) {
-        navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-          { replace: true },
-        );
+      if (redirectTarget) {
+        navigate(redirectTarget, { replace: true });
       } else {
-        const dashboard =
-          profile.role === "brand"
-            ? "/BrandDashboard"
-            : profile.role === "agency"
-              ? "/AgencyDashboard"
-              : "/CreatorDashboard";
+        const dashboard = getDashboardPath(profile);
         navigate(dashboard, { replace: true });
       }
     }
@@ -117,8 +279,12 @@ export default function Login() {
     initialized,
     authenticated,
     profile,
+    user,
     navigate,
     creatorType,
+    isOauthReturn,
+    preferredRoleFromQuery,
+    redirectTarget,
     userType,
     logout,
     accessDenied,
@@ -148,14 +314,24 @@ export default function Login() {
   };
 
   const getSignupLink = () => {
-    if (userType === "creator") return "/CreatorSignupOptions";
-    if (userType === "brand") return "/OrganizationSignup?type=brand_company";
-    if (userType === "agency") return "/AgencySelection";
+    if (
+      userType === "creator" ||
+      userType === "brand" ||
+      userType === "agency"
+    ) {
+      return getSignupPathForRole(
+        userType as AuthIntentRole,
+        creatorType || null,
+      );
+    }
     return "/Register";
   };
 
-  // Show loading state when redirecting or when authenticated
-  if (isRedirecting || authenticated) {
+  // Keep authenticated OAuth callbacks on the redirect loader until routing settles.
+  const shouldShowLoading =
+    isRedirecting || (isOauthReturn && (!initialized || authenticated));
+
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -167,7 +343,9 @@ export default function Login() {
               Loading...
             </span>
           </div>
-          <p className="mt-4 text-gray-600">Redirecting...</p>
+          <p className="mt-4 text-gray-600">
+            {isOauthReturn ? "Completing sign up..." : "Redirecting..."}
+          </p>
         </div>
       </div>
     );
@@ -238,7 +416,14 @@ export default function Login() {
                     className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
                     onClick={async () => {
                       try {
-                        await loginWithProvider("google");
+                        // Save auth intent before OAuth redirect so new users know which role to sign up for
+                        saveAuthIntent({
+                          role: userType as "creator" | "brand" | "agency",
+                          creatorType: creatorType || null,
+                        });
+                        await loginWithProvider("google", {
+                          redirectTo: googleLoginRedirectTo,
+                        });
                       } catch (err: any) {
                         toast({
                           title: t("auth.login.googleSignInFailed"),

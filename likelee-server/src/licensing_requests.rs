@@ -74,7 +74,7 @@ pub struct CreateLicensingRequest {
 pub struct CreateBrandCampaignLicenseRequest {
     pub collaborator_type: String, // agency | creator
     pub target_id: String,         // agency_users.id (agency path) or creators.id (creator path)
-    pub offered_rate_weekly_cents: Option<i64>,
+    pub offered_rate_monthly_cents: Option<i64>,
     pub rate_currency: Option<String>,
     pub campaign_title: Option<String>,
     pub usage_scope: Option<String>,
@@ -175,7 +175,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
@@ -263,7 +263,7 @@ pub async fn list_for_agency(
             brand_id
         };
         let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-        let status = r
+        let raw_status = r
             .get("status")
             .and_then(|v| v.as_str())
             .unwrap_or("pending")
@@ -289,6 +289,17 @@ pub async fn list_for_agency(
 
         // Try to get client info from license_submissions first, then brands, then direct fields
         let license_submission = r.get("license_submissions");
+        let submission_status = license_submission
+            .and_then(|ls| ls.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let status = if submission_status == "completed" || submission_status == "signed" {
+            "approved".to_string()
+        } else {
+            raw_status
+        };
 
         let brand_email = license_submission
             .and_then(|ls| ls.get("client_email"))
@@ -838,11 +849,11 @@ pub async fn create_for_brand_campaign(
     if payload.target_id.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, "target_id is required".to_string()));
     }
-    if let Some(offered) = payload.offered_rate_weekly_cents {
+    if let Some(offered) = payload.offered_rate_monthly_cents {
         if offered <= 0 {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "offered_rate_weekly_cents must be greater than 0".to_string(),
+                "offered_rate_monthly_cents must be greater than 0".to_string(),
             ));
         }
     }
@@ -892,13 +903,13 @@ pub async fn create_for_brand_campaign(
         resolved_talent_name,
         resolved_source_type,
         resolved_source_id,
-        resolved_base_rate_weekly_cents,
+        resolved_base_rate_monthly_cents,
         resolved_accept_negotiations,
     ) = if collaborator_type == "agency" {
         let connection_resp = state
             .pg
             .from("agency_talent_relationships")
-            .select("id,agency_id,talent_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
+            .select("id,agency_id,talent_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency")
             .eq("id", payload.target_id.trim())
             .limit(1)
             .execute()
@@ -973,8 +984,8 @@ pub async fn create_for_brand_campaign(
             .or_else(|| t.get("stage_name").and_then(|v| v.as_str()))
             .unwrap_or("Talent")
             .to_string();
-        let resolved_base_rate_weekly_cents = resolve_weekly_cents(
-            conn.get("licensing_rate_weekly_cents")
+        let resolved_base_rate_monthly_cents = resolve_weekly_cents(
+            conn.get("licensing_rate_monthly_cents")
                 .and_then(|v| v.as_i64()),
             None,
             None,
@@ -1002,7 +1013,7 @@ pub async fn create_for_brand_campaign(
             resolved_talent_name,
             "agency_connection".to_string(),
             resolved_connection_id,
-            resolved_base_rate_weekly_cents,
+            resolved_base_rate_monthly_cents,
             resolved_accept_negotiations,
         )
     } else {
@@ -1036,7 +1047,7 @@ pub async fn create_for_brand_campaign(
             .and_then(|v| v.as_str())
             .unwrap_or("Creator")
             .to_string();
-        let resolved_base_rate_weekly_cents = resolve_weekly_cents(
+        let resolved_base_rate_monthly_cents = resolve_weekly_cents(
             c.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
             c.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
             None,
@@ -1100,14 +1111,14 @@ pub async fn create_for_brand_campaign(
             resolved_talent_name,
             "creator".to_string(),
             resolved_source_id,
-            resolved_base_rate_weekly_cents,
+            resolved_base_rate_monthly_cents,
             resolved_accept_negotiations,
         )
     };
 
-    let base_rate_weekly_cents = resolved_base_rate_weekly_cents.ok_or((
+    let base_rate_monthly_cents = resolved_base_rate_monthly_cents.ok_or((
         StatusCode::UNPROCESSABLE_ENTITY,
-        "base weekly rate is missing for selected collaborator".to_string(),
+        "base monthly rate is missing for selected collaborator".to_string(),
     ))?;
 
     if resolved_agency_id.is_empty() || resolved_talent_id.is_empty() {
@@ -1116,7 +1127,7 @@ pub async fn create_for_brand_campaign(
             "unable to resolve agency/talent routing for this request".to_string(),
         ));
     }
-    if payload.offered_rate_weekly_cents.is_some() && !resolved_accept_negotiations {
+    if payload.offered_rate_monthly_cents.is_some() && !resolved_accept_negotiations {
         return Err((
             StatusCode::UNPROCESSABLE_ENTITY,
             "this collaborator does not accept custom offers".to_string(),
@@ -1171,8 +1182,8 @@ pub async fn create_for_brand_campaign(
         "license_start_date": payload.license_start_date,
         "license_end_date": payload.license_end_date,
         "notes": payload.notes,
-        "base_rate_weekly_cents": base_rate_weekly_cents,
-        "offered_rate_weekly_cents": payload.offered_rate_weekly_cents,
+        "base_rate_monthly_cents": base_rate_monthly_cents,
+        "offered_rate_monthly_cents": payload.offered_rate_monthly_cents,
         "rate_currency": resolved_currency,
         "rate_source_type": resolved_source_type,
         "rate_source_id": resolved_source_id,
@@ -1182,7 +1193,7 @@ pub async fn create_for_brand_campaign(
         .pg
         .from("licensing_requests")
         .insert(request_json.to_string())
-        .select("id,status,agency_id,brand_id,talent_id,base_rate_weekly_cents,offered_rate_weekly_cents,rate_currency,rate_source_type,rate_source_id")
+        .select("id,status,agency_id,brand_id,talent_id,base_rate_monthly_cents,offered_rate_monthly_cents,rate_currency,rate_source_type,rate_source_id")
         .single()
         .execute()
         .await
@@ -1271,7 +1282,7 @@ pub async fn list_brand_campaign_license_options(
         let req = state
             .pg
             .from("agency_talent_relationships")
-            .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
+            .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency")
             .eq("agency_id", agency_id)
             .eq("status", "active")
             .limit(limit);
@@ -1345,8 +1356,8 @@ pub async fn list_brand_campaign_license_options(
                 if !(search.is_empty() || name.contains(&search) || stage.contains(&search)) {
                     return None;
                 }
-                let base_weekly = resolve_weekly_cents(
-                    conn.get("licensing_rate_weekly_cents")
+                let base_monthly = resolve_weekly_cents(
+                    conn.get("licensing_rate_monthly_cents")
                         .and_then(|v| v.as_i64()),
                     None,
                     None,
@@ -1362,10 +1373,11 @@ pub async fn list_brand_campaign_license_options(
                     "country": detail.get("country").cloned().unwrap_or(serde_json::Value::Null),
                     "profile_photo_url": detail.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
                     "role_type": detail.get("role_type").cloned().unwrap_or(serde_json::Value::Null),
-                    "base_rate_weekly_cents": base_weekly,
+                    "base_rate_monthly_cents": base_monthly,
                     "rate_currency": conn.get("rate_currency").cloned().unwrap_or(json!("USD")),
                     "accept_negotiations": conn.get("accept_negotiations").cloned().unwrap_or(json!(true)),
                     "rate_source_type": "agency_connection",
+                    "rate_source_id": conn.get("id").cloned().unwrap_or(serde_json::Value::Null),
                 }))
             })
             .collect();
@@ -1432,15 +1444,20 @@ pub async fn list_brand_campaign_license_options(
             );
             json!({
                 "id": r.get("id").cloned().unwrap_or(serde_json::Value::Null),
+                "creator_id": r.get("id").cloned().unwrap_or(serde_json::Value::Null),
                 "display_name": r.get("full_name").cloned().unwrap_or(serde_json::Value::Null),
+                "stage_name": r.get("stage_name").cloned().unwrap_or(serde_json::Value::Null),
+                "agency_id": r.get("agency_id").cloned().unwrap_or(serde_json::Value::Null),
                 "city": r.get("city").cloned().unwrap_or(serde_json::Value::Null),
                 "state": r.get("state").cloned().unwrap_or(serde_json::Value::Null),
+                "country": r.get("country").cloned().unwrap_or(serde_json::Value::Null),
                 "profile_photo_url": r.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
                 "creator_type": r.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
-                "base_rate_weekly_cents": base_weekly,
+                "base_rate_monthly_cents": base_weekly,
                 "rate_currency": r.get("currency_code").cloned().unwrap_or(json!("USD")),
                 "accept_negotiations": r.get("accept_negotiations").cloned().unwrap_or(json!(true)),
                 "rate_source_type": "creator",
+                "rate_source_id": r.get("id").cloned().unwrap_or(serde_json::Value::Null),
             })
         })
         .collect();

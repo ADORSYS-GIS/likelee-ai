@@ -1,4 +1,3 @@
-use aws_sdk_rekognition::Client as RekogClient;
 use envconfig::Envconfig;
 use postgrest::Postgrest;
 
@@ -52,13 +51,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "DUIX_AUTH_TOKEN", default = "change-me")]
     pub duix_auth_token: String,
-
-    // Keep as string to allow legacy "1"/"0" values
-    #[envconfig(from = "MODERATION_ENABLED", default = "1")]
-    pub moderation_enabled: String,
-
-    #[envconfig(from = "AWS_REGION", default = "us-east-1")]
-    pub aws_region: String,
 
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
@@ -134,8 +126,32 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_BASIC_BASE_PRICE_ID", default = "")]
     pub stripe_agency_basic_base_price_id: String,
 
+    #[envconfig(from = "STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID", default = "")]
+    pub stripe_agency_basic_headcount_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_BASIC_BASE_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_basic_base_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_BASIC_HEADCOUNT_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_basic_headcount_annual_price_id: String,
+
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID", default = "")]
+    pub stripe_agency_pro_headcount_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_pro_base_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_pro_headcount_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_IRL_BOOKING_PRICE_ID", default = "")]
+    pub stripe_agency_irl_booking_price_id: String,
+
+    #[envconfig(from = "STRIPE_AGENCY_IRL_BOOKING_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_agency_irl_booking_annual_price_id: String,
 
     #[envconfig(from = "STRIPE_BRAND_BASIC_PRICE_ID", default = "")]
     pub stripe_brand_basic_price_id: String,
@@ -280,7 +296,6 @@ pub struct AppState {
     pub pg: Postgrest,
     pub veriff: VeriffConfig,
     pub duix: DuixConfig,
-    pub rekog: Option<RekogClient>,
     pub supabase_url: String,
     pub supabase_service_key: String,
     pub supabase_jwt_secret: String,
@@ -301,7 +316,15 @@ pub struct AppState {
     pub stripe_licensing_enterprise_price_id: String,
 
     pub stripe_agency_basic_base_price_id: String,
+    pub stripe_agency_basic_base_annual_price_id: String,
+    pub stripe_agency_basic_headcount_price_id: String,
+    pub stripe_agency_basic_headcount_annual_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
+    pub stripe_agency_pro_base_annual_price_id: String,
+    pub stripe_agency_pro_headcount_price_id: String,
+    pub stripe_agency_pro_headcount_annual_price_id: String,
+    pub stripe_agency_irl_booking_price_id: String,
+    pub stripe_agency_irl_booking_annual_price_id: String,
     pub stripe_brand_basic_price_id: String,
     pub stripe_brand_basic_annual_price_id: String,
     pub stripe_brand_pro_price_id: String,

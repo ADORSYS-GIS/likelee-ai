@@ -540,23 +540,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/AgencySubscribe"
-        element={
-          <ProtectedRoute allowedRoles={["agency"]}>
-            <AgencySubscribe />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/AgencySubscribe" element={<AgencySubscribe />} />
 
-      <Route
-        path="/agencysubscribe"
-        element={
-          <ProtectedRoute allowedRoles={["agency"]}>
-            <AgencySubscribe />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/agencysubscribe" element={<AgencySubscribe />} />
 
       <Route path="/brandpricing" element={<BrandSubscribe />} />
       <Route path="/BrandSubscribe" element={<BrandPricingRedirect />} />

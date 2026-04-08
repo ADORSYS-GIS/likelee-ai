@@ -20,14 +20,6 @@ hex = "0.4"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-aws-config = "1.8"
-aws-sdk-rekognition = "1.94"
-aws-types = "1"
-aws-runtime = "=1.7.2"
-aws-credential-types = "=1.2.14"
-aws-sdk-sts = "=1.94.0"
-aws-sdk-sso = "=1.94.0"
-aws-sdk-ssooidc = "=1.94.0"
 envconfig = "0.11"
 image = { version = "0.24", default-features = false, features = [
     "png",
@@ -54,6 +46,7 @@ pulldown-cmark = "0.12"
 regex = "1"
 dashmap = "5"
 parking_lot = "0.12"
+futures = "0.3"
 
 [patch.crates-io]
 postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }

@@ -1,9 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, Users, UserCircle, Trophy } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  getDashboardPath,
+  getOnboardingPath,
+  getOrganizationSignupPathForType,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+} from "@/auth/onboarding";
 
 const organizationTypes = [
   {
@@ -45,9 +52,31 @@ const organizationTypes = [
 
 export default function GetAccess() {
   const navigate = useNavigate();
+  const { initialized, authenticated, profile, user } = useAuth();
+
+  React.useEffect(() => {
+    if (!initialized || !authenticated) return;
+    if (!profile) {
+      const role = String(
+        user?.user_metadata?.role || user?.app_metadata?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      if (role === "creator" || role === "brand" || role === "agency") {
+        navigate(getSignupPathForRole(role), { replace: true });
+      }
+      return;
+    }
+    const path = isOnboardingIncomplete(profile)
+      ? getOnboardingPath(profile)
+      : getDashboardPath(profile);
+    if (path) {
+      navigate(path, { replace: true });
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
 
   const handleSelect = (type) => {
-    navigate(createPageUrl(`OrganizationSignup`) + `?type=${type}`);
+    navigate(getOrganizationSignupPathForType(type));
   };
 
   return (

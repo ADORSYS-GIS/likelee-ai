@@ -9,8 +9,13 @@ import {
   Globe,
   ShieldCheck,
   Lock,
+  Building2,
   User,
   Image as ImageIcon,
+  AlertTriangle,
+  ExternalLink,
+  CalendarDays,
+  Percent,
 } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
@@ -33,8 +38,25 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
+import MarketplaceConnectContractModal from "@/components/marketplace/MarketplaceConnectContractModal";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { isDefaultPricing } from "@/utils/pricingDefaults";
+import {
+  approveAgencyCreatorDisconnectRequest,
+  rejectAgencyCreatorDisconnectRequest,
+} from "@/api/creatorAgencyConnection";
+import { MarketplaceContractSummary } from "@/api/marketplaceContracts";
 
 export type MarketplaceProfile = {
   id: string;
@@ -59,15 +81,29 @@ export type MarketplaceProfile = {
     | "declined"
     | "disconnected";
   updated_at?: string | null;
+  talent_ownership?: "agency_owned" | "regular" | null;
+  marketplace_contract?: MarketplaceContractSummary | null;
+  agency_id?: string | null;
+  is_licensable?: boolean;
 };
 
-type MarketplaceProfileDetails = {
+export type MarketplaceProfileDetails = {
   profile_type: "creator" | "agency";
   profile: Record<string, any> | null;
   availability: Record<string, any>;
   rates: Array<Record<string, any>>;
   portfolio: Array<Record<string, any>>;
   campaigns: Array<Record<string, any>>;
+  agency_id?: string | null;
+  is_licensable?: boolean;
+  represented_agency?: {
+    id?: string | null;
+    name?: string | null;
+    logo_url?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+  } | null;
   connection_status:
     | "none"
     | "waiting"
@@ -75,6 +111,7 @@ type MarketplaceProfileDetails = {
     | "connected"
     | "declined"
     | "disconnected";
+  marketplace_contract?: MarketplaceContractSummary | null;
 };
 
 type MarketplaceSectionProps = {
@@ -101,6 +138,10 @@ type MarketplaceSectionProps = {
   lockedDescription?: string;
   lockedCtaLabel?: string;
   onLockedAction?: () => void;
+  enableAgencyContractConnect?: boolean;
+  connectLocked?: boolean;
+  connectLockedReason?: string;
+  onConnectLocked?: () => void;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -174,6 +215,10 @@ export function MarketplaceSection({
   lockedDescription = "Upgrade to unlock connections and licensing actions.",
   lockedCtaLabel = "Upgrade",
   onLockedAction,
+  enableAgencyContractConnect = false,
+  connectLocked = false,
+  connectLockedReason = "",
+  onConnectLocked,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -189,10 +234,18 @@ export function MarketplaceSection({
   >(new Set());
   const [selectedProfile, setSelectedProfile] =
     useState<MarketplaceProfile | null>(null);
+  const [contractConnectProfile, setContractConnectProfile] =
+    useState<MarketplaceProfile | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [profileType, setProfileType] = useState<
     "all" | "creator" | "agency" | "connected" | "waiting"
   >("all");
+  const [disconnectDecision, setDisconnectDecision] = useState<
+    null | "approve" | "reject"
+  >(null);
+  const [disconnectActionLoading, setDisconnectActionLoading] = useState<
+    null | "approve" | "reject"
+  >(null);
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
     entityType === "agency" ? "recent" : "followers",
   );
@@ -218,6 +271,10 @@ export function MarketplaceSection({
           "Request licenses",
           "Unlock collaborator workflows",
         ];
+  const selectedProfileId = String(selectedProfile?.id || "").trim();
+  const selectedProfileType = selectedProfile?.profile_type || entityType;
+  const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
+  const isDisconnectBusy = disconnectActionLoading !== null;
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -260,23 +317,51 @@ export function MarketplaceSection({
   });
 
   const detailsQuery = useIndexedDbQuery<MarketplaceProfileDetails>({
-    queryKey: [
-      `${queryScope}-details`,
-      selectedProfile?.profile_type,
-      selectedProfile?.id,
-    ],
-    queryFn: async () =>
-      await base44.get<MarketplaceProfileDetails>(
-        detailsEndpointBuilder(
-          selectedProfile?.profile_type || entityType,
-          selectedProfile?.id || "",
-        ),
-      ),
-    maxAge: 30 * 1000, // 30 seconds
-    syncInterval: 30 * 1000,
+    queryKey: [`${queryScope}-details`, selectedProfileType, selectedProfileId],
+    queryFn: async () => {
+      if (!canFetchDetails) {
+        throw new Error("Missing marketplace profile id for details request.");
+      }
+      return await base44.get<MarketplaceProfileDetails>(
+        detailsEndpointBuilder(selectedProfileType, selectedProfileId),
+      );
+    },
+    maxAge: 5 * 60 * 1000, // 5 minutes
+    syncInterval: 5 * 60 * 1000,
     staleWhileRevalidate: true,
-    enabled: !!selectedProfile,
+    enabled: canFetchDetails,
   });
+  const detailProfile = detailsQuery.data?.profile || null;
+  const representedAgency = detailsQuery.data?.represented_agency || null;
+  const effectiveLicensingAgencyId = String(
+    selectedProfile?.agency_id ||
+      detailsQuery.data?.agency_id ||
+      detailProfile?.agency_id ||
+      "",
+  ).trim();
+  const representedAgencyName = String(
+    representedAgency?.name || "Represented Agency",
+  ).trim();
+  const representedAgencyLogo = String(
+    representedAgency?.logo_url || "",
+  ).trim();
+  const representedAgencyLocation = [
+    representedAgency?.city,
+    representedAgency?.state,
+    representedAgency?.country,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ");
+  const selectedCreatorIsLicensable =
+    selectedProfile?.profile_type === "creator" &&
+    Boolean(
+      effectiveLicensingAgencyId &&
+      (selectedProfile?.is_licensable !== false ||
+        detailsQuery.data?.is_licensable === true ||
+        detailProfile?.is_licensable === true),
+    );
 
   useEffect(() => {
     if (!marketplaceQuery.error) return;
@@ -290,19 +375,6 @@ export function MarketplaceSection({
       variant: "destructive" as any,
     });
   }, [marketplaceQuery.error, toast, entityLabel]);
-
-  useEffect(() => {
-    if (!detailsQuery.error) return;
-    toast({
-      title: "Failed to load profile details",
-      description: parseApiErrorMessage(
-        detailsQuery.error,
-        "Please try again.",
-        entityLabel,
-      ),
-      variant: "destructive" as any,
-    });
-  }, [detailsQuery.error, toast, entityLabel]);
 
   const profiles = useMemo(() => {
     const rows = Array.isArray(marketplaceQuery.data)
@@ -338,6 +410,16 @@ export function MarketplaceSection({
           ? row.connection_status
           : "none",
       updated_at: row?.updated_at ?? null,
+      talent_ownership:
+        row?.talent_ownership === "agency_owned" ||
+        row?.talent_ownership === "regular"
+          ? row.talent_ownership
+          : null,
+      marketplace_contract:
+        row?.marketplace_contract &&
+        typeof row.marketplace_contract === "object"
+          ? row.marketplace_contract
+          : null,
     })) as MarketplaceProfile[];
 
     const creatorCategories = ["models", "actors", "influencers", "athletes"];
@@ -728,10 +810,26 @@ export function MarketplaceSection({
               const disableConnectAction =
                 connectionStatus === "waiting" ||
                 connectionStatus === "pending" ||
-                isRequestingConnect;
+                isRequestingConnect ||
+                connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const ownershipLabel =
+                profile.profile_type === "creator" &&
+                profile.talent_ownership === "agency_owned"
+                  ? "Agency-Owned"
+                  : profile.profile_type === "creator"
+                    ? "Regular"
+                    : null;
+              const ownershipBadgeClass =
+                profile.talent_ownership === "agency_owned"
+                  ? "bg-violet-50/95 text-violet-700 border-violet-200"
+                  : "bg-slate-50/95 text-slate-700 border-slate-200";
+              const hasPendingDisconnect =
+                String(
+                  profile.marketplace_contract?.disconnect_status || "",
+                ).toLowerCase() === "pending";
 
               return (
                 <Card
@@ -744,18 +842,23 @@ export function MarketplaceSection({
                       <img
                         src={profile.profile_photo_url}
                         alt={profile.display_name}
-                        className="w-full aspect-[4/3] object-cover bg-slate-100"
+                        className="w-full aspect-[3/4] object-cover object-center bg-slate-100"
                       />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                      <div className="w-full aspect-[3/4] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
                         <User className="w-9 h-9 text-slate-400" />
                       </div>
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
-                      <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
-                        {entityLabelTitle}
-                      </Badge>
                       <div className="flex items-center gap-1.5">
+                        {/* Agency-owned badge removed as per request */}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {hasPendingDisconnect && (
+                          <div className="h-5 w-5 rounded-md bg-rose-50/95 border border-rose-200 shadow-sm flex items-center justify-center">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          </div>
+                        )}
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
                             Connected
@@ -874,11 +977,28 @@ export function MarketplaceSection({
                               onLockedAction?.();
                               return;
                             }
+                            if (connectLocked) {
+                              onConnectLocked?.();
+                              return;
+                            }
                             if (isRequestingConnect) return;
                             setRequestingConnectKeys((prev) =>
                               new Set(prev).add(profileKey),
                             );
                             try {
+                              if (
+                                enableAgencyContractConnect &&
+                                profile.profile_type === "creator"
+                              ) {
+                                setRequestingConnectKeys((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(profileKey);
+                                  return next;
+                                });
+                                setContractConnectProfile(profile);
+                                return;
+                              }
+
                               const result: any = await base44.post(
                                 connectEndpoint,
                                 {
@@ -953,19 +1073,26 @@ export function MarketplaceSection({
                             }
                           }}
                         >
-                          {actionsLocked
-                            ? connectionStatus === "pending" ||
-                              connectionStatus === "waiting"
-                              ? `Waiting for ${entityLabel} response`
-                              : "Upgrade to Connect"
-                            : isRequestingConnect
-                              ? "Sending..."
+                          {isRequestingConnect
+                            ? "Sending..."
+                            : actionsLocked || connectLocked
+                              ? "Upgrade to Connect"
                               : connectionStatus === "pending" ||
                                   connectionStatus === "waiting"
                                 ? `Waiting for ${entityLabel} response`
                                 : "Connect"}
                         </Button>
+                        {connectLockedReason ? (
+                          <span className="text-[10px] font-semibold text-amber-700">
+                            {connectLockedReason}
+                          </span>
+                        ) : null}
                       </div>
+                    )}
+                    {profile.talent_ownership === "agency_owned" && (
+                      <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
+                        external talent
+                      </p>
                     )}
                   </div>
                 </Card>
@@ -975,13 +1102,42 @@ export function MarketplaceSection({
         )}
       </div>
 
+      <MarketplaceConnectContractModal
+        open={!!contractConnectProfile}
+        profile={contractConnectProfile}
+        onClose={() => setContractConnectProfile(null)}
+        onSuccess={(contract) => {
+          if (!contractConnectProfile) return;
+          const profileKey = `${contractConnectProfile.profile_type}:${contractConnectProfile.id}`;
+          setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+          toast({
+            title: "Contract sent",
+            description: contract?.agency_sign_url
+              ? "The contract has been sent for signature and the agency signing link opened in a new tab."
+              : "The contract has been sent for signature.",
+          });
+          queryClient.invalidateQueries({
+            queryKey: [queryScope],
+          });
+        }}
+      />
+
       <Sheet
         open={detailsOpen}
         onOpenChange={(open) => {
+          if (isDisconnectBusy) return;
           if (!open) setSelectedProfile(null);
         }}
       >
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          {isDisconnectBusy ? (
+            <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-sm font-medium text-slate-700">
+                <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
+                Processing disconnect request...
+              </div>
+            </div>
+          ) : null}
           <SheetHeader>
             <SheetTitle>
               {selectedProfile?.display_name || "Marketplace Profile"}
@@ -998,6 +1154,19 @@ export function MarketplaceSection({
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading profile details...
               </div>
+            ) : detailsQuery.error ? (
+              <Card className="p-4 border border-rose-200 bg-rose-50 rounded-xl">
+                <div className="text-sm font-semibold text-rose-900">
+                  Failed to load profile details
+                </div>
+                <div className="text-sm text-rose-800 mt-1">
+                  {parseApiErrorMessage(
+                    detailsQuery.error,
+                    "Please try again.",
+                    entityLabel,
+                  )}
+                </div>
+              </Card>
             ) : (
               <>
                 {(() => {
@@ -1005,15 +1174,26 @@ export function MarketplaceSection({
                     string,
                     any
                   >;
+                  const marketplaceContract =
+                    detailsQuery.data?.marketplace_contract ||
+                    selectedProfile?.marketplace_contract ||
+                    null;
+                  const pendingDisconnect =
+                    String(
+                      marketplaceContract?.disconnect_status || "",
+                    ).toLowerCase() === "pending";
                   const openToWork = Array.isArray(profile?.content_types)
                     ? profile.content_types
                     : [];
                   const industries = Array.isArray(profile?.industries)
                     ? profile.industries
                     : [];
-                  const baseRateCents = Number(
+                  const rawBaseRateCents = Number(
                     profile?.base_monthly_price_cents || 0,
                   );
+                  const baseRateCents = isDefaultPricing(profile)
+                    ? 0
+                    : rawBaseRateCents;
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
                   const isAgencyProfile =
@@ -1158,6 +1338,7 @@ export function MarketplaceSection({
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                           Verified
                         </Badge>
+                        {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
                         {selectedProfile?.location || "Location not specified"}
@@ -1221,55 +1402,208 @@ export function MarketplaceSection({
                 </Card>
 
                 {selectedProfile?.profile_type === "creator" && (
-                  <Card className="p-4 border border-gray-200 rounded-xl">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Availability & Rates
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-gray-500">Willing to Travel</p>
-                        <p className="font-semibold text-gray-900 mt-1">
-                          {typeof detailsQuery.data?.availability
-                            ?.willing_to_travel === "boolean"
-                            ? detailsQuery.data?.availability?.willing_to_travel
-                              ? "Yes"
-                              : "No"
-                            : "Not specified"}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-gray-500">Connection Status</p>
-                        <p className="font-semibold text-gray-900 mt-1 capitalize">
-                          {detailsQuery.data?.connection_status || "none"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(detailsQuery.data?.rates || [])
-                        .slice(0, 6)
-                        .map((r, i) => (
-                          <div
-                            key={`${r?.label || r?.rate_name || "rate"}-${i}`}
-                            className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
-                          >
-                            <p className="text-indigo-700 font-semibold">
-                              {String(r?.label || r?.rate_name || "Rate")}
-                            </p>
-                            <p className="text-gray-900 font-bold mt-1">
-                              {formatMoney(
-                                r?.amount_cents ?? r?.price_per_month_cents,
-                                r?.currency || "USD",
-                              )}
-                            </p>
+                  <>
+                    {(() => {
+                      const marketplaceContract =
+                        detailsQuery.data?.marketplace_contract ||
+                        selectedProfile?.marketplace_contract ||
+                        null;
+                      const pendingDisconnect =
+                        String(
+                          marketplaceContract?.disconnect_status || "",
+                        ).toLowerCase() === "pending";
+
+                      return enableAgencyContractConnect &&
+                        marketplaceContract ? (
+                        <Card
+                          className={`p-4 rounded-xl ${
+                            pendingDisconnect
+                              ? "border-rose-200 bg-rose-50/60"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-900">
+                                  Marketplace contract
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Contract terms for this agency-creator
+                                  connection.
+                                </p>
+                              </div>
+                              {pendingDisconnect ? (
+                                <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
+                                  Creator requested disconnect
+                                </Badge>
+                              ) : null}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <Percent className="w-3 h-3" />
+                                  Commission
+                                </div>
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {Number(
+                                    marketplaceContract?.commission_rate || 0,
+                                  ).toFixed(2)}
+                                  %
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="text-gray-500">Status</div>
+                                <p className="font-semibold text-gray-900 mt-1 capitalize">
+                                  {String(
+                                    marketplaceContract?.status || "unknown",
+                                  ).replaceAll("_", " ")}
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <CalendarDays className="w-3 h-3" />
+                                  Start date
+                                </div>
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {marketplaceContract?.valid_from || "—"}
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <CalendarDays className="w-3 h-3" />
+                                  End date
+                                </div>
+                                <p className="font-semibold text-gray-900 mt-1">
+                                  {marketplaceContract?.valid_until || "—"}
+                                </p>
+                              </div>
+                            </div>
+
+                            {pendingDisconnect ? (
+                              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                                <div className="font-semibold">
+                                  Creator is requesting disconnect
+                                </div>
+                                {marketplaceContract?.disconnect_reason ? (
+                                  <div className="mt-2 whitespace-pre-wrap">
+                                    {marketplaceContract.disconnect_reason}
+                                  </div>
+                                ) : (
+                                  <div className="mt-2">
+                                    No reason was provided.
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+
+                            <div className="flex flex-wrap gap-2">
+                              {marketplaceContract?.signed_document_url ? (
+                                <Button
+                                  variant="outline"
+                                  disabled={isDisconnectBusy}
+                                  onClick={() =>
+                                    window.open(
+                                      marketplaceContract.signed_document_url ||
+                                        "",
+                                      "_blank",
+                                      "noopener,noreferrer",
+                                    )
+                                  }
+                                >
+                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                  View signed contract
+                                </Button>
+                              ) : null}
+                              {pendingDisconnect ? (
+                                <>
+                                  <Button
+                                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                    disabled={isDisconnectBusy}
+                                    onClick={() =>
+                                      setDisconnectDecision("approve")
+                                    }
+                                  >
+                                    Approve disconnect
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="border-rose-200 text-rose-700"
+                                    disabled={isDisconnectBusy}
+                                    onClick={() =>
+                                      setDisconnectDecision("reject")
+                                    }
+                                  >
+                                    Reject request
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
                           </div>
-                        ))}
-                      {(detailsQuery.data?.rates || []).length === 0 && (
-                        <p className="text-sm text-gray-500">
-                          No rates published yet.
-                        </p>
-                      )}
-                    </div>
-                  </Card>
+                        </Card>
+                      ) : null;
+                    })()}
+
+                    <Card className="p-4 border border-gray-200 rounded-xl">
+                      <h4 className="text-sm font-bold text-gray-900 mb-3">
+                        Availability & Rates
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                          <p className="text-gray-500">Willing to Travel</p>
+                          <p className="font-semibold text-gray-900 mt-1">
+                            {typeof detailsQuery.data?.availability
+                              ?.willing_to_travel === "boolean"
+                              ? detailsQuery.data?.availability
+                                  ?.willing_to_travel
+                                ? "Yes"
+                                : "No"
+                              : "Not specified"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                          <p className="text-gray-500">Connection Status</p>
+                          <div className="flex flex-col">
+                            <p className="font-semibold text-gray-900 mt-1 capitalize leading-none">
+                              {detailsQuery.data?.connection_status || "none"}
+                            </p>
+                            {selectedProfile?.talent_ownership ===
+                              "agency_owned" && (
+                              <p className="text-[10px] text-indigo-600 font-semibold mt-1.5">
+                                Automatically connected (Created by you)
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {(detailsQuery.data?.rates || [])
+                          .slice(0, 6)
+                          .map((r, i) => (
+                            <div
+                              key={`${r?.label || r?.rate_name || "rate"}-${i}`}
+                              className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
+                            >
+                              <p className="text-indigo-700 font-semibold">
+                                {String(r?.label || r?.rate_name || "Rate")}
+                              </p>
+                              <p className="text-gray-900 font-bold mt-1">
+                                {formatMoney(
+                                  r?.amount_cents ?? r?.price_per_month_cents,
+                                  r?.currency || "USD",
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        {(detailsQuery.data?.rates || []).length === 0 && (
+                          <p className="text-sm text-gray-500">
+                            No rates published yet.
+                          </p>
+                        )}
+                      </div>
+                    </Card>
+                  </>
                 )}
 
                 {selectedProfile?.profile_type === "creator" && (
@@ -1366,19 +1700,38 @@ export function MarketplaceSection({
                   </Card>
                 )}
                 {showRequestLicense &&
-                  selectedProfile?.profile_type === "creator" && (
-                    <Card className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                          <h4 className="text-sm font-bold text-amber-900">
-                            Ready to license this talent?
-                          </h4>
-                          <p className="text-xs text-amber-700 mt-1">
-                            Send a licensing request to the represented agency.
-                          </p>
+                  selectedProfile?.profile_type === "creator" &&
+                  selectedCreatorIsLicensable && (
+                    <Card className="overflow-hidden border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 rounded-xl shadow-sm">
+                      <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-12 w-12 rounded-xl border border-amber-200 bg-white shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            {representedAgencyLogo ? (
+                              <img
+                                src={representedAgencyLogo}
+                                alt={representedAgencyName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-amber-600" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-amber-900">
+                              Ready to license this talent?
+                            </h4>
+                            <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              {representedAgencyName}
+                            </p>
+                            <p className="text-xs text-amber-700 mt-1">
+                              {representedAgencyLocation
+                                ? `${representedAgencyLocation} • Send your licensing request directly to this agency.`
+                                : "Send your licensing request directly to this represented agency."}
+                            </p>
+                          </div>
                         </div>
                         <Button
-                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-sm"
                           onClick={() => {
                             if (actionsLocked) {
                               onLockedAction?.();
@@ -1399,11 +1752,112 @@ export function MarketplaceSection({
                       </div>
                     </Card>
                   )}
+                {showRequestLicense &&
+                  selectedProfile?.profile_type === "creator" &&
+                  !selectedCreatorIsLicensable && (
+                    <Card className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-slate-900">
+                          Licensing unavailable
+                        </h4>
+                        <p className="text-xs text-slate-600">
+                          This creator is not currently represented by an active
+                          agency roster entry, so licensing requests can’t be
+                          sent from marketplace right now.
+                        </p>
+                      </div>
+                    </Card>
+                  )}
               </>
             )}
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={disconnectDecision !== null}
+        onOpenChange={(open) => {
+          if (!open) setDisconnectDecision(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {disconnectDecision === "approve"
+                ? "Approve creator disconnect request?"
+                : "Reject creator disconnect request?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {disconnectDecision === "approve"
+                ? "This will terminate the live connection for this agency-creator pair while preserving the contract record for history."
+                : "This will keep the current contract and live connection active."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDisconnectBusy}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                isDisconnectBusy || !selectedProfile?.id || !disconnectDecision
+              }
+              onClick={async () => {
+                const creatorId = String(selectedProfile?.id || "").trim();
+                if (!disconnectDecision || !creatorId) return;
+                try {
+                  setDisconnectActionLoading(disconnectDecision);
+                  if (disconnectDecision === "approve") {
+                    await approveAgencyCreatorDisconnectRequest(creatorId);
+                    toast({
+                      title: "Disconnect approved",
+                      description:
+                        "The creator connection has been removed for this agency.",
+                    });
+                  } else {
+                    await rejectAgencyCreatorDisconnectRequest(creatorId);
+                    toast({
+                      title: "Disconnect rejected",
+                      description:
+                        "The creator remains connected under the active contract.",
+                    });
+                  }
+                  await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: [queryScope] }),
+                    queryClient.invalidateQueries({
+                      queryKey: [
+                        `${queryScope}-details`,
+                        selectedProfileType,
+                        creatorId,
+                      ],
+                    }),
+                  ]);
+                  setSelectedProfile(null);
+                } catch (error: any) {
+                  toast({
+                    title: `Failed to ${disconnectDecision} request`,
+                    description: error?.message || String(error),
+                    variant: "destructive" as any,
+                  });
+                } finally {
+                  setDisconnectActionLoading(null);
+                  setDisconnectDecision(null);
+                }
+              }}
+            >
+              {disconnectActionLoading === disconnectDecision ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
+              {disconnectDecision === "approve"
+                ? disconnectActionLoading === "approve"
+                  ? "Approving..."
+                  : "Approve disconnect"
+                : disconnectActionLoading === "reject"
+                  ? "Rejecting..."
+                  : "Reject request"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
