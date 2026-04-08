@@ -5825,11 +5825,7 @@ export default function CreatorDashboard() {
       normalizedStatus === "rejected" || normalizedStatus === "declined";
     const hasPendingFollowUp = isPending && currentKycReason.length > 0;
     const BannerIcon =
-      hasPendingFollowUp || isRejected
-        ? ShieldAlert
-        : isPending
-          ? Clock
-          : Lock;
+      hasPendingFollowUp || isRejected ? ShieldAlert : isPending ? Clock : Lock;
     const bannerClassName =
       hasPendingFollowUp || isRejected
         ? "mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
@@ -6149,11 +6145,16 @@ export default function CreatorDashboard() {
                     Exclusive Creator Offer
                   </div>
                   <h2 className="text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Experience Likelee <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">Pro</span> for 30 Days
+                    Experience Likelee{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
+                      Pro
+                    </span>{" "}
+                    for 30 Days
                   </h2>
                   <p className="mt-4 text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles, advanced analytics, 
-                    content monitoring, and premium campaign opportunities.
+                    Unlock professional features including AI Voice profiles,
+                    advanced analytics, content monitoring, and premium campaign
+                    opportunities.
                   </p>
                 </div>
               </div>
@@ -6166,7 +6167,10 @@ export default function CreatorDashboard() {
                       "No credit card required",
                       "Automated fallback to Free",
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 text-slate-200">
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 text-slate-200"
+                      >
                         <div className="h-2 w-2 rounded-full bg-emerald-400" />
                         <span className="text-sm font-semibold">{item}</span>
                       </div>
@@ -11780,9 +11784,9 @@ export default function CreatorDashboard() {
                         Ready to lock in Pro?
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        Your trial is active, but you can secure your professional
-                        workflow tools today. Get full marketplace priority and
-                        exclusive campaign access.
+                        Your trial is active, but you can secure your
+                        professional workflow tools today. Get full marketplace
+                        priority and exclusive campaign access.
                       </p>
                     </div>
                     <Button
@@ -11793,7 +11797,6 @@ export default function CreatorDashboard() {
                     </Button>
                   </div>
                 </div>
-
               </div>
             </div>
           </Card>

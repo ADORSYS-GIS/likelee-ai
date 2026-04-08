@@ -4,7 +4,15 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, X, Gift, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  Check,
+  ArrowLeft,
+  X,
+  Gift,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import {
   createCreatorSubscriptionCheckout,
   getCreatorBillingStatus,
@@ -59,15 +67,21 @@ export default function CreatorSubscribe() {
       setCurrentPlanTier(tier);
       setTrialInfo({
         active: !!(resp as any)?.trial_active,
-        endsAt: (resp as any)?.trial_ends_at ? String((resp as any)?.trial_ends_at) : undefined,
+        endsAt: (resp as any)?.trial_ends_at
+          ? String((resp as any)?.trial_ends_at)
+          : undefined,
         startAt: (resp as any)?.trial_start_at,
       });
       toast({
         title: "Trial started!",
-        description: "You now have 30 days of Pro access to explore all features.",
+        description:
+          "You now have 30 days of Pro access to explore all features.",
       });
     } catch (e: any) {
-      if (e?.message?.includes("trial_already_started") || String(e).includes("trial_already_started")) {
+      if (
+        e?.message?.includes("trial_already_started") ||
+        String(e).includes("trial_already_started")
+      ) {
         setShowActiveTrialModal(true);
       } else {
         toast({
@@ -495,7 +509,8 @@ export default function CreatorSubscribe() {
                     Limited Time Trial
                   </div>
                   <h2 className="text-2xl font-black tracking-tight sm:text-3xl leading-tight">
-                    Start Your 30-Day <span className="text-[#5eead4]">Pro</span> Trial
+                    Start Your 30-Day{" "}
+                    <span className="text-[#5eead4]">Pro</span> Trial
                   </h2>
                 </div>
               </div>
@@ -521,7 +536,7 @@ export default function CreatorSubscribe() {
         )}
 
         <div className="mt-10 flex flex-wrap justify-center gap-6 items-stretch">
-          {!trialInfo.startAt && currentPlanTier === "free" && (
+          {currentPlanTier === "free" && (
             <Card className="flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all">
               <Badge className="bg-gray-100 text-gray-600 shadow-none hover:bg-gray-100 mb-4">
                 DEFAULT
@@ -548,7 +563,10 @@ export default function CreatorSubscribe() {
                   "Marketplace visibility",
                   "Standard support",
                 ].map((item) => (
-                  <div key={item} className="flex items-center gap-2.5 text-[#26415F]">
+                  <div
+                    key={item}
+                    className="flex items-center gap-2.5 text-[#26415F]"
+                  >
                     <div className="h-4 w-4 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
                       <Check className="h-3 w-3" />
                     </div>
@@ -616,15 +634,22 @@ export default function CreatorSubscribe() {
                     </div>
                     <div className="space-y-2">
                       {group.items.slice(0, 3).map((label) => (
-                        <div key={label} className="flex items-center gap-2.5 text-[#26415F]">
+                        <div
+                          key={label}
+                          className="flex items-center gap-2.5 text-[#26415F]"
+                        >
                           <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E8FAFB] text-[#12A4A9]">
                             <Check className="h-3 w-3" />
                           </div>
-                          <div className="text-[14px] font-semibold">{label}</div>
+                          <div className="text-[14px] font-semibold">
+                            {label}
+                          </div>
                         </div>
                       ))}
                       {group.items.length > 3 && (
-                         <div className="text-[12px] font-bold text-[#12A4A9] pl-6">+ More features</div>
+                        <div className="text-[12px] font-bold text-[#12A4A9] pl-6">
+                          + More features
+                        </div>
                       )}
                     </div>
                   </div>
@@ -660,7 +685,9 @@ export default function CreatorSubscribe() {
                   MOST POPULAR
                 </Badge>
                 {currentPlanTier !== "pro" && (
-                  <Badge className="bg-[#2E4DA4] text-white text-[10px]">RECOM.</Badge>
+                  <Badge className="bg-[#2E4DA4] text-white text-[10px]">
+                    RECOM.
+                  </Badge>
                 )}
               </div>
               <div className="text-3xl font-black">Pro</div>
@@ -694,15 +721,22 @@ export default function CreatorSubscribe() {
                     </div>
                     <div className="space-y-2">
                       {group.items.slice(0, 3).map((label) => (
-                        <div key={label} className="flex items-center gap-2.5 text-white/90">
+                        <div
+                          key={label}
+                          className="flex items-center gap-2.5 text-white/90"
+                        >
                           <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[#89F4F7]">
                             <Check className="h-3 w-3" />
                           </div>
-                          <div className="text-[14px] font-semibold">{label}</div>
+                          <div className="text-[14px] font-semibold">
+                            {label}
+                          </div>
                         </div>
                       ))}
-                       {group.items.length > 3 && (
-                         <div className="text-[12px] font-bold text-[#89F4F7] pl-6">+ More features</div>
+                      {group.items.length > 3 && (
+                        <div className="text-[12px] font-bold text-[#89F4F7] pl-6">
+                          + More features
+                        </div>
                       )}
                     </div>
                   </div>
@@ -791,7 +825,10 @@ export default function CreatorSubscribe() {
           </Button>
         </div>
 
-        <Dialog open={showActiveTrialModal} onOpenChange={setShowActiveTrialModal}>
+        <Dialog
+          open={showActiveTrialModal}
+          onOpenChange={setShowActiveTrialModal}
+        >
           <DialogContent className="sm:max-w-[420px] rounded-[32px] p-8">
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 shadow-sm ring-1 ring-emerald-100">
@@ -802,7 +839,9 @@ export default function CreatorSubscribe() {
                   Pro Trial Active!
                 </DialogTitle>
                 <DialogDescription className="mt-4 text-base leading-relaxed text-[#475569]">
-                  It looks like your 30-day Pro trial has already been activated. You're all set to explore every premium feature on Likelee!
+                  It looks like your 30-day Pro trial has already been
+                  activated. You're all set to explore every premium feature on
+                  Likelee!
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="mt-8 w-full sm:justify-center">
