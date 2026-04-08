@@ -9,10 +9,7 @@ use tracing::{info, warn};
 use crate::{
     auth::AuthUser,
     config::AppState,
-    team::{
-        self,
-        permissions::Permission,
-    },
+    team::{self, permissions::Permission},
 };
 
 fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
@@ -92,13 +89,8 @@ pub async fn get_agency_seat_breakdown(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencySeatBreakdownResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
+    let agency_access = team::require_agency_access(&state, &user).await?;
+    let agency_id = agency_access.organization_id.clone();
     if state.stripe_secret_key.trim().is_empty() {
         return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
@@ -107,7 +99,7 @@ pub async fn get_agency_seat_breakdown(
         ));
     }
 
-    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
     let subscriptions =
         list_customer_subscriptions_for_billing(&state, billing_ctx.customer_id.as_str()).await?;
 
@@ -116,7 +108,7 @@ pub async fn get_agency_seat_breakdown(
         let belongs_to_agency = sub
             .metadata
             .get("agency_id")
-            .map(|value| value.trim() == user.id.as_str())
+            .map(|value| value.trim() == agency_id.as_str())
             .unwrap_or(false);
         if !belongs_to_agency {
             continue;
@@ -1125,7 +1117,7 @@ pub async fn create_agency_subscription_checkout(
         )
     })?);
 
-    let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let current_state = fetch_agency_checkout_sync_state(&state, &agency_id).await?;
     let current_paid_seats = current_state.seats_limit.max(0);
 
     let mut seat_charge_mode = "total".to_string();
@@ -1370,13 +1362,9 @@ pub async fn change_agency_subscription_plan(
     user: AuthUser,
     Json(payload): Json<AgencyCheckoutRequest>,
 ) -> Result<Json<AgencyPlanChangeResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err(billing_error(
@@ -1416,7 +1404,7 @@ pub async fn change_agency_subscription_plan(
         ));
     }
 
-    let roster_count = agency_roster_count(&state, &user.id).await?;
+    let roster_count = agency_roster_count(&state, &agency_id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
         return Err(billing_error(
             StatusCode::BAD_REQUEST,
@@ -1439,7 +1427,7 @@ pub async fn change_agency_subscription_plan(
         ));
     }
 
-    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
     let is_annual = interval.eq_ignore_ascii_case("year");
     let (irl_booking_price_id, irl_booking_env_var) = if is_annual {
         (
@@ -1458,7 +1446,7 @@ pub async fn change_agency_subscription_plan(
             .pg
             .from("agencies")
             .select("stripe_subscription_id,stripe_customer_id,plan_tier,plan_interval")
-            .eq("id", &user.id)
+            .eq("id", &agency_id)
             .limit(1)
             .execute()
             .await
@@ -1604,7 +1592,7 @@ pub async fn change_agency_subscription_plan(
     }
 
     let mut md = std::collections::HashMap::new();
-    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
     md.insert("plan".to_string(), normalized_plan.clone());
     md.insert(
@@ -1658,14 +1646,14 @@ pub async fn change_agency_subscription_plan(
 
     crate::payouts::sync_agency_subscription_from_stripe(
         &state,
-        &user.id,
+        &agency_id,
         &subscription_id,
         Some(billing_ctx.customer_id.as_str()),
     )
     .await
     .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
 
-    let latest_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let latest_state = fetch_agency_checkout_sync_state(&state, &agency_id).await?;
 
     Ok(Json(AgencyPlanChangeResponse {
         plan_tier: latest_state.plan_tier,
@@ -1679,13 +1667,9 @@ pub async fn create_or_update_agency_seat_addon(
     user: AuthUser,
     Json(payload): Json<AgencySeatAddonRequest>,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
     if state.stripe_secret_key.trim().is_empty() {
         return Err(billing_error(
@@ -1709,7 +1693,7 @@ pub async fn create_or_update_agency_seat_addon(
         Some(v) => Some(normalize_interval(Some(v))?),
     };
 
-    let roster_count = agency_roster_count(&state, &user.id).await?;
+    let roster_count = agency_roster_count(&state, &agency_id).await?;
     if roster_count > AGENCY_MAX_SELF_SERVE_ROSTER_MODELS {
         return Err(billing_error(
             StatusCode::BAD_REQUEST,
@@ -1742,12 +1726,12 @@ pub async fn create_or_update_agency_seat_addon(
         ));
     }
 
-    let billing_ctx = get_or_create_agency_billing_context(&state, &user.id).await?;
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
     let agency_resp = state
         .pg
         .from("agencies")
         .select("plan_tier,plan_interval")
-        .eq("id", &user.id)
+        .eq("id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -1802,7 +1786,7 @@ pub async fn create_or_update_agency_seat_addon(
         ));
     }
 
-    let current_state = fetch_agency_checkout_sync_state(&state, &user.id).await?;
+    let current_state = fetch_agency_checkout_sync_state(&state, &agency_id).await?;
     let already_billed_seats = current_state.seats_limit;
     let requested_total_seats = payload.seats;
     let requested_total_seats_i64 = i64::from(requested_total_seats);
@@ -1835,10 +1819,10 @@ pub async fn create_or_update_agency_seat_addon(
         seat_price_id,
         additional_seats,
     )]);
-    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.client_reference_id = Some(agency_id.as_str());
 
     let mut md = std::collections::HashMap::new();
-    md.insert("agency_id".to_string(), user.id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
     md.insert("billing_domain".to_string(), "agency".to_string());
     md.insert("subscription_kind".to_string(), "seat_addon".to_string());
     md.insert("plan".to_string(), effective_plan.clone());
@@ -1881,15 +1865,11 @@ pub async fn start_agency_pro_trial(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
 
-    let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
+    let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
     if access.trial_active {
         return Err(billing_error(
             StatusCode::CONFLICT,
@@ -1922,7 +1902,7 @@ pub async fn start_agency_pro_trial(
     let resp = state
         .pg
         .from("agencies")
-        .eq("id", &user.id)
+        .eq("id", &agency_id)
         .update(update.to_string())
         .execute()
         .await
@@ -1938,7 +1918,6 @@ pub async fn start_agency_pro_trial(
         trial_ends_at: Some(trial_ends_at.to_rfc3339()),
         display_plan_label: "Trial".to_string(),
     }))
->>>>>>> origin/main
 }
 
 pub async fn create_agency_irl_booking_addon_checkout(
@@ -2669,15 +2648,9 @@ pub async fn get_agency_billing_status(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyBillingStatusResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
+    let agency_access = team::require_agency_access(&state, &user).await?;
+    let agency_id = agency_access.organization_id.clone();
 
-    let agency_id = user.id.clone();
     let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
 
     let resp = state
@@ -2791,15 +2764,9 @@ pub async fn create_agency_billing_portal(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err(billing_error(
-            StatusCode::FORBIDDEN,
-            "agency_only",
-            "Only agency accounts can perform this action.",
-        ));
-    }
-
-    let agency_id = user.id.clone();
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
     let resp = state
         .pg
         .from("agencies")

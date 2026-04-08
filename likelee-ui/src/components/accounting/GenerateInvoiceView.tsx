@@ -366,7 +366,15 @@ export const GenerateInvoiceViewApi = () => {
           ),
         );
         setClients(Array.isArray(c) ? c : []);
-        setTalents(Array.isArray(t) ? t : []);
+        const mappedTalents = Array.isArray(t)
+          ? t.map((r: any) => ({
+              id: r.id,
+              full_name: r.full_name || r.name || r.stage_name || null,
+              name: r.full_name || r.name || r.stage_name || "Unnamed",
+              profile_photo_url: r.profile_photo_url || null,
+            }))
+          : [];
+        setTalents(mappedTalents);
 
         try {
           const ap: any = await getAgencyProfile();
@@ -1304,7 +1312,7 @@ export const GenerateInvoiceViewApi = () => {
                               )}
                               {talents.map((t) => (
                                 <SelectItem key={t.id} value={t.id}>
-                                  {t.full_name || t.name || "Talent"}
+                                  {t.name || t.full_name || "Talent"}
                                 </SelectItem>
                               ))}
                             </SelectContent>
