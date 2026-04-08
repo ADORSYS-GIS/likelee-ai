@@ -170,9 +170,10 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,payment_amount,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,context_type,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .is("archived_at", "null")  // Only show non-archived records
+        .or("context_type.is.null,context_type.neq.campaign")
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -281,12 +282,6 @@ pub async fn list_for_agency(
                 campaign
                     .and_then(|c| c.get("payment_amount"))
                     .and_then(value_to_f64)
-            })
-            .or_else(|| {
-                // Requests created via the submission flow persist payment_amount in cents.
-                r.get("payment_amount")
-                    .and_then(value_to_f64)
-                    .map(|v| v / 100.0)
             });
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
