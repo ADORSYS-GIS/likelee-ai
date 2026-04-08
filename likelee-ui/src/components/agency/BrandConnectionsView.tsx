@@ -53,10 +53,28 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const extractFirstNumber = (value: unknown): number => {
-  const match = String(value ?? "").match(/\d+/);
-  if (!match) return 0;
-  const parsed = Number.parseInt(match[0], 10);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+
+  // Only treat numbers as quantities when the text clearly expresses a count.
+  // This avoids miscounting specs like "1080x1920" or "15 sec".
+  const patterns: RegExp[] = [
+    /\b(\d{1,3})\s*[x×]\b/i, // "3x"
+    /\b[x×]\s*(\d{1,3})\b/i, // "x3"
+    /\bqty\s*[:\-]?\s*(\d{1,3})\b/i, // "qty 3" / "qty:3"
+    /\bquantity\s*[:\-]?\s*(\d{1,3})\b/i, // "quantity 3"
+    /\b(\d{1,3})\s*(?:pcs?|pieces?)\b/i, // "3 pcs" / "3 pieces"
+    /\b(\d{1,3})\s*(?:deliverables?|deliverable|assets?)\b/i, // "3 deliverables" / "2 assets"
+  ];
+
+  for (const re of patterns) {
+    const match = raw.match(re);
+    if (!match) continue;
+    const parsed = Number.parseInt(match[1], 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return 0;
 };
 
 const extractDeliverableCount = (value: unknown): number => {

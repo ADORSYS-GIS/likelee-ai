@@ -282,6 +282,7 @@ pub async fn list_for_agency(
                 campaign
                     .and_then(|c| c.get("payment_amount"))
                     .and_then(value_to_f64)
+                    .map(|v| v / 100.0)
             });
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
