@@ -61,7 +61,9 @@ export default function ProtectedRoute({
     if (!requiredPermissions?.length || !isTeamScopedRole) {
       return false;
     }
-    return !requiredPermissions.every((permission) => hasPermission(permission));
+    return !requiredPermissions.every((permission) =>
+      hasPermission(permission),
+    );
   }, [hasPermission, isTeamScopedRole, requiredPermissions]);
 
   // Handle role-based redirect with useEffect to prevent content flash

@@ -43,7 +43,11 @@ const ActiveLicensesView = ({
   const [selectedLicense, setSelectedLicense] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const { hasPermission, loading: accessLoading, context } = useTeamAccess("agency");
+  const {
+    hasPermission,
+    loading: accessLoading,
+    context,
+  } = useTeamAccess("agency");
   const canViewLicenses = hasPermission("view_licenses");
   const canManageLicenses = hasPermission("manage_licenses");
   const isReadOnly = canViewLicenses && !canManageLicenses;

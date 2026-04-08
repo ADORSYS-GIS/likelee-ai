@@ -4087,7 +4087,8 @@ export default function BrandDashboard() {
     if (!canApproveDeliverables) {
       toast({
         title: "Permission required",
-        description: "Your role cannot approve or request changes on deliverables.",
+        description:
+          "Your role cannot approve or request changes on deliverables.",
         variant: "destructive" as any,
       });
       return;
@@ -5081,7 +5082,9 @@ export default function BrandDashboard() {
                                                   size="sm"
                                                   className="flex-1 h-8 rounded-none font-bold bg-gray-900"
                                                   disabled={
-                                                    isApproved || isBusy || !canApproveDeliverables
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -5100,7 +5103,9 @@ export default function BrandDashboard() {
                                                   variant="outline"
                                                   className="flex-1 h-8 rounded-none font-bold"
                                                   disabled={
-                                                    isApproved || isBusy || !canApproveDeliverables
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -11604,7 +11609,9 @@ export default function BrandDashboard() {
               <Button
                 className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
-                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId || !canApproveDeliverables
+                  !reviewDialog.note.trim() ||
+                  reviewing === reviewDialog.delId ||
+                  !canApproveDeliverables
                 }
                 onClick={() =>
                   handleDeliverableReview(

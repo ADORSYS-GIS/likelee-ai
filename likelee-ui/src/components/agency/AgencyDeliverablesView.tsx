@@ -706,7 +706,9 @@ export function AgencyDeliverablesView() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className={isBrandApproved ? "col-span-1" : "col-span-2"}>
+                    <span
+                      className={isBrandApproved ? "col-span-1" : "col-span-2"}
+                    >
                       <Button
                         variant="outline"
                         size="sm"
@@ -1053,7 +1055,8 @@ export function AgencyDeliverablesView() {
           <div>
             <p className="font-bold text-amber-800">View Only Mode</p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing deliverables but not approving or managing them.
+              Your role allows viewing deliverables but not approving or
+              managing them.
             </p>
           </div>
         </div>

@@ -294,9 +294,10 @@ export default function TeamInviteLanding() {
         </div>
 
         <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-          You were invited to join as <span className="font-semibold">{membershipRole}</span>.
-          Verify your email on this page and we’ll finish the invitation without
-          sending you through full onboarding.
+          You were invited to join as{" "}
+          <span className="font-semibold">{membershipRole}</span>. Verify your
+          email on this page and we’ll finish the invitation without sending you
+          through full onboarding.
         </div>
 
         {actionError ? (

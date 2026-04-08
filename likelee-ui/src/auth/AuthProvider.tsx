@@ -155,7 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const organizationType = String(
             membership.organization_type || roleHint || "",
           ).trim();
-          const organizationId = String(membership.organization_id || "").trim();
+          const organizationId = String(
+            membership.organization_id || "",
+          ).trim();
           let organizationName = "";
 
           if (organizationType && organizationId) {
@@ -163,26 +165,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               organizationType === "brand" ? "brands" : "agencies";
             const organizationLabelColumn =
               organizationType === "brand" ? "company_name" : "agency_name";
-            
+
             // Fetch the organization's profile data (owner's profile)
             const { data: orgData } = await supabase
               .from(organizationTable)
               .select("*")
               .eq("id", organizationId)
               .maybeSingle();
-            
+
             organizationName = String(
               (orgData as any)?.[organizationLabelColumn] || "",
             ).trim();
 
             // Set profile with the organization's data plus membership info
             // This gives team members access to the same data as the owner
-            console.log("[AuthProvider] Found membership, using organization profile");
+            console.log(
+              "[AuthProvider] Found membership, using organization profile",
+            );
             setProfile({
               ...(orgData || {}),
               id: userId,
               email:
-                String(membership.email || userEmail || "").trim().toLowerCase() ||
+                String(membership.email || userEmail || "")
+                  .trim()
+                  .toLowerCase() ||
                 userEmail ||
                 "",
               full_name: userFullName,
@@ -275,7 +281,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const organizationType = String(
             membership.organization_type || roleHint || "",
           ).trim();
-          const organizationId = String(membership.organization_id || "").trim();
+          const organizationId = String(
+            membership.organization_id || "",
+          ).trim();
           let organizationName = "";
 
           if (organizationType && organizationId) {
@@ -296,7 +304,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile({
             id: userId,
             email:
-              String(membership.email || userEmail || "").trim().toLowerCase() ||
+              String(membership.email || userEmail || "")
+                .trim()
+                .toLowerCase() ||
               userEmail ||
               "",
             full_name: userFullName,

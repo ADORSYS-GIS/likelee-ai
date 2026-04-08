@@ -6120,7 +6120,9 @@ const GenerateInvoiceView = () => {
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
   const [showTalentSelector, setShowTalentSelector] = useState(false);
-  const [selectedTalentIds, setSelectedTalentIds] = useState<Set<string>>(new Set());
+  const [selectedTalentIds, setSelectedTalentIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [talentSearchQuery, setTalentSearchQuery] = useState("");
   const [items, setItems] = useState<
     {
@@ -6243,9 +6245,9 @@ const GenerateInvoiceView = () => {
     const unitPrice = Number(unitPriceRaw);
     return Boolean(
       description ||
-        talentId ||
-        dateOfService ||
-        (unitPriceRaw !== "" && Number.isFinite(unitPrice) && unitPrice > 0),
+      talentId ||
+      dateOfService ||
+      (unitPriceRaw !== "" && Number.isFinite(unitPrice) && unitPrice > 0),
     );
   };
 
@@ -6325,14 +6327,12 @@ const GenerateInvoiceView = () => {
       return { ok: false, message: "Please select payment terms." };
     }
 
-    const validItems = items
-      .filter(hasLineItemContent)
-      .map((it) => {
-        const qty = Number(it.quantity || "0") || 0;
-        const unit = Number(it.unit_price || "0");
-        const unitOk = Number.isFinite(unit) && unit >= 0;
-        return { qty, unitOk };
-      });
+    const validItems = items.filter(hasLineItemContent).map((it) => {
+      const qty = Number(it.quantity || "0") || 0;
+      const unit = Number(it.unit_price || "0");
+      const unitOk = Number.isFinite(unit) && unit >= 0;
+      return { qty, unitOk };
+    });
 
     if (!validItems.length) {
       return {
@@ -6455,17 +6455,15 @@ const GenerateInvoiceView = () => {
   const buildCreateInvoicePayload = () => {
     const commissionPct = Number(commission || "0") || 0;
     const agency_commission_bps = Math.round(commissionPct * 100);
-    const itemPayload = items
-      .filter(hasLineItemContent)
-      .map((it, idx) => ({
-        description: it.description,
-        talent_id: it.talent_id || undefined,
-        date_of_service: it.date_of_service || undefined,
-        rate_type: it.rate_type,
-        quantity: Number(it.quantity || "0") || 0,
-        unit_price_cents: Math.round((Number(it.unit_price || "0") || 0) * 100),
-        sort_order: idx,
-      }));
+    const itemPayload = items.filter(hasLineItemContent).map((it, idx) => ({
+      description: it.description,
+      talent_id: it.talent_id || undefined,
+      date_of_service: it.date_of_service || undefined,
+      rate_type: it.rate_type,
+      quantity: Number(it.quantity || "0") || 0,
+      unit_price_cents: Math.round((Number(it.unit_price || "0") || 0) * 100),
+      sort_order: idx,
+    }));
 
     return {
       client_id: selectedClientId,
@@ -6550,7 +6548,9 @@ const GenerateInvoiceView = () => {
       const text = cleanText(value);
       if (!text) return "-";
       const parsed = new Date(`${text}T00:00:00`);
-      return Number.isNaN(parsed.getTime()) ? text : format(parsed, "MMM d, yyyy");
+      return Number.isNaN(parsed.getTime())
+        ? text
+        : format(parsed, "MMM d, yyyy");
     };
 
     const formatRateLabel = (value: string) => {
@@ -6559,7 +6559,9 @@ const GenerateInvoiceView = () => {
       if (key === "day") return "Day rate";
       if (key === "hourly") return "Hourly rate";
       if (key === "project") return "Project rate";
-      return key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+      return key
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
     const toStatusLabel = (value: string) =>
@@ -6632,12 +6634,7 @@ const GenerateInvoiceView = () => {
       }
     };
 
-    const drawLabel = (
-      text: string,
-      x: number,
-      y: number,
-      color = cMuted,
-    ) => {
+    const drawLabel = (text: string, x: number, y: number, color = cMuted) => {
       page.drawText(text.toUpperCase(), {
         x,
         y,
@@ -6775,22 +6772,22 @@ const GenerateInvoiceView = () => {
       return Boolean(cleanText(expense.description) || amount > 0);
     });
 
-    const lineItems = items
-      .filter(hasLineItemContent)
-      .map((item) => {
-        const talentName = cleanText(getTalentLabel(item.talent_id));
-        const serviceDate = cleanText(item.date_of_service)
-          ? formatDisplayDate(item.date_of_service)
-          : "";
-        const rateLabel = formatRateLabel(item.rate_type);
-        return {
-          ...item,
-          title: cleanText(getLineItemPdfTitle(item), "Service item"),
-          qty: Number(item.quantity || "0") || 0,
-          unit: Number(item.unit_price || "0") || 0,
-          meta: [talentName, serviceDate, rateLabel].filter(Boolean).join("  •  "),
-        };
-      });
+    const lineItems = items.filter(hasLineItemContent).map((item) => {
+      const talentName = cleanText(getTalentLabel(item.talent_id));
+      const serviceDate = cleanText(item.date_of_service)
+        ? formatDisplayDate(item.date_of_service)
+        : "";
+      const rateLabel = formatRateLabel(item.rate_type);
+      return {
+        ...item,
+        title: cleanText(getLineItemPdfTitle(item), "Service item"),
+        qty: Number(item.quantity || "0") || 0,
+        unit: Number(item.unit_price || "0") || 0,
+        meta: [talentName, serviceDate, rateLabel]
+          .filter(Boolean)
+          .join("  •  "),
+      };
+    });
 
     const logoBytes = await tryFetchLogoPng();
     page.drawRectangle({
@@ -6908,10 +6905,8 @@ const GenerateInvoiceView = () => {
     );
     drawLabel("Status", metaX + 16, metaY + 8);
     const badgeText = toStatusLabel(statusText);
-    const badgeWidth = fontBold.widthOfTextAtSize(
-      badgeText.toUpperCase(),
-      8,
-    ) + 18;
+    const badgeWidth =
+      fontBold.widthOfTextAtSize(badgeText.toUpperCase(), 8) + 18;
     drawBadge(
       badgeText,
       metaX + metaW - 16 - badgeWidth,
@@ -7052,7 +7047,12 @@ const GenerateInvoiceView = () => {
       let hiddenItemCount = 0;
       for (let index = 0; index < lineItems.length; index += 1) {
         const item = lineItems[index];
-        const titleLines = wrapText(item.title, descWidth, fontBold, 10.5).slice(0, 2);
+        const titleLines = wrapText(
+          item.title,
+          descWidth,
+          fontBold,
+          10.5,
+        ).slice(0, 2);
         const metaLines = item.meta
           ? wrapText(item.meta, descWidth, font, 8.5).slice(0, 2)
           : [];
@@ -7271,7 +7271,12 @@ const GenerateInvoiceView = () => {
       fill: cAccentSoft,
       accentColor: cAccentDark,
     });
-    drawLabel("Billing summary", rightLowerX + 16, rightLowerY + footerCardH - 22, cAccentDark);
+    drawLabel(
+      "Billing summary",
+      rightLowerX + 16,
+      rightLowerY + footerCardH - 22,
+      cAccentDark,
+    );
     const tx = rightLowerX + 16;
     let ty = rightLowerY + footerCardH - 46;
     const drawTotalRow = (label: string, value: string, bold = false) => {
@@ -7551,9 +7556,7 @@ const GenerateInvoiceView = () => {
 
   const openTalentSelector = () => {
     const existingTalentIds = new Set(
-      items
-        .map((it) => it.talent_id)
-        .filter((id) => id && id.trim() !== "")
+      items.map((it) => it.talent_id).filter((id) => id && id.trim() !== ""),
     );
     setSelectedTalentIds(existingTalentIds);
     setTalentSearchQuery("");
@@ -7562,17 +7565,17 @@ const GenerateInvoiceView = () => {
 
   const addSelectedTalentsToInvoice = () => {
     const existingIds = new Set(
-      items.map((it) => it.talent_id).filter((id) => id && id.trim() !== "")
+      items.map((it) => it.talent_id).filter((id) => id && id.trim() !== ""),
     );
     const toAdd = Array.from(selectedTalentIds).filter(
-      (id) => !existingIds.has(id)
+      (id) => !existingIds.has(id),
     );
     const toRemove = Array.from(existingIds).filter(
-      (id) => !selectedTalentIds.has(id)
+      (id) => !selectedTalentIds.has(id),
     );
 
     let newItems = items.filter((it) => !toRemove.includes(it.talent_id));
-    
+
     const newLineItems = toAdd.map((talentId) => ({
       id: Math.random().toString(36).slice(2),
       description: "",
@@ -7582,7 +7585,7 @@ const GenerateInvoiceView = () => {
       quantity: "1",
       unit_price: "0",
     }));
-    
+
     newItems = [...newItems, ...newLineItems];
     setItems(newItems);
     setSelectedTalentIds(new Set());
@@ -7888,7 +7891,13 @@ const GenerateInvoiceView = () => {
                   onClick={openTalentSelector}
                 >
                   <Users className="w-4 h-4" />
-                  Manage Talents ({items.filter((it) => it.talent_id && it.talent_id.trim() !== "").length})
+                  Manage Talents (
+                  {
+                    items.filter(
+                      (it) => it.talent_id && it.talent_id.trim() !== "",
+                    ).length
+                  }
+                  )
                 </Button>
                 <Button
                   variant="outline"
@@ -8373,10 +8382,11 @@ const GenerateInvoiceView = () => {
               )}
             </DialogTitle>
             <DialogDescription>
-              Search and select talents. Existing selections are preserved. Line items will be added or removed to match your selection.
+              Search and select talents. Existing selections are preserved. Line
+              items will be added or removed to match your selection.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex items-center gap-2 py-3 border-b">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

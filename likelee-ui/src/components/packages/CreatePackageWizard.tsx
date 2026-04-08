@@ -260,7 +260,7 @@ export function CreatePackageWizard({
         allow_callbacks: packageToEdit.allow_callbacks ?? true,
         consent_items:
           Array.isArray(packageToEdit.consent_items) &&
-            packageToEdit.consent_items.length > 0
+          packageToEdit.consent_items.length > 0
             ? packageToEdit.consent_items
             : initialFormData.consent_items,
         password_protected: packageToEdit.password_protected || false,
@@ -820,10 +820,9 @@ export function CreatePackageWizard({
                               try {
                                 const fd = new FormData();
                                 fd.append("file", file);
-                                const resp = await base44.post<{ file_url?: string }>(
-                                  "/api/agency/storage/files/upload",
-                                  fd,
-                                );
+                                const resp = await base44.post<{
+                                  file_url?: string;
+                                }>("/api/agency/storage/files/upload", fd);
                                 const url = resp?.file_url;
                                 if (url) {
                                   setFormData((prev) => ({
@@ -835,7 +834,8 @@ export function CreatePackageWizard({
                               } catch (err: any) {
                                 toast({
                                   title: "Upload failed",
-                                  description: err?.message || "Please try again.",
+                                  description:
+                                    err?.message || "Please try again.",
                                   variant: "destructive",
                                 });
                               } finally {
@@ -853,7 +853,8 @@ export function CreatePackageWizard({
                             alt="Cover preview"
                             className="w-full h-24 object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
                             }}
                           />
                         </div>
@@ -954,16 +955,16 @@ export function CreatePackageWizard({
                           const tid = String(item?.talent_id || "").trim();
                           const resolvedTalent = item?.talent ||
                             (tid ? talentById.get(tid) : null) || {
-                            id: tid,
-                            full_name: item?.talent_name || "Talent",
-                          };
+                              id: tid,
+                              full_name: item?.talent_name || "Talent",
+                            };
                           const talentName = String(
                             resolvedTalent?.stage_name ||
-                            resolvedTalent?.name ||
-                            resolvedTalent?.full_legal_name ||
-                            resolvedTalent?.full_name ||
-                            item?.talent_name ||
-                            "Talent",
+                              resolvedTalent?.name ||
+                              resolvedTalent?.full_legal_name ||
+                              resolvedTalent?.full_name ||
+                              item?.talent_name ||
+                              "Talent",
                           ).trim();
                           const photo = String(
                             resolvedTalent?.profile_photo_url || "",
@@ -1258,7 +1259,9 @@ export function CreatePackageWizard({
                           {canViewConnections ? (
                             <select
                               value={selectedBrandId}
-                              onChange={(e) => setSelectedBrandId(e.target.value)}
+                              onChange={(e) =>
+                                setSelectedBrandId(e.target.value)
+                              }
                               className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                             >
                               <option value="">Select a brand…</option>
@@ -1517,62 +1520,62 @@ export function CreatePackageWizard({
 
           {/* Footer */}
           <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  if (step === 0) onOpenChange(false);
-                  else prevStep();
-                }}
-                className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-              >
-                {step === 0 ? (
-                  "Cancel"
-                ) : (
-                  <>
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                  </>
-                )}
-              </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (step === 0) onOpenChange(false);
+                else prevStep();
+              }}
+              className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+            >
+              {step === 0 ? (
+                "Cancel"
+              ) : (
+                <>
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                </>
+              )}
+            </Button>
 
-              <div className="flex gap-3 w-full sm:w-auto">
-                {step < totalSteps - 1 ? (
-                  <Button
-                    onClick={nextStep}
-                    disabled={isNavigating}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group w-full sm:w-auto"
-                  >
-                    {isNavigating ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Continue{" "}
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={mutation.isPending || offerSendMutation.isPending}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
-                  >
-                    {mutation.isPending || offerSendMutation.isPending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : isTemplateMode ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                    {isTemplateMode
-                      ? isEditMode
-                        ? "Save Template"
-                        : "Done"
-                      : "Publish & Send"}
-                  </Button>
-                )}
-              </div>
+            <div className="flex gap-3 w-full sm:w-auto">
+              {step < totalSteps - 1 ? (
+                <Button
+                  onClick={nextStep}
+                  disabled={isNavigating}
+                  className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group w-full sm:w-auto"
+                >
+                  {isNavigating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Continue{" "}
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={mutation.isPending || offerSendMutation.isPending}
+                  className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  {mutation.isPending || offerSendMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isTemplateMode ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                  {isTemplateMode
+                    ? isEditMode
+                      ? "Save Template"
+                      : "Done"
+                    : "Publish & Send"}
+                </Button>
+              )}
             </div>
-          </DialogContent>
+          </div>
+        </DialogContent>
       </Dialog>
 
       {/* Athlete/Talent Selector Overlay Modal */}

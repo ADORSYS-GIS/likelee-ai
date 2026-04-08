@@ -565,7 +565,10 @@ export const getTeamInviteByToken = (token: string) =>
   base44Client.get(`/api/invites/team/${encodeURIComponent(token)}`);
 
 export const acceptTeamInviteByToken = (token: string) =>
-  base44Client.post(`/api/invites/team/${encodeURIComponent(token)}/accept`, {});
+  base44Client.post(
+    `/api/invites/team/${encodeURIComponent(token)}/accept`,
+    {},
+  );
 
 export const declineTeamInviteByToken = (token: string) =>
   base44Client.post(
