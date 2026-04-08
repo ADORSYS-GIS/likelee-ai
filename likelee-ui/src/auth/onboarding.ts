@@ -101,6 +101,17 @@ export function isOrganizationOnboardingIncomplete(profile?: Profile | null) {
 
 export function isOnboardingIncomplete(profile?: Profile | null) {
   if (!profile) return false;
+  
+  // For creators/talent, if onboarding_step is not set or empty, treat as incomplete
+  if (profile.role === "creator" || profile.role === "talent") {
+    const step = String(profile.onboarding_step || "")
+      .trim()
+      .toLowerCase();
+    // If step is empty/null, it's incomplete. If step is set but not "complete", it's incomplete.
+    return !step || (!!step && step !== "complete");
+  }
+  
+  // For other roles, use the original logic
   const step = String(profile.onboarding_step || "")
     .trim()
     .toLowerCase();
