@@ -52,6 +52,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+const extractFirstNumber = (value: unknown): number => {
+  const match = String(value ?? "").match(/\d+/);
+  if (!match) return 0;
+  const parsed = Number.parseInt(match[0], 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const extractDeliverableCount = (value: unknown): number => {
+  const text = String(value ?? "").trim();
+  if (!text) return 0;
+
+  const lines = text
+    .split(/\n|,|;/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return 0;
+
+  const counted = lines.reduce((sum, line) => {
+    const amount = extractFirstNumber(line);
+    return sum + (amount > 0 ? amount : 1);
+  }, 0);
+
+  return counted > 0 ? counted : lines.length;
+};
+
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1757,8 +1783,30 @@ const BrandConnectionsView = () => {
                     };
                     const reels = briefVal("deliverables_reels");
                     const heroImg = briefVal("deliverables_hero_image");
+                    const explicitExpected = Number.parseInt(
+                      briefVal("total_expected_deliverables"),
+                      10,
+                    );
+                    const requiredDeliverablesText = briefVal(
+                      "required_deliverables",
+                    );
+                    const requiredDeliverablesCount = extractDeliverableCount(
+                      requiredDeliverablesText,
+                    );
+                    const reelsCount = extractFirstNumber(reels);
+                    const heroCount = extractFirstNumber(heroImg);
+                    const fallbackHero =
+                      heroCount > 0 ? heroCount : heroImg ? 1 : 0;
+                    const deliverablesCount =
+                      Number.isFinite(explicitExpected) && explicitExpected > 0
+                        ? explicitExpected
+                        : requiredDeliverablesCount > 0
+                          ? requiredDeliverablesCount
+                          : reelsCount + fallbackHero;
                     const deliverablesSummary =
-                      [reels, heroImg].filter(Boolean).join(", ") || "—";
+                      deliverablesCount > 0
+                        ? `${deliverablesCount} deliverable${deliverablesCount === 1 ? "" : "s"}`
+                        : [reels, heroImg].filter(Boolean).join(", ") || "—";
                     const launchDate = briefVal("overview_launch_date");
                     const deadlineDate = briefVal("budget_submission_deadline");
                     const budgetTotal = briefVal("budget_total");
