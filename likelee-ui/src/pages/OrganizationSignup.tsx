@@ -2721,7 +2721,7 @@ export default function OrganizationSignup() {
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  View / Download
+                  Download
                 </Button>
               </div>
 

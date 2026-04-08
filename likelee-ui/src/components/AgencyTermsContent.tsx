@@ -3,6 +3,20 @@ import React from "react";
 export function AgencyTermsContent() {
   return (
     <div className="space-y-4 text-base text-gray-700 font-medium pb-8">
+      <style>{`
+        .legal-caps {
+          font-size: 14px;
+          line-height: 1.8;
+          letter-spacing: 0.03em;
+          font-weight: 400;
+          color: #2a2a2a;
+          background-color: #f9f9f9;
+          border-left: 3px solid #4f46e5;
+          padding: 16px 20px;
+          border-radius: 4px;
+          margin: 16px 0;
+        }
+      `}</style>
       <h2 className="text-xl font-bold text-gray-900 mb-4">
         Terms and Conditions
       </h2>
@@ -411,7 +425,7 @@ export function AgencyTermsContent() {
 
       <div className="space-y-2">
         <h3 className="font-bold text-gray-900">10. Limitation of Liability</h3>
-        <p>
+        <p className="legal-caps">
           TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, LIKELEE AI AND ITS
           AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AND LICENSORS SHALL NOT BE
           LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE,
@@ -420,14 +434,14 @@ export function AgencyTermsContent() {
           USE OF THE PLATFORM OR THESE TERMS, EVEN IF LIKELEE HAS BEEN ADVISED
           OF THE POSSIBILITY OF SUCH DAMAGES.
         </p>
-        <p>
+        <p className="legal-caps">
           IN NO EVENT SHALL LIKELEE'S TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL
           CLAIMS ARISING FROM OR RELATED TO THESE TERMS EXCEED THE GREATER OF:
           (A) THE TOTAL FEES PAID BY YOU TO LIKELEE IN THE THREE (3) MONTHS
           IMMEDIATELY PRECEDING THE CLAIM; OR (B) ONE HUNDRED DOLLARS ($100).
-          Some jurisdictions do not allow the exclusion or limitation of certain
-          warranties or liabilities. In such jurisdictions, Likelee's liability
-          is limited to the maximum extent permitted by law.
+          SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF CERTAIN
+          WARRANTIES OR LIABILITIES. IN SUCH JURISDICTIONS, LIKELEE'S LIABILITY
+          IS LIMITED TO THE MAXIMUM EXTENT PERMITTED BY LAW.
         </p>
       </div>
 
@@ -435,7 +449,7 @@ export function AgencyTermsContent() {
         <h3 className="font-bold text-gray-900">
           11. Disclaimer of Warranties
         </h3>
-        <p>
+        <p className="legal-caps">
           THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
           OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
           IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
@@ -507,7 +521,7 @@ export function AgencyTermsContent() {
         <h4 className="font-semibold text-gray-800 mt-2">
           13.4 Class Action Waiver
         </h4>
-        <p>
+        <p className="legal-caps">
           TO THE FULLEST EXTENT PERMITTED BY LAW, YOU WAIVE ANY RIGHT TO PURSUE
           DISPUTES ON A CLASS, CONSOLIDATED, OR REPRESENTATIVE BASIS. ALL
           DISPUTES MUST BE BROUGHT IN YOUR INDIVIDUAL CAPACITY.

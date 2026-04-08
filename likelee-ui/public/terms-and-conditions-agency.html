@@ -49,7 +49,7 @@
       h2 {
         font-family: "Fraunces", Georgia, "Times New Roman", serif;
         font-size: 20px;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 40px;
         margin-bottom: 16px;
         padding-bottom: 8px;
@@ -60,7 +60,7 @@
       h3 {
         font-family: "Fraunces", Georgia, "Times New Roman", serif;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 24px;
         margin-bottom: 12px;
         color: #0a0a0a;
@@ -102,6 +102,7 @@
         color: white;
         border: none;
         border-radius: 6px;
+        font-family: "Sora", system-ui, sans-serif;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
@@ -122,19 +123,33 @@
         font-size: 14px;
       }
 
+      .legal-caps {
+        font-size: 14px;
+        line-height: 1.8;
+        letter-spacing: 0.03em;
+        font-weight: 400;
+        color: #2a2a2a;
+        background-color: #f9f9f9;
+        border-left: 3px solid #4f46e5;
+        padding: 16px 20px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+
       @media print {
         @page {
-          margin: 0.5in;
-          size: auto;
+          margin: 0;
         }
 
+        html,
         body {
-          padding: 0;
+          margin: 0 !important;
+          padding: 0.75in !important;
           font-size: 11pt;
         }
 
         .print-button {
-          display: none;
+          display: none !important;
         }
 
         h1 {
@@ -155,6 +170,10 @@
         li {
           orphans: 3;
           widows: 3;
+        }
+
+        .legal-caps {
+          page-break-inside: avoid;
         }
 
         .container {
@@ -551,34 +570,34 @@
       </p>
 
       <h2>10. Limitation of Liability</h2>
-      <p>
-        To the maximum extent permitted by applicable law, Likelee AI and its
-        affiliates, officers, directors, employees, and licensors shall not be
-        liable for any indirect, incidental, special, consequential, punitive,
-        or exemplary damages, including loss of profits, revenue, data,
-        goodwill, or business opportunities, arising out of or related to your
-        use of the Platform or these Terms, even if Likelee has been advised of
-        the possibility of such damages.
+      <p class="legal-caps">
+        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, LIKELEE AI AND ITS
+        AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AND LICENSORS SHALL NOT BE
+        LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE,
+        OR EXEMPLARY DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, DATA,
+        GOODWILL, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR RELATED TO YOUR
+        USE OF THE PLATFORM OR THESE TERMS, EVEN IF LIKELEE HAS BEEN ADVISED OF
+        THE POSSIBILITY OF SUCH DAMAGES.
       </p>
-      <p>
-        In no event shall Likelee's total cumulative liability to you for all
-        claims arising from or related to these Terms exceed the greater of: (a)
-        the total fees paid by you to Likelee in the three (3) months
-        immediately preceding the claim; or (b) one hundred dollars ($100). Some
-        jurisdictions do not allow the exclusion or limitation of certain
-        warranties or liabilities. In such jurisdictions, Likelee's liability is
-        limited to the maximum extent permitted by law.
+      <p class="legal-caps">
+        IN NO EVENT SHALL LIKELEE'S TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL
+        CLAIMS ARISING FROM OR RELATED TO THESE TERMS EXCEED THE GREATER OF: (A)
+        THE TOTAL FEES PAID BY YOU TO LIKELEE IN THE THREE (3) MONTHS
+        IMMEDIATELY PRECEDING THE CLAIM; OR (B) ONE HUNDRED DOLLARS ($100).
       </p>
 
       <h2>11. Disclaimer of Warranties</h2>
-      <p>
-        The Platform is provided "as is" and "as available" without warranties
-        of any kind, either express or implied, including but not limited to
-        implied warranties of merchantability, fitness for a particular purpose,
-        title, and non-infringement. Likelee does not warrant that the Platform
-        will be uninterrupted, secure, or error-free, or that any defects will
-        be corrected. Likelee makes no warranty regarding the accuracy,
-        reliability, or completeness of any content on the Platform.
+      <p class="legal-caps">
+        THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
+        OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+        IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+        TITLE, AND NON-INFRINGEMENT.
+      </p>
+      <p class="legal-caps">
+        LIKELEE DOES NOT WARRANT THAT THE PLATFORM WILL BE UNINTERRUPTED,
+        SECURE, OR ERROR-FREE, OR THAT ANY DEFECTS WILL BE CORRECTED. LIKELEE
+        MAKES NO WARRANTY REGARDING THE ACCURACY, RELIABILITY, OR COMPLETENESS
+        OF ANY CONTENT ON THE PLATFORM.
       </p>
 
       <h2>12. Term and Termination</h2>
@@ -630,10 +649,10 @@
       </p>
 
       <h3>13.4 Class Action Waiver</h3>
-      <p>
-        To the fullest extent permitted by law, you waive any right to pursue
-        disputes on a class, consolidated, or representative basis. All disputes
-        must be brought in your individual capacity.
+      <p class="legal-caps">
+        TO THE FULLEST EXTENT PERMITTED BY LAW, YOU WAIVE ANY RIGHT TO PURSUE
+        DISPUTES ON A CLASS, CONSOLIDATED, OR REPRESENTATIVE BASIS. ALL DISPUTES
+        MUST BE BROUGHT IN YOUR INDIVIDUAL CAPACITY.
       </p>
 
       <h3>13.5 Exception for Injunctive Relief</h3>

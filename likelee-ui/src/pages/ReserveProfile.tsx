@@ -55,7 +55,6 @@ import {
 } from "@/auth/onboarding";
 
 import { CreatorTermsContent } from "@/components/CreatorTermsContent";
-import { downloadTermsPdf } from "@/utils/termsDownload";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
@@ -2269,22 +2268,22 @@ export default function ReserveProfile() {
               </div>
 
               <div className="border-2 border-gray-200 bg-white">
-                <ScrollArea className="h-96 p-4">
+                <ScrollArea className="h-[700px] p-4">
                   <div id="creator-terms-content">
                     <CreatorTermsContent />
                   </div>
                 </ScrollArea>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    downloadTermsPdf(
-                      "creator-terms-content",
-                      "Creator & Talent Terms and Conditions",
+                    window.open(
+                      "/creator-talent-terms-and-conditions.html",
+                      "_blank",
                     )
                   }
                 >
@@ -2293,7 +2292,7 @@ export default function ReserveProfile() {
                 </Button>
               </div>
 
-              <div className="p-4 border-2 border-gray-200 bg-gray-50">
+              <div className="p-4 border-2 border-gray-200 bg-gray-50 mt-4">
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="terms"
