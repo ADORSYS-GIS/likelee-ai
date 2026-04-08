@@ -23,9 +23,11 @@ import {
   Upload,
   Eye,
   EyeOff,
+  Download,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgencyTermsContent } from "@/components/AgencyTermsContent";
+import { downloadTermsPdf } from "@/utils/termsDownload";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -2699,14 +2701,33 @@ export default function OrganizationSignup() {
                 <p className="text-gray-600">
                   {t(
                     "organizationSignup.terms.subtitle",
-                    "Please review and agree to our policies to complete your registration.",
+                    "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
                   )}
                 </p>
               </div>
 
               <ScrollArea className="h-[600px] border-2 border-gray-200 rounded-none p-4 bg-gray-50">
-                <AgencyTermsContent />
+                <div id="agency-terms-content">
+                  <AgencyTermsContent />
+                </div>
               </ScrollArea>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-2 border-black rounded-none"
+                  onClick={() =>
+                    downloadTermsPdf(
+                      "agency-terms-content",
+                      "Agency Terms and Conditions",
+                    )
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
 
               <div className="flex items-start space-x-3 p-4 border-2 border-black bg-gray-50 rounded-none">
                 <Checkbox
@@ -2717,20 +2738,29 @@ export default function OrganizationSignup() {
                   }
                   className="border-2 border-gray-900 mt-0.5"
                 />
-                <label
-                  htmlFor="org-agree-terms"
-                  className="text-sm text-gray-700 cursor-pointer leading-relaxed"
-                >
-                  {t("organizationSignup.terms.agreeTo", "I agree to the")}{" "}
-                  <span className="font-semibold underline">
-                    {t("organizationSignup.terms.policyLink", "Privacy Policy")}
-                  </span>{" "}
-                  {t(
-                    "organizationSignup.terms.andTerms",
-                    "and Terms of Service",
-                  )}
-                  .
-                </label>
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="org-agree-terms"
+                    className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                  >
+                    I agree to the{" "}
+                    <a
+                      href="https://likelee.ai/privacypolicy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold underline text-indigo-600"
+                    >
+                      Privacy Policy
+                    </a>{" "}
+                    and Terms of Service.
+                  </label>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "organizationSignup.terms.mustAgree",
+                      "You must agree to the terms to complete your registration.",
+                    )}
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-4">

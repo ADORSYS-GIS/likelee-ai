@@ -714,12 +714,12 @@
     "completeSignUp": "Complete Sign Up",
     "terms": {
       "title": "Terms & Agreements",
-      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
       "agreeTo": "I agree to the",
       "policyLink": "Privacy Policy",
       "andTerms": "and Terms of Service",
       "mustAgreeTitle": "Agreement Required",
-      "mustAgree": "You must agree to the privacy policy to complete your registration.",
+      "mustAgree": "You must agree to the terms to complete your registration.",
       "completeRegistration": "Complete Registration"
     },
     "industries": {
@@ -1292,10 +1292,11 @@
     },
     "terms": {
       "title": "Terms & Agreements",
-      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
       "agreeTo": "I agree to the",
       "policyLink": "Privacy Policy",
-      "mustAgree": "You must agree to the privacy policy to create your account.",
+      "mustAgree": "You must agree to the terms to complete registration.",
+      "mustAgreeTitle": "Agreement Required",
       "completeRegistration": "Complete Registration"
     },
     "errors": {
@@ -1548,7 +1549,7 @@
         "languages": "e.g., English, Spanish",
         "confirmPassword": "••••••••",
         "handle": "@yourhandle",
-        "price": "150",
+        "price": "",
         "headshot": "Image URL",
         "specify": "Please specify..."
       },

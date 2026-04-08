@@ -140,6 +140,11 @@ import {
 } from "recharts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+  isDefaultPricing,
+  MIN_BASE_MONTHLY_CENTS,
+  shouldDefaultVisibilityOn,
+} from "@/utils/pricingDefaults";
 import { supabase } from "@/lib/supabase";
 import { DocusealForm } from "@docuseal/react";
 
@@ -901,7 +906,6 @@ export default function CreatorDashboard() {
     }
     return Number.isFinite(fallback) ? fallback : 0;
   };
-
   const [creator, setCreator] = useState<any>({
     name: profile?.full_name || user?.user_metadata?.full_name || "",
     email: profile?.email || user?.email || "",
@@ -929,6 +933,7 @@ export default function CreatorDashboard() {
     accept_negotiations: true,
     is_public_brands: resolvePublicBrandsVisibility(profile),
   });
+  const baseRateRef = useRef<number | null>(null);
   const [licenses, setLicenses] = useState<any[]>([]);
   const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
@@ -2706,6 +2711,18 @@ export default function CreatorDashboard() {
   // Sync creator state when auth profile changes
   useEffect(() => {
     if (profile) {
+      const weeklyCents =
+        typeof profile.base_weekly_price_cents === "number"
+          ? profile.base_weekly_price_cents
+          : null;
+      const monthlyCents =
+        typeof profile.base_monthly_price_cents === "number"
+          ? profile.base_monthly_price_cents
+          : null;
+      const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+      const isPublicBrands =
+        resolvedVisibility ||
+        (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
       setCreator((prev: any) => ({
         ...prev,
         name: profile.full_name || user?.user_metadata?.full_name || prev.name,
@@ -2730,7 +2747,7 @@ export default function CreatorDashboard() {
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
         vibes: profile.vibes ?? prev.vibes,
-        is_public_brands: resolvePublicBrandsVisibility(profile),
+        is_public_brands: isPublicBrands,
       }));
     }
   }, [profile]);
@@ -3350,6 +3367,35 @@ export default function CreatorDashboard() {
       try {
         const json = await base44.get("/dashboard");
         const profile = json.profile || {};
+        const weeklyCents =
+          typeof profile.base_weekly_price_cents === "number"
+            ? profile.base_weekly_price_cents
+            : null;
+        const monthlyCents =
+          typeof profile.base_monthly_price_cents === "number"
+            ? profile.base_monthly_price_cents
+            : null;
+        const monthlyFromProfile =
+          typeof monthlyCents === "number"
+            ? Math.round(monthlyCents / 100)
+            : typeof weeklyCents === "number"
+              ? Math.round((weeklyCents / 100) * 4.345)
+              : undefined;
+        const hasExplicitBaseRate =
+          !isDefaultPricing(profile) &&
+          ((typeof weeklyCents === "number" && weeklyCents > 0) ||
+            (typeof monthlyCents === "number" && monthlyCents > 0));
+        const resolvedPricePerMonth = hasExplicitBaseRate
+          ? typeof monthlyFromProfile === "number"
+            ? monthlyFromProfile
+            : 0
+          : 0;
+        baseRateRef.current = resolvedPricePerMonth;
+        const visibilityField = String(profile?.visibility || "").trim();
+        const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+        const isPublicBrands =
+          resolvedVisibility ||
+          (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -3377,17 +3423,17 @@ export default function CreatorDashboard() {
               : prev.height_cm,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
-          is_public_brands: resolvePublicBrandsVisibility(profile),
+          is_public_brands: isPublicBrands,
           instagram_connected: prev.instagram_connected ?? false,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Canonical rate is weekly; fall back to legacy monthly when needed.
+          // If pricing was never explicitly set, keep it blank (0) instead of
+          // showing the platform minimum default.
           price_per_month:
-            typeof profile.base_weekly_price_cents === "number"
-              ? Math.round(profile.base_weekly_price_cents / 100)
-              : typeof profile.base_monthly_price_cents === "number"
-                ? Math.round(profile.base_monthly_price_cents / 100 / 4.345)
-                : (prev.price_per_month ?? 0),
+            typeof resolvedPricePerMonth === "number"
+              ? resolvedPricePerMonth
+              : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
@@ -5224,6 +5270,10 @@ export default function CreatorDashboard() {
       const value = Number.parseFloat(text);
       return Number.isFinite(value) ? value : undefined;
     };
+    const nextRate = creator.price_per_month || 0;
+    const prevRate = baseRateRef.current;
+    const rateChanged =
+      typeof prevRate === "number" ? nextRate !== prevRate : nextRate > 0;
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -5234,10 +5284,13 @@ export default function CreatorDashboard() {
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
-      base_weekly_price_cents: (creator.price_per_month || 0) * 100,
       base_monthly_price_cents: Math.round(
-        (creator.price_per_month || 0) * 100 * 4.345,
+        (creator.price_per_month || 0) * 100,
       ),
+      base_weekly_price_cents: Math.round(
+        ((creator.price_per_month || 0) / 4.345) * 100,
+      ),
+      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
@@ -5311,6 +5364,12 @@ export default function CreatorDashboard() {
       // Update creator state with the saved data from the response
       if (Array.isArray(responseData) && responseData.length > 0) {
         const savedProfile = responseData[0];
+        const savedMonthlyRate =
+          typeof savedProfile.base_monthly_price_cents === "number"
+            ? Math.round(savedProfile.base_monthly_price_cents / 100)
+            : typeof savedProfile.base_weekly_price_cents === "number"
+              ? Math.round((savedProfile.base_weekly_price_cents / 100) * 4.345)
+              : creator.price_per_month || 0;
         setCreator((prev) => ({
           ...prev,
           name: savedProfile.full_name || prev.name,
@@ -5342,15 +5401,11 @@ export default function CreatorDashboard() {
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),
-          price_per_month:
-            typeof savedProfile.base_weekly_price_cents === "number"
-              ? Math.round(savedProfile.base_weekly_price_cents / 100)
-              : savedProfile.base_monthly_price_cents
-                ? Math.round(
-                    savedProfile.base_monthly_price_cents / 100 / 4.345,
-                  )
-                : prev.price_per_month,
+          price_per_month: savedMonthlyRate,
         }));
+        if (typeof savedMonthlyRate === "number") {
+          baseRateRef.current = savedMonthlyRate;
+        }
       }
 
       setEditingRules(false);
@@ -10844,7 +10899,7 @@ export default function CreatorDashboard() {
                     <span className="text-xl font-medium text-gray-900">$</span>
                     <Input
                       type="number"
-                      value={creator.price_per_month || 0}
+                      value={creator.price_per_month ?? ""}
                       onChange={(e) =>
                         setCreator({
                           ...creator,
@@ -13367,6 +13422,12 @@ export default function CreatorDashboard() {
 }
 const resolvePublicBrandsVisibility = (data: any): boolean => {
   if (typeof data?.public_profile_visible === "boolean") {
+    const rawVisibility = String(data?.visibility || "")
+      .trim()
+      .toLowerCase();
+    if (!rawVisibility && data.public_profile_visible === false) {
+      return true;
+    }
     return data.public_profile_visible;
   }
   const rawVisibility = String(data?.visibility || "")

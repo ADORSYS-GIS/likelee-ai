@@ -133,6 +133,12 @@ export default function CreatorSignup() {
         youtube_handle: data.youtube_handle || "",
         agency_name: data.agency_name || "",
         status: "waitlist",
+        // Default base rate should be empty (0) until creator explicitly sets it.
+        base_weekly_price_cents: 0,
+        base_monthly_price_cents: 0,
+        // Default marketplace visibility ON for new creators.
+        public_profile_visible: true,
+        visibility: "brands",
       });
     },
     onSuccess: (data: any) => {
