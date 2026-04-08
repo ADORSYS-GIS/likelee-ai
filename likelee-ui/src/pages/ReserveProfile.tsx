@@ -491,7 +491,7 @@ export default function ReserveProfile() {
       // Prevent redirecting to dashboard if we are actively trying to agree to terms (step 4)
       // or if we just returned from the terms page with local state indicating we are on step 4
       const isActivelyOnboardingLocally = step > 1 && !profileSaveLoading;
-      
+
       // We only force you to dashboard if server says completed AND we aren't in the middle
       // of confirming the final step locally (which can happen on a tab visibility change
       // before finalizing the profile).
