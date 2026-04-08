@@ -3,10 +3,38 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 // https://vite.dev/config/
-export default ({ mode }) => {
+export default async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  let pwaPlugin = null;
+
+  try {
+    const { VitePWA } = await import("vite-plugin-pwa");
+    pwaPlugin = VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 15000000,
+      },
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      manifest: {
+        name: "Likelee - Agency Dashboard",
+        short_name: "Likelee",
+        description: "Likelee Agency Operations Dashboard",
+        theme_color: "#ffffff",
+        background_color: "#ffffff",
+        display: "standalone",
+      },
+    });
+  } catch {
+    console.warn(
+      "[vite] vite-plugin-pwa is not installed; continuing without PWA support.",
+    );
+  }
+
   return defineConfig({
-    plugins: [react()],
+    plugins: [react(), pwaPlugin].filter(Boolean),
     define: {
       __API_BASE_URL__: JSON.stringify(env.VITE_API_BASE_URL),
     },

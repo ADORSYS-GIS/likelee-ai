@@ -80,10 +80,38 @@ pub async fn update_portal_settings(
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let resolved = resolve_talent(&state, &user).await?;
 
+    let existing_resp = state
+        .pg
+        .from("talent_portal_settings")
+        .select("allow_training,public_profile_visible")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing_txt = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let existing_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&existing_txt).unwrap_or_default();
+    let existing = existing_rows.first();
+
+    let allow_training = payload.allow_training.unwrap_or_else(|| {
+        existing
+            .and_then(|r| r.get("allow_training"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    });
+
+    let public_profile_visible = payload.public_profile_visible.unwrap_or_else(|| {
+        existing
+            .and_then(|r| r.get("public_profile_visible"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true)
+    });
+
     let row = json!({
         "talent_id": resolved.talent_id,
-        "allow_training": payload.allow_training,
-        "public_profile_visible": payload.public_profile_visible,
+        "allow_training": allow_training,
+        "public_profile_visible": public_profile_visible,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 

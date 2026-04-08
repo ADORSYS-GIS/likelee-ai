@@ -13,17 +13,23 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Layout, Check } from "lucide-react";
-import { toJpeg } from "html-to-image";
-import { jsPDF } from "jspdf";
 import { supabase } from "@/lib/supabase";
 import { listAgencyClients, shareCompCard } from "@/api/functions";
 import { toast } from "@/components/ui/use-toast";
+import {
+  generateAndUploadCompCard,
+  renderNodeToJpegDataUrl,
+  renderNodeToPdfBlob,
+} from "@/lib/compCardEngine";
 
 interface CompCardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   talents: any[];
   agencyName: string;
+  agencyEmail?: string;
+  agencyWebsite?: string;
+  logoUrl?: string;
 }
 
 const CompCardModal = ({
@@ -31,6 +37,9 @@ const CompCardModal = ({
   onOpenChange,
   talents,
   agencyName,
+  agencyEmail,
+  agencyWebsite,
+  logoUrl,
 }: CompCardModalProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
@@ -51,9 +60,7 @@ const CompCardModal = ({
   const selectedCount = selectedTalentIds.length;
 
   const toggleTalent = (id: string) => {
-    setSelectedTalentIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+    setSelectedTalentIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const selectAll = () => {
@@ -85,45 +92,12 @@ const CompCardModal = ({
     );
   };
 
-  const renderPreviewToPdfBlob = async () => {
-    const dataUrl = await renderPreviewToJpeg(3);
-
-    const img = new Image();
-    const imgLoaded = new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load exported image"));
-    });
-    img.src = dataUrl;
-    await imgLoaded;
-
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "pt",
-      format: "a4",
-    });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-
-    const margin = 36;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
-
-    const imgW = img.width;
-    const imgH = img.height;
-    const scale = Math.min(maxW / imgW, maxH / imgH);
-    const drawW = imgW * scale;
-    const drawH = imgH * scale;
-    const x = (pageW - drawW) / 2;
-    const y = (pageH - drawH) / 2;
-
-    doc.addImage(dataUrl, "JPEG", x, y, drawW, drawH, undefined, "FAST");
-    const blob = doc.output("blob");
-    return blob;
-  };
-
   const uploadCompCardPublic = async (format: "jpeg" | "pdf") => {
     if (!previewTalentComputed) throw new Error("Missing selected talent");
     if (!supabase) throw new Error("Supabase not configured");
+
+    const node = previewNodeRef.current;
+    if (!node) throw new Error("Missing preview element");
 
     let user = null as any;
     {
@@ -165,26 +139,19 @@ const CompCardModal = ({
       user = u;
     }
 
-    const blob =
-      format === "pdf"
-        ? await renderPreviewToPdfBlob()
-        : await dataUrlToBlob(await renderPreviewToJpeg(2));
-    const id =
-      (globalThis as any)?.crypto?.randomUUID?.() ||
-      `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
     const talentId = String((previewTalentComputed as any)?.id || "unknown");
-    const ext = format === "pdf" ? "pdf" : "jpg";
-    const contentType = format === "pdf" ? "application/pdf" : "image/jpeg";
-    const path = `agency/${user.id}/comp_cards/${talentId}/${id}.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from("likelee-public")
-      .upload(path, blob, { upsert: true, contentType });
-    if (uploadErr) throw uploadErr;
-    const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
-    const url = data?.publicUrl || "";
-    if (!url) throw new Error("Failed to create public comp card URL");
-    return url;
+    const baseName = getExportBaseName(previewTalentComputed);
+    const meta = await generateAndUploadCompCard({
+      supabase,
+      node,
+      format,
+      userId: String(user.id),
+      talentId,
+      filenameBase: baseName,
+      prefix: "agency",
+    });
+
+    return meta.url;
   };
 
   const onShareSend = async () => {
@@ -351,30 +318,13 @@ const CompCardModal = ({
     return name.replace(/\s+/g, "_");
   };
 
-  const renderPreviewToJpeg = async (pixelRatio: number) => {
-    const node = previewNodeRef.current;
-    if (!node) throw new Error("Missing preview element");
-    return await toJpeg(node, {
-      quality: 0.95,
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      pixelRatio,
-      // Prevent CSP-blocked Google font fetch attempts during export.
-      fontEmbedCSS: "",
-      preferredFontFormat: undefined,
-    });
-  };
-
-  const dataUrlToBlob = async (dataUrl: string) => {
-    const resp = await fetch(dataUrl);
-    return await resp.blob();
-  };
-
   const exportJpeg = async () => {
     if (!previewTalentComputed || selectedCount < 1) return;
     setExporting("jpeg");
     try {
-      const dataUrl = await renderPreviewToJpeg(2);
+      const node = previewNodeRef.current;
+      if (!node) throw new Error("Missing preview element");
+      const dataUrl = await renderNodeToJpegDataUrl(node, 2);
       const base = getExportBaseName(previewTalentComputed);
       downloadDataUrl(dataUrl, `${base}_CompCard(1).jpg`);
     } finally {
@@ -386,7 +336,9 @@ const CompCardModal = ({
     if (!previewTalentComputed || selectedCount < 1) return;
     setExporting("pdf");
     try {
-      const blob = await renderPreviewToPdfBlob();
+      const node = previewNodeRef.current;
+      if (!node) throw new Error("Missing preview element");
+      const blob = await renderNodeToPdfBlob(node);
       const url = URL.createObjectURL(blob);
       const base = getExportBaseName(previewTalentComputed);
       downloadDataUrl(url, `${base}_CompCard(1).pdf`);
@@ -499,26 +451,6 @@ const CompCardModal = ({
                 <label className="text-sm font-bold text-gray-900">
                   Select Talent
                 </label>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAll}
-                    className="h-7 text-xs"
-                  >
-                    {selectedTalentIds.length === talents.length
-                      ? "Deselect All"
-                      : "Select All"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearSelected}
-                    className="h-7 text-xs"
-                  >
-                    Clear
-                  </Button>
-                </div>
               </div>
 
               <ScrollArea className="h-56 sm:h-64 rounded-xl border border-gray-200 p-2">
@@ -658,40 +590,42 @@ const CompCardModal = ({
               >
                 {/* === CLASSIC LAYOUT === */}
                 {selectedTemplate === "classic" && (
-                  <div className="grid grid-cols-2 h-full">
-                    {/* Main Left Image */}
-                    <div className="col-span-1 h-full relative border-r border-white/10">
-                      <img
-                        src={
-                          previewTalentComputed.img ||
-                          previewTalentComputed.profile_photo_url
-                        }
-                        className="w-full h-full object-cover"
-                        alt={previewTalentComputed.name}
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                    {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
-                    <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
-                      {[...Array(4)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="relative border-b border-r border-white/10 overflow-hidden"
-                        >
-                          <img
-                            src={
-                              previewTalentComputed.img ||
-                              previewTalentComputed.profile_photo_url
-                            }
-                            className="w-full h-full object-cover opacity-90"
-                            alt=""
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      ))}
+                  <div className="flex flex-col h-full bg-white">
+                    <div className="grid grid-cols-2 flex-grow overflow-hidden relative">
+                      {/* Main Left Image */}
+                      <div className="col-span-1 h-full relative border-r border-white/10">
+                        <img
+                          src={
+                            previewTalentComputed.img ||
+                            previewTalentComputed.profile_photo_url
+                          }
+                          className="w-full h-full object-cover object-top"
+                          alt={previewTalentComputed.name}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                      {/* Right Grid of 4 (reusing active image since we lack a gallery for now) */}
+                      <div className="col-span-1 grid grid-cols-2 grid-rows-2 h-full">
+                        {[...Array(4)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="relative border-b border-r border-white/10 overflow-hidden"
+                          >
+                            <img
+                              src={
+                                previewTalentComputed.img ||
+                                previewTalentComputed.profile_photo_url
+                              }
+                              className="w-full h-full object-cover object-top opacity-90"
+                              alt=""
+                              crossOrigin="anonymous"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     {/* Footer Info */}
-                    <div className="absolute bottom-0 w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end">
+                    <div className="w-full bg-white p-4 border-t border-gray-100 flex justify-between items-end shrink-0">
                       <div>
                         <h2 className="font-black text-2xl uppercase tracking-tighter leading-none">
                           {previewTalentComputed.name}
@@ -739,9 +673,14 @@ const CompCardModal = ({
                           {agencyName}
                         </p>
                         <p className="text-[9px] text-gray-400">
-                          bookings@
-                          {agencyName.toLowerCase().replace(/\s+/g, "")}.com
+                          {agencyEmail ||
+                            `bookings@${agencyName.toLowerCase().replace(/\s+/g, "")}.com`}
                         </p>
+                        {agencyWebsite && (
+                          <p className="text-[9px] text-gray-400">
+                            {agencyWebsite.replace(/^https?:\/\//, "")}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -755,7 +694,7 @@ const CompCardModal = ({
                         previewTalentComputed.img ||
                         previewTalentComputed.profile_photo_url
                       }
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                       alt={previewTalentComputed.name}
                       crossOrigin="anonymous"
                     />
@@ -806,6 +745,9 @@ const CompCardModal = ({
                         <div>
                           <p className="font-bold text-sm tracking-widest uppercase">
                             {agencyName}
+                          </p>
+                          <p className="text-[10px] opacity-70">
+                            {agencyEmail || ""}
                           </p>
                         </div>
                       </div>
@@ -887,12 +829,14 @@ const CompCardModal = ({
                           {agencyName}
                         </p>
                         <p className="text-[10px] text-gray-400 mt-2 break-all">
-                          bookings@
-                          {agencyName.toLowerCase().replace(/\s+/g, "")}.com
+                          {agencyEmail ||
+                            `bookings@${agencyName.toLowerCase().replace(/\s+/g, "")}.com`}
                         </p>
-                        <p className="text-[10px] text-gray-400">
-                          (212) 555-0123
-                        </p>
+                        {agencyWebsite && (
+                          <p className="text-[10px] text-gray-400">
+                            {agencyWebsite.replace(/^https?:\/\//, "")}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

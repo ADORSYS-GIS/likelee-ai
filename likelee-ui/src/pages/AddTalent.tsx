@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Upload,
   Instagram,
@@ -36,6 +37,7 @@ import {
 import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
+import { DobInput } from "@/components/ui/DobInput";
 
 const ethnicities = [
   "Asian",
@@ -113,13 +115,12 @@ export default function AddTalent() {
     voice_sample: null,
 
     // Social
-    instagram_connected: false,
     instagram_handle: "",
 
     // Notes
     bio: "",
     special_skills: "",
-    licensing_rate_weekly_usd: "",
+    licensing_rate_monthly_usd: "",
     accept_negotiations: true,
   });
 
@@ -163,34 +164,35 @@ export default function AddTalent() {
   const photoInputRef = useRef(null);
   const voiceInputRef = useRef(null);
 
-  const handleHeroUpload = (e) => {
-    const file = e.target.files[0];
+  const handleHeroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files?.[0] as File | undefined) ?? undefined;
     if (file) {
       setUploading(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           hero_media: {
             url: URL.createObjectURL(file),
             type: file.type.includes("video") ? "video" : "image",
             name: file.name,
+            file,
           },
-        });
+        }));
         setUploading(false);
       }, 1000);
     }
   };
 
-  const handlePhotosUpload = (e) => {
+  const handlePhotosUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e?.target;
-    const files = Array.from((input?.files || []) as any);
+    const files = Array.from(input?.files || []) as File[];
     if (input) {
       input.value = "";
     }
     if (files.length > 0) {
       setUploading(true);
       setTimeout(() => {
-        const newPhotos = files.map((file) => ({
+        const newPhotos = files.map((file: File) => ({
           url: URL.createObjectURL(file),
           name: file.name,
           file,
@@ -208,18 +210,19 @@ export default function AddTalent() {
     }
   };
 
-  const handleVoiceUpload = (e) => {
-    const file = e.target.files[0];
+  const handleVoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files?.[0] as File | undefined) ?? undefined;
     if (file) {
       setUploadingVoice(true);
       setTimeout(() => {
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
           voice_sample: {
             url: URL.createObjectURL(file),
             name: file.name,
+            file,
           },
-        });
+        }));
         setUploadingVoice(false);
       }, 1000);
     }
@@ -258,29 +261,18 @@ export default function AddTalent() {
     return age >= 18;
   };
 
-  const handleConnectInstagram = () => {
-    // Demo mode - simulate connection
-    setFormData({
-      ...formData,
-      instagram_connected: true,
-      instagram_handle: "@talent_handle",
-    });
-    toast({ title: "Info", description: "Instagram connected! (Demo mode)" });
-  };
-
   const toggleEthnicity = (ethnicity) => {
-    const current = formData.ethnicity;
-    if (current.includes(ethnicity)) {
-      setFormData({
-        ...formData,
-        ethnicity: current.filter((e) => e !== ethnicity),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        ethnicity: [...current, ethnicity],
-      });
-    }
+    setFormData((prev) => {
+      const exists = prev.ethnicity.includes(ethnicity);
+      if (exists) {
+        return {
+          ...prev,
+          ethnicity: prev.ethnicity.filter((e) => e !== ethnicity),
+        };
+      } else {
+        return { ...prev, ethnicity: [...prev.ethnicity, ethnicity] };
+      }
+    });
   };
 
   const toggleRoleCategory = (category) => {
@@ -304,7 +296,6 @@ export default function AddTalent() {
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
-      console.log("Submitting talent data:", formData);
 
       if (!isAtLeast18(formData.birthdate)) {
         toast({
@@ -317,6 +308,8 @@ export default function AddTalent() {
 
       let profilePhotoUrl = "";
       let galleryPhotoUrls: string[] = [];
+
+      // Upload Gallery Photos if exist
       const photoFiles: File[] = Array.isArray(formData.photos)
         ? (formData.photos
             .map((p: any) => p?.file)
@@ -364,6 +357,109 @@ export default function AddTalent() {
         }
       }
 
+      // Upload Hero Media if exists
+      let heroMediaUrl = "";
+      if (
+        formData.hero_media &&
+        formData.hero_media.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.hero_media.file;
+          const safeName = (file.name || "hero")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : file.type?.includes("video")
+              ? "mp4"
+              : "jpg";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/hero_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          heroMediaUrl = data.publicUrl || "";
+
+          // If hero media is an image and we don't have a profile photo yet, use it
+          if (!profilePhotoUrl && formData.hero_media.type === "image") {
+            profilePhotoUrl = heroMediaUrl;
+          }
+        } catch (e: any) {
+          const msg = e?.message || String(e);
+          console.error("Hero media upload failed:", msg, e);
+          toast({
+            title: "⚠️ Hero media upload failed",
+            description: `Could not upload hero video/image: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Upload Voice Sample if exists
+      let voiceSampleUrl = "";
+      if (
+        formData.voice_sample &&
+        formData.voice_sample.file &&
+        supabase &&
+        user?.id
+      ) {
+        try {
+          const file = formData.voice_sample.file;
+          const safeName = (file.name || "voice")
+            .toString()
+            .replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const ext = safeName.includes(".")
+            ? safeName.split(".").pop()
+            : "mp3";
+          const rand =
+            (globalThis as any)?.crypto?.randomUUID?.() ||
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const path = `agency/${user.id}/talents/voice_${rand}.${ext}`;
+          const { error } = await supabase.storage
+            .from("likelee-public")
+            .upload(path, file, {
+              upsert: true,
+              contentType: file.type || "audio/mpeg",
+            });
+          if (error) throw error;
+          const { data } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(path);
+          voiceSampleUrl = data.publicUrl || "";
+        } catch (e: any) {
+          const msg = e?.message || String(e);
+          console.error("Voice sample upload failed:", msg, e);
+          toast({
+            title: "⚠️ Voice sample upload failed",
+            description: `Could not upload voice sample: ${msg}. Check browser console for details.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      const aiUsage: string[] = [];
+      if (formData.hero_media) {
+        if (formData.hero_media.type === "video") aiUsage.push("Video");
+        if (formData.hero_media.type === "image") aiUsage.push("Image");
+      }
+      if (formData.photos && formData.photos.length > 0) {
+        if (!aiUsage.includes("Image")) aiUsage.push("Image");
+      }
+      if (formData.voice_sample) {
+        if (!aiUsage.includes("Voice")) aiUsage.push("Voice");
+      }
+
       // Map frontend form data to backend expected format
       // Note: Ideally we upload images to S3/Storage first and get a URL.
       // For this demo, we'll use a placeholder if it's a local blob URL.
@@ -378,8 +474,11 @@ export default function AddTalent() {
         instagram_handle: formData.instagram_handle,
         instagram_followers: 0,
         engagement_rate: 0,
-        profile_photo_url: profilePhotoUrl,
+        profile_photo_url: profilePhotoUrl || heroMediaUrl,
         photo_urls: galleryPhotoUrls,
+        video_url:
+          formData.hero_media?.type === "video" ? heroMediaUrl : undefined,
+        voice_sample_url: voiceSampleUrl,
         bio: formData.bio,
         special_skills: formData.special_skills,
 
@@ -419,11 +518,12 @@ export default function AddTalent() {
         country: formData.country,
         organization: formData.organization,
         sports: formData.sports,
-        licensing_rate_weekly_cents: Math.round(
-          Number(formData.licensing_rate_weekly_usd || 0) * 100,
+        licensing_rate_monthly_cents: Math.round(
+          Number(formData.licensing_rate_monthly_usd || 0) * 100,
         ),
         accept_negotiations: !!formData.accept_negotiations,
         rate_currency: "USD",
+        ai_usage: aiUsage,
       };
 
       await createAgencyTalent(payload);
@@ -468,7 +568,7 @@ export default function AddTalent() {
     formData.email &&
     formData.birthdate &&
     isAtLeast18(formData.birthdate) &&
-    Number(formData.licensing_rate_weekly_usd || 0) > 0;
+    Number(formData.licensing_rate_monthly_usd || 0) > 0;
   const canProceedStep2 =
     formData.gender &&
     formData.ethnicity.length > 0 &&
@@ -644,20 +744,14 @@ export default function AddTalent() {
                 >
                   Date of Birth <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="birthdate"
-                  type="date"
+                <DobInput
                   value={formData.birthdate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthdate: e.target.value })
+                  onChange={(iso) =>
+                    setFormData({ ...formData, birthdate: iso })
                   }
-                  className="border-2 border-gray-300"
+                  variant="sharp"
+                  minAge={18}
                 />
-                {formData.birthdate && !isAtLeast18(formData.birthdate) && (
-                  <p className="text-sm text-red-600 mt-2 font-medium">
-                    {`${entityTitle} must be at least 18 years old.`}
-                  </p>
-                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -731,23 +825,25 @@ export default function AddTalent() {
                     placeholder="e.g. UCLA"
                   />
                 </div>
-                <div>
-                  <Label
-                    htmlFor="sports"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    Sports
-                  </Label>
-                  <Input
-                    id="sports"
-                    value={formData.sports}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sports: e.target.value })
-                    }
-                    className="border-2 border-gray-300"
-                    placeholder="e.g. Basketball"
-                  />
-                </div>
+                {isSportsAgency && (
+                  <div className="md:col-span-2">
+                    <Label
+                      htmlFor="sports"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Sports (comma separated)
+                    </Label>
+                    <Input
+                      id="sports"
+                      value={formData.sports}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sports: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="e.g. Football, Basketball"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -771,22 +867,22 @@ export default function AddTalent() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label
-                    htmlFor="licensing_rate_weekly_usd"
+                    htmlFor="licensing_rate_monthly_usd"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Licensing Rate (USD/week){" "}
+                    Licensing Rate (USD/month){" "}
                     <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id="licensing_rate_weekly_usd"
+                    id="licensing_rate_monthly_usd"
                     type="number"
                     min="1"
                     step="1"
-                    value={formData.licensing_rate_weekly_usd}
+                    value={formData.licensing_rate_monthly_usd}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        licensing_rate_weekly_usd: e.target.value,
+                        licensing_rate_monthly_usd: e.target.value,
                       })
                     }
                     className="border-2 border-gray-300"
@@ -794,19 +890,29 @@ export default function AddTalent() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.accept_negotiations}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          accept_negotiations: e.target.checked,
-                        })
-                      }
-                    />
-                    Open to negotiations
-                  </label>
+                  <div className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <Label className="text-sm font-medium text-gray-900">
+                          Open to negotiations
+                        </Label>
+                        <p className="mt-0.5 text-xs text-gray-600">
+                          Allow brands to propose custom rates for this{" "}
+                          {entityLower}.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!!formData.accept_negotiations}
+                        onCheckedChange={(checked: boolean) =>
+                          setFormData({
+                            ...formData,
+                            accept_negotiations: checked,
+                          })
+                        }
+                        aria-label="Open to negotiations"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1260,13 +1366,13 @@ export default function AddTalent() {
                       <video
                         src={formData.hero_media.url}
                         controls
-                        className="w-full h-64 object-cover border-2 border-gray-200 rounded-lg"
+                        className="w-full h-64 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                       />
                     ) : (
                       <img
                         src={formData.hero_media.url}
                         alt="Hero"
-                        className="w-full h-64 object-cover border-2 border-gray-200 rounded-lg"
+                        className="w-full h-64 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                       />
                     )}
                     <Button
@@ -1325,7 +1431,7 @@ export default function AddTalent() {
                           <img
                             src={photo.url}
                             alt={photo.name}
-                            className="w-full h-24 object-cover border-2 border-gray-200 rounded-lg"
+                            className="w-full h-24 object-contain bg-gray-100 border-2 border-gray-200 rounded-lg"
                           />
                           {formData.photos.length > 1 && (
                             <button
@@ -1438,28 +1544,20 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Instagram Account
                 </Label>
-                {!formData.instagram_connected ? (
-                  <Button
-                    onClick={handleConnectInstagram}
-                    className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white"
-                  >
-                    <Instagram className="w-5 h-5 mr-2" />
-                    Connect Instagram
-                  </Button>
-                ) : (
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Instagram className="w-6 h-6 text-purple-600" />
-                      <div>
-                        <p className="font-bold text-gray-900">
-                          {formData.instagram_handle}
-                        </p>
-                        <p className="text-sm text-gray-600">Connected</p>
-                      </div>
-                    </div>
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  </div>
-                )}
+                <div className="relative">
+                  <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    value={formData.instagram_handle}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        instagram_handle: e.target.value,
+                      })
+                    }
+                    placeholder="@handle"
+                    className="pl-10 h-12"
+                  />
+                </div>
               </div>
 
               <Alert className="bg-blue-50 border-2 border-blue-200">

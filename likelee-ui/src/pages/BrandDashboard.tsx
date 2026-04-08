@@ -78,7 +78,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
-import { MarketplaceProfile } from "@/components/marketplace/MarketplaceSection";
+import {
+  MarketplaceProfile,
+  MarketplaceProfileDetails,
+} from "@/components/marketplace/MarketplaceSection";
 import {
   Dialog,
   DialogContent,
@@ -135,10 +138,20 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
+const getBrandInitials = (name: string) => {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "B";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
 // Mock data
 const mockBrand = {
   name: "Urban Apparel Co.",
-  logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200",
+  logo: "",
   industry: "Retail & E-commerce",
   website: "www.urbanapparel.com",
   contact_email: "team@urbanapparel.com",
@@ -1166,7 +1179,7 @@ export default function BrandDashboard() {
           industry: profile?.industry || prev.industry,
           website: profile?.website || prev.website,
           contact_email: profile?.email || prev.contact_email,
-          logo: profile?.logo_url || prev.logo,
+          logo: profile?.logo_url || "",
         }));
       } catch {
         // Keep mock fallback on failure.
@@ -1843,9 +1856,45 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
-  const handleOpenLicenseRequest = (creator: MarketplaceProfile | null) => {
+  const handleOpenLicenseRequest = (
+    creator: MarketplaceProfile | null,
+    details?: MarketplaceProfileDetails,
+  ) => {
     if (!creator) return;
-    setSelectedLicenseCreator(creator);
+    const detailProfile = details?.profile || null;
+    const representedAgency = details?.represented_agency || null;
+    const agencyId = String(
+      creator.agency_id || details?.agency_id || detailProfile?.agency_id || "",
+    ).trim();
+    const isLicensable = Boolean(
+      agencyId &&
+      (details?.is_licensable === true ||
+        detailProfile?.is_licensable === true ||
+        creator.is_licensable === undefined ||
+        creator.is_licensable),
+    );
+    if (!isLicensable) {
+      toast({
+        title: "Licensing unavailable",
+        description:
+          "This creator is not currently represented by an agency, so the request cannot be sent.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedLicenseCreator({
+      ...creator,
+      agency_id: agencyId,
+      is_licensable: isLicensable,
+      agency_name:
+        representedAgency?.name ||
+        detailProfile?.agency_name ||
+        creator.agency_name,
+      agency_logo_url:
+        representedAgency?.logo_url ||
+        detailProfile?.agency_logo_url ||
+        creator.agency_logo_url,
+    });
     setLicenseRequestForm((prev) => ({
       ...prev,
       start_date: new Date().toISOString().slice(0, 10),
@@ -1910,10 +1959,12 @@ export default function BrandDashboard() {
     const fee = Number(licenseRequestForm.license_fee || 0);
     setCreatingLicenseRequest(true);
     try {
-      const agencyId =
-        selectedLicenseCreator.agency_id ||
-        selectedLicenseCreator.agency ||
-        undefined;
+      const agencyId = String(selectedLicenseCreator.agency_id || "").trim();
+      if (!agencyId) {
+        throw new Error(
+          "This creator is not currently represented by an active agency.",
+        );
+      }
 
       await createAgencyBrandLicensingRequest({
         creator_id: selectedLicenseCreator.id,
@@ -3923,6 +3974,13 @@ export default function BrandDashboard() {
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     const status = String(deliverable?.status || "").toLowerCase();
+    const offer = brandOfferItems.find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const isPaid =
+      String(offer?.payment_status || "")
+        .trim()
+        .toLowerCase() === "paid";
     const approvedForDownload = [
       "approved",
       "accepted",
@@ -3940,6 +3998,15 @@ export default function BrandDashboard() {
       toast({
         title: "Download unavailable",
         description: "Approve this deliverable to unlock downloads.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!isPaid) {
+      toast({
+        title: "Payment required",
+        description:
+          "Payment has not been received for this offer. Please complete payment to download deliverables.",
         variant: "destructive" as any,
       });
       return;
@@ -4014,6 +4081,23 @@ export default function BrandDashboard() {
   ) => {
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
+    const offer = brandOfferItems.find(
+      (o: any) => String(o?.id || "") === String(offerId),
+    );
+    const isPaid =
+      String(offer?.payment_status || "")
+        .trim()
+        .toLowerCase() === "paid";
+    if (!isPaid) {
+      toast({
+        title: "Payment required",
+        description:
+          "You can’t approve or review deliverables until payment for this offer is completed.",
+        variant: "destructive" as any,
+      });
+      deliverableReviewBusyRef.current.delete(deliverableId);
+      return;
+    }
     try {
       setReviewing(deliverableId);
       const result = await reviewOfferDeliverable(offerId, deliverableId, {
@@ -4859,9 +4943,9 @@ export default function BrandDashboard() {
                                     payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
-                                    After you approve a deliverable, the
-                                    Download button appears. Approvals are final
-                                    and can’t be undone.
+                                    After you approve a deliverable, Downloading
+                                    will be enabled. Approvals are final and
+                                    can’t be undone.
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&
@@ -4919,9 +5003,13 @@ export default function BrandDashboard() {
                                                   className="w-full h-full object-cover"
                                                 />
                                               ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                                  <Video className="w-12 h-12 text-white/20" />
-                                                </div>
+                                                <video
+                                                  src={getPublicUrl(del)}
+                                                  muted
+                                                  playsInline
+                                                  preload="metadata"
+                                                  className="w-full h-full object-cover bg-gray-900"
+                                                />
                                               )}
                                               {isApproved && (
                                                 <div className="absolute top-3 right-3">
@@ -8443,11 +8531,12 @@ export default function BrandDashboard() {
         <h3 className="text-xl font-bold text-gray-900 mb-4">Company Logo</h3>
         <div className="flex items-center gap-6">
           <div className="relative">
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="w-32 h-32 object-cover border-2 border-gray-200 rounded-lg"
-            />
+            <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-lg">
+              <AvatarImage src={brand.logo} alt={brand.name} />
+              <AvatarFallback className="text-2xl font-bold text-gray-700">
+                {getBrandInitials(brand.name)}
+              </AvatarFallback>
+            </Avatar>
             <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
               <Edit className="w-4 h-4 text-gray-600" />
               <input
@@ -9946,7 +10035,21 @@ export default function BrandDashboard() {
                             📄 View resume
                           </a>
                         )}
-                        {app.comp_card_url && (
+                        {Array.isArray(app.comp_cards) &&
+                        app.comp_cards.length > 0 ? (
+                          app.comp_cards.map((cc: any, i: number) => (
+                            <a
+                              key={cc.url || i}
+                              href={cc.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={cc.name || `comp_card_${i + 1}`}
+                              className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                            >
+                              🖼️ Card {i + 1}
+                            </a>
+                          ))
+                        ) : app.comp_card_url ? (
                           <a
                             href={app.comp_card_url}
                             target="_blank"
@@ -9956,7 +10059,7 @@ export default function BrandDashboard() {
                           >
                             🖼️ Comp card
                           </a>
-                        )}
+                        ) : null}
                         {app.portfolio_link && (
                           <a
                             href={ensureProtocol(app.portfolio_link)}
@@ -10790,22 +10893,24 @@ export default function BrandDashboard() {
         <div className="p-6 border-b border-gray-200">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
-              <img
-                src={brand.logo}
-                alt={brand.name}
-                className="w-12 h-12 object-cover border-2 border-gray-200 rounded-lg"
-              />
+              <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
+                <AvatarImage src={brand.logo} alt={brand.name} />
+                <AvatarFallback className="font-bold text-gray-700">
+                  {getBrandInitials(brand.name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{brand.name}</p>
                 <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
               </div>
             </div>
           ) : (
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="w-12 h-12 object-cover border-2 border-gray-200 rounded-lg mx-auto"
-            />
+            <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
+              <AvatarImage src={brand.logo} alt={brand.name} />
+              <AvatarFallback className="font-bold text-gray-700">
+                {getBrandInitials(brand.name)}
+              </AvatarFallback>
+            </Avatar>
           )}
         </div>
 
@@ -11030,7 +11135,9 @@ export default function BrandDashboard() {
               verifiedBadgeLabel=""
               queryScope="brand-creator-marketplace"
               showRequestLicense
-              onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
+              onRequestLicense={(profile, details) =>
+                handleOpenLicenseRequest(profile, details)
+              }
             />
           )}
           {activeSection === "marketplace-agencies" &&

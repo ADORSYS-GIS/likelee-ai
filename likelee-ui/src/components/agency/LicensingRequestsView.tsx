@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, CheckCircle2, Send, RefreshCw, Eye } from "lucide-react";
+import { Filter, CheckCircle2, Send, RefreshCw, Eye, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,21 @@ const LicensingRequestsView = ({
     "Active" | "Archive" | "Brand Requests"
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
+
+  useEffect(() => {
+    if (activeRequestTab === "Active" && Array.isArray(data)) {
+      const pending = data.filter((r: any) => r.status === "pending").length;
+      localStorage.setItem("regular_licensing_seen_count", String(pending));
+    } else if (
+      activeRequestTab === "Brand Requests" &&
+      Array.isArray(brandLicenseData)
+    ) {
+      const pending = brandLicenseData.filter(
+        (r: any) => r.status === "pending",
+      ).length;
+      localStorage.setItem("brand_licensing_seen_count", String(pending));
+    }
+  }, [activeRequestTab, data, brandLicenseData]);
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
@@ -309,15 +324,51 @@ const LicensingRequestsView = ({
               Licensing Requests
             </h2>
             <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
-              {["Active", "Archive", "Brand Requests"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveRequestTab(tab as any)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {["Active", "Archive", "Brand Requests"].map((tab) => {
+                let badgeCount = 0;
+                if (tab === "Active") {
+                  const pending = (data || []).filter(
+                    (r: any) => r.status === "pending",
+                  ).length;
+                  const seen = parseInt(
+                    localStorage.getItem("regular_licensing_seen_count") || "0",
+                    10,
+                  );
+                  // While viewing, we show 0 badge
+                  badgeCount =
+                    activeRequestTab === "Active"
+                      ? 0
+                      : Math.max(0, pending - seen);
+                } else if (tab === "Brand Requests") {
+                  const pending = brandLicenseData.filter(
+                    (r: any) => r.status === "pending",
+                  ).length;
+                  const seen = parseInt(
+                    localStorage.getItem("brand_licensing_seen_count") || "0",
+                    10,
+                  );
+                  // While viewing, we show 0 badge
+                  badgeCount =
+                    activeRequestTab === "Brand Requests"
+                      ? 0
+                      : Math.max(0, pending - seen);
+                }
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveRequestTab(tab as any)}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                  >
+                    {tab}
+                    {badgeCount > 0 && (
+                      <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <Button
@@ -522,7 +573,7 @@ const LicensingRequestsView = ({
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <span className="text-[10px] font-bold">\u2715</span>
+                        <X className="w-3 h-3" />
                       </div>
                       Decline
                     </Button>
@@ -658,7 +709,7 @@ const LicensingRequestsView = ({
                   <div className="space-y-4">
                     <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
                       <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
-                        <span className="text-[10px] font-bold">\u2715</span>{" "}
+                        <X className="w-4 h-4" />
                         Declined
                       </p>
                     </div>
@@ -683,7 +734,7 @@ const LicensingRequestsView = ({
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <span className="text-[10px] font-bold">\u2715</span>
+                        <X className="w-3 h-3" />
                       </div>
                       Decline
                     </Button>

@@ -1,6 +1,8 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, pricing_defaults};
 use axum::{extract::State, http::StatusCode, Json};
 use serde::Serialize;
+
+use pricing_defaults::{is_default_pricing, should_default_visibility_on};
 
 #[derive(Serialize)]
 pub struct DashboardResponse {
@@ -15,7 +17,7 @@ pub async fn get_dashboard(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
-    let select_cols = "id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, tiktok_handle, portfolio_link, visibility, public_profile_visible, kyc_status, kyc_rejection_reason, kyc_rejection_code, verified_at, base_weekly_price_cents, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity";
+    let select_cols = "id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, tiktok_handle, portfolio_link, visibility, public_profile_visible, kyc_status, kyc_rejection_reason, kyc_rejection_code, verified_at, base_weekly_price_cents, base_monthly_price_cents, pricing_updated_at, created_at, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity";
 
     let resp = state
         .pg
@@ -54,11 +56,23 @@ pub async fn get_dashboard(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         }
     }
-    let profile = rows
+    let mut profile = rows
         .as_array()
         .and_then(|a| a.first())
         .cloned()
         .unwrap_or(serde_json::json!({}));
+
+    let default_pricing = is_default_pricing(&profile);
+    let default_visibility = should_default_visibility_on(&profile);
+
+    if default_pricing {
+        profile["base_monthly_price_cents"] = serde_json::Value::Null;
+        profile["base_weekly_price_cents"] = serde_json::Value::Null;
+    }
+    if default_visibility {
+        profile["public_profile_visible"] = serde_json::Value::Bool(true);
+        profile["visibility"] = serde_json::Value::String("brands".to_string());
+    }
 
     let campaigns: Vec<serde_json::Value> = vec![];
     let approvals: Vec<serde_json::Value> = vec![];

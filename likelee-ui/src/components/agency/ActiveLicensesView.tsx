@@ -44,6 +44,11 @@ const ActiveLicensesView = ({
     onRenew(license);
   };
 
+  const canRenewLicense = (license: any) => {
+    const status = String(license?.status || "");
+    return status === "Expiring" || status === "Expired";
+  };
+
   const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
     {
       queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
@@ -97,6 +102,50 @@ const ActiveLicensesView = ({
         <Button
           variant="default"
           className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 px-6 h-11 rounded-xl shadow-lg shadow-indigo-200"
+          onClick={() => {
+            if (!licenses || licenses.length === 0) {
+              return;
+            }
+            const headers = [
+              entitySingularTitle,
+              "License Type",
+              "Brand",
+              "Start Date",
+              "End Date",
+              "Deadline",
+              "Days Left",
+              "Usage Scope",
+              "Value",
+              "Status",
+              "Auto Renew",
+            ];
+            const rows = licenses.map((lic: any) => [
+              `"${(lic.talent_name || "").replace(/"/g, '""')}"`,
+              `"${(lic.license_type || "").replace(/"/g, '""')}"`,
+              `"${(lic.brand || "").replace(/"/g, '""')}"`,
+              lic.start_date || "",
+              lic.end_date || "",
+              lic.deadline || "",
+              lic.days_left ?? "",
+              `"${Array.isArray(lic.usage_scope) ? lic.usage_scope.join(", ") : (lic.usage_scope || "").replace(/"/g, '""')}"`,
+              lic.value || 0,
+              lic.status || "",
+              lic.auto_renew ? "Yes" : "No",
+            ]);
+            const csv = [
+              headers.join(","),
+              ...rows.map((r) => r.join(",")),
+            ].join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `active-licenses-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }}
         >
           <Download className="w-4 h-4" /> Export Report
         </Button>
@@ -337,7 +386,7 @@ const ActiveLicensesView = ({
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {String(lic.status).includes("Expiring") && (
+                      {canRenewLicense(lic) && (
                         <Button
                           className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95"
                           onClick={() => handleRenew(lic)}
@@ -364,7 +413,11 @@ const ActiveLicensesView = ({
         license={selectedLicense}
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        onRenew={handleRenew}
+        onRenew={
+          selectedLicense && canRenewLicense(selectedLicense)
+            ? handleRenew
+            : undefined
+        }
         isSportsAgency={isSportsAgency}
       />
     </div>

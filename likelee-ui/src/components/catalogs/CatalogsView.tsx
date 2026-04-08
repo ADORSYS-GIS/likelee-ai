@@ -79,6 +79,12 @@ export function CatalogsView({
     ? catalogsQuery.data
     : [];
 
+  const isExpiredCatalog = (catalog: any) => {
+    if (!catalog?.expires_at) return false;
+    const expiry = new Date(catalog.expires_at);
+    return !Number.isNaN(expiry.getTime()) && expiry.getTime() <= Date.now();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,90 +157,122 @@ export function CatalogsView({
         </Card>
       ) : (
         <div className="grid gap-4">
-          {catalogs.map((catalog: any) => (
-            <Card
-              key={catalog.id}
-              onClick={() => setPreviewCatalog(catalog)}
-              className="p-5 bg-white border border-gray-100 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer hover:border-indigo-100 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
-                  <Library className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-gray-900 truncate">
-                    {catalog.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {catalog.client_name && (
-                      <span className="text-xs text-gray-500 font-medium truncate">
-                        {catalog.client_name}
-                      </span>
-                    )}
-                    {catalog.client_email && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400 break-all">
-                        <Mail className="w-3 h-3" />
-                        {catalog.client_email}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Created{" "}
-                    {new Date(catalog.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                    {catalog.expires_at && (
-                      <>
-                        {" • "}
-                        <span className="text-orange-500 font-medium">
-                          Expires{" "}
-                          {new Date(catalog.expires_at).toLocaleDateString()}
-                        </span>
-                      </>
-                    )}
-                  </p>
-                </div>
-              </div>
+          {catalogs.map((catalog: any) =>
+            (() => {
+              const isExpired = isExpiredCatalog(catalog);
+              const isPaid =
+                catalog?.is_paid === true ||
+                String(catalog?.payment_status || "").toLowerCase() === "paid";
 
-              <div className="flex w-full sm:w-auto items-center gap-2 shrink-0 flex-wrap">
-                <Badge
-                  variant="secondary"
-                  className={
-                    catalog.sent_at
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : "bg-amber-50 text-amber-700 border-amber-100"
-                  }
+              return (
+                <Card
+                  key={catalog.id}
+                  onClick={() => setPreviewCatalog(catalog)}
+                  className="p-5 bg-white border border-gray-100 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer hover:border-indigo-100 hover:shadow-sm transition-all"
                 >
-                  {catalog.sent_at ? "Sent" : "Draft"}
-                </Badge>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 px-3 rounded-lg font-semibold text-xs flex items-center gap-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyLink(catalog.access_token);
-                  }}
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  Copy Link
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteId(catalog.id);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+                      <Library className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 truncate">
+                        {catalog.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {catalog.client_name && (
+                          <span className="text-xs text-gray-500 font-medium truncate">
+                            {catalog.client_name}
+                          </span>
+                        )}
+                        {catalog.client_email && (
+                          <span className="flex items-center gap-1 text-xs text-gray-400 break-all">
+                            <Mail className="w-3 h-3" />
+                            {catalog.client_email}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Created{" "}
+                        {new Date(catalog.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                        {catalog.expires_at && (
+                          <>
+                            {" • "}
+                            <span className="text-orange-500 font-medium">
+                              Expires{" "}
+                              {new Date(
+                                catalog.expires_at,
+                              ).toLocaleDateString()}
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full sm:w-auto items-center gap-2 shrink-0 flex-wrap">
+                    {catalog.licensing_request_id && (
+                      <Badge
+                        variant="secondary"
+                        className={
+                          isPaid
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                            : "bg-amber-50 text-amber-700 border-amber-100"
+                        }
+                      >
+                        {isPaid ? "Paid" : "Unpaid"}
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="secondary"
+                      className={
+                        isExpired
+                          ? "bg-red-50 text-red-700 border-red-100"
+                          : catalog.sent_at
+                            ? "bg-green-50 text-green-700 border-green-100"
+                            : "bg-amber-50 text-amber-700 border-amber-100"
+                      }
+                    >
+                      {isExpired
+                        ? "Expired"
+                        : catalog.sent_at
+                          ? "Sent"
+                          : "Draft"}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 rounded-lg font-semibold text-xs flex items-center gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyLink(catalog.access_token);
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy Link
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteId(catalog.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })(),
+          )}
         </div>
       )}
 
@@ -296,6 +334,11 @@ export function CatalogsView({
             <div className="mt-6 space-y-6">
               {(() => {
                 const items = previewCatalog.items || [];
+                const isExpired = isExpiredCatalog(previewCatalog);
+                const isPaid =
+                  previewCatalog?.is_paid === true ||
+                  String(previewCatalog?.payment_status || "").toLowerCase() ===
+                    "paid";
                 const talentCount = items.length;
                 const assetCount = items.reduce(
                   (sum: number, it: any) => sum + (it.assets?.[0]?.count || 0),
@@ -333,6 +376,20 @@ export function CatalogsView({
                         {previewCatalog.client_email || "—"}
                       </span>
                     </div>
+                    {previewCatalog.licensing_request_id && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-gray-500 font-medium shrink-0">
+                          Payment
+                        </span>
+                        <span
+                          className={`font-bold text-right ${
+                            isPaid ? "text-emerald-600" : "text-amber-600"
+                          }`}
+                        >
+                          {isPaid ? "Paid" : "Unpaid"}
+                        </span>
+                      </div>
+                    )}
                     <div className="h-px bg-gray-100 my-1" />
 
                     <div className="grid grid-cols-3 gap-2 py-1">
@@ -369,9 +426,13 @@ export function CatalogsView({
                         Linked Receipt
                       </span>
                       <span
-                        className={`font-bold ${previewCatalog.licensing_request_id ? "text-green-600" : "text-gray-400"}`}
+                        className={`font-bold ${isExpired ? "text-red-600" : previewCatalog.licensing_request_id ? "text-green-600" : "text-gray-400"}`}
                       >
-                        {previewCatalog.licensing_request_id ? "Active" : "No"}
+                        {isExpired
+                          ? "Expired"
+                          : previewCatalog.licensing_request_id
+                            ? "Active"
+                            : "No"}
                       </span>
                     </div>
                     <div className="flex justify-between">

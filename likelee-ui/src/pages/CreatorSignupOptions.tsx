@@ -1,10 +1,18 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { Card as UICard } from "@/components/ui/card";
 import { Button as UIButton } from "@/components/ui/button";
 import { Users, User, Trophy } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  getCreatorOnboardingPath,
+  getDashboardPath,
+  getLoginPathForRole,
+  getOnboardingPath,
+  getSignupPathForRole,
+  isOnboardingIncomplete,
+} from "@/auth/onboarding";
 
 const Card: any = UICard;
 const Button: any = UIButton;
@@ -12,6 +20,28 @@ const Button: any = UIButton;
 export default function CreatorSignupOptions() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { initialized, authenticated, profile, user } = useAuth();
+
+  React.useEffect(() => {
+    if (!initialized || !authenticated) return;
+    if (!profile) {
+      const role = String(
+        user?.user_metadata?.role || user?.app_metadata?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      if (role === "creator" || role === "brand" || role === "agency") {
+        navigate(getSignupPathForRole(role), { replace: true });
+      }
+      return;
+    }
+    const path = isOnboardingIncomplete(profile)
+      ? getOnboardingPath(profile)
+      : getDashboardPath(profile);
+    if (path) {
+      navigate(path, { replace: true });
+    }
+  }, [authenticated, initialized, navigate, profile, user]);
 
   const creatorTypes = [
     {
@@ -129,7 +159,7 @@ export default function CreatorSignupOptions() {
               </p>
               <div className="space-y-3">
                 <Link
-                  to={`${createPageUrl("Register")}?type=${selectedType}`}
+                  to={getCreatorOnboardingPath(selectedType, "signup")}
                   className="block w-full"
                   onClick={() => setShowAuth(false)}
                 >
@@ -139,7 +169,7 @@ export default function CreatorSignupOptions() {
                   </Button>
                 </Link>
                 <Link
-                  to={`/ReserveProfile?type=${selectedType}&mode=login`}
+                  to={getLoginPathForRole("creator", selectedType)}
                   className="block w-full"
                   onClick={() => setShowAuth(false)}
                 >

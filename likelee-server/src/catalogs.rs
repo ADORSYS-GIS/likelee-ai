@@ -90,12 +90,88 @@ pub async fn list_catalogs(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
-    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
-    Ok(Json(rows))
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    let lr_ids: Vec<String> = rows
+        .iter()
+        .filter_map(|r| {
+            r.get("licensing_request_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
+        .collect();
+
+    let mut payment_link_by_lr: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    if !lr_ids.is_empty() {
+        let lr_refs: Vec<&str> = lr_ids.iter().map(|s| s.as_str()).collect();
+        let pl_resp = state
+            .pg
+            .from("agency_payment_links")
+            .select("licensing_request_id,status,paid_at,created_at")
+            .eq("agency_id", &user.id)
+            .in_("licensing_request_id", lr_refs)
+            .order("created_at.desc")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pl_text = pl_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pl_rows: Vec<serde_json::Value> = serde_json::from_str(&pl_text).unwrap_or_default();
+        for row in pl_rows {
+            let lrid = row
+                .get("licensing_request_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if lrid.is_empty() || payment_link_by_lr.contains_key(&lrid) {
+                continue;
+            }
+            payment_link_by_lr.insert(lrid, row);
+        }
+    }
+
+    for row in &mut rows {
+        let Some(obj) = row.as_object_mut() else {
+            continue;
+        };
+        let lrid = obj
+            .get("licensing_request_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if lrid.is_empty() {
+            obj.insert("payment_status".into(), json!("unlinked"));
+            obj.insert("is_paid".into(), json!(false));
+            continue;
+        }
+        let status = payment_link_by_lr
+            .get(&lrid)
+            .and_then(|pl| pl.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        obj.insert("payment_status".into(), json!(status.clone()));
+        obj.insert("is_paid".into(), json!(status == "paid"));
+        if let Some(paid_at) = payment_link_by_lr
+            .get(&lrid)
+            .and_then(|pl| pl.get("paid_at"))
+            .cloned()
+        {
+            obj.insert("paid_at".into(), paid_at);
+        }
+    }
+
+    Ok(Json(json!(rows)))
 }
 
 // ============================================================================
-// List eligible paid licensing requests (no catalog yet)
+// List eligible signed licensing requests
 // ============================================================================
 
 pub async fn list_eligible_requests(
@@ -106,94 +182,152 @@ pub async fn list_eligible_requests(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    // 1. Fetch agency_payment_links with status = 'paid' for this agency
-    let pl_resp = state
+    // 1. Fetch signed licensing requests for this agency.
+    let lr_resp = state
         .pg
-        .from("agency_payment_links")
-        .select("id,licensing_request_id,client_name,client_email,total_amount_cents,paid_at,licensing_requests(talent_id,talent_ids,campaign_title)")
+        .from("licensing_requests")
+        .select("id,client_name,campaign_title,talent_id,talent_ids,license_submissions!licensing_requests_submission_id_fkey(status,license_fee,client_name,client_email)")
         .eq("agency_id", &user.id)
-        .eq("status", "paid")
-        .order("paid_at.desc")
         .limit(200)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let pl_status = pl_resp.status();
-    let pl_text = pl_resp
+    let lr_status = lr_resp.status();
+    let lr_text = lr_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !pl_status.is_success() {
+    if !lr_status.is_success() {
         return Err(crate::errors::sanitize_db_error(
-            pl_status.as_u16(),
-            pl_text,
+            lr_status.as_u16(),
+            lr_text,
         ));
     }
 
-    let pl_rows: Vec<serde_json::Value> = serde_json::from_str(&pl_text).unwrap_or_default();
+    let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
 
-    // 2. Fetch existing catalogs
-    let existing_resp = state
-        .pg
-        .from("agency_catalogs")
-        .select("licensing_request_id")
-        .eq("agency_id", &user.id)
-        .not("is", "licensing_request_id", "null")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let existing_text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let existing_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&existing_text).unwrap_or_default();
-
-    let used_lr_ids: std::collections::HashSet<String> = existing_rows
+    // 2. Fetch latest payment-link state for these requests so the UI can show paid/unpaid.
+    let lr_ids: Vec<String> = lr_rows
         .iter()
-        .filter_map(|r| {
-            r.get("licensing_request_id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-        })
+        .filter_map(|r| r.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
+    let mut payment_link_by_lr: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    if !lr_ids.is_empty() {
+        let lr_refs: Vec<&str> = lr_ids.iter().map(|s| s.as_str()).collect();
+        let pl_resp = state
+            .pg
+            .from("agency_payment_links")
+            .select("id,licensing_request_id,status,client_name,client_email,total_amount_cents,paid_at,created_at")
+            .eq("agency_id", &user.id)
+            .in_("licensing_request_id", lr_refs)
+            .order("created_at.desc")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pl_text = pl_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pl_rows: Vec<serde_json::Value> = serde_json::from_str(&pl_text).unwrap_or_default();
+        for row in pl_rows {
+            let lrid = row
+                .get("licensing_request_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if lrid.is_empty() || payment_link_by_lr.contains_key(&lrid) {
+                continue;
+            }
+            payment_link_by_lr.insert(lrid, row);
+        }
+    }
 
-    // 3. Keep eligible ones and gather all unique talent IDs
+    // 3. Keep eligible signed ones and gather all unique talent IDs
     let mut eligible: Vec<serde_json::Value> = Vec::new();
     let mut all_talent_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 
-    for row in pl_rows {
-        let lrid = row
-            .get("licensing_request_id")
+    for row in lr_rows {
+        let lrid = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+        let submission = row.get("license_submissions");
+        let submission_status = submission
+            .and_then(|ls| ls.get("status"))
             .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if !lrid.is_empty() && used_lr_ids.contains(lrid) {
-            continue; // already used
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let is_signed = submission_status == "completed" || submission_status == "signed";
+        if !is_signed {
+            continue;
         }
 
-        let mut mod_row = row.clone();
+        let payment_link = payment_link_by_lr.get(lrid);
+        let payment_status = payment_link
+            .and_then(|pl| pl.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        let is_paid = payment_status == "paid";
+
+        let mut mod_row = json!({
+            "id": lrid,
+            "licensing_request_id": lrid,
+            "client_name": payment_link
+                .and_then(|pl| pl.get("client_name"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+                .or_else(|| {
+                    submission
+                        .and_then(|ls| ls.get("client_name"))
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                })
+                .or_else(|| row.get("client_name").and_then(|v| v.as_str()))
+                .unwrap_or("Unnamed Client"),
+            "client_email": payment_link
+                .and_then(|pl| pl.get("client_email"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+                .or_else(|| {
+                    submission
+                        .and_then(|ls| ls.get("client_email"))
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                })
+                .or_else(|| row.get("client_email").and_then(|v| v.as_str()))
+                .unwrap_or(""),
+            "campaign_title": row.get("campaign_title").cloned().unwrap_or(serde_json::Value::Null),
+            "total_amount_cents": payment_link
+                .and_then(|pl| pl.get("total_amount_cents"))
+                .cloned()
+                .or_else(|| submission.and_then(|ls| ls.get("license_fee")).cloned())
+                .unwrap_or(serde_json::Value::Null),
+            "paid_at": payment_link
+                .and_then(|pl| pl.get("paid_at"))
+                .cloned()
+                .unwrap_or(serde_json::Value::Null),
+            "payment_status": payment_status,
+            "is_paid": is_paid,
+            "submission_status": submission_status,
+        });
 
         // Extract talents
         let mut t_ids: Vec<String> = Vec::new();
-        if let Some(lr) = row.get("licensing_requests") {
-            if let Some(arr) = lr.get("talent_ids").and_then(|v| v.as_array()) {
-                for t in arr {
-                    if let Some(s) = t.as_str() {
-                        t_ids.push(s.to_string());
-                    }
+        if let Some(arr) = row.get("talent_ids").and_then(|v| v.as_array()) {
+            for t in arr {
+                if let Some(s) = t.as_str() {
+                    t_ids.push(s.to_string());
                 }
             }
-            if t_ids.is_empty() {
-                if let Some(t) = lr.get("talent_id").and_then(|v| v.as_str()) {
-                    if !t.is_empty() {
-                        t_ids.push(t.to_string());
-                    }
-                }
-            }
-            // Propagate campaign title to root for easier wizard usage
-            if let Some(ct) = lr.get("campaign_title") {
-                if let Some(obj) = mod_row.as_object_mut() {
-                    obj.insert("campaign_title".into(), ct.clone());
+        }
+        if t_ids.is_empty() {
+            if let Some(t) = row.get("talent_id").and_then(|v| v.as_str()) {
+                if !t.is_empty() {
+                    t_ids.push(t.to_string());
                 }
             }
         }
@@ -267,7 +401,6 @@ pub async fn list_eligible_requests(
                 }
             }
             obj.insert("talents".into(), serde_json::json!(linked_talents));
-            obj.remove("licensing_requests"); // don't send raw joined block
         }
     }
 
@@ -289,6 +422,56 @@ pub async fn create_catalog(
 
     if payload.title.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, "title is required".to_string()));
+    }
+
+    if let Some(ref lrid) = payload.licensing_request_id {
+        if !lrid.trim().is_empty() {
+            let lr_resp = state
+                .pg
+                .from("licensing_requests")
+                .select("id,license_submissions!licensing_requests_submission_id_fkey(status)")
+                .eq("agency_id", &user.id)
+                .eq("id", lrid.trim())
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let lr_status = lr_resp.status();
+            let lr_text = lr_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !lr_status.is_success() {
+                return Err(crate::errors::sanitize_db_error(
+                    lr_status.as_u16(),
+                    lr_text,
+                ));
+            }
+
+            let lr_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&lr_text).unwrap_or_default();
+            let lr = lr_rows.first().ok_or((
+                StatusCode::NOT_FOUND,
+                "Linked licensing request not found".to_string(),
+            ))?;
+
+            let submission_status = lr
+                .get("license_submissions")
+                .and_then(|ls| ls.get("status"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_lowercase();
+
+            if submission_status != "completed" && submission_status != "signed" {
+                return Err((
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "Linked licensing request must be signed before creating a catalog".to_string(),
+                ));
+            }
+        }
     }
 
     // 1. Insert the catalog root record
@@ -447,8 +630,7 @@ pub async fn create_catalog(
     let mut email_sent = false;
 
     if !client_email.is_empty() {
-        let app_url =
-            std::env::var("APP_URL").unwrap_or_else(|_| "https://app.likelee.com".to_string());
+        let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "https://likelee.ai".to_string());
         let catalog_url = format!("{}/share/catalog/{}", app_url, access_token);
         let client_name = payload.client_name.as_deref().unwrap_or("Client");
         let subject = format!("Your Licensed Assets Catalog – {}", payload.title.trim());
@@ -589,6 +771,44 @@ pub async fn get_public_catalog(
         .get("licensing_request_id")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    let mut payment_status = "unlinked".to_string();
+    let mut paid_at_value = serde_json::Value::Null;
+    let mut downloads_locked = false;
+    if let Some(ref lrid) = licensing_request_id {
+        if let Ok(pay_resp) = state
+            .pg
+            .from("agency_payment_links")
+            .auth(state.supabase_service_key.clone())
+            .select("status,paid_at")
+            .eq("licensing_request_id", lrid)
+            .order("created_at.desc")
+            .limit(1)
+            .execute()
+            .await
+        {
+            if let Ok(pay_text) = pay_resp.text().await {
+                let pay_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&pay_text).unwrap_or_default();
+                if let Some(pay) = pay_rows.first() {
+                    payment_status = pay
+                        .get("status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unpaid")
+                        .trim()
+                        .to_lowercase();
+                    paid_at_value = pay
+                        .get("paid_at")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
+                } else {
+                    payment_status = "unpaid".to_string();
+                }
+            }
+        } else {
+            payment_status = "unpaid".to_string();
+        }
+        downloads_locked = payment_status != "paid";
+    }
 
     // 1b. Fetch agency branding
     let mut agency_branding = json!({});
@@ -698,7 +918,7 @@ pub async fn get_public_catalog(
                             .get("storage_path")
                             .and_then(|v| v.as_str())
                             .unwrap_or("");
-                        if !bucket.is_empty() {
+                        if !bucket.is_empty() && !downloads_locked {
                             if let Some(su) = generate_signed_url(&state, bucket, path).await {
                                 if let Some(obj) = asset.as_object_mut() {
                                     obj.insert("url".into(), json!(su));
@@ -742,7 +962,7 @@ pub async fn get_public_catalog(
                                 .get("storage_path")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("");
-                            if !bucket.is_empty() {
+                            if !bucket.is_empty() && !downloads_locked {
                                 if let Some(su) = generate_signed_url(&state, bucket, path).await {
                                     if let Some(obj) = asset.as_object_mut() {
                                         obj.insert("url".into(), json!(su));
@@ -832,7 +1052,7 @@ pub async fn get_public_catalog(
                     obj.insert("mime_type".into(), vr["mime_type"].clone());
                     obj.entry("emotion_tag")
                         .or_insert_with(|| vr["emotion_tag"].clone());
-                    if !bucket.is_empty() && !path.is_empty() {
+                    if !bucket.is_empty() && !path.is_empty() && !downloads_locked {
                         if let Some(su) = generate_signed_url(&state, &bucket, &path).await {
                             obj.insert("signed_url".into(), json!(su));
                         }
@@ -937,6 +1157,8 @@ pub async fn get_public_catalog(
                 "created_at": req.get("created_at"),
                 "license_fee_cents": fee_cents,
                 "license_fee_display": format!("${:.2}", fee_cents as f64 / 100.0),
+                "payment_status": payment_status,
+                "paid_at": paid_at_value.clone(),
             }))
         } else {
             None
@@ -952,6 +1174,10 @@ pub async fn get_public_catalog(
         "created_at": catalog.get("created_at"),
         "notes": catalog.get("notes"),
         "expires_at": catalog.get("expires_at"),
+        "payment_status": payment_status,
+        "is_paid": payment_status == "paid",
+        "paid_at": paid_at_value,
+        "downloads_locked": downloads_locked,
         "items": enriched_items,
         "receipt": receipt,
         "agency": agency_branding,

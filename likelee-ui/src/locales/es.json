@@ -1493,7 +1493,7 @@
         "languages": "ej: Inglés, Español",
         "confirmPassword": "••••••••",
         "handle": "@tuusuario",
-        "price": "150",
+        "price": "",
         "headshot": "URL de la imagen",
         "specify": "Por favor especifique..."
       },
@@ -1973,6 +1973,16 @@
     "back": "Atrás",
     "submitting": "Enviando...",
     "completeSignUp": "Completar Registro",
+    "terms": {
+      "title": "Términos y Acuerdos",
+      "subtitle": "Por favor revisa y acepta nuestras políticas para completar tu registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio",
+      "mustAgreeTitle": "Acuerdo Requerido",
+      "mustAgree": "Debes aceptar la política de privacidad para completar tu registro.",
+      "completeRegistration": "Completar Registro"
+    },
     "industries": {
       "fashion": "Moda",
       "beauty": "Belleza",

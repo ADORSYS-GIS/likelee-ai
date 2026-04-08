@@ -10,13 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
 import { ActiveLicense } from "@/api/activeLicenses";
 import {
   Calendar,
   DollarSign,
   FileText,
-  User,
   Briefcase,
   RefreshCw,
 } from "lucide-react";

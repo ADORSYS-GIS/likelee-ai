@@ -106,6 +106,8 @@ button:focus-visible {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --font-display: "Fraunces", serif;
+    --font-body: "Sora", sans-serif;
   }
 
   .dark {
@@ -219,5 +221,38 @@ button:focus-visible {
   }
   .animate-ping-slow {
     animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  body {
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+  }
+
+  th {
+    font-family: var(--font-display);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .font-table-header {
+    font-family: var(--font-display);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
   }
 }

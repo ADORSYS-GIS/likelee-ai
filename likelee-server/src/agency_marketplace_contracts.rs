@@ -12,7 +12,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 const REQUIRED_PLACEHOLDERS: [&str; 3] = ["{commission_rate}", "{valid_from}", "{valid_until}"];
 
@@ -1252,15 +1252,18 @@ pub async fn sync_contract_for_row(
         state.docuseal_api_key.clone(),
         state.docuseal_base_url.clone(),
     );
-    let submission = docuseal
-        .get_submission(submission_id.unwrap())
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to sync DocuSeal submission: {}", e),
-            )
-        })?;
+    let submission = match docuseal.get_submission(submission_id.unwrap()).await {
+        Ok(s) => s,
+        Err(e) => {
+            warn!(
+                contract_id = %contract_id,
+                submission_id = %submission_id.unwrap(),
+                error = %e,
+                "failed to sync DocuSeal submission, skipping for now"
+            );
+            return Ok(parse_contract_summary(row));
+        }
+    };
 
     let live_status = submission.status.to_lowercase();
     let mut next_status = row

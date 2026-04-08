@@ -4,6 +4,7 @@ use crate::brand_campaigns::{
 use crate::config::AppState;
 use crate::entitlements::{creator_has_brand_connection_access, PlanTier};
 use crate::errors::sanitize_db_error;
+use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
     extract::{Path, Query, State},
@@ -130,6 +131,97 @@ fn resolve_weekly_rate_cents(
     base_monthly_price_cents
         .filter(|v| *v > 0)
         .map(|v| ((v as f64) / 4.345).round() as i64)
+}
+
+fn marketplace_profile_dedupe_key(row: &serde_json::Value) -> Option<String> {
+    let profile_type = row
+        .get("profile_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if profile_type != "creator" {
+        return None;
+    }
+
+    let display_name = row
+        .get("display_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let full_name = row
+        .get("full_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let profile_photo_url = row
+        .get("profile_photo_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let location = row
+        .get("location")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let tagline = row
+        .get("tagline")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    let resolved_name = if !display_name.is_empty() {
+        display_name
+    } else {
+        full_name
+    };
+
+    if resolved_name.is_empty() {
+        return None;
+    }
+
+    if !profile_photo_url.is_empty() {
+        return Some(format!(
+            "creator:{}|photo:{}|location:{}",
+            resolved_name, profile_photo_url, location
+        ));
+    }
+
+    Some(format!(
+        "creator:{}|location:{}|tagline:{}",
+        resolved_name, location, tagline
+    ))
+}
+
+fn marketplace_profile_richness_score(row: &serde_json::Value) -> usize {
+    let fields = [
+        row.get("bio").and_then(|v| v.as_str()),
+        row.get("tagline").and_then(|v| v.as_str()),
+        row.get("profile_photo_url").and_then(|v| v.as_str()),
+        row.get("agency_id").and_then(|v| v.as_str()),
+    ];
+
+    let filled_text_fields = fields
+        .iter()
+        .filter(|value| value.map(|v| !v.trim().is_empty()).unwrap_or(false))
+        .count();
+
+    let numeric_fields = [
+        row.get("followers").and_then(|v| v.as_i64()).is_some(),
+        row.get("engagement_rate")
+            .and_then(|v| v.as_f64())
+            .is_some(),
+    ]
+    .into_iter()
+    .filter(|v| *v)
+    .count();
+
+    filled_text_fields + numeric_fields
 }
 
 pub async fn search_faces(
@@ -564,7 +656,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations,plan_tier")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -657,13 +749,17 @@ pub async fn search_marketplace_profiles(
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
-                visibility.is_empty()
-                    || visibility == "public"
-                    || visibility == "brands"
-                    || visibility == "visible_to_brands"
-                    || visibility == "true"
-            });
+            let is_visible_to_marketplace = match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(&row),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            };
             if !is_visible_to_marketplace {
                 continue;
             }
@@ -716,10 +812,15 @@ pub async fn search_marketplace_profiles(
             } else {
                 format!("{city}, {state}")
             };
-            let base_weekly_price_cents = resolve_weekly_rate_cents(
-                row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
-                row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
-            );
+            let default_pricing = is_default_pricing(&row);
+            let base_weekly_price_cents_value = if default_pricing {
+                serde_json::Value::Null
+            } else {
+                serde_json::json!(resolve_weekly_rate_cents(
+                    row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+                    row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+                ))
+            };
             let marketplace_contract = contract_by_creator_id
                 .get(creator_id)
                 .map(crate::agency_marketplace_contracts::parse_contract_summary)
@@ -764,12 +865,22 @@ pub async fn search_marketplace_profiles(
                 },
                 "verification_source": "kyc",
                 "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
-                "base_weekly_price_cents": base_weekly_price_cents,
-                "base_monthly_price_cents": row.get("base_monthly_price_cents").cloned().unwrap_or(serde_json::Value::Null),
+                "base_weekly_price_cents": base_weekly_price_cents_value,
+                "base_monthly_price_cents": if default_pricing {
+                    serde_json::Value::Null
+                } else {
+                    row.get("base_monthly_price_cents")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null)
+                },
                 "currency_code": row.get("currency_code").cloned().unwrap_or(serde_json::json!("USD")),
                 "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
                 "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
                 "agency_id": agency_by_creator_id.get(creator_id).map(|s| serde_json::json!(s)).unwrap_or(serde_json::Value::Null),
+                "is_licensable": agency_by_creator_id
+                    .get(creator_id)
+                    .map(|agency_id| !agency_id.trim().is_empty())
+                    .unwrap_or(false),
             }));
         }
     } else {
@@ -970,7 +1081,45 @@ pub async fn search_marketplace_profiles(
         }
     }
 
-    results.sort_by(|a, b| {
+    let mut deduped_results: Vec<serde_json::Value> = Vec::new();
+    let mut dedupe_index_by_key: HashMap<String, usize> = HashMap::new();
+
+    for row in results {
+        let Some(dedupe_key) = marketplace_profile_dedupe_key(&row) else {
+            deduped_results.push(row);
+            continue;
+        };
+
+        if let Some(existing_index) = dedupe_index_by_key.get(&dedupe_key).copied() {
+            let replace_existing = {
+                let existing = &deduped_results[existing_index];
+                let existing_score = marketplace_profile_richness_score(existing);
+                let candidate_score = marketplace_profile_richness_score(&row);
+
+                if candidate_score != existing_score {
+                    candidate_score > existing_score
+                } else {
+                    let existing_updated = existing
+                        .get("updated_at")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let candidate_updated =
+                        row.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
+                    candidate_updated > existing_updated
+                }
+            };
+
+            if replace_existing {
+                deduped_results[existing_index] = row;
+            }
+            continue;
+        }
+
+        dedupe_index_by_key.insert(dedupe_key, deduped_results.len());
+        deduped_results.push(row);
+    }
+
+    deduped_results.sort_by(|a, b| {
         let au = a
             .get("updated_at")
             .and_then(|v| v.as_str())
@@ -984,11 +1133,11 @@ pub async fn search_marketplace_profiles(
         bu.cmp(&au)
     });
 
-    if results.len() > limit {
-        results.truncate(limit);
+    if deduped_results.len() > limit {
+        deduped_results.truncate(limit);
     }
 
-    Ok(Json(serde_json::Value::Array(results)))
+    Ok(Json(serde_json::Value::Array(deduped_results)))
 }
 
 pub(crate) async fn resolve_effective_agency_id(
@@ -1284,6 +1433,7 @@ pub async fn get_marketplace_profile_details(
         "rates": serde_json::json!([]),
         "portfolio": serde_json::json!([]),
         "campaigns": serde_json::json!([]),
+        "represented_agency": serde_json::Value::Null,
         "connection_status": "none",
         "marketplace_contract": serde_json::Value::Null,
     });
@@ -1291,10 +1441,11 @@ pub async fn get_marketplace_profile_details(
     if profile_type == "creator" {
         let creator_id_for_connection: Option<String> = Some(profile_id.clone());
         let mut talent_ids_for_assets: Vec<String> = Vec::new();
+        let mut licensing_agency_id: Option<String> = None;
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
             .eq("id", &profile_id)
             .limit(1)
             .execute()
@@ -1321,13 +1472,17 @@ pub async fn get_marketplace_profile_details(
             .unwrap_or("")
             .trim()
             .to_lowercase();
-        let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
-            visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
-        });
+        let is_visible_to_marketplace = match public_profile_visible {
+            Some(true) => true,
+            Some(false) => should_default_visibility_on(&row),
+            None => {
+                visibility.is_empty()
+                    || visibility == "public"
+                    || visibility == "brands"
+                    || visibility == "visible_to_brands"
+                    || visibility == "true"
+            }
+        };
         if !is_visible_to_marketplace {
             return Err((
                 StatusCode::NOT_FOUND,
@@ -1344,6 +1499,9 @@ pub async fn get_marketplace_profile_details(
                 StatusCode::NOT_FOUND,
                 "marketplace profile not found".to_string(),
             ));
+        let mut row = row;
+        if is_default_pricing(&row) {
+            row["base_monthly_price_cents"] = serde_json::Value::Null;
         }
         response["profile"] = row;
 
@@ -1368,9 +1526,11 @@ pub async fn get_marketplace_profile_details(
         let talent_ids_resp = state
             .pg
             .from("agency_users")
-            .select("id")
+            .select("id,agency_id")
             .eq("creator_id", &profile_id)
             .eq("role", "talent")
+            .eq("status", "active")
+            .order("updated_at.desc")
             .limit(30)
             .execute()
             .await
@@ -1383,11 +1543,67 @@ pub async fn get_marketplace_profile_details(
         if talent_ids_status.is_success() {
             let rows: Vec<serde_json::Value> =
                 serde_json::from_str(&talent_ids_text).unwrap_or_default();
+            licensing_agency_id = rows
+                .iter()
+                .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()))
+                .map(str::trim)
+                .find(|s| !s.is_empty())
+                .map(|s| s.to_string());
             talent_ids_for_assets = rows
                 .iter()
                 .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
                 .map(|s| s.to_string())
                 .collect();
+        }
+
+        if let Some(profile_obj) = response["profile"].as_object_mut() {
+            profile_obj.insert(
+                "agency_id".to_string(),
+                licensing_agency_id
+                    .as_ref()
+                    .map(|s| serde_json::json!(s))
+                    .unwrap_or(serde_json::Value::Null),
+            );
+            profile_obj.insert(
+                "is_licensable".to_string(),
+                serde_json::json!(licensing_agency_id.is_some()),
+            );
+        }
+        response["agency_id"] = licensing_agency_id
+            .as_ref()
+            .map(|s| serde_json::json!(s))
+            .unwrap_or(serde_json::Value::Null);
+        response["is_licensable"] = serde_json::json!(licensing_agency_id.is_some());
+
+        if let Some(agency_id) = licensing_agency_id.as_ref() {
+            let agency_resp = state
+                .pg
+                .from("agencies")
+                .select("id,agency_name,logo_url,city,state,country")
+                .eq("id", agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let agency_status = agency_resp.status();
+            let agency_text = agency_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if agency_status.is_success() {
+                let agency_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&agency_text).unwrap_or_default();
+                if let Some(agency_row) = agency_rows.first() {
+                    response["represented_agency"] = serde_json::json!({
+                        "id": agency_row.get("id").cloned().unwrap_or(serde_json::Value::Null),
+                        "name": agency_row.get("agency_name").cloned().unwrap_or(serde_json::Value::Null),
+                        "logo_url": agency_row.get("logo_url").cloned().unwrap_or(serde_json::Value::Null),
+                        "city": agency_row.get("city").cloned().unwrap_or(serde_json::Value::Null),
+                        "state": agency_row.get("state").cloned().unwrap_or(serde_json::Value::Null),
+                        "country": agency_row.get("country").cloned().unwrap_or(serde_json::Value::Null),
+                    });
+                }
+            }
         }
 
         if !talent_ids_for_assets.is_empty() {
@@ -1944,6 +2160,12 @@ pub async fn create_marketplace_connection_request(
             ));
         }
         let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+        crate::entitlements::require_agency_paid_access(
+            &state,
+            &effective_agency_id,
+            "paid_plan_required_for_marketplace_connections",
+        )
+        .await?;
 
         let connected_resp = state
             .pg
@@ -2404,6 +2626,12 @@ pub async fn list_agency_brand_connection_requests(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg
@@ -2445,6 +2673,12 @@ pub async fn list_agency_brand_connections(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg
@@ -2485,6 +2719,12 @@ pub async fn accept_agency_brand_connection_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let pending_resp = state
         .pg
@@ -2603,6 +2843,12 @@ pub async fn decline_agency_brand_connection_request(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let pending_resp = state
         .pg
@@ -2727,6 +2973,12 @@ pub async fn disconnect_brand_agency_connection_as_agency(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    crate::entitlements::require_agency_paid_access(
+        &state,
+        &effective_agency_id,
+        "paid_plan_required_for_brand_connections",
+    )
+    .await?;
 
     let resp = state
         .pg
@@ -3387,7 +3639,7 @@ pub async fn list_brand_agency_talent_rates(
     let conn_resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency")
         .eq("agency_id", &agency_id)
         .eq("status", "active")
         .limit(limit)
@@ -3515,7 +3767,7 @@ pub async fn list_brand_agency_talent_rates(
             "location": location,
             "profile_photo_url": talent.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
             "creator_type": talent.get("role_type").cloned().unwrap_or(serde_json::json!("Creator")),
-            "base_rate_weekly_cents": conn.get("licensing_rate_weekly_cents").cloned().unwrap_or(serde_json::Value::Null),
+            "base_rate_monthly_cents": conn.get("licensing_rate_monthly_cents").cloned().unwrap_or(serde_json::Value::Null),
             "rate_currency": conn.get("rate_currency").cloned().unwrap_or(serde_json::json!("USD")),
             "accept_negotiations": conn.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
             "rate_source_type": "agency_connection",

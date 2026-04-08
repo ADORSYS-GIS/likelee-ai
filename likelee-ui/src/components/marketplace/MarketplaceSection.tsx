@@ -7,6 +7,7 @@ import {
   Loader2,
   Globe,
   ShieldCheck,
+  Building2,
   User,
   Image as ImageIcon,
   AlertTriangle,
@@ -48,6 +49,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceConnectContractModal from "@/components/marketplace/MarketplaceConnectContractModal";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { isDefaultPricing } from "@/utils/pricingDefaults";
 import {
   approveAgencyCreatorDisconnectRequest,
   rejectAgencyCreatorDisconnectRequest,
@@ -79,15 +81,27 @@ export type MarketplaceProfile = {
   updated_at?: string | null;
   talent_ownership?: "agency_owned" | "regular" | null;
   marketplace_contract?: MarketplaceContractSummary | null;
+  agency_id?: string | null;
+  is_licensable?: boolean;
 };
 
-type MarketplaceProfileDetails = {
+export type MarketplaceProfileDetails = {
   profile_type: "creator" | "agency";
   profile: Record<string, any> | null;
   availability: Record<string, any>;
   rates: Array<Record<string, any>>;
   portfolio: Array<Record<string, any>>;
   campaigns: Array<Record<string, any>>;
+  agency_id?: string | null;
+  is_licensable?: boolean;
+  represented_agency?: {
+    id?: string | null;
+    name?: string | null;
+    logo_url?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+  } | null;
   connection_status:
     | "none"
     | "waiting"
@@ -118,6 +132,9 @@ type MarketplaceSectionProps = {
     details?: MarketplaceProfileDetails,
   ) => void;
   enableAgencyContractConnect?: boolean;
+  connectLocked?: boolean;
+  connectLockedReason?: string;
+  onConnectLocked?: () => void;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -187,6 +204,9 @@ export function MarketplaceSection({
   showRequestLicense = false,
   onRequestLicense,
   enableAgencyContractConnect = false,
+  connectLocked = false,
+  connectLockedReason = "",
+  onConnectLocked,
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -287,6 +307,37 @@ export function MarketplaceSection({
     staleWhileRevalidate: true,
     enabled: canFetchDetails,
   });
+  const detailProfile = detailsQuery.data?.profile || null;
+  const representedAgency = detailsQuery.data?.represented_agency || null;
+  const effectiveLicensingAgencyId = String(
+    selectedProfile?.agency_id ||
+      detailsQuery.data?.agency_id ||
+      detailProfile?.agency_id ||
+      "",
+  ).trim();
+  const representedAgencyName = String(
+    representedAgency?.name || "Represented Agency",
+  ).trim();
+  const representedAgencyLogo = String(
+    representedAgency?.logo_url || "",
+  ).trim();
+  const representedAgencyLocation = [
+    representedAgency?.city,
+    representedAgency?.state,
+    representedAgency?.country,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ");
+  const selectedCreatorIsLicensable =
+    selectedProfile?.profile_type === "creator" &&
+    Boolean(
+      effectiveLicensingAgencyId &&
+      (selectedProfile?.is_licensable !== false ||
+        detailsQuery.data?.is_licensable === true ||
+        detailProfile?.is_licensable === true),
+    );
 
   useEffect(() => {
     if (!marketplaceQuery.error) return;
@@ -686,7 +737,8 @@ export function MarketplaceSection({
               const disableConnectAction =
                 connectionStatus === "waiting" ||
                 connectionStatus === "pending" ||
-                isRequestingConnect;
+                isRequestingConnect ||
+                connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
@@ -717,22 +769,16 @@ export function MarketplaceSection({
                       <img
                         src={profile.profile_photo_url}
                         alt={profile.display_name}
-                        className="w-full aspect-[4/3] object-cover bg-slate-100"
+                        className="w-full aspect-[3/4] object-cover object-center bg-slate-100"
                       />
                     ) : (
-                      <div className="w-full aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                      <div className="w-full aspect-[3/4] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
                         <User className="w-9 h-9 text-slate-400" />
                       </div>
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        {ownershipLabel && (
-                          <Badge
-                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold shadow-sm ${ownershipBadgeClass}`}
-                          >
-                            {ownershipLabel}
-                          </Badge>
-                        )}
+                        {/* Agency-owned badge removed as per request */}
                       </div>
                       <div className="flex items-center gap-1.5">
                         {hasPendingDisconnect && (
@@ -846,6 +892,10 @@ export function MarketplaceSection({
                           onClick={async (e) => {
                             // Prevent card click from opening details when pressing connect.
                             e.stopPropagation();
+                            if (connectLocked) {
+                              onConnectLocked?.();
+                              return;
+                            }
                             if (isRequestingConnect) return;
                             setRequestingConnectKeys((prev) =>
                               new Set(prev).add(profileKey),
@@ -940,12 +990,24 @@ export function MarketplaceSection({
                         >
                           {isRequestingConnect
                             ? "Sending..."
-                            : connectionStatus === "pending" ||
-                                connectionStatus === "waiting"
-                              ? `Waiting for ${entityLabel} response`
-                              : "Connect"}
+                            : connectLocked
+                              ? "Upgrade to Connect"
+                              : connectionStatus === "pending" ||
+                                  connectionStatus === "waiting"
+                                ? `Waiting for ${entityLabel} response`
+                                : "Connect"}
                         </Button>
+                        {connectLockedReason ? (
+                          <span className="text-[10px] font-semibold text-amber-700">
+                            {connectLockedReason}
+                          </span>
+                        ) : null}
                       </div>
+                    )}
+                    {profile.talent_ownership === "agency_owned" && (
+                      <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
+                        external talent
+                      </p>
                     )}
                   </div>
                 </Card>
@@ -1041,9 +1103,12 @@ export function MarketplaceSection({
                   const industries = Array.isArray(profile?.industries)
                     ? profile.industries
                     : [];
-                  const baseRateCents = Number(
+                  const rawBaseRateCents = Number(
                     profile?.base_monthly_price_cents || 0,
                   );
+                  const baseRateCents = isDefaultPricing(profile)
+                    ? 0
+                    : rawBaseRateCents;
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
                   const isAgencyProfile =
@@ -1188,21 +1253,7 @@ export function MarketplaceSection({
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                           Verified
                         </Badge>
-                        {selectedProfile?.profile_type === "creator" && (
-                          <Badge
-                            className={`h-5 px-2 rounded-md border text-[10px] font-semibold ${
-                              selectedProfile?.talent_ownership ===
-                              "agency_owned"
-                                ? "bg-violet-50 text-violet-700 border-violet-200"
-                                : "bg-slate-50 text-slate-700 border-slate-200"
-                            }`}
-                          >
-                            {selectedProfile?.talent_ownership ===
-                            "agency_owned"
-                              ? "Agency-Owned"
-                              : "Regular"}
-                          </Badge>
-                        )}
+                        {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
                         {selectedProfile?.location || "Location not specified"}
@@ -1428,9 +1479,17 @@ export function MarketplaceSection({
                         </div>
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                           <p className="text-gray-500">Connection Status</p>
-                          <p className="font-semibold text-gray-900 mt-1 capitalize">
-                            {detailsQuery.data?.connection_status || "none"}
-                          </p>
+                          <div className="flex flex-col">
+                            <p className="font-semibold text-gray-900 mt-1 capitalize leading-none">
+                              {detailsQuery.data?.connection_status || "none"}
+                            </p>
+                            {selectedProfile?.talent_ownership ===
+                              "agency_owned" && (
+                              <p className="text-[10px] text-indigo-600 font-semibold mt-1.5">
+                                Automatically connected (Created by you)
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1556,19 +1615,38 @@ export function MarketplaceSection({
                   </Card>
                 )}
                 {showRequestLicense &&
-                  selectedProfile?.profile_type === "creator" && (
-                    <Card className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                          <h4 className="text-sm font-bold text-amber-900">
-                            Ready to license this talent?
-                          </h4>
-                          <p className="text-xs text-amber-700 mt-1">
-                            Send a licensing request to the represented agency.
-                          </p>
+                  selectedProfile?.profile_type === "creator" &&
+                  selectedCreatorIsLicensable && (
+                    <Card className="overflow-hidden border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 rounded-xl shadow-sm">
+                      <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-12 w-12 rounded-xl border border-amber-200 bg-white shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            {representedAgencyLogo ? (
+                              <img
+                                src={representedAgencyLogo}
+                                alt={representedAgencyName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-amber-600" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-amber-900">
+                              Ready to license this talent?
+                            </h4>
+                            <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              {representedAgencyName}
+                            </p>
+                            <p className="text-xs text-amber-700 mt-1">
+                              {representedAgencyLocation
+                                ? `${representedAgencyLocation} • Send your licensing request directly to this agency.`
+                                : "Send your licensing request directly to this represented agency."}
+                            </p>
+                          </div>
                         </div>
                         <Button
-                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-sm"
                           onClick={() => {
                             if (!selectedProfile) return;
                             onRequestLicense?.(
@@ -1579,6 +1657,22 @@ export function MarketplaceSection({
                         >
                           Request License
                         </Button>
+                      </div>
+                    </Card>
+                  )}
+                {showRequestLicense &&
+                  selectedProfile?.profile_type === "creator" &&
+                  !selectedCreatorIsLicensable && (
+                    <Card className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-slate-900">
+                          Licensing unavailable
+                        </h4>
+                        <p className="text-xs text-slate-600">
+                          This creator is not currently represented by an active
+                          agency roster entry, so licensing requests can’t be
+                          sent from marketplace right now.
+                        </p>
                       </div>
                     </Card>
                   )}

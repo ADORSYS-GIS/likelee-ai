@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { DobInput } from "@/components/ui/DobInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -142,6 +143,11 @@ import {
 } from "recharts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+  isDefaultPricing,
+  MIN_BASE_MONTHLY_CENTS,
+  shouldDefaultVisibilityOn,
+} from "@/utils/pricingDefaults";
 import { supabase } from "@/lib/supabase";
 import { DocusealForm } from "@docuseal/react";
 
@@ -191,6 +197,19 @@ const RESTRICTIONS = [
   "MLM/Multi-Level Marketing",
   "Unlicensed Financial Products",
   "Health/Medical Claims",
+];
+
+const VIBES = [
+  "Streetwear",
+  "Glam",
+  "Natural",
+  "Classic",
+  "Edgy",
+  "Athletic",
+  "Runway",
+  "Editorial",
+  "Commercial",
+  "Casual",
 ];
 
 // Voice recording scripts for different emotions
@@ -567,6 +586,7 @@ export default function CreatorDashboard() {
     "connections" | "asset_requests"
   >("connections");
   const [campaignSearch, setCampaignSearch] = useState("");
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [archiveSearch, setArchiveSearch] = useState("");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
@@ -635,6 +655,7 @@ export default function CreatorDashboard() {
     agency_name?: string;
     marketplace_contract?: CreatorAgencyConnection["marketplace_contract"];
   } | null>(null);
+  const [showPhotoFull, setShowPhotoFull] = useState(false);
   const IMAGE_SECTIONS = getImageSections(t);
 
   const fullySignedOfferStatuses = useMemo(
@@ -896,7 +917,6 @@ export default function CreatorDashboard() {
     }
     return Number.isFinite(fallback) ? fallback : 0;
   };
-
   const [creator, setCreator] = useState<any>({
     name: profile?.full_name || user?.user_metadata?.full_name || "",
     email: profile?.email || user?.email || "",
@@ -924,6 +944,7 @@ export default function CreatorDashboard() {
     accept_negotiations: true,
     is_public_brands: resolvePublicBrandsVisibility(profile),
   });
+  const baseRateRef = useRef<number | null>(null);
   const [licenses, setLicenses] = useState<any[]>([]);
   const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
@@ -990,8 +1011,8 @@ export default function CreatorDashboard() {
             centsToDollars(offer?.monthly_rate_cents),
             centsToDollars(offer?.rate_cents),
             monthlyFromWeeklyCents(offer?.creator_rate_weekly_cents),
-            monthlyFromWeeklyCents(offer?.offered_rate_weekly_cents),
-            monthlyFromWeeklyCents(offer?.rate_weekly_cents),
+            centsToDollars(offer?.offered_rate_monthly_cents),
+            centsToDollars(offer?.rate_monthly_cents),
           ],
           baseMonthlyRate,
         );
@@ -2338,6 +2359,7 @@ export default function CreatorDashboard() {
     let active = true;
     (async () => {
       try {
+        setIsLoadingCampaigns(true);
         setAgencyConnectionLoading(true);
         const canLoadTalentCommerceData = creatorPlanTierForLoad !== "free";
         const [
@@ -2459,6 +2481,7 @@ export default function CreatorDashboard() {
       } finally {
         if (!active) return;
         setAgencyConnectionLoading(false);
+        setIsLoadingCampaigns(false);
       }
     })();
     return () => {
@@ -2692,6 +2715,9 @@ export default function CreatorDashboard() {
     t("creatorDashboard.restrictions.healthMedicalClaims"),
   ];
 
+  const getTranslatedVibes = () =>
+    VIBES.map((vibe) => resolveTranslation(`content.vibes.${vibe}`, vibe));
+
   // Mapping functions to translate stored English values to localized display text
   const translateContentType = (englishType: string): string => {
     const index = CONTENT_TYPES.indexOf(englishType);
@@ -2709,6 +2735,12 @@ export default function CreatorDashboard() {
     const index = RESTRICTIONS.indexOf(englishRestriction);
     if (index === -1) return englishRestriction;
     return getTranslatedRestrictions()[index];
+  };
+
+  const translateVibe = (englishVibe: string): string => {
+    const index = VIBES.indexOf(englishVibe);
+    if (index === -1) return englishVibe;
+    return getTranslatedVibes()[index];
   };
 
   useEffect(() => {
@@ -2731,6 +2763,18 @@ export default function CreatorDashboard() {
   // Sync creator state when auth profile changes
   useEffect(() => {
     if (profile) {
+      const weeklyCents =
+        typeof profile.base_weekly_price_cents === "number"
+          ? profile.base_weekly_price_cents
+          : null;
+      const monthlyCents =
+        typeof profile.base_monthly_price_cents === "number"
+          ? profile.base_monthly_price_cents
+          : null;
+      const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+      const isPublicBrands =
+        resolvedVisibility ||
+        (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
       setCreator((prev: any) => ({
         ...prev,
         name: profile.full_name || user?.user_metadata?.full_name || prev.name,
@@ -2754,7 +2798,8 @@ export default function CreatorDashboard() {
             : prev.height_cm,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
-        is_public_brands: resolvePublicBrandsVisibility(profile),
+        vibes: profile.vibes ?? prev.vibes,
+        is_public_brands: isPublicBrands,
       }));
     }
   }, [profile]);
@@ -2791,6 +2836,65 @@ export default function CreatorDashboard() {
   const veriffFrameRef = useRef<any>(null);
   const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
   const creatorUserId = user?.id ? String(user.id) : null;
+
+  const currentCreatorKycReason = useMemo(
+    () =>
+      formatKycReason(
+        creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
+      ),
+    [creator?.kyc_rejection_reason, profile?.kyc_rejection_reason],
+  );
+
+  const normalizedCreatorStatus = useMemo(
+    () =>
+      String(creator?.kyc_status || "")
+        .trim()
+        .toLowerCase(),
+    [creator?.kyc_status],
+  );
+
+  const isCreatorApproved = normalizedCreatorStatus === "approved";
+  const isCreatorPending = normalizedCreatorStatus === "pending";
+  const isCreatorRejected =
+    normalizedCreatorStatus === "rejected" ||
+    normalizedCreatorStatus === "declined";
+
+  const hasCreatorPendingFollowUp =
+    isCreatorPending && currentCreatorKycReason.length > 0;
+
+  const verificationButtonLabel = useMemo(() => {
+    if (isCreatorPending) {
+      return savedKycSessionUrl
+        ? t(
+            hasCreatorPendingFollowUp
+              ? "creatorDashboard.verificationStatus.continueVerification"
+              : "creatorDashboard.verificationStatus.resumeVerification",
+            hasCreatorPendingFollowUp
+              ? "Continue Verification"
+              : "Resume Verification",
+          )
+        : t(
+            "creatorDashboard.verificationStatus.restartVerification",
+            "Start New Verification",
+          );
+    }
+
+    if (isCreatorRejected) {
+      return t(
+        "creatorDashboard.verificationStatus.retryVerification",
+        "Retry Verification",
+      );
+    }
+
+    return t("creatorDashboard.verificationStatus.completeVerification");
+  }, [
+    isCreatorPending,
+    isCreatorRejected,
+    savedKycSessionUrl,
+    hasCreatorPendingFollowUp,
+    t,
+  ]);
+
   const openCreatorKycModal = (sessionUrl: string) => {
     setShowKycModal(true);
     setKycEmbedLoading(true);
@@ -3321,6 +3425,35 @@ export default function CreatorDashboard() {
       try {
         const json = await base44.get("/dashboard");
         const profile = json.profile || {};
+        const weeklyCents =
+          typeof profile.base_weekly_price_cents === "number"
+            ? profile.base_weekly_price_cents
+            : null;
+        const monthlyCents =
+          typeof profile.base_monthly_price_cents === "number"
+            ? profile.base_monthly_price_cents
+            : null;
+        const monthlyFromProfile =
+          typeof monthlyCents === "number"
+            ? Math.round(monthlyCents / 100)
+            : typeof weeklyCents === "number"
+              ? Math.round((weeklyCents / 100) * 4.345)
+              : undefined;
+        const hasExplicitBaseRate =
+          !isDefaultPricing(profile) &&
+          ((typeof weeklyCents === "number" && weeklyCents > 0) ||
+            (typeof monthlyCents === "number" && monthlyCents > 0));
+        const resolvedPricePerMonth = hasExplicitBaseRate
+          ? typeof monthlyFromProfile === "number"
+            ? monthlyFromProfile
+            : 0
+          : 0;
+        baseRateRef.current = resolvedPricePerMonth;
+        const visibilityField = String(profile?.visibility || "").trim();
+        const resolvedVisibility = resolvePublicBrandsVisibility(profile);
+        const isPublicBrands =
+          resolvedVisibility ||
+          (!resolvedVisibility && shouldDefaultVisibilityOn(profile));
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -3348,17 +3481,17 @@ export default function CreatorDashboard() {
               : prev.height_cm,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
-          is_public_brands: resolvePublicBrandsVisibility(profile),
+          is_public_brands: isPublicBrands,
           instagram_connected: prev.instagram_connected ?? false,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Canonical rate is weekly; fall back to legacy monthly when needed.
+          // If pricing was never explicitly set, keep it blank (0) instead of
+          // showing the platform minimum default.
           price_per_month:
-            typeof profile.base_weekly_price_cents === "number"
-              ? Math.round(profile.base_weekly_price_cents / 100)
-              : typeof profile.base_monthly_price_cents === "number"
-                ? Math.round(profile.base_monthly_price_cents / 100 / 4.345)
-                : (prev.price_per_month ?? 0),
+            typeof resolvedPricePerMonth === "number"
+              ? resolvedPricePerMonth
+              : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
@@ -4364,20 +4497,25 @@ export default function CreatorDashboard() {
             <div className="relative flex justify-between items-start mb-6">
               <div className="flex items-end -mt-16 mb-4">
                 <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={
-                        profile?.profile_photo_url ||
-                        creator.profile_photo ||
-                        user?.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name && data.first_name[0] !== "["
-                        ? data.first_name[0].toUpperCase()
-                        : user?.email?.[0].toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div
+                    className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                    onClick={() => setShowPhotoFull(true)}
+                  >
+                    <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                      <AvatarImage
+                        src={
+                          profile?.profile_photo_url ||
+                          creator.profile_photo ||
+                          user?.user_metadata?.avatar_url
+                        }
+                      />
+                      <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                        {data.first_name && data.first_name[0] !== "["
+                          ? data.first_name[0].toUpperCase()
+                          : user?.email?.[0].toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
                 <div className="ml-6 mb-2">
                   <div className="flex items-center gap-3 mb-1">
@@ -5441,6 +5579,18 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handleToggleVibe = (vibe) => {
+    const current = creator.vibes || [];
+    if (current.includes(vibe)) {
+      setCreator({
+        ...creator,
+        vibes: current.filter((v) => v !== vibe),
+      });
+    } else {
+      setCreator({ ...creator, vibes: [...current, vibe] });
+    }
+  };
+
   const handleSaveRules = async (
     customToast?: any,
     overrides?: Partial<typeof creator>,
@@ -5479,6 +5629,10 @@ export default function CreatorDashboard() {
       const value = Number.parseFloat(text);
       return Number.isFinite(value) ? value : undefined;
     };
+    const nextRate = creator.price_per_month || 0;
+    const prevRate = baseRateRef.current;
+    const rateChanged =
+      typeof prevRate === "number" ? nextRate !== prevRate : nextRate > 0;
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -5489,10 +5643,13 @@ export default function CreatorDashboard() {
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
-      base_weekly_price_cents: (creator.price_per_month || 0) * 100,
       base_monthly_price_cents: Math.round(
-        (creator.price_per_month || 0) * 100 * 4.345,
+        (creator.price_per_month || 0) * 100,
       ),
+      base_weekly_price_cents: Math.round(
+        ((creator.price_per_month || 0) / 4.345) * 100,
+      ),
+      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
@@ -5541,6 +5698,7 @@ export default function CreatorDashboard() {
           : "private",
       content_types: overrides?.content_types ?? creator.content_types,
       industries: overrides?.industries ?? creator.industries,
+      vibes: overrides?.vibes ?? creator.vibes,
     };
 
     try {
@@ -5565,6 +5723,12 @@ export default function CreatorDashboard() {
       // Update creator state with the saved data from the response
       if (Array.isArray(responseData) && responseData.length > 0) {
         const savedProfile = responseData[0];
+        const savedMonthlyRate =
+          typeof savedProfile.base_monthly_price_cents === "number"
+            ? Math.round(savedProfile.base_monthly_price_cents / 100)
+            : typeof savedProfile.base_weekly_price_cents === "number"
+              ? Math.round((savedProfile.base_weekly_price_cents / 100) * 4.345)
+              : creator.price_per_month || 0;
         setCreator((prev) => ({
           ...prev,
           name: savedProfile.full_name || prev.name,
@@ -5588,6 +5752,7 @@ export default function CreatorDashboard() {
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
+          vibes: savedProfile.vibes ?? prev.vibes,
           content_restrictions:
             savedProfile.content_restrictions ?? prev.content_restrictions,
           brand_exclusivity:
@@ -5595,15 +5760,11 @@ export default function CreatorDashboard() {
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),
-          price_per_month:
-            typeof savedProfile.base_weekly_price_cents === "number"
-              ? Math.round(savedProfile.base_weekly_price_cents / 100)
-              : savedProfile.base_monthly_price_cents
-                ? Math.round(
-                    savedProfile.base_monthly_price_cents / 100 / 4.345,
-                  )
-                : prev.price_per_month,
+          price_per_month: savedMonthlyRate,
         }));
+        if (typeof savedMonthlyRate === "number") {
+          baseRateRef.current = savedMonthlyRate;
+        }
       }
 
       setEditingRules(false);
@@ -5697,8 +5858,8 @@ export default function CreatorDashboard() {
           : Sparkles;
     const bannerClassName =
       hasPendingFollowUp || isRejected
-        ? "rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
-        : "rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
+        ? "mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
+        : "mb-6 rounded-2xl bg-gradient-to-r from-white via-[#F3FBFC] to-[#FFF7ED] px-4 py-3 shadow-sm ring-1 ring-black/5 sm:px-5";
 
     const title = hasPendingFollowUp
       ? t(
@@ -6987,6 +7148,15 @@ export default function CreatorDashboard() {
                     )}
                   </div>
                 ))}
+                {!recording.voiceProfileCreated && recording.accessible && (
+                  <Button
+                    disabled={true}
+                    className="w-full bg-gray-400 cursor-not-allowed text-white"
+                  >
+                    <PlayCircle className="w-4 h-4 mr-2" />
+                    Coming Soon
+                  </Button>
+                )}
               </div>
             </Card>
           )}
@@ -9208,11 +9378,18 @@ export default function CreatorDashboard() {
                   Try a different brand or campaign name.
                 </p>
               </>
-            ) : (
+            ) : isLoadingCampaigns ? (
               <>
                 <p>Loading campaigns...</p>
                 <p className="text-sm text-gray-500 mt-1">
                   Fetching your active campaigns and licenses.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>No active campaigns yet.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  New campaigns will appear here once they start.
                 </p>
               </>
             )}
@@ -10658,11 +10835,16 @@ export default function CreatorDashboard() {
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
-                <img
-                  src={profile?.profile_photo_url || creator.profile_photo}
-                  alt={creator.name}
-                  className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
-                />
+                <div
+                  className="relative cursor-zoom-in hover:scale-105 transition-transform"
+                  onClick={() => setShowPhotoFull(true)}
+                >
+                  <img
+                    src={profile?.profile_photo_url || creator.profile_photo}
+                    alt={creator.name}
+                    className={`w-32 h-32 rounded-full object-cover object-top border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
+                  />
+                </div>
                 <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
                   <Edit className="w-4 h-4 text-gray-600" />
                   <input
@@ -10757,16 +10939,16 @@ export default function CreatorDashboard() {
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
                       Date of Birth
                     </Label>
-                    <Input
-                      type="date"
+                    <DobInput
                       value={creator.birthday || ""}
-                      onChange={(e) =>
+                      onChange={(iso) =>
                         setCreator({
                           ...creator,
-                          birthday: e.target.value,
+                          birthday: iso,
                         })
                       }
-                      className="border-2 border-gray-300"
+                      variant="rounded"
+                      minAge={18}
                     />
                   </div>
 
@@ -10886,6 +11068,32 @@ export default function CreatorDashboard() {
                 />
               </div>
 
+              <div className="pt-2">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  {t("reserveProfile.form.vibes")}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {VIBES.map((vibe) => {
+                    const isSelected = creator.vibes?.includes(vibe);
+                    return (
+                      <button
+                        key={vibe}
+                        type="button"
+                        onClick={() => handleToggleVibe(vibe)}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 rounded-lg flex items-center gap-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-4 h-4" />}
+                        {translateVibe(vibe)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <Button
                 onClick={handleSaveProfile}
                 disabled={savingProfile}
@@ -10984,10 +11192,10 @@ export default function CreatorDashboard() {
             </h3>
 
             <div className="space-y-6">
-              <div className="flex items-center justify-between py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between py-4">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.visibleToBrands")}
+                    Marketplace Visibility
                   </Label>
                   <p className="text-sm text-gray-600">
                     {t(
@@ -11001,42 +11209,12 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, is_public_brands: checked });
                     await handleSaveRules(
                       checked
-                        ? "Profile is now visible to brands."
-                        : "Profile is now hidden from brands.",
+                        ? "Profile is now visible in the marketplace."
+                        : "Profile is now hidden from the marketplace.",
                       { is_public_brands: checked },
                     );
                   }}
                 />
-              </div>
-
-              <div className="flex items-center justify-between py-4 border-b border-gray-200">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.enableLicensing")}
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.enableLicensingDesc",
-                    )}
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between py-4">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotifications",
-                    )}
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotificationsDesc",
-                    )}
-                  </p>
-                </div>
-                <Switch defaultChecked />
               </div>
             </div>
           </Card>
@@ -11262,7 +11440,7 @@ export default function CreatorDashboard() {
                     <span className="text-xl font-medium text-gray-900">$</span>
                     <Input
                       type="number"
-                      value={creator.price_per_month || 0}
+                      value={creator.price_per_month ?? ""}
                       onChange={(e) =>
                         setCreator({
                           ...creator,
@@ -11279,7 +11457,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
                     <span className="text-xl">/</span>
-                    <span className="text-base">week</span>
+                    <span className="text-base">month</span>
                   </div>
                 </div>
               </div>
@@ -11559,7 +11737,7 @@ export default function CreatorDashboard() {
               alt="Likelee Logo"
               className="w-8 h-8"
             />
-            <span className="font-bold text-xl">Likelee</span>
+            <span className="font-bold text-xl font-display">Likelee</span>
           </div>
         )}
 
@@ -12272,7 +12450,9 @@ export default function CreatorDashboard() {
                     alt="Likelee Logo"
                     className="w-10 h-10"
                   />
-                  <span className="font-bold text-lg">Likelee</span>
+                  <span className="font-bold text-lg font-display">
+                    Likelee
+                  </span>
                 </div>
                 <p className="text-sm text-gray-600">
                   The Verified Talent Ecosystem for AI-powered Media.
@@ -13988,11 +14168,33 @@ export default function CreatorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showPhotoFull} onOpenChange={setShowPhotoFull}>
+        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm">
+            <img
+              src={
+                profile?.profile_photo_url ||
+                creator.profile_photo ||
+                user?.user_metadata?.avatar_url
+              }
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 const resolvePublicBrandsVisibility = (data: any): boolean => {
   if (typeof data?.public_profile_visible === "boolean") {
+    const rawVisibility = String(data?.visibility || "")
+      .trim()
+      .toLowerCase();
+    if (!rawVisibility && data.public_profile_visible === false) {
+      return true;
+    }
     return data.public_profile_visible;
   }
   const rawVisibility = String(data?.visibility || "")

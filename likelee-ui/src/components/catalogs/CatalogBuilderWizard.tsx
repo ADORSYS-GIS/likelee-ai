@@ -368,8 +368,8 @@ export function CatalogBuilderWizard({
   // -------------------------------- Render -----------------------------------
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl w-full rounded-2xl p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogContent className="max-w-4xl w-full h-[min(92vh,860px)] rounded-2xl p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
             Create Asset Catalog
           </DialogTitle>
@@ -379,7 +379,7 @@ export function CatalogBuilderWizard({
         </DialogHeader>
 
         {/* Step indicator */}
-        <div className="flex items-center gap-1 px-6 pt-4">
+        <div className="shrink-0 flex items-center gap-1 px-6 pt-4">
           {STEPS.map((s, i) => (
             <React.Fragment key={s.id}>
               <div
@@ -412,7 +412,7 @@ export function CatalogBuilderWizard({
         </div>
 
         {/* Step content */}
-        <div className="px-6 py-5 min-h-[400px] overflow-y-auto max-h-[650px]">
+        <div className="flex-1 min-h-0 px-6 py-5 overflow-y-auto">
           {/* ---- Step: Info ---- */}
           {step === "info" && (
             <div className="space-y-4">
@@ -461,8 +461,9 @@ export function CatalogBuilderWizard({
           {step === "select-request" && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 font-medium">
-                Select a paid licensing request to link this catalog to. This
-                will also populate a receipt for the client.
+                Select a signed licensing request to link this catalog to. Paid
+                and unpaid requests are both allowed. We will show the payment
+                status so you can decide whether to send the catalog yet.
               </p>
               {eligibleQuery.isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -470,12 +471,15 @@ export function CatalogBuilderWizard({
                 </div>
               ) : eligibleRequests.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No paid licensing requests available. You can still create a
+                  No signed licensing requests available. You can still create a
                   catalog without linking a request.
                 </div>
               ) : (
                 eligibleRequests.map((req: any) => {
                   const selected = sourceId === req.id;
+                  const isPaid =
+                    req.is_paid === true ||
+                    String(req.payment_status || "").toLowerCase() === "paid";
                   return (
                     <button
                       key={req.id}
@@ -499,9 +503,26 @@ export function CatalogBuilderWizard({
                           {req.total_amount_cents && (
                             <Badge
                               variant="secondary"
-                              className="bg-green-50 text-green-700"
+                              className={
+                                isPaid
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }
                             >
-                              ${(req.total_amount_cents / 100).toFixed(2)} Paid
+                              ${(req.total_amount_cents / 100).toFixed(2)}{" "}
+                              {isPaid ? "Paid" : "Unpaid"}
+                            </Badge>
+                          )}
+                          {!req.total_amount_cents && (
+                            <Badge
+                              variant="secondary"
+                              className={
+                                isPaid
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }
+                            >
+                              {isPaid ? "Paid" : "Unpaid"}
                             </Badge>
                           )}
                           {selected && (
@@ -511,16 +532,26 @@ export function CatalogBuilderWizard({
                           )}
                         </div>
                       </div>
-                      {req.paid_at && (
-                        <p className="text-[11px] text-gray-400 mt-1.5">
-                          Paid{" "}
-                          {new Date(req.paid_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                      <div className="mt-1.5 space-y-1">
+                        <p className="text-[11px] text-gray-400">
+                          Contract signed and eligible for catalog delivery.
                         </p>
-                      )}
+                        {req.paid_at ? (
+                          <p className="text-[11px] text-green-600">
+                            Paid{" "}
+                            {new Date(req.paid_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-amber-600">
+                            Unpaid request. You can still create the catalog,
+                            but payment has not been recorded yet.
+                          </p>
+                        )}
+                      </div>
                     </button>
                   );
                 })
@@ -880,7 +911,7 @@ export function CatalogBuilderWizard({
         </div>
 
         {/* Footer nav */}
-        <div className="px-6 pb-6 flex items-center justify-between border-t border-gray-100 pt-4">
+        <div className="shrink-0 px-6 pb-6 flex items-center justify-between border-t border-gray-100 pt-4 bg-white">
           <Button
             variant="outline"
             onClick={stepIndex === 0 ? onClose : goPrev}

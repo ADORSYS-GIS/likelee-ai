@@ -153,11 +153,11 @@ export default function StudioVideoOptions() {
 
   return (
     <div
+      className="font-body"
       style={{
         background: "#09090F",
         minHeight: "100vh",
         color: "#F0F0FF",
-        fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
       {/* ── HEADER ── */}

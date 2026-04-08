@@ -1,24 +1,57 @@
-import React, { startTransition, useEffect, useMemo, useState } from "react";
+import React, {
+  lazy,
+  Suspense,
+  startTransition,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { format, addDays } from "date-fns";
-import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
-import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
-import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
-import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
-import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
+
+// Heavy scouting components - lazy loaded to defer Leaflet map bundle
+const LicenseTemplatesTab = lazy(() =>
+  import("@/components/licensing/LicenseTemplatesTab").then((m) => ({
+    default: m.LicenseTemplatesTab,
+  })),
+);
+const LicenseSubmissionsTab = lazy(() =>
+  import("@/components/licensing/LicenseSubmissionsTab").then((m) => ({
+    default: m.LicenseSubmissionsTab,
+  })),
+);
+const ActiveLicenseDetailsSheet = lazy(() =>
+  import("@/components/licensing/ActiveLicenseDetailsSheet").then((m) => ({
+    default: m.ActiveLicenseDetailsSheet,
+  })),
+);
+const ScoutingMap = lazy(() =>
+  import("@/components/scouting/map/ScoutingMap").then((m) => ({
+    default: m.ScoutingMap,
+  })),
+);
+const ScoutingTrips = lazy(() =>
+  import("@/components/scouting/ScoutingTrips").then((m) => ({
+    default: m.ScoutingTrips,
+  })),
+);
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { parseBackendError } from "@/utils/errorParser";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   LayoutDashboard,
@@ -44,6 +77,8 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
+  Sparkles,
+  Crown,
   Download,
   Filter,
   Target,
@@ -96,6 +131,7 @@ import {
   MapPin,
   Star,
   Menu,
+  PanelRight,
   ImageIcon,
   Loader2,
   Mic,
@@ -104,12 +140,71 @@ import {
   Play,
   Library,
   FolderCheck,
+  Gift,
+  MessageSquare,
 } from "lucide-react";
-import { AgencyDeliverablesView } from "@/components/agency/AgencyDeliverablesView";
+import { useUnreadMessages } from "@/hooks/useChat";
+// ----------- LAZY TAB COMPONENTS -----------
+const CommunicationHub = lazy(() =>
+  import("@/components/chat/CommunicationHub").then((m) => ({
+    default: m.CommunicationHub,
+  })),
+);
+// Each import is split into its own JS chunk by Vite.
+// The browser only downloads these when the user navigates to that tab.
+const AgencyDeliverablesView = lazy(() =>
+  import("@/components/agency/AgencyDeliverablesView").then((m) => ({
+    default: m.AgencyDeliverablesView,
+  })),
+);
+const BookingsView = lazy(() =>
+  import("@/components/Bookings/BookingsView").then((m) => ({
+    default: m.BookingsView,
+  })),
+);
+const GeneralSettingsView = lazy(
+  () => import("@/components/dashboard/settings/GeneralSettingsView"),
+);
+const AgencyDashboardView = lazy(
+  () => import("@/components/agency/DashboardView"),
+);
+const FileStorageView = lazy(
+  () => import("@/components/dashboard/settings/FileStorageView"),
+);
+const AgencyRosterView = lazy(() => import("@/components/agency/RosterView"));
+const AnalyticsDashboardView = lazy(
+  () => import("@/components/agency/AnalyticsDashboardView"),
+);
+const LicensingRequestsView = lazy(
+  () => import("@/components/agency/LicensingRequestsView"),
+);
+const ActiveLicensesView = lazy(
+  () => import("@/components/agency/ActiveLicensesView"),
+);
+const BrandConnectionsView = lazy(
+  () => import("@/components/agency/BrandConnectionsView"),
+);
+const AgencyJobInvitesView = lazy(
+  () => import("@/components/agency/AgencyJobInvitesView"),
+);
+const MarketplaceSection = lazy(
+  () => import("@/components/marketplace/MarketplaceSection"),
+);
+const PerformanceTiers = lazy(
+  () => import("@/components/dashboard/PerformanceTiers"),
+);
+const ClientCRMView = lazy(() => import("@/components/crm/ClientCRMView"));
+const TalentCommissionSettings = lazy(() =>
+  import("@/components/dashboard/settings/TalentCommissionSettings").then(
+    (m) => ({
+      default: m.TalentCommissionSettings,
+    }),
+  ),
+);
+// -------------------------------------------
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
-
 import {
   ComplianceRenewableLicense,
   RenewalLaunchContext,
@@ -117,7 +212,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
   clearStoredKycSessionUrl,
@@ -144,18 +238,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { BookingsView } from "@/components/Bookings/BookingsView";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
-import AgencyDashboardView from "@/components/agency/DashboardView";
-import FileStorageView from "@/components/dashboard/settings/FileStorageView";
-import AgencyRosterView from "@/components/agency/RosterView";
-import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
-import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
-import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
-import BrandConnectionsView from "@/components/agency/BrandConnectionsView";
-import AgencyJobInvitesView from "@/components/agency/AgencyJobInvitesView";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
-import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
   getAgencyRoster,
   getAgencyProfile,
@@ -194,9 +276,26 @@ import {
   sendAgencyPaymentLinkEmail,
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
+  syncAgencyCheckoutSession,
+  getAgencyBillingStatus,
+  startAgencyProTrial,
+  getAgencyBrandLicenseRequests,
 } from "@/api/functions";
-import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+
+/** Skeleton shown while a lazy tab chunk is being downloaded */
+const TabSkeleton = () => (
+  <div className="flex-1 p-6 lg:p-8 animate-pulse space-y-4">
+    <div className="h-8 bg-gray-100 rounded-lg w-1/3" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-28 bg-gray-100 rounded-xl" />
+      ))}
+    </div>
+    <div className="h-64 bg-gray-100 rounded-xl" />
+    <div className="h-40 bg-gray-100 rounded-xl" />
+  </div>
+);
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -5128,14 +5227,17 @@ const FinancialReportsView = () => {
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700;900&family=Sora:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <title>${title}</title>
     <style>
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; color:#111827; }
-      h1 { font-size: 18px; margin: 0 0 6px; }
+      body { font-family: "Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 24px; color:#111827; }
+      h1 { font-family: "Fraunces", ui-serif, Georgia, serif; font-size: 18px; margin: 0 0 6px; }
       .meta { color:#6b7280; font-size: 12px; margin-bottom: 18px; }
-      h2 { font-size: 14px; margin: 18px 0 8px; }
+      h2 { font-family: "Fraunces", ui-serif, Georgia, serif; font-size: 14px; margin: 18px 0 8px; }
       table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      th { text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
+      th { font-family: "Fraunces", ui-serif, Georgia, serif; text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
     </style>
   </head>
   <body>
@@ -10389,13 +10491,22 @@ const SocialDiscoveryTab = () => (
   </Card>
 );
 
-const MarketplaceTab = () => (
+const MarketplaceTab = ({
+  connectLocked = false,
+  onConnectLocked,
+}: {
+  connectLocked?: boolean;
+  onConnectLocked?: () => void;
+}) => (
   <MarketplaceSection
     title="Likelee Marketplace"
     subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
     enableAgencyContractConnect
+    connectLocked={connectLocked}
+    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
+    onConnectLocked={onConnectLocked}
   />
 );
 
@@ -15625,7 +15736,7 @@ const ComplianceHubView = () => {
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-xs text-gray-700 font-medium font-sans">
+            <tbody className="divide-y divide-gray-100 text-xs text-gray-700 font-medium font-body">
               {DOCS_CHECKLIST.map((row, idx) => (
                 <tr key={idx} className="hover:bg-gray-50/30">
                   <td className="px-6 py-4">
@@ -15769,26 +15880,6 @@ const RoyaltiesPayoutsView = ({
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeTab, setActiveTab] = useState("Commission Structure");
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState<any>(null);
-  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
-  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [prospectToEdit, setProspectToEdit] = useState<any>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [selectedTier, setSelectedTier] = useState("All Tiers");
-  const [isEditingTierCommission, setIsEditingTierCommission] = useState(false);
-  const [tierCommissionDraft, setTierCommissionDraft] = useState<
-    Record<string, number | "">
-  >({});
-  const [initialTierCommissionDraft, setInitialTierCommissionDraft] = useState<
-    Record<string, number | "">
-  >({});
-  const [talentCustomRateDrafts, setTalentCustomRateDrafts] = useState<
-    Record<string, string>
-  >({});
-  const [lastSavedTalentDraft, setLastSavedTalentDraft] = useState<
-    Record<string, string>
-  >({});
   const subTabs = [
     "Commission Structure",
     "Payout Preferences",
@@ -15824,96 +15915,12 @@ const RoyaltiesPayoutsView = ({
     },
   });
 
-  // Fetch Performance Tiers Data
+  // Fetch Performance Tiers Data (used for avg commission rate stat card)
   const { data: tiersData } = useQuery({
     queryKey: ["performance-tiers"],
     queryFn: async () => {
       const resp = await base44.get<any>("/agency/dashboard/performance-tiers");
       return resp;
-    },
-  });
-
-  const tierConfig = (tiersData?.config || {}) as Record<
-    string,
-    { min_earnings?: number; min_bookings?: number; commission_rate?: number }
-  >;
-
-  useEffect(() => {
-    if (isEditingTierCommission) return;
-    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
-    const next: Record<string, number | ""> = {};
-    for (const name of tierNames) {
-      const cfgRate = tierConfig?.[name]?.commission_rate;
-      const fallbackTierRate = (tiersData?.tiers || []).find(
-        (t: any) => t.name === name,
-      )?.commission_rate;
-      const rate =
-        typeof cfgRate === "number" && Number.isFinite(cfgRate)
-          ? cfgRate
-          : typeof fallbackTierRate === "number" &&
-              Number.isFinite(fallbackTierRate)
-            ? fallbackTierRate
-            : "";
-      next[name] = rate;
-    }
-    setTierCommissionDraft(next);
-  }, [tiersData?.config, tiersData?.tiers, isEditingTierCommission]);
-
-  useEffect(() => {
-    const all = tiersData?.tiers?.flatMap((t: any) => t.talents) || [];
-    const next: Record<string, string> = {};
-    for (const t of all) {
-      const key = (t.creator_id as string | undefined) || t.id;
-      next[key] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
-    }
-    setTalentCustomRateDrafts(next);
-    setLastSavedTalentDraft(next);
-  }, [tiersData?.tiers]);
-
-  const tierCommissionMutation = useMutation({
-    mutationFn: async (payload: { config: any }) => {
-      await base44.post(
-        "/agency/dashboard/performance-tiers/configure",
-        payload,
-      );
-      return true;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
-      setIsEditingTierCommission(false);
-      setInitialTierCommissionDraft({});
-      toast({
-        title: "Saved",
-        description: "Tier commission rates updated successfully.",
-      });
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Save failed",
-        description:
-          err?.response?.data || err?.message || "Failed to update tier rates.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const talentCommissionMutation = useMutation({
-    mutationFn: async ({
-      creatorId,
-      rate,
-    }: {
-      creatorId: string;
-      rate: number | null;
-    }) => {
-      await base44.post("/agency/dashboard/talent-commissions/update", {
-        creator_id: creatorId,
-        custom_rate: rate,
-      });
-      return true;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
-      queryClient.invalidateQueries({ queryKey: ["commission-history"] });
     },
   });
 
@@ -15927,18 +15934,6 @@ const RoyaltiesPayoutsView = ({
       return resp;
     },
     enabled: activeTab === "Commission Breakdown",
-  });
-
-  // Fetch Commission History Data
-  const { data: historyData } = useQuery({
-    queryKey: ["commission-history"],
-    queryFn: async () => {
-      const resp = await base44.get<any>(
-        "/agency/dashboard/talent-commissions/history",
-      );
-      return resp;
-    },
-    enabled: showHistory,
   });
 
   const { data: paymentHistoryTopEarners } = useQuery({
@@ -15960,18 +15955,6 @@ const RoyaltiesPayoutsView = ({
     },
   });
 
-  const allTalents = tiersData?.tiers.flatMap((t: any) => t.talents) || [];
-
-  const filteredTalent =
-    selectedTier === "All Tiers"
-      ? allTalents
-      : allTalents.filter((t: any) => t.tier?.tier_name === selectedTier);
-
-  // Derive top earners from real data
-  const topEarners = [...allTalents]
-    .sort((a, b) => b.earnings_30d - a.earnings_30d)
-    .slice(0, 10);
-
   const avgTierCommissionRate = useMemo(() => {
     const tiers = (tiersData?.tiers || []) as Array<{
       commission_rate?: number;
@@ -15986,85 +15969,6 @@ const RoyaltiesPayoutsView = ({
     );
     return sum / total;
   }, [tiersData?.tiers]);
-
-  const saveTierCommissionRates = () => {
-    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
-    const merged: any = { ...tierConfig };
-
-    for (const name of tierNames) {
-      const existing = merged[name] || {};
-      const nextRateRaw = tierCommissionDraft?.[name];
-      const nextRate =
-        nextRateRaw === "" || nextRateRaw === null || nextRateRaw === undefined
-          ? undefined
-          : Number(nextRateRaw);
-
-      merged[name] = {
-        min_earnings:
-          existing.min_earnings ??
-          (name === "Premium"
-            ? 5000
-            : name === "Core"
-              ? 2500
-              : name === "Growth"
-                ? 500
-                : 0),
-        min_bookings:
-          existing.min_bookings ??
-          (name === "Premium"
-            ? 8
-            : name === "Core"
-              ? 5
-              : name === "Growth"
-                ? 1
-                : 0),
-        commission_rate:
-          typeof nextRate === "number" && Number.isFinite(nextRate)
-            ? nextRate
-            : existing.commission_rate,
-      };
-    }
-
-    tierCommissionMutation.mutate({ config: merged });
-  };
-
-  const startEditingTierCommissions = () => {
-    setInitialTierCommissionDraft(tierCommissionDraft);
-    setIsEditingTierCommission(true);
-  };
-
-  const cancelEditingTierCommissions = () => {
-    setTierCommissionDraft(initialTierCommissionDraft);
-    setIsEditingTierCommission(false);
-  };
-
-  const isTierCommissionDirty = (() => {
-    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
-    for (const name of tierNames) {
-      const draft = tierCommissionDraft?.[name];
-      const current = tierConfig?.[name]?.commission_rate;
-      if (draft === "" && (current === undefined || current === null)) continue;
-      if (draft === "" && typeof current === "number") return true;
-      if (typeof draft === "number" && draft !== current) return true;
-    }
-    return false;
-  })();
-
-  const commitTalentCustomRate = (creatorId: string) => {
-    const draft = (talentCustomRateDrafts?.[creatorId] ?? "").trim();
-    const lastSaved = lastSavedTalentDraft?.[creatorId];
-    if (lastSaved === draft) return;
-
-    const rate = draft === "" ? null : Number(draft);
-    if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100))
-      return;
-
-    setLastSavedTalentDraft((prev) => ({
-      ...(prev || {}),
-      [creatorId]: draft,
-    }));
-    talentCommissionMutation.mutate({ creatorId, rate });
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -16175,461 +16079,15 @@ const RoyaltiesPayoutsView = ({
 
       {activeTab === "Commission Structure" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-          <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Commission by Performance Tier
-                </h3>
-                <p className="text-sm font-medium text-gray-500 max-w-2xl">
-                  {`Set different commission rates based on ${entitySingularLower} performance tier. Higher-performing ${entitySingularLower} can earn lower commission rates as an incentive.`}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {!isEditingTierCommission ? (
-                  <Button
-                    variant="outline"
-                    onClick={startEditingTierCommissions}
-                    className="gap-2 font-bold h-11 px-6 text-sm rounded-xl"
-                  >
-                    <Settings className="w-5 h-5" />
-                    Edit Rates
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={cancelEditingTierCommissions}
-                      className="gap-2 font-bold h-11 px-6 text-sm rounded-xl"
-                    >
-                      <X className="w-5 h-5" />
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="default"
-                      onClick={saveTierCommissionRates}
-                      disabled={
-                        !isTierCommissionDirty ||
-                        tierCommissionMutation.isPending
-                      }
-                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70"
-                    >
-                      {tierCommissionMutation.isPending
-                        ? "Saving..."
-                        : "Save Changes"}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
-              {tiersData?.tiers && tiersData.tiers.length > 0 ? (
-                tiersData.tiers.map((group: any) => (
-                  <div
-                    key={group.level}
-                    className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
-                      group.name === "Premium"
-                        ? "bg-[#FAF5FF] border-purple-200"
-                        : group.name === "Core"
-                          ? "bg-[#F0F9FF] border-blue-200"
-                          : group.name === "Growth"
-                            ? "bg-[#F0FDF4] border-green-200"
-                            : "bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    {/* Decorative background circle */}
-                    <div
-                      className={`absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-5 ${group.name === "Premium" ? "bg-purple-600" : group.name === "Core" ? "bg-blue-600" : group.name === "Growth" ? "bg-green-600" : "bg-gray-600"}`}
-                    />
-
-                    <div className="flex justify-between items-center relative z-10">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`}
-                        />
-                        <span className="text-lg font-black tracking-tight text-gray-900">
-                          {group.name} Tier
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isEditingTierCommission ? (
-                          <div className="relative w-20">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              value={tierCommissionDraft?.[group.name] ?? ""}
-                              onChange={(e) =>
-                                setTierCommissionDraft((prev) => ({
-                                  ...(prev || {}),
-                                  [group.name]:
-                                    e.target.value === ""
-                                      ? ""
-                                      : Number(e.target.value),
-                                }))
-                              }
-                              className="h-9 pr-6 text-right font-black text-gray-900 bg-white border-2 rounded-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900 pointer-events-none">
-                              %
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="px-4 py-1.5 bg-white border-2 border-gray-200 rounded-xl text-lg font-black text-gray-900">
-                            {group.commission_rate}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="relative z-10">
-                      <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden border border-gray-100 shadow-inner">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
-                          style={{
-                            width: `${Math.min(100, ((group.talents?.length || 0) / 20) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 py-10 text-center text-gray-500 font-medium border-2 border-dashed rounded-xl">
-                  No performance tiers defined.
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden rounded-xl">
-            <div className="p-4 sm:p-10 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {`${entitySingularTitle} Commission Settings`}
-                </h3>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  {`Set custom commission rates for specific ${entitySingularLower} when needed`}{" "}
-                  {`(e.g., special contracts, VIP ${entitySingularLower})`}
-                </p>
-              </div>
-              <div className="flex gap-3 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  className={`font-black uppercase tracking-tight text-[10px] gap-2 h-10 px-5 border-gray-200 shadow-sm transition-all w-full sm:w-auto ${showHistory ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-600"}`}
-                  onClick={() => setShowHistory(!showHistory)}
-                >
-                  <History
-                    className={`w-4 h-4 ${showHistory ? "text-white" : "text-gray-400"}`}
-                  />
-                  {showHistory ? "Hide History" : "View History"}
-                </Button>
-              </div>
-            </div>
-
-            {showHistory ? (
-              <div className="p-10 bg-gray-50/50">
-                <div className="bg-white border-2 border-gray-900 rounded-3xl shadow-xl overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowHistory(false)}
-                        className="rounded-full hover:bg-gray-100 h-10 w-10"
-                      >
-                        <ArrowLeft className="w-5 h-5" />
-                      </Button>
-                      <div>
-                        <h4 className="text-base font-black text-gray-900 uppercase tracking-tight">
-                          Commission Changes History
-                        </h4>
-                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
-                          Audit log for rate adjustments
-                        </p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className="border-gray-200 text-gray-500 font-bold px-3 py-1"
-                    >
-                      {historyData?.length || 0} RECORDS
-                    </Badge>
-                  </div>
-                  <div className="divide-y divide-gray-100 font-sans max-h-[500px] overflow-y-auto">
-                    {historyData && historyData.length > 0 ? (
-                      historyData.map((item, i) => (
-                        <div
-                          key={item.id || i}
-                          className="flex items-center justify-between p-6 hover:bg-indigo-50/20 transition-all group"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-indigo-600 border border-gray-100 group-hover:border-indigo-100 group-hover:bg-white transition-all shadow-sm">
-                              <History className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {item.talent_name ||
-                                  `Unknown ${entitySingularTitle}`}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] text-gray-400 font-medium">
-                                  {item.changed_at
-                                    ? format(
-                                        new Date(item.changed_at),
-                                        "MMM d, yyyy • HH:mm",
-                                      )
-                                    : "N/A"}
-                                </span>
-                                <span className="w-1 h-1 rounded-full bg-gray-200" />
-                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">
-                                  ADMIN:{" "}
-                                  {item.changed_by_name || "Agency Admin"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-right">
-                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">
-                                PREVIOUS
-                              </p>
-                              <span className="text-sm font-bold text-gray-300 line-through decoration-1">
-                                {typeof item.old_rate === "number"
-                                  ? `${item.old_rate}%`
-                                  : "—"}
-                              </span>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-300 transition-colors" />
-                            <div className="text-right">
-                              <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">
-                                NEW RATE
-                              </p>
-                              <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-md shadow-indigo-100 block">
-                                {item.action === "reset"
-                                  ? "Reset"
-                                  : typeof item.new_rate === "number"
-                                    ? `${item.new_rate}%`
-                                    : "—"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-24 text-center bg-white flex flex-col items-center">
-                        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                          <History className="w-8 h-8 text-indigo-200" />
-                        </div>
-                        <p className="text-base font-bold text-gray-900 mb-1">
-                          No history yet
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          All commission adjustments will appear here.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6 bg-gray-50/50 border-t border-gray-100 text-center">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowHistory(false)}
-                      className="font-black uppercase tracking-widest text-[9px] h-9 px-6 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
-                    >
-                      {`Return to ${entitySingularTitle} List`}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="px-4 sm:px-10 py-6 border-b border-gray-100 bg-gray-50/30 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Tier Filter:
-                      </span>
-                      <select
-                        value={selectedTier}
-                        onChange={(e) => setSelectedTier(e.target.value)}
-                        className="h-9 px-4 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer hover:border-indigo-200 shadow-sm"
-                      >
-                        <option value="All Tiers">All Tiers</option>
-                        <option value="Premium">Premium</option>
-                        <option value="Core">Core</option>
-                        <option value="Growth">Growth</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                    <div className="h-4 w-[1px] bg-gray-200" />
-                    <span className="text-xs font-bold text-gray-500">
-                      Total:{" "}
-                      <span className="text-indigo-600 font-black">
-                        {filteredTalent.length}
-                      </span>{" "}
-                      candidates
-                    </span>
-                  </div>
-                  <div className="flex gap-2 w-full lg:w-auto">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-[10px] font-bold text-gray-400 uppercase tracking-tight gap-1.5 hover:text-indigo-600 w-full lg:w-auto justify-center"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Export Rates
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-gray-50/50">
-                        <th className="px-8 py-5 w-12 text-center">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          {entitySingularTitle}
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Tier
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          30D Earnings
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Current Rate
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Custom Rate
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Last Changed
-                        </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 font-sans">
-                      {filteredTalent.map((talent) => (
-                        <tr
-                          key={talent.id}
-                          className="hover:bg-gray-50/30 transition-colors group"
-                        >
-                          <td className="px-8 py-5 text-center">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                          </td>
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={talent.photo_url || ""}
-                                className="w-10 h-10 rounded-lg object-cover shadow-sm bg-gray-100"
-                              />
-                              <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                {talent.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5">
-                            <Badge
-                              className={`px-2 py-0.5 font-bold text-[10px] uppercase shadow-sm ${talent.tier?.tier_name === "Premium" ? "bg-purple-50 text-purple-600" : talent.tier?.tier_name === "Core" ? "bg-blue-50 text-blue-600" : talent.tier?.tier_name === "Growth" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-500"}`}
-                            >
-                              {talent.tier?.tier_name}
-                            </Badge>
-                          </td>
-                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
-                            {currencyFormatter.format(talent.earnings_30d)}
-                          </td>
-                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
-                            {talent.commission_rate}%
-                          </td>
-                          <td className="px-8 py-5">
-                            <div className="relative w-24">
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="1"
-                                value={
-                                  talentCustomRateDrafts?.[
-                                    (talent.creator_id as string | undefined) ||
-                                      talent.id
-                                  ] ?? ""
-                                }
-                                onChange={(e) =>
-                                  setTalentCustomRateDrafts((prev) => ({
-                                    ...(prev || {}),
-                                    [(talent.creator_id as
-                                      | string
-                                      | undefined) || talent.id]:
-                                      e.target.value,
-                                  }))
-                                }
-                                onBlur={() =>
-                                  talent.creator_id
-                                    ? commitTalentCustomRate(
-                                        talent.creator_id as string,
-                                      )
-                                    : undefined
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    (e.target as HTMLInputElement).blur();
-                                  }
-                                }}
-                                disabled={!talent.creator_id}
-                                placeholder={
-                                  talent.is_custom_rate ? "" : "Default"
-                                }
-                                className="w-full h-10 bg-white border border-gray-200 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all"
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
-                                %
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">
-                              {talent.is_custom_rate
-                                ? "Custom Rate Applied"
-                                : "Using Tier Default"}
-                            </span>
-                          </td>
-                          <td className="px-8 py-5 text-right"></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-
-            <div className="p-4 sm:p-8 bg-[#F0F7FF] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-indigo-100">
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <p className="text-xs font-medium text-indigo-600">
-                  Custom rates override tier-based defaults. Reset to use tier
-                  default.
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                className="font-bold text-xs text-gray-500 uppercase tracking-wider gap-2 hover:bg-white/50 border border-gray-200 px-6 h-10 shadow-sm w-full sm:w-auto justify-center"
-              >
-                <Download className="w-4 h-4" /> Export Settings
-              </Button>
-            </div>
-          </Card>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
+              {`${entitySingularTitle} Commission Rules`}
+            </h3>
+            <p className="text-sm text-gray-500 font-medium tracking-tight">
+              {`Agency-managed ${entitySingularLower} can use settings-based overrides here. Marketplace-connected ${entitySingularLower} follow the active signed contract rate and are read-only on this screen.`}
+            </p>
+          </div>
+          <TalentCommissionSettings entitySingularLower={entitySingularLower} />
         </div>
       )}
 
@@ -17025,7 +16483,7 @@ const RoyaltiesPayoutsView = ({
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
                         Total Gross
                       </p>
-                      <p className="text-2xl font-black font-sans tracking-tight">
+                      <p className="text-2xl font-black font-display tracking-tight">
                         {currencyFormatter.format(deal.total_value)}
                       </p>
                     </div>
@@ -17142,7 +16600,7 @@ export default function AgencyDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, profile, authenticated, logout } = useAuth();
+  const { user, profile, authenticated, logout, refreshProfile } = useAuth();
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
@@ -17162,10 +16620,13 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const normalizeSubTab = (value: string | null | undefined) =>
-    String(value || "")
+  const normalizeSubTab = (value: string | null | undefined) => {
+    const cleaned = String(value || "")
       .trim()
       .replace(/\/+$/g, "");
+    if (cleaned === "Protect & Usage") return "Protection & Usage";
+    return cleaned;
+  };
 
   // Sensible default sub-tab based on tab
   const getDefaultSubTab = (tab: string) => {
@@ -17177,7 +16638,7 @@ export default function AgencyDashboard() {
       case "jobs":
         return "Job Invites";
       case "protection":
-        return "Protect & Usage";
+        return "Protection & Usage";
       case "analytics":
         return "Analytics Dashboard";
       case "bookings":
@@ -17194,6 +16655,10 @@ export default function AgencyDashboard() {
     normalizeSubTab(searchParams.get("subTab")) ||
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
+  const checkoutSuccess = searchParams.get("success") === "1";
+  const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
+  const billingSyncRequested =
+    searchParams.get("billing_sync") === "1" || checkoutSuccess;
 
   useEffect(() => {
     const nextTab = String(searchParams.get("tab") || "").trim();
@@ -17214,6 +16679,15 @@ export default function AgencyDashboard() {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
   });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("agency-sidebar-width");
+    return saved ? parseInt(saved, 10) : 280;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("agency-sidebar-width", sidebarWidth.toString());
+  }, [sidebarWidth]);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
     if (!license.template_id) {
       toast({
@@ -17226,9 +16700,19 @@ export default function AgencyDashboard() {
 
     setRenewalLaunchContext({
       templateId: license.template_id,
+      brandId: license.brand_id || undefined,
+      talentId: license.talent_id || undefined,
       clientName: license.client_name || license.brand || "",
       clientEmail: license.client_email || "",
       talentName: license.talent_name || "",
+      durationDays: license.duration_days,
+      startDate: license.start_date,
+      customTerms: license.custom_terms || undefined,
+      requiresAgencySignature: license.requires_agency_signature,
+      territory: license.territory || undefined,
+      exclusivity: license.exclusivity || undefined,
+      modificationsAllowed: license.modifications_allowed || undefined,
+      licenseFee: typeof license.value === "number" ? license.value : undefined,
     });
 
     setActiveTabState("licensing");
@@ -17338,6 +16822,57 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
+  useEffect(() => {
+    if (!authenticated || !user?.id) return;
+    if (!billingSyncRequested && !checkoutSessionId) return;
+
+    let cancelled = false;
+
+    const syncBillingState = async () => {
+      try {
+        if (billingSyncRequested || checkoutSessionId) {
+          await syncAgencyCheckoutSession(
+            checkoutSessionId ? { session_id: checkoutSessionId } : undefined,
+          );
+        }
+
+        const latestProfile = await getAgencyProfile();
+        if (!cancelled) {
+          queryClient.setQueryData(["agency-profile", user.id], latestProfile);
+        }
+        await refreshProfile();
+      } catch (error) {
+        console.error("Failed to sync agency billing state:", error);
+      } finally {
+        if (cancelled) return;
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete("billing_sync");
+            next.delete("success");
+            next.delete("session_id");
+            return next;
+          },
+          { replace: true, preventScrollReset: true },
+        );
+      }
+    };
+
+    void syncBillingState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authenticated,
+    billingSyncRequested,
+    checkoutSessionId,
+    queryClient,
+    refreshProfile,
+    setSearchParams,
+    user?.id,
+  ]);
+
   const licensingRequestsCountQuery = useIndexedDbQuery({
     queryKey: ["agency-licensing-requests", user?.id],
     queryFn: async () => {
@@ -17352,16 +16887,60 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
+  const brandLicenseRequestsQuery = useQuery({
+    queryKey: ["agency-brand-license-requests", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyBrandLicenseRequests();
+      return Array.isArray(resp) ? resp : resp?.requests || [];
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 15 * 1000,
+  });
+
   const pendingLicensingRequestsCount = useMemo(() => {
+    // 1. Regular Requests
     const d: any = licensingRequestsCountQuery.data;
-    const requests = d?.requests ?? d?.data ?? d;
-    if (!Array.isArray(requests)) return 0;
-    const pending = requests.filter((r: any) => r?.status === "pending");
-    return pending.length;
-  }, [licensingRequestsCountQuery.data]);
+    const regReqs = d?.requests ?? d?.data ?? d;
+    const regPending = Array.isArray(regReqs)
+      ? regReqs.filter((r: any) => r?.status === "pending").length
+      : 0;
+
+    // 2. Brand Requests
+    const brandReqs = brandLicenseRequestsQuery.data;
+    const brandPending = Array.isArray(brandReqs)
+      ? brandReqs.filter((r: any) => r?.status === "pending").length
+      : 0;
+
+    // seen counts from localStorage
+    const regSeen = parseInt(
+      localStorage.getItem("regular_licensing_seen_count") || "0",
+      10,
+    );
+    const brandSeen = parseInt(
+      localStorage.getItem("brand_licensing_seen_count") || "0",
+      10,
+    );
+
+    // If currently on the licensing requests tab, we clear it visually
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      return 0;
+    }
+
+    const regUnseen = Math.max(0, regPending - regSeen);
+    const brandUnseen = Math.max(0, brandPending - brandSeen);
+
+    return regUnseen + brandUnseen;
+  }, [
+    licensingRequestsCountQuery.data,
+    brandLicenseRequestsQuery.data,
+    activeTab,
+    activeSubTab,
+  ]);
 
   const brandConnectionRequestsCountQuery = useQuery({
-    queryKey: ["agency-brand-connection-requests", user?.id],
+    queryKey: ["agency", "brand-connection-requests"],
     queryFn: async () => {
       const resp = await base44.get<{
         status?: string;
@@ -17376,7 +16955,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionOffersQuery = useIndexedDbQuery({
-    queryKey: ["agency-campaign-offers-my", user?.id],
+    queryKey: ["agency", "campaign-offers-my"],
     queryFn: async () => {
       const resp = await base44.get<{ offers?: any[] }>(
         "/api/campaign-offers/my",
@@ -17393,7 +16972,7 @@ export default function AgencyDashboard() {
   });
 
   const brandConnectionJobInvitesQuery = useIndexedDbQuery({
-    queryKey: ["agency-job-invites", user?.id],
+    queryKey: ["agency", "job-invites"],
     queryFn: async () => {
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
@@ -17410,15 +16989,15 @@ export default function AgencyDashboard() {
       });
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
-    syncInterval: 30 * 1000,
+    maxAge: 120 * 1000,
+    syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
   const brandConnectionFeedbackQuery = useIndexedDbQuery({
-    queryKey: ["agency-package-feedback", user?.id],
+    queryKey: ["agency", "package-feedback"],
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
         "/api/agency/brand-offers/package-feedback",
@@ -17426,52 +17005,57 @@ export default function AgencyDashboard() {
       return Array.isArray(resp?.items) ? resp.items : [];
     },
     agencyId: user?.id,
-    maxAge: 60 * 1000,
+    maxAge: 120 * 1000,
     syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
   });
 
-  const pendingBrandConnectionCount = useMemo(() => {
-    const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+  const brandCounts = useMemo(() => {
+    const numRequests = Array.isArray(brandConnectionRequestsCountQuery.data)
       ? brandConnectionRequestsCountQuery.data.length
       : 0;
-    const offers =
-      (Array.isArray(brandConnectionOffersQuery.data)
-        ? brandConnectionOffersQuery.data.filter((o) =>
-            ["sent", "viewed"].includes(o.status),
-          ).length
-        : 0) +
-      (Array.isArray(brandConnectionJobInvitesQuery.data)
-        ? brandConnectionJobInvitesQuery.data.length
-        : 0);
-    const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+    const numOffers = Array.isArray(brandConnectionOffersQuery.data)
+      ? brandConnectionOffersQuery.data.filter((o) =>
+          ["sent", "viewed"].includes(o.status),
+        ).length
+      : 0;
+    const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data.length
       : 0;
+
+    return { numRequests, numOffers, numFeedback };
+  }, [
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  const pendingBrandConnectionCount = useMemo(() => {
+    const { numRequests, numOffers, numFeedback } = brandCounts;
 
     // Subtract seen counts
     const saved = localStorage.getItem("brand_connections_seen_counts");
     const seen = saved ? JSON.parse(saved) : {};
 
-    const diffRequests = Math.max(0, requests - (seen.requests || 0));
-    const diffOffers = Math.max(0, offers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, feedback - (seen.feedback || 0));
+    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
+    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
+    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
 
     // If currently on the brand-connections tab, we don't want the badge to persist if viewed
     if (activeTab === "brand-connections") {
-      return 0; // Or return the total if we want it to stay until they switch sub-tabs.
-      // But the user said "when the notification is opened the 2 shouldn't be showing".
+      return 0;
     }
 
     return diffRequests + diffOffers + diffFeedback;
-  }, [
-    brandConnectionRequestsCountQuery.data,
-    brandConnectionOffersQuery.data,
-    brandConnectionJobInvitesQuery.data,
-    brandConnectionFeedbackQuery.data,
-    activeTab,
-  ]);
+  }, [brandCounts, activeTab]);
+
+  const pendingJobInvitesCount = useMemo(() => {
+    return Array.isArray(brandConnectionJobInvitesQuery.data)
+      ? brandConnectionJobInvitesQuery.data.length
+      : 0;
+  }, [brandConnectionJobInvitesQuery.data]);
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -17561,8 +17145,280 @@ export default function AgencyDashboard() {
     return "Free";
   }, [agencyPlanTier]);
 
+  const [agencyBilling, setAgencyBilling] = useState<any>(null);
+  const [agencyBillingLoading, setAgencyBillingLoading] = useState(true);
+  const [startingAgencyTrial, setStartingAgencyTrial] = useState(false);
+  const agencyTrialActive = !!agencyBilling?.trial_active;
+  const agencyTrialEndsAt = agencyBilling?.trial_ends_at
+    ? String(agencyBilling.trial_ends_at)
+    : "";
+  const agencyTrialStartAt = agencyBilling?.trial_start_at;
+  const agencyHasPaidAccess =
+    agencyBilling?.has_paid_access ?? agencyPlanTier !== "free";
+  const agencyCanConnectMarketplace =
+    agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
+  const agencyCanUseBrandConnections =
+    agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+  const agencyDisplayPlanLabel = (() => {
+    const raw = String(agencyBilling?.display_plan_label || "").trim();
+    const normalized = raw
+      .replace(/\b(annual|monthly)\b/gi, "")
+      .replace(/\bplan\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (normalized) return normalized;
+    return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+  })();
+  const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadBilling = async () => {
+      try {
+        setAgencyBillingLoading(true);
+        const resp = await getAgencyBillingStatus();
+        if (!cancelled) setAgencyBilling(resp);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setAgencyBillingLoading(false);
+      }
+    };
+    void loadBilling();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!agencyTrialActive || !agencyTrialEndsAt) {
+      setAgencyTrialCountdown("");
+      return;
+    }
+    const compute = () => {
+      const end = new Date(agencyTrialEndsAt).getTime();
+      const ms = Math.max(0, end - Date.now());
+      if (ms <= 0) {
+        setAgencyTrialCountdown("Trial ended");
+        return;
+      }
+      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+      setAgencyTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+    };
+    compute();
+    const id = window.setInterval(compute, 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [agencyTrialActive, agencyTrialEndsAt]);
+
+  const handleStartAgencyTrial = async () => {
+    if (startingAgencyTrial) return;
+
+    setStartingAgencyTrial(true);
+    try {
+      const resp = await startAgencyProTrial();
+      setAgencyBilling((prev: any) => ({
+        ...(prev || {}),
+        ...(resp || {}),
+        has_paid_access: true,
+        has_pro_access: true,
+        can_connect_marketplace_creators: true,
+        can_use_brand_connections: true,
+      }));
+      await agencyProfileQuery.refetch();
+      toast({
+        title: "Pro trial started",
+        description:
+          "Your agency now has 30 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      if (msg.includes("trial_already_active")) {
+        toast({
+          title: "Trial already active",
+          description: "Your agency already has an active Pro trial.",
+        });
+        await agencyProfileQuery.refetch();
+        return;
+      }
+      if (msg.includes("trial_only_available_for_free_accounts")) {
+        toast({
+          title: "Trial unavailable",
+          description:
+            "The Pro trial is only available while your agency is on the Free plan.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      toast({
+        title: "Could not start trial",
+        description: msg || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setStartingAgencyTrial(false);
+    }
+  };
+
   const hasProAccess =
-    agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+    agencyBilling?.has_pro_access ??
+    (agencyPlanTier === "pro" ||
+      agencyPlanTier === "enterprise" ||
+      agencyTrialActive);
+
+  const irlAddonEntitlement = useMemo(() => {
+    const queryValue = (agencyProfileQuery.data as any)
+      ?.addon_irl_booking_enabled;
+    if (typeof queryValue === "boolean") return queryValue;
+    if (queryValue === 1 || queryValue === 0) return Boolean(queryValue);
+    if (typeof queryValue === "string" && queryValue.trim()) {
+      return ["1", "true", "yes", "on"].includes(
+        queryValue.trim().toLowerCase(),
+      );
+    }
+
+    const profileValue = (profile as any)?.addon_irl_booking_enabled;
+    if (typeof profileValue === "boolean") return profileValue;
+    if (profileValue === 1 || profileValue === 0) return Boolean(profileValue);
+    if (typeof profileValue === "string" && profileValue.trim()) {
+      return ["1", "true", "yes", "on"].includes(
+        profileValue.trim().toLowerCase(),
+      );
+    }
+
+    return null;
+  }, [agencyProfileQuery.data, profile]);
+  const hasIrlBookingAddon = irlAddonEntitlement === true || agencyTrialActive;
+  const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
+  const effectiveAgencyMode: "AI" | "IRL" =
+    agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
+  const isMobile = useIsMobile();
+  const SIDEBAR_MIN_WIDTH = 80;
+  const SIDEBAR_MAX_WIDTH = 280;
+  const SIDEBAR_EXPANDED_WIDTH = 256;
+  const SIDEBAR_COLLAPSE_THRESHOLD = 140;
+  const SIDEBAR_FADE_START = 220;
+  const isSidebarCollapsed =
+    !isMobile && sidebarWidth <= SIDEBAR_COLLAPSE_THRESHOLD;
+  const labelOpacity = isMobile
+    ? 1
+    : Math.min(
+        1,
+        Math.max(
+          0,
+          (sidebarWidth - SIDEBAR_COLLAPSE_THRESHOLD) /
+            (SIDEBAR_FADE_START - SIDEBAR_COLLAPSE_THRESHOLD),
+        ),
+      );
+  const showLabels = isMobile || sidebarWidth > SIDEBAR_COLLAPSE_THRESHOLD;
+  const showSubItems = isMobile || sidebarWidth >= 200;
+  const sidebarNavRef = useRef<HTMLElement | null>(null);
+  const collapsedItemButtonRefs = useRef<
+    Record<string, HTMLButtonElement | null>
+  >({});
+  const collapsedPopoutHideTimeoutRef = useRef<number | null>(null);
+  const [collapsedPopout, setCollapsedPopout] = useState<{
+    itemId: string;
+    top: number;
+  } | null>(null);
+  const [openCollapsedSubmenu, setOpenCollapsedSubmenu] = useState<
+    string | null
+  >(null);
+
+  const clearCollapsedPopoutHideTimeout = () => {
+    if (collapsedPopoutHideTimeoutRef.current !== null) {
+      window.clearTimeout(collapsedPopoutHideTimeoutRef.current);
+      collapsedPopoutHideTimeoutRef.current = null;
+    }
+  };
+
+  const closeCollapsedPopout = (opts?: { immediate?: boolean }) => {
+    const immediate = !!opts?.immediate;
+    clearCollapsedPopoutHideTimeout();
+    if (immediate) {
+      setCollapsedPopout(null);
+      return;
+    }
+    collapsedPopoutHideTimeoutRef.current = window.setTimeout(() => {
+      setCollapsedPopout(null);
+    }, 180);
+  };
+
+  const openCollapsedPopout = (itemId: string) => {
+    clearCollapsedPopoutHideTimeout();
+    if (!isSidebarCollapsed) return;
+    const navEl = sidebarNavRef.current;
+    const btnEl = collapsedItemButtonRefs.current[itemId];
+    if (!navEl || !btnEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideEl = navEl.parentElement;
+    if (!asideEl) {
+      setCollapsedPopout({ itemId, top: 0 });
+      return;
+    }
+    const asideRect = asideEl.getBoundingClientRect();
+    const btnRect = btnEl.getBoundingClientRect();
+    const top = Math.max(0, btnRect.top - asideRect.top);
+    setCollapsedPopout({ itemId, top });
+  };
+  const toggleSidebarCollapsed = () => {
+    if (isMobile) return;
+    setSidebarWidth((prev) =>
+      prev <= SIDEBAR_COLLAPSE_THRESHOLD
+        ? SIDEBAR_EXPANDED_WIDTH
+        : SIDEBAR_MIN_WIDTH,
+    );
+  };
+
+  const handleSidebarDragStart = (event: React.MouseEvent) => {
+    if (isMobile) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+    const handleMove = (event: MouseEvent) => {
+      const nextWidth = Math.min(
+        SIDEBAR_MAX_WIDTH,
+        Math.max(SIDEBAR_MIN_WIDTH, event.clientX),
+      );
+      setSidebarWidth(nextWidth);
+    };
+    const handleUp = () => {
+      setIsResizingSidebar(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [
+    isResizingSidebar,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_COLLAPSE_THRESHOLD,
+  ]);
+
+  useEffect(() => {
+    if (effectiveAgencyMode !== "AI") return;
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      ["roster", "licensing", "protection", "analytics"].forEach((id) =>
+        next.add(id),
+      );
+      return Array.from(next);
+    });
+  }, [effectiveAgencyMode]);
 
   useEffect(() => {
     if (activeSubTab === "All Talent" && isSportsAgency) {
@@ -17589,6 +17445,49 @@ export default function AgencyDashboard() {
       setActiveSubTab("Talent Availability");
     }
   }, [activeSubTab, isSportsAgency]);
+
+  // Handle clearing notification counts when visiting tabs
+  useEffect(() => {
+    if (activeTab === "brand-connections") {
+      const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+        ? brandConnectionRequestsCountQuery.data.length
+        : 0;
+      const offers =
+        (Array.isArray(brandConnectionOffersQuery.data)
+          ? brandConnectionOffersQuery.data.filter((o) =>
+              ["sent", "viewed"].includes(o.status),
+            ).length
+          : 0) +
+        (Array.isArray(brandConnectionJobInvitesQuery.data)
+          ? brandConnectionJobInvitesQuery.data.length
+          : 0);
+      const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+        ? brandConnectionFeedbackQuery.data.length
+        : 0;
+
+      localStorage.setItem(
+        "brand_connections_seen_counts",
+        JSON.stringify({ requests, offers, feedback }),
+      );
+    }
+  }, [
+    activeTab,
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionJobInvitesQuery.data,
+    brandConnectionFeedbackQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
+      const requests = Array.isArray(brandLicenseRequestsQuery.data)
+        ? brandLicenseRequestsQuery.data.filter(
+            (r: any) => r?.status === "pending",
+          ).length
+        : 0;
+      localStorage.setItem("brand_licensing_seen_count", String(requests));
+    }
+  }, [activeTab, activeSubTab, brandLicenseRequestsQuery.data]);
 
   useEffect(() => {
     if (activeTab !== "roster") return;
@@ -18113,11 +18012,15 @@ export default function AgencyDashboard() {
     "settings",
   ]);
   const setAgencyMode = (mode: "AI" | "IRL") => {
-    setAgencyModeState(mode);
+    const resolvedMode =
+      mode === "IRL" && irlAddonEntitlement === false && !agencyTrialActive
+        ? "AI"
+        : mode;
+    setAgencyModeState(resolvedMode);
     setSearchParams(
       (prev) => {
         const newParams = new URLSearchParams(prev);
-        newParams.set("mode", mode);
+        newParams.set("mode", resolvedMode);
         return newParams;
       },
       { replace: true, preventScrollReset: true },
@@ -18125,10 +18028,35 @@ export default function AgencyDashboard() {
   };
 
   useEffect(() => {
-    if (agencyMode !== "AI") return;
+    if (effectiveAgencyMode !== "AI") return;
     if (activeTab !== "accounting") return;
     setActiveTab("dashboard");
-  }, [agencyMode, activeTab]);
+  }, [effectiveAgencyMode, activeTab]);
+
+  useEffect(() => {
+    if (irlAddonEntitlement !== false || agencyTrialActive) return;
+    if (agencyMode !== "IRL") return;
+    setAgencyModeState("AI");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("mode", "AI");
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
+    toast({
+      title: "IRL Booking add-on required",
+      description:
+        "Enable the IRL Booking add-on to access IRL mode in the agency dashboard.",
+    });
+  }, [
+    agencyMode,
+    irlAddonEntitlement,
+    agencyTrialActive,
+    setSearchParams,
+    toast,
+  ]);
 
   const setActiveTab = (tab: string) => {
     startTransition(() => {
@@ -18280,6 +18208,126 @@ export default function AgencyDashboard() {
   };
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeNotificationTab, setActiveNotificationTab] = useState<
+    "all" | "unread"
+  >("all");
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<
+    string[]
+  >(() => {
+    try {
+      const saved = localStorage.getItem("likelee_dismissed_notifications");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "likelee_dismissed_notifications",
+      JSON.stringify(dismissedNotificationIds),
+    );
+  }, [dismissedNotificationIds]);
+
+  const systemNotifications = useMemo(() => {
+    const alerts = [];
+    if (pendingBrandConnectionCount > 0) {
+      const parts = [];
+      const { numRequests, numOffers, numFeedback } = brandCounts;
+      if (numRequests > 0) parts.push(`${numRequests} request(s)`);
+      if (numOffers > 0) parts.push(`${numOffers} offer(s)`);
+      if (numFeedback > 0) parts.push(`${numFeedback} feedback(s)`);
+
+      alerts.push({
+        id: `brand_conn_${pendingBrandConnectionCount}`,
+        title: "Brand Connections",
+        message: `Pending: ${parts.join(", ")}.`,
+        time: "Action required",
+        color: "indigo",
+        isSummary: true,
+      });
+    }
+    if (pendingLicensingRequestsCount > 0) {
+      alerts.push({
+        id: `license_req_${pendingLicensingRequestsCount}`,
+        title: "Licensing Requests",
+        message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
+        time: "Action required",
+        color: "indigo",
+        isSummary: true,
+      });
+    }
+    if (pendingJobInvitesCount > 0) {
+      alerts.push({
+        id: `job_invites_${pendingJobInvitesCount}`,
+        title: "Job Invites",
+        message: `You have ${pendingJobInvitesCount} pending job invite(s).`,
+        time: "New message",
+        color: "blue",
+        isSummary: true,
+      });
+    }
+    alerts.push({
+      id: "welcome",
+      title: "System Alert",
+      message:
+        "Your verification was successfully processed. Welcome to Likelee!",
+      time: "Just now",
+      color: "blue",
+    });
+    return alerts;
+  }, [
+    pendingBrandConnectionCount,
+    pendingLicensingRequestsCount,
+    pendingJobInvitesCount,
+  ]);
+
+  const notifications = useMemo(() => {
+    return systemNotifications.map((n) => ({
+      ...n,
+      read: dismissedNotificationIds.includes(n.id),
+    }));
+  }, [systemNotifications, dismissedNotificationIds]);
+
+  const chatUnreadCount = useUnreadMessages(profile?.id);
+
+  const allNotifications = useMemo(() => {
+    const chatNotification =
+      chatUnreadCount > 0
+        ? {
+            id: `chat_unread_${chatUnreadCount}`,
+            title: "Messages",
+            message: `You have ${chatUnreadCount} unread message(s).`,
+            time: "New message",
+            color: "blue",
+            isSummary: true,
+            read: false,
+          }
+        : null;
+
+    return chatNotification
+      ? [chatNotification, ...notifications]
+      : notifications;
+  }, [chatUnreadCount, notifications]);
+
+  const unreadCount =
+    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+  const filteredNotifications = allNotifications.filter(
+    (n) => activeNotificationTab === "all" || !n.read,
+  );
+
+  const markAllAsRead = () => {
+    const unreadIds = allNotifications
+      .filter((n: any) => !n.read)
+      .map((n: any) => n.id);
+    setDismissedNotificationIds((prev) =>
+      Array.from(new Set([...prev, ...unreadIds])),
+    );
+  };
+
+  const markAsRead = (id: string) => {
+    setDismissedNotificationIds((prev) => Array.from(new Set([...prev, id])));
+  };
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
@@ -18288,6 +18336,75 @@ export default function AgencyDashboard() {
   const [supportSubject, setSupportSubject] = useState("");
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
+  const [refreshAllLoading, setRefreshAllLoading] = useState(false);
+
+  const refreshAll = async () => {
+    if (refreshAllLoading) return;
+    setRefreshAllLoading(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["agency-roster"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-talent-performance"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-revenue-breakdown"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-licensing-pipeline"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-dashboard-recent-activity"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-profile"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency-licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "licensing-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "brand-license-requests"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["agency-clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency", "job-invites"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "campaign-offers-my"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "package-feedback"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "brand-connection-requests"],
+        }),
+      ]);
+
+      if ("serviceWorker" in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.update();
+        } catch {
+          // best-effort
+        }
+      }
+
+      toast({
+        title: "Refreshed",
+        description: "All dashboard data has been refreshed.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Refresh failed",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setRefreshAllLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!showNotifications && !showProfileMenu) return;
@@ -18339,7 +18456,7 @@ export default function AgencyDashboard() {
   }
 
   const sidebarItems: SidebarItem[] =
-    agencyMode === "AI"
+    effectiveAgencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
@@ -18348,6 +18465,10 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
@@ -18356,25 +18477,41 @@ export default function AgencyDashboard() {
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
           {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
+          },
+          {
             id: "licensing",
             label: "Licensing",
             icon: FileText,
             subItems: [
               "Licensing Requests",
-              "License Submissions",
               "Active Licenses",
+              "License Submissions",
               "License Templates",
             ],
+            badge:
+              pendingLicensingRequestsCount > 0
+                ? pendingLicensingRequestsCount
+                : undefined,
+            badges: {
+              "Licensing Requests":
+                pendingLicensingRequestsCount > 0
+                  ? pendingLicensingRequestsCount
+                  : undefined,
+            },
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
           {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            badge: "Coming soon",
           },
           {
             id: "analytics",
@@ -18392,6 +18529,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18412,12 +18551,24 @@ export default function AgencyDashboard() {
             label: "Jobs",
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
+            badge:
+              pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "roster",
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+          },
+          {
+            id: "messages",
+            label: "Messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount || undefined,
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -18469,6 +18620,8 @@ export default function AgencyDashboard() {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
+            disabled: !agencyCanUseBrandConnections,
+            disabledReason: "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18500,7 +18653,7 @@ export default function AgencyDashboard() {
   }, [activeTab, activeSubTab, sidebarItems]);
 
   return (
-    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-sans text-slate-800">
+    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -18511,17 +18664,29 @@ export default function AgencyDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        style={{ width: isMobile ? "16rem" : `${sidebarWidth}px` }}
       >
         <div
-          className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+            isSidebarCollapsed
+              ? "p-4 flex items-center justify-center"
+              : "p-6 flex items-center gap-3"
+          }`}
           onClick={() => {
             setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
+          title={
+            isSidebarCollapsed ? profile?.agency_name || "Agency" : undefined
+          }
         >
           <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
+            <div
+              className={`${
+                isSidebarCollapsed ? "w-12 h-12" : "w-16 h-16"
+              } rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden`}
+            >
               {profile?.logo_url ? (
                 <img
                   src={profile.logo_url}
@@ -18530,37 +18695,72 @@ export default function AgencyDashboard() {
                 />
               ) : (
                 <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-indigo-600" />
+                  <Building2
+                    className={`${isSidebarCollapsed ? "w-6 h-6" : "w-8 h-8"} text-indigo-600`}
+                  />
                 </div>
               )}
             </div>
             <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-                {profile?.agency_name || "Agency Name"}
-              </h2>
-              {agencyKycStatus === "approved" && (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </Badge>
-              )}
+          {showLabels && (
+            <div
+              className="flex flex-col min-w-0 transition-opacity duration-150"
+              style={{ opacity: labelOpacity }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+                  {profile?.agency_name || "Agency Name"}
+                </h2>
+                {agencyKycStatus === "approved" && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 font-medium truncate">
+                {profile?.email || user?.email}
+              </p>
             </div>
-            <p className="text-sm text-gray-500 font-medium truncate">
-              {profile?.email || user?.email}
-            </p>
-          </div>
+          )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-4">
+        <nav
+          ref={(node) => {
+            sidebarNavRef.current = node;
+          }}
+          className={`relative flex-1 py-4 overflow-x-hidden ${
+            isSidebarCollapsed
+              ? "px-2 overflow-y-hidden"
+              : "px-4 overflow-y-auto"
+          }`}
+        >
           {sidebarItems.map((item) => (
-            <div key={item.id} className="mb-2">
+            <div
+              key={item.id}
+              className={isSidebarCollapsed ? "mb-1" : "mb-2"}
+              onMouseEnter={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                openCollapsedPopout(item.id);
+              }}
+              onMouseLeave={() => {
+                if (!isSidebarCollapsed || !item.subItems) return;
+                closeCollapsedPopout();
+              }}
+            >
               <button
+                ref={(node) => {
+                  collapsedItemButtonRefs.current[item.id] = node;
+                }}
                 onClick={() => {
                   if (item.disabled) {
                     navigate("/AgencySubscribe");
                     setSidebarOpen(false);
+                    return;
+                  }
+                  if (isSidebarCollapsed && item.subItems) {
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
                     return;
                   }
                   if (item.subItems) {
@@ -18572,118 +18772,351 @@ export default function AgencyDashboard() {
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
+                    if (isSidebarCollapsed) {
+                      setOpenCollapsedSubmenu(null);
+                    }
                   }
                 }}
                 title={
                   item.disabled
                     ? item.disabledReason || "Requires Pro"
-                    : undefined
+                    : isSidebarCollapsed
+                      ? item.label
+                      : undefined
                 }
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                onFocus={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  openCollapsedPopout(item.id);
+                }}
+                onBlur={() => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (openCollapsedSubmenu === item.id) return;
+                  closeCollapsedPopout();
+                }}
+                onKeyDown={(event) => {
+                  if (!isSidebarCollapsed || !item.subItems) return;
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setOpenCollapsedSubmenu(null);
+                    closeCollapsedPopout({ immediate: true });
+                    return;
+                  }
+                  if (event.key === "ArrowRight" || event.key === "Enter") {
+                    event.preventDefault();
+                    openCollapsedPopout(item.id);
+                    setOpenCollapsedSubmenu(item.id);
+                  }
+                }}
+                className={`w-full flex items-center rounded-lg text-sm font-medium transition-colors ${
+                  isSidebarCollapsed
+                    ? "justify-center px-2 py-1.5 relative"
+                    : "gap-3 px-3 py-2.5"
+                } ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                } ${
+                  isSidebarCollapsed &&
+                  !!item.subItems &&
+                  (collapsedPopout?.itemId === item.id ||
+                    openCollapsedSubmenu === item.id)
+                    ? "bg-gray-50 text-gray-900"
+                    : ""
                 } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`${
+                    isSidebarCollapsed ? "w-5 h-5" : "w-5 h-5"
+                  } ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"}`}
                 />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    {item.badge}
+                {isSidebarCollapsed && item.subItems && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="absolute right-1.5 h-5 w-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openCollapsedPopout(item.id);
+                      setOpenCollapsedSubmenu(item.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openCollapsedPopout(item.id);
+                        setOpenCollapsedSubmenu(item.id);
+                      }
+                    }}
+                    aria-label={`Open ${item.label} submenu`}
+                  >
+                    <ChevronRight className="h-3 w-3" />
                   </span>
                 )}
-                {item.disabled && (
-                  <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    Pro
-                  </span>
-                )}
-                {item.subItems && (
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
-                  />
+                {showLabels && (
+                  <>
+                    <div
+                      className="flex-1 text-left leading-snug transition-opacity duration-150"
+                      style={{ opacity: labelOpacity }}
+                    >
+                      <span className="block whitespace-normal break-words">
+                        {item.label}
+                      </span>
+                      {typeof item.badge === "string" && (
+                        <span className="inline-flex mt-1 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    {item.badge !== undefined &&
+                      typeof item.badge !== "string" && (
+                        <span
+                          className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                          style={{ opacity: labelOpacity }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    {item.disabled && (
+                      <span
+                        className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        style={{ opacity: labelOpacity }}
+                      >
+                        Pro
+                      </span>
+                    )}
+                    {item.subItems && (
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
+                        style={{ opacity: labelOpacity }}
+                      />
+                    )}
+                  </>
                 )}
               </button>
 
               {/* Sub-items */}
-              {item.subItems && expandedItems.includes(item.id) && (
-                <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                  {item.subItems.map((subItem) => (
-                    <button
-                      key={subItem}
-                      onClick={() => {
-                        if (
+              {item.subItems &&
+                expandedItems.includes(item.id) &&
+                showSubItems &&
+                showLabels && (
+                  <div className="mt-1 ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                        }}
+                        title={
                           item.disabledSubItems &&
                           item.disabledSubItems[subItem]
-                        ) {
-                          navigate("/AgencySubscribe");
-                          setSidebarOpen(false);
-                          return;
+                            ? "Requires Pro"
+                            : undefined
                         }
-                        if (
-                          item.id === "jobs" &&
-                          subItem === "Open Job Board"
-                        ) {
-                          navigate(
-                            `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
-                              `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
-                            )}`,
-                          );
-                          setSidebarOpen(false);
-                          return;
-                        }
-                        setActiveView(item.id, subItem);
-                        setSidebarOpen(false);
-                      }}
-                      title={
-                        item.disabledSubItems && item.disabledSubItems[subItem]
-                          ? "Requires Pro"
-                          : undefined
-                      }
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="truncate">{subItem}</span>
-                      <span className="flex items-center gap-2">
-                        {item.disabledSubItems &&
-                          item.disabledSubItems[subItem] && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                              Pro
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
                             </span>
                           )}
-                        {item.badges && item.badges[subItem] && (
-                          <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                            {item.badges[subItem]}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
           ))}
+
+          {/* Items are rendered above */}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4">
           <button
             onClick={() => logout()}
-            className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50"
+            className={`flex items-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors w-full rounded-lg hover:bg-red-50 ${
+              isSidebarCollapsed
+                ? "justify-center px-2 py-2"
+                : "gap-2 px-3 py-2"
+            }`}
+            title={isSidebarCollapsed ? "Sign Out" : undefined}
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-5 h-5 transform -scale-x-100" />
+            {showLabels && (
+              <span
+                className="transition-opacity duration-150"
+                style={{ opacity: labelOpacity }}
+              >
+                Sign Out
+              </span>
+            )}
           </button>
         </div>
+
+        {!isMobile && (
+          <button
+            onClick={toggleSidebarCollapsed}
+            className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+          >
+            <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+          </button>
+        )}
+
+        {!isMobile && (
+          <div
+            onMouseDown={handleSidebarDragStart}
+            className="absolute inset-y-0 right-0 w-2 cursor-ew-resize"
+            title="Resize sidebar"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Collapsed sub-items popout (single instance, anchored to hovered item) */}
+        {/* Rendered outside the <nav> to avoid clipping by overflow-x-hidden */}
+        <AnimatePresence>
+          {isSidebarCollapsed &&
+            collapsedPopout &&
+            (() => {
+              const item = sidebarItems.find(
+                (i) => i.id === collapsedPopout.itemId,
+              );
+              if (!item?.subItems || item.subItems.length === 0) return null;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute left-full z-50 w-64 pl-2 -ml-px"
+                  style={{ top: collapsedPopout.top }}
+                  onMouseEnter={() => {
+                    clearCollapsedPopoutHideTimeout();
+                  }}
+                  onMouseLeave={() => {
+                    closeCollapsedPopout();
+                  }}
+                >
+                  <div
+                    className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2"
+                    role="menu"
+                    aria-label={`${item.label} submenu`}
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        setOpenCollapsedSubmenu(null);
+                        closeCollapsedPopout({ immediate: true });
+                      }
+                    }}
+                  >
+                    <div className="absolute -left-1.5 top-3 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
+                    {item.subItems.map((subItem) => (
+                      <button
+                        key={subItem}
+                        role="menuitem"
+                        onClick={() => {
+                          if (
+                            item.disabledSubItems &&
+                            item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            item.id === "jobs" &&
+                            subItem === "Open Job Board"
+                          ) {
+                            navigate(
+                              `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                                `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                              )}`,
+                            );
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          setActiveView(item.id, subItem);
+                          setSidebarOpen(false);
+                          setOpenCollapsedSubmenu(null);
+                          closeCollapsedPopout({ immediate: true });
+                        }}
+                        title={
+                          item.disabledSubItems &&
+                          item.disabledSubItems[subItem]
+                            ? "Requires Pro"
+                            : undefined
+                        }
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeTab === item.id && activeSubTab === subItem
+                            ? "text-indigo-700 bg-indigo-50 font-bold"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <span className="truncate">{subItem}</span>
+                        <span className="flex items-center gap-2">
+                          {item.disabledSubItems &&
+                            item.disabledSubItems[subItem] && (
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                                Pro
+                              </span>
+                            )}
+                          {item.badges && item.badges[subItem] && (
+                            <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              {item.badges[subItem]}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
+        </AnimatePresence>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden">
+      <div
+        className="flex-1 flex flex-col ml-0 overflow-hidden"
+        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
+      >
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
@@ -18696,23 +19129,52 @@ export default function AgencyDashboard() {
           </Button>
 
           <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
+            {!agencyBillingLoading &&
+              !agencyTrialActive &&
+              !agencyTrialEndsAt &&
+              agencyPlanTier === "free" && (
+                <motion.button
+                  type="button"
+                  onClick={() => navigate("/AgencySubscribe")}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-xs font-black text-amber-900 shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
+                  title="Activate Pro Trial"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-inner">
+                    <Gift className="h-4 w-4 text-white" />
+                  </span>
+                  <span className="uppercase tracking-wide">PRO</span>
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-80" />
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-60 animate-ping" />
+                </motion.button>
+              )}
+
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
-              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              onClick={() =>
+                irlAddonLocked
+                  ? navigate("/AgencySubscribe")
+                  : setAgencyMode(effectiveAgencyMode === "AI" ? "IRL" : "AI")
+              }
+              className={
+                irlAddonLocked
+                  ? "font-bold border-2 border-amber-200 hover:border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 shadow-sm transition-all px-3 sm:px-4"
+                  : "font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
+              }
             >
-              {agencyMode === "AI" ? "AI" : "IRL"}
-              <span className="hidden sm:inline">&nbsp;Mode</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-500 hover:text-gray-900"
-              onClick={() => setShowHeaderSearch(true)}
-            >
-              <Search className="w-5 h-5" />
+              {irlAddonLocked ? (
+                <>
+                  <Crown className="w-4 h-4 mr-2 text-amber-600" />
+                  Add IRL Booking
+                </>
+              ) : (
+                <>
+                  {effectiveAgencyMode === "AI" ? "AI" : "IRL"}
+                  <span className="hidden sm:inline">&nbsp;Mode</span>
+                </>
+              )}
             </Button>
 
             {/* Notifications Dropdown */}
@@ -18724,30 +19186,100 @@ export default function AgencyDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center px-[5px] py-[2px] text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900">Notifications</h3>
+                <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                  <div className="p-4 border-b border-gray-100 pb-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-6">
+                      <button
+                        onClick={() => setActiveNotificationTab("all")}
+                        className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setActiveNotificationTab("unread")}
+                        className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                      >
+                        Unread ({unreadCount})
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <p className="text-sm font-bold text-gray-900">
-                      No notifications yet
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      When your agency receives updates, they’ll show up here.
-                    </p>
+                  <div className="divide-y divide-gray-100 max-h-[320px] overflow-y-auto w-full">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="p-6 flex flex-col items-center justify-center text-center">
+                        <p className="text-sm font-medium text-gray-500">
+                          {activeNotificationTab === "all"
+                            ? "No notifications found."
+                            : "You're all caught up!"}
+                        </p>
+                      </div>
+                    ) : (
+                      filteredNotifications.map((notif: any) => (
+                        <button
+                          key={notif.id}
+                          onClick={() => markAsRead(notif.id as string)}
+                          className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center border ${
+                              notif.color === "indigo"
+                                ? "bg-indigo-50 border-indigo-100"
+                                : "bg-blue-50 border-blue-100"
+                            }`}
+                          >
+                            <Users
+                              className={`w-4 h-4 ${notif.color === "indigo" ? "text-indigo-600" : "text-blue-600"}`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                              <span className="font-bold">{notif.title}</span>
+                            </p>
+                            <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                              {notif.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                              {notif.time}
+                            </p>
+                          </div>
+                          {!notif.read && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-2" />
+                          )}
+                        </button>
+                      ))
+                    )}
                   </div>
-                  <div className="p-4 border-t border-gray-100 text-center">
+                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
                     <button
-                      className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
                       onClick={() => {
+                        toast({
+                          title: "View all notifications",
+                          description:
+                            "Navigating to full notifications page...",
+                        });
                         setShowNotifications(false);
-                        setShowSupportDialog(true);
                       }}
+                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                      Contact support
+                      View all notifications
                     </button>
                   </div>
                 </div>
@@ -18758,9 +19290,7 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
-              onClick={() => {
-                setShowSupportDialog(true);
-              }}
+              onClick={() => navigate("/support")}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
@@ -18797,9 +19327,11 @@ export default function AgencyDashboard() {
                         <h3 className="font-bold text-gray-900 truncate">
                           {profile?.agency_name || "Agency Name"}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          Agency Account
-                        </p>
+                        <div className="mt-1 flex items-center">
+                          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                            {agencyDisplayPlanLabel}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {agencyKycStatus === "approved" && (
@@ -18859,7 +19391,7 @@ export default function AgencyDashboard() {
                           Billing & Subscription
                         </p>
                         <p className="text-xs text-gray-500">
-                          Agency {agencyPlanLabel} Plan
+                          {agencyDisplayPlanLabel}
                         </p>
                       </div>
                     </button>
@@ -18906,7 +19438,7 @@ export default function AgencyDashboard() {
                       onClick={() => logout()}
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition-colors text-left text-red-600"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 transform -scale-x-100" />
                       <span className="text-sm font-bold">Sign Out</span>
                     </button>
                   </div>
@@ -19052,327 +19584,439 @@ export default function AgencyDashboard() {
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
           {activeTab === "dashboard" && (
-            <AgencyDashboardView
-              isSportsAgency={isSportsAgency}
-              onKYC={handleKYC}
-              agencyName={agencyName}
-              rosterData={rosterTalents}
-              licensingRequestsCount={pendingLicensingRequestsCount}
-              overview={dashboardOverviewQuery.data}
-              talentPerformance={talentPerformanceQuery.data}
-              revenueBreakdown={revenueBreakdownQuery.data}
-              licensingPipeline={licensingPipelineQuery.data}
-              recentActivity={recentActivityQuery.data}
-              kycStatus={agencyKycStatus}
-              kycRejectionReason={agencyKycRejectionReason}
-              kycLoading={kycLoading}
-              onRefreshStatus={refreshAgencyKycStatus}
-              refreshLoading={kycStatusRefreshing}
-              canResumeKyc={
-                String(agencyKycStatus || "")
-                  .trim()
-                  .toLowerCase() === "pending" && !!savedKycSessionUrl
-              }
-            />
+            <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-lg font-black text-gray-900">
+                    Welcome to your agency dashboard
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    This is your main hub for managing your agency.
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  {!agencyBillingLoading && (
+                    <div
+                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                        agencyTrialActive
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                          : agencyPlanTier === "pro"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                            : agencyPlanTier === "basic" ||
+                                agencyPlanTier === "agency"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                              : agencyPlanTier === "enterprise"
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                : "bg-white text-gray-900 ring-gray-200"
+                      }`}
+                      title="Current plan"
+                    >
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>PRO TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
+                    </div>
+                  )}
+
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <Button
+                        type="button"
+                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        Upgrade
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
+              </div>
+            </div>
           )}
-          {activeTab === "roster" && isRosterPrimarySubTab && (
-            <AgencyRosterView
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              categoryFilter={categoryFilter}
-              setCategoryFilter={setCategoryFilter}
-              sortConfig={sortConfig}
-              setSortConfig={setSortConfig}
-              agencyMode={agencyMode}
-              rosterData={rosterTalents}
-              activeCampaigns={activeCampaigns}
-              earnings30dTotalCents={earnings30dTotalCents}
-              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
-              agencyName={agencyName}
-              agencyEmail={agencyEmail}
-              agencyWebsite={agencyWebsite}
-              logoUrl={agencyLogoUrl}
-              kycStatus={agencyKycStatus}
-              onEditProfile={goToEditProfile}
-              onViewMarketplace={goToMarketplace}
-              seatsLimit={seatsLimit}
-              isLoading={rosterQuery.isLoading}
-              onRosterChanged={() => rosterQuery.refetch()}
-              isSportsAgency={isSportsAgency}
-            />
-          )}
-          {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-            <PerformanceTiers isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "jobs" && activeSubTab === "Job Invites" && (
-            <AgencyJobInvitesView />
-          )}
-          {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && (
-              <LicensingRequestsView
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === "dashboard" && (
+              <AgencyDashboardView
                 isSportsAgency={isSportsAgency}
-                onBrandRequestAccepted={(ctx) => {
-                  console.log("Brand request accepted, context:", ctx);
-                  setBrandRequestContext(ctx);
-                  setActiveView("licensing", "License Templates");
-                }}
-              />
-            )}
-          {activeTab === "licensing" &&
-            activeSubTab === "Brand Connections" && <BrandConnectionsView />}
-          {activeTab === "brand-connections" && <BrandConnectionsView />}
-          {activeTab === "licensing" &&
-            activeSubTab === "License Submissions" && (
-              <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
-            )}
-          {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
-            <ActiveLicensesView
-              onRenew={handleRenew}
-              isSportsAgency={isSportsAgency}
-            />
-          )}
-          {activeTab === "licensing" &&
-            activeSubTab === "License Templates" && (
-              <LicenseTemplatesTab
-                isSportsAgency={isSportsAgency}
-                brandRequestContext={
-                  brandRequestContext
-                    ? {
-                        brand_id: brandRequestContext.brandId,
-                        brand_name: brandRequestContext.brandName,
-                        brand_email: brandRequestContext.brandEmail,
-                        licensing_request_id:
-                          brandRequestContext.licensingRequestId,
-                        talent_id: brandRequestContext.talentId,
-                        talent_name: brandRequestContext.talentName,
-                      }
-                    : null
+                onKYC={handleKYC}
+                agencyName={agencyName}
+                rosterData={rosterTalents}
+                licensingRequestsCount={pendingLicensingRequestsCount}
+                overview={dashboardOverviewQuery.data}
+                talentPerformance={talentPerformanceQuery.data}
+                revenueBreakdown={revenueBreakdownQuery.data}
+                licensingPipeline={licensingPipelineQuery.data}
+                recentActivity={recentActivityQuery.data}
+                kycStatus={agencyKycStatus}
+                kycRejectionReason={agencyKycRejectionReason}
+                kycLoading={kycLoading}
+                onRefreshStatus={refreshAgencyKycStatus}
+                refreshLoading={kycStatusRefreshing}
+                canResumeKyc={
+                  String(agencyKycStatus || "")
+                    .trim()
+                    .toLowerCase() === "pending" && !!savedKycSessionUrl
                 }
-                onBrandRequestContextHandled={() => {
-                  console.log("Brand request context handled, clearing");
-                  setBrandRequestContext(null);
-                }}
               />
             )}
-          {activeTab === "protection" &&
-            activeSubTab === "Protect & Usage" &&
-            (hasProAccess ? (
-              <ProtectionUsageView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Protection & Usage is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "protection" &&
-            activeSubTab === "Compliance Hub" &&
-            (hasProAccess ? (
-              <ComplianceHubView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Compliance Hub is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
-            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-              <div className="text-lg font-black text-gray-900">
-                Coming soon
-              </div>
-              <div className="text-gray-500 font-medium mt-1">
-                Protection & Usage is coming soon.
-              </div>
-            </Card>
-          )}
-          {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
-            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-              <div className="text-lg font-black text-gray-900">
-                Coming soon
-              </div>
-              <div className="text-gray-500 font-medium mt-1">
-                Compliance Hub is coming soon.
-              </div>
-            </Card>
-          )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Analytics Dashboard" &&
-            (agencyMode === "IRL" ? (
+            {activeTab === "roster" && isRosterPrimarySubTab && (
+              <AgencyRosterView
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                categoryFilter={categoryFilter}
+                setCategoryFilter={setCategoryFilter}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
+                agencyMode={effectiveAgencyMode}
+                rosterData={rosterTalents}
+                activeCampaigns={activeCampaigns}
+                earnings30dTotalCents={earnings30dTotalCents}
+                earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+                agencyName={agencyName}
+                agencyEmail={agencyEmail}
+                agencyWebsite={agencyWebsite}
+                logoUrl={agencyLogoUrl}
+                kycStatus={agencyKycStatus}
+                onEditProfile={goToEditProfile}
+                onViewMarketplace={goToMarketplace}
+                seatsLimit={seatsLimit}
+                isLoading={rosterQuery.isLoading}
+                onRosterChanged={() => rosterQuery.refetch()}
+                isSportsAgency={isSportsAgency}
+              />
+            )}
+            {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
+              <PerformanceTiers isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "jobs" &&
+              activeSubTab === "Job Invites" &&
+              (hasProAccess ? (
+                <AgencyJobInvitesView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Jobs are available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "licensing" &&
+              activeSubTab === "Licensing Requests" && (
+                <LicensingRequestsView
+                  isSportsAgency={isSportsAgency}
+                  onBrandRequestAccepted={(ctx) => {
+                    console.log("Brand request accepted, context:", ctx);
+                    setBrandRequestContext(ctx);
+                    setActiveView("licensing", "License Templates");
+                  }}
+                />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Brand Connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "brand-connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "licensing" &&
+              activeSubTab === "License Submissions" && (
+                <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Active Licenses" && (
+                <ActiveLicensesView
+                  onRenew={handleRenew}
+                  isSportsAgency={isSportsAgency}
+                />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "License Templates" && (
+                <LicenseTemplatesTab
+                  isSportsAgency={isSportsAgency}
+                  renewalLaunchContext={renewalLaunchContext}
+                  onRenewalLaunchHandled={() => {
+                    setRenewalLaunchContext(null);
+                  }}
+                  brandRequestContext={
+                    brandRequestContext
+                      ? {
+                          brand_id: brandRequestContext.brandId,
+                          brand_name: brandRequestContext.brandName,
+                          brand_email: brandRequestContext.brandEmail,
+                          licensing_request_id:
+                            brandRequestContext.licensingRequestId,
+                          talent_id: brandRequestContext.talentId,
+                          talent_name: brandRequestContext.talentName,
+                        }
+                      : null
+                  }
+                  onBrandRequestContextHandled={() => {
+                    console.log("Brand request context handled, clearing");
+                    setBrandRequestContext(null);
+                  }}
+                />
+              )}
+            {activeTab === "protection" && (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">
                   Coming soon
                 </div>
                 <div className="text-gray-500 font-medium mt-1">
-                  Analytics Dashboard for IRL Mode is coming soon.
+                  Protection & Usage is coming soon.
                 </div>
               </Card>
-            ) : hasProAccess ? (
-              <AnalyticsDashboardView
-                onRenewLicense={handleRenew}
-                agencyMode={agencyMode}
-                licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                talentData={TALENT_DATA}
-              />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Advanced Analytics is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && (
-              <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
             )}
-          {activeTab === "deliverables" && <AgencyDeliverablesView />}
-
-          {activeTab === "packages" && (
-            <PackagesView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "catalogs" && (
-            <CatalogsView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "payouts" && (
-            <ConnectBankView isSportsAgency={isSportsAgency} />
-          )}
-          {activeTab === "settings" && activeSubTab === "General Settings" && (
-            <GeneralSettingsView />
-          )}
-          {activeTab === "settings" && activeSubTab === "File Storage" && (
-            <FileStorageView />
-          )}
-          {activeTab === "scouting" && (
-            <ScoutingHubView
-              isSportsAgency={isSportsAgency}
-              activeTab={activeScoutingTab}
-              setActiveTab={setActiveScoutingTab}
-              isEventModalOpen={isEventModalOpen}
-              setIsEventModalOpen={setIsEventModalOpen}
-              eventToEdit={eventToEdit}
-              setEventToEdit={setEventToEdit}
-              isPlanTripModalOpen={isPlanTripModalOpen}
-              setIsPlanTripModalOpen={setIsPlanTripModalOpen}
-              isProspectModalOpen={isProspectModalOpen}
-              setIsProspectModalOpen={setIsProspectModalOpen}
-              prospectToEdit={prospectToEdit}
-              setProspectToEdit={setProspectToEdit}
-            />
-          )}
-          {activeTab === "marketplace" && <MarketplaceTab />}
-          {activeTab === "client-crm" && <ClientCRMView />}
-          {activeTab === "file-storage" && <FileStorageView />}
-          {activeTab === "bookings" && (
-            <BookingsView
-              activeSubTab={activeSubTab}
-              bookings={bookings}
-              onAddBooking={onAddBooking}
-              onUpdateBooking={onUpdateBooking}
-              onCancelBooking={onCancelBooking}
-              bookOuts={bookOuts}
-              onAddBookOut={onAddBookOut}
-              onRemoveBookOut={onRemoveBookOut}
-              isSportsAgency={isSportsAgency}
-              agencyMode={agencyMode}
-            />
-          )}
-          {activeTab === "accounting" && (
-            <div>
-              {activeSubTab === "Connect Bank" && (
-                <ConnectBankView isSportsAgency={isSportsAgency} />
+            {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (effectiveAgencyMode === "IRL" ? (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Coming soon
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Analytics Dashboard for IRL Mode is coming soon.
+                  </div>
+                </Card>
+              ) : hasProAccess ? (
+                <AnalyticsDashboardView
+                  onRenewLicense={handleRenew}
+                  agencyMode={effectiveAgencyMode}
+                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                  talentData={TALENT_DATA}
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Advanced Analytics is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "analytics" &&
+              activeSubTab === "Royalties & Payouts" && (
+                <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
               )}
-              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
-              {activeSubTab === "Invoice Management" && (
-                <InvoiceManagementView
-                  setActiveSubTab={setActiveSubTab}
-                  activeSubTab={activeSubTab}
-                  isSportsAgency={isSportsAgency}
+            {activeTab === "deliverables" && <AgencyDeliverablesView />}
+
+            {activeTab === "packages" && (
+              <PackagesView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "catalogs" && (
+              <CatalogsView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "payouts" && (
+              <ConnectBankView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "settings" &&
+              activeSubTab === "General Settings" && (
+                <GeneralSettingsView
+                  hasIrlBookingAddon={hasIrlBookingAddon}
+                  hasProAccess={hasProAccess}
+                  agencyDisplayPlanLabel={agencyDisplayPlanLabel}
                 />
               )}
-              {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
-              {(activeSubTab === "Talent Statements" ||
-                activeSubTab === "Athlete Statements") && (
-                <TalentStatementsView isSportsAgency={isSportsAgency} />
-              )}
-              {activeSubTab === "Financial Reports" &&
-                (hasProAccess ? (
-                  <FinancialReportsView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Financial Reports are available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeSubTab === "Expense Tracking" &&
-                (hasProAccess ? (
-                  <ExpenseTrackingView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Expense Tracking is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          )}
+            {activeTab === "settings" && activeSubTab === "File Storage" && (
+              <FileStorageView />
+            )}
+            {activeTab === "scouting" && (
+              <ScoutingHubView
+                isSportsAgency={isSportsAgency}
+                activeTab={activeScoutingTab}
+                setActiveTab={setActiveScoutingTab}
+                isEventModalOpen={isEventModalOpen}
+                setIsEventModalOpen={setIsEventModalOpen}
+                eventToEdit={eventToEdit}
+                setEventToEdit={setEventToEdit}
+                isPlanTripModalOpen={isPlanTripModalOpen}
+                setIsPlanTripModalOpen={setIsPlanTripModalOpen}
+                isProspectModalOpen={isProspectModalOpen}
+                setIsProspectModalOpen={setIsProspectModalOpen}
+                prospectToEdit={prospectToEdit}
+                setProspectToEdit={setProspectToEdit}
+              />
+            )}
+            {activeTab === "talent-packages" && (
+              <TalentPackagesView
+                isSportsAgency={isSportsAgency}
+                agencyId={profile?.id}
+              />
+            )}
+            {activeTab === "marketplace" && (
+              <MarketplaceTab
+                connectLocked={!agencyCanConnectMarketplace}
+                onConnectLocked={() => navigate("/agencysubscribe")}
+              />
+            )}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Messaging is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "client-crm" && <ClientCRMView />}
+            {activeTab === "file-storage" && <FileStorageView />}
+            {activeTab === "bookings" && (
+              <BookingsView
+                activeSubTab={activeSubTab}
+                bookings={bookings}
+                onAddBooking={onAddBooking}
+                onUpdateBooking={onUpdateBooking}
+                onCancelBooking={onCancelBooking}
+                bookOuts={bookOuts}
+                onAddBookOut={onAddBookOut}
+                onRemoveBookOut={onRemoveBookOut}
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+              />
+            )}
+            {activeTab === "accounting" && (
+              <div>
+                {activeSubTab === "Connect Bank" && (
+                  <ConnectBankView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Invoice Generation" && (
+                  <GenerateInvoiceView />
+                )}
+                {activeSubTab === "Invoice Management" && (
+                  <InvoiceManagementView
+                    setActiveSubTab={setActiveSubTab}
+                    activeSubTab={activeSubTab}
+                    isSportsAgency={isSportsAgency}
+                  />
+                )}
+                {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
+                {(activeSubTab === "Talent Statements" ||
+                  activeSubTab === "Athlete Statements") && (
+                  <TalentStatementsView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Financial Reports" &&
+                  (hasProAccess ? (
+                    <FinancialReportsView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        Financial Reports are available on the Pro plan.
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                {activeSubTab === "Expense Tracking" &&
+                  (hasProAccess ? (
+                    <ExpenseTrackingView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        Expense Tracking is available on the Pro plan.
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </Suspense>
         </main>
 
         <Dialog

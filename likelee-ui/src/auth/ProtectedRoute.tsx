@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
+import { getOnboardingPath, isOnboardingIncomplete } from "./onboarding";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -34,6 +35,10 @@ export default function ProtectedRoute({
     if (profile.role === "talent") return ["talent", "creator"];
     return [profile.role];
   }, [profile?.role]);
+  const onboardingPath = React.useMemo(
+    () => getOnboardingPath(profile),
+    [profile],
+  );
 
   // Handle role-based redirect with useEffect to prevent content flash
   React.useEffect(() => {
@@ -47,12 +52,12 @@ export default function ProtectedRoute({
         return;
       }
 
-      // Redirect incomplete onboarding to signup
       if (
-        profile.onboarding_step === "email_verification" &&
-        location.pathname !== "/organization-signup"
+        onboardingPath &&
+        isOnboardingIncomplete(profile) &&
+        window.location.pathname !== onboardingPath.split("?")[0]
       ) {
-        navigate("/organization-signup", { replace: true });
+        navigate(onboardingPath, { replace: true });
       }
     }
   }, [
@@ -62,6 +67,7 @@ export default function ProtectedRoute({
     allowedRoles,
     location.pathname,
     navigate,
+    onboardingPath,
   ]);
 
   if (!initialized) {
@@ -85,8 +91,9 @@ export default function ProtectedRoute({
 
   // Show loading spinner during onboarding redirect
   if (
-    profile.onboarding_step === "email_verification" &&
-    location.pathname !== "/organization-signup"
+    onboardingPath &&
+    isOnboardingIncomplete(profile) &&
+    location.pathname !== onboardingPath.split("?")[0]
   ) {
     return <LoadingSpinner />;
   }

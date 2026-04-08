@@ -42,7 +42,6 @@ Likelee relies on several external integrations for essential functionality:
 | **AI Generation/Rendering** | Model routing for image/video generation by AI Creators.                 | Replicate API, Hugging Face APIs, Together.ai.                                       |
 | **Storage & Database**      | User profiles, waitlist submissions, and uploaded photos.                | **Firebase Realtime Database**, **Firebase Storage**.                                |
 | **Asset Traceability**      | Invisible watermarking for exports.                                      | Truepic Lens.                                                                        |
-| **Moderation**              | Analysis of uploaded images.                                             | AWS Rekognition.                                                                     |
 | **Royalty Tracking**        | Fetching ad-spend and sales data for spend-share/revenue-share models.   | Meta Ads API, TikTok Ads API, Google Ads API, Shopify Admin API, Stripe (read-only). |
 
 ## 4. Logical Component View

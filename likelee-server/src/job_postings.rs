@@ -166,6 +166,7 @@ pub struct ApplyJobPayload {
     pub comp_card_name: Option<String>,
     pub comp_card_url: Option<String>,
     pub comp_card_path: Option<String>,
+    pub comp_cards: Option<serde_json::Value>,
     pub portfolio_link: Option<String>,
     pub github_link: Option<String>,
     pub linkedin_link: Option<String>,
@@ -635,10 +636,7 @@ pub async fn list_jobs(
     }
     if let Some(s) = params.search.as_ref().filter(|s| !s.is_empty()) {
         let pattern = format!("%{}%", s);
-        req = req.or(format!(
-            "job_title.ilike.{},about_role.ilike.{}",
-            pattern, pattern
-        ));
+        req = req.ilike("job_title", pattern);
     }
 
     let resp = req
@@ -1466,6 +1464,12 @@ pub async fn apply_job(
                 }
             }
         }
+        crate::entitlements::require_agency_paid_access(
+            &state,
+            &applicant_id,
+            "paid_plan_required_for_job_applications",
+        )
+        .await?;
     } else if applicant_role == "creator" || applicant_role == "ai_artist" {
         let mut req = state.pg.from("creators").select("id,email");
         if let Some(email) = user
@@ -1507,6 +1511,7 @@ pub async fn apply_job(
         "comp_card_name": payload.comp_card_name,
         "comp_card_url": payload.comp_card_url,
         "comp_card_path": payload.comp_card_path,
+        "comp_cards": payload.comp_cards,
         "portfolio_link": payload.portfolio_link,
         "github_link": payload.github_link,
         "linkedin_link": payload.linkedin_link,

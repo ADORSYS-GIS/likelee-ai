@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
 import { getAgencyPayoutsAccountStatus } from "@/api/functions";
 import { RefreshCw } from "lucide-react";
 import {
@@ -44,17 +44,22 @@ import {
 } from "@/components/ui/dialog";
 import {
   Activity,
+  ChevronDown,
   ShieldCheck,
   ExternalLink,
   Key,
   Check,
   Info,
 } from "lucide-react";
-import { ensureHexColor } from "@/utils/color";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -71,6 +76,132 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+
+type GeneralSettingsViewProps = {
+  hasIrlBookingAddon?: boolean;
+  hasProAccess?: boolean;
+  agencyDisplayPlanLabel?: string;
+  kycStatus?: string;
+};
+
+const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
+const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
+const CALENDLY_BOOKING_TYPE_OPTIONS = [
+  { key: "default", label: "Calendly Event Type" },
+] as const;
+
+type CalendlySettingsState = {
+  calendly_api_token: string;
+  scheduling_url: string;
+  is_enabled: boolean;
+  mappings: Record<string, string>;
+};
+
+type CalendlyFieldStatus = "idle" | "saving" | "saved" | "error";
+
+async function parseApiResponse(resp: Response) {
+  const raw = await resp.text();
+  if (!raw.trim()) return {};
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      status: resp.ok ? "success" : "error",
+      message: raw.trim(),
+    };
+  }
+}
+
+function isCalendlyEventTypeUri(value?: string | null) {
+  return Boolean(value?.trim().startsWith(CALENDLY_EVENT_TYPE_URI_PREFIX));
+}
+
+function withCalendlyManualMappingGuidance(message: string) {
+  if (!message) return message;
+  if (message.toLowerCase().includes("paste event type uris manually")) {
+    return message;
+  }
+  return `${message} You can still paste event type URIs manually below.`;
+}
+
+function normalizeCalendlyMappingsWithEventTypes(
+  mappings: Record<string, string>,
+  eventTypes: any[],
+) {
+  const eventTypeUriBySlug = new Map(
+    eventTypes
+      .filter((eventType) => eventType?.slug && eventType?.uri)
+      .map((eventType) => [eventType.slug, eventType.uri]),
+  );
+
+  return Object.fromEntries(
+    Object.entries(mappings).map(([key, value]) => {
+      if (isCalendlyEventTypeUri(value)) {
+        return [key, value];
+      }
+      return [key, eventTypeUriBySlug.get(value) || value];
+    }),
+  );
+}
+
+function cloneCalendlySettings(
+  settings: CalendlySettingsState,
+): CalendlySettingsState {
+  return {
+    calendly_api_token: settings.calendly_api_token || "",
+    scheduling_url: settings.scheduling_url || "",
+    is_enabled: Boolean(settings.is_enabled),
+    mappings: { ...(settings.mappings || {}) },
+  };
+}
+
+function areCalendlySettingsEqual(
+  left: CalendlySettingsState,
+  right: CalendlySettingsState,
+) {
+  return (
+    JSON.stringify(cloneCalendlySettings(left)) ===
+    JSON.stringify(cloneCalendlySettings(right))
+  );
+}
+
+function getCalendlyMappingFieldKey(typeKey: string) {
+  return `mapping:${typeKey}`;
+}
+
+const CalendlyAutosaveStatus = ({
+  status,
+}: {
+  status?: CalendlyFieldStatus;
+}) => {
+  if (!status || status === "idle") return null;
+
+  if (status === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
+        <RefreshCw className="h-3 w-3 animate-spin" />
+        Saving...
+      </span>
+    );
+  }
+
+  if (status === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+        <Check className="h-3 w-3" />
+        Saved
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+      <XCircle className="h-3 w-3" />
+      Save failed
+    </span>
+  );
+};
 
 const InviteTeamMemberModal = ({
   open,
@@ -341,8 +472,13 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
-  const { profile, refreshProfile } = useAuth();
+const GeneralSettingsView = ({
+  kycStatus,
+  hasIrlBookingAddon = false,
+  hasProAccess = false,
+  agencyDisplayPlanLabel,
+}: GeneralSettingsViewProps) => {
+  const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
     .trim()
@@ -368,23 +504,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [defaultCommissionRate, setDefaultCommissionRate] =
     useState<number>(20);
-  const [divisionCommissions, setDivisionCommissions] = useState<
-    { id: string; name: string; count: number; rate: number }[]
-  >([
-    { id: "women", name: "Women", count: 45, rate: 20 },
-    { id: "men", name: "Men", count: 32, rate: 20 },
-    { id: "kids", name: "Kids", count: 18, rate: 15 },
-    { id: "curve", name: "Curve", count: 12, rate: 20 },
-  ]);
-  const [showDivisionModal, setShowDivisionModal] = useState(false);
-  const [editingDivisionId, setEditingDivisionId] = useState<string | null>(
-    null,
-  );
-  const [divisionDraft, setDivisionDraft] = useState({
-    name: "",
-    count: 0,
-    rate: 20,
-  });
   const [isSavingCommissions, setIsSavingCommissions] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<
     {
@@ -414,8 +533,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [secondaryColor, setSecondaryColor] = useState(
     profile?.secondary_color || "#10B981",
   );
-  const primaryColorInputRef = useRef<HTMLInputElement>(null);
-  const secondaryColorInputRef = useRef<HTMLInputElement>(null);
   const [prodKey, setProdKey] = useState("pk_live_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [testKey, setTestKey] = useState("pk_test_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [showProdKey, setShowProdKey] = useState(false);
@@ -425,11 +542,20 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calendly State
-  const [calendlySettings, setCalendlySettings] = useState({
-    calendly_api_token: "",
-    is_enabled: false,
-    mappings: {} as Record<string, string>,
-  });
+  const [calendlySettings, setCalendlySettings] =
+    useState<CalendlySettingsState>({
+      calendly_api_token: "",
+      scheduling_url: "",
+      is_enabled: false,
+      mappings: {},
+    });
+  const [lastSavedCalendlySettings, setLastSavedCalendlySettings] =
+    useState<CalendlySettingsState>({
+      calendly_api_token: "",
+      scheduling_url: "",
+      is_enabled: false,
+      mappings: {},
+    });
   const [calendlyEventTypes, setCalendlyEventTypes] = useState<any[]>([]);
   const [isFetchingCalendlyEventTypes, setIsFetchingCalendlyEventTypes] =
     useState(false);
@@ -437,76 +563,254 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     useState(false);
   const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
     useState(false);
+  const hasCalendlyAccess = hasIrlBookingAddon && hasProAccess;
+  const [calendlyEventTypesError, setCalendlyEventTypesError] = useState<
+    string | null
+  >(null);
+  const [hasSavedCalendlyToken, setHasSavedCalendlyToken] = useState(false);
+  const [isCalendlyMappingsOpen, setIsCalendlyMappingsOpen] = useState(false);
+  const [calendlyFieldStatuses, setCalendlyFieldStatuses] = useState<
+    Record<string, CalendlyFieldStatus>
+  >({});
+  const calendlyFieldStatusTimeoutsRef = useRef<Record<string, number>>({});
 
-  const fetchCalendlySettings = async () => {
-    try {
-      setIsFetchingCalendlySettings(true);
-      const { data, error } = await supabase
-        .from("agency_calendly_settings")
-        .select("*")
-        .eq("agency_id", profile?.id)
-        .maybeSingle();
-      if (error) throw error;
-      if (data) {
-        setCalendlySettings({
-          calendly_api_token: data.calendly_api_token || "",
-          is_enabled: data.is_enabled ?? false,
-          mappings: data.mappings || {},
-        });
-      }
-    } catch (err: any) {
-      console.error("Error fetching Calendly settings:", err);
-    } finally {
-      setIsFetchingCalendlySettings(false);
+  const getAccessToken = () => token || "";
+
+  const setCalendlyFieldStatus = (
+    fieldKey: string,
+    status: CalendlyFieldStatus,
+  ) => {
+    const existingTimeout = calendlyFieldStatusTimeoutsRef.current[fieldKey];
+    if (existingTimeout) {
+      window.clearTimeout(existingTimeout);
+      delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
+    }
+
+    setCalendlyFieldStatuses((prev) => ({
+      ...prev,
+      [fieldKey]: status,
+    }));
+
+    if (status === "saved") {
+      calendlyFieldStatusTimeoutsRef.current[fieldKey] = window.setTimeout(
+        () => {
+          setCalendlyFieldStatuses((prev) => ({
+            ...prev,
+            [fieldKey]: "idle",
+          }));
+          delete calendlyFieldStatusTimeoutsRef.current[fieldKey];
+        },
+        1800,
+      );
     }
   };
 
-  const fetchCalendlyEventTypes = async () => {
+  const updateCalendlySettings = (
+    updater:
+      | CalendlySettingsState
+      | ((previous: CalendlySettingsState) => CalendlySettingsState),
+  ) => {
+    let nextSettings!: CalendlySettingsState;
+    setCalendlySettings((previous) => {
+      nextSettings =
+        typeof updater === "function"
+          ? cloneCalendlySettings(updater(previous))
+          : cloneCalendlySettings(updater);
+      return nextSettings;
+    });
+    return nextSettings;
+  };
+
+  const fetchCalendlySettings = async () => {
+    if (!hasCalendlyAccess) {
+      setIsFetchingCalendlySettings(false);
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(null);
+      const emptySettings = cloneCalendlySettings({
+        calendly_api_token: "",
+        scheduling_url: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      setCalendlySettings(emptySettings);
+      setLastSavedCalendlySettings(emptySettings);
+      return null;
+    }
     try {
-      setIsFetchingCalendlyEventTypes(true);
-      const resp = await fetch("/api/calendly/event-types", {
+      setIsFetchingCalendlySettings(true);
+      const resp = await fetch("/api/calendly/settings", {
         headers: {
-          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+          Authorization: `Bearer ${getAccessToken()}`,
         },
       });
-      const data = await resp.json();
+      const payload = await parseApiResponse(resp);
+      if (payload.status !== "success" || !payload.data) {
+        throw new Error(payload.message || "Failed to load Calendly settings");
+      }
+      const data = payload.data;
+      if (data) {
+        const normalizedSettings = cloneCalendlySettings({
+          calendly_api_token: data.calendly_api_token || "",
+          scheduling_url: data.scheduling_url || "",
+          is_enabled: data.is_enabled ?? false,
+          mappings: data.mappings || {},
+        });
+        setCalendlySettings(normalizedSettings);
+        setLastSavedCalendlySettings(normalizedSettings);
+        setHasSavedCalendlyToken(Boolean(data.calendly_api_token?.trim()));
+        return data;
+      }
+    } catch (err: any) {
+      console.error("Error fetching Calendly settings:", err);
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(
+        err.message || "Failed to load your saved Calendly configuration.",
+      );
+    } finally {
+      setIsFetchingCalendlySettings(false);
+    }
+    return null;
+  };
+
+  const fetchCalendlyEventTypes = async () => {
+    if (!hasCalendlyAccess) {
+      setIsFetchingCalendlyEventTypes(false);
+      setCalendlyEventTypes([]);
+      setCalendlyEventTypesError(null);
+      return;
+    }
+    try {
+      setIsFetchingCalendlyEventTypes(true);
+      setCalendlyEventTypesError(null);
+      const resp = await fetch("/api/calendly/event-types", {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      const data = await parseApiResponse(resp);
       if (data.status === "success" && Array.isArray(data.data)) {
         setCalendlyEventTypes(data.data);
+        setCalendlySettings((prev) => ({
+          ...prev,
+          mappings: normalizeCalendlyMappingsWithEventTypes(
+            prev.mappings,
+            data.data,
+          ),
+        }));
       } else {
-        // If not configured, it might return an error
         setCalendlyEventTypes([]);
+        setCalendlyEventTypesError(
+          withCalendlyManualMappingGuidance(
+            data.message || "Failed to load Calendly event types.",
+          ),
+        );
       }
     } catch (err: any) {
       console.error("Error fetching Calendly event types:", err);
       setCalendlyEventTypes([]);
+      setCalendlyEventTypesError(
+        withCalendlyManualMappingGuidance(
+          err.message || "Failed to load Calendly event types.",
+        ),
+      );
     } finally {
       setIsFetchingCalendlyEventTypes(false);
     }
   };
 
-  const handleSaveCalendlySettings = async () => {
+  const handleSaveCalendlySettings = async ({
+    nextSettings,
+    fieldKey,
+    silentSuccess = false,
+  }: {
+    nextSettings?: CalendlySettingsState;
+    fieldKey?: string;
+    silentSuccess?: boolean;
+  } = {}) => {
+    if (!hasCalendlyAccess) {
+      toast({
+        title: "Pro plan required",
+        description:
+          "Calendly integration is available on Pro plans with the IRL Booking add-on.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!hasIrlBookingAddon) {
+      toast({
+        title: "IRL Booking add-on required",
+        description:
+          "Enable the IRL Booking add-on before configuring Calendly integration.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload = cloneCalendlySettings(nextSettings || calendlySettings);
+    if (fieldKey) {
+      setCalendlyFieldStatus(fieldKey, "saving");
+    }
+
     try {
       setIsSavingCalendlySettings(true);
+      setCalendlyEventTypesError(null);
       const resp = await fetch("/api/calendly/settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+          Authorization: `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify(calendlySettings),
+        body: JSON.stringify(payload),
       });
-      const data = await resp.json();
+      const data = await parseApiResponse(resp);
       if (data.status === "success") {
-        toast({
-          title: "Settings Saved",
-          description: "Calendly integration settings have been updated.",
+        const savedSettings = cloneCalendlySettings({
+          calendly_api_token:
+            data.data?.calendly_api_token || payload.calendly_api_token,
+          scheduling_url: data.data?.scheduling_url || payload.scheduling_url,
+          is_enabled: data.data?.is_enabled ?? payload.is_enabled,
+          mappings: data.data?.mappings || payload.mappings,
         });
-        // Refetch event types in case token changed
-        fetchCalendlyEventTypes();
+        if (data.data) {
+          setCalendlySettings(savedSettings);
+          setHasSavedCalendlyToken(
+            Boolean(data.data.calendly_api_token?.trim()),
+          );
+        } else {
+          setCalendlySettings(savedSettings);
+          setHasSavedCalendlyToken(Boolean(payload.calendly_api_token.trim()));
+        }
+        setLastSavedCalendlySettings(savedSettings);
+        if (fieldKey) {
+          setCalendlyFieldStatus(fieldKey, "saved");
+        }
+        if (!silentSuccess) {
+          toast({
+            title: "Settings Saved",
+            description:
+              data.message ||
+              "Calendly integration settings have been updated.",
+          });
+        }
+        if (
+          payload.calendly_api_token.trim() &&
+          (payload.calendly_api_token !==
+            lastSavedCalendlySettings.calendly_api_token ||
+            calendlyEventTypes.length === 0)
+        ) {
+          await fetchCalendlyEventTypes();
+        } else if (!payload.calendly_api_token.trim()) {
+          setCalendlyEventTypes([]);
+        }
+        return true;
       } else {
         throw new Error(data.message || "Failed to save Calendly settings");
       }
     } catch (err: any) {
+      setCalendlyEventTypesError(err.message || null);
+      if (fieldKey) {
+        setCalendlyFieldStatus(fieldKey, "error");
+      }
       toast({
         title: "Error",
         description: err.message || "Failed to save Calendly settings",
@@ -515,6 +819,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     } finally {
       setIsSavingCalendlySettings(false);
     }
+    return false;
   };
 
   const [bankStatusLoading, setBankStatusLoading] = useState(false);
@@ -534,6 +839,17 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     if (planTier === "enterprise") return "Enterprise";
     return "Free";
   }, [planTier]);
+
+  const currentPlanDisplay = useMemo(() => {
+    const label = String(agencyDisplayPlanLabel || "").trim();
+    const normalized = label
+      .replace(/\b(annual|monthly)\b/gi, "")
+      .replace(/\bplan\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (normalized) return normalized;
+    return planLabel;
+  }, [agencyDisplayPlanLabel, planLabel]);
 
   useEffect(() => {
     if (activeTab !== "Integrations") return;
@@ -562,11 +878,79 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Integrations" && profile?.id) {
-      fetchCalendlySettings();
-      fetchCalendlyEventTypes();
+    if (activeTab !== "Integrations") return;
+    if (!hasIrlBookingAddon) {
+      setHasSavedCalendlyToken(false);
+      setCalendlyEventTypesError(null);
+      const emptySettings = cloneCalendlySettings({
+        calendly_api_token: "",
+        scheduling_url: "",
+        is_enabled: false,
+        mappings: {},
+      });
+      setCalendlySettings(emptySettings);
+      setLastSavedCalendlySettings(emptySettings);
+      setCalendlyEventTypes([]);
+      return;
     }
-  }, [activeTab, profile?.id]);
+    let mounted = true;
+    void (async () => {
+      const data = await fetchCalendlySettings();
+      if (!mounted) return;
+      if (data?.calendly_api_token) {
+        await fetchCalendlyEventTypes();
+      } else {
+        setCalendlyEventTypes([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab, hasIrlBookingAddon, profile?.id]);
+
+  useEffect(() => {
+    if (!hasIrlBookingAddon || !calendlySettings.is_enabled) {
+      setIsCalendlyMappingsOpen(false);
+      return;
+    }
+
+    if (
+      calendlyEventTypesError ||
+      Object.keys(calendlySettings.mappings || {}).length > 0
+    ) {
+      setIsCalendlyMappingsOpen(true);
+    }
+  }, [
+    calendlyEventTypesError,
+    calendlySettings.is_enabled,
+    calendlySettings.mappings,
+    hasIrlBookingAddon,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(calendlyFieldStatusTimeoutsRef.current).forEach(
+        (timeoutId) => window.clearTimeout(timeoutId),
+      );
+    };
+  }, []);
+
+  const autosaveCalendlyField = async (
+    fieldKey: string,
+    nextSettings?: CalendlySettingsState,
+  ) => {
+    const settingsToSave = cloneCalendlySettings(
+      nextSettings || calendlySettings,
+    );
+    if (areCalendlySettingsEqual(settingsToSave, lastSavedCalendlySettings)) {
+      return;
+    }
+    await handleSaveCalendlySettings({
+      nextSettings: settingsToSave,
+      fieldKey,
+      silentSuccess: true,
+    });
+  };
 
   const defaultNotificationPrefs = [
     {
@@ -687,33 +1071,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             setDefaultCommissionRate(
               Math.max(0, Math.min(100, data.default_commission_bps / 100)),
             );
-          }
-
-          if (Array.isArray(data.division_commissions)) {
-            const parsed = data.division_commissions
-              .map((row: any) => {
-                const id = String(row?.id || "");
-                const name = String(row?.name || "");
-                const count = Number.isFinite(row?.count)
-                  ? Math.max(0, Math.floor(row.count))
-                  : 0;
-                const rateBps = Number.isFinite(row?.rate_bps)
-                  ? Math.max(0, Math.min(10000, Math.floor(row.rate_bps)))
-                  : null;
-                const ratePct =
-                  rateBps !== null
-                    ? Math.max(0, Math.min(100, rateBps / 100))
-                    : null;
-                if (!id || !name) return null;
-                return {
-                  id,
-                  name,
-                  count,
-                  rate: ratePct !== null ? ratePct : defaultCommissionRate,
-                };
-              })
-              .filter(Boolean);
-            setDivisionCommissions(parsed as any);
           }
         } catch (e: any) {
           toast({
@@ -1020,41 +1377,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     }
   };
 
-  const persistDivisionCommissions = async (
-    nextDivisions: { id: string; name: string; count: number; rate: number }[],
-  ) => {
-    if (!profile?.id) return;
-    try {
-      setIsSavingCommissions(true);
-      const payload = {
-        agency_id: profile.id,
-        default_commission_bps: Math.round(
-          Math.max(0, Math.min(100, defaultCommissionRate)) * 100,
-        ),
-        division_commissions: nextDivisions.map((d) => ({
-          id: d.id,
-          name: d.name,
-          count: d.count,
-          rate_bps: Math.round(Math.max(0, Math.min(100, d.rate)) * 100),
-        })),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from("agency_commission_settings")
-        .upsert(payload, { onConflict: "agency_id" });
-      if (error) throw error;
-    } catch (e: any) {
-      toast({
-        title: "Failed to save division settings",
-        description: getUserFriendlyError(e),
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingCommissions(false);
-    }
-  };
-
   const saveTaxCurrencySettings = async () => {
     setIsSavingTaxCurrencySettings(true);
     try {
@@ -1230,71 +1552,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     }
   };
 
-  const openAddDivision = () => {
-    setEditingDivisionId(null);
-    setDivisionDraft({ name: "", count: 0, rate: defaultCommissionRate });
-    setShowDivisionModal(true);
-  };
-
-  const openEditDivision = (division: {
-    id: string;
-    name: string;
-    count: number;
-    rate: number;
-  }) => {
-    setEditingDivisionId(division.id);
-    setDivisionDraft({
-      name: division.name,
-      count: division.count,
-      rate: division.rate,
-    });
-    setShowDivisionModal(true);
-  };
-
-  const saveDivision = () => {
-    const name = (divisionDraft.name || "").trim();
-    const count = Number.isFinite(divisionDraft.count)
-      ? Math.max(0, Math.floor(divisionDraft.count))
-      : 0;
-    const rate = Number.isFinite(divisionDraft.rate)
-      ? Math.max(0, Math.min(100, divisionDraft.rate))
-      : defaultCommissionRate;
-
-    if (!name) {
-      toast({
-        title: "Missing division name",
-        description: "Please enter a division name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDivisionCommissions((prev) => {
-      let next: { id: string; name: string; count: number; rate: number }[];
-      if (editingDivisionId) {
-        next = prev.map((d) =>
-          d.id === editingDivisionId ? { ...d, name, count, rate } : d,
-        );
-      } else {
-        const idBase = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const id = `${idBase}-${Math.random().toString(16).slice(2)}`;
-        next = [...prev, { id, name, count, rate }];
-      }
-      void persistDivisionCommissions(next);
-      return next;
-    });
-
-    setShowDivisionModal(false);
-  };
-
-  const removeDivision = (id: string) => {
-    setDivisionCommissions((prev) => {
-      const next = prev.filter((d) => d.id !== id);
-      void persistDivisionCommissions(next);
-      return next;
-    });
-  };
-
   const handleSaveCommissionSettings = async () => {
     if (!profile?.id) return;
     try {
@@ -1305,12 +1562,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
         default_commission_bps: Math.round(
           Math.max(0, Math.min(100, defaultCommissionRate)) * 100,
         ),
-        division_commissions: divisionCommissions.map((d) => ({
-          id: d.id,
-          name: d.name,
-          count: d.count,
-          rate_bps: Math.round(Math.max(0, Math.min(100, d.rate)) * 100),
-        })),
         updated_at: new Date().toISOString(),
       };
 
@@ -1342,10 +1593,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
+      // Exclude email from update payload as it's not allowed to be changed after sign-in
+      const { email, ...updateData } = formData;
       const { error } = await supabase
         .from("agencies")
         .update({
-          ...formData,
+          ...updateData,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           updated_at: new Date().toISOString(),
@@ -1434,7 +1687,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             "Email Templates",
             "Notifications",
             "Tax & Currency",
-            "Divisions",
             "Team",
             "File Storage",
             "Integrations",
@@ -1481,22 +1733,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         planTier === "pro" ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {planLabel}
+                      {currentPlanDisplay}
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`font-black uppercase tracking-wider px-2 py-0.5 text-[10px] border-none ${
-                        planTier === "pro"
-                          ? "bg-indigo-500 text-white"
-                          : planTier === "basic" || planTier === "agency"
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : planTier === "enterprise"
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {planTier}
-                    </Badge>
                   </div>
                 </div>
                 <Button
@@ -1677,8 +1915,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </Label>
                   <Input
                     value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
+                    disabled
+                    className="bg-gray-50 border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm cursor-not-allowed opacity-70"
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
@@ -1756,73 +1994,6 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                  <div className="space-y-3 sm:space-y-4">
-                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                      Primary Brand Color
-                    </Label>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                        <input
-                          type="color"
-                          value={ensureHexColor(primaryColor, "#4F46E5")}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="absolute inset-0 w-full h-full cursor-pointer"
-                          style={{
-                            opacity: 0,
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{ backgroundColor: primaryColor }}
-                        />
-                      </div>
-                      <Input
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3 sm:space-y-4">
-                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                      Secondary Brand Color
-                    </Label>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                        <input
-                          type="color"
-                          value={ensureHexColor(secondaryColor, "#10B981")}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          className="absolute inset-0 w-full h-full cursor-pointer"
-                          style={{
-                            opacity: 0,
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{ backgroundColor: secondaryColor }}
-                        />
-                      </div>
-                      <Input
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
                     Email Signature
@@ -1875,6 +2046,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Agency Commission (%)
                   </Label>
                   <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
                     value={String(defaultCommissionRate)}
                     onChange={(e) => {
                       const n = parseFloat(e.target.value);
@@ -1883,6 +2058,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         return;
                       }
                       setDefaultCommissionRate(Math.max(0, Math.min(100, n)));
+                    }}
+                    onBlur={() => {
+                      setDefaultCommissionRate((prev) =>
+                        clampAndSnapCommissionPct(prev),
+                      );
                     }}
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
@@ -1893,91 +2073,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-            {/* Division Commissions */}
-            {/* Division Commissions */}
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Division Commissions
-                </h3>
-                <Button
-                  variant="outline"
-                  onClick={openAddDivision}
-                  className="h-8 px-3 sm:h-9 sm:px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Division
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {divisionCommissions.map((division) => (
-                  <div
-                    key={division.id}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {division.name}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {`${division.count} ${entityPluralLower}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Input
-                          value={String(division.rate)}
-                          onChange={(e) => {
-                            const next = parseFloat(e.target.value);
-                            const clamped = Number.isFinite(next)
-                              ? Math.max(0, Math.min(100, next))
-                              : 0;
-                            setDivisionCommissions((prev) =>
-                              prev.map((d) =>
-                                d.id === division.id
-                                  ? { ...d, rate: clamped }
-                                  : d,
-                              ),
-                            );
-                          }}
-                          className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
-                        />
-                        <span className="text-xs font-bold text-gray-500">
-                          %
-                        </span>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-7 h-7 text-gray-400 hover:text-indigo-600"
-                          >
-                            <MoreVertical className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openEditDivision(division)}
-                          >
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => removeDivision(division.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
             {/* Talent Commission Rules */}
+
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
@@ -2584,160 +2681,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
           </div>
         )}
 
-        {activeTab === "Divisions" && (
-          <div className="space-y-6">
-            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Divisions / Boards
-                    </h3>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {`Organize your ${entityPluralLower} into divisions`}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={openAddDivision}
-                  className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Division
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {divisionCommissions.map((division) => (
-                  <div
-                    key={division.id}
-                    className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-bold text-gray-900">
-                        {division.name}
-                      </h4>
-                      <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5">
-                        Active
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {`${division.count} ${entityPluralLower} assigned`}
-                    </p>
-                    <div className="flex items-end justify-between pt-2">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          Commission Rate
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {division.rate}%
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-9 h-9 rounded-xl border-gray-200"
-                          onClick={() => openEditDivision(division)}
-                        >
-                          <Edit2 className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-9 h-9 rounded-xl border-red-100 bg-red-50 hover:bg-red-100"
-                          onClick={() => removeDivision(division.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        )}
-
         {activeTab === "File Storage" && <FileStorageView />}
-
-        <Dialog open={showDivisionModal} onOpenChange={setShowDivisionModal}>
-          <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-gray-900">
-                {editingDivisionId ? "Edit Division" : "Add Division"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-5 py-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-900">
-                  Division Name
-                </Label>
-                <Input
-                  value={divisionDraft.name}
-                  onChange={(e) =>
-                    setDivisionDraft((p) => ({ ...p, name: e.target.value }))
-                  }
-                  className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-900">
-                    {`${entitySingularTitle} Count`}
-                  </Label>
-                  <Input
-                    value={String(divisionDraft.count)}
-                    onChange={(e) => {
-                      const n = parseInt(e.target.value, 10);
-                      setDivisionDraft((p) => ({
-                        ...p,
-                        count: Number.isFinite(n) ? n : 0,
-                      }));
-                    }}
-                    className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-900">
-                    Commission Rate (%)
-                  </Label>
-                  <Input
-                    value={String(divisionDraft.rate)}
-                    onChange={(e) => {
-                      const n = parseFloat(e.target.value);
-                      setDivisionDraft((p) => ({
-                        ...p,
-                        rate: Number.isFinite(n) ? n : 0,
-                      }));
-                    }}
-                    className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="ghost"
-                onClick={() => setShowDivisionModal(false)}
-                className="font-bold"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={saveDivision}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
-              >
-                Save
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {activeTab === "Team" && (
           <div className="space-y-6">
@@ -2839,11 +2783,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">
-                  <a
-                    href={`/AgencyDashboard?mode=IRL&tab=accounting&subTab=${encodeURIComponent(
-                      "Connect Bank",
-                    )}`}
-                  >
+                  <a href={`/AgencyDashboard?tab=payouts`}>
                     {bankStatus?.connected ? "Change account" : "Connect"}
                   </a>
                 </Button>
@@ -2863,15 +2803,24 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         Calendly Integration
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
-                        Automate meeting scheduling with your clients
+                        {hasCalendlyAccess
+                          ? "Automate meeting scheduling with your clients"
+                          : "Available on Pro with the IRL Booking add-on"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
-                        {calendlySettings.is_enabled ? "Active" : "Disabled"}
+                        {hasCalendlyAccess
+                          ? calendlySettings.is_enabled
+                            ? "Active"
+                            : "Disabled"
+                          : "Locked"}
                       </span>
                       <Switch
-                        checked={calendlySettings.is_enabled}
+                        checked={
+                          hasCalendlyAccess && calendlySettings.is_enabled
+                        }
+                        disabled={!hasCalendlyAccess}
                         onCheckedChange={(checked) =>
                           setCalendlySettings((p) => ({
                             ...p,
@@ -2883,6 +2832,24 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                 </div>
               </div>
+
+              {!hasIrlBookingAddon && (
+                <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    Enable the IRL Booking add-on to use Calendly, scouting,
+                    client CRM, bookings, and IRL accounting workflows.
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
+                  >
+                    <a href={createPageUrl("AgencySubscribe")}>
+                      Get IRL Booking Add-on
+                    </a>
+                  </Button>
+                </div>
+              )}
 
               <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="space-y-3">
@@ -2901,116 +2868,312 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
-                  <div className="relative group">
-                    <Input
-                      type="password"
-                      placeholder="calendly_v2_..."
-                      value={calendlySettings.calendly_api_token}
-                      onChange={(e) =>
-                        setCalendlySettings((p) => ({
-                          ...p,
-                          calendly_api_token: e.target.value,
-                        }))
-                      }
-                      className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  <div className="flex justify-end">
+                    <CalendlyAutosaveStatus
+                      status={calendlyFieldStatuses.calendly_api_token}
                     />
-                    {calendlySettings.calendly_api_token && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-green-50 text-green-600">
-                        <Check className="w-4 h-4" />
-                      </div>
-                    )}
                   </div>
+                  <Input
+                    type="password"
+                    placeholder="calendly_v2_..."
+                    value={calendlySettings.calendly_api_token}
+                    disabled={!hasCalendlyAccess}
+                    onChange={(e) => {
+                      updateCalendlySettings((p) => {
+                        const nextToken = e.target.value;
+                        const tokenChanged =
+                          p.calendly_api_token.trim() &&
+                          p.calendly_api_token !== nextToken;
+
+                        return {
+                          ...p,
+                          calendly_api_token: nextToken,
+                          mappings: tokenChanged ? {} : p.mappings,
+                        };
+                      });
+                      setCalendlyFieldStatuses((prev) => ({
+                        ...prev,
+                        calendly_api_token: "idle",
+                      }));
+                    }}
+                    onBlur={() =>
+                      void autosaveCalendlyField("calendly_api_token")
+                    }
+                    className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  />
+                  {calendlySettings.calendly_api_token && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-green-50 text-green-600">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                      Public Calendly Scheduling Link
+                    </Label>
+                    <a
+                      href="https://help.calendly.com/hc/en-us/articles/223193448-How-to-share-your-scheduling-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
+                    >
+                      Where to find it
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <div className="flex justify-end">
+                    <CalendlyAutosaveStatus
+                      status={calendlyFieldStatuses.scheduling_url}
+                    />
+                  </div>
+                  <Input
+                    type="url"
+                    placeholder="https://calendly.com/your-handle/your-event"
+                    value={calendlySettings.scheduling_url}
+                    disabled={!hasCalendlyAccess}
+                    onChange={(e) => {
+                      updateCalendlySettings((p) => ({
+                        ...p,
+                        scheduling_url: e.target.value,
+                      }));
+                      setCalendlyFieldStatuses((prev) => ({
+                        ...prev,
+                        scheduling_url: "idle",
+                      }));
+                    }}
+                    onBlur={() => void autosaveCalendlyField("scheduling_url")}
+                    className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  />
                   <p className="text-xs text-gray-400 font-medium leading-relaxed flex items-start gap-2 italic">
                     <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                    Your token is stored securely. This allows us to fetch your
-                    available event types and schedule meetings automatically.
+                    Use the public Calendly event link that should open when a
+                    booking is sent through Calendly from Likelee. In Calendly,
+                    open your Scheduling page, find the event type, and copy its
+                    link.
                   </p>
                 </div>
 
-                {calendlySettings.is_enabled && (
-                  <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
-                        <Activity className="w-4 h-4 text-gray-400" />
-                        Event Type Mappings
-                      </h4>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Map platform booking categories to specific Calendly
-                        event types
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { key: "default", label: "Default Meeting" },
-                        { key: "agency_discovery", label: "Agency Discovery" },
-                        { key: "talent_interview", label: "Interview" },
-                        { key: "photo_shoot", label: "Photo Shoot" },
-                      ].map((type) => (
-                        <div
-                          key={type.key}
-                          className="space-y-2 p-4 bg-gray-50/50 border border-gray-100 rounded-xl group hover:border-indigo-100 transition-colors"
+                {hasCalendlyAccess && calendlySettings.is_enabled && (
+                  <Collapsible
+                    open={isCalendlyMappingsOpen}
+                    onOpenChange={setIsCalendlyMappingsOpen}
+                  >
+                    <div className="space-y-4 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
                         >
-                          <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-indigo-600 transition-colors">
-                            {type.label}
-                          </Label>
-                          {isFetchingCalendlyEventTypes ? (
-                            <div className="h-10 flex items-center justify-center bg-white border border-gray-100 rounded-lg animate-pulse">
-                              <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
-                            </div>
-                          ) : calendlyEventTypes.length > 0 ? (
-                            <Select
-                              value={calendlySettings.mappings[type.key] || ""}
-                              onValueChange={(val) =>
-                                setCalendlySettings((p) => ({
-                                  ...p,
-                                  mappings: { ...p.mappings, [type.key]: val },
-                                }))
-                              }
-                            >
-                              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
-                                <SelectValue placeholder="Select Calendly Event" />
-                              </SelectTrigger>
-                              <SelectContent className="rounded-xl border-gray-200 shadow-xl">
-                                <SelectItem
-                                  value=""
-                                  className="text-xs font-bold text-gray-400 italic"
-                                >
-                                  Use System Default
-                                </SelectItem>
-                                {calendlyEventTypes.map((et: any) => (
-                                  <SelectItem
-                                    key={et.slug}
-                                    value={et.slug}
-                                    className="text-xs font-bold py-2.5"
-                                  >
-                                    <div className="flex flex-col gap-0.5">
-                                      <span>{et.name}</span>
-                                      {et.duration && (
-                                        <span className="text-[10px] text-gray-400">
-                                          {et.duration} mins
-                                        </span>
-                                      )}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
-                              Enter API Token to load event types
-                            </div>
-                          )}
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
+                              <Activity className="w-4 h-4 text-gray-400" />
+                              Calendly Event Type
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium">
+                              Select the Calendly event type Likelee should use
+                              for booking invites and reminders
+                            </p>
+                          </div>
+                          <ChevronDown
+                            className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${
+                              isCalendlyMappingsOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      </CollapsibleTrigger>
+
+                      {calendlyEventTypesError && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          {calendlyEventTypesError}
                         </div>
-                      ))}
+                      )}
+
+                      <CollapsibleContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {CALENDLY_BOOKING_TYPE_OPTIONS.map((type) => (
+                            <div
+                              key={type.key}
+                              className="space-y-2 p-4 bg-gray-50/50 border border-gray-100 rounded-xl group hover:border-indigo-100 transition-colors"
+                            >
+                              <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-indigo-600 transition-colors">
+                                {type.label}
+                              </Label>
+                              {isFetchingCalendlyEventTypes ? (
+                                <div className="h-10 flex items-center justify-center bg-white border border-gray-100 rounded-lg animate-pulse">
+                                  <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
+                                </div>
+                              ) : calendlyEventTypes.length > 0 ? (
+                                <div className="space-y-2">
+                                  <div className="flex justify-end">
+                                    <CalendlyAutosaveStatus
+                                      status={
+                                        calendlyFieldStatuses[
+                                          getCalendlyMappingFieldKey(type.key)
+                                        ]
+                                      }
+                                    />
+                                  </div>
+                                  <Select
+                                    value={(() => {
+                                      const currentMapping =
+                                        calendlySettings.mappings[type.key];
+                                      if (!currentMapping) {
+                                        return CALENDLY_USE_DEFAULT_VALUE;
+                                      }
+                                      if (
+                                        isCalendlyEventTypeUri(currentMapping)
+                                      ) {
+                                        return currentMapping;
+                                      }
+                                      const matchingEventType =
+                                        calendlyEventTypes.find(
+                                          (eventType: any) =>
+                                            eventType.slug === currentMapping,
+                                        );
+                                      return (
+                                        matchingEventType?.uri ||
+                                        CALENDLY_USE_DEFAULT_VALUE
+                                      );
+                                    })()}
+                                    onValueChange={(val) => {
+                                      const nextSettings =
+                                        updateCalendlySettings((p) => {
+                                          const nextMappings = {
+                                            ...p.mappings,
+                                          };
+                                          if (
+                                            val === CALENDLY_USE_DEFAULT_VALUE
+                                          ) {
+                                            delete nextMappings[type.key];
+                                          } else {
+                                            nextMappings[type.key] = val;
+                                          }
+                                          return {
+                                            ...p,
+                                            mappings: nextMappings,
+                                          };
+                                        });
+                                      void autosaveCalendlyField(
+                                        getCalendlyMappingFieldKey(type.key),
+                                        nextSettings,
+                                      );
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
+                                      <SelectValue placeholder="Select Calendly Event" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-gray-200 shadow-xl">
+                                      <SelectItem
+                                        value={CALENDLY_USE_DEFAULT_VALUE}
+                                        className="text-xs font-bold text-gray-400 italic"
+                                      >
+                                        Leave Unset
+                                      </SelectItem>
+                                      {calendlyEventTypes.map((et: any) => (
+                                        <SelectItem
+                                          key={et.uri || et.slug}
+                                          value={et.uri || et.slug}
+                                          className="text-xs font-bold py-2.5"
+                                        >
+                                          <div className="flex flex-col gap-0.5">
+                                            <span>{et.name}</span>
+                                            <span className="text-[10px] text-gray-400">
+                                              {et.slug}
+                                            </span>
+                                            {et.duration && (
+                                              <span className="text-[10px] text-gray-400">
+                                                {et.duration} mins
+                                              </span>
+                                            )}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              ) : hasSavedCalendlyToken ? (
+                                <div className="space-y-2">
+                                  <div className="flex justify-end">
+                                    <CalendlyAutosaveStatus
+                                      status={
+                                        calendlyFieldStatuses[
+                                          getCalendlyMappingFieldKey(type.key)
+                                        ]
+                                      }
+                                    />
+                                  </div>
+                                  <Input
+                                    value={
+                                      calendlySettings.mappings[type.key] || ""
+                                    }
+                                    onChange={(e) => {
+                                      updateCalendlySettings((p) => {
+                                        const nextMappings = { ...p.mappings };
+                                        const nextValue = e.target.value.trim();
+                                        if (!nextValue) {
+                                          delete nextMappings[type.key];
+                                        } else {
+                                          nextMappings[type.key] = nextValue;
+                                        }
+                                        return {
+                                          ...p,
+                                          mappings: nextMappings,
+                                        };
+                                      });
+                                      setCalendlyFieldStatuses((prev) => ({
+                                        ...prev,
+                                        [getCalendlyMappingFieldKey(type.key)]:
+                                          "idle",
+                                      }));
+                                    }}
+                                    onBlur={() =>
+                                      void autosaveCalendlyField(
+                                        getCalendlyMappingFieldKey(type.key),
+                                      )
+                                    }
+                                    placeholder="https://api.calendly.com/event_types/..."
+                                    className="h-10 bg-white border-gray-200 rounded-lg text-xs font-medium"
+                                  />
+                                  <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                                    Paste the full Calendly event type URI that
+                                    Likelee should use for bookings. This works
+                                    even when the token cannot list event types
+                                    automatically.
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
+                                  {hasSavedCalendlyToken
+                                    ? "No active Calendly event types found for this account"
+                                    : "Save a valid Calendly token to load event types"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                  </div>
+                  </Collapsible>
                 )}
 
-                <div className="flex justify-end pt-4">
+                <div className="flex justify-end gap-3 pt-4">
+                  {!hasIrlBookingAddon && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-11 rounded-xl border-amber-300 px-6 font-bold text-amber-800 hover:bg-amber-50"
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>
+                        Buy IRL Booking Add-on
+                      </a>
+                    </Button>
+                  )}
                   <Button
                     onClick={handleSaveCalendlySettings}
-                    disabled={isSavingCalendlySettings}
+                    disabled={isSavingCalendlySettings || !hasCalendlyAccess}
                     className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     {isSavingCalendlySettings ? (

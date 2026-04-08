@@ -7,6 +7,7 @@ use axum::{
 };
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
@@ -14,6 +15,7 @@ pub struct Claims {
     pub email: Option<String>,
     pub exp: usize,
     pub user_metadata: Option<serde_json::Value>,
+    pub app_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -21,6 +23,98 @@ pub struct AuthUser {
     pub id: String,
     pub email: Option<String>,
     pub role: String,
+}
+
+fn supabase_auth_base_url(state: &AppState) -> String {
+    state
+        .supabase_url
+        .trim_end_matches('/')
+        .trim_end_matches("/rest/v1")
+        .to_string()
+}
+
+async fn lookup_role_from_supabase_auth(state: &AppState, user_id: &str) -> Option<String> {
+    let user_id = user_id.trim();
+    if user_id.is_empty() {
+        return None;
+    }
+
+    let url = format!(
+        "{}/auth/v1/admin/users/{}",
+        supabase_auth_base_url(state),
+        user_id
+    );
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(&url)
+        .header("apikey", state.supabase_service_key.clone())
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .send()
+        .await
+        .ok()?;
+
+    if !resp.status().is_success() {
+        return None;
+    }
+
+    let payload: Value = resp.json().await.ok()?;
+    payload
+        .get("user_metadata")
+        .and_then(|v| v.get("role"))
+        .and_then(|v| v.as_str())
+        .or_else(|| {
+            payload
+                .get("app_metadata")
+                .and_then(|v| v.get("role"))
+                .and_then(|v| v.as_str())
+        })
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+async fn lookup_role_from_profiles(state: &AppState, user_id: &str) -> Option<String> {
+    let candidates = [
+        ("agencies", "agency"),
+        ("brands", "brand"),
+        ("creators", "creator"),
+    ];
+
+    for (table, role) in candidates {
+        let Ok(resp) = state
+            .pg
+            .from(table)
+            .select("id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+            .await
+        else {
+            continue;
+        };
+
+        if !resp.status().is_success() {
+            continue;
+        }
+
+        let Ok(text) = resp.text().await else {
+            continue;
+        };
+        let Ok(rows) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        if rows
+            .as_array()
+            .map(|items| !items.is_empty())
+            .unwrap_or(false)
+        {
+            return Some(role.to_string());
+        }
+    }
+
+    None
 }
 
 #[async_trait]
@@ -73,13 +167,28 @@ where
         let user_id = token_data.claims.sub;
 
         // 3. Extract role from JWT metadata
-        let role = token_data
+        let mut role = token_data
             .claims
             .user_metadata
             .as_ref()
             .and_then(|m| m.get("role"))
             .and_then(|r| r.as_str())
+            .or_else(|| {
+                token_data
+                    .claims
+                    .app_metadata
+                    .as_ref()
+                    .and_then(|m| m.get("role"))
+                    .and_then(|r| r.as_str())
+            })
             .map(|s| s.to_string());
+
+        if role.is_none() {
+            role = lookup_role_from_supabase_auth(&app_state, &user_id).await;
+        }
+        if role.is_none() {
+            role = lookup_role_from_profiles(&app_state, &user_id).await;
+        }
 
         // 4. Ensure role is present
         let role = role.ok_or((

@@ -152,7 +152,7 @@ export default function StudioSubscribe() {
         <Badge className="mb-6 bg-white/10 text-white border-white/20">
           Wallet Balance: {wallet?.balance || 0} credits
         </Badge>
-        <h1 className="text-4xl md:text-6xl font-bold mb-6">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 font-display">
           Choose Your Plan
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
@@ -184,9 +184,13 @@ export default function StudioSubscribe() {
                 )}
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">Lite Plan</h3>
+              <h3 className="text-2xl font-bold text-white mb-2 font-display">
+                Lite Plan
+              </h3>
               <div className="flex items-baseline mb-2">
-                <span className="text-5xl font-bold text-white">$15</span>
+                <span className="text-5xl font-bold text-white font-display">
+                  $15
+                </span>
                 <span className="text-gray-400 ml-2">/ month</span>
               </div>
               <p className="text-gray-400 mb-6">60 credits per month</p>
@@ -260,11 +264,11 @@ export default function StudioSubscribe() {
                 )}
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">
+              <h3 className="text-2xl font-bold text-white mb-2 font-display">
                 Pro Plan — Flexible Credits
               </h3>
               <div className="flex items-baseline mb-2">
-                <span className="text-5xl font-bold text-white">
+                <span className="text-5xl font-bold text-white font-display">
                   ${selectedTier.price}
                 </span>
                 <span className="text-gray-400 ml-2">/ month</span>
@@ -298,7 +302,7 @@ export default function StudioSubscribe() {
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Monthly total:</span>
-                    <span className="text-3xl font-bold text-white">
+                    <span className="text-3xl font-bold text-white font-display">
                       ${selectedTier.price}
                     </span>
                   </div>
@@ -361,7 +365,7 @@ export default function StudioSubscribe() {
           {/* Current Credits Display */}
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
+              <h1 className="text-4xl font-bold text-white mb-2 font-display">
                 Studio Credits
               </h1>
               <p className="text-gray-400">
@@ -370,7 +374,7 @@ export default function StudioSubscribe() {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-400 mb-1">Current Balance</p>
-              <p className="text-3xl font-bold text-white">
+              <p className="text-3xl font-bold text-white font-display">
                 {wallet?.balance || 0}
               </p>
               <p className="text-sm text-gray-200/80">credits</p>

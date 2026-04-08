@@ -26,8 +26,8 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 
 export default function BrandCompany() {
   const { t } = useTranslation();
@@ -130,9 +130,7 @@ export default function BrandCompany() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") + "?type=brand_company",
-                )
+                navigate(getOrganizationSignupPathForType("brand_company"))
               }
               className="h-14 px-12 font-bold bg-[#26B7B9] hover:bg-[#1e9596] text-white transition-all rounded-none text-lg border-2 border-[#26B7B9]"
             >
@@ -234,9 +232,7 @@ export default function BrandCompany() {
           <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") + "?type=brand_company",
-                )
+                navigate(getOrganizationSignupPathForType("brand_company"))
               }
               className="h-14 px-12 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none text-lg border-none"
             >

@@ -227,22 +227,6 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
   - Frontend URL for Stripe redirects and email links (default `http://localhost:5173`).
   - Must be an absolute URL starting with `http://` or `https://`.
 
-### AWS & Moderation
-
-- `AWS_REGION`
-  - AWS region for Rekognition (default `us-east-1`).
-- `MODERATION_ENABLED`
-  - Enable content moderation via AWS Rekognition (default `1`).
-  - Set to `0` to disable.
-
-### Liveness Detection
-
-- `LIVENESS_ENABLED`
-  - Enable face liveness detection via AWS Rekognition (default `0`).
-  - Requires Rekognition client initialization.
-- `LIVENESS_MIN_SCORE`
-  - Minimum confidence score for liveness check (default `0.90`).
-
 ### Multi-Level Cache
 
 The server implements a three-level hierarchical caching strategy to reduce database load:
@@ -333,8 +317,14 @@ Configuration variables:
   - Stripe Price ID for scale tier.
 - `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
   - Stripe Price ID for Agency Basic plan (new pricing pages).
+- `STRIPE_AGENCY_BASIC_HEADCOUNT_PRICE_ID`
+  - Stripe Price ID for Agency Basic per-model headcount billing.
 - `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
   - Stripe Price ID for Agency Pro plan (new pricing pages).
+- `STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID`
+  - Stripe Price ID for Agency Pro per-model headcount billing.
+- `STRIPE_AGENCY_IRL_BOOKING_PRICE_ID`
+  - Stripe Price ID for the recurring IRL Booking add-on.
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
@@ -692,28 +682,6 @@ The Studio Wallet is tied directly to the user's permanent `user_id` in the data
 
 ---
 
-## Liveness Detection
-
-Face liveness detection prevents spoofing during identity verification using AWS Rekognition.
-
-### Configuration
-
-- `LIVENESS_ENABLED`: Set to `1` to enable (default `0`).
-- `LIVENESS_MIN_SCORE`: Minimum confidence threshold (default `0.90`).
-
-### API Endpoints
-
-- `POST /api/liveness/session` - Create a liveness detection session
-- `POST /api/liveness/result` - Get liveness check results
-
-### Implementation
-
-- **Backend Logic**: `likelee-server/src/liveness.rs`
-- **AWS Service**: Rekognition Face Liveness
-- **Initialization**: Rekognition client initializes when `MODERATION_ENABLED` or `LIVENESS_ENABLED` is set.
-
----
-
 ## Voice & Audio
 
 Voice recording and cloning capabilities for talent profiles.
@@ -943,6 +911,41 @@ Agencies can invite talent to join their roster:
 - The first submit creates a draft marketplace contract plus a DocuSeal template.
 - The agency then uses the embedded DocuSeal builder to place signature fields and finalize the send.
 - After the creator signs, `POST /webhooks/docuseal/marketplace-contracts` updates the marketplace contract row and activates the creator-agency connection automatically.
+
+---
+
+## Messaging Hub Enhancements
+
+### Goals
+
+- Modernize the messaging UI with improved aesthetics and interactive features.
+- Support message lifecycle management (editing and soft deletion).
+- Improve navigation via search and filtering.
+
+### Features
+
+- **Soft Deletion**: Messages can be marked as `is_deleted`. On the UI, they are replaced by a "Message was deleted" placeholder.
+- **Message Editing**: Messages can be edited by the sender. The `edited_at` timestamp is updated, and an "(edited)" label is shown in the UI.
+- **Search**: Users can search for conversations by participant name in the `ThreadList`.
+- **Filtering**: Quick filters for "All" and "Unread" conversations.
+- **Aesthetics**: Circular send button (pointing right), rounded bubbles (`20px`), green read receipt ticks, and removed self-avatars for a cleaner layout.
+
+### Data Model Updates
+
+#### `messages`
+
+- `is_deleted` (boolean, default `false`)
+- `edited_at` (timestamptz, nullable)
+
+### Backend API
+
+- `PUT /api/messages/:id`: Edit message content (sender only).
+- `DELETE /api/messages/:id`: Set `is_deleted = true` (sender only).
+
+### Realtime Synchronization
+
+- Supabase realtime broadasts `UPDATE` events on the `messages` table.
+- Frontend `useChat` hook listens for these events to update the message list and thread list (last message preview) in realtime.
 - Creator Dashboard, Talent Portal, and Agency Roster also perform best-effort contract sync on normal reads as a fallback if webhook delivery is delayed.
 - Creator-side connected agency cards should expose contract reminders such as commission rate, start date, end date, disconnect status, and the signed contract link.
 
@@ -1281,3 +1284,56 @@ Automated scheduling of agency payouts.
 - **Configuration**: `AGENCY_PAYOUT_SCHEDULER_ENABLED`
 
 ### Implementation
+
+---
+
+## Two-Way Messaging Hub (HB-13)
+
+### Goals
+
+- Replace the static notification inbox with a real-time, two-way conversation system.
+- Guarantee strict data isolation: each (Agency, Creator) pair has exactly one private thread; different agencies cannot see each other's messages with the same creator.
+- Display professional participant identity (agency logo, creator profile photo) in the chat UI.
+
+### Database Schema
+
+See [ER Diagram – HB-13 Addendum](./er-diagram.md#two-way-messaging-hub-addendum-hb-13-2026-04-02).
+
+**Migration**: `supabase/migrations/2026-04-02_messaging_hub.sql`
+
+| Table           | Key constraints                                                                 |
+| --------------- | ------------------------------------------------------------------------------- |
+| `conversations` | `UNIQUE(agency_id, creator_id)` prevents duplicate threads                      |
+| `messages`      | RLS restricts access to participants only; `REPLICA IDENTITY FULL` for Realtime |
+
+### API Endpoints
+
+| Method | Route                             | Handler                        | Description                                                  |
+| ------ | --------------------------------- | ------------------------------ | ------------------------------------------------------------ |
+| `GET`  | `/api/conversations`              | `messages::list_conversations` | List all threads for the auth user with participant metadata |
+| `POST` | `/api/conversations/start`        | `messages::start_conversation` | Idempotent upsert — creates or resumes a thread              |
+| `GET`  | `/api/conversations/:id/messages` | `messages::list_messages`      | Paginated message history; marks received messages as read   |
+| `POST` | `/api/messages/send`              | `messages::send_message`       | Send a message; validates participation before insert        |
+
+### Frontend Components
+
+| File                                       | Purpose                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `src/hooks/useChat.ts`                     | Supabase Realtime subscription, optimistic sends, conversation management |
+| `src/components/chat/ThreadList.tsx`       | Left panel with avatars, last-seen timestamps, active thread highlight    |
+| `src/components/chat/ChatWindow.tsx`       | Premium bubble UI with sender/receiver avatars, read receipts (✓/✓✓)      |
+| `src/components/chat/CommunicationHub.tsx` | Drop-in container to embed in `AgencyDashboard` and `TalentPortal`        |
+
+### Realtime
+
+Supabase Realtime is used for instant message delivery via `postgres_changes` subscription on `INSERT` events filtered by `conversation_id`. The `messages` table has `REPLICA IDENTITY FULL` set.
+
+> Also enable the table in Supabase Dashboard → Database → Replication → `supabase_realtime`.
+
+---
+
+## Milestones
+
+- [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Multi-stage deliverable review workflow and secure media proxy with JWT fallback.
+- [x] **Creator Payment Gate (2026-03-17)**: Payment gating for campaign deliverables; Stripe-based campaign offer checkout.
+- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.
