@@ -630,8 +630,7 @@ pub async fn create_catalog(
     let mut email_sent = false;
 
     if !client_email.is_empty() {
-        let app_url =
-            std::env::var("APP_URL").unwrap_or_else(|_| "https://likelee.ai".to_string());
+        let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "https://likelee.ai".to_string());
         let catalog_url = format!("{}/share/catalog/{}", app_url, access_token);
         let client_name = payload.client_name.as_deref().unwrap_or("Client");
         let subject = format!("Your Licensed Assets Catalog – {}", payload.title.trim());
