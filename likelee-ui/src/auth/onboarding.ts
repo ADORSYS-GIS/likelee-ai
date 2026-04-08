@@ -101,16 +101,16 @@ export function isOrganizationOnboardingIncomplete(profile?: Profile | null) {
 
 export function isOnboardingIncomplete(profile?: Profile | null) {
   if (!profile) return false;
-  
+
   const step = String(profile.onboarding_step || "")
     .trim()
     .toLowerCase();
-  
+
   // If onboarding_step is explicitly set and not "complete", it's incomplete
   if (step && step !== "complete") {
     return true;
   }
-  
+
   // For creators/talent with no onboarding_step set, check if they have started onboarding
   // by checking if they have a creator_type (which is set during signup)
   if ((profile.role === "creator" || profile.role === "talent") && !step) {
@@ -118,7 +118,7 @@ export function isOnboardingIncomplete(profile?: Profile | null) {
     // If no creator_type, they haven't started, so treat as complete (will redirect to signup options)
     return !!profile.creator_type;
   }
-  
+
   return false;
 }
 
