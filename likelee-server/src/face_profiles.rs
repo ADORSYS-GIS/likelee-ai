@@ -1499,6 +1499,7 @@ pub async fn get_marketplace_profile_details(
                 StatusCode::NOT_FOUND,
                 "marketplace profile not found".to_string(),
             ));
+        }
         let mut row = row;
         if is_default_pricing(&row) {
             row["base_monthly_price_cents"] = serde_json::Value::Null;

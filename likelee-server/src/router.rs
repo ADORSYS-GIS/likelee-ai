@@ -1186,6 +1186,8 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/creator/billing/status",
             get(crate::billing::get_creator_billing_status),
+        )
+        .route(
             "/api/agency/billing/change-plan",
             post(crate::billing::change_agency_subscription_plan),
         )

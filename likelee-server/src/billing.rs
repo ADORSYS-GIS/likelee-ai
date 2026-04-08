@@ -1,9 +1,9 @@
 use axum::{extract::State, http::StatusCode, Json};
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::Duration as StdDuration;
 use tracing::{info, warn};
 
 use crate::{
@@ -583,7 +583,6 @@ pub struct CreatorCheckoutResponse {
     pub checkout_url: String,
 }
 
-fn plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
 const AGENCY_MIN_SELF_SERVE_ROSTER_MODELS: u32 = 2;
 const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 1000;
 
@@ -701,14 +700,6 @@ fn creator_plan_to_price_env_var_with_interval(plan: &str, interval: &str) -> Op
         _ => None,
     }
 }
-
-pub async fn create_agency_subscription_checkout(
-    State(state): State<AppState>,
-    user: AuthUser,
-    Json(payload): Json<AgencyCheckoutRequest>,
-) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
 fn agency_base_price_id_matches(state: &AppState, price_id: &str) -> bool {
     let price_id = price_id.trim();
     !price_id.is_empty()
@@ -2353,7 +2344,7 @@ pub async fn sync_agency_checkout_session(
         }
 
         if attempt < 3 {
-            tokio::time::sleep(Duration::from_millis(1500)).await;
+            tokio::time::sleep(StdDuration::from_millis(1500)).await;
         }
     }
 
@@ -2689,7 +2680,7 @@ pub async fn get_creator_billing_status(
     let trial_start_at = created_at_str.and_then(parse_db_date);
 
     let trial_ends_at_dt = if billed_tier == PlanTier::Free {
-        trial_start_at.map(|dt| dt + Duration::days(14))
+        trial_start_at.map(|dt| dt + chrono::Duration::days(14))
     } else {
         None
     };

@@ -3852,39 +3852,6 @@ export default function CreatorDashboard() {
       : creatorPlanTier === "basic"
         ? "bg-[#ECFAFC] text-[#136B86] border-[#BFEAF0]"
         : "bg-white text-[#5B667A] border-[#E2E8F0]";
-  const currentCreatorKycReason = formatKycReason(
-    creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
-  );
-  const normalizedCreatorStatus = String(creator?.kyc_status || "")
-    .trim()
-    .toLowerCase();
-  const isCreatorApproved = normalizedCreatorStatus === "approved";
-  const isCreatorPending = normalizedCreatorStatus === "pending";
-  const isCreatorRejected =
-    normalizedCreatorStatus === "rejected" ||
-    normalizedCreatorStatus === "declined";
-  const hasCreatorPendingFollowUp =
-    isCreatorPending && currentCreatorKycReason.length > 0;
-  const verificationButtonLabel = isCreatorPending
-    ? savedKycSessionUrl
-      ? t(
-          hasCreatorPendingFollowUp
-            ? "creatorDashboard.verificationStatus.continueVerification"
-            : "creatorDashboard.verificationStatus.resumeVerification",
-          hasCreatorPendingFollowUp
-            ? "Continue Verification"
-            : "Resume Verification",
-        )
-      : t(
-          "creatorDashboard.verificationStatus.restartVerification",
-          "Start New Verification",
-        )
-    : isCreatorRejected
-      ? t(
-          "creatorDashboard.verificationStatus.retryVerification",
-          "Retry Verification",
-        )
-      : t("creatorDashboard.verificationStatus.completeVerification");
 
   useEffect(() => {
     const lockedFallback = creatorPlanTier === "free" ? "content" : "dashboard";
