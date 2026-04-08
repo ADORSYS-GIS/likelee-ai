@@ -2717,10 +2717,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    window.open(
-                      "/terms-and-conditions-agency.html",
-                      "_blank",
-                    )
+                    window.open("/terms-and-conditions-agency.html", "_blank")
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
