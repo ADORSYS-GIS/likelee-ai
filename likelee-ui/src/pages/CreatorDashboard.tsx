@@ -9745,6 +9745,173 @@ export default function CreatorDashboard() {
     );
   };
 
+  const renderApprovals = () => {
+    const actionableOffers = directBrandOffers.filter((offer: any) =>
+      [
+        "contract_sent",
+        "contract_partially_signed",
+        "changes_requested",
+      ].includes(String(offer?.status || "").toLowerCase()),
+    );
+
+    const pendingDeliverables = deliverableEligibleOffers.filter(
+      (offer: any) =>
+        String(offer?.status || "").toLowerCase() === "changes_requested",
+    );
+
+    const openBrandConnectionSubTab = (
+      subTab: "requests" | "offers" | "deliverables",
+    ) => {
+      setBrandConnectionSubTab(subTab);
+      setActiveSection("brand-connection");
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
+          <p className="text-gray-600 mt-1">
+            Review brand requests, contract actions, and deliverable feedback.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
+            <div className="text-sm text-gray-500">Pending requests</div>
+            <div className="mt-2 text-3xl font-bold text-gray-900">
+              {pending.length}
+            </div>
+            <Button
+              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              onClick={() => openBrandConnectionSubTab("requests")}
+            >
+              Open requests
+            </Button>
+          </Card>
+
+          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
+            <div className="text-sm text-gray-500">Offer actions</div>
+            <div className="mt-2 text-3xl font-bold text-gray-900">
+              {actionableOffers.length}
+            </div>
+            <Button
+              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              onClick={() => openBrandConnectionSubTab("offers")}
+            >
+              Review offers
+            </Button>
+          </Card>
+
+          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
+            <div className="text-sm text-gray-500">Deliverable feedback</div>
+            <div className="mt-2 text-3xl font-bold text-gray-900">
+              {pendingDeliverables.length}
+            </div>
+            <Button
+              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              onClick={() => openBrandConnectionSubTab("deliverables")}
+            >
+              View feedback
+            </Button>
+          </Card>
+        </div>
+
+        <Card className="p-6 border border-[#DDE5EF] shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                Needs your attention
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                The latest items that still need a response from you.
+              </div>
+            </div>
+            <Badge className="bg-[#1A2140] text-white">
+              {pending.length +
+                actionableOffers.length +
+                pendingDeliverables.length}
+            </Badge>
+          </div>
+
+          {pending.length === 0 &&
+          actionableOffers.length === 0 &&
+          pendingDeliverables.length === 0 ? (
+            <div className="mt-6 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-sm text-gray-600">
+              No approvals are waiting right now.
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {pending.slice(0, 5).map((req: any) => (
+                <div
+                  key={`request-${String(req?.id || "")}`}
+                  className="rounded-xl border border-gray-200 bg-white p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {req?.brands?.company_name ||
+                          "Brand connection request"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Connection request awaiting your response
+                      </div>
+                    </div>
+                    <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
+                      Request
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+
+              {actionableOffers.slice(0, 5).map((offer: any) => (
+                <div
+                  key={`offer-${String(offer?.id || "")}`}
+                  className="rounded-xl border border-gray-200 bg-white p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {offer?.brands?.company_name || "Brand"} •{" "}
+                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                      </div>
+                    </div>
+                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                      {String(offer?.status || "sent").replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+
+              {pendingDeliverables.slice(0, 5).map((offer: any) => (
+                <div
+                  key={`deliverable-${String(offer?.id || "")}`}
+                  className="rounded-xl border border-gray-200 bg-white p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {offer?.brand_campaigns?.name || "Deliverable review"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Feedback received on submitted deliverables
+                      </div>
+                    </div>
+                    <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
+                      Feedback
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  };
+
   const renderCampaignArchive = () => {
     const archiveQuery = archiveSearch.trim().toLowerCase();
     const campaignsToShow = archiveQuery
