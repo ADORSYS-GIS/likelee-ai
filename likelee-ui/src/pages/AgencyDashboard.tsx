@@ -42,6 +42,7 @@ import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
@@ -348,6 +349,8 @@ const ConnectBankView = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
+  const canManageBilling = hasPermission("manage_billing");
   const entityPluralLower = isSportsAgency ? "athletes" : "talent";
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -369,6 +372,10 @@ const ConnectBankView = ({
   const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
+    if (accessLoading || !canManageBilling) {
+      setLoading(false);
+      return;
+    }
     let mounted = true;
     (async () => {
       setLoading(true);
@@ -410,9 +417,10 @@ const ConnectBankView = ({
     return () => {
       mounted = false;
     };
-  }, [toast]);
+  }, [accessLoading, canManageBilling, toast]);
 
   const connect = async () => {
+    if (!canManageBilling) return;
     setLoading(true);
     try {
       const resp = await getAgencyStripeOnboardingLink();
@@ -433,6 +441,7 @@ const ConnectBankView = ({
   };
 
   const handleRequestPayout = async () => {
+    if (!canManageBilling) return;
     const amountDollars = parseFloat(payoutAmount);
     if (!isFinite(amountDollars) || amountDollars <= 0) {
       toast({
@@ -500,6 +509,10 @@ const ConnectBankView = ({
 
   const connected = Boolean(status?.connected);
   const accountLast4 = String(status?.bank_last4 || "").trim();
+  const actionsLocked = accessLoading || !canManageBilling;
+  const actionButtonClass = actionsLocked
+    ? "blur-[2px] opacity-60 pointer-events-none select-none"
+    : "";
 
   const payoutStatusClass = (s: string) => {
     const key = String(s || "pending").toLowerCase();
@@ -527,14 +540,32 @@ const ConnectBankView = ({
         </div>
         <Button
           variant="outline"
-          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
+          className={`h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto ${actionButtonClass}`}
           onClick={connect}
-          disabled={loading}
+          disabled={loading || actionsLocked}
+          aria-disabled={loading || actionsLocked}
         >
           <CreditCard className="w-4 h-4" />
           {connected ? "Change account" : "Connect Bank Account"}
         </Button>
       </div>
+
+      {!accessLoading && !canManageBilling && (
+        <Card className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-700 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-amber-900">
+                Billing access required
+              </p>
+              <p className="text-sm text-amber-800">
+                Your role can view this payout page, but only billing roles can
+                update bank connections or request payouts.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-4 sm:p-8 bg-white border border-gray-100 rounded-2xl">
         <div className="max-w-3xl mx-auto">
@@ -608,9 +639,10 @@ const ConnectBankView = ({
                 Request a payout from your available balance.
               </div>
               <Button
-                className="h-10 px-5 rounded-xl font-bold"
+                className={`h-10 px-5 rounded-xl font-bold ${actionButtonClass}`}
                 onClick={() => setShowPayoutDialog(true)}
-                disabled={loading}
+                disabled={loading || actionsLocked}
+                aria-disabled={loading || actionsLocked}
               >
                 Request Payout
               </Button>
@@ -737,9 +769,10 @@ const ConnectBankView = ({
           </div>
 
           <Button
-            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2"
+            className={`w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2 ${actionButtonClass}`}
             onClick={connect}
-            disabled={loading}
+            disabled={loading || actionsLocked}
+            aria-disabled={loading || actionsLocked}
           >
             <Link className="w-4 h-4" />
             {connected ? "Change account" : "Connect with Stripe"}
@@ -6086,6 +6119,9 @@ const GenerateInvoiceView = () => {
   );
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
+  const [showTalentSelector, setShowTalentSelector] = useState(false);
+  const [selectedTalentIds, setSelectedTalentIds] = useState<Set<string>>(new Set());
+  const [talentSearchQuery, setTalentSearchQuery] = useState("");
   const [items, setItems] = useState<
     {
       id: string;
@@ -6117,17 +6153,44 @@ const GenerateInvoiceView = () => {
       try {
         const resp = await getAgencyClients();
         const rows = Array.isArray((resp as any)?.data)
-          ? (resp as any).data
+          ? (resp as any)?.data
           : Array.isArray(resp)
             ? resp
             : Array.isArray((resp as any)?.data?.data)
-              ? (resp as any).data.data
+              ? (resp as any)?.data.data
               : [];
         if (!mounted) return;
         setClients(rows);
       } catch (e: any) {
         toast({
           title: "Failed to load clients",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await getAgencyTalents({});
+        const rows = Array.isArray((resp as any)?.data)
+          ? (resp as any)?.data
+          : Array.isArray(resp)
+            ? resp
+            : Array.isArray((resp as any)?.data?.data)
+              ? (resp as any)?.data.data
+              : [];
+        if (!mounted) return;
+        setTalents(rows);
+      } catch (e: any) {
+        toast({
+          title: "Failed to load talents",
           description: String(e?.message || e),
           variant: "destructive" as any,
         });
@@ -6165,6 +6228,47 @@ const GenerateInvoiceView = () => {
     const qty = Number(it.quantity || "0") || 0;
     const unit = Number(it.unit_price || "0") || 0;
     return qty * unit;
+  };
+
+  const hasLineItemContent = (it: {
+    description: string;
+    talent_id: string;
+    date_of_service: string;
+    unit_price: string;
+  }) => {
+    const description = String(it.description || "").trim();
+    const talentId = String(it.talent_id || "").trim();
+    const dateOfService = String(it.date_of_service || "").trim();
+    const unitPriceRaw = String(it.unit_price || "").trim();
+    const unitPrice = Number(unitPriceRaw);
+    return Boolean(
+      description ||
+        talentId ||
+        dateOfService ||
+        (unitPriceRaw !== "" && Number.isFinite(unitPrice) && unitPrice > 0),
+    );
+  };
+
+  const getTalentLabel = (talentId: string) => {
+    const talent = talents.find(
+      (entry) => String((entry as any)?.id || "") === String(talentId || ""),
+    );
+    return (
+      String((talent as any)?.stage_name || "").trim() ||
+      String((talent as any)?.full_name || "").trim() ||
+      String((talent as any)?.name || "").trim()
+    );
+  };
+
+  const getLineItemPdfTitle = (it: {
+    description: string;
+    talent_id: string;
+  }) => {
+    const description = String(it.description || "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (description) return description;
+    return getTalentLabel(it.talent_id) ? "Talent services" : "Service item";
   };
 
   const subtotal = useMemo(() => {
@@ -6222,19 +6326,18 @@ const GenerateInvoiceView = () => {
     }
 
     const validItems = items
+      .filter(hasLineItemContent)
       .map((it) => {
-        const desc = String(it.description || "").trim();
         const qty = Number(it.quantity || "0") || 0;
         const unit = Number(it.unit_price || "0");
         const unitOk = Number.isFinite(unit) && unit >= 0;
-        return { desc, qty, unitOk };
-      })
-      .filter((it) => it.desc.length > 0);
+        return { qty, unitOk };
+      });
 
     if (!validItems.length) {
       return {
         ok: false,
-        message: "Please add at least one line item with a description.",
+        message: "Please add at least one line item.",
       };
     }
     if (validItems.some((it) => it.qty <= 0)) {
@@ -6353,6 +6456,7 @@ const GenerateInvoiceView = () => {
     const commissionPct = Number(commission || "0") || 0;
     const agency_commission_bps = Math.round(commissionPct * 100);
     const itemPayload = items
+      .filter(hasLineItemContent)
       .map((it, idx) => ({
         description: it.description,
         talent_id: it.talent_id || undefined,
@@ -6361,8 +6465,7 @@ const GenerateInvoiceView = () => {
         quantity: Number(it.quantity || "0") || 0,
         unit_price_cents: Math.round((Number(it.unit_price || "0") || 0) * 100),
         sort_order: idx,
-      }))
-      .filter((it) => (it.description || "").trim().length > 0);
+      }));
 
     return {
       client_id: selectedClientId,
@@ -6417,44 +6520,238 @@ const GenerateInvoiceView = () => {
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-    const cText = rgb(0.12, 0.12, 0.12);
-    const cMuted = rgb(0.45, 0.45, 0.45);
-    const cBorder = rgb(0.9, 0.92, 0.95);
-    const cBg = rgb(0.98, 0.98, 0.99);
+    const cText = rgb(0.1, 0.14, 0.19);
+    const cMuted = rgb(0.42, 0.48, 0.56);
+    const cBorder = rgb(0.86, 0.9, 0.95);
+    const cPanel = rgb(0.985, 0.99, 0.995);
+    const cWhite = rgb(1, 1, 1);
+    const cAccent = rgb(0.09, 0.59, 0.64);
+    const cAccentSoft = rgb(0.93, 0.98, 0.99);
+    const cAccentDark = rgb(0.08, 0.18, 0.31);
+    const cWarm = rgb(0.96, 0.72, 0.24);
+    const cStripe = rgb(0.96, 0.98, 1);
 
-    const margin = 36;
-    const gap = 14;
+    const margin = 34;
+    const gap = 16;
+    const contentW = width - margin * 2;
+    const footerCardH = 164;
+    const footerGap = 24;
+    const minCursorY = margin + footerCardH + footerGap + 34;
     const money = (n: number) => formatMoney.format(n);
 
-    const drawCard = (x: number, y: number, w: number, h: number) => {
+    const cleanText = (value: any, fallback = "") => {
+      const text = String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+      return text || fallback;
+    };
+
+    const formatDisplayDate = (value: string) => {
+      const text = cleanText(value);
+      if (!text) return "-";
+      const parsed = new Date(`${text}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? text : format(parsed, "MMM d, yyyy");
+    };
+
+    const formatRateLabel = (value: string) => {
+      const key = cleanText(value).toLowerCase();
+      if (!key) return "";
+      if (key === "day") return "Day rate";
+      if (key === "hourly") return "Hourly rate";
+      if (key === "project") return "Project rate";
+      return key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
+    const toStatusLabel = (value: string) =>
+      cleanText(value, "draft")
+        .split(/\s+/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+
+    const wrapText = (
+      value: string,
+      maxWidth: number,
+      fontRef: any,
+      size: number,
+    ) => {
+      const paragraphs = String(value ?? "").split(/\n+/);
+      const lines: string[] = [];
+
+      for (const paragraph of paragraphs) {
+        const normalized = paragraph.replace(/\s+/g, " ").trim();
+        if (!normalized) {
+          if (lines.length > 0) lines.push("");
+          continue;
+        }
+
+        let line = "";
+        for (const word of normalized.split(" ")) {
+          const candidate = line ? `${line} ${word}` : word;
+          if (!line || fontRef.widthOfTextAtSize(candidate, size) <= maxWidth) {
+            line = candidate;
+          } else {
+            lines.push(line);
+            line = word;
+          }
+        }
+        if (line) lines.push(line);
+      }
+
+      while (lines[lines.length - 1] === "") lines.pop();
+      return lines;
+    };
+
+    const drawCard = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      opts: {
+        fill?: any;
+        border?: any;
+        accentColor?: any;
+      } = {},
+    ) => {
       page.drawRectangle({
         x,
         y,
         width: w,
         height: h,
-        color: cBg,
-        borderColor: cBorder,
+        color: opts.fill || cWhite,
+        borderColor: opts.border || cBorder,
         borderWidth: 1,
       });
+      if (opts.accentColor) {
+        page.drawRectangle({
+          x,
+          y: y + h - 5,
+          width: w,
+          height: 5,
+          color: opts.accentColor,
+        });
+      }
     };
 
-    const drawLabel = (text: string, x: number, y: number) => {
+    const drawLabel = (
+      text: string,
+      x: number,
+      y: number,
+      color = cMuted,
+    ) => {
       page.drawText(text.toUpperCase(), {
         x,
         y,
         size: 8,
         font: fontBold,
-        color: cMuted,
+        color,
       });
     };
 
-    const drawValue = (text: string, x: number, y: number, bold = false) => {
-      page.drawText(text, {
+    const drawValue = (
+      text: string,
+      x: number,
+      y: number,
+      bold = false,
+      color = cText,
+      size = 11,
+    ) => {
+      page.drawText(String(text || ""), {
         x,
         y,
-        size: 11,
+        size,
         font: bold ? fontBold : font,
-        color: cText,
+        color,
+      });
+    };
+
+    const drawRightText = (
+      text: string,
+      rightX: number,
+      y: number,
+      size: number,
+      fontRef: any = font,
+      color: any = cText,
+    ) => {
+      const safeText = String(text || "");
+      page.drawText(safeText, {
+        x: rightX - fontRef.widthOfTextAtSize(safeText, size),
+        y,
+        size,
+        font: fontRef,
+        color,
+      });
+    };
+
+    const drawLines = ({
+      lines,
+      x,
+      y,
+      size,
+      fontRef = font,
+      color = cText,
+      lineHeight = size + 3,
+    }: {
+      lines: string[];
+      x: number;
+      y: number;
+      size: number;
+      fontRef?: any;
+      color?: any;
+      lineHeight?: number;
+    }) => {
+      lines.forEach((line, index) => {
+        page.drawText(line, {
+          x,
+          y: y - index * lineHeight,
+          size,
+          font: fontRef,
+          color,
+        });
+      });
+      return lines.length * lineHeight;
+    };
+
+    const drawBadge = (
+      text: string,
+      x: number,
+      y: number,
+      fill: any,
+      textColor: any,
+    ) => {
+      const label = text.toUpperCase();
+      const badgeW = fontBold.widthOfTextAtSize(label, 8) + 18;
+      page.drawRectangle({
+        x,
+        y,
+        width: badgeW,
+        height: 18,
+        color: fill,
+      });
+      page.drawText(label, {
+        x: x + 9,
+        y: y + 6,
+        size: 8,
+        font: fontBold,
+        color: textColor,
+      });
+      return badgeW;
+    };
+
+    const drawSectionTitle = (text: string, y: number) => {
+      const label = text.toUpperCase();
+      page.drawText(label, {
+        x: margin,
+        y,
+        size: 9,
+        font: fontBold,
+        color: cMuted,
+      });
+      const startX = margin + fontBold.widthOfTextAtSize(label, 9) + 12;
+      page.drawLine({
+        start: { x: startX, y: y + 4 },
+        end: { x: width - margin, y: y + 4 },
+        thickness: 1,
+        color: cBorder,
       });
     };
 
@@ -6466,21 +6763,66 @@ const GenerateInvoiceView = () => {
       "Agency";
 
     const clientCompany = String((selectedClient as any)?.company || "").trim();
-    const clientName = String((selectedClient as any)?.name || "").trim();
+    const clientName =
+      String((selectedClient as any)?.contact_name || "").trim() ||
+      String((selectedClient as any)?.name || "").trim();
     const clientEmail = String((selectedClient as any)?.email || "").trim();
 
     const invoiceNo = invoiceNumber ? invoiceNumber : "(not assigned yet)";
     const statusText = invoiceId ? "issued" : "draft";
+    const displayExpenses = expenses.filter((expense) => {
+      const amount = Number(expense.amount || "0") || 0;
+      return Boolean(cleanText(expense.description) || amount > 0);
+    });
+
+    const lineItems = items
+      .filter(hasLineItemContent)
+      .map((item) => {
+        const talentName = cleanText(getTalentLabel(item.talent_id));
+        const serviceDate = cleanText(item.date_of_service)
+          ? formatDisplayDate(item.date_of_service)
+          : "";
+        const rateLabel = formatRateLabel(item.rate_type);
+        return {
+          ...item,
+          title: cleanText(getLineItemPdfTitle(item), "Service item"),
+          qty: Number(item.quantity || "0") || 0,
+          unit: Number(item.unit_price || "0") || 0,
+          meta: [talentName, serviceDate, rateLabel].filter(Boolean).join("  •  "),
+        };
+      });
 
     const logoBytes = await tryFetchLogoPng();
+    page.drawRectangle({
+      x: 0,
+      y: height - 146,
+      width,
+      height: 146,
+      color: cAccentSoft,
+    });
+    page.drawRectangle({
+      x: width - 172,
+      y: height - 146,
+      width: 172,
+      height: 146,
+      color: cStripe,
+    });
+    page.drawRectangle({
+      x: 0,
+      y: height - 8,
+      width,
+      height: 8,
+      color: cAccent,
+    });
+
     if (logoBytes) {
       try {
         const img = await doc.embedPng(logoBytes);
-        const imgW = 34;
+        const imgW = 36;
         const imgH = (img.height / img.width) * imgW;
         page.drawImage(img, {
           x: margin,
-          y: height - margin - imgH + 2,
+          y: height - margin - imgH + 8,
           width: imgW,
           height: imgH,
         });
@@ -6490,399 +6832,502 @@ const GenerateInvoiceView = () => {
     }
 
     page.drawText("Likelee", {
-      x: margin + (logoBytes ? 42 : 0),
-      y: height - margin - 16,
-      size: 16,
+      x: margin + (logoBytes ? 46 : 0),
+      y: height - margin - 18,
+      size: 18,
       font: fontBold,
-      color: cText,
+      color: cAccentDark,
     });
     page.drawText("Invoice", {
       x: margin,
-      y: height - margin - 44,
-      size: 28,
+      y: height - margin - 54,
+      size: 31,
       font: fontBold,
-      color: cText,
+      color: cAccentDark,
     });
     page.drawText(invoiceNo, {
       x: margin,
-      y: height - margin - 66,
-      size: 11,
-      font,
-      color: cMuted,
+      y: height - margin - 78,
+      size: 12,
+      font: fontBold,
+      color: cText,
     });
-    page.drawText(`From: ${agencyName} (sent via Likelee)`, {
+    page.drawText(`Prepared by ${agencyName}`, {
       x: margin,
-      y: height - margin - 86,
-      size: 10,
+      y: height - margin - 98,
+      size: 10.5,
+      font,
+      color: cText,
+    });
+    page.drawText("Generated with Likelee invoicing", {
+      x: margin,
+      y: height - margin - 114,
+      size: 9,
       font,
       color: cMuted,
     });
 
-    const metaW = 230;
-    const metaH = 92;
+    const metaW = 222;
+    const metaH = 138;
     const metaX = width - margin - metaW;
-    const metaY = height - margin - metaH;
-    drawCard(metaX, metaY, metaW, metaH);
-    drawLabel("Invoice date", metaX + 14, metaY + metaH - 22);
-    drawValue(
-      invoiceDate,
-      metaX + metaW - 14 - font.widthOfTextAtSize(invoiceDate, 11),
-      metaY + metaH - 24,
+    const metaY = height - margin - metaH + 6;
+    drawCard(metaX, metaY, metaW, metaH, {
+      fill: cWhite,
+      accentColor: cAccent,
+    });
+    drawLabel("Amount due", metaX + 16, metaY + metaH - 22, cAccentDark);
+    drawRightText(
+      money(grandTotal),
+      metaX + metaW - 16,
+      metaY + metaH - 52,
+      23,
+      fontBold,
+      cAccentDark,
     );
-    drawLabel("Due date", metaX + 14, metaY + metaH - 46);
-    drawValue(
-      dueDate,
-      metaX + metaW - 14 - font.widthOfTextAtSize(dueDate, 11),
-      metaY + metaH - 48,
+    page.drawLine({
+      start: { x: metaX + 16, y: metaY + 62 },
+      end: { x: metaX + metaW - 16, y: metaY + 62 },
+      thickness: 1,
+      color: cBorder,
+    });
+    drawLabel("Invoice date", metaX + 16, metaY + 44);
+    drawRightText(
+      formatDisplayDate(invoiceDate),
+      metaX + metaW - 16,
+      metaY + 42,
+      10,
+      fontBold,
     );
-    drawLabel("Status", metaX + 14, metaY + metaH - 70);
-    drawValue(
-      statusText,
-      metaX + metaW - 14 - font.widthOfTextAtSize(statusText, 11),
-      metaY + metaH - 72,
+    drawLabel("Due date", metaX + 16, metaY + 24);
+    drawRightText(
+      formatDisplayDate(dueDate),
+      metaX + metaW - 16,
+      metaY + 22,
+      10,
+      fontBold,
+    );
+    drawLabel("Status", metaX + 16, metaY + 8);
+    const badgeText = toStatusLabel(statusText);
+    const badgeWidth = fontBold.widthOfTextAtSize(
+      badgeText.toUpperCase(),
+      8,
+    ) + 18;
+    drawBadge(
+      badgeText,
+      metaX + metaW - 16 - badgeWidth,
+      metaY + 4,
+      cAccentSoft,
+      cAccentDark,
     );
 
-    const cardW = (width - margin * 2 - gap) / 2;
-    const cardH = 92;
-    const cardsTopY = height - margin - 130;
+    const cardW = (contentW - gap) / 2;
+    const cardH = 98;
+    const cardsTopY = metaY - 22;
 
     const billX = margin;
     const billY = cardsTopY - cardH;
-    drawCard(billX, billY, cardW, cardH);
-    drawLabel("Bill to", billX + 14, billY + cardH - 22);
-    const billLineY = billY + cardH - 44;
+    drawCard(billX, billY, cardW, cardH, {
+      fill: cWhite,
+      accentColor: cWarm,
+    });
+    drawLabel("Bill to", billX + 16, billY + cardH - 22);
+    const billTitleLines = wrapText(
+      clientCompany || clientName || "Client",
+      cardW - 32,
+      fontBold,
+      13,
+    ).slice(0, 2);
+    const billBodyLines = [
+      ...(clientCompany && clientName
+        ? wrapText(clientName, cardW - 32, font, 10.5).slice(0, 1)
+        : []),
+      ...(clientEmail
+        ? wrapText(clientEmail, cardW - 32, font, 10.5).slice(0, 1)
+        : []),
+    ];
+    drawLines({
+      lines: billTitleLines,
+      x: billX + 16,
+      y: billY + cardH - 46,
+      size: 13,
+      fontRef: fontBold,
+      color: cText,
+      lineHeight: 14,
+    });
     if (clientCompany) {
-      drawValue(clientCompany, billX + 14, billLineY, true);
-      if (clientName) drawValue(clientName, billX + 14, billLineY - 16);
-      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 32);
+      drawLines({
+        lines: billBodyLines,
+        x: billX + 16,
+        y: billY + cardH - 64,
+        size: 10.5,
+        fontRef: font,
+        color: cMuted,
+        lineHeight: 13,
+      });
     } else {
-      drawValue(clientName || "Client", billX + 14, billLineY, true);
-      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 16);
+      drawLines({
+        lines: billBodyLines,
+        x: billX + 16,
+        y: billY + cardH - 64,
+        size: 10.5,
+        fontRef: font,
+        color: cMuted,
+        lineHeight: 13,
+      });
     }
 
     const refX = margin + cardW + gap;
     const refY = billY;
-    drawCard(refX, refY, cardW, cardH);
-    drawLabel("Reference", refX + 14, refY + cardH - 22);
-    if (projectReference) {
-      drawValue(projectReference, refX + 14, refY + cardH - 44, true);
-    }
-
-    let y = billY - 24;
-    page.drawText("LINE ITEMS", {
-      x: margin,
-      y,
-      size: 10,
-      font: fontBold,
-      color: cMuted,
+    drawCard(refX, refY, cardW, cardH, {
+      fill: cWhite,
+      accentColor: cAccent,
     });
-    y -= 10;
+    drawLabel("Reference", refX + 16, refY + cardH - 22);
+    const referenceLines = [
+      ...(poNumber
+        ? wrapText(`PO Number: ${poNumber}`, cardW - 32, font, 10.5).slice(0, 2)
+        : []),
+      ...(projectReference
+        ? wrapText(
+            `Project: ${projectReference}`,
+            cardW - 32,
+            font,
+            10.5,
+          ).slice(0, 2)
+        : []),
+    ];
+    drawLines({
+      lines: referenceLines.length
+        ? referenceLines
+        : ["No purchase order or project reference added."],
+      x: refX + 16,
+      y: refY + cardH - 48,
+      size: 10.5,
+      fontRef: referenceLines.length ? font : font,
+      color: referenceLines.length ? cText : cMuted,
+      lineHeight: 13,
+    });
 
+    let y = billY - 26;
     const tableX = margin;
-    const tableW = width - margin * 2;
-    const rowH = 28;
-    page.drawLine({
-      start: { x: tableX, y },
-      end: { x: tableX + tableW, y },
-      thickness: 1,
-      color: cBorder,
-    });
-    y -= 18;
-    page.drawText("DESCRIPTION", {
+    const tableW = contentW;
+    const totalRight = tableX + tableW - 16;
+    const unitRight = totalRight - 90;
+    const qtyRight = unitRight - 74;
+    const descX = tableX + 16;
+    const descWidth = qtyRight - descX - 28;
+
+    drawSectionTitle("Line Items", y);
+    y -= 22;
+
+    const tableHeaderH = 28;
+    page.drawRectangle({
       x: tableX,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
+      y: y - tableHeaderH,
+      width: tableW,
+      height: tableHeaderH,
+      color: cPanel,
+      borderColor: cBorder,
+      borderWidth: 1,
     });
-    page.drawText("QTY", {
-      x: tableX + tableW - 170,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
-    });
-    page.drawText("UNIT", {
-      x: tableX + tableW - 120,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
-    });
-    page.drawText("TOTAL", {
-      x: tableX + tableW - 56,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
-    });
-    y -= 10;
-    page.drawLine({
-      start: { x: tableX, y },
-      end: { x: tableX + tableW, y },
-      thickness: 1,
-      color: cBorder,
-    });
-    y -= 18;
+    drawLabel("Description", descX, y - 18);
+    drawLabel("Qty", qtyRight - 16, y - 18);
+    drawLabel("Unit", unitRight - 18, y - 18);
+    drawLabel("Total", totalRight - 22, y - 18);
+    y -= tableHeaderH + 8;
 
-    const itemRows = items
-      .map((it) => ({
-        ...it,
-        desc: (it.description || "").replace(/\s+/g, " ").trim(),
-        qty: Number(it.quantity || "0") || 0,
-        unit: Number(it.unit_price || "0") || 0,
-      }))
-      .filter((it) => it.desc.length > 0);
-
-    if (!itemRows.length) {
-      page.drawText("No line items", {
+    if (!lineItems.length) {
+      page.drawRectangle({
         x: tableX,
-        y,
-        size: 10,
-        font,
-        color: cMuted,
+        y: y - 34,
+        width: tableW,
+        height: 34,
+        color: cWhite,
+        borderColor: cBorder,
+        borderWidth: 1,
       });
-      y -= rowH;
+      drawValue("No line items added.", tableX + 16, y - 22, false, cMuted, 10);
+      y -= 42;
     } else {
-      for (const it of itemRows.slice(0, 6)) {
-        const total = it.qty * it.unit;
-        page.drawText(it.desc.slice(0, 44), {
+      let hiddenItemCount = 0;
+      for (let index = 0; index < lineItems.length; index += 1) {
+        const item = lineItems[index];
+        const titleLines = wrapText(item.title, descWidth, fontBold, 10.5).slice(0, 2);
+        const metaLines = item.meta
+          ? wrapText(item.meta, descWidth, font, 8.5).slice(0, 2)
+          : [];
+        const rowHeight =
+          18 +
+          titleLines.length * 12 +
+          (metaLines.length ? metaLines.length * 10 + 4 : 0);
+
+        if (y - rowHeight < minCursorY) {
+          hiddenItemCount = lineItems.length - index;
+          break;
+        }
+
+        page.drawRectangle({
           x: tableX,
-          y,
-          size: 10,
-          font: fontBold,
-          color: cText,
+          y: y - rowHeight,
+          width: tableW,
+          height: rowHeight,
+          color: index % 2 === 0 ? cWhite : cPanel,
+          borderColor: cBorder,
+          borderWidth: 1,
         });
 
-        const sub = [
-          (() => {
-            const talentName = String(
-              talents.find(
-                (t) =>
-                  String((t as any)?.id || "") === String(it.talent_id || ""),
-              )?.name ||
-                talents.find(
-                  (t) =>
-                    String((t as any)?.id || "") === String(it.talent_id || ""),
-                )?.full_name ||
-                "",
-            ).trim();
-            const date = String(it.date_of_service || "").trim();
-            const rate = String(it.rate_type || "").trim();
-            return [talentName, date, rate].filter(Boolean).join(" • ");
-          })(),
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-        if (sub) {
-          page.drawText(sub.slice(0, 60), {
-            x: tableX,
-            y: y - 12,
-            size: 9,
-            font,
+        const textTopY = y - 16;
+        drawLines({
+          lines: titleLines,
+          x: descX,
+          y: textTopY,
+          size: 10.5,
+          fontRef: fontBold,
+          color: cText,
+          lineHeight: 12,
+        });
+        if (metaLines.length) {
+          drawLines({
+            lines: metaLines,
+            x: descX,
+            y: textTopY - titleLines.length * 12 - 1,
+            size: 8.5,
+            fontRef: font,
             color: cMuted,
+            lineHeight: 10,
           });
         }
 
-        page.drawText(String(it.qty), {
-          x: tableX + tableW - 170,
-          y,
-          size: 10,
-          font,
-          color: cText,
-        });
-        page.drawText(money(it.unit), {
-          x: tableX + tableW - 120,
-          y,
-          size: 10,
-          font,
-          color: cText,
-        });
-        page.drawText(money(total), {
-          x: tableX + tableW - 56,
-          y,
-          size: 10,
-          font: fontBold,
-          color: cText,
-        });
+        const numericY = y - rowHeight / 2 - 1;
+        drawRightText(String(item.qty), qtyRight, numericY, 10, fontBold);
+        drawRightText(money(item.unit), unitRight, numericY, 10, font);
+        drawRightText(
+          money(item.qty * item.unit),
+          totalRight,
+          numericY,
+          10.5,
+          fontBold,
+          cAccentDark,
+        );
 
-        y -= rowH;
-        page.drawLine({
-          start: { x: tableX, y },
-          end: { x: tableX + tableW, y },
-          thickness: 1,
-          color: cBorder,
-        });
-        y -= 14;
+        y -= rowHeight + 8;
+      }
+
+      if (hiddenItemCount > 0) {
+        drawValue(
+          `${hiddenItemCount} more line item${hiddenItemCount === 1 ? "" : "s"} not shown in this PDF preview.`,
+          tableX + 16,
+          y - 2,
+          false,
+          cMuted,
+          9,
+        );
+        y -= 22;
       }
     }
 
-    page.drawText("EXPENSES", {
-      x: margin,
-      y,
-      size: 10,
-      font: fontBold,
-      color: cMuted,
-    });
-    y -= 10;
-    page.drawLine({
-      start: { x: tableX, y },
-      end: { x: tableX + tableW, y },
-      thickness: 1,
-      color: cBorder,
-    });
-    y -= 18;
-    page.drawText("DESCRIPTION", {
+    drawSectionTitle("Expenses", y);
+    y -= 22;
+
+    page.drawRectangle({
       x: tableX,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
+      y: y - tableHeaderH,
+      width: tableW,
+      height: tableHeaderH,
+      color: cPanel,
+      borderColor: cBorder,
+      borderWidth: 1,
     });
-    page.drawText("TAXABLE", {
-      x: tableX + tableW - 160,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
-    });
-    page.drawText("AMOUNT", {
-      x: tableX + tableW - 70,
-      y,
-      size: 9,
-      font: fontBold,
-      color: cMuted,
-    });
-    y -= 10;
-    page.drawLine({
-      start: { x: tableX, y },
-      end: { x: tableX + tableW, y },
-      thickness: 1,
-      color: cBorder,
-    });
-    y -= 18;
+    drawLabel("Description", descX, y - 18);
+    drawLabel("Taxable", unitRight - 40, y - 18);
+    drawLabel("Amount", totalRight - 26, y - 18);
+    y -= tableHeaderH + 8;
 
-    if (!expenses.length) {
-      page.drawText("No expenses", {
+    if (!displayExpenses.length) {
+      page.drawRectangle({
         x: tableX,
-        y,
-        size: 10,
-        font,
-        color: cMuted,
+        y: y - 34,
+        width: tableW,
+        height: 34,
+        color: cWhite,
+        borderColor: cBorder,
+        borderWidth: 1,
       });
-      y -= 28;
+      drawValue("No expenses added.", tableX + 16, y - 22, false, cMuted, 10);
+      y -= 42;
     } else {
-      for (const e of expenses.slice(0, 4)) {
-        const desc = String(e.description || "").trim() || "Expense";
-        const amount = Number(e.amount || "0") || 0;
-        page.drawText(desc.slice(0, 44), {
+      let hiddenExpenseCount = 0;
+      for (let index = 0; index < displayExpenses.length; index += 1) {
+        const expense = displayExpenses[index];
+        const descLines = wrapText(
+          cleanText(expense.description, "Expense"),
+          descWidth + 24,
+          font,
+          10,
+        ).slice(0, 2);
+        const rowHeight = 16 + descLines.length * 11;
+
+        if (y - rowHeight < minCursorY) {
+          hiddenExpenseCount = displayExpenses.length - index;
+          break;
+        }
+
+        page.drawRectangle({
           x: tableX,
-          y,
+          y: y - rowHeight,
+          width: tableW,
+          height: rowHeight,
+          color: index % 2 === 0 ? cWhite : cPanel,
+          borderColor: cBorder,
+          borderWidth: 1,
+        });
+
+        drawLines({
+          lines: descLines,
+          x: descX,
+          y: y - 15,
           size: 10,
-          font,
+          fontRef: font,
           color: cText,
+          lineHeight: 11,
         });
-        page.drawText("No", {
-          x: tableX + tableW - 160,
-          y,
-          size: 10,
-          font,
-          color: cText,
-        });
-        page.drawText(money(amount), {
-          x: tableX + tableW - 70,
-          y,
-          size: 10,
-          font: fontBold,
-          color: cText,
-        });
-        y -= 28;
-        page.drawLine({
-          start: { x: tableX, y },
-          end: { x: tableX + tableW, y },
-          thickness: 1,
-          color: cBorder,
-        });
-        y -= 14;
+        const numericY = y - rowHeight / 2 - 1;
+        drawRightText("No", unitRight, numericY, 10, fontBold, cMuted);
+        drawRightText(
+          money(Number(expense.amount || "0") || 0),
+          totalRight,
+          numericY,
+          10,
+          fontBold,
+          cText,
+        );
+
+        y -= rowHeight + 8;
+      }
+
+      if (hiddenExpenseCount > 0) {
+        drawValue(
+          `${hiddenExpenseCount} more expense${hiddenExpenseCount === 1 ? "" : "s"} not shown in this PDF preview.`,
+          tableX + 16,
+          y - 2,
+          false,
+          cMuted,
+          9,
+        );
+        y -= 22;
       }
     }
-
-    const bottomY = margin + 170;
-    if (y < bottomY) y = bottomY;
 
     const lowerCardW = cardW;
-    const lowerCardH = 140;
     const leftLowerX = margin;
-    const leftLowerY = margin + 20;
+    const leftLowerY = Math.max(margin, y - footerGap - footerCardH);
     const rightLowerX = margin + lowerCardW + gap;
     const rightLowerY = leftLowerY;
 
-    drawCard(leftLowerX, leftLowerY, lowerCardW, lowerCardH);
+    drawCard(leftLowerX, leftLowerY, lowerCardW, footerCardH, {
+      fill: cWhite,
+      accentColor: cWarm,
+    });
     drawLabel(
       "Payment instructions",
-      leftLowerX + 14,
-      leftLowerY + lowerCardH - 22,
+      leftLowerX + 16,
+      leftLowerY + footerCardH - 22,
     );
-    page.drawText(String(paymentInstructions || "").slice(0, 140), {
-      x: leftLowerX + 14,
-      y: leftLowerY + lowerCardH - 46,
-      size: 10,
+    const paymentLines = wrapText(
+      cleanText(paymentInstructions, "Payment instructions not provided."),
+      lowerCardW - 32,
       font,
+      10,
+    ).slice(0, footerText ? 5 : 7);
+    drawLines({
+      lines: paymentLines,
+      x: leftLowerX + 16,
+      y: leftLowerY + footerCardH - 44,
+      size: 10,
+      fontRef: font,
       color: cText,
       lineHeight: 12,
     });
-    page.drawLine({
-      start: { x: leftLowerX + 14, y: leftLowerY + 54 },
-      end: { x: leftLowerX + lowerCardW - 14, y: leftLowerY + 54 },
-      thickness: 1,
-      color: cBorder,
-    });
-    drawLabel("Footer", leftLowerX + 14, leftLowerY + 44);
-    page.drawText(String(footerText || "").slice(0, 90), {
-      x: leftLowerX + 14,
-      y: leftLowerY + 26,
-      size: 10,
-      font,
-      color: cText,
-    });
-
-    drawCard(rightLowerX, rightLowerY, lowerCardW, lowerCardH);
-    const tx = rightLowerX + 14;
-    let ty = rightLowerY + lowerCardH - 34;
-    const drawTotalRow = (label: string, value: string, bold = false) => {
-      page.drawText(label, { x: tx, y: ty, size: 10, font, color: cText });
-      page.drawText(value, {
-        x:
-          rightLowerX +
-          lowerCardW -
-          14 -
-          font.widthOfTextAtSize(value, bold ? 11 : 10),
-        y: ty,
-        size: bold ? 11 : 10,
-        font: bold ? fontBold : font,
-        color: cText,
+    if (footerText) {
+      page.drawLine({
+        start: { x: leftLowerX + 16, y: leftLowerY + 48 },
+        end: { x: leftLowerX + lowerCardW - 16, y: leftLowerY + 48 },
+        thickness: 1,
+        color: cBorder,
       });
-      ty -= 18;
+      drawLabel("Footer", leftLowerX + 16, leftLowerY + 32);
+      drawLines({
+        lines: wrapText(footerText, lowerCardW - 32, font, 10).slice(0, 2),
+        x: leftLowerX + 16,
+        y: leftLowerY + 18,
+        size: 10,
+        fontRef: font,
+        color: cText,
+        lineHeight: 12,
+      });
+    }
+
+    drawCard(rightLowerX, rightLowerY, lowerCardW, footerCardH, {
+      fill: cAccentSoft,
+      accentColor: cAccentDark,
+    });
+    drawLabel("Billing summary", rightLowerX + 16, rightLowerY + footerCardH - 22, cAccentDark);
+    const tx = rightLowerX + 16;
+    let ty = rightLowerY + footerCardH - 46;
+    const drawTotalRow = (label: string, value: string, bold = false) => {
+      drawValue(label, tx, ty, false, cText, 9.5);
+      drawRightText(
+        value,
+        rightLowerX + lowerCardW - 16,
+        ty,
+        bold ? 10.5 : 9.5,
+        bold ? fontBold : font,
+        bold ? cAccentDark : cText,
+      );
+      ty -= 16;
     };
 
-    drawTotalRow("Subtotal", money(subtotal), true);
+    drawTotalRow("Subtotal", money(subtotal));
     drawTotalRow("Expenses", money(expensesTotal));
     drawTotalRow("Discount", "-$0.00");
     drawTotalRow("Tax (0%)", "$0.00");
     page.drawLine({
       start: { x: tx, y: ty + 6 },
-      end: { x: rightLowerX + lowerCardW - 14, y: ty + 6 },
+      end: { x: rightLowerX + lowerCardW - 16, y: ty + 6 },
       thickness: 1,
       color: cBorder,
     });
-    ty -= 14;
-    drawTotalRow("Total", money(grandTotal), true);
+    ty -= 12;
     drawTotalRow(
       `Agency fee (${commissionPct}%)`,
       money(agencyCommissionAmount),
     );
     drawTotalRow("Talent net", money(talentNetAmount));
+
+    page.drawRectangle({
+      x: rightLowerX + 12,
+      y: rightLowerY + 12,
+      width: lowerCardW - 24,
+      height: 36,
+      color: cAccentDark,
+    });
+    drawLabel("Total due", rightLowerX + 24, rightLowerY + 34, cAccentSoft);
+    drawRightText(
+      money(grandTotal),
+      rightLowerX + lowerCardW - 24,
+      rightLowerY + 24,
+      16,
+      fontBold,
+      cWhite,
+    );
+
+    page.drawText("Thank you for choosing Likelee for invoicing.", {
+      x: margin,
+      y: 16,
+      size: 8.5,
+      font,
+      color: cMuted,
+    });
 
     const bytes = await doc.save();
     return bytesToBase64(bytes);
@@ -7090,6 +7535,91 @@ const GenerateInvoiceView = () => {
     setExpenses(
       expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
     );
+  };
+
+  const toggleTalentSelection = (talentId: string) => {
+    setSelectedTalentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(talentId)) {
+        next.delete(talentId);
+      } else {
+        next.add(talentId);
+      }
+      return next;
+    });
+  };
+
+  const openTalentSelector = () => {
+    const existingTalentIds = new Set(
+      items
+        .map((it) => it.talent_id)
+        .filter((id) => id && id.trim() !== "")
+    );
+    setSelectedTalentIds(existingTalentIds);
+    setTalentSearchQuery("");
+    setShowTalentSelector(true);
+  };
+
+  const addSelectedTalentsToInvoice = () => {
+    const existingIds = new Set(
+      items.map((it) => it.talent_id).filter((id) => id && id.trim() !== "")
+    );
+    const toAdd = Array.from(selectedTalentIds).filter(
+      (id) => !existingIds.has(id)
+    );
+    const toRemove = Array.from(existingIds).filter(
+      (id) => !selectedTalentIds.has(id)
+    );
+
+    let newItems = items.filter((it) => !toRemove.includes(it.talent_id));
+    
+    const newLineItems = toAdd.map((talentId) => ({
+      id: Math.random().toString(36).slice(2),
+      description: "",
+      talent_id: talentId,
+      date_of_service: "",
+      rate_type: "day" as const,
+      quantity: "1",
+      unit_price: "0",
+    }));
+    
+    newItems = [...newItems, ...newLineItems];
+    setItems(newItems);
+    setSelectedTalentIds(new Set());
+    setTalentSearchQuery("");
+    setShowTalentSelector(false);
+  };
+
+  const filteredTalents = useMemo(() => {
+    if (!talentSearchQuery.trim()) return talents;
+    const query = talentSearchQuery.toLowerCase();
+    return talents.filter((talent) => {
+      const stageName = String((talent as any)?.stage_name || "").toLowerCase();
+      const fullName = String((talent as any)?.full_name || "").toLowerCase();
+      const name = String((talent as any)?.name || "").toLowerCase();
+      const email = String((talent as any)?.email || "").toLowerCase();
+      return (
+        stageName.includes(query) ||
+        fullName.includes(query) ||
+        name.includes(query) ||
+        email.includes(query)
+      );
+    });
+  }, [talents, talentSearchQuery]);
+
+  const selectAllVisible = () => {
+    setSelectedTalentIds((prev) => {
+      const next = new Set(prev);
+      filteredTalents.forEach((talent) => {
+        const id = String((talent as any)?.id || "");
+        if (id) next.add(id);
+      });
+      return next;
+    });
+  };
+
+  const clearAllSelections = () => {
+    setSelectedTalentIds(new Set());
   };
 
   return (
@@ -7351,14 +7881,24 @@ const GenerateInvoiceView = () => {
               <Label className="text-sm font-bold text-gray-700">
                 Invoice Items <span className="text-red-500">*</span>
               </Label>
-              <Button
-                variant="outline"
-                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
-                onClick={addLineItem}
-              >
-                <Plus className="w-4 h-4" />
-                Add Line Item
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+                  onClick={openTalentSelector}
+                >
+                  <Users className="w-4 h-4" />
+                  Manage Talents ({items.filter((it) => it.talent_id && it.talent_id.trim() !== "").length})
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+                  onClick={addLineItem}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Line Item
+                </Button>
+              </div>
             </div>
             <div className="space-y-4">
               {items.map((it, idx) => (
@@ -7820,6 +8360,136 @@ const GenerateInvoiceView = () => {
           </div>
         </div>
       </Card>
+
+      <Dialog open={showTalentSelector} onOpenChange={setShowTalentSelector}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Select Talents for Invoice</span>
+              {selectedTalentIds.size > 0 && (
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                  {selectedTalentIds.size} selected
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Search and select talents. Existing selections are preserved. Line items will be added or removed to match your selection.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center gap-2 py-3 border-b">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search by name or email..."
+                value={talentSearchQuery}
+                onChange={(e) => setTalentSearchQuery(e.target.value)}
+                className="pl-9 h-10"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectAllVisible}
+              className="whitespace-nowrap"
+            >
+              Select All
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllSelections}
+              className="whitespace-nowrap"
+            >
+              Clear
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-2">
+            {talents.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No talents available</p>
+                <p className="text-sm">Add talents to your agency first</p>
+              </div>
+            ) : filteredTalents.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No talents found</p>
+                <p className="text-sm">Try a different search term</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredTalents.map((talent) => {
+                  const talentId = String((talent as any)?.id || "");
+                  const talentName =
+                    String((talent as any)?.stage_name || "").trim() ||
+                    String((talent as any)?.full_name || "").trim() ||
+                    String((talent as any)?.name || "").trim() ||
+                    talentId;
+                  const isSelected = selectedTalentIds.has(talentId);
+
+                  return (
+                    <div
+                      key={talentId}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
+                        isSelected
+                          ? "bg-emerald-50 border border-emerald-200"
+                          : "hover:bg-gray-50 border border-transparent"
+                      }`}
+                      onClick={() => toggleTalentSelection(talentId)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleTalentSelection(talentId)}
+                        className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">
+                          {talentName}
+                        </div>
+                        {(talent as any)?.email && (
+                          <div className="text-xs text-gray-500 truncate">
+                            {(talent as any).email}
+                          </div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {talents.length > 0 && (
+            <div className="pt-3 border-t text-xs text-gray-500 text-center">
+              Showing {filteredTalents.length} of {talents.length} talents
+            </div>
+          )}
+
+          <DialogFooter className="pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedTalentIds(new Set());
+                setTalentSearchQuery("");
+                setShowTalentSelector(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={addSelectedTalentsToInvoice}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Apply Selection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

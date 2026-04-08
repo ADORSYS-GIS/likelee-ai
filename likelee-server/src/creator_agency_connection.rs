@@ -711,7 +711,8 @@ pub async fn approve_disconnect_request(
     Path(creator_id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let access = require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+    let access =
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
     let agency_id = &access.organization_id;
     crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
     let contract_row = get_latest_contract_for_connection(&state, agency_id, &creator_id)
@@ -777,7 +778,8 @@ pub async fn reject_disconnect_request(
     Path(creator_id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let access = require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+    let access =
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
     let agency_id = &access.organization_id;
     let contract_row = get_latest_contract_for_connection(&state, agency_id, &creator_id)
         .await?

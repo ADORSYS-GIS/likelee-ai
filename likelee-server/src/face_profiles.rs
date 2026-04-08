@@ -2785,7 +2785,7 @@ pub async fn disconnect_brand_agency_connection_as_agency(
     Path(brand_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access =
-        require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
     let effective_agency_id = access.organization_id;
 
     let resp = state

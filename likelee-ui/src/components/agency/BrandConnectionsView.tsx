@@ -67,6 +67,7 @@ const BrandConnectionsView = () => {
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
   const canViewConnections = hasPermission("view_brand_connections");
   const canManageConnections = hasPermission("manage_brand_connections");
+  const canDisconnectBrands = hasPermission("disconnect_brand_connections");
   const isReadOnly = canViewConnections && !canManageConnections;
 
   const [activeTab, setActiveTab] = useState<
@@ -1320,7 +1321,7 @@ const BrandConnectionsView = () => {
                                 <Button
                                   variant="destructive"
                                   size="icon"
-                                  disabled={!brandId || isBusy || !canManageConnections}
+                                  disabled={!brandId || isBusy || !canDisconnectBrands}
                                   onClick={() => disconnectBrand(brandId)}
                                   aria-label="Disconnect from brand"
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1329,7 +1330,7 @@ const BrandConnectionsView = () => {
                                 </Button>
                               </span>
                             </TooltipTrigger>
-                            {!canManageConnections && (
+                            {!canDisconnectBrands && (
                               <TooltipContent>
                                 <p>Your role cannot disconnect brands</p>
                               </TooltipContent>

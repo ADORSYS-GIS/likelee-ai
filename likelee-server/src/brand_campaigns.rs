@@ -2784,7 +2784,7 @@ pub async fn respond_to_campaign_offer(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     if user.role == "agency" {
-        team::require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+        team::require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
     let action = payload.action.trim().to_lowercase();
