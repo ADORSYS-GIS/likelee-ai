@@ -3947,6 +3947,10 @@ export default function BrandCampaignDashboard({
                                         src={deliverablePreviewSrc(deliverable)}
                                         alt={`Deliverable ${idx + 1}`}
                                         className="w-full h-full object-cover"
+                                        onContextMenu={(e) =>
+                                          e.preventDefault()
+                                        }
+                                        draggable={false}
                                       />
                                     ) : (
                                       <video
@@ -3955,6 +3959,10 @@ export default function BrandCampaignDashboard({
                                         playsInline
                                         preload="metadata"
                                         className="w-full h-full object-cover bg-gray-900"
+                                        onContextMenu={(e) =>
+                                          e.preventDefault()
+                                        }
+                                        controlsList="nodownload noplaybackrate"
                                       />
                                     )}
                                   </div>
@@ -4011,9 +4019,9 @@ export default function BrandCampaignDashboard({
                                             size="sm"
                                             className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-3 shadow-none"
                                             onClick={() =>
-                                              window.open(
-                                                deliverableFileSrc(deliverable),
-                                                "_blank",
+                                              downloadSelectedCampaignDeliverable(
+                                                deliverable,
+                                                idx,
                                               )
                                             }
                                           >
