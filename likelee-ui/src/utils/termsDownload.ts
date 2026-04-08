@@ -2,17 +2,17 @@ import { jsPDF } from "jspdf";
 
 export async function downloadTermsPdf(containerId: string, title: string) {
   if (typeof window === "undefined") return;
-  
+
   // Ensure fonts are actually loaded before cloning
   if (document.fonts && document.fonts.ready) {
     await document.fonts.ready;
   }
-  
+
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const clone = container.cloneNode(true) as HTMLElement;
-  
+
   // "Goldilocks" balanced styling for professional readability
   clone.style.fontFamily = '"Sora", "Helvetica", "Arial", sans-serif';
   clone.style.color = "#111827";
@@ -23,10 +23,10 @@ export async function downloadTermsPdf(containerId: string, title: string) {
   clone.style.letterSpacing = "normal";
   clone.style.whiteSpace = "normal";
   clone.style.wordBreak = "normal";
-  clone.style.padding = "40pt"; 
+  clone.style.padding = "40pt";
   clone.style.boxSizing = "border-box";
   clone.style.background = "#ffffff";
-  clone.style.width = "1024px"; 
+  clone.style.width = "1024px";
 
   const setStyle = (el: HTMLElement) => {
     el.style.textAlign = "left";
@@ -84,7 +84,7 @@ export async function downloadTermsPdf(containerId: string, title: string) {
     replacement.style.padding = "0";
     replacement.style.display = "block";
     setStyle(replacement);
-    
+
     list.querySelectorAll("li").forEach((li) => {
       const item = document.createElement("p");
       item.style.fontFamily = '"Sora", "Helvetica", "Arial", sans-serif';
@@ -106,9 +106,13 @@ export async function downloadTermsPdf(containerId: string, title: string) {
   });
 
   // Whitespace and punctuation cleanup
-  const textWalker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null);
+  const textWalker = document.createTreeWalker(
+    clone,
+    NodeFilter.SHOW_TEXT,
+    null,
+  );
   let n: Node | null;
-  while (n = textWalker.nextNode()) {
+  while ((n = textWalker.nextNode())) {
     if (n.nodeValue) {
       n.nodeValue = n.nodeValue
         .replace(/\s+/g, " ")
@@ -134,9 +138,3 @@ export async function downloadTermsPdf(containerId: string, title: string) {
 
   doc.save(`${title.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
-
-
-
-
-
-
