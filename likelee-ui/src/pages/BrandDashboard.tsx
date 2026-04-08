@@ -11516,12 +11516,16 @@ export default function BrandDashboard() {
                   src={getPublicUrl(previewImage)}
                   controls
                   className="max-w-full max-h-full"
+                  onContextMenu={(e) => e.preventDefault()}
+                  controlsList="nodownload noplaybackrate"
                 />
               ) : (
                 <img
                   src={previewImage ? getPublicUrl(previewImage) : ""}
                   className="max-w-full max-h-full object-contain"
                   alt="Preview"
+                  onContextMenu={(e) => e.preventDefault()}
+                  draggable={false}
                 />
               )}
               {previewItems.length > 1 && (
@@ -11557,29 +11561,21 @@ export default function BrandDashboard() {
                 </>
               )}
               <div className="absolute top-4 right-4 flex gap-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
-                  asChild
-                >
-                  <a
-                    href={previewImage ? getPublicUrl(previewImage) : ""}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
+                {["approved", "accepted", "brand_approved"].includes(
+                  String(previewImage?.status || "").toLowerCase(),
+                ) && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
+                    onClick={() => {
+                      if (previewImage)
+                        void downloadOfferHubDeliverable(previewImage);
+                    }}
                   >
                     <Download className="w-4 h-4 mr-2" /> Download
-                  </a>
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md h-8 w-8"
-                  onClick={() => setPreviewImage(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                  </Button>
+                )}
               </div>
             </div>
             {previewImage?.caption && (
