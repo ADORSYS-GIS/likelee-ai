@@ -11296,10 +11296,8 @@ export default function BrandDashboard() {
                     )}
                   </div>
 
-                  {sidebarOpen &&
-                    showCampaignSubtabs &&
-                    isCampaignGroup && (
-                      <div className="mt-1 ml-11 space-y-1">
+                  {sidebarOpen && showCampaignSubtabs && isCampaignGroup && (
+                    <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
                           navigateToSection("campaign-offers", {
