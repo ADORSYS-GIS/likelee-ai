@@ -60,6 +60,50 @@ import {
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
+const extractFirstNumber = (value: unknown): number => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+
+  // Only treat numbers as quantities when the text clearly expresses a count.
+  // This avoids miscounting specs like "1080x1920" or "15 sec".
+  const patterns: RegExp[] = [
+    /\b(\d{1,3})\s*[x×]\b/i, // "3x"
+    /\b[x×]\s*(\d{1,3})\b/i, // "x3"
+    /\bqty\s*[:\-]?\s*(\d{1,3})\b/i, // "qty 3" / "qty:3"
+    /\bquantity\s*[:\-]?\s*(\d{1,3})\b/i, // "quantity 3"
+    /\b(\d{1,3})\s*(?:pcs?|pieces?)\b/i, // "3 pcs" / "3 pieces"
+    /\b(\d{1,3})\s*(?:deliverables?|deliverable|assets?)\b/i, // "3 deliverables" / "2 assets"
+  ];
+
+  for (const re of patterns) {
+    const match = raw.match(re);
+    if (!match) continue;
+    const parsed = Number.parseInt(match[1], 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return 0;
+};
+
+const extractDeliverableCount = (value: unknown): number => {
+  const text = String(value ?? "").trim();
+  if (!text) return 0;
+
+  const lines = text
+    .split(/\n|,|;/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return 0;
+
+  const counted = lines.reduce((sum, line) => {
+    const amount = extractFirstNumber(line);
+    return sum + (amount > 0 ? amount : 1);
+  }, 0);
+
+  return counted > 0 ? counted : lines.length;
+};
+
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1900,8 +1944,30 @@ const BrandConnectionsView = () => {
                     };
                     const reels = briefVal("deliverables_reels");
                     const heroImg = briefVal("deliverables_hero_image");
+                    const explicitExpected = Number.parseInt(
+                      briefVal("total_expected_deliverables"),
+                      10,
+                    );
+                    const requiredDeliverablesText = briefVal(
+                      "required_deliverables",
+                    );
+                    const requiredDeliverablesCount = extractDeliverableCount(
+                      requiredDeliverablesText,
+                    );
+                    const reelsCount = extractFirstNumber(reels);
+                    const heroCount = extractFirstNumber(heroImg);
+                    const fallbackHero =
+                      heroCount > 0 ? heroCount : heroImg ? 1 : 0;
+                    const deliverablesCount =
+                      Number.isFinite(explicitExpected) && explicitExpected > 0
+                        ? explicitExpected
+                        : requiredDeliverablesCount > 0
+                          ? requiredDeliverablesCount
+                          : reelsCount + fallbackHero;
                     const deliverablesSummary =
-                      [reels, heroImg].filter(Boolean).join(", ") || "—";
+                      deliverablesCount > 0
+                        ? `${deliverablesCount} deliverable${deliverablesCount === 1 ? "" : "s"}`
+                        : [reels, heroImg].filter(Boolean).join(", ") || "—";
                     const launchDate = briefVal("overview_launch_date");
                     const deadlineDate = briefVal("budget_submission_deadline");
                     const budgetTotal = briefVal("budget_total");
