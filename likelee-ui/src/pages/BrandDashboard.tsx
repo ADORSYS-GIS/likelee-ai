@@ -81,6 +81,8 @@ import {
   Headset,
   BookOpen,
   Info,
+  Shield,
+  ShieldCheck,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -8974,7 +8976,7 @@ export default function BrandDashboard() {
         <TabsContent value="security" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Settings className="w-6 h-6" /> Security Settings
+              <Shield className="w-6 h-6" /> Security Settings
             </h3>
             <div className="space-y-4">
               <Button
@@ -11095,7 +11097,7 @@ export default function BrandDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed h-screen z-40 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
+        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed inset-y-0 left-0 z-50 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
         style={{
           width: isMobile
             ? sidebarOpen
@@ -11146,7 +11148,9 @@ export default function BrandDashboard() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav
+          className={`flex-1 p-4 min-h-0 ${sidebarOpen ? "overflow-y-auto" : "overflow-visible"}`}
+        >
           <div className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -11190,9 +11194,18 @@ export default function BrandDashboard() {
                           ? "justify-center px-2 py-3"
                           : "gap-3 px-3 py-3"
                       }`}
-                      title={!sidebarOpen ? item.label : undefined}
+                      title={
+                        !sidebarOpen && !isCampaignGroup
+                          ? item.label
+                          : undefined
+                      }
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <div className="relative flex items-center">
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        {!sidebarOpen && isCampaignGroup && (
+                          <ChevronRight className="w-3 h-3 absolute -right-3 top-1 text-gray-400" />
+                        )}
+                      </div>
                       {sidebarOpen && (
                         <>
                           <span className="flex-1 text-left font-medium">
@@ -11255,9 +11268,12 @@ export default function BrandDashboard() {
                       className={
                         sidebarOpen
                           ? "mt-1 ml-11 space-y-1"
-                          : "hidden group-hover:block absolute left-full top-0 ml-2 bg-white border border-gray-200 shadow-xl rounded-lg p-2 w-48 z-50 space-y-1"
+                          : "hidden group-hover:block absolute left-[80px] top-0 bg-white border border-gray-200 shadow-xl rounded-lg p-2 w-48 z-[100] space-y-1"
                       }
                     >
+                      {!sidebarOpen && (
+                        <div className="absolute top-4 -left-1.5 w-3 h-3 bg-white border-l border-t border-gray-200 transform -rotate-45" />
+                      )}
                       <button
                         onClick={() => {
                           navigateToSection("campaign-offers", {
@@ -11359,19 +11375,17 @@ export default function BrandDashboard() {
         </nav>
 
         {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => {
-            setSidebarOpen(!sidebarOpen);
-            setSidebarWidth(!sidebarOpen ? 256 : 80);
-          }}
-          className={`p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors flex ${sidebarOpen ? "justify-end pr-6" : "justify-center"}`}
-        >
-          <div className="p-1 rounded-md border border-gray-200 bg-white">
-            <ChevronLeft
-              className={`w-5 h-5 text-gray-600 transition-transform ${sidebarOpen ? "" : "rotate-180"}`}
-            />
-          </div>
-        </button>
+        <div className="flex-shrink-0 mt-auto bg-white border-t border-gray-200">
+          <button
+            onClick={() => {
+              setSidebarOpen(!sidebarOpen);
+              setSidebarWidth(!sidebarOpen ? 256 : 80);
+            }}
+            className="w-full p-4 hover:bg-gray-50 transition-colors flex items-center justify-center h-14"
+          >
+            <Menu className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
 
         {!isMobile && (
           <div
