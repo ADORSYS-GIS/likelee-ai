@@ -9,6 +9,7 @@ import React, {
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
@@ -8821,7 +8822,7 @@ export default function BrandDashboard() {
                 {
                   id: "licenseExpirationAlerts",
                   title: "License Expiration Alerts",
-                  desc: "30-day advance notice",
+                  desc: "10-day advance notice",
                 },
                 {
                   id: "monthlyAnalyticsSummary",
@@ -9006,12 +9007,21 @@ export default function BrandDashboard() {
               >
                 Reset Admin Password <ChevronRight className="w-4 h-4" />
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
-              >
-                Enable 2FA Protection <ChevronRight className="w-4 h-4" />
-              </Button>
+              <div className="relative group">
+                <Button
+                  variant="outline"
+                  disabled
+                  className="w-full justify-between rounded-lg border border-gray-200 font-bold text-sm h-12 opacity-50 blur-[1px] cursor-not-allowed"
+                >
+                  Enable 2FA Protection (Coming Soon){" "}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <Badge variant="secondary" className="bg-gray-900 text-white">
+                    Coming Soon
+                  </Badge>
+                </div>
+              </div>
               <Button
                 variant="outline"
                 className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
@@ -9052,13 +9062,31 @@ export default function BrandDashboard() {
                   },
                 },
                 {
-                  title: "Download My Data (GDPR)",
+                  title: "Download My Data (GDPR) (Coming Soon)",
                   icon: Download,
                   action: () => {},
                 },
               ].map((legal, i) => {
                 const Icon = legal.icon;
-                return (
+                return legal.title.includes("Coming Soon") ? (
+                  <div key={i} className="relative group">
+                    <button
+                      disabled
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-400 text-left transition-colors opacity-50 blur-[1px] cursor-not-allowed"
+                    >
+                      <Icon className="w-4 h-4 text-gray-400 shrink-0" />
+                      {legal.title}
+                    </button>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <Badge
+                        variant="secondary"
+                        className="bg-gray-900 text-white"
+                      >
+                        Coming Soon
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
                   <button
                     key={i}
                     onClick={legal.action}
@@ -9086,15 +9114,27 @@ export default function BrandDashboard() {
                 <HelpCircle className="w-4 h-4 text-gray-500 shrink-0" />
                 Contact Support
               </button>
-              <button className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+              <button
+                onClick={() => (window.location.href = "/aboutus")}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
+              >
                 <FileText className="w-4 h-4 text-gray-500 shrink-0" />
                 Knowledge Base
               </button>
-              <button className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+              <button
+                onClick={() =>
+                  (window.location.href =
+                    "/book-demo?source=brand_company_hero")
+                }
+                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
+              >
                 <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
                 Schedule a Call
               </button>
-              <button className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+              <button
+                onClick={() => (window.location.href = "/support")}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
+              >
                 <Info className="w-4 h-4 text-gray-500 shrink-0" />
                 Report a Bug
               </button>
@@ -11443,37 +11483,59 @@ export default function BrandDashboard() {
                       });
                       setCollapsedPopout(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Target className="w-4 h-4" />
                     <span>My Offers</span>
                   </button>
                   <button
                     onClick={() => {
-                      setActiveSection("inbox");
+                      navigateToSection("campaigns-inbox");
                       setCollapsedPopout(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
                   >
-                    <MessageSquare className="w-4 h-4" />
+                    <Mail className="w-4 h-4" />
                     <span>Inbox</span>
                   </button>
                   <button
                     onClick={() => {
-                      setActiveSection("deliverables");
+                      navigateToSection("campaigns-contract-hub");
                       setCollapsedPopout(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
                   >
-                    <RefreshCw className="w-4 h-4" />
+                    <FileText className="w-4 h-4" />
+                    <span>Contract Hub</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaigns-deliverables");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
                     <span>Deliverables</span>
                   </button>
                   <button
                     onClick={() => {
-                      setActiveSection("studio");
+                      navigateToSection("campaigns-hub", {
+                        campaignHubTab: "jobs",
+                      });
                       setCollapsedPopout(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span>Jobs</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("studio");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>Asset Library</span>
@@ -11492,6 +11554,23 @@ export default function BrandDashboard() {
           marginLeft: isMobile ? "0" : `${!sidebarOpen ? 80 : sidebarWidth}px`,
         }}
       >
+        {/* Persistent Header */}
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 group">
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+              alt="Likelee Logo"
+              className="h-10 w-auto transform transition-transform group-hover:scale-105"
+            />
+            <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
+              Likelee
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+          </div>
+        </header>
+
         <div className="p-8">
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && (
