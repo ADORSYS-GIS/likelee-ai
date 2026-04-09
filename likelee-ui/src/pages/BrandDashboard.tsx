@@ -4,7 +4,9 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useCallback,
 } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -673,6 +675,25 @@ export default function BrandDashboard() {
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [collapsedPopout, setCollapsedPopout] = useState<{
+    itemId: string;
+    top: number;
+  } | null>(null);
+  const popoutHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearPopoutTimeout = useCallback(() => {
+    if (popoutHideTimeoutRef.current) {
+      clearTimeout(popoutHideTimeoutRef.current);
+      popoutHideTimeoutRef.current = null;
+    }
+  }, []);
+
+  const hidePopoutWithDelay = useCallback(() => {
+    clearPopoutTimeout();
+    popoutHideTimeoutRef.current = setTimeout(() => {
+      setCollapsedPopout(null);
+    }, 150);
+  }, [clearPopoutTimeout]);
   const [showLogoPreview, setShowLogoPreview] = useState(false);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
   const [inboxSubTab, setInboxSubTab] = useState<
@@ -11150,6 +11171,7 @@ export default function BrandDashboard() {
         {/* Navigation */}
         <nav
           className={`flex-1 p-4 min-h-0 ${sidebarOpen ? "overflow-y-auto" : "overflow-visible"}`}
+          onMouseLeave={hidePopoutWithDelay}
         >
           <div className="space-y-1">
             {navigationItems.map((item) => {
@@ -11165,7 +11187,20 @@ export default function BrandDashboard() {
                 : activeSection === item.id;
 
               return (
-                <div key={item.id} className="relative group">
+                <div
+                  key={item.id}
+                  className="relative group"
+                  onMouseEnter={(e) => {
+                    if (!sidebarOpen && isCampaignGroup) {
+                      clearPopoutTimeout();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setCollapsedPopout({
+                        itemId: item.id,
+                        top: rect.top,
+                      });
+                    }
+                  }}
+                >
                   <div
                     className={`w-full flex items-center gap-2 rounded-lg transition-all ${
                       isActive
@@ -11261,19 +11296,10 @@ export default function BrandDashboard() {
                     )}
                   </div>
 
-                  {(sidebarOpen
-                    ? showCampaignSubtabs && isCampaignGroup
-                    : isCampaignGroup) && (
-                    <div
-                      className={
-                        sidebarOpen
-                          ? "mt-1 ml-11 space-y-1"
-                          : "hidden group-hover:block absolute left-[80px] top-0 bg-white border border-gray-200 shadow-xl rounded-lg p-2 w-48 z-[100] space-y-1"
-                      }
-                    >
-                      {!sidebarOpen && (
-                        <div className="absolute top-4 -left-1.5 w-3 h-3 bg-white border-l border-t border-gray-200 transform -rotate-45" />
-                      )}
+                  {sidebarOpen &&
+                    showCampaignSubtabs &&
+                    isCampaignGroup && (
+                      <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
                           navigateToSection("campaign-offers", {
@@ -11395,6 +11421,70 @@ export default function BrandDashboard() {
             aria-hidden="true"
           />
         )}
+
+        {/* Popout for collapsed navigation */}
+        <AnimatePresence>
+          {!sidebarOpen && collapsedPopout && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute left-full z-[100] w-64 pl-2 -ml-px"
+              style={{ top: collapsedPopout.top }}
+              onMouseEnter={clearPopoutTimeout}
+              onMouseLeave={hidePopoutWithDelay}
+            >
+              <div className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+                <div className="absolute -left-1.5 top-4 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaign-offers", {
+                        category: "brand-campaign-offers",
+                      });
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>My Offers</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("inbox");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Inbox</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("deliverables");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Deliverables</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("studio");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Asset Library</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </aside>
 
       {/* Main Content */}
