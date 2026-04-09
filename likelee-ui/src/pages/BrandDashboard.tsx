@@ -11157,7 +11157,7 @@ export default function BrandDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed top-16 bottom-0 left-0 z-50 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
+        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed top-16 bottom-0 left-0 z-40 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
         style={{
           width: isMobile
             ? sidebarOpen
