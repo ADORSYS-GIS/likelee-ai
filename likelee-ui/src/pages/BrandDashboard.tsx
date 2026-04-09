@@ -103,6 +103,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -678,6 +679,13 @@ export default function BrandDashboard() {
   const [originalBrand, setOriginalBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    newProjectAlerts: true,
+    deliverableSubmissions: true,
+    approvalReminders: true,
+    licenseExpirationAlerts: true,
+    monthlyAnalyticsSummary: true,
+  });
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
@@ -1798,6 +1806,7 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const contractHubPendingCount = useMemo(() => {
+    if (!notificationPrefs.newProjectAlerts) return 0;
     const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
     return offers.filter((offer: any) => {
       const st = String(offer?.status || "").toLowerCase();
@@ -1805,9 +1814,10 @@ export default function BrandDashboard() {
     }).length;
   }, [brandOfferItems]);
 
-  const pendingApprovalCount = mockCampaigns.filter(
-    (c) => c.status === "pending_approval",
-  ).length;
+  const pendingApprovalCount = useMemo(() => {
+    if (!notificationPrefs.deliverableSubmissions) return 0;
+    return mockCampaigns.filter((c) => c.status === "pending_approval").length;
+  }, [notificationPrefs.deliverableSubmissions]);
   const activeLicenses = mockLicenses.filter(
     (l) => l.status === "active" || l.status === "expiring_soon",
   );
@@ -1835,7 +1845,10 @@ export default function BrandDashboard() {
       id: "usage",
       label: "Usage Rights",
       icon: FileText,
-      badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
+      badge:
+        notificationPrefs.licenseExpirationAlerts && expiringLicenses.length > 0
+          ? expiringLicenses.length
+          : undefined,
     },
     { id: "billing", label: "Billing", icon: CreditCard },
     { id: "settings", label: "Settings", icon: Settings },
@@ -8763,28 +8776,33 @@ export default function BrandDashboard() {
             <div className="space-y-2">
               {[
                 {
+                  id: "newProjectAlerts",
                   title: "New Project Alerts",
                   desc: "When talent accepts or delivers assets",
                 },
                 {
+                  id: "deliverableSubmissions",
                   title: "Deliverable Submissions",
                   desc: "When creators submit work for approval",
                 },
                 {
+                  id: "approvalReminders",
                   title: "Approval Reminders",
                   desc: "48-hour countdown notifications",
                 },
                 {
+                  id: "licenseExpirationAlerts",
                   title: "License Expiration Alerts",
                   desc: "30-day advance notice",
                 },
                 {
+                  id: "monthlyAnalyticsSummary",
                   title: "Monthly Analytics Summary",
                   desc: "Monthly performance email report",
                 },
-              ].map((pref, i) => (
+              ].map((pref) => (
                 <div
-                  key={i}
+                  key={pref.id}
                   className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
                 >
                   <div className="pr-12">
@@ -8795,7 +8813,17 @@ export default function BrandDashboard() {
                       {pref.desc}
                     </p>
                   </div>
-                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-200 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
+                  <Switch
+                    checked={
+                      notificationPrefs[
+                        pref.id as keyof typeof notificationPrefs
+                      ]
+                    }
+                    onCheckedChange={(val) =>
+                      setNotificationPrefs((p) => ({ ...p, [pref.id]: val }))
+                    }
+                    className="data-[state=checked]:bg-[#F7B750]"
+                  />
                 </div>
               ))}
             </div>
@@ -8962,7 +8990,7 @@ export default function BrandDashboard() {
                 variant="outline"
                 className="w-full justify-between rounded-xl border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
               >
-                Active Session Audit <ChevronRight className="w-4 h-4" />
+                View Active Sessions <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </Card>
@@ -11029,27 +11057,42 @@ export default function BrandDashboard() {
       <aside
         className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
       >
-        {/* Brand Section */}
-        <div className="p-6 border-b border-gray-200">
-          {sidebarOpen ? (
-            <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
+        <div
+          className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+            !sidebarOpen
+              ? "p-4 flex items-center justify-center cursor-pointer"
+              : "p-6 flex items-center gap-3 cursor-pointer"
+          }`}
+          onClick={() => navigateToSection("settings")}
+          title={!sidebarOpen ? brand.name : undefined}
+        >
+          <div className="relative">
+            <a
+              href={brand.logo}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="block focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+            >
+              <Avatar
+                className={`${!sidebarOpen ? "w-10 h-10" : "w-12 h-12"} border-2 border-gray-200 rounded-lg`}
+              >
                 <AvatarImage src={brand.logo} alt={brand.name} />
                 <AvatarFallback className="font-bold text-gray-700">
                   {getBrandInitials(brand.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-              </div>
+            </a>
+          </div>
+          {sidebarOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 truncate">{brand.name}</p>
+              {brand.plan && (
+                <p className="text-xs text-brand-orange font-bold truncate">
+                  {brand.plan}
+                </p>
+              )}
             </div>
-          ) : (
-            <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
-              <AvatarImage src={brand.logo} alt={brand.name} />
-              <AvatarFallback className="font-bold text-gray-700">
-                {getBrandInitials(brand.name)}
-              </AvatarFallback>
-            </Avatar>
           )}
         </div>
 
@@ -11093,7 +11136,12 @@ export default function BrandDashboard() {
                         setShowContractHub(false);
                         setSelectedContract(null);
                       }}
-                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left"
+                      className={`w-full flex items-center transition-colors ${
+                        !sidebarOpen
+                          ? "justify-center px-2 py-3"
+                          : "gap-3 px-3 py-3"
+                      }`}
+                      title={!sidebarOpen ? item.label : undefined}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       {sidebarOpen && (
@@ -11180,11 +11228,12 @@ export default function BrandDashboard() {
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {inboxPendingCount > 0 && (
-                          <Badge className="bg-gray-200 text-gray-700">
-                            {inboxPendingCount}
-                          </Badge>
-                        )}
+                        {notificationPrefs.newProjectAlerts &&
+                          inboxPendingCount > 0 && (
+                            <Badge className="bg-gray-200 text-gray-700">
+                              {inboxPendingCount}
+                            </Badge>
+                          )}
                       </button>
                       <button
                         onClick={() => {
