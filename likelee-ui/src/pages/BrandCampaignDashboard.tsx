@@ -210,6 +210,9 @@ export default function BrandCampaignDashboard({
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
   const previousCollaboratorTypeRef = useRef<string>("");
   const isFetchingCampaignCardsRef = useRef(false);
+  const [previewImage, setPreviewImage] = useState<any>(null);
+  const [previewItems, setPreviewItems] = useState<any[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const [campaignForm, setCampaignForm] = useState({
     name: "",
@@ -3951,18 +3954,12 @@ export default function BrandCampaignDashboard({
                                   isPaid ? "cursor-zoom-in" : "cursor-default"
                                 }`}
                                 onClick={() => {
-                                  if (!isPaid) {
-                                    toast({
-                                      title: "Payment required",
-                                      description:
-                                        "Please complete payment to unlock high-resolution previews.",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
                                   setPreviewItems(selectedCampaignDeliverables);
                                   setPreviewIndex(idx);
-                                  setPreviewImage(deliverable);
+                                  setPreviewImage({
+                                    ...deliverable,
+                                    payment_status: offer?.payment_status,
+                                  });
                                 }}
                               >
                                 <div className="flex items-start gap-6">
@@ -3981,11 +3978,7 @@ export default function BrandCampaignDashboard({
                                           },
                                         )}
                                         alt={`Deliverable ${idx + 1}`}
-                                        className={`w-full h-full object-cover ${
-                                          deliverable?.payment_status !== "paid"
-                                            ? "blur-[2px]"
-                                            : ""
-                                        }`}
+                                        className="w-full h-full object-cover"
                                         onContextMenu={(e) =>
                                           e.preventDefault()
                                         }
@@ -4201,6 +4194,142 @@ export default function BrandCampaignDashboard({
           </div>
         </div>
       )}
+      {/* Image Preview Dialog */}
+      <Dialog
+        open={!!previewImage}
+        onOpenChange={() => {
+          setPreviewImage(null);
+          setPreviewItems([]);
+          setPreviewIndex(0);
+        }}
+      >
+        <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-none">
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
+            <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900 border border-white/5">
+              {previewImage?.asset_type === "video" ? (
+                previewImage?.payment_status !== "paid" ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-950 p-8 text-center">
+                    <div className="w-24 h-24 mb-6 rounded-none border-2 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5">
+                      <video
+                        src={getPublicUrl(previewImage)}
+                        className="w-full h-full object-cover opacity-10 grayscale blur-sm"
+                        muted
+                      />
+                      <div className="absolute flex flex-col items-center">
+                        <Lock className="w-10 h-10 text-indigo-400 mb-2" />
+                        <Sparkles className="w-6 h-6 text-indigo-400/50 absolute -top-8 -right-8 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      Premium Campaign Asset
+                    </h3>
+                    <p className="text-sm text-gray-500 max-w-xs mb-8 font-medium">
+                      This high-resolution deliverable is secured until the
+                      escrow payment is released.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => setPreviewImage(null)}
+                      >
+                        Go back
+                      </Button>
+                      <Button
+                        className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] px-8"
+                        onClick={() => {
+                          setPreviewImage(null);
+                          // In campaign dashboard, we don't have the billing tab directly
+                          toast({
+                            title: "Redirecting...",
+                            description:
+                              "Please visit Brand Settings to manage payments.",
+                          });
+                        }}
+                      >
+                        View Billing
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    src={getPublicUrl(previewImage)}
+                    controls
+                    className="max-w-full max-h-full"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controlsList="nodownload noplaybackrate"
+                  />
+                )
+              ) : (
+                <div className="relative group/preview">
+                  {/* Watermark Overlay for Unpaid Assets */}
+                  {previewImage?.payment_status !== "paid" && (
+                    <div
+                      className="absolute inset-0 z-10 pointer-events-none opacity-[0.08]"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='white' font-family='sans-serif' font-weight='black' text-anchor='middle' transform='rotate(-45 75 75)'%3ELIKELEE PREVIEW%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                      }}
+                    />
+                  )}
+
+                  {/* Interaction Shield - Transparent layer over the image */}
+                  <div
+                    className="absolute inset-0 z-20 cursor-default"
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+
+                  <img
+                    src={
+                      previewImage
+                        ? deliverablePreviewSrc(previewImage, {
+                            thumbnail: previewImage?.payment_status !== "paid",
+                          })
+                        : ""
+                    }
+                    className="max-w-full max-h-full object-contain"
+                    alt="Preview"
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
+                  />
+                </div>
+              )}
+              {previewItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center z-30"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex > 0
+                          ? previewIndex - 1
+                          : previewItems.length - 1;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center z-30"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex < previewItems.length - 1
+                          ? previewIndex + 1
+                          : 0;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ArrowLeft className="w-5 h-5 rotate-180" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={markDoneOpen} onOpenChange={setMarkDoneOpen}>
         <AlertDialogContent>

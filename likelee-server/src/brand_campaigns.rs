@@ -6832,7 +6832,7 @@ pub async fn serve_offer_deliverable(
     let bucket = state.supabase_bucket_private.clone();
     let storage_url = if is_thumbnail && asset_type == "image" {
         format!(
-            "{}/storage/v1/render/image/authenticated/{}/{}?width=200&quality=20&resize=contain",
+            "{}/storage/v1/render/image/authenticated/{}/{}?width=800&quality=80&resize=contain",
             state.supabase_url, bucket, path
         )
     } else {
