@@ -8673,43 +8673,8 @@ export default function BrandDashboard() {
                 />
               </div>
             </div>
-          </Card>
 
-          {/* Brand Identity */}
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Star className="w-6 h-6" /> Brand Identity
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-bold text-gray-900 block mb-1">
-                      Secondary Brand Color
-                    </Label>
-                    <p className="text-xs text-gray-500">
-                      Used for highlights, buttons, and badges.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 border border-gray-200"
-                      style={{ backgroundColor: brand.secondary_color }}
-                    />
-                    <Input
-                      type="color"
-                      value={brand.secondary_color}
-                      onChange={(e) =>
-                        setBrand({ ...brand, secondary_color: e.target.value })
-                      }
-                      className="w-12 h-12 p-1 rounded-none border-none cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12">
+            <div className="mt-12 pt-8 border-t border-gray-100">
               <Button
                 onClick={handleSaveProfile}
                 disabled={
@@ -8898,7 +8863,7 @@ export default function BrandDashboard() {
               ))}
             </div>
 
-            <Button className="w-full rounded-none bg-gray-900 hover:bg-gray-800 text-white font-bold h-12">
+            <Button className="w-full rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12">
               <Plus className="w-5 h-5 mr-3" />
               Invite New Collaborator
             </Button>
@@ -8940,11 +8905,10 @@ export default function BrandDashboard() {
             </h3>
             <div className="space-y-3">
               {[
-                { title: "Terms & Conditions", status: "Active" },
-                { title: "Privacy Policy", status: "Active" },
-                { title: "SAG-AFTRA Agreement", status: "Signed" },
-                { title: "Data Processing Agreement", status: "Active" },
-                { title: "Data Export (GDPR)", status: "Ready" },
+                { title: "Terms & Conditions" },
+                { title: "Privacy Policy" },
+                { title: "SAG-AFTRA Agreement" },
+                { title: "Data Export (GDPR)" },
               ].map((legal, i) => (
                 <Button
                   key={i}
@@ -8955,12 +8919,6 @@ export default function BrandDashboard() {
                     <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
                     {legal.title}
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="rounded-none border-gray-200 text-gray-500 text-[10px]"
-                  >
-                    {legal.status}
-                  </Badge>
                 </Button>
               ))}
             </div>
@@ -8972,52 +8930,35 @@ export default function BrandDashboard() {
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <HelpCircle className="w-6 h-6" /> Support & Help Center
             </h3>
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
-                <div className="w-12 h-12 bg-orange-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-[#F7B750] transition-colors">
-                  <MessageSquare className="w-6 h-6 text-[#F7B750] group-hover:text-white" />
-                </div>
-                <h4 className="font-bold text-gray-900 mb-1">Live Chat</h4>
-                <p className="text-xs text-gray-500">Average response: 5 min</p>
-              </Card>
-
-              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
-                <div className="w-12 h-12 bg-blue-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-blue-500 transition-colors">
-                  <Calendar className="w-6 h-6 text-blue-500 group-hover:text-white" />
-                </div>
-                <h4 className="font-bold text-gray-900 mb-1">Book a Demo</h4>
-                <p className="text-xs text-gray-500">Schedule a feature tour</p>
-              </Card>
-
-              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
-                <div className="w-12 h-12 bg-green-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-green-500 transition-colors">
-                  <Globe className="w-6 h-6 text-green-500 group-hover:text-white" />
-                </div>
-                <h4 className="font-bold text-gray-900 mb-1">Help Center</h4>
-                <p className="text-xs text-gray-500">
-                  Guides and documentation
-                </p>
-              </Card>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-bold text-gray-900 text-sm mb-4">
-                Frequently Asked Questions
-              </h4>
-              {[
-                "How do I update my brand colors?",
-                "Where can I find my project invoices?",
-                "How to invite team members?",
-                "What territories do licenses cover?",
-              ].map((faq, i) => (
-                <Button
-                  key={i}
-                  variant="ghost"
-                  className="w-full justify-between rounded-none text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-4 border border-gray-100 mb-2"
-                >
-                  {faq} <ChevronRight className="w-4 h-4 text-gray-400" />
-                </Button>
-              ))}
+            <div className="grid md:grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+              >
+                <HelpCircle className="w-5 h-5" />
+                Contact Support
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+              >
+                <FileText className="w-5 h-5" />
+                Knowledge Base
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+              >
+                <Calendar className="w-5 h-5" />
+                Schedule a Call
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+              >
+                <AlertCircle className="w-5 h-5" />
+                Report a Bug
+              </Button>
             </div>
           </Card>
         </TabsContent>
