@@ -2716,9 +2716,13 @@ export default function OrganizationSignup() {
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
-                  onClick={() =>
-                    window.open("/terms-and-conditions-agency.html", "_blank")
-                  }
+                  onClick={() => {
+                    const termsFile =
+                      flow === "brand"
+                        ? "/creator-talent-terms-and-conditions.html"
+                        : "/terms-and-conditions-agency.html";
+                    window.open(termsFile, "_blank");
+                  }}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Download

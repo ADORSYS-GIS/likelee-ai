@@ -13,6 +13,7 @@ import {
   createAgencyBrandLicensingRequest,
   getBrandLicensingRequests,
   getBrandProfile,
+  updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
 } from "@/api/functions";
@@ -151,12 +152,13 @@ const getBrandInitials = (name: string) => {
 
 // Mock data
 const mockBrand = {
+  id: "",
   name: "Urban Apparel Co.",
   logo: "",
   industry: "Retail & E-commerce",
   website: "www.urbanapparel.com",
   contact_email: "team@urbanapparel.com",
-  plan: "Pro Studio",
+  plan: "",
   team_seats: 3,
   secondary_color: "#F7B750",
 };
@@ -671,6 +673,7 @@ export default function BrandDashboard() {
   const [brand, setBrand] = useState(mockBrand);
   const [originalBrand, setOriginalBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
@@ -1179,11 +1182,13 @@ export default function BrandDashboard() {
         if (!mounted || !profile) return;
         const brandData = {
           ...brand,
+          id: profile?.id || "",
           name: profile?.company_name || profile?.name || brand.name || "Brand",
           industry: profile?.industry || brand.industry,
           website: profile?.website || brand.website,
           contact_email: profile?.email || brand.contact_email,
           logo: profile?.logo_url || "",
+          plan: profile?.plan_tier || profile?.plan || "",
           secondary_color: profile?.secondary_color || brand.secondary_color,
         };
         setBrand(brandData);
@@ -1832,21 +1837,74 @@ export default function BrandDashboard() {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !brand.id) return;
+
+    try {
       setUploadingLogo(true);
-      setTimeout(() => {
-        setBrand({ ...brand, logo: URL.createObjectURL(file) });
-        setUploadingLogo(false);
-        toast({ title: "Success", description: "Logo uploaded! (Demo mode)" });
-      }, 1000);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${brand.id}-${Date.now()}.${fileExt}`;
+      const filePath = `brand-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("likelee-public")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
+
+      // Update backend profile record
+      await updateBrandProfile({
+        logo_url: publicUrl,
+      });
+
+      setBrand({ ...brand, logo: publicUrl });
+      toast({ title: "Success", description: "Logo updated successfully!" });
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Upload failed",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
-  const handleSaveProfile = () => {
-    setOriginalBrand(brand);
-    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+  const handleSaveProfile = async () => {
+    try {
+      setIsSavingProfile(true);
+      // Exclude contact_email from update as requested
+      const updateData = {
+        name: brand.name,
+        company_name: brand.name, // Usually both are updated
+        industry: brand.industry,
+        website: brand.website,
+        updated_at: new Date().toISOString(),
+      };
+
+      await updateBrandProfile(updateData);
+
+      setOriginalBrand(brand);
+      toast({
+        title: "Settings Saved",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Unable to save profile changes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleShareBrief = (campaignId) => {
@@ -8586,19 +8644,19 @@ export default function BrandDashboard() {
 
         <TabsContent value="profile" className="space-y-6 mt-0">
           {/* Company Logo */}
-          <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-6 bg-white border border-gray-200 rounded-xl shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">
               Company Logo
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
-                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
+                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-xl bg-gray-50">
                   <AvatarImage src={brand.logo} alt={brand.name} />
-                  <AvatarFallback className="text-2xl font-bold text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
+                  <AvatarFallback className="text-2xl font-bold text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                     {getBrandInitials(brand.name)}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-sm">
+                <label className="absolute -bottom-2 -right-2 bg-white rounded-xl p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-sm">
                   <Edit className="w-4 h-4 text-gray-900" />
                   <input
                     type="file"
@@ -8621,7 +8679,7 @@ export default function BrandDashboard() {
           </Card>
 
           {/* Company Information */}
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Building2 className="w-6 h-6" /> Company Information
             </h3>
@@ -8633,7 +8691,7 @@ export default function BrandDashboard() {
                 <Input
                   value={brand.name}
                   onChange={(e) => setBrand({ ...brand, name: e.target.value })}
-                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
+                  className="rounded-xl border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
@@ -8645,7 +8703,7 @@ export default function BrandDashboard() {
                   onChange={(e) =>
                     setBrand({ ...brand, industry: e.target.value })
                   }
-                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
+                  className="rounded-xl border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
@@ -8657,7 +8715,7 @@ export default function BrandDashboard() {
                   onChange={(e) =>
                     setBrand({ ...brand, website: e.target.value })
                   }
-                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
+                  className="rounded-xl border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
@@ -8666,10 +8724,8 @@ export default function BrandDashboard() {
                 </Label>
                 <Input
                   value={brand.contact_email}
-                  onChange={(e) =>
-                    setBrand({ ...brand, contact_email: e.target.value })
-                  }
-                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
+                  disabled
+                  className="rounded-xl border border-gray-200 bg-gray-50 h-11 text-sm font-medium cursor-not-allowed"
                 />
               </div>
             </div>
@@ -8678,10 +8734,14 @@ export default function BrandDashboard() {
               <Button
                 onClick={handleSaveProfile}
                 disabled={
-                  JSON.stringify(brand) === JSON.stringify(originalBrand)
+                  JSON.stringify(brand) === JSON.stringify(originalBrand) ||
+                  isSavingProfile
                 }
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold px-12 h-12 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                {isSavingProfile ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
                 Save Profile Changes
               </Button>
             </div>
@@ -8797,12 +8857,12 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
                 <Users className="w-6 h-6" /> Organization Members
               </h3>
-              <Badge className="rounded-none bg-gray-900 text-white font-bold text-[10px] py-1.5 px-3">
+              <Badge className="rounded-xl bg-gray-900 text-white font-bold text-[10px] py-1.5 px-3">
                 {brand.team_seats} / 5 Seats
               </Badge>
             </div>
@@ -8827,10 +8887,10 @@ export default function BrandDashboard() {
               ].map((member, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-5 bg-white border border-gray-100 hover:border-gray-900 transition-colors rounded-none"
+                  className="flex items-center justify-between p-5 bg-white border border-gray-100 hover:border-gray-900 transition-colors rounded-xl"
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar className="w-10 h-10 rounded-none border border-gray-200">
+                    <Avatar className="w-10 h-10 rounded-xl border border-gray-200">
                       <AvatarFallback className="font-bold text-xs bg-gray-100">
                         {member.name
                           .split(" ")
@@ -8854,7 +8914,7 @@ export default function BrandDashboard() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="rounded-none text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      className="rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -8863,7 +8923,7 @@ export default function BrandDashboard() {
               ))}
             </div>
 
-            <Button className="w-full rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12">
+            <Button className="w-full rounded-xl bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12">
               <Plus className="w-5 h-5 mr-3" />
               Invite New Collaborator
             </Button>
@@ -8871,26 +8931,26 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Settings className="w-6 h-6" /> Security Settings
             </h3>
             <div className="space-y-4">
               <Button
                 variant="outline"
-                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+                className="w-full justify-between rounded-xl border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
               >
                 Reset Admin Password <ChevronRight className="w-4 h-4" />
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+                className="w-full justify-between rounded-xl border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
               >
                 Enable 2FA Protection <ChevronRight className="w-4 h-4" />
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+                className="w-full justify-between rounded-xl border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
               >
                 Active Session Audit <ChevronRight className="w-4 h-4" />
               </Button>
@@ -8899,7 +8959,7 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="legal" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <FileText className="w-6 h-6" /> Compliance & Legal
             </h3>
@@ -8913,7 +8973,7 @@ export default function BrandDashboard() {
                 <Button
                   key={i}
                   variant="ghost"
-                  className="w-full justify-between rounded-none font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-6 border-b border-gray-50 last:border-0"
+                  className="w-full justify-between rounded-xl font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-6 border-b border-gray-50 last:border-0"
                 >
                   <div className="flex items-center">
                     <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
@@ -8926,35 +8986,35 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="support" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+          <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <HelpCircle className="w-6 h-6" /> Support & Help Center
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
               <Button
                 variant="outline"
-                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
               >
                 <HelpCircle className="w-5 h-5" />
                 Contact Support
               </Button>
               <Button
                 variant="outline"
-                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
               >
                 <FileText className="w-5 h-5" />
                 Knowledge Base
               </Button>
               <Button
                 variant="outline"
-                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
               >
                 <Calendar className="w-5 h-5" />
                 Schedule a Call
               </Button>
               <Button
                 variant="outline"
-                className="justify-start gap-4 h-16 rounded-none border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
+                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
               >
                 <AlertCircle className="w-5 h-5" />
                 Report a Bug
