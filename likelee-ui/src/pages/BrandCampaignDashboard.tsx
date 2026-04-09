@@ -814,6 +814,7 @@ export default function BrandCampaignDashboard({
               ...deliverable,
               offer_id: offerId,
               collaborator_label: collaboratorLabelFromOffer(offer),
+              payment_status: offer?.payment_status,
             }));
           } catch {
             return [];
@@ -1654,17 +1655,24 @@ export default function BrandCampaignDashboard({
     };
   }, []);
 
-  const deliverablePreviewSrc = (deliverable: any) => {
+  const deliverablePreviewSrc = (
+    deliverable: any,
+    options: { thumbnail?: boolean } = {},
+  ) => {
     const raw = String(deliverable?.asset_url || "").trim();
     if (!raw) return "";
     if (raw.startsWith("http")) return raw;
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return raw;
+
     const proxyUrl = `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`;
-    return authToken
-      ? `${proxyUrl}?token=${encodeURIComponent(authToken)}`
-      : proxyUrl;
+    const queryParams = new URLSearchParams();
+    if (authToken) queryParams.set("token", authToken);
+    if (options.thumbnail) queryParams.set("thumbnail", "true");
+
+    const queryString = queryParams.toString();
+    return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
   };
 
   const deliverableFileSrc = (deliverable: any) =>
@@ -3944,14 +3952,36 @@ export default function BrandCampaignDashboard({
                                     ).startsWith("image") &&
                                     deliverable?.asset_url ? (
                                       <img
-                                        src={deliverablePreviewSrc(deliverable)}
+                                        src={deliverablePreviewSrc(
+                                          deliverable,
+                                          {
+                                            thumbnail:
+                                              deliverable?.payment_status !==
+                                              "paid",
+                                          },
+                                        )}
                                         alt={`Deliverable ${idx + 1}`}
-                                        className="w-full h-full object-cover"
+                                        className={`w-full h-full object-cover ${
+                                          deliverable?.payment_status !== "paid"
+                                            ? "blur-[2px]"
+                                            : ""
+                                        }`}
                                         onContextMenu={(e) =>
                                           e.preventDefault()
                                         }
                                         draggable={false}
                                       />
+                                    ) : deliverable?.payment_status !==
+                                      "paid" ? (
+                                      <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all">
+                                        <div className="relative mb-2 flex items-center justify-center">
+                                          <Lock className="w-6 h-6 text-indigo-400/80" />
+                                          <Sparkles className="w-4 h-4 text-indigo-400 absolute -top-3 -right-3 animate-pulse" />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-center px-2 leading-tight">
+                                          Video Locked
+                                        </span>
+                                      </div>
                                     ) : (
                                       <video
                                         src={deliverablePreviewSrc(deliverable)}

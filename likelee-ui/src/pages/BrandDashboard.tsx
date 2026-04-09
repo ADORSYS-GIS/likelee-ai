@@ -76,6 +76,8 @@ import {
   RefreshCw,
   Maximize2,
   Trash2,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -4155,7 +4157,10 @@ export default function BrandDashboard() {
     }
   };
 
-  const getPublicUrl = (del: any) => {
+  const getPublicUrl = (
+    del: any,
+    options: { thumbnail?: boolean; download?: boolean } = {},
+  ) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const path = typeof del === "string" ? del : del?.asset_url;
     if (!path) return "";
@@ -4163,7 +4168,13 @@ export default function BrandDashboard() {
 
     if (typeof del === "object" && del?.id && del?.offer_id) {
       const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
-      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
+      const queryParams = new URLSearchParams();
+      if (authToken) queryParams.set("token", authToken);
+      if (options.thumbnail) queryParams.set("thumbnail", "true");
+      if (options.download) queryParams.set("download", "true");
+
+      const queryString = queryParams.toString();
+      return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
     }
 
     // Never expose private-bucket URLs directly; access must go through API proxies.
@@ -4988,7 +4999,11 @@ export default function BrandDashboard() {
                                                 selectedOfferHubDeliverables,
                                               );
                                               setPreviewIndex(idx);
-                                              setPreviewImage(del);
+                                              setPreviewImage({
+                                                ...del,
+                                                payment_status:
+                                                  offer?.payment_status,
+                                              });
                                             }}
                                           >
                                             <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -4996,12 +5011,35 @@ export default function BrandDashboard() {
                                                 del?.asset_type || "",
                                               ).startsWith("image") ? (
                                                 <img
-                                                  src={getPublicUrl(del)}
+                                                  src={getPublicUrl(del, {
+                                                    thumbnail:
+                                                      offer?.payment_status !==
+                                                      "paid",
+                                                  })}
                                                   alt={
                                                     del.caption || "Deliverable"
                                                   }
-                                                  className="w-full h-full object-cover"
+                                                  className={`w-full h-full object-cover ${
+                                                    offer?.payment_status !==
+                                                    "paid"
+                                                      ? "blur-[2px]"
+                                                      : ""
+                                                  }`}
                                                 />
+                                              ) : offer?.payment_status !==
+                                                "paid" ? (
+                                                <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all group-hover:bg-gray-900">
+                                                  <div className="relative mb-3 flex items-center justify-center">
+                                                    <Lock className="w-8 h-8 text-indigo-400/80" />
+                                                    <Sparkles className="w-5 h-5 text-indigo-400 absolute -top-4 -right-4 animate-pulse" />
+                                                  </div>
+                                                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-center px-4 leading-tight">
+                                                    Premium Video
+                                                  </span>
+                                                  <span className="text-[7px] mt-2 font-bold text-indigo-400/60 uppercase tracking-widest border border-indigo-500/20 px-1.5 py-0.5 rounded-none">
+                                                    Locked
+                                                  </span>
+                                                </div>
                                               ) : (
                                                 <video
                                                   src={getPublicUrl(del)}
@@ -11512,17 +11550,71 @@ export default function BrandDashboard() {
           <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
             <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900">
               {previewImage?.asset_type === "video" ? (
-                <video
-                  src={getPublicUrl(previewImage)}
-                  controls
-                  className="max-w-full max-h-full"
-                  onContextMenu={(e) => e.preventDefault()}
-                  controlsList="nodownload noplaybackrate"
-                />
+                previewImage?.payment_status !== "paid" ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-950 p-8 text-center">
+                    <div className="w-24 h-24 mb-6 rounded-none border-2 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5">
+                      <video
+                        src={getPublicUrl(previewImage)}
+                        className="w-full h-full object-cover opacity-10 grayscale blur-sm"
+                        muted
+                      />
+                      <div className="absolute flex flex-col items-center">
+                        <Lock className="w-10 h-10 text-indigo-400 mb-2" />
+                        <Sparkles className="w-6 h-6 text-indigo-400/50 absolute -top-8 -right-8 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      Premium Campaign Asset
+                    </h3>
+                    <p className="text-sm text-gray-500 max-w-xs mb-8">
+                      This high-resolution deliverable is secured until the
+                      escrow payment is released.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => setPreviewImage(null)}
+                      >
+                        Go back
+                      </Button>
+                      <Button
+                        className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)]"
+                        onClick={() => {
+                          const billingTab = document.querySelector(
+                            '[id*="billing-management"]',
+                          ) as HTMLElement;
+                          if (billingTab) {
+                            billingTab.click();
+                          }
+                          setPreviewImage(null);
+                        }}
+                      >
+                        Pay Now
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    src={getPublicUrl(previewImage)}
+                    controls
+                    className="max-w-full max-h-full"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controlsList="nodownload noplaybackrate"
+                  />
+                )
               ) : (
                 <img
-                  src={previewImage ? getPublicUrl(previewImage) : ""}
-                  className="max-w-full max-h-full object-contain"
+                  src={
+                    previewImage
+                      ? getPublicUrl(previewImage, {
+                          thumbnail: previewImage?.payment_status !== "paid",
+                        })
+                      : ""
+                  }
+                  className={`max-w-full max-h-full object-contain ${
+                    previewImage?.payment_status !== "paid" ? "blur-[2px]" : ""
+                  }`}
                   alt="Preview"
                   onContextMenu={(e) => e.preventDefault()}
                   draggable={false}
