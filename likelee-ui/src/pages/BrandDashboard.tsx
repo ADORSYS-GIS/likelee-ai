@@ -77,6 +77,10 @@ import {
   RefreshCw,
   Maximize2,
   Trash2,
+  CircleSlash,
+  Headset,
+  BookOpen,
+  Info,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -1859,6 +1863,7 @@ export default function BrandDashboard() {
 
       // Update backend profile record
       await updateBrandProfile({
+        company_name: brand.name,
         logo_url: publicUrl,
       });
 
@@ -8858,14 +8863,17 @@ export default function BrandDashboard() {
 
         <TabsContent value="team" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                <Users className="w-6 h-6" /> Organization Members
+                <Users className="w-6 h-6" /> Team Management
               </h3>
-              <Badge className="rounded-xl bg-gray-900 text-white font-bold text-[10px] py-1.5 px-3">
+              <Badge className="rounded-xl bg-[#F7B750] text-white font-bold text-[10px] py-1.5 px-3">
                 {brand.team_seats} / 5 Seats
               </Badge>
             </div>
+            <p className="text-sm text-gray-500 mb-8">
+              Manage your team ({brand.team_seats} / 5 seats used)
+            </p>
 
             <div className="space-y-3 mb-8">
               {[
@@ -8960,65 +8968,75 @@ export default function BrandDashboard() {
 
         <TabsContent value="legal" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <FileText className="w-6 h-6" /> Compliance & Legal
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              Compliance & Legal
             </h3>
             <div className="space-y-3">
               {[
-                { title: "Terms & Conditions" },
-                { title: "Privacy Policy" },
-                { title: "SAG-AFTRA Agreement" },
-                { title: "Data Export (GDPR)" },
-              ].map((legal, i) => (
-                <Button
-                  key={i}
-                  variant="ghost"
-                  className="w-full justify-between rounded-xl font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-6 border-b border-gray-50 last:border-0"
-                >
-                  <div className="flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
+                {
+                  title: "Terms & Conditions",
+                  icon: FileText,
+                  action: () =>
+                    window.open(
+                      "/creator-talent-terms-and-conditions.html",
+                      "_blank",
+                    ),
+                },
+                {
+                  title: "Privacy Policy",
+                  icon: FileText,
+                  action: () =>
+                    window.open("https://likelee.ai/privacypolicy", "_blank"),
+                },
+                {
+                  title: "SAG-AFTRA Alignment Statement",
+                  icon: CircleSlash,
+                  action: () => {},
+                },
+                {
+                  title: "Download My Data (GDPR)",
+                  icon: Download,
+                  action: () => {},
+                },
+              ].map((legal, i) => {
+                const Icon = legal.icon;
+                return (
+                  <button
+                    key={i}
+                    onClick={legal.action}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
+                  >
+                    <Icon className="w-4 h-4 text-gray-500 shrink-0" />
                     {legal.title}
-                  </div>
-                </Button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </Card>
         </TabsContent>
 
         <TabsContent value="support" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-xl shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <HelpCircle className="w-6 h-6" /> Support & Help Center
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              Support & Help Center
             </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
-              >
-                <HelpCircle className="w-5 h-5" />
+            <div className="grid md:grid-cols-2 gap-3">
+              <button className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+                <HelpCircle className="w-4 h-4 text-gray-500 shrink-0" />
                 Contact Support
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
-              >
-                <FileText className="w-5 h-5" />
+              </button>
+              <button className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+                <FileText className="w-4 h-4 text-gray-500 shrink-0" />
                 Knowledge Base
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
-              >
-                <Calendar className="w-5 h-5" />
+              </button>
+              <button className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+                <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
                 Schedule a Call
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start gap-4 h-16 rounded-xl border-gray-200 font-bold text-gray-900 hover:bg-gray-50 hover:border-gray-900"
-              >
-                <AlertCircle className="w-5 h-5" />
+              </button>
+              <button className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+                <Info className="w-4 h-4 text-gray-500 shrink-0" />
                 Report a Bug
-              </Button>
+              </button>
             </div>
           </Card>
         </TabsContent>
@@ -11016,7 +11034,6 @@ export default function BrandDashboard() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-                <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
               </div>
             </div>
           ) : (
