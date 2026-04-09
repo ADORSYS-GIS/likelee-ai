@@ -4990,11 +4990,28 @@ export default function BrandDashboard() {
                                         const isBusy =
                                           String(reviewing || "") ===
                                           String(del?.id || "");
+                                        const isPaid =
+                                          String(offer?.payment_status || "")
+                                            .trim()
+                                            .toLowerCase() === "paid";
                                         return (
                                           <Card
                                             key={String(del.id)}
-                                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${
+                                              isPaid
+                                                ? "cursor-zoom-in"
+                                                : "cursor-default"
+                                            }`}
                                             onClick={() => {
+                                              if (!isPaid) {
+                                                toast({
+                                                  title: "Payment required",
+                                                  description:
+                                                    "Please complete payment to unlock high-resolution previews.",
+                                                  variant: "destructive" as any,
+                                                });
+                                                return;
+                                              }
                                               setPreviewItems(
                                                 selectedOfferHubDeliverables,
                                               );
@@ -5108,13 +5125,14 @@ export default function BrandDashboard() {
                                                   disabled={
                                                     isApproved || isBusy
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "approve",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   {isApproved
                                                     ? "Approved"
@@ -5127,13 +5145,14 @@ export default function BrandDashboard() {
                                                   disabled={
                                                     isApproved || isBusy
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "changes_requested",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   Request changes
                                                 </Button>

@@ -3917,6 +3917,10 @@ export default function BrandCampaignDashboard({
                             ].includes(status);
                             const displayStatus =
                               status === "brand_approved" ? "approved" : status;
+                            const isPaid =
+                              String(deliverable?.payment_status || "")
+                                .trim()
+                                .toLowerCase() === "paid";
                             const statusClass =
                               displayStatus === "approved" ||
                               displayStatus === "accepted"
@@ -3943,7 +3947,23 @@ export default function BrandCampaignDashboard({
                             return (
                               <Card
                                 key={deliverableId || idx}
-                                className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none"
+                                className={`p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none ${
+                                  isPaid ? "cursor-zoom-in" : "cursor-default"
+                                }`}
+                                onClick={() => {
+                                  if (!isPaid) {
+                                    toast({
+                                      title: "Payment required",
+                                      description:
+                                        "Please complete payment to unlock high-resolution previews.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  setPreviewItems(selectedCampaignDeliverables);
+                                  setPreviewIndex(idx);
+                                  setPreviewImage(deliverable);
+                                }}
                               >
                                 <div className="flex items-start gap-6">
                                   <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
@@ -4016,12 +4036,13 @@ export default function BrandCampaignDashboard({
                                           size="sm"
                                           className="bg-green-600 hover:bg-green-700 text-white rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
                                           disabled={isApproved || isBusy}
-                                          onClick={() =>
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             void reviewSelectedCampaignDeliverable(
                                               deliverable,
                                               "approve",
-                                            )
-                                          }
+                                            );
+                                          }}
                                         >
                                           {isApproved
                                             ? "Approved"
@@ -4034,12 +4055,13 @@ export default function BrandCampaignDashboard({
                                           size="sm"
                                           className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
                                           disabled={isApproved || isBusy}
-                                          onClick={() =>
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             void reviewSelectedCampaignDeliverable(
                                               deliverable,
                                               "changes_requested",
-                                            )
-                                          }
+                                            );
+                                          }}
                                         >
                                           Request Edit
                                         </Button>
