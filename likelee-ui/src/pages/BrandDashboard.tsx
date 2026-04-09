@@ -158,6 +158,7 @@ const mockBrand = {
   contact_email: "team@urbanapparel.com",
   plan: "Pro Studio",
   team_seats: 3,
+  secondary_color: "#F7B750",
 };
 
 const mockCreators = [
@@ -668,6 +669,7 @@ export default function BrandDashboard() {
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
   const [brand, setBrand] = useState(mockBrand);
+  const [originalBrand, setOriginalBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
@@ -1175,14 +1177,17 @@ export default function BrandDashboard() {
       try {
         const profile = await getBrandProfile();
         if (!mounted || !profile) return;
-        setBrand((prev) => ({
-          ...prev,
-          name: profile?.company_name || profile?.name || prev.name || "Brand",
-          industry: profile?.industry || prev.industry,
-          website: profile?.website || prev.website,
-          contact_email: profile?.email || prev.contact_email,
+        const brandData = {
+          ...brand,
+          name: profile?.company_name || profile?.name || brand.name || "Brand",
+          industry: profile?.industry || brand.industry,
+          website: profile?.website || brand.website,
+          contact_email: profile?.email || brand.contact_email,
           logo: profile?.logo_url || "",
-        }));
+          secondary_color: profile?.secondary_color || brand.secondary_color,
+        };
+        setBrand(brandData);
+        setOriginalBrand(brandData);
       } catch {
         // Keep mock fallback on failure.
       }
@@ -1840,6 +1845,7 @@ export default function BrandDashboard() {
   };
 
   const handleSaveProfile = () => {
+    setOriginalBrand(brand);
     toast({ title: "Success", description: "Profile updated! (Demo mode)" });
   };
 
@@ -8559,16 +8565,22 @@ export default function BrandDashboard() {
             Team
           </TabsTrigger>
           <TabsTrigger
-            value="integrations"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Integrations
-          </TabsTrigger>
-          <TabsTrigger
             value="security"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
-            Security & Legal
+            Security
+          </TabsTrigger>
+          <TabsTrigger
+            value="legal"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+          >
+            Compliance & Legal
+          </TabsTrigger>
+          <TabsTrigger
+            value="support"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+          >
+            Support & Help
           </TabsTrigger>
         </TabsList>
 
@@ -8616,7 +8628,7 @@ export default function BrandDashboard() {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-gray-500 block">
-                  Company Name
+                  Organization Name
                 </Label>
                 <Input
                   value={brand.name}
@@ -8661,11 +8673,49 @@ export default function BrandDashboard() {
                 />
               </div>
             </div>
+          </Card>
+
+          {/* Brand Identity */}
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+              <Star className="w-6 h-6" /> Brand Identity
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-bold text-gray-900 block mb-1">
+                      Secondary Brand Color
+                    </Label>
+                    <p className="text-xs text-gray-500">
+                      Used for highlights, buttons, and badges.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 border border-gray-200"
+                      style={{ backgroundColor: brand.secondary_color }}
+                    />
+                    <Input
+                      type="color"
+                      value={brand.secondary_color}
+                      onChange={(e) =>
+                        setBrand({ ...brand, secondary_color: e.target.value })
+                      }
+                      className="w-12 h-12 p-1 rounded-none border-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold px-12 h-12 transition-all"
+                disabled={
+                  JSON.stringify(brand) === JSON.stringify(originalBrand)
+                }
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold px-12 h-12 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Profile Changes
               </Button>
@@ -8855,78 +8905,121 @@ export default function BrandDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="integrations" className="space-y-6 mt-0">
-          <Card className="p-12 bg-white border border-gray-200 rounded-none shadow-none flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
-              <Zap className="w-8 h-8 text-gray-300" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">
-              Extend Your Workflow
+        <TabsContent value="security" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+              <Settings className="w-6 h-6" /> Security Settings
             </h3>
-            <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
-              Connect Likelee with your favorite marketing tools to automate
-              deliverables, tracking, and payments.
-            </p>
-            <Button
-              disabled
-              className="rounded-none bg-gray-100 text-gray-400 font-bold text-xs px-8"
-            >
-              Coming Soon
-            </Button>
+            <div className="space-y-4">
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+              >
+                Reset Admin Password <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+              >
+                Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+              >
+                Active Session Audit <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                <Settings className="w-6 h-6" /> Security Settings
-              </h3>
-              <div className="space-y-4">
+        <TabsContent value="legal" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+              <FileText className="w-6 h-6" /> Compliance & Legal
+            </h3>
+            <div className="space-y-3">
+              {[
+                { title: "Terms & Conditions", status: "Active" },
+                { title: "Privacy Policy", status: "Active" },
+                { title: "SAG-AFTRA Agreement", status: "Signed" },
+                { title: "Data Processing Agreement", status: "Active" },
+                { title: "Data Export (GDPR)", status: "Ready" },
+              ].map((legal, i) => (
                 <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+                  key={i}
+                  variant="ghost"
+                  className="w-full justify-between rounded-none font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-6 border-b border-gray-50 last:border-0"
                 >
-                  Reset Admin Password <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
-                >
-                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
-                >
-                  Active Session Audit <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                <FileText className="w-6 h-6" /> Legal & Governance
-              </h3>
-              <div className="space-y-3">
-                {[
-                  "Terms & Conditions",
-                  "Privacy Policy",
-                  "SAG-AFTRA Agreement",
-                  "Data Export (GDPR)",
-                ].map((legal, i) => (
-                  <Button
-                    key={i}
-                    variant="ghost"
-                    className="w-full justify-start rounded-none font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
-                  >
+                  <div className="flex items-center">
                     <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
-                    {legal}
-                  </Button>
-                ))}
-              </div>
-            </Card>
-          </div>
+                    {legal.title}
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="rounded-none border-gray-200 text-gray-500 text-[10px]"
+                  >
+                    {legal.status}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="support" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+              <HelpCircle className="w-6 h-6" /> Support & Help Center
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
+                <div className="w-12 h-12 bg-orange-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-[#F7B750] transition-colors">
+                  <MessageSquare className="w-6 h-6 text-[#F7B750] group-hover:text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">Live Chat</h4>
+                <p className="text-xs text-gray-500">Average response: 5 min</p>
+              </Card>
+
+              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
+                <div className="w-12 h-12 bg-blue-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-blue-500 transition-colors">
+                  <Calendar className="w-6 h-6 text-blue-500 group-hover:text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">Book a Demo</h4>
+                <p className="text-xs text-gray-500">Schedule a feature tour</p>
+              </Card>
+
+              <Card className="p-6 border border-gray-100 rounded-none hover:border-[#F7B750] transition-colors cursor-pointer group">
+                <div className="w-12 h-12 bg-green-50 rounded-none flex items-center justify-center mb-4 group-hover:bg-green-500 transition-colors">
+                  <Globe className="w-6 h-6 text-green-500 group-hover:text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">Help Center</h4>
+                <p className="text-xs text-gray-500">
+                  Guides and documentation
+                </p>
+              </Card>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-bold text-gray-900 text-sm mb-4">
+                Frequently Asked Questions
+              </h4>
+              {[
+                "How do I update my brand colors?",
+                "Where can I find my project invoices?",
+                "How to invite team members?",
+                "What territories do licenses cover?",
+              ].map((faq, i) => (
+                <Button
+                  key={i}
+                  variant="ghost"
+                  className="w-full justify-between rounded-none text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-4 border border-gray-100 mb-2"
+                >
+                  {faq} <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Button>
+              ))}
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
