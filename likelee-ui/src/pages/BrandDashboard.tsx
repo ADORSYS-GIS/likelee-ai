@@ -97,12 +97,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -8541,37 +8536,37 @@ export default function BrandDashboard() {
         <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
           <TabsTrigger
             value="profile"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Notifications
           </TabsTrigger>
           <TabsTrigger
             value="billing"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Billing
           </TabsTrigger>
           <TabsTrigger
             value="team"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Team
           </TabsTrigger>
           <TabsTrigger
             value="integrations"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Integrations
           </TabsTrigger>
           <TabsTrigger
             value="security"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Security & Legal
           </TabsTrigger>
@@ -8580,18 +8575,18 @@ export default function BrandDashboard() {
         <TabsContent value="profile" className="space-y-6 mt-0">
           {/* Company Logo */}
           <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">
               Company Logo
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
                   <AvatarImage src={brand.logo} alt={brand.name} />
-                  <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
+                  <AvatarFallback className="text-2xl font-bold text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
                     {getBrandInitials(brand.name)}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-sm">
                   <Edit className="w-4 h-4 text-gray-900" />
                   <input
                     type="file"
@@ -8603,7 +8598,7 @@ export default function BrandDashboard() {
                 </label>
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
+                <p className="text-sm font-bold text-gray-900 mb-1">
                   Upload Official Logo
                 </p>
                 <p className="text-xs text-gray-500 font-medium">
@@ -8614,23 +8609,23 @@ export default function BrandDashboard() {
           </Card>
 
           {/* Company Information */}
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Building2 className="w-6 h-6" /> Company Information
             </h3>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                <Label className="text-xs font-bold text-gray-500 block">
                   Company Name
                 </Label>
                 <Input
                   value={brand.name}
                   onChange={(e) => setBrand({ ...brand, name: e.target.value })}
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                <Label className="text-xs font-bold text-gray-500 block">
                   Industry
                 </Label>
                 <Input
@@ -8638,11 +8633,11 @@ export default function BrandDashboard() {
                   onChange={(e) =>
                     setBrand({ ...brand, industry: e.target.value })
                   }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                <Label className="text-xs font-bold text-gray-500 block">
                   Website
                 </Label>
                 <Input
@@ -8650,11 +8645,11 @@ export default function BrandDashboard() {
                   onChange={(e) =>
                     setBrand({ ...brand, website: e.target.value })
                   }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                <Label className="text-xs font-bold text-gray-500 block">
                   Contact Email
                 </Label>
                 <Input
@@ -8662,7 +8657,7 @@ export default function BrandDashboard() {
                   onChange={(e) =>
                     setBrand({ ...brand, contact_email: e.target.value })
                   }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  className="rounded-none border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
                 />
               </div>
             </div>
@@ -8670,7 +8665,7 @@ export default function BrandDashboard() {
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold px-12 h-12 transition-all"
               >
                 Save Profile Changes
               </Button>
@@ -8680,7 +8675,7 @@ export default function BrandDashboard() {
 
         <TabsContent value="notifications" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Bell className="w-6 h-6" /> Communication Preferences
             </h3>
             <div className="space-y-2">
@@ -8711,14 +8706,14 @@ export default function BrandDashboard() {
                   className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
                 >
                   <div className="pr-12">
-                    <Label className="text-sm font-black text-gray-900 uppercase tracking-widest block mb-1">
+                    <Label className="text-sm font-bold text-gray-900 block mb-1">
                       {pref.title}
                     </Label>
                     <p className="text-xs font-medium text-gray-500">
                       {pref.desc}
                     </p>
                   </div>
-                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
+                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-200 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
                 </div>
               ))}
             </div>
@@ -8727,58 +8722,58 @@ export default function BrandDashboard() {
 
         <TabsContent value="billing" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <CreditCard className="w-6 h-6" /> Billing & Payment
             </h3>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                <Label className="text-xs font-bold text-gray-500 block">
                   Billing Address
                 </Label>
                 <Textarea
                   defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
+                  className="rounded-none border border-gray-200 focus:border-gray-900 font-medium min-h-[120px]"
                 />
               </div>
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  <Label className="text-xs font-bold text-gray-500 block">
                     Billing Email
                   </Label>
                   <Input
                     defaultValue="billing@urbanapparel.com"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                    className="rounded-none border border-gray-200 focus:border-gray-900 h-11 font-medium"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  <Label className="text-xs font-bold text-gray-500 block">
                     Tax Identification
                   </Label>
                   <Input
                     placeholder="XX-XXXXXXX"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                    className="rounded-none border border-gray-200 focus:border-gray-900 h-11 font-medium"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
+            <div className="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-none flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  <p className="text-xs font-bold text-gray-400 mb-1">
                     Primary Payment Method
                   </p>
-                  <p className="text-sm font-black text-gray-900">
+                  <p className="text-sm font-bold text-gray-900">
                     Visa ending in 4242
                   </p>
                 </div>
               </div>
               <Button
                 variant="outline"
-                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
+                className="rounded-none border border-gray-900 font-bold text-xs h-10 px-6 hover:bg-gray-900 hover:text-white"
               >
                 Manage
               </Button>
@@ -8789,10 +8784,10 @@ export default function BrandDashboard() {
         <TabsContent value="team" className="space-y-6 mt-0">
           <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
                 <Users className="w-6 h-6" /> Organization Members
               </h3>
-              <Badge className="rounded-none bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3">
+              <Badge className="rounded-none bg-gray-900 text-white font-bold text-[10px] py-1.5 px-3">
                 {brand.team_seats} / 5 Seats
               </Badge>
             </div>
@@ -8817,11 +8812,11 @@ export default function BrandDashboard() {
               ].map((member, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-5 bg-white border-2 border-gray-100 hover:border-gray-900 transition-colors rounded-none"
+                  className="flex items-center justify-between p-5 bg-white border border-gray-100 hover:border-gray-900 transition-colors rounded-none"
                 >
                   <div className="flex items-center gap-4">
                     <Avatar className="w-10 h-10 rounded-none border border-gray-200">
-                      <AvatarFallback className="font-black text-xs bg-gray-100 uppercase">
+                      <AvatarFallback className="font-bold text-xs bg-gray-100">
                         {member.name
                           .split(" ")
                           .map((n) => n[0])
@@ -8829,7 +8824,7 @@ export default function BrandDashboard() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-black text-gray-900 text-sm uppercase tracking-tight">
+                      <p className="font-bold text-gray-900 text-sm tracking-tight">
                         {member.name}
                       </p>
                       <p className="text-xs font-bold text-gray-400">
@@ -8838,7 +8833,7 @@ export default function BrandDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
+                    <span className="text-[10px] font-bold text-indigo-500">
                       {member.role}
                     </span>
                     <Button
@@ -8853,7 +8848,7 @@ export default function BrandDashboard() {
               ))}
             </div>
 
-            <Button className="w-full rounded-none bg-gray-950 hover:bg-gray-800 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[8px_8px_0px_rgba(31,41,55,0.2)]">
+            <Button className="w-full rounded-none bg-gray-900 hover:bg-gray-800 text-white font-bold h-12">
               <Plus className="w-5 h-5 mr-3" />
               Invite New Collaborator
             </Button>
@@ -8865,7 +8860,7 @@ export default function BrandDashboard() {
             <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
               <Zap className="w-8 h-8 text-gray-300" />
             </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
+            <h3 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">
               Extend Your Workflow
             </h3>
             <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
@@ -8874,7 +8869,7 @@ export default function BrandDashboard() {
             </p>
             <Button
               disabled
-              className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
+              className="rounded-none bg-gray-100 text-gray-400 font-bold text-xs px-8"
             >
               Coming Soon
             </Button>
@@ -8884,25 +8879,25 @@ export default function BrandDashboard() {
         <TabsContent value="security" className="space-y-6 mt-0">
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                 <Settings className="w-6 h-6" /> Security Settings
               </h3>
               <div className="space-y-4">
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
                 >
                   Reset Admin Password <ChevronRight className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
                 >
                   Enable 2FA Protection <ChevronRight className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                  className="w-full justify-between rounded-none border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
                 >
                   Active Session Audit <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -8910,7 +8905,7 @@ export default function BrandDashboard() {
             </Card>
 
             <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                 <FileText className="w-6 h-6" /> Legal & Governance
               </h3>
               <div className="space-y-3">
@@ -8923,7 +8918,7 @@ export default function BrandDashboard() {
                   <Button
                     key={i}
                     variant="ghost"
-                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
+                    className="w-full justify-start rounded-none font-bold text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
                     {legal}
@@ -8934,32 +8929,6 @@ export default function BrandDashboard() {
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Support Section - Global Footer */}
-      <Card className="p-8 bg-gray-950 text-white rounded-none shadow-none mt-12 border-none">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
-              Need Assistance?
-            </h3>
-            <p className="text-gray-400 font-medium text-sm">
-              Our partner success team is available 24/7 to help you optimize
-              your campaigns.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12">
-              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-none border-white/20 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
-            >
-              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
-            </Button>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 
