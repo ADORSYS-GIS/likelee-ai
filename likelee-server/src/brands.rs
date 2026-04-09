@@ -14,6 +14,7 @@ pub struct BrandProfilePayload {
     pub email: Option<String>,
     pub website: Option<String>,
     pub phone_number: Option<String>,
+    pub logo_url: Option<String>,
     pub industry: Option<String>,
     pub primary_goal: Option<serde_json::Value>,
     pub geographic_target: Option<String>,

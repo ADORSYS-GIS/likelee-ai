@@ -1867,7 +1867,9 @@ export default function BrandDashboard() {
         logo_url: publicUrl,
       });
 
-      setBrand({ ...brand, logo: publicUrl });
+      const newBrand = { ...brand, logo: publicUrl };
+      setBrand(newBrand);
+      setOriginalBrand((prev) => ({ ...prev, logo: publicUrl }));
       toast({ title: "Success", description: "Logo updated successfully!" });
     } catch (error: any) {
       console.error("Error uploading logo:", error);
@@ -8991,7 +8993,9 @@ export default function BrandDashboard() {
                 {
                   title: "SAG-AFTRA Alignment Statement",
                   icon: CircleSlash,
-                  action: () => {},
+                  action: () => {
+                    window.location.href = "/sagaftraalignment";
+                  },
                 },
                 {
                   title: "Download My Data (GDPR)",
@@ -9021,7 +9025,10 @@ export default function BrandDashboard() {
               Support & Help Center
             </h3>
             <div className="grid md:grid-cols-2 gap-3">
-              <button className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors">
+              <button
+                onClick={() => (window.location.href = "/support")}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
+              >
                 <HelpCircle className="w-4 h-4 text-gray-500 shrink-0" />
                 Contact Support
               </button>
