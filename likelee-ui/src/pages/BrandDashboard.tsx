@@ -9,7 +9,6 @@ import React, {
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
@@ -11158,7 +11157,7 @@ export default function BrandDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed inset-y-0 left-0 z-50 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
+        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed top-16 bottom-0 left-0 z-50 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
         style={{
           width: isMobile
             ? sidebarOpen
@@ -11554,23 +11553,6 @@ export default function BrandDashboard() {
           marginLeft: isMobile ? "0" : `${!sidebarOpen ? 80 : sidebarWidth}px`,
         }}
       >
-        {/* Persistent Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 group">
-            <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
-              alt="Likelee Logo"
-              className="h-10 w-auto transform transition-transform group-hover:scale-105"
-            />
-            <span className="text-xl font-bold text-gray-900 tracking-tight font-display">
-              Likelee
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <LanguageSwitcher />
-          </div>
-        </header>
-
         <div className="p-8">
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && (
