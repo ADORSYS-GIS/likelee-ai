@@ -766,6 +766,8 @@ export default function BrandDashboard() {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [jobsUnreadCount, setJobsUnreadCount] = useState(0);
   const [licensingContractsCount, setLicensingContractsCount] = useState(0);
+  const [contractHubViewed, setContractHubViewed] = useState(false);
+  const [deliverablesViewed, setDeliverablesViewed] = useState(false);
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -842,8 +844,20 @@ export default function BrandDashboard() {
       });
     } else if (nextSection === "licensing-requests") {
       setLicensingContractsCount(0);
+    } else if (nextSection === "campaigns-contract-hub") {
+      // Clear contract hub badge
+      setContractHubViewed(true);
+      // Mark related notifications as read
+      const contractNotifications = brandNotifications.filter(
+        (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
+      );
+      contractNotifications.forEach((n) => {
+        handleMarkNotificationRead(n.id);
+      });
     } else if (nextSection === "campaigns-deliverables") {
-      // Clear deliverables badge by marking related notifications as read
+      // Clear deliverables badge
+      setDeliverablesViewed(true);
+      // Mark related notifications as read
       const deliverableNotifications = brandNotifications.filter(
         (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
       );
@@ -1981,7 +1995,7 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const contractHubPendingCount = useMemo(() => {
-    if (!notificationPrefs.newProjectAlerts) return 0;
+    if (!notificationPrefs.newProjectAlerts || contractHubViewed) return 0;
 
     // Count from offers
     const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
@@ -1996,10 +2010,16 @@ export default function BrandDashboard() {
     ).length;
 
     return offerCount + notifCount;
-  }, [brandOfferItems, brandNotifications, notificationPrefs.newProjectAlerts]);
+  }, [
+    brandOfferItems,
+    brandNotifications,
+    notificationPrefs.newProjectAlerts,
+    contractHubViewed,
+  ]);
 
   const pendingApprovalCount = useMemo(() => {
-    if (!notificationPrefs.deliverableSubmissions) return 0;
+    if (!notificationPrefs.deliverableSubmissions || deliverablesViewed)
+      return 0;
 
     // Count from campaigns
     const campaignCount = mockCampaigns.filter(
