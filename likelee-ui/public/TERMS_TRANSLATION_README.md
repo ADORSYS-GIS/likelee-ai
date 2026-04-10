@@ -1,17 +1,20 @@
 # Terms and Conditions Translation Guide
 
 ## Overview
+
 The Terms and Conditions HTML files need to be professionally translated into French, Spanish, and German. These are legal documents that require accurate translation to ensure legal compliance.
 
 ## Required Files
 
 ### Agency Terms (for Brands/Agencies)
+
 - ✅ `terms-and-conditions-agency-en.html` (English - Complete)
 - ⚠️ `terms-and-conditions-agency-fr.html` (French - Needs Translation)
 - ⚠️ `terms-and-conditions-agency-es.html` (Spanish - Needs Translation)
 - ⚠️ `terms-and-conditions-agency-de.html` (German - Needs Translation)
 
 ### Creator Terms (for Talent/Creators)
+
 - ✅ `creator-talent-terms-and-conditions-en.html` (English - Complete)
 - ⚠️ `creator-talent-terms-and-conditions-fr.html` (French - Needs Translation)
 - ⚠️ `creator-talent-terms-and-conditions-es.html` (Spanish - Needs Translation)
@@ -20,13 +23,16 @@ The Terms and Conditions HTML files need to be professionally translated into Fr
 ## Translation Requirements
 
 ### Legal Accuracy
+
 These are binding legal documents. Translation must:
+
 1. Maintain legal terminology accuracy
 2. Preserve the exact meaning of all clauses
 3. Be reviewed by a legal professional fluent in the target language
 4. Comply with local legal requirements for each jurisdiction
 
 ### Recommended Approach
+
 1. **Professional Translation Service**: Use a legal translation service that specializes in:
    - Software/SaaS agreements
    - Intellectual property licensing
@@ -42,6 +48,7 @@ These are binding legal documents. Translation must:
 ## Current Status
 
 The application code has been updated to automatically load the correct language version:
+
 - When a user selects French, the app loads `*-fr.html`
 - When a user selects Spanish, the app loads `*-es.html`
 - When a user selects German, the app loads `*-de.html`
@@ -62,6 +69,7 @@ Until professional translations are available, the placeholder files direct user
 ## Cost Estimate
 
 Professional legal translation typically costs:
+
 - $0.15-0.30 per word for certified legal translation
 - Each document is approximately 5,000-6,000 words
 - Total: ~$9,000-$18,000 for all translations (3 languages × 2 documents)
