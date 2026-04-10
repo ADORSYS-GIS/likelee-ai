@@ -1090,6 +1090,308 @@
   "talentAgenciesAndUnionsProfileMessage": "Skalieren Sie NIL- und digitale Doppelgänger-Deals über ganze Kader. Massen-Onboarding, einheitliche Compliance-Verfolgung, sofortige Auszahlungen.",
   "studiosAndBrandsProfile": "Studios & Marken",
   "studiosAndBrandsProfileMessage": "Greifen Sie auf verifizierte, freigegebene Avatare für Anzeigen, Spiele und Kampagnen zu – ohne monatelange rechtliche Verhandlungen oder Zustimmungsrisiko.",
+  "brandCompanyPage": {
+    "hero": {
+      "title": "Lizenzieren Sie Talent-Abbilder für KI-Inhalte.",
+      "subtitle": "Legal. Sofort.",
+      "description": "Markensichere KI-Kreativität mit verifizierter Talent-Zustimmung in <48 Stunden. Arbeiten Sie mit unabhängigen Talenten oder deren Agenturen.",
+      "getStartedButton": "Loslegen",
+      "bookDemoButton": "Demo buchen"
+    },
+    "whyLikelee": {
+      "title": "Warum Likelee",
+      "verifiedConsent": {
+        "title": "Verifizierte Zustimmung",
+        "description": "Talente lizenzieren aktiv ihr Abbild – kein Scraping, keine rechtlichen Grauzonen. Jede Berechtigung ist explizit und durchsetzbar."
+      },
+      "aiSpeed": {
+        "title": "KI-native Geschwindigkeit",
+        "description": "Lizenzierte Assets in <48 Stunden geliefert. Reichen Sie Ihr Briefing ein, erhalten Sie Talent-Berechtigungen mit Ihren KI-Inhalten, automatisch."
+      },
+      "legalCompliance": {
+        "title": "Rechtliche Compliance integriert",
+        "description": "Jede Lizenz dokumentiert Nutzungsumfang, Gebiet, Dauer und Vergütung. Transparente Rechteverwaltung mit verifizierten Assets."
+      }
+    },
+    "useCases": {
+      "title": "Anwendungsfälle",
+      "paidSocial": {
+        "title": "Bezahlte soziale Medien & Performance",
+        "description": "KI-generierte Werbekreativität mit lizenzierten Talenten für Kampagnen, Regionen, Dauer"
+      },
+      "ecommerce": {
+        "title": "E-Commerce & Produkt",
+        "description": "Verifizierte Talente auf Produktseiten und Kampagnen"
+      },
+      "ooh": {
+        "title": "OOH & Einzelhandel",
+        "description": "Plakatwände und im Geschäft mit vorab geklärten Rechten"
+      },
+      "content": {
+        "title": "Inhalt & Gaming",
+        "description": "Integrieren Sie Abbilder in Markenerlebnisse"
+      }
+    },
+    "howItWorks": {
+      "title": "Wie Likelee funktioniert",
+      "step1": "Talente oder Agenturen legen Lizenzbedingungen fest",
+      "step2": "Sie durchsuchen und reichen Ihr Briefing ein",
+      "step3": "Talent genehmigt mit einem Klick",
+      "step4": "Sie erhalten lizenzierte Assets + verbindliche Vereinbarung"
+    },
+    "pilot": {
+      "title": "Treten Sie unserem Pilotprogramm bei",
+      "getStartedButton": "Loslegen",
+      "bookDemoButton": "Demo buchen"
+    }
+  },
+  "impactPage": {
+    "hero": {
+      "title": "Unser",
+      "subtitle": "Umwelt-Engagement",
+      "description": "Bei Likelee sind Kreativität und Technologie untrennbar – und beide basieren auf Ressourcen, die echte Auswirkungen haben. Jeder Render, Export und jede Kampagne, die wir antreiben, verbraucht Energie. Die Anerkennung dieses Fußabdrucks ist Teil unserer Verantwortung als Plattform, die Kreativen und Studios weltweit dient."
+    },
+    "whyMatters": {
+      "title": "Warum das wichtig ist",
+      "description": "Digitale Arbeit zu produzieren ist nicht auswirkungsfrei. Ob es ein KI-Modell ist, das Inferenz ausführt, ein Video-Render oder in der Cloud gespeicherte Daten – jede kreative Ausgabe hat Umweltkosten. Für uns ist die Anerkennung dieser Verbindung kein Marketing-Statement – es ist eine Grundlage für den Betrieb mit Integrität in einer sich schnell ausdehnenden Branche."
+    },
+    "approach": {
+      "title": "Unser Ansatz",
+      "infrastructure": {
+        "title": "1. Verantwortliche Infrastruktur",
+        "description": "Wir priorisieren Cloud-Anbieter und Partner, die transparente Nachhaltigkeitsdaten und messbare Fortschrittsberichte veröffentlichen. Diese Beziehungen werden regelmäßig überprüft, während sich Standards und Technologien weiterentwickeln."
+      },
+      "transparency": {
+        "title": "2. Transparenz als Standard",
+        "description": "Wir entwickeln produktinterne Hinweise, die Benutzern helfen zu verstehen, wann ihre Einstellungen oder Generierungsmethoden mehr Ressourcen verbrauchen. Diese sind darauf ausgelegt zu informieren, nicht zu beschränken, und geben Künstlern und Studios die Kontrolle über ihre Entscheidungen."
+      },
+      "collaboration": {
+        "title": "3. Zusammenarbeit und Verantwortlichkeit",
+        "description": "Wir führen einen offenen Dialog mit Kreativen, Nachhaltigkeitsexperten und Technologen durch laufende Diskussionen und vierteljährliche Überprüfungssitzungen. Diese informieren unsere Infrastruktur-Roadmap und unsere Produktupdates."
+      }
+    },
+    "standBy": {
+      "title": "Wofür wir stehen",
+      "description": "Wir werden die Realitäten des Energieverbrauchs nicht hinter vagen Nachhaltigkeitsbehauptungen oder oberflächlichen Versprechen verstecken. Unser Ziel ist es, spezifisch, messbar und offen für Korrekturen zu sein, während sich das Feld weiterentwickelt. Echter Fortschritt hängt von Klarheit ab, nicht von Slogans."
+    },
+    "yourRole": {
+      "title": "Ihre Rolle",
+      "description": "Wenn Sie über Likelee hochladen, lizenzieren oder produzieren, nehmen Sie an einem gemeinsamen System teil, das auf Nachverfolgbarkeit und Verantwortlichkeit aufbaut. Einfache Aktionen – wie das Stapeln von Exporten oder die Verwendung optimierter Render-Einstellungen – tragen bedeutsam zur Effizienz im großen Maßstab bei. Die Werkzeuge sind verfügbar; die Entscheidungen bleiben bei Ihnen."
+    },
+    "lookingForward": {
+      "title": "Blick nach vorn",
+      "paragraph1": "Nachhaltigkeit ist kein festes Ziel, sondern ein fortlaufender Prozess. Da die KI-Generierung fortschrittlicher und zugänglicher wird, ist unser Engagement, das Gleichgewicht zu halten – zu innovieren, ohne die Auswirkungen dieser Innovation zu vernachlässigen. Wir werden Likelees Infrastruktur und Berichtspraktiken weiter verfeinern, um sicherzustellen, dass kreativer Fortschritt und Umweltverantwortung koexistieren können.",
+      "paragraph2": "Wir laden Sie ein, zusammenzuarbeiten, zu kritisieren und uns zu helfen, uns zu verbessern.",
+      "paragraph3": "Wenden Sie sich mit Ideen, Bedenken oder Partnerschaftsmöglichkeiten an"
+    }
+  },
+  "landing": {
+    "hero": {
+      "tagline": "Hören Sie auf, Geld zwischen Buchungen liegen zu lassen",
+      "title": "#1 KI-native Talent-\nManagement-Plattform",
+      "subtitle": "Entwickelt für Agenturen, die sowohl traditionelle Buchungen als auch KI-Lizenzeinnahmen verwalten.",
+      "forBrandsButton": "Für Marken",
+      "forAgenciesButton": "Für Agenturen"
+    },
+    "section2": {
+      "title": "Skalieren Sie Ihren Kader\nohne Personal zu\nskalieren",
+      "subtitle": "Gleiche Talente. Gleichzeitige KI-Kampagnen. Exponentielles Umsatzwachstum."
+    },
+    "features": {
+      "card1": {
+        "title": "Verwandeln Sie Buchungslücken\nin vorhersagbare\nmonatliche Einnahmen",
+        "description": "Traditionelle Shootings plus KI-Lizenzierung. Ihre Talente verdienen, während sie auf ihren nächsten Auftrag warten."
+      },
+      "card2": {
+        "title": "KI-gestützte Operationen\nmit Agentur-Kontrolle",
+        "description": "Überspringen Sie manuelle Terminplanung und greifen Sie auf intelligente Buchungsautomatisierung zu. Alles mit vollständiger vertraglicher Aufsicht."
+      },
+      "card3": {
+        "title": "Entwickelt für Agenturen\naller Größen",
+        "description": "Von Boutique-Talent-Shops bis hin zu Unternehmens-Kadern – verwalten Sie traditionelle Buchungen und KI-Lizenzierung in einer Plattform, die für jede Größe entwickelt wurde."
+      }
+    },
+    "section4": {
+      "title": "Verschwenden Sie Ihren Kader\nnicht zwischen Buchungen",
+      "subtitle": "KI-Lizenzierung hält Talente konstant am Verdienen, und Agenturen spüren die sich zusammensetzenden Einnahmen sofort.",
+      "ctaButton": "Loslegen"
+    }
+  },
+  "aboutUsPage": {
+    "mission": {
+      "title": "Mission",
+      "subtitle": "Im Zeitalter der KI benötigen Talent-Agenturen Infrastruktur, die mit der Technologie skaliert, nicht dagegen.",
+      "description": "Likelee baut die Plattform für Agenturen, um traditionelle Buchungen und KI-Lizenzierung an einem Ort zu verwalten. Wir schaffen ein neues Umsatzmodell, bei dem Buchungslücken zu Verdienstmöglichkeiten werden, Operationen auf Automatisierung laufen und Agenturen ohne zusätzliches Personal skalieren."
+    },
+    "principles": {
+      "title": "Leitprinzipien",
+      "principle1": {
+        "title": "Agentur-Kontrolle, immer",
+        "description": "Sie genehmigen jede Buchung, passen jeden Preis an, lehnen jedes Projekt ab. Vollständige operative Kontrolle."
+      },
+      "principle2": {
+        "title": "Transparente Umsatzverfolgung",
+        "description": "Sehen Sie traditionelle Buchungen und KI-Lizenzeinnahmen in Echtzeit. Ein Dashboard, vollständige Sichtbarkeit."
+      },
+      "principle3": {
+        "title": "Talent-Schutz integriert",
+        "description": "Smart Contracts spezifizieren exakte Nutzungsrechte, Dauer und Gebiet. Jede Lizenz wird verfolgt und ist widerrufbar."
+      },
+      "principle4": {
+        "title": "Operationen zuerst, Technologie zweitens",
+        "description": "Wir bauen, was die heutigen Agentur-Herausforderungen löst, nicht theoretische zukünftige Probleme."
+      }
+    },
+    "challenge": {
+      "title": "Das Problem ist real (und es passiert jetzt)",
+      "paragraph1": "Traditionelle Talent-Buchungen sind Fest oder Hungersnot. Ein 2.000-Dollar-Shooting, dann wochenlange Stille. Ihre Talente sitzen untätig zwischen Jobs. Ihre Agentur absorbiert die Umsatzvolatilität. Währenddessen bleiben Ihre operativen Gemeinkosten konstant – Kalender, Verträge, Kundenkoordination, Zahlungsabwicklung.",
+      "paragraph2": "Traditionelle Agentur-Infrastruktur wurde für physische Buchungen gebaut. Sie berücksichtigt keine KI-Lizenz-Umsatzströme. Agenturen können nicht effizient sowohl traditionelle Shootings als auch digitale Abbild-Deals verwalten. Talente sehen inkonsistente Einnahmen. Agenturen lassen Geld während Buchungslücken liegen.",
+      "paragraph3": "Das KI-Zeitalter schuf neue Fragen: Wie verwalten Sie traditionelle und KI-Buchungen gleichzeitig? Wie skalieren Sie Umsatz ohne Personal zu skalieren? Wie stellen Sie sicher, dass Talente während Durststrecken loyal bleiben?",
+      "conclusion": "Likelee löst alle drei."
+    },
+    "whyNow": {
+      "title": "Warum Likelee, warum jetzt?",
+      "paragraph1": "KI hat die Fest-oder-Hungersnot-Natur von Talent-Buchungen nicht geschaffen – aber sie schuf eine Lösung. KI-Lizenzierung lässt dieselben Talente gleichzeitig an mehreren Kampagnen arbeiten, während sie auf ihre nächste traditionelle Buchung warten.",
+      "paragraph2": "Traditionelle Agentur-Tools verwalten einen Umsatzstrom. Sie brechen, wenn Sie KI-Lizenzierung hinzufügen. Buchungskoordination ist manuell. Umsatzverfolgung ist über Plattformen fragmentiert. Vertragserstellung dauert Stunden.",
+      "paragraph3": "Likelee ist für Dual-Revenue-Agenturen gebaut – wo ein Kader sowohl traditionelle Buchungsgebühren als auch wiederkehrende KI-Lizenzeinnahmen generiert, und die Verwaltung beider erfordert integrierte Infrastruktur, nicht verstreute Tools.",
+      "conclusion": "Wir ersetzen nicht traditionelle Buchungen. Wir fügen einen zweiten Umsatzstrom hinzu, der die Lücken füllt und sich über die Zeit zusammensetzt."
+    },
+    "approach": {
+      "title": "Wie es funktioniert: Vom Kader-Upload zum Umsatz",
+      "step1": {
+        "title": "Fügen Sie Ihre Talente hinzu",
+        "description": "Laden Sie Ihren Kader mit Headshots und Portfolios hoch. Talent-Profile werden sowohl für traditionelle Buchungen als auch für KI-Lizenzanfragen verfügbar."
+      },
+      "step2": {
+        "title": "Marken reichen Anfragen ein",
+        "description": "Studios und Marken durchsuchen Ihre Talente für traditionelle Shootings oder KI-Lizenzkampagnen. Sie sehen Anwendungsfall, Dauer, Gebiet und Vergütung im Voraus."
+      },
+      "step3": {
+        "title": "Sie kontrollieren jeden Deal",
+        "description": "Überprüfen Sie Anfragen in einem Dashboard. Genehmigen Sie traditionelle Buchungen, passen Sie KI-Lizenzpreise an oder lehnen Sie ab. Vollständige Agentur-Kontrolle über beide Umsatzströme."
+      },
+      "step4": {
+        "title": "Automatisierte Vertragserstellung",
+        "description": "System generiert Buchungsvereinbarungen für traditionelle Shootings und Smart Contracts für KI-Lizenzierung. Keine manuelle Erstellung, keine rechtlichen Engpässe."
+      },
+      "step5": {
+        "title": "Geschützte Zahlungsabwicklung",
+        "description": "Gelder in Treuhand für sowohl traditionelle als auch KI-Deals gehalten. Automatische Provisionsaufteilungen. Geld wird direkt auf Ihr Agenturkonto freigegeben."
+      },
+      "step6": {
+        "title": "Echtzeit-Umsatzverfolgung",
+        "description": "Ein Dashboard zeigt traditionellen Buchungskalender und aktive KI-Lizenzvereinbarungen. Sehen Sie, welches Talent womit verdient, wann Verträge ablaufen und monatlich wiederkehrende Einnahmen."
+      }
+    },
+    "users": {
+      "title": "Wer Likelee nutzt",
+      "modelingAgencies": {
+        "title": "Model-Agenturen",
+        "description": "Verwalten Sie Castings, Laufsteg-Buchungen und redaktionelle Shootings neben KI-Lizenzierung für E-Commerce- und Werbekampagnen."
+      },
+      "sportsAgencies": {
+        "title": "Sport-Agenturen",
+        "description": "Koordinieren Sie traditionelle Endorsements und Sponsorings, während Sie Athleten-NIL für KI-generierte Marketing-Inhalte lizenzieren."
+      },
+      "talentManagement": {
+        "title": "Talent-Management-Firmen",
+        "description": "Handhaben Sie traditionelle Buchungen für Schauspieler, Influencer und Kreative, während Sie ihr Abbild während Projektlücken monetarisieren."
+      },
+      "allSizes": {
+        "title": "Boutique bis Unternehmen",
+        "description": "5-Personen-Shops bis 200+ Talent-Kader. Gleiche Plattform, skaliert zu Ihrer Größe."
+      }
+    },
+    "operations": {
+      "title": "Wie wir arbeiten",
+      "verification": {
+        "title": "Verifizierung zuerst",
+        "description": "Jeder Kreative besteht Identitätsprüfungen, bevor sein Avatar live geht. Schlechte Akteure bekommen keine Plattform."
+      },
+      "contracts": {
+        "title": "Verständliche Verträge",
+        "description": "Kein Juristenkauderwelsch. Verständliche Vereinbarungen mit automatischen Ablaufdaten und eingebauten Sunset-Klauseln."
+      },
+      "ledger": {
+        "title": "Gemeinsames Hauptbuch",
+        "description": "Sowohl Sie als auch die Marke sehen dieselbe Echtzeit-Aufzeichnung jeder Nutzung, jeder Zahlung, jedes Ablaufdatums."
+      },
+      "security": {
+        "title": "Sicherheit by Design",
+        "description": "Biometrische Dateien verschlüsselt im Ruhezustand. Keine Datenverkäufe an Dritte. Kein Scraping. Ihre Daten gehören Ihnen."
+      },
+      "userBuilt": {
+        "title": "Mit Benutzern gebaut, nicht für Benutzer",
+        "description": "Wir veröffentlichen nur Features, wenn Kreative, Agenturen und Studios realen Bedarf bestätigen. Kein Feature-Bloat."
+      }
+    }
+  },
+  "supportPage": {
+    "hero": {
+      "title": "Support",
+      "subtitle": "Brauchen Sie Hilfe? Wir sind da. Der schnellste Weg, uns zu erreichen, ist",
+      "description": "Wir lesen jede Nachricht. Bitte fügen Sie so viele Details wie möglich hinzu (Screenshots, Links, Schritte zur Reproduktion). Wir antworten so schnell wie möglich."
+    },
+    "form": {
+      "emailLabel": "Ihre E-Mail *",
+      "emailPlaceholder": "sie@beispiel.com",
+      "subjectLabel": "Betreff *",
+      "subjectPlaceholder": "Wie können wir helfen?",
+      "messageLabel": "Ihre Frage *",
+      "messagePlaceholder": "Bitte fügen Sie so viele Details wie möglich hinzu: was Sie zu tun versuchen, was passiert, Fehlermeldungen, Screenshots, etc.",
+      "sendButton": "Nachricht senden",
+      "sending": "Wird gesendet..."
+    },
+    "success": {
+      "title": "Nachricht gesendet!",
+      "description": "Vielen Dank für Ihre Nachricht. Wir melden uns bald bei Ihnen."
+    },
+    "footer": {
+      "orEmail": "Oder schreiben Sie uns direkt an",
+      "copied": "In Zwischenablage kopiert",
+      "copiedDescription": "Support-E-Mail-Adresse wurde in Ihre Zwischenablage kopiert."
+    }
+  },
+  "sagAftraPage": {
+    "hero": {
+      "title": "SAG-AFTRA-Ausrichtung",
+      "description": "Likelee integriert die KI-Schutzmaßnahmen des SAG-AFTRA Commercials Contract 2025 in jede von uns ausgestellte Lizenz – und wir wenden denselben Standard auf alle Kreativen auf der Plattform an (Schauspieler, Models, Athleten, Influencer, Stimme)."
+    },
+    "safeguards": {
+      "informedConsent": {
+        "title": "Informierte Zustimmung jedes Mal",
+        "description": "Ein Kreativer unterzeichnet eine klare, projektspezifische Freigabe vor jeder Erfassung, Synthetisierung oder Wiederverwendung ihres Gesichts, ihrer Stimme oder Bewegung."
+      },
+      "fairPay": {
+        "title": "Faire Bezahlung & Residuen auf Autopilot",
+        "description": "Jede Replik löst Vorab-Vergütung, laufende Residuen und vollständige Renten-/Gesundheitsbeiträge (oder Äquivalent) aus – automatisch von unserer Royalty-Engine protokolliert und ausgezahlt."
+      },
+      "scopeLocked": {
+        "title": "Umfang-gesperrte Nutzung",
+        "description": "Verträge buchstabieren genau aus, wo (TV, Streaming, sozial, in-engine, Print, etc.) und wie lange eine Replik erscheinen kann. Neues Medium? Neues Projekt? Frische Genehmigung + Auszahlung."
+      },
+      "noBlanket": {
+        "title": "Keine Pauschalrechte oder Übertragungen",
+        "description": "\"Alle Medien auf Dauer\"-Klauseln sind hier ungültig. Zustimmung ist nicht übertragbar; Unterlizenzierung erfordert eine brandneue Vereinbarung."
+      },
+      "aiTraining": {
+        "title": "KI-Training ist eine separate Lizenz",
+        "description": "Das Einspeisen von Abbild-Daten in Modell-Training ist sein eigener, ausgehandelter Anwendungsfall mit unterschiedlichen Bedingungen und Umsatzbeteiligung."
+      },
+      "backgroundTalent": {
+        "title": "Hintergrund-Talent geschützt",
+        "description": "Digitale Stand-ins zählen niemals zu Hintergrund-Einstellungsminima oder ersetzen On-Set-Performer."
+      },
+      "enforceable": {
+        "title": "Durchsetzbare Schutzmaßnahmen",
+        "description": "Unterstützt von SAG-AFTRA-Verträgen und kalifornischem Recht, was Kreativen klaren Rückgriff gibt, wenn Bedingungen verletzt werden."
+      }
+    },
+    "bottomLine": {
+      "title": "Fazit",
+      "description": "Likelee lizenziert Talente so, wie es die Gewerkschafts-KI-Regeln beabsichtigten – Zustimmung zuerst, Geld zweitens, Kreative-Kontrolle immer – und wir halten jede Marke und Kampagne auf der Plattform an denselben Standard."
+    }
+  },
   "howWeOperate": "Wie wir arbeiten",
   "verificationFirst": "Überprüfung zuerst",
   "verificationFirstMessage": "Jeder Schöpfer durchläuft Identitätsprüfungen, bevor sein Avatar live geht. Schlechte Akteure bekommen keine Plattform.",
@@ -1969,6 +2271,7 @@
     "companyEmail": "Firmen-E-Mail",
     "confirmPassword": "Passwort bestätigen",
     "organizationName": "Organisationsname",
+    "agencyName": "Agenturname",
     "contactName": "Kontaktname",
     "contactTitle": "Kontakt-Titel",
     "contactTitlePlaceholder": "z.B. Marketing Manager",
@@ -2661,6 +2964,239 @@
         "brand": "Marke",
         "agency": "Agentur"
       }
+    }
+  },
+  "aboutUsPage": {
+    "mission": {
+      "title": "Mission",
+      "subtitle": "Im KI-Zeitalter benötigen Talentagenturen eine Infrastruktur, die mit der Technologie skaliert, nicht dagegen.",
+      "description": "Likelee baut die Plattform für Agenturen, um traditionelle Buchungen und KI-Lizenzen an einem Ort zu verwalten. Wir schaffen ein neues Umsatzmodell, bei dem Buchungslücken zu Verdienstmöglichkeiten werden, Abläufe mit Automatisierung funktionieren und Agenturen ohne zusätzliches Personal skalieren."
+    },
+    "principles": {
+      "title": "Leitprinzipien",
+      "principle1": {
+        "title": "Agenturkontrolle, Immer",
+        "description": "Sie genehmigen jede Buchung, passen jeden Preis an, lehnen jedes Projekt ab. Vollständige operative Kontrolle."
+      },
+      "principle2": {
+        "title": "Transparente Umsatzverfolgung",
+        "description": "Sehen Sie traditionelle Buchungen und KI-Lizenzeinnahmen in Echtzeit. Ein Dashboard, volle Sichtbarkeit."
+      },
+      "principle3": {
+        "title": "Integrierter Talentschutz",
+        "description": "Smart Contracts spezifizieren exakte Nutzungsrechte, Dauer und Gebiet. Jede Lizenz wird verfolgt und ist widerrufbar."
+      },
+      "principle4": {
+        "title": "Betrieb Zuerst, Technologie Zweitens",
+        "description": "Wir bauen, was aktuelle Agenturherausforderungen löst, nicht theoretische zukünftige Probleme."
+      }
+    },
+    "challenge": {
+      "title": "Das Problem ist real (und passiert jetzt)",
+      "paragraph1": "Traditionelle Talentbuchungen sind Fest oder Hungersnot. Ein 2.000-Dollar-Shooting, dann wochenlange Stille. Ihr Talent ist zwischen Jobs untätig. Ihre Agentur absorbiert die Umsatzvolatilität. Währenddessen bleiben Ihre Betriebskosten konstant: Terminplanung, Verträge, Kundenkoordination, Zahlungsabwicklung.",
+      "paragraph2": "Die traditionelle Agenturinfrastruktur wurde für physische Buchungen gebaut. Sie berücksichtigt keine KI-Lizenzeinnahmen. Agenturen können traditionelle Shootings und digitale Bildvereinbarungen nicht effizient verwalten. Talente sehen inkonsistente Einnahmen. Agenturen lassen während Buchungslücken Geld liegen.",
+      "paragraph3": "Das KI-Zeitalter schuf neue Fragen: Wie verwalten Sie traditionelle und KI-Buchungen gleichzeitig? Wie skalieren Sie Einnahmen ohne Personal zu skalieren? Wie stellen Sie sicher, dass Talente während Durststrecken loyal bleiben?",
+      "conclusion": "Likelee löst alle drei."
+    },
+    "whyNow": {
+      "title": "Warum Likelee, Warum Jetzt?",
+      "paragraph1": "KI hat die Fest-oder-Hungersnot-Natur von Talentbuchungen nicht geschaffen, aber sie schuf eine Lösung. KI-Lizenzen ermöglichen es demselben Talent, gleichzeitig an mehreren Kampagnen zu arbeiten, während es auf die nächste traditionelle Buchung wartet.",
+      "paragraph2": "Traditionelle Agenturtools verwalten einen Einnahmenstrom. Sie brechen, wenn Sie KI-Lizenzen hinzufügen. Buchungskoordination ist manuell. Umsatzverfolgung ist über Plattformen fragmentiert. Vertragserstellung dauert Stunden.",
+      "paragraph3": "Likelee ist für Dual-Revenue-Agenturen gebaut, bei denen eine Liste sowohl traditionelle Buchungsgebühren als auch wiederkehrende KI-Lizenzeinnahmen generiert, und die Verwaltung beider erfordert integrierte Infrastruktur, nicht verstreute Tools.",
+      "conclusion": "Wir ersetzen keine traditionellen Buchungen. Wir fügen einen zweiten Einnahmenstrom hinzu, der Lücken füllt und sich im Laufe der Zeit zusammensetzt."
+    },
+    "approach": {
+      "title": "Wie es funktioniert: Von der Roster-Upload bis zu Einnahmen",
+      "step1": {
+        "title": "Fügen Sie Ihr Talent hinzu",
+        "description": "Laden Sie Ihre Liste mit Fotos und Portfolios hoch. Talentprofile sind sowohl für traditionelle Buchungen als auch für KI-Lizenzanfragen verfügbar."
+      },
+      "step2": {
+        "title": "Marken senden Anfragen",
+        "description": "Studios und Marken durchsuchen Ihr Talent für traditionelle Shootings oder KI-Lizenzkampagnen. Sie sehen Anwendungsfall, Dauer, Gebiet und Vergütung im Voraus."
+      },
+      "step3": {
+        "title": "Sie kontrollieren jeden Deal",
+        "description": "Überprüfen Sie Anfragen in einem Dashboard. Genehmigen Sie traditionelle Buchungen, passen Sie KI-Lizenzpreise an oder lehnen Sie ab. Vollständige Agenturkontrolle über beide Einnahmenströme."
+      },
+      "step4": {
+        "title": "Automatische Vertragserstellung",
+        "description": "Das System generiert Buchungsvereinbarungen für traditionelle Shootings und Smart Contracts für KI-Lizenzen. Kein manuelles Verfassen, keine rechtlichen Engpässe."
+      },
+      "step5": {
+        "title": "Geschützte Zahlungsabwicklung",
+        "description": "Gelder auf Treuhandkonto für traditionelle und KI-Deals gehalten. Automatische Provisionsaufteilungen. Geld wird direkt auf Ihr Agenturkonto freigegeben."
+      },
+      "step6": {
+        "title": "Echtzeit-Umsatzverfolgung",
+        "description": "Ein Dashboard zeigt traditionellen Buchungskalender und aktive KI-Lizenzvereinbarungen. Sehen Sie, welches Talent von was verdient, wann Verträge auslaufen und monatlich wiederkehrende Einnahmen."
+      }
+    },
+    "users": {
+      "title": "Wer Likelee nutzt",
+      "modelingAgencies": {
+        "title": "Modelagenturen",
+        "description": "Verwalten Sie Castings, Laufstegbuchungen und redaktionelle Shootings zusammen mit KI-Lizenzen für E-Commerce und Werbekampagnen."
+      },
+      "sportsAgencies": {
+        "title": "Sportagenturen",
+        "description": "Koordinieren Sie traditionelle Sponsorings und Endorsements, während Sie Athleten-NIL für KI-generierte Marketinginhalte lizenzieren."
+      },
+      "talentManagement": {
+        "title": "Talentmanagement-Firmen",
+        "description": "Verwalten Sie traditionelle Buchungen für Schauspieler, Influencer und Creators, während Sie deren Abbild während Projektlücken monetarisieren."
+      },
+      "allSizes": {
+        "title": "Von Boutique bis Enterprise",
+        "description": "5-Personen-Shops bis 200+ Talent-Rosters. Gleiche Plattform, skaliert auf Ihre Größe."
+      }
+    },
+    "operations": {
+      "title": "Wie wir arbeiten",
+      "verification": {
+        "title": "Verifizierung zuerst",
+        "description": "Jeder Creator besteht Identitätsprüfungen, bevor sein Avatar live geht. Schlechte Akteure bekommen keine Plattform."
+      },
+      "contracts": {
+        "title": "Verträge in einfacher Sprache",
+        "description": "Kein juristisches Kauderwelsch. Vereinbarungen in einfacher Sprache mit automatischen Ablaufdaten und eingebauten Sunset-Klauseln."
+      },
+      "ledger": {
+        "title": "Gemeinsames Ledger",
+        "description": "Sowohl Sie als auch die Marke sehen denselben Echtzeit-Datensatz jeder Nutzung, jeder Zahlung, jedes Ablaufdatums."
+      },
+      "security": {
+        "title": "Sicherheit durch Design",
+        "description": "Biometrische Dateien im Ruhezustand verschlüsselt. Kein Datenverkauf an Dritte. Kein Scraping. Ihre Daten gehören Ihnen."
+      },
+      "userBuilt": {
+        "title": "Mit Nutzern gebaut, nicht für Nutzer",
+        "description": "Wir veröffentlichen nur Features, wenn Creators, Agenturen und Studios einen realen Bedarf bestätigen. Keine Feature-Überladung."
+      }
+    }
+  },
+  "supportPage": {
+    "hero": {
+      "title": "Support",
+      "subtitle": "Brauchen Sie Hilfe? Wir haben Sie abgedeckt. Der schnellste Weg, uns zu erreichen, ist",
+      "description": "Wir lesen jede Nachricht. Bitte fügen Sie so viele Details wie möglich hinzu (Screenshots, Links, Schritte zur Reproduktion). Wir werden so schnell wie möglich antworten."
+    },
+    "form": {
+      "emailLabel": "Ihre E-Mail *",
+      "emailPlaceholder": "sie@beispiel.com",
+      "subjectLabel": "Betreff *",
+      "subjectPlaceholder": "Wie können wir helfen?",
+      "messageLabel": "Ihre Frage *",
+      "messagePlaceholder": "Bitte fügen Sie so viele Details wie möglich hinzu: Was Sie versuchen zu tun, was passiert, Fehlermeldungen, Screenshots usw.",
+      "sendButton": "Nachricht senden",
+      "sending": "Wird gesendet..."
+    },
+    "success": {
+      "title": "Nachricht gesendet!",
+      "description": "Danke für Ihre Nachricht. Wir werden uns bald bei Ihnen melden."
+    },
+    "footer": {
+      "orEmail": "Oder senden Sie uns direkt eine E-Mail an",
+      "copied": "In Zwischenablage kopiert",
+      "copiedDescription": "Die Support-E-Mail-Adresse wurde in Ihre Zwischenablage kopiert."
+    }
+  },
+  "sagAftraPage": {
+    "hero": {
+      "title": "SAG-AFTRA-Ausrichtung",
+      "description": "Likelee integriert die KI-Schutzmaßnahmen des SAG-AFTRA Commercial Contract 2025 in jede von uns ausgestellte Lizenz und wenden denselben Standard auf alle Creators auf der Plattform an (Schauspieler, Models, Athleten, Influencer, Stimme)."
+    },
+    "safeguards": {
+      "informedConsent": {
+        "title": "Informierte Zustimmung jedes Mal",
+        "description": "Ein Creator unterzeichnet eine klare, projektspezifische Autorisierung vor jeder Erfassung, Synthetisierung oder Wiederverwendung seines Gesichts, seiner Stimme oder Bewegung."
+      },
+      "fairPay": {
+        "title": "Faire Bezahlung und Tantiemen auf Autopilot",
+        "description": "Jede Replik löst Anfangsvergütung, laufende Tantiemen und vollständige Renten-/Gesundheitsbeiträge (oder Äquivalent) aus, die automatisch von unserer Tantiemen-Engine erfasst und bezahlt werden."
+      },
+      "scopeLocked": {
+        "title": "Umfangsbeschränkte Nutzung",
+        "description": "Verträge spezifizieren genau, wo (TV, Streaming, Social, In-Engine, Print usw.) und wie lange eine Replik erscheinen kann. Neues Medium? Neues Projekt? Neue Genehmigung + Zahlung."
+      },
+      "noBlanket": {
+        "title": "Keine Pauschalrechte oder Übertragungen",
+        "description": "\"Alle Medien auf Dauer\"-Klauseln sind hier nichtig. Zustimmung ist nicht übertragbar; Unterlizenzierung erfordert eine neue Vereinbarung."
+      },
+      "aiTraining": {
+        "title": "KI-Training ist eine separate Lizenz",
+        "description": "Das Einspeisen von Abbilddaten in das Modelltraining ist ein eigener verhandelter Anwendungsfall mit unterschiedlichen Bedingungen und Umsatzbeteiligung."
+      },
+      "backgroundTalent": {
+        "title": "Hintergrundtalent geschützt",
+        "description": "Digitale Doubles zählen niemals zu Hintergrund-Einstellungsminima oder ersetzen Künstler am Set."
+      },
+      "enforceable": {
+        "title": "Durchsetzbare Schutzmaßnahmen",
+        "description": "Unterstützt durch SAG-AFTRA-Verträge und kalifornisches Recht, was Creators klaren Rechtsbehelf gibt, wenn Bedingungen verletzt werden."
+      }
+    },
+    "bottomLine": {
+      "title": "Fazit",
+      "description": "Likelee lizenziert Talent so, wie die KI-Regeln der Gewerkschaft es beabsichtigten: Zustimmung zuerst, Bargeld zweitens, Creator-Kontrolle immer, und wir halten jede Marke und Kampagne auf der Plattform an denselben Standard."
+    }
+  },
+  "faces": {
+    "retainerModel": {
+      "title": "Wie es funktioniert: Monatliches Retainer-Modell",
+      "steps": {
+        "0": {
+          "title": "Sie lizenzieren Ihr Abbild",
+          "description": "Marke erhält Nutzungsrechte"
+        },
+        "1": {
+          "title": "Sie verdienen monatlich",
+          "description": "Solange Ihre Lizenz aktiv ist, werden Sie jeden Monat bezahlt"
+        },
+        "2": {
+          "title": "Lizenz ist für X Monate aktiv",
+          "description": "Sie haben einer 90-Tage-, 6-Monats- oder 12-Monats-Lizenzperiode zugestimmt"
+        },
+        "3": {
+          "title": "Wenn die Lizenz endet",
+          "description": "Sie entscheiden, ob Sie verlängern, widerrufen oder zu neuen Marken wechseln"
+        },
+        "4": {
+          "title": "Sie können mehrere Lizenzen gleichzeitig haben",
+          "description": "Jede Marke zahlt Sie separat, jeden Monat"
+        }
+      }
+    },
+    "retainerAdvantage": {
+      "title": "Der monatliche Retainer-Vorteil",
+      "cards": {
+        "0": {
+          "title": "✓ Vorhersagbares Einkommen",
+          "description": "Wissen Sie genau, wie viel Sie jeden Monat verdienen"
+        },
+        "1": {
+          "title": "✓ Passiv während aktiv",
+          "description": "Sie arbeiten nicht; die Marke generiert Inhalte; Sie werden bezahlt"
+        },
+        "2": {
+          "title": "✓ Mehrere Lizenzen stapeln",
+          "description": "Arbeiten Sie mit 3, 4 oder 5 Marken gleichzeitig; werden Sie von allen bezahlt"
+        },
+        "3": {
+          "title": "✓ Vollständige Transparenz",
+          "description": "Wissen Sie genau, welche Marken Sie verwenden und wie viel Sie von jeder verdienen"
+        }
+      }
+    },
+    "likenessStaysYours": {
+      "title": "Ihr Abbild bleibt Ihres",
+      "line1": "Ihre Zustimmung läuft niemals von selbst ab. Jede Lizenz hat ein Enddatum. Wenn Sie nein sagen, sagen wir nein.",
+      "line2": "Wenn eine Marke Ihr Abbild weiter verwenden möchte, verlängert sie—und Sie entscheiden, ob es sich lohnt.",
+      "line3": "Wasserzeichen-Verträge. Automatisierte Takedowns. Echter rechtlicher Schutz."
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "subtitle": "Alles, was Sie über das Sein eines Creators auf Likelee wissen müssen"
     }
   }
 }
