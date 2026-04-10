@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 export default function Landing() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function Landing() {
       <section className="bg-[#32C8D1] text-white">
         <div className="max-w-7xl mx-auto px-6 py-8 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">
-            Stop Leaving Money on the Table Between Bookings
+            {t("landing.hero.tagline")}
           </h2>
         </div>
       </section>
@@ -53,13 +55,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              #1 AI-Native Talent
-              <br />
-              Management Platform
+              {t("landing.hero.title")}
             </h1>
             <p className="mt-6 text-gray-600 text-base md:text-lg max-w-lg">
-              Built for agencies managing both traditional bookings and AI
-              licensing revenue.
+              {t("landing.hero.subtitle")}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -67,14 +66,14 @@ export default function Landing() {
                 onClick={() => navigate("/BrandCompany")}
                 className="h-12 px-10 bg-[#F7B750] hover:bg-[#F7B750]/90 text-white border-2 border-black rounded-none shadow-[4px_4px_0px_rgba(0,0,0,1)]"
               >
-                For Brands
+                {t("landing.hero.forBrandsButton")}
               </Button>
               <Button
                 onClick={() => navigate("/AgencySelection")}
                 variant="outline"
                 className="h-12 px-10 bg-white hover:bg-gray-50 text-gray-900 border-2 border-black rounded-none shadow-[4px_4px_0px_rgba(0,0,0,1)]"
               >
-                For Agencies
+                {t("landing.hero.forAgenciesButton")}
               </Button>
             </div>
           </div>
@@ -113,15 +112,10 @@ export default function Landing() {
 
           <div className="max-w-xl">
             <h2 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              Scale Your Roster
-              <br />
-              Without Scaling
-              <br />
-              Headcount
+              {t("landing.section2.title")}
             </h2>
             <p className="mt-6 text-lg text-gray-600">
-              Same talent. Simultaneous AI campaigns. Exponential revenue
-              growth.
+              {t("landing.section2.subtitle")}
             </p>
           </div>
         </div>
@@ -132,38 +126,26 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="border-2 border-black p-8 min-h-[180px]">
               <h3 className="text-xl font-extrabold text-gray-900 leading-snug">
-                Turn Booking Gaps Into
-                <br />
-                Predictable Monthly
-                <br />
-                Income
+                {t("landing.features.card1.title")}
               </h3>
               <p className="mt-5 text-gray-600 text-base leading-relaxed">
-                Traditional shoots plus AI licensing. Your talent earns while
-                waiting for their next gig.
+                {t("landing.features.card1.description")}
               </p>
             </div>
             <div className="border-2 border-black p-8 min-h-[180px]">
               <h3 className="text-xl font-extrabold text-gray-900 leading-snug">
-                AI-Powered Operations
-                <br />
-                with Agency-Grade Control
+                {t("landing.features.card2.title")}
               </h3>
               <p className="mt-5 text-gray-600 text-base leading-relaxed">
-                Skip manual scheduling and access intelligent booking
-                automation. All with complete contractual oversight.
+                {t("landing.features.card2.description")}
               </p>
             </div>
             <div className="border-2 border-black p-8 min-h-[180px]">
               <h3 className="text-xl font-extrabold text-gray-900 leading-snug">
-                Built for Agencies of All
-                <br />
-                Sizes
+                {t("landing.features.card3.title")}
               </h3>
               <p className="mt-5 text-gray-600 text-base leading-relaxed">
-                From boutique talent shops to enterprise rosters—manage
-                traditional bookings and AI licensing in one platform built for
-                every scale.
+                {t("landing.features.card3.description")}
               </p>
             </div>
           </div>
@@ -174,20 +156,17 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="max-w-xl">
             <h2 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              Don&apos;t Waste Your Roster
-              <br />
-              Between Bookings
+              {t("landing.section4.title")}
             </h2>
             <p className="mt-6 text-lg text-gray-600">
-              AI licensing keeps talent earning consistently, and agencies feel
-              the compounding revenue instantly.
+              {t("landing.section4.subtitle")}
             </p>
             <div className="mt-8">
               <Button
                 onClick={() => navigate("/Login")}
                 className="h-12 px-10 bg-[#F7B750] hover:bg-[#F7B750]/90 text-white border-2 border-black rounded-none shadow-[4px_4px_0px_rgba(0,0,0,1)]"
               >
-                Get Started
+                {t("landing.section4.ctaButton")}
               </Button>
             </div>
           </div>

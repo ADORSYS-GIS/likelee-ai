@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import {
   CheckCircle2,
@@ -11,6 +12,8 @@ import {
 } from "lucide-react";
 
 export default function SAGAFTRAAlignment() {
+  const { t } = useTranslation();
+
   useEffect(() => {
     // Add JSON-LD structured data
     const structuredData = {
@@ -41,51 +44,37 @@ export default function SAGAFTRAAlignment() {
   const safeguards = [
     {
       icon: FileText,
-      title: "Informed consent every time",
-      description:
-        "A creator signs a clear, project-specific release before any capture, synthetization, or reuse of their face, voice, or motion.",
+      key: "informedConsent",
       color: "from-[#32C8D1] to-teal-600",
     },
     {
       icon: DollarSign,
-      title: "Fair pay & residuals on autopilot",
-      description:
-        "Each replica triggers up-front compensation, ongoing residuals, and full pension/health (or equivalent) contributions—logged and paid out automatically by our royalty engine.",
+      key: "fairPay",
       color: "from-green-500 to-emerald-600",
     },
     {
       icon: Lock,
-      title: "Scope-locked usage",
-      description:
-        "Contracts spell out exactly where (TV, streaming, social, in-engine, print, etc.) and how long a replica can appear. New medium? New project? Fresh approval + payout.",
+      key: "scopeLocked",
       color: "from-[#F18B6A] to-[#E07A5A]",
     },
     {
       icon: Shield,
-      title: "No blanket rights or transfers",
-      description:
-        '"All-media in perpetuity" clauses are void here. Consent is non-transferable; sublicensing requires a brand-new agreement.',
+      key: "noBlanket",
       color: "from-purple-500 to-indigo-600",
     },
     {
       icon: Users,
-      title: "AI-training is a separate license",
-      description:
-        "Feeding likeness data into model training is its own, bargained-for use case with distinct terms and revenue share.",
+      key: "aiTraining",
       color: "from-[#F7B750] to-yellow-600",
     },
     {
       icon: Users,
-      title: "Background talent protected",
-      description:
-        "Digital stand-ins never count toward background-hiring minimums or replace on-set performers.",
+      key: "backgroundTalent",
       color: "from-cyan-500 to-blue-600",
     },
     {
       icon: Scale,
-      title: "Enforceable safeguards",
-      description:
-        "Backed by SAG-AFTRA contracts and California law, giving creators clear recourse if terms are breached.",
+      key: "enforceable",
       color: "from-red-500 to-pink-600",
     },
   ];
@@ -99,13 +88,10 @@ export default function SAGAFTRAAlignment() {
             <CheckCircle2 className="w-16 h-16 mx-auto text-[#32C8D1] mb-4" />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-            SAG-AFTRA Alignment
+            {t("sagAftraPage.hero.title")}
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 leading-relaxed max-w-4xl mx-auto">
-            Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards
-            into every license we issue—and we apply the same bar to all
-            creators on the platform (actors, models, athletes, influencers,
-            voice).
+            {t("sagAftraPage.hero.description")}
           </p>
         </div>
       </section>
@@ -114,11 +100,11 @@ export default function SAGAFTRAAlignment() {
       <section className="px-6 py-16">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
-            {safeguards.map((safeguard, index) => {
+            {safeguards.map((safeguard) => {
               const Icon = safeguard.icon;
               return (
                 <Card
-                  key={index}
+                  key={safeguard.key}
                   className="p-8 bg-white border-2 border-black transition-all hover:shadow-xl group rounded-none"
                 >
                   <div
@@ -127,10 +113,10 @@ export default function SAGAFTRAAlignment() {
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    {safeguard.title}
+                    {t(`sagAftraPage.safeguards.${safeguard.key}.title`)}
                   </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    {safeguard.description}
+                    {t(`sagAftraPage.safeguards.${safeguard.key}.description`)}
                   </p>
                 </Card>
               );
@@ -144,13 +130,10 @@ export default function SAGAFTRAAlignment() {
         <div className="max-w-5xl mx-auto">
           <Card className="p-12 bg-white border-2 border-black shadow-2xl rounded-none">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 text-center">
-              Bottom Line
+              {t("sagAftraPage.bottomLine.title")}
             </h2>
             <p className="text-xl text-gray-700 leading-relaxed text-center">
-              Likelee licenses talent the way the union's AI rules
-              intended—consent first, cash second, creator control always—and we
-              hold every brand and campaign on the platform to that same
-              standard.
+              {t("sagAftraPage.bottomLine.description")}
             </p>
           </Card>
         </div>
