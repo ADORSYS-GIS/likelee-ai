@@ -2296,7 +2296,7 @@ export default function ReserveProfile() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const lang = i18n.language || 'en';
+                    const lang = i18n.language || "en";
                     const fileName = `/creator-talent-terms-and-conditions-${lang}.html`;
                     window.open(fileName, "_blank");
                   }}

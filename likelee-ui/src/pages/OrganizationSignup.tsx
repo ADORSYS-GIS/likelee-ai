@@ -2717,7 +2717,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const lang = i18n.language || 'en';
+                    const lang = i18n.language || "en";
                     const fileName = `/terms-and-conditions-agency-${lang}.html`;
                     window.open(fileName, "_blank");
                   }}
