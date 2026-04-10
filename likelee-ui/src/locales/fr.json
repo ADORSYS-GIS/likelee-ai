@@ -1871,6 +1871,17 @@
       "livenessFailedTitle": "Échec de la vérification de présence",
       "livenessFailedDesc": "Veuillez réessayer avec un bon éclairage et suivre les instructions.",
       "kycErrorTitle": "Erreur KYC"
+    },
+    "terms": {
+      "title": "Conditions générales",
+      "subtitle": "Veuillez lire et accepter nos politiques pour finaliser votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de confidentialité",
+      "andTerms": "et les Conditions d'utilisation",
+      "download": "Télécharger",
+      "mustAgree": "Vous devez accepter les conditions pour finaliser votre inscription.",
+      "mustAgreeTitle": "Accord requis",
+      "completeRegistration": "Finaliser l'inscription"
     }
   },
   "faces": {
