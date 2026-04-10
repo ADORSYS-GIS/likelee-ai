@@ -1603,6 +1603,8 @@
       "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
       "agreeTo": "I agree to the",
       "policyLink": "Privacy Policy",
+      "andTerms": "and Terms of Service",
+      "download": "Download",
       "mustAgree": "You must agree to the terms to complete registration.",
       "mustAgreeTitle": "Agreement Required",
       "completeRegistration": "Complete Registration"
