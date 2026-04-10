@@ -17135,14 +17135,14 @@ export default function AgencyDashboard() {
     const t =
       (agencyProfileQuery.data as any)?.plan_tier ||
       (profile as any)?.plan_tier;
-    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "free";
+    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "none";
   }, [agencyProfileQuery.data, profile]);
 
   const agencyPlanLabel = useMemo(() => {
     if (agencyPlanTier === "pro") return "Pro";
     if (agencyPlanTier === "basic") return "Basic";
     if (agencyPlanTier === "enterprise") return "Enterprise";
-    return "Free";
+    return "Unsubscribed";
   }, [agencyPlanTier]);
 
   const [agencyBilling, setAgencyBilling] = useState<any>(null);
@@ -17154,21 +17154,52 @@ export default function AgencyDashboard() {
     : "";
   const agencyTrialStartAt = agencyBilling?.trial_start_at;
   const agencyHasPaidAccess =
-    agencyBilling?.has_paid_access ?? agencyPlanTier !== "free";
+    agencyBilling?.has_paid_access ??
+    (agencyPlanTier !== "none" && agencyPlanTier !== "free");
+  const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyCanConnectMarketplace =
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+
+  const agencyPlanIntervalLabel = useMemo(() => {
+    const raw = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+    if (raw.includes("annual") || raw.includes("year")) return "Annual";
+    if (raw.includes("monthly") || raw.includes("month")) return "Monthly";
+    return "";
+  }, [agencyBilling?.display_plan_label]);
+
   const agencyDisplayPlanLabel = (() => {
     const raw = String(agencyBilling?.display_plan_label || "").trim();
     const normalized = raw
-      .replace(/\b(annual|monthly)\b/gi, "")
       .replace(/\bplan\b/gi, "")
       .replace(/\s+/g, " ")
       .trim();
+    if (agencySubscriptionLocked) return "Choose a plan";
     if (normalized) return normalized;
-    return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+    return agencyPlanLabel;
   })();
+
+  const agencyTrialTierLabel = useMemo(() => {
+    const rawEffective = String(agencyBilling?.effective_plan_tier || "")
+      .trim()
+      .toLowerCase();
+    const rawTier = String(agencyBilling?.plan_tier || "").trim().toLowerCase();
+    const rawLabel = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+
+    const candidate = rawEffective || rawTier || rawLabel;
+    if (candidate.includes("basic")) return "BASIC";
+    if (candidate.includes("pro")) return "PRO";
+    if (candidate.includes("enterprise")) return "ENTERPRISE";
+    if (agencyPlanTier === "basic") return "BASIC";
+    if (agencyPlanTier === "pro") return "PRO";
+    if (agencyPlanTier === "enterprise") return "ENTERPRISE";
+    return "TRIAL";
+  }, [agencyBilling?.display_plan_label, agencyBilling?.effective_plan_tier, agencyBilling?.plan_tier, agencyPlanTier]);
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   useEffect(() => {
@@ -17228,7 +17259,7 @@ export default function AgencyDashboard() {
       toast({
         title: "Pro trial started",
         description:
-          "Your agency now has 30 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+          "Your agency now has 30 days of Pro access.",
       });
     } catch (e: any) {
       const msg = String(e?.message || e || "");
@@ -17244,7 +17275,7 @@ export default function AgencyDashboard() {
         toast({
           title: "Trial unavailable",
           description:
-            "The Pro trial is only available while your agency is on the Free plan.",
+            "Trial is only available for unsubscribed agencies.",
           variant: "destructive" as any,
         });
         return;
@@ -18459,7 +18490,13 @@ export default function AgencyDashboard() {
     effectiveAgencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "marketplace", label: "Marketplace", icon: Store },
+          {
+            id: "marketplace",
+            label: "Marketplace",
+            icon: Store,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "jobs",
             label: "Jobs",
@@ -18467,22 +18504,24 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
           },
           {
             id: "roster",
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
           },
           {
             id: "licensing",
@@ -18504,14 +18543,30 @@ export default function AgencyDashboard() {
                   ? pendingLicensingRequestsCount
                   : undefined,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "payouts",
+            label: "Payouts",
+            icon: DollarSign,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
             badge: "Coming soon",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "analytics",
@@ -18519,18 +18574,38 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
             disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
+              "Analytics Dashboard": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18545,7 +18620,13 @@ export default function AgencyDashboard() {
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "marketplace", label: "Marketplace", icon: Store },
+          {
+            id: "marketplace",
+            label: "Marketplace",
+            icon: Store,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "jobs",
             label: "Jobs",
@@ -18553,25 +18634,39 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
           },
           {
             id: "roster",
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
           },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "scouting",
+            label: "Scouting",
+            icon: Target,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "bookings",
             label: "Bookings",
@@ -18584,8 +18679,16 @@ export default function AgencyDashboard() {
               "Management & Analytics",
               "Campaigns",
             ],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
+          {
+            id: "payouts",
+            label: "Payouts",
+            icon: DollarSign,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "accounting",
             label: "Accounting & Invoicing",
@@ -18600,9 +18703,11 @@ export default function AgencyDashboard() {
               "Connect Bank",
             ],
             disabledSubItems: {
-              "Financial Reports": !hasProAccess,
-              "Expense Tracking": !hasProAccess,
+              "Financial Reports": agencySubscriptionLocked || !hasProAccess,
+              "Expense Tracking": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "analytics",
@@ -18610,18 +18715,38 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
             disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
+              "Analytics Dashboard": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
+            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18758,6 +18883,11 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                     return;
                   }
+                  if (agencySubscriptionLocked && item.id !== "dashboard" && item.id !== "settings") {
+                    navigate("/AgencySubscribe");
+                    setSidebarOpen(false);
+                    return;
+                  }
                   if (isSidebarCollapsed && item.subItems) {
                     openCollapsedPopout(item.id);
                     setOpenCollapsedSubmenu(item.id);
@@ -18881,7 +19011,10 @@ export default function AgencyDashboard() {
                         className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
                         style={{ opacity: labelOpacity }}
                       >
-                        Pro
+                        {agencySubscriptionLocked &&
+                        item.disabledReason === "Choose a plan"
+                          ? "Plan"
+                          : "Pro"}
                       </span>
                     )}
                     {item.subItems && (
@@ -18907,6 +19040,15 @@ export default function AgencyDashboard() {
                           if (
                             item.disabledSubItems &&
                             item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            agencySubscriptionLocked &&
+                            item.id !== "dashboard" &&
+                            item.id !== "settings"
                           ) {
                             navigate("/AgencySubscribe");
                             setSidebarOpen(false);
@@ -19061,6 +19203,15 @@ export default function AgencyDashboard() {
                             return;
                           }
                           if (
+                            agencySubscriptionLocked &&
+                            item.id !== "dashboard" &&
+                            item.id !== "settings"
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
                             item.id === "jobs" &&
                             subItem === "Open Job Board"
                           ) {
@@ -19132,19 +19283,19 @@ export default function AgencyDashboard() {
             {!agencyBillingLoading &&
               !agencyTrialActive &&
               !agencyTrialEndsAt &&
-              agencyPlanTier === "free" && (
+              agencySubscriptionLocked && (
                 <motion.button
                   type="button"
                   onClick={() => navigate("/AgencySubscribe")}
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   className="group relative inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-xs font-black text-amber-900 shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
-                  title="Activate Pro Trial"
+                  title="Choose a plan"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-inner">
                     <Gift className="h-4 w-4 text-white" />
                   </span>
-                  <span className="uppercase tracking-wide">PRO</span>
+                  <span className="uppercase tracking-wide">PLAN</span>
                   <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-80" />
                   <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-60 animate-ping" />
                 </motion.button>
@@ -19613,7 +19764,10 @@ export default function AgencyDashboard() {
                     >
                       {agencyTrialActive ? (
                         <span className="inline-flex items-center gap-2">
-                          <span>PRO TRIAL</span>
+                          <span>
+                            {agencyTrialTierLabel} TRIAL
+                            {agencyPlanIntervalLabel ? ` (${agencyPlanIntervalLabel.toUpperCase()})` : ""}
+                          </span>
                           {agencyTrialCountdown ? (
                             <span className="text-[11px] font-black tracking-normal opacity-95">
                               {agencyTrialCountdown}
@@ -19629,14 +19783,14 @@ export default function AgencyDashboard() {
                   )}
 
                   {!agencyBillingLoading &&
-                    agencyPlanTier === "free" &&
+                    agencySubscriptionLocked &&
                     !agencyTrialActive && (
                       <Button
                         type="button"
                         className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
                         onClick={() => navigate("/agencysubscribe")}
                       >
-                        Upgrade
+                        Choose a plan
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}

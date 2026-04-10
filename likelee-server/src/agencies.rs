@@ -435,7 +435,7 @@ pub async fn register(
         "email": payload.email,
         "website": payload.website,
         "phone_number": payload.phone_number,
-        "plan_tier": "free",
+        "plan_tier": "none",
         "trial_ends_at": serde_json::Value::Null,
         "seats_limit": 1,
         "status": "waitlist",

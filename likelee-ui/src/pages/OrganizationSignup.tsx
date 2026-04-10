@@ -521,7 +521,7 @@ export default function OrganizationSignup() {
               if (isBrand) {
                 navigate("/BrandDashboard", { replace: true });
               } else {
-                navigate("/AgencyDashboard", { replace: true });
+                navigate("/AgencySubscribe", { replace: true });
               }
               return;
             }
@@ -618,7 +618,7 @@ export default function OrganizationSignup() {
                 if (brandProfile) {
                   navigate("/BrandDashboard", { replace: true });
                 } else {
-                  navigate("/AgencyDashboard", { replace: true });
+                  navigate("/AgencySubscribe", { replace: true });
                 }
                 return;
               }

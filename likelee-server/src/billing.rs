@@ -816,7 +816,7 @@ async fn fetch_agency_checkout_sync_state(
         plan_tier: row
             .get("plan_tier")
             .and_then(|v| v.as_str())
-            .unwrap_or("free")
+            .unwrap_or("none")
             .to_string(),
         seats_limit: row.get("seats_limit").and_then(|v| v.as_i64()).unwrap_or(1),
         addon_irl_booking_enabled: row
@@ -1094,13 +1094,19 @@ pub async fn create_agency_subscription_checkout(
     let normalized_plan = normalize_self_serve_plan(payload.plan.as_str())?;
     let interval = normalize_interval(payload.interval.as_deref())?;
 
+    let mut inherited_trial_days: Option<u32> = None;
+    let mut previous_subscription_id: Option<String> = None;
+    let mut existing_subscription_id: String = String::new();
+    let mut current_plan_tier: String = "none".to_string();
+    let mut current_plan_interval: String = "month".to_string();
+
     // Prevent Basic annual -> Basic monthly downgrade via direct checkout creation.
     // (Plan changes should be upgrades only; downgrades require support intervention.)
     {
         let agency_resp = state
             .pg
             .from("agencies")
-            .select("plan_tier,plan_interval")
+            .select("plan_tier,plan_interval,stripe_subscription_id")
             .eq("id", &user.id)
             .limit(1)
             .execute()
@@ -1119,18 +1125,24 @@ pub async fn create_agency_subscription_checkout(
         }
         let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
         let row = rows.first().cloned().unwrap_or_else(|| json!({}));
-        let current_plan_tier = row
+        current_plan_tier = row
             .get("plan_tier")
             .and_then(|value| value.as_str())
-            .unwrap_or("free")
+            .unwrap_or("none")
             .trim()
             .to_lowercase();
-        let current_plan_interval = row
+        current_plan_interval = row
             .get("plan_interval")
             .and_then(|value| value.as_str())
             .unwrap_or("month")
             .trim()
             .to_lowercase();
+        existing_subscription_id = row
+            .get("stripe_subscription_id")
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
 
         if normalized_plan == "basic"
             && current_plan_tier == "basic"
@@ -1142,6 +1154,22 @@ pub async fn create_agency_subscription_checkout(
                 "downgrade_not_allowed",
                 "Downgrades are not allowed from this endpoint.",
             ));
+        }
+
+        // If the agency is already on a paid plan (including active trial), they should not
+        // start a new trial via this endpoint.
+        // Exception: when currently trialing and switching plan, we allow Checkout with inherited
+        // remaining trial days (handled below).
+        if payload.start_trial && current_plan_tier != "none" {
+            // Allow if they have an existing Stripe subscription and it is currently trialing.
+            // Otherwise reject.
+            if existing_subscription_id.trim().is_empty() {
+                return Err(billing_error(
+                    StatusCode::BAD_REQUEST,
+                    "trial_only_available_for_unsubscribed_accounts",
+                    "Trial is only available for unsubscribed agencies.",
+                ));
+            }
         }
     }
 
@@ -1221,6 +1249,52 @@ pub async fn create_agency_subscription_checkout(
     }
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    if payload.start_trial && current_plan_tier != "none" {
+        if existing_subscription_id.trim().is_empty() {
+            return Err(billing_error(
+                StatusCode::BAD_REQUEST,
+                "trial_only_available_for_unsubscribed_accounts",
+                "Trial is only available for unsubscribed agencies.",
+            ));
+        }
+
+        if let Ok(parsed_subscription) = existing_subscription_id.parse::<stripe_sdk::SubscriptionId>() {
+            if let Ok(subscription) =
+                stripe_sdk::Subscription::retrieve(&client, &parsed_subscription, &[]).await
+            {
+                let is_trialing = subscription.status == stripe_sdk::SubscriptionStatus::Trialing;
+
+                let current_price_id = subscription
+                    .items
+                    .data
+                    .first()
+                    .and_then(|item| item.price.as_ref())
+                    .map(|p| p.id.to_string())
+                    .unwrap_or_default();
+
+                if is_trialing && !current_price_id.is_empty() && current_price_id != base_plan_price_id {
+                    let now = chrono::Utc::now().timestamp();
+                    let trial_end = subscription
+                        .trial_end
+                        .map(|t| t)
+                        .unwrap_or(0);
+                    let seconds_left = trial_end.saturating_sub(now);
+                    let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
+                    let final_days = days_left.max(1) as u32;
+
+                    inherited_trial_days = Some(final_days);
+                    previous_subscription_id = Some(existing_subscription_id.clone());
+                } else if !is_trialing {
+                    return Err(billing_error(
+                        StatusCode::BAD_REQUEST,
+                        "trial_only_available_for_unsubscribed_accounts",
+                        "Trial is only available for unsubscribed agencies.",
+                    ));
+                }
+            }
+        }
+    }
 
     // Create a subscription checkout session.
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
@@ -1312,11 +1386,11 @@ pub async fn create_agency_subscription_checkout(
         },
     );
     if payload.start_trial {
-        if access.has_paid_access() {
+        if access.has_paid_access() && inherited_trial_days.is_none() {
             return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "trial_only_available_for_free_accounts",
-                "Trial is only available for free agencies.",
+                "trial_only_available_for_unsubscribed_accounts",
+                "Trial is only available for unsubscribed agencies.",
             ));
         }
         if !payload.agreement_accepted {
@@ -1331,6 +1405,9 @@ pub async fn create_agency_subscription_checkout(
             "trial_agreement_accepted_at".to_string(),
             chrono::Utc::now().to_rfc3339(),
         );
+        if let Some(ref prev) = previous_subscription_id {
+            md.insert("previous_subscription_id".to_string(), prev.clone());
+        }
     }
     cs_params.metadata = Some(md);
 
@@ -1379,6 +1456,9 @@ pub async fn create_agency_subscription_checkout(
             "trial_agreement_accepted_at".to_string(),
             chrono::Utc::now().to_rfc3339(),
         );
+        if let Some(ref prev) = previous_subscription_id {
+            sub_md.insert("previous_subscription_id".to_string(), prev.clone());
+        }
     }
     let deepfake_models = payload.addons.deepfake_protection_models.unwrap_or(0);
     let team_members = payload.addons.additional_team_members.unwrap_or(0);
@@ -1393,10 +1473,19 @@ pub async fn create_agency_subscription_checkout(
         sub_md.insert("addon_team_members".to_string(), team_members.to_string());
     }
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
-        trial_period_days: if payload.start_trial { Some(30) } else { None },
+        trial_period_days: if payload.start_trial {
+            Some(inherited_trial_days.unwrap_or(30))
+        } else {
+            None
+        },
         metadata: Some(sub_md),
         ..Default::default()
     });
+
+    if payload.start_trial {
+        cs_params.payment_method_collection =
+            Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
@@ -2000,55 +2089,11 @@ pub async fn start_agency_pro_trial(
         ));
     }
 
-    let access = crate::entitlements::get_agency_access_state(&state, &user.id).await?;
-    if access.trial_active {
-        return Err(billing_error(
-            StatusCode::CONFLICT,
-            "trial_already_active",
-            "Trial is already active.",
-        ));
-    }
-    if access.trial_ends_at.is_some() {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_already_used",
-            "This agency has already used its trial.",
-        ));
-    }
-    if access.billed_tier != crate::entitlements::PlanTier::Free {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_only_available_for_free_accounts",
-            "Trial is only available for free agencies.",
-        ));
-    }
-
-    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(30);
-    let update = json!({
-        "trial_ends_at": trial_ends_at.to_rfc3339(),
-        "plan_updated_at": chrono::Utc::now().to_rfc3339(),
-        "plan_interval": "month"
-    });
-
-    let resp = state
-        .pg
-        .from("agencies")
-        .eq("id", &user.id)
-        .update(update.to_string())
-        .execute()
-        .await
-        .map_err(map_postgrest_transport_error)?;
-    let status = resp.status();
-    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
-    if !status.is_success() {
-        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
-    }
-
-    Ok(Json(AgencyTrialStartResponse {
-        trial_active: true,
-        trial_ends_at: Some(trial_ends_at.to_rfc3339()),
-        display_plan_label: "Trial".to_string(),
-    }))
+    Err(billing_error(
+        StatusCode::BAD_REQUEST,
+        "trial_requires_checkout",
+        "Agency trials must be started via Stripe Checkout.",
+    ))
 }
 
 pub async fn create_agency_irl_booking_addon_checkout(
@@ -3494,7 +3539,7 @@ pub async fn get_agency_billing_status(
     let plan_tier_str = row
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .to_string();
 
     let trial_start_at = row
@@ -3514,7 +3559,7 @@ pub async fn get_agency_billing_status(
         crate::entitlements::PlanTier::Enterprise => "enterprise",
         crate::entitlements::PlanTier::Pro => "pro",
         crate::entitlements::PlanTier::Basic => "basic",
-        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Free => "none",
     }
     .to_string();
 
