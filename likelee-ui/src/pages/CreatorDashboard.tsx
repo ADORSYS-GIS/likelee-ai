@@ -3781,7 +3781,9 @@ export default function CreatorDashboard() {
 
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
   const trialActive = !!creatorBilling?.trial_active;
-  const effectivePlanTier = creatorPlanTier;
+  const effectivePlanTier = String(
+    (creatorBilling as any)?.entitlement_tier || creatorPlanTier,
+  );
   const hasUsedProTrial = !!creatorBilling?.trial_pro_start_at || (!!creatorBilling?.trial_start_at && creatorPlanTier === "pro");
 
   const [trialCountdown, setTrialCountdown] = useState<string>("");

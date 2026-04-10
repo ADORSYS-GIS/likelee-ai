@@ -340,6 +340,8 @@ export default function CreatorSubscribe() {
 
   const hasActiveProTrial = trialInfo.active && !!trialInfo.proStartAt;
 
+  const canSelectBasicUi = canSelectBasic && !hasActiveProTrial;
+
   const handlePlanSelection = (plan: "basic" | "pro") => {
     if (plan === "basic" && !canSelectBasic) return;
     if (plan === "pro" && !canSelectPro) return;
@@ -576,28 +578,19 @@ export default function CreatorSubscribe() {
           <Card
             role="button"
             tabIndex={0}
-            aria-disabled={!canSelectBasic}
+            aria-disabled={!canSelectBasicUi}
             onClick={() => {
-              if (!canSelectBasic) return;
-              if (!hasUsedBasicTrial) {
-                void onStartTrial("basic");
-              } else {
-                void onCheckout("basic");
-              }
+              handlePlanSelection("basic");
             }}
             onKeyDown={(e) => {
-              if (!canSelectBasic) return;
+              if (!canSelectBasicUi) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                if (!hasUsedBasicTrial) {
-                  void onStartTrial("basic");
-                } else {
-                  void onCheckout("basic");
-                }
+                handlePlanSelection("basic");
               }
             }}
             className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15A9AD]/40 ${
-              canSelectBasic
+              canSelectBasicUi
                 ? "cursor-pointer hover:shadow-[0_14px_40px_rgba(20,37,66,0.06)]"
                 : "cursor-default border-[#15A9AD]/30 bg-emerald-50/20"
             }`}
@@ -636,7 +629,7 @@ export default function CreatorSubscribe() {
                   e.stopPropagation();
                   handlePlanSelection("basic");
                 }}
-                disabled={!canSelectBasic || checkingOut || startingTrial}
+                disabled={!canSelectBasicUi || checkingOut || startingTrial}
               >
                 {currentPlanTier === "basic"
                   ? "Current Plan"
