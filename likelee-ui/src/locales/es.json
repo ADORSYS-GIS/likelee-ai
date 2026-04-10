@@ -1963,6 +1963,7 @@
     "companyEmail": "Correo de Empresa",
     "confirmPassword": "Confirmar Contraseña",
     "organizationName": "Nombre de la Organización",
+    "agencyName": "Nombre de la Agencia",
     "contactName": "Nombre de Contacto",
     "contactTitle": "Título de Contacto",
     "contactTitlePlaceholder": "ej. Gerente de Marketing",
@@ -2656,6 +2657,340 @@
         "brand": "Marca",
         "agency": "Agencia"
       }
+    }
+  },
+  "landing": {
+    "hero": {
+      "tagline": "Deja de Perder Dinero Entre Reservas",
+      "title": "Plataforma de Gestión de Talento\n#1 Nativa de IA",
+      "subtitle": "Construida para agencias que gestionan tanto reservas tradicionales como licencias de IA.",
+      "forBrandsButton": "Para Marcas",
+      "forAgenciesButton": "Para Agencias"
+    },
+    "section2": {
+      "title": "Escala Tu Lista\nSin Escalar\nPersonal",
+      "subtitle": "Mismo talento. Campañas de IA simultáneas. Crecimiento exponencial de ingresos."
+    },
+    "features": {
+      "card1": {
+        "title": "Convierte Brechas de Reservas en\nIngresos Mensuales\nPredecibles",
+        "description": "Sesiones tradicionales más licencias de IA. Tu talento gana mientras espera su próximo trabajo."
+      },
+      "card2": {
+        "title": "Operaciones Impulsadas por IA\ncon Control de Nivel de Agencia",
+        "description": "Omite la programación manual y accede a la automatización inteligente de reservas. Todo con supervisión contractual completa."
+      },
+      "card3": {
+        "title": "Construido para Agencias de\nTodos los Tamaños",
+        "description": "Desde tiendas boutique de talento hasta listas empresariales: gestiona reservas tradicionales y licencias de IA en una plataforma construida para cada escala."
+      }
+    },
+    "section4": {
+      "title": "No Desperdicies Tu Lista\nEntre Reservas",
+      "subtitle": "Las licencias de IA mantienen al talento ganando consistentemente, y las agencias sienten los ingresos compuestos instantáneamente.",
+      "ctaButton": "Comenzar"
+    }
+  },
+  "aboutUsPage": {
+    "mission": {
+      "title": "Misión",
+      "subtitle": "En la era de la IA, las agencias de talento necesitan infraestructura que escale con la tecnología, no en su contra.",
+      "description": "Likelee construye la plataforma para que las agencias gestionen reservas tradicionales y licencias de IA en un solo lugar. Estamos creando un nuevo modelo de ingresos donde las brechas de reservas se convierten en oportunidades de ganancias, las operaciones funcionan con automatización y las agencias escalan sin agregar personal."
+    },
+    "principles": {
+      "title": "Principios Rectores",
+      "principle1": {
+        "title": "Control de Agencia, Siempre",
+        "description": "Apruebas cada reserva, ajustas cada precio, rechazas cualquier proyecto. Control operativo total."
+      },
+      "principle2": {
+        "title": "Seguimiento Transparente de Ingresos",
+        "description": "Ve reservas tradicionales e ingresos por licencias de IA en tiempo real. Un panel, visibilidad completa."
+      },
+      "principle3": {
+        "title": "Protección de Talento Integrada",
+        "description": "Los contratos inteligentes especifican derechos de uso exactos, duración y territorio. Cada licencia se rastrea y es revocable."
+      },
+      "principle4": {
+        "title": "Operaciones Primero, Tecnología Segundo",
+        "description": "Construimos lo que resuelve los desafíos actuales de las agencias, no problemas teóricos futuros."
+      }
+    },
+    "challenge": {
+      "title": "El Problema es Real (Y Está Sucediendo Ahora)",
+      "paragraph1": "Las reservas de talento tradicionales son festín o hambruna. Una sesión de $2K, luego semanas de silencio. Tu talento está inactivo entre trabajos. Tu agencia absorbe la volatilidad de ingresos. Mientras tanto, tus gastos operativos permanecen constantes: calendarios, contratos, coordinación de clientes, procesamiento de pagos.",
+      "paragraph2": "La infraestructura de agencias tradicionales fue construida para reservas físicas. No tiene en cuenta los flujos de ingresos por licencias de IA. Las agencias no pueden gestionar eficientemente tanto sesiones tradicionales como acuerdos de imagen digital. El talento ve ingresos inconsistentes. Las agencias dejan dinero sobre la mesa durante las brechas de reservas.",
+      "paragraph3": "La era de la IA creó nuevas preguntas: ¿Cómo gestionas reservas tradicionales y de IA simultáneamente? ¿Cómo escalas los ingresos sin escalar el personal? ¿Cómo aseguras que el talento permanezca leal durante los períodos secos?",
+      "conclusion": "Likelee resuelve las tres."
+    },
+    "whyNow": {
+      "title": "¿Por Qué Likelee, Por Qué Ahora?",
+      "paragraph1": "La IA no creó la naturaleza de festín o hambruna de las reservas de talento, pero creó una solución. Las licencias de IA permiten que el mismo talento trabaje en múltiples campañas simultáneamente mientras espera su próxima reserva tradicional.",
+      "paragraph2": "Las herramientas de agencias tradicionales gestionan un flujo de ingresos. Se rompen cuando agregas licencias de IA. La coordinación de reservas es manual. El seguimiento de ingresos está fragmentado en plataformas. La generación de contratos toma horas.",
+      "paragraph3": "Likelee está construido para agencias de doble ingreso, donde una lista genera tanto tarifas de reservas tradicionales como ingresos recurrentes por licencias de IA, y gestionar ambos requiere infraestructura integrada, no herramientas dispersas.",
+      "conclusion": "No estamos reemplazando las reservas tradicionales. Estamos agregando un segundo flujo de ingresos que llena las brechas y se compone con el tiempo."
+    },
+    "approach": {
+      "title": "Cómo Funciona: Desde la Carga de Lista hasta los Ingresos",
+      "step1": {
+        "title": "Agrega Tu Talento",
+        "description": "Sube tu lista con fotos y portafolios. Los perfiles de talento están disponibles tanto para reservas tradicionales como para solicitudes de licencias de IA."
+      },
+      "step2": {
+        "title": "Las Marcas Envían Solicitudes",
+        "description": "Estudios y marcas navegan por tu talento para sesiones tradicionales o campañas de licencias de IA. Ves el caso de uso, duración, territorio y compensación por adelantado."
+      },
+      "step3": {
+        "title": "Controlas Cada Acuerdo",
+        "description": "Revisa solicitudes en un panel. Aprueba reservas tradicionales, ajusta precios de licencias de IA o rechaza. Control total de agencia sobre ambos flujos de ingresos."
+      },
+      "step4": {
+        "title": "Generación Automática de Contratos",
+        "description": "El sistema genera acuerdos de reserva para sesiones tradicionales y contratos inteligentes para licencias de IA. Sin redacción manual, sin cuellos de botella legales."
+      },
+      "step5": {
+        "title": "Procesamiento de Pagos Protegido",
+        "description": "Fondos retenidos en depósito en garantía para acuerdos tradicionales y de IA. Divisiones automáticas de comisiones. El dinero se libera directamente a tu cuenta de agencia."
+      },
+      "step6": {
+        "title": "Seguimiento de Ingresos en Tiempo Real",
+        "description": "Un panel muestra el calendario de reservas tradicionales y acuerdos activos de licencias de IA. Ve qué talento está ganando de qué, cuándo expiran los contratos e ingresos recurrentes mensuales."
+      }
+    },
+    "users": {
+      "title": "Quién Usa Likelee",
+      "modelingAgencies": {
+        "title": "Agencias de Modelaje",
+        "description": "Gestiona castings, reservas de pasarela y sesiones editoriales junto con licencias de IA para comercio electrónico y campañas publicitarias."
+      },
+      "sportsAgencies": {
+        "title": "Agencias Deportivas",
+        "description": "Coordina patrocinios y respaldos tradicionales mientras licencias el NIL de atletas para contenido de marketing generado por IA."
+      },
+      "talentManagement": {
+        "title": "Empresas de Gestión de Talento",
+        "description": "Maneja reservas tradicionales para actores, influencers y creadores mientras monetizas su imagen durante las brechas de proyectos."
+      },
+      "allSizes": {
+        "title": "De Boutique a Empresa",
+        "description": "Tiendas de 5 personas a listas de más de 200 talentos. Misma plataforma, escala a tu tamaño."
+      }
+    },
+    "operations": {
+      "title": "Cómo Operamos",
+      "verification": {
+        "title": "Verificación Primero",
+        "description": "Cada creador pasa controles de identidad antes de que su avatar esté activo. Los malos actores no obtienen una plataforma."
+      },
+      "contracts": {
+        "title": "Contratos en Lenguaje Sencillo",
+        "description": "Sin jerga legal. Acuerdos en lenguaje sencillo con fechas de vencimiento automáticas y cláusulas de extinción incorporadas."
+      },
+      "ledger": {
+        "title": "Libro Mayor Compartido",
+        "description": "Tanto tú como la marca ven el mismo registro en tiempo real de cada uso, cada pago, cada fecha de vencimiento."
+      },
+      "security": {
+        "title": "Seguridad por Diseño",
+        "description": "Archivos biométricos encriptados en reposo. Sin ventas de datos a terceros. Sin raspado. Tus datos son tuyos."
+      },
+      "userBuilt": {
+        "title": "Construido Con Usuarios, No Para Usuarios",
+        "description": "Solo lanzamos funciones cuando creadores, agencias y estudios confirman una necesidad real. Sin sobrecarga de funciones."
+      }
+    }
+  },
+  "supportPage": {
+    "hero": {
+      "title": "Soporte",
+      "subtitle": "¿Necesitas ayuda? Te tenemos cubierto. La forma más rápida de contactarnos es",
+      "description": "Leemos cada mensaje. Por favor incluye tantos detalles como puedas (capturas de pantalla, enlaces, pasos para reproducir). Responderemos lo más rápido posible."
+    },
+    "form": {
+      "emailLabel": "Tu Correo Electrónico *",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "subjectLabel": "Asunto *",
+      "subjectPlaceholder": "¿Cómo podemos ayudar?",
+      "messageLabel": "Tu Pregunta *",
+      "messagePlaceholder": "Por favor incluye tantos detalles como sea posible: qué estás intentando hacer, qué está sucediendo, mensajes de error, capturas de pantalla, etc.",
+      "sendButton": "Enviar Mensaje",
+      "sending": "Enviando..."
+    },
+    "success": {
+      "title": "¡Mensaje Enviado!",
+      "description": "Gracias por tu mensaje. Te responderemos pronto."
+    },
+    "footer": {
+      "orEmail": "O envíanos un correo directamente a",
+      "copied": "Copiado al Portapapeles",
+      "copiedDescription": "La dirección de correo de soporte ha sido copiada a tu portapapeles."
+    }
+  },
+  "sagAftraPage": {
+    "hero": {
+      "title": "Alineación con SAG-AFTRA",
+      "description": "Likelee incorpora las salvaguardas de IA del Contrato Comercial SAG-AFTRA 2025 en cada licencia que emitimos, y aplicamos el mismo estándar a todos los creadores en la plataforma (actores, modelos, atletas, influencers, voz)."
+    },
+    "safeguards": {
+      "informedConsent": {
+        "title": "Consentimiento informado cada vez",
+        "description": "Un creador firma una autorización clara y específica del proyecto antes de cualquier captura, sintetización o reutilización de su rostro, voz o movimiento."
+      },
+      "fairPay": {
+        "title": "Pago justo y regalías en piloto automático",
+        "description": "Cada réplica activa compensación inicial, regalías continuas y contribuciones completas de pensión/salud (o equivalente), registradas y pagadas automáticamente por nuestro motor de regalías."
+      },
+      "scopeLocked": {
+        "title": "Uso con alcance bloqueado",
+        "description": "Los contratos especifican exactamente dónde (TV, streaming, redes sociales, en motor, impresión, etc.) y por cuánto tiempo puede aparecer una réplica. ¿Nuevo medio? ¿Nuevo proyecto? Nueva aprobación + pago."
+      },
+      "noBlanket": {
+        "title": "Sin derechos generales ni transferencias",
+        "description": "Las cláusulas \"todos los medios a perpetuidad\" son nulas aquí. El consentimiento no es transferible; la sublicencia requiere un nuevo acuerdo."
+      },
+      "aiTraining": {
+        "title": "El entrenamiento de IA es una licencia separada",
+        "description": "Alimentar datos de imagen en el entrenamiento de modelos es su propio caso de uso negociado con términos distintos y participación en ingresos."
+      },
+      "backgroundTalent": {
+        "title": "Talento de fondo protegido",
+        "description": "Los dobles digitales nunca cuentan para los mínimos de contratación de fondo ni reemplazan a los artistas en el set."
+      },
+      "enforceable": {
+        "title": "Salvaguardas ejecutables",
+        "description": "Respaldado por contratos SAG-AFTRA y la ley de California, dando a los creadores un recurso claro si se violan los términos."
+      }
+    },
+    "bottomLine": {
+      "title": "Conclusión",
+      "description": "Likelee licencia talento de la manera que las reglas de IA del sindicato pretendían: consentimiento primero, efectivo segundo, control del creador siempre, y mantenemos a cada marca y campaña en la plataforma con ese mismo estándar."
+    }
+  },
+  "brandCompanyPage": {
+    "hero": {
+      "title": "Licencie Apariencias de Talentos para Contenido IA.",
+      "subtitle": "Legalmente. Instantáneamente.",
+      "description": "Creativo IA seguro para marcas con consentimiento de talento verificado en <48 horas. Trabaja con talento independiente o sus agencias.",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    },
+    "whyLikelee": {
+      "title": "Por Qué Likelee",
+      "verifiedConsent": {
+        "title": "Consentimiento Verificado",
+        "description": "Los talentos licencian activamente su apariencia—sin raspado, sin áreas grises legales. Cada permiso es explícito y ejecutable."
+      },
+      "aiSpeed": {
+        "title": "Velocidad Nativa IA",
+        "description": "Activos licenciados entregados en <48 horas. Envía tu brief, obtén permisos de talento con tu contenido IA, automáticamente."
+      },
+      "legalCompliance": {
+        "title": "Cumplimiento Legal Integrado",
+        "description": "Cada licencia documenta el alcance de uso, territorio, duración y compensación. Gestión transparente de derechos con activos verificados."
+      }
+    },
+    "useCases": {
+      "title": "Casos de Uso",
+      "paidSocial": {
+        "title": "Redes Sociales Pagadas y Rendimiento",
+        "description": "Creativo publicitario generado por IA con talento licenciado para campañas, regiones, duración"
+      },
+      "ecommerce": {
+        "title": "E-Commerce y Producto",
+        "description": "Talento verificado en páginas de productos y campañas"
+      },
+      "ooh": {
+        "title": "Publicidad Exterior y Retail",
+        "description": "Vallas publicitarias y en tienda con derechos pre-aprobados"
+      },
+      "content": {
+        "title": "Contenido y Juegos",
+        "description": "Integra apariencias en experiencias de marca"
+      }
+    },
+    "howItWorks": {
+      "title": "Cómo Funciona Likelee",
+      "step1": "Los talentos o agencias establecen términos de licencia",
+      "step2": "Navegas y envías tu brief",
+      "step3": "El talento aprueba con un clic",
+      "step4": "Recibes activos licenciados + acuerdo vinculante"
+    },
+    "pilot": {
+      "title": "Únete a Nuestro Programa Piloto",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    }
+  },
+  "impactPage": {
+    "hero": {
+      "title": "Nuestro",
+      "subtitle": "Compromiso Ambiental",
+      "description": "En Likelee, la creatividad y la tecnología son inseparables — y ambas dependen de recursos que tienen un impacto real. Cada renderizado, exportación y campaña que impulsamos funciona con energía. Reconocer esa huella es parte de nuestra responsabilidad como plataforma que sirve a creadores y estudios en todo el mundo."
+    },
+    "whyMatters": {
+      "title": "Por Qué Esto Importa",
+      "description": "Producir trabajo digital no está libre de impacto. Ya sea un modelo de IA ejecutando inferencia, un renderizado de video o datos almacenados en la nube, cada salida creativa tiene un costo ambiental. Para nosotros, reconocer esa conexión no es una declaración de marketing — es una base para operar con integridad en una industria en rápida expansión."
+    },
+    "approach": {
+      "title": "Nuestro Enfoque",
+      "infrastructure": {
+        "title": "1. Infraestructura Responsable",
+        "description": "Priorizamos proveedores de nube y socios que publican datos de sostenibilidad transparentes e informes de progreso medibles. Estas relaciones se revisan regularmente a medida que evolucionan los estándares y tecnologías."
+      },
+      "transparency": {
+        "title": "2. Transparencia por Defecto",
+        "description": "Estamos desarrollando señales en el producto que ayudan a los usuarios a entender cuándo sus configuraciones o métodos de generación consumen más recursos. Estos están diseñados para informar, no restringir, dando a artistas y estudios control sobre sus elecciones."
+      },
+      "collaboration": {
+        "title": "3. Colaboración y Responsabilidad",
+        "description": "Mantenemos un diálogo abierto con creadores, expertos en sostenibilidad y tecnólogos a través de discusiones continuas y sesiones de revisión trimestrales. Estas informan nuestra hoja de ruta de infraestructura y nuestras actualizaciones de producto."
+      }
+    },
+    "standBy": {
+      "title": "Lo Que Defendemos",
+      "description": "No ocultaremos las realidades del uso de energía detrás de afirmaciones vagas de sostenibilidad o promesas superficiales. Nuestro objetivo es ser específicos, medibles y abiertos a corrección a medida que evoluciona el campo. El progreso real depende de la claridad, no de eslóganes."
+    },
+    "yourRole": {
+      "title": "Tu Rol",
+      "description": "Cuando subes, licencias o produces a través de Likelee, estás participando en un sistema compartido construido sobre trazabilidad y responsabilidad. Acciones simples — como agrupar exportaciones o usar configuraciones de renderizado optimizadas — contribuyen significativamente a la eficiencia a escala. Las herramientas están disponibles; las elecciones son tuyas."
+    },
+    "lookingForward": {
+      "title": "Mirando Hacia Adelante",
+      "paragraph1": "La sostenibilidad no es un objetivo fijo sino un proceso continuo. A medida que la generación de IA se vuelve más avanzada y accesible, nuestro compromiso es mantener el equilibrio — innovar sin descuidar el impacto de esa innovación. Continuaremos refinando la infraestructura y las prácticas de informes de Likelee para garantizar que el progreso creativo y la responsabilidad ambiental puedan coexistir.",
+      "paragraph2": "Te invitamos a colaborar, criticar y ayudarnos a mejorar.",
+      "paragraph3": "Contáctanos con ideas, preocupaciones u oportunidades de asociación en"
+    }
+  },
+  "landing": {
+    "hero": {
+      "tagline": "Deja de Dejar Dinero Sobre la Mesa Entre Reservas",
+      "title": "Plataforma de Gestión de Talentos\nNativa IA #1",
+      "subtitle": "Construida para agencias que gestionan tanto reservas tradicionales como ingresos por licencias de IA.",
+      "forBrandsButton": "Para Marcas",
+      "forAgenciesButton": "Para Agencias"
+    },
+    "section2": {
+      "title": "Escala Tu Lista\nSin Escalar\nPersonal",
+      "subtitle": "Mismo talento. Campañas de IA simultáneas. Crecimiento exponencial de ingresos."
+    },
+    "features": {
+      "card1": {
+        "title": "Convierte Brechas de Reservas\nen Ingresos Mensuales\nPredecibles",
+        "description": "Sesiones tradicionales más licencias de IA. Tu talento gana mientras espera su próximo trabajo."
+      },
+      "card2": {
+        "title": "Operaciones Impulsadas por IA\ncon Control de Nivel Agencia",
+        "description": "Omite la programación manual y accede a la automatización inteligente de reservas. Todo con supervisión contractual completa."
+      },
+      "card3": {
+        "title": "Construido para Agencias\nde Todos los Tamaños",
+        "description": "Desde tiendas boutique de talentos hasta listas empresariales—gestiona reservas tradicionales y licencias de IA en una plataforma construida para cada escala."
+      }
+    },
+    "section4": {
+      "title": "No Desperdicies Tu Lista\nEntre Reservas",
+      "subtitle": "Las licencias de IA mantienen al talento ganando consistentemente, y las agencias sienten los ingresos compuestos instantáneamente.",
+      "ctaButton": "Comenzar"
     }
   }
 }
