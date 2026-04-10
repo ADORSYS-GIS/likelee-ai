@@ -3,6 +3,20 @@ import React from "react";
 export function CreatorTermsContent() {
   return (
     <div className="prose prose-lg max-w-none space-y-6 text-gray-700">
+      <style>{`
+        .legal-caps {
+          font-size: 14px;
+          line-height: 1.8;
+          letter-spacing: 0.03em;
+          font-weight: 400;
+          color: #2a2a2a;
+          background-color: #f9f9f9;
+          border-left: 3px solid #4f46e5;
+          padding: 16px 20px;
+          border-radius: 4px;
+          margin: 16px 0;
+        }
+      `}</style>
       <h2 className="text-2xl font-bold text-gray-900">Terms and Conditions</h2>
 
       <section>
@@ -336,11 +350,11 @@ export function CreatorTermsContent() {
         <h3 className="text-xl font-bold text-gray-900">
           10. Disclaimer of Liability for Misuse of Likeness
         </h3>
-        <p className="uppercase font-semibold text-gray-800">
-          Likelee AI expressly disclaims all liability for the unauthorized,
-          unlawful, or otherwise improper use of your Likeness by any Brand,
-          Agency, third party, or any other person or entity operating outside
-          of or in violation of an executed License Agreement.
+        <p className="legal-caps">
+          LIKELEE AI EXPRESSLY DISCLAIMS ALL LIABILITY FOR THE UNAUTHORIZED,
+          UNLAWFUL, OR OTHERWISE IMPROPER USE OF YOUR LIKENESS BY ANY BRAND,
+          AGENCY, THIRD PARTY, OR ANY OTHER PERSON OR ENTITY OPERATING OUTSIDE
+          OF OR IN VIOLATION OF AN EXECUTED LICENSE AGREEMENT.
         </p>
         <p>You acknowledge and agree that:</p>
         <ul className="list-disc pl-6 space-y-2">
@@ -430,21 +444,21 @@ export function CreatorTermsContent() {
         <h3 className="text-xl font-bold text-gray-900">
           13. Limitation of Liability
         </h3>
-        <p className="uppercase font-semibold text-gray-800">
-          To the maximum extent permitted by applicable law, Likelee AI and its
-          affiliates, officers, directors, employees, and licensors shall not be
-          liable for any indirect, incidental, special, consequential, punitive,
-          or exemplary damages, including loss of earnings, reputational harm,
-          emotional distress, or lost business opportunities, arising out of or
-          related to your use of the Platform or the misuse of your Likeness by
-          any third party, even if Likelee has been advised of the possibility
-          of such damages.
+        <p className="legal-caps">
+          TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, LIKELEE AI AND ITS
+          AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AND LICENSORS SHALL NOT BE
+          LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE,
+          OR EXEMPLARY DAMAGES, INCLUDING LOSS OF EARNINGS, REPUTATIONAL HARM,
+          EMOTIONAL DISTRESS, OR LOST BUSINESS OPPORTUNITIES, ARISING OUT OF OR
+          RELATED TO YOUR USE OF THE PLATFORM OR THE MISUSE OF YOUR LIKENESS BY
+          ANY THIRD PARTY, EVEN IF LIKELEE HAS BEEN ADVISED OF THE POSSIBILITY
+          OF SUCH DAMAGES.
         </p>
-        <p className="uppercase font-semibold text-gray-800">
-          Likelee's total cumulative liability to you for all claims shall not
-          exceed the greater of: (a) the total platform fees deducted from your
-          earnings in the three (3) months preceding the claim; or (b) one
-          hundred dollars ($100).
+        <p className="legal-caps">
+          LIKELEE'S TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL CLAIMS SHALL NOT
+          EXCEED THE GREATER OF: (A) THE TOTAL PLATFORM FEES DEDUCTED FROM YOUR
+          EARNINGS IN THE THREE (3) MONTHS PRECEDING THE CLAIM; OR (B) ONE
+          HUNDRED DOLLARS ($100).
         </p>
       </section>
 
@@ -452,14 +466,14 @@ export function CreatorTermsContent() {
         <h3 className="text-xl font-bold text-gray-900">
           14. Disclaimer of Warranties
         </h3>
-        <p className="uppercase font-semibold text-gray-800">
-          The Platform is provided "as is" and "as available" without warranties
-          of any kind, express or implied. Likelee does not warrant that the
-          Platform will be uninterrupted or error-free, that licensing
-          opportunities will be available, or that any Brand will use your
-          Likeness in the manner agreed. Likelee makes no guarantee regarding
-          the volume, frequency, or value of licensing transactions you will
-          receive through the Platform.
+        <p className="legal-caps">
+          THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
+          OF ANY KIND, EXPRESS OR IMPLIED. LIKELEE DOES NOT WARRANT THAT THE
+          PLATFORM WILL BE UNINTERRUPTED OR ERROR-FREE, THAT LICENSING
+          OPPORTUNITIES WILL BE AVAILABLE, OR THAT ANY BRAND WILL USE YOUR
+          LIKENESS IN THE MANNER AGREED. LIKELEE MAKES NO GUARANTEE REGARDING
+          THE VOLUME, FREQUENCY, OR VALUE OF LICENSING TRANSACTIONS YOU WILL
+          RECEIVE THROUGH THE PLATFORM.
         </p>
       </section>
 
@@ -525,10 +539,10 @@ export function CreatorTermsContent() {
         <h4 className="font-semibold text-gray-800">
           16.4 Class Action Waiver
         </h4>
-        <p className="uppercase font-semibold text-gray-800">
-          To the fullest extent permitted by law, you waive any right to bring
-          claims as a class, collective, or representative action. All claims
-          must be brought in your individual capacity.
+        <p className="legal-caps">
+          TO THE FULLEST EXTENT PERMITTED BY LAW, YOU WAIVE ANY RIGHT TO BRING
+          CLAIMS AS A CLASS, COLLECTIVE, OR REPRESENTATIVE ACTION. ALL CLAIMS
+          MUST BE BROUGHT IN YOUR INDIVIDUAL CAPACITY.
         </p>
         <h4 className="font-semibold text-gray-800">
           16.5 Exception for Injunctive Relief
