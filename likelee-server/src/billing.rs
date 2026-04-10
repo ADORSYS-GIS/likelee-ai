@@ -2560,12 +2560,9 @@ pub async fn create_creator_subscription_checkout(
                         let final_days = days_left.max(1) as u32;
                         inherited_trial_days = Some(final_days);
                         
-                        info!("Inheriting trial: {} days left. Canceling old subscription {} to allow renewal for new plan.", final_days, existing_subscription);
-                        
-                        // Cancel old subscription immediately to clear the way for the new one
-                        let _ = stripe_sdk::Subscription::cancel(&client, &parsed_subscription, stripe_sdk::CancelSubscription::default()).await;
-                        
-                        // Proceed to Checkout Session block below (inherited_trial_days will be used)
+                        info!("Inheriting trial: {} days left. Deferring cancellation of old subscription {} until checkout completes.", final_days, existing_subscription);
+                        // Proceed to Checkout Session block below (inherited_trial_days will be used).
+                        // The previous subscription will be cancelled after successful checkout via webhook.
                     } else if current_price_id != price_id {
                         // PAID user – Use Portal
                         let customer = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
@@ -2678,6 +2675,12 @@ pub async fn create_creator_subscription_checkout(
     md.insert("billing_domain".to_string(), "creator".to_string());
     md.insert("plan_tier".to_string(), plan.clone());
     md.insert("interval".to_string(), interval.clone());
+    if inherited_trial_days.is_some() && !existing_subscription.trim().is_empty() {
+        md.insert(
+            "previous_subscription_id".to_string(),
+            existing_subscription.trim().to_string(),
+        );
+    }
     if payload.start_trial {
         md.insert("trial_started_from_checkout".to_string(), "1".to_string());
         cs_params.payment_method_collection = Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);

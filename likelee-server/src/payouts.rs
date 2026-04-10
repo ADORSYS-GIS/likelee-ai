@@ -1595,6 +1595,14 @@ pub async fn stripe_webhook(
                     .unwrap_or("")
                     .to_string();
 
+                let previous_subscription_id = obj
+                    .get("metadata")
+                    .and_then(|m| m.get("previous_subscription_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+
                 if !creator_id.is_empty() && !subscription_id.is_empty() {
                     let _ = sync_creator_subscription_from_stripe(
                         &state,
@@ -1607,6 +1615,47 @@ pub async fn stripe_webhook(
                         },
                     )
                     .await;
+
+                    if !previous_subscription_id.is_empty()
+                        && previous_subscription_id != subscription_id
+                    {
+                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                        match previous_subscription_id.parse::<stripe_sdk::SubscriptionId>() {
+                            Ok(prev_id) => {
+                                match stripe_sdk::Subscription::cancel(
+                                    &client,
+                                    &prev_id,
+                                    stripe_sdk::CancelSubscription::default(),
+                                )
+                                .await
+                                {
+                                    Ok(_) => {
+                                        tracing::info!(
+                                            creator_id = %creator_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            new_subscription_id = %subscription_id,
+                                            "cancelled previous creator subscription after successful checkout"
+                                        );
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!(
+                                            creator_id = %creator_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            error = %e,
+                                            "failed to cancel previous creator subscription after checkout (best-effort)"
+                                        );
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                tracing::warn!(
+                                    creator_id = %creator_id,
+                                    previous_subscription_id = %previous_subscription_id,
+                                    "could not parse previous subscription id for cancellation"
+                                );
+                            }
+                        }
+                    }
                 }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
