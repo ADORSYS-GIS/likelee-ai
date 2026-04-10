@@ -734,15 +734,14 @@ Voice recording and cloning capabilities for talent profiles.
 
 Creator subscriptions are backed by Stripe and persisted directly on the creator profile.
 
-### Free Plan Trial (Full Access & User-Initiated)
+### Creator Free Trial (Standardized Stripe Model)
 
-- For new creators or those who haven't started their trial, a "Gift Box" motion component appears on the Dashboard.
-- The trial period only starts when the user explicitly clicks "Unlock My Trial".
-- This updates `creators.trial_started_at`, which the backend uses to calculate the 30-day Pro access window.
-- After 30 days, creators on the free plan fall back to the standard free entitlements.
-- A "Free" plan banner is displayed on the subscription page as long as the trial hasn't been activated.
-- The backend treats this as an entitlement override only:
-  - `plan_tier` remains `free` unless the user subscribes.
+- For new creators or those who haven't started their trial, a "Gift Box" offer banner appears on the Dashboard and Subscription pages.
+- The trial is activated by selecting a plan (Basic or Pro) and entering payment details via **Stripe Checkout**.
+- Card details are collected upfront, but no charge is made for 30 days.
+- Upon activation, Stripe initiates a `trialing` subscription, and the backend syncs this to set `creators.trial_started_at`.
+- The `plan_tier` is updated from `free` to `basic` or `pro` immediately, but access remains free until the trial ends.
+- This prevents multiple trials per user since `trial_started_at` is checked before allowing a trial checkout session.
 
 
 ### Plan Visibility & Management
@@ -1340,3 +1339,4 @@ Supabase Realtime is used for instant message delivery via `postgres_changes` su
 - [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Multi-stage deliverable review workflow and secure media proxy with JWT fallback.
 - [x] **Creator Payment Gate (2026-03-17)**: Payment gating for campaign deliverables; Stripe-based campaign offer checkout.
 - [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.
+- [x] **Creator Free Trial Standardization (2026-04-09)**: Standardized Creator trial flow to require upfront payment details via Stripe Checkout. Implemented 30-day trial attached to paid plans with reuse prevention and persistent UI visibility.

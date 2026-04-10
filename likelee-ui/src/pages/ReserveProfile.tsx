@@ -1239,7 +1239,7 @@ export default function ReserveProfile() {
       localStorage.removeItem("reserve_profileId");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
-      navigate("/CreatorDashboard", { replace: true });
+      navigate("/CreatorSubscribe", { replace: true });
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.profileSaveFailed"),

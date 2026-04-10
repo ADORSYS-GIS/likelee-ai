@@ -606,6 +606,30 @@ export default function CreatorDashboard() {
   const [creatorSignUrl, setCreatorSignUrl] = useState("");
   const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManageSubscription = async () => {
+    try {
+      setPortalLoading(true);
+      const { createCreatorBillingPortal } = await import("@/api/functions");
+      const res = await createCreatorBillingPortal();
+      // base44Client returns the payload directly
+      const url = (res as any)?.checkout_url || (res as any)?.data?.checkout_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("No portal URL returned");
+      }
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: e.message || "Failed to open billing portal",
+      });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
   const [loadingJobInvites, setLoadingJobInvites] = useState(false);
   const [jobInvites, setJobInvites] = useState<any[]>([]);
@@ -3757,7 +3781,8 @@ export default function CreatorDashboard() {
 
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
   const trialActive = !!creatorBilling?.trial_active;
-  const effectivePlanTier = trialActive ? "pro" : creatorPlanTier;
+  const effectivePlanTier = creatorPlanTier;
+  const hasUsedProTrial = !!creatorBilling?.trial_pro_start_at || (!!creatorBilling?.trial_start_at && creatorPlanTier === "pro");
 
   const [trialCountdown, setTrialCountdown] = useState<string>("");
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
@@ -3767,7 +3792,7 @@ export default function CreatorDashboard() {
     : "";
 
   useEffect(() => {
-    if (creatorPlanTier !== "free" || !trialActive || !trialEndsAt) {
+    if (!trialActive || !trialEndsAt) {
       setTrialCountdown("");
       setDaysLeft(null);
       return;
@@ -3847,11 +3872,9 @@ export default function CreatorDashboard() {
       : creatorPlanTier === "pro";
   const creatorPlanLabel =
     effectivePlanTier === "pro"
-      ? trialActive
-        ? "Trial"
-        : "Pro Plan"
+      ? (trialActive ? "Pro Trial" : "Pro Plan")
       : effectivePlanTier === "basic"
-        ? "Basic Plan"
+        ? (trialActive ? "Basic Trial" : "Basic Plan")
         : "Free Plan";
   const creatorPlanBadgeClass =
     effectivePlanTier === "pro"
@@ -5800,11 +5823,22 @@ export default function CreatorDashboard() {
               </div>
             </div>
             <Button
-              onClick={() => navigate("/CreatorSubscribe")}
-              className="h-10 rounded-full bg-[#0F172A] px-4 text-white hover:bg-black"
+              disabled={portalLoading}
+              onClick={() => {
+                if (trialActive || creatorPlanTier !== "free") {
+                  handleManageSubscription();
+                } else {
+                  navigate("/CreatorSubscribe");
+                }
+              }}
+              className="h-10 rounded-full bg-[#0F172A] px-4 text-white hover:bg-black disabled:opacity-70"
             >
-              <Crown className="mr-2 h-4 w-4" />
-              Upgrade plan
+              {portalLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Crown className="mr-2 h-4 w-4" />
+              )}
+              {portalLoading ? "Processing..." : "Upgrade plan"}
             </Button>
           </div>
         </div>
@@ -5990,7 +6024,8 @@ export default function CreatorDashboard() {
     if (
       activeSection === "settings" ||
       activeSection === "talent-portal" ||
-      !creatorBillingLoaded
+      !creatorBillingLoaded ||
+      effectivePlanTier === "free"
     )
       return null;
 
@@ -6025,7 +6060,10 @@ export default function CreatorDashboard() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <p className="text-base font-black tracking-tight text-[#0F172A]">
+                <p
+                  className="text-base font-black tracking-tight text-[#0F172A] cursor-pointer hover:text-[#32C8D1] transition-colors"
+                  onClick={() => navigate("/CreatorSubscribe")}
+                >
                   {creatorPlanLabel}
                 </p>
                 <div
@@ -6034,7 +6072,7 @@ export default function CreatorDashboard() {
                   {effectivePlanTier}
                 </div>
               </div>
-              {creatorPlanTier === "free" && trialActive && trialEndsAt && (
+              {trialActive && trialEndsAt && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
                     <span className="text-[#94A3B8]">Ends in:</span>
@@ -6073,6 +6111,7 @@ export default function CreatorDashboard() {
               setSettingsTab("billing");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
+            disabled={portalLoading}
             className={`h-11 rounded-xl px-6 font-black text-sm transition-all duration-300 group ${
               isExpiringSoon
                 ? "bg-[#1E293B] text-white hover:bg-[#0F172A] hover:scale-[1.02] shadow-[0_8px_20px_-6px_rgba(30,41,59,0.4)] border-0"
@@ -6164,8 +6203,8 @@ export default function CreatorDashboard() {
                   <div className="space-y-4 mb-8">
                     {[
                       "30 Days of Premium Access",
-                      "No credit card required",
-                      "Automated fallback to Free",
+                      "Cancel anytime during trial",
+                      "Automatic billing after 30 days",
                     ].map((item, i) => (
                       <div
                         key={i}
@@ -11798,7 +11837,9 @@ export default function CreatorDashboard() {
                           ? "Pro Trial"
                           : "Pro"
                         : effectivePlanTier === "basic"
-                          ? "Basic"
+                          ? trialActive
+                            ? "Basic Trial"
+                            : "Basic"
                           : "Free"}
                     </Badge>
                   </div>
@@ -11819,7 +11860,9 @@ export default function CreatorDashboard() {
                           ? "Pro Trial access"
                           : "Pro creator access"
                         : effectivePlanTier === "basic"
-                          ? "Basic creator access"
+                          ? trialActive
+                            ? "Basic Trial access"
+                            : "Basic creator access"
                           : "Free creator access"}
                     </div>
                   </div>
@@ -11934,11 +11977,17 @@ export default function CreatorDashboard() {
                   {effectivePlanTier !== "pro" && (
                     <Button
                       className="mt-5 rounded-full bg-[#16324F] px-5 text-white hover:bg-[#10263D]"
+                      disabled={portalLoading}
                       onClick={() => navigate("/CreatorSubscribe")}
                     >
-                      {effectivePlanTier === "free"
-                        ? "Upgrade to Basic"
-                        : "Upgrade to Pro"}
+                      {portalLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Processing...
+                        </>
+                      ) : (
+                        "View Details"
+                      )}
                     </Button>
                   )}
                 </div>
@@ -11958,9 +12007,16 @@ export default function CreatorDashboard() {
                     </div>
                     <Button
                       onClick={() => navigate("/CreatorSubscribe")}
-                      className="w-full md:w-auto rounded-full bg-[#32C8D1] px-10 py-7 text-xl font-black text-white transition-all hover:scale-105 hover:bg-[#2bb2bb] shadow-[0_12px_24px_-8px_rgba(50,200,209,0.5)] border-0"
+                      className="w-full md:w-auto rounded-full bg-[#32C8D1] px-10 py-7 text-xl font-black text-white transition-all hover:scale-105 hover:bg-[#2bb2bb] shadow-[0_12px_24px_-8px_rgba(50,200,209,0.5)] border-0 disabled:opacity-70"
                     >
-                      Subscribe for a plan
+                      {portalLoading ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin mr-3" />
+                          Opening Portal...
+                        </>
+                      ) : (
+                        "Select Plan"
+                      )}
                     </Button>
                   </div>
                 </div>

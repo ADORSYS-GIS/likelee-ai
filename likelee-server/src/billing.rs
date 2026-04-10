@@ -544,6 +544,17 @@ pub struct CreatorCheckoutRequest {
     pub plan: String,
     #[serde(default)]
     pub interval: Option<String>,
+    #[serde(default)]
+    pub start_trial: bool,
+    #[serde(default)]
+    pub agreement_accepted: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreatorUpgradeRequest {
+    pub plan: String,
+    #[serde(default)]
+    pub interval: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -561,6 +572,8 @@ pub struct CreatorBillingStatusResponse {
     pub trial_active: bool,
     pub trial_ends_at: Option<String>,
     pub trial_start_at: Option<String>,
+    pub trial_basic_start_at: Option<String>,
+    pub trial_pro_start_at: Option<String>,
     pub can_use_kyc: bool,
     pub can_use_likeness: bool,
     pub can_use_agency_connection: bool,
@@ -2373,6 +2386,13 @@ pub async fn create_creator_subscription_checkout(
         return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
     }
 
+    if payload.start_trial && !payload.agreement_accepted {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "must_accept_agreement_for_trial".to_string(),
+        ));
+    }
+
     let interval = payload
         .interval
         .as_deref()
@@ -2404,7 +2424,7 @@ pub async fn create_creator_subscription_checkout(
     let creator_resp = state
         .pg
         .from("creators")
-        .select("id,email,full_name,stripe_customer_id,stripe_subscription_id")
+        .select("id,email,full_name,stripe_customer_id,stripe_subscription_id,trial_started_at")
         .eq("id", &creator_id)
         .limit(1)
         .execute()
@@ -2436,6 +2456,24 @@ pub async fn create_creator_subscription_checkout(
         .unwrap_or("")
         .trim()
         .to_string();
+
+    if payload.start_trial {
+        let (trial_used, _) = match plan.as_str() {
+            "basic" => (
+                creator_row.get("trial_basic_started_at").filter(|v| !v.is_null()).is_some(),
+                "trial_basic_started_at"
+            ),
+            "pro" => (
+                creator_row.get("trial_pro_started_at").filter(|v| !v.is_null()).is_some(),
+                "trial_pro_started_at"
+            ),
+            _ => (false, "trial_started_at")
+        };
+        
+        if trial_used {
+            return Err((StatusCode::FORBIDDEN, "trial_already_used".to_string()));
+        }
+    }
     let customer_id = if !existing_customer.is_empty() {
         existing_customer
     } else {
@@ -2475,12 +2513,14 @@ pub async fn create_creator_subscription_checkout(
         cust_id
     };
 
+    let mut inherited_trial_days: Option<u32> = None;
     let existing_subscription = creator_row
         .get("stripe_subscription_id")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .trim()
         .to_string();
+
     if !existing_subscription.is_empty() {
         let parsed_subscription = existing_subscription
             .parse::<stripe_sdk::SubscriptionId>()
@@ -2501,15 +2541,8 @@ pub async fn create_creator_subscription_checkout(
                         | stripe_sdk::SubscriptionStatus::Paused
                         | stripe_sdk::SubscriptionStatus::Unpaid
                 );
+
                 if live_subscription {
-                    let customer = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
-                        (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            "invalid_stripe_customer_id".to_string(),
-                        )
-                    })?;
-                    let mut portal_params = stripe_sdk::CreateBillingPortalSession::new(customer);
-                    portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
                     let current_price_id = subscription
                         .items
                         .data
@@ -2517,7 +2550,33 @@ pub async fn create_creator_subscription_checkout(
                         .and_then(|item| item.price.as_ref())
                         .map(|price| price.id.to_string())
                         .unwrap_or_default();
-                    if current_price_id != price_id {
+
+                    // If plan is DIFFERENT and user is in a TRIAL, we do the "Inheritance via Renewal" flow
+                    if current_price_id != price_id && subscription.status == stripe_sdk::SubscriptionStatus::Trialing {
+                        let now = chrono::Utc::now().timestamp();
+                        let trial_end = subscription.trial_end.unwrap_or(now);
+                        let seconds_left = trial_end - now;
+                        let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
+                        let final_days = days_left.max(1) as u32;
+                        inherited_trial_days = Some(final_days);
+                        
+                        info!("Inheriting trial: {} days left. Canceling old subscription {} to allow renewal for new plan.", final_days, existing_subscription);
+                        
+                        // Cancel old subscription immediately to clear the way for the new one
+                        let _ = stripe_sdk::Subscription::cancel(&client, &parsed_subscription, stripe_sdk::CancelSubscription::default()).await;
+                        
+                        // Proceed to Checkout Session block below (inherited_trial_days will be used)
+                    } else if current_price_id != price_id {
+                        // PAID user – Use Portal
+                        let customer = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                "invalid_stripe_customer_id".to_string(),
+                            )
+                        })?;
+                        let mut portal_params = stripe_sdk::CreateBillingPortalSession::new(customer);
+                        portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+                        
                         let subscription_item = subscription
                             .items
                             .data
@@ -2527,6 +2586,7 @@ pub async fn create_creator_subscription_checkout(
                                 StatusCode::BAD_GATEWAY,
                                 "creator_subscription_missing_items".to_string(),
                             ))?;
+
                         portal_params.flow_data =
                             Some(stripe_sdk::CreateBillingPortalSessionFlowData {
                                 after_completion: Some(
@@ -2558,13 +2618,30 @@ pub async fn create_creator_subscription_checkout(
                                 type_: stripe_sdk::CreateBillingPortalSessionFlowDataType::SubscriptionUpdateConfirm,
                                 ..Default::default()
                             });
+
+                        let portal = stripe_sdk::BillingPortalSession::create(&client, portal_params)
+                            .await
+                            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+                        return Ok(Json(CreatorCheckoutResponse {
+                            checkout_url: portal.url,
+                        }));
+                    } else {
+                        // SAME plan – portal for basic management (cancel, etc)
+                        let customer = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                "invalid_stripe_customer_id".to_string(),
+                            )
+                        })?;
+                        let mut portal_params = stripe_sdk::CreateBillingPortalSession::new(customer);
+                        portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+                        let portal = stripe_sdk::BillingPortalSession::create(&client, portal_params)
+                            .await
+                            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+                        return Ok(Json(CreatorCheckoutResponse {
+                            checkout_url: portal.url,
+                        }));
                     }
-                    let portal = stripe_sdk::BillingPortalSession::create(&client, portal_params)
-                        .await
-                        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-                    return Ok(Json(CreatorCheckoutResponse {
-                        checkout_url: portal.url,
-                    }));
                 }
             }
             Err(error) => {
@@ -2591,7 +2668,7 @@ pub async fn create_creator_subscription_checkout(
     })?);
     cs_params.client_reference_id = Some(creator_id.as_str());
     cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
-        price: Some(price_id),
+        price: Some(price_id.clone()),
         quantity: Some(1),
         ..Default::default()
     }]);
@@ -2601,8 +2678,25 @@ pub async fn create_creator_subscription_checkout(
     md.insert("billing_domain".to_string(), "creator".to_string());
     md.insert("plan_tier".to_string(), plan.clone());
     md.insert("interval".to_string(), interval.clone());
+    if payload.start_trial {
+        md.insert("trial_started_from_checkout".to_string(), "1".to_string());
+        cs_params.payment_method_collection = Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
+
+    info!(
+        "Creating creator checkout session for user {} (creator {}): plan={}, interval={}, start_trial={}, price_id={}",
+        user.id, creator_id, plan, interval, payload.start_trial, price_id
+    );
+
     cs_params.metadata = Some(md.clone());
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        trial_period_days: if payload.start_trial {
+            Some(inherited_trial_days.unwrap_or(30))
+        } else if inherited_trial_days.is_some() {
+            inherited_trial_days
+        } else {
+            None
+        },
         metadata: Some(md),
         ..Default::default()
     });
@@ -2626,6 +2720,116 @@ pub async fn create_creator_subscription_checkout(
     Ok(Json(CreatorCheckoutResponse { checkout_url: url }))
 }
 
+pub async fn upgrade_creator_subscription(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreatorUpgradeRequest>,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    let plan = payload.plan.trim().to_lowercase();
+    if plan != "basic" && plan != "pro" {
+        return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
+    }
+
+    let interval = payload
+        .interval
+        .unwrap_or_else(|| "month".to_string())
+        .trim()
+        .to_lowercase();
+    if interval != "month" && interval != "year" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_billing_interval".to_string(),
+        ));
+    }
+
+    let creator_id = user.id.clone();
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_subscription_id, plan_tier")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let creator_row = rows
+        .first()
+        .and_then(|v| v.as_object())
+        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
+
+    let stripe_subscription_id = creator_row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or((StatusCode::BAD_REQUEST, "no_active_subscription".to_string()))?;
+
+    let stripe_subscription_id_parsed = stripe_subscription_id
+        .parse::<stripe_sdk::SubscriptionId>()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_subscription_id".to_string()))?;
+
+    let price_id = creator_plan_to_price_id_with_interval(&state, &plan, &interval).ok_or((
+        StatusCode::BAD_REQUEST,
+        "invalid_plan_configuration".to_string(),
+    ))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let sub = stripe_sdk::Subscription::retrieve(&client, &stripe_subscription_id_parsed, &[])
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let item_id = sub
+        .items
+        .data
+        .first()
+        .ok_or((StatusCode::BAD_GATEWAY, "subscription_has_no_items".to_string()))?
+        .id
+        .to_string();
+
+    let req_client = reqwest::Client::new();
+    let res = req_client
+        .post(&format!("https://api.stripe.com/v1/subscriptions/{}", stripe_subscription_id))
+        .basic_auth(&state.stripe_secret_key, Some(""))
+        .form(&[
+            ("items[0][id]", item_id.as_str()),
+            ("items[0][price]", price_id.as_str()),
+            ("proration_behavior", "create_prorations"),
+        ])
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !res.status().is_success() {
+        warn!("stripe upgrade failed: {:?}", res.text().await);
+        return Err((StatusCode::BAD_GATEWAY, "stripe_upgrade_failed".to_string()));
+    }
+
+    Ok(Json(CreatorCheckoutResponse {
+        checkout_url: String::new(),
+    }))
+}
+
 pub async fn get_creator_billing_status(
     State(state): State<AppState>,
     user: AuthUser,
@@ -2639,7 +2843,7 @@ pub async fn get_creator_billing_status(
     let resp = state
         .pg
         .from("creators")
-        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at,trial_started_at")
+        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at,trial_started_at,trial_basic_started_at,trial_pro_started_at")
         .eq("id", &creator_id)
         .limit(1)
         .execute()
@@ -2676,28 +2880,54 @@ pub async fn get_creator_billing_status(
                     .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
             })
     }
+    let plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .to_string();
 
     let trial_start_at_str = row.get("trial_started_at").and_then(|v| v.as_str());
+    let trial_basic_start_at_str = row.get("trial_basic_started_at").and_then(|v| v.as_str());
+    let trial_pro_start_at_str = row.get("trial_pro_started_at").and_then(|v| v.as_str());
+    
     let trial_start_at = trial_start_at_str.and_then(parse_db_date);
+    let trial_basic_start_at = trial_basic_start_at_str.and_then(parse_db_date);
+    let trial_pro_start_at = trial_pro_start_at_str.and_then(parse_db_date);
 
-    let trial_ends_at_dt = if billed_tier == PlanTier::Free {
-        trial_start_at.map(|dt| dt + chrono::Duration::days(30))
-    } else {
-        None
+    // Dynamic trial status based on the CURRENT plan tier.
+    // Important: if the creator is still marked as `free` but has plan-specific trial timestamps,
+    // we must still surface an active countdown.
+    let current_plan_trial_start = match plan_tier.as_str() {
+        "basic" => trial_basic_start_at.or(trial_start_at),
+        "pro" | "enterprise" => trial_pro_start_at.or(trial_start_at),
+        _ => trial_start_at
+            .or(trial_pro_start_at)
+            .or(trial_basic_start_at),
     };
 
-    let trial_ends_at = trial_ends_at_dt.map(|dt| dt.to_rfc3339());
-    let trial_active = trial_ends_at_dt.map(|dt| dt > Utc::now()).unwrap_or(false);
+    // For safety, treat the most recent known trial start as authoritative.
+    let latest_trial_start = [trial_start_at, trial_basic_start_at, trial_pro_start_at]
+        .into_iter()
+        .flatten()
+        .max();
 
+    let resolved_trial_start = current_plan_trial_start.or(latest_trial_start);
+
+    let trial_active = resolved_trial_start.map_or(false, |start_dt| {
+        chrono::Utc::now().signed_duration_since(start_dt).num_days() < 30
+    });
+    
+    // Trial ends dynamically 30 days after it started
+    let trial_ends_at_dt = resolved_trial_start.map(|dt| dt + chrono::Duration::days(30));
+    let trial_ends_at = trial_ends_at_dt.map(|dt| dt.to_rfc3339());
+    
     Ok(Json(CreatorBillingStatusResponse {
         creator_id: creator_id.clone(),
-        plan_tier: row
-            .get("plan_tier")
-            .and_then(|v| v.as_str())
-            .unwrap_or("free")
-            .to_string(),
+        plan_tier: plan_tier.clone(),
         entitlement_tier: format!("{:?}", entitlement_tier).to_lowercase(),
         trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
+        trial_basic_start_at: trial_basic_start_at.map(|dt| dt.to_rfc3339()),
+        trial_pro_start_at: trial_pro_start_at.map(|dt| dt.to_rfc3339()),
         trial_active,
         trial_ends_at,
         subscription_status: if matches!(
@@ -2752,60 +2982,6 @@ pub async fn get_creator_billing_status(
     }))
 }
 
-pub async fn start_creator_trial(
-    State(state): State<AppState>,
-    user: AuthUser,
-) -> Result<StatusCode, (StatusCode, String)> {
-    if user.role != "creator" && user.role != "talent" {
-        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
-    }
-
-    let (creator_id, billed_tier, _) = get_creator_entitlement_tier_for_user(&state, &user).await?;
-
-    if billed_tier != PlanTier::Free {
-        return Err((StatusCode::BAD_REQUEST, "already_on_paid_plan".to_string()));
-    }
-
-    // Check if trial already started
-    let resp = state
-        .pg
-        .from("creators")
-        .select("trial_started_at")
-        .eq("id", &creator_id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let row = serde_json::from_str::<serde_json::Value>(&text)
-        .ok()
-        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
-        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
-
-    if row
-        .get("trial_started_at")
-        .and_then(|v| v.as_str())
-        .is_some()
-    {
-        return Err((StatusCode::BAD_REQUEST, "trial_already_started".to_string()));
-    }
-
-    // Start trial
-    let _ = state
-        .pg
-        .from("creators")
-        .eq("id", &creator_id)
-        .update(json!({ "trial_started_at": Utc::now().to_rfc3339() }).to_string())
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(StatusCode::OK)
-}
 
 #[derive(Debug, Serialize)]
 pub struct CampaignCheckoutResponse {
@@ -3422,6 +3598,78 @@ pub async fn create_agency_billing_portal(
         })),
         Err(e) => {
             warn!(error = %e, agency_id = %agency_id, "failed to create stripe billing portal session");
+            Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        }
+    }
+}
+
+pub async fn create_creator_billing_portal(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" {
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "creator_only",
+            "Only creator accounts can perform this action.",
+        ));
+    }
+
+    let creator_id = user.id.clone();
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_customer_id")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
+
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id".to_string(),
+            )
+        })?;
+
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    // Return to dashboard settings with the billing tab active
+    let return_url = format!(
+        "{}/CreatorDashboard?tab=billing",
+        state.frontend_url.trim_end_matches('/')
+    );
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(CreatorCheckoutResponse {
+            checkout_url: session.url,
+        })),
+        Err(e) => {
+            warn!(error = %e, creator_id = %creator_id, "failed to create stripe creator billing portal session");
             Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
         }
     }

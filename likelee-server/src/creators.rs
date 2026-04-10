@@ -120,12 +120,22 @@ pub async fn upsert_profile(
     let (_, _, tier) = get_creator_entitlement_tier_for_user(&state, &user)
         .await
         .unwrap_or((user.id.clone(), PlanTier::Free, PlanTier::Free));
-    if !creator_has_likeness_access(tier) {
+
+    // Allow Free tier users to save their profile, but if they are on Free,
+    // they cannot be "Public" yet.
+    if !creator_has_likeness_access(tier)
+        && body
+            .get("visibility")
+            .and_then(|v| v.as_str())
+            .map(|s| visibility_maps_to_public_profile(s))
+            .unwrap_or(false)
+    {
         return Err((
             StatusCode::FORBIDDEN,
-            "basic_plan_required_for_creator_profile".to_string(),
+            "basic_plan_required_for_public_profile".to_string(),
         ));
     }
+
     if !creator_has_cameo_uploads(tier)
         && body
             .get("cameo_front_url")
