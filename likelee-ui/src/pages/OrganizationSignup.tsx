@@ -214,7 +214,7 @@ const getIndustries = (t: any) => [
 ];
 
 export default function OrganizationSignup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, profile, refreshProfile, initialized, login, authenticated } =
     useAuth();
   const { toast } = useToast();
@@ -2716,9 +2716,11 @@ export default function OrganizationSignup() {
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
-                  onClick={() =>
-                    window.open("/terms-and-conditions-agency.html", "_blank")
-                  }
+                  onClick={() => {
+                    const lang = i18n.language || 'en';
+                    const fileName = `/terms-and-conditions-agency-${lang}.html`;
+                    window.open(fileName, "_blank");
+                  }}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   {t("organizationSignup.terms.download", "Download")}

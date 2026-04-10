@@ -281,7 +281,7 @@ export default function ReserveProfile() {
   const { login, refreshProfile, user, authenticated, profile, initialized } =
     useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Check if user arrived via OAuth
   const isOAuthSignup =
@@ -2295,12 +2295,11 @@ export default function ReserveProfile() {
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
-                  onClick={() =>
-                    window.open(
-                      "/creator-talent-terms-and-conditions.html",
-                      "_blank",
-                    )
-                  }
+                  onClick={() => {
+                    const lang = i18n.language || 'en';
+                    const fileName = `/creator-talent-terms-and-conditions-${lang}.html`;
+                    window.open(fileName, "_blank");
+                  }}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   {t("reserveProfile.terms.download", "Download")}
