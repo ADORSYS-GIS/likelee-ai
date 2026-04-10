@@ -18,6 +18,14 @@ import {
   updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
+  listBrandNotifications,
+  markBrandNotificationRead,
+  getBrandNotificationCount,
+  getInboxUnreadCount,
+  markInboxPackagesViewed,
+  getJobsUnreadCount,
+  markJobApplicationsViewed,
+  getLicensingContractsCount,
 } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
@@ -704,6 +712,8 @@ export default function BrandDashboard() {
   const [originalBrand, setOriginalBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
+    useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState({
     newProjectAlerts: true,
     deliverableSubmissions: true,
@@ -711,12 +721,18 @@ export default function BrandDashboard() {
     licenseExpirationAlerts: true,
     monthlyAnalyticsSummary: true,
   });
+  const [initialNotificationPrefs, setInitialNotificationPrefs] = useState({
+    newProjectAlerts: true,
+    deliverableSubmissions: true,
+    approvalReminders: true,
+    licenseExpirationAlerts: true,
+    monthlyAnalyticsSummary: true,
+  });
+
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
-  // Note: "completed" tab key maps to "Expired" UI label per #360.
-  // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
@@ -739,6 +755,17 @@ export default function BrandDashboard() {
     amount?: number;
     currency?: string;
   }>({ open: false });
+
+  // Brand Notifications State
+  const [brandNotifications, setBrandNotifications] = useState<any[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
+
+  // Badge Count State
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [jobsUnreadCount, setJobsUnreadCount] = useState(0);
+  const [licensingContractsCount, setLicensingContractsCount] = useState(0);
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -796,6 +823,34 @@ export default function BrandDashboard() {
       nextSection === "campaigns-hub" ? "campaigns" : nextSection,
     );
     setSearchParams(params, { replace: options?.replace ?? false });
+
+    // Clear badge counts when viewing sections
+    if (nextSection === "campaigns-inbox") {
+      setInboxUnreadCount(0);
+      // Mark inbox packages as viewed in the backend
+      markInboxPackagesViewed().catch((err) => {
+        console.error("Failed to mark inbox packages as viewed:", err);
+      });
+    } else if (
+      nextSection === "campaigns-hub" &&
+      options?.campaignHubTab === "jobs"
+    ) {
+      setJobsUnreadCount(0);
+      // Mark job applications as viewed in the backend
+      markJobApplicationsViewed().catch((err) => {
+        console.error("Failed to mark job applications as viewed:", err);
+      });
+    } else if (nextSection === "licensing-requests") {
+      setLicensingContractsCount(0);
+    } else if (nextSection === "campaigns-deliverables") {
+      // Clear deliverables badge by marking related notifications as read
+      const deliverableNotifications = brandNotifications.filter(
+        (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
+      );
+      deliverableNotifications.forEach((n) => {
+        handleMarkNotificationRead(n.id);
+      });
+    }
   };
 
   const goToCampaignsSection = () => {
@@ -1230,6 +1285,11 @@ export default function BrandDashboard() {
         };
         setBrand(brandData);
         setOriginalBrand(brandData);
+
+        if (profile?.notification_prefs) {
+          setNotificationPrefs(profile.notification_prefs);
+          setInitialNotificationPrefs(profile.notification_prefs);
+        }
       } catch {
         // Keep mock fallback on failure.
       }
@@ -1239,6 +1299,96 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, []);
+
+  // Load brand notifications
+  useEffect(() => {
+    let mounted = true;
+    const loadNotifications = async () => {
+      try {
+        setLoadingNotifications(true);
+        const response = await listBrandNotifications({ limit: 50 });
+        if (!mounted) return;
+        const notifications = Array.isArray(response) ? response : [];
+        setBrandNotifications(notifications);
+
+        // Get unread count
+        const countResponse = await getBrandNotificationCount();
+        if (mounted && countResponse?.count !== undefined) {
+          setUnreadNotificationCount(countResponse.count);
+        }
+      } catch (error) {
+        console.error("Failed to load notifications:", error);
+      } finally {
+        if (mounted) setLoadingNotifications(false);
+      }
+    };
+
+    loadNotifications();
+
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Load badge counts
+  useEffect(() => {
+    let mounted = true;
+    const loadBadgeCounts = async () => {
+      try {
+        const [inboxResponse, jobsResponse, licensingResponse] =
+          await Promise.all([
+            getInboxUnreadCount(),
+            getJobsUnreadCount(),
+            getLicensingContractsCount(),
+          ]);
+
+        if (!mounted) return;
+
+        if (inboxResponse?.count !== undefined) {
+          setInboxUnreadCount(inboxResponse.count);
+        }
+        if (jobsResponse?.count !== undefined) {
+          setJobsUnreadCount(jobsResponse.count);
+        }
+        if (licensingResponse?.count !== undefined) {
+          setLicensingContractsCount(licensingResponse.count);
+        }
+      } catch (error) {
+        console.error("Failed to load badge counts:", error);
+      }
+    };
+
+    loadBadgeCounts();
+
+    // Refresh badge counts every 30 seconds
+    const interval = setInterval(loadBadgeCounts, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Mark notification as read
+  const handleMarkNotificationRead = async (notificationId: string) => {
+    try {
+      await markBrandNotificationRead(notificationId);
+      setBrandNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? { ...n, read_at: new Date().toISOString() }
+            : n,
+        ),
+      );
+      setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
 
   useEffect(() => {
     if (activeSection !== "campaigns-inbox") return;
@@ -1832,17 +1982,37 @@ export default function BrandDashboard() {
 
   const contractHubPendingCount = useMemo(() => {
     if (!notificationPrefs.newProjectAlerts) return 0;
+
+    // Count from offers
     const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
-    return offers.filter((offer: any) => {
+    const offerCount = offers.filter((offer: any) => {
       const st = String(offer?.status || "").toLowerCase();
       return st === "contract_sent" || st === "contract_partially_signed";
     }).length;
-  }, [brandOfferItems]);
+
+    // Count from notifications
+    const notifCount = brandNotifications.filter(
+      (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
+    ).length;
+
+    return offerCount + notifCount;
+  }, [brandOfferItems, brandNotifications, notificationPrefs.newProjectAlerts]);
 
   const pendingApprovalCount = useMemo(() => {
     if (!notificationPrefs.deliverableSubmissions) return 0;
-    return mockCampaigns.filter((c) => c.status === "pending_approval").length;
-  }, [notificationPrefs.deliverableSubmissions]);
+
+    // Count from campaigns
+    const campaignCount = mockCampaigns.filter(
+      (c) => c.status === "pending_approval",
+    ).length;
+
+    // Count from notifications
+    const notifCount = brandNotifications.filter(
+      (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
+    ).length;
+
+    return campaignCount + notifCount;
+  }, [brandNotifications, notificationPrefs.deliverableSubmissions]);
   const activeLicenses = mockLicenses.filter(
     (l) => l.status === "active" || l.status === "expiring_soon",
   );
@@ -1859,11 +2029,21 @@ export default function BrandDashboard() {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
+      badge: (() => {
+        // Sum of all campaign sub-tab badges: Inbox + Contract Hub + Deliverables + Jobs
+        const total =
+          inboxUnreadCount +
+          contractHubPendingCount +
+          pendingApprovalCount +
+          jobsUnreadCount;
+        return total > 0 ? total : undefined;
+      })(),
     },
     {
       id: "licensing-requests",
       label: "Licensing Requests",
       icon: FileText,
+      badge: licensingContractsCount > 0 ? licensingContractsCount : undefined,
     },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
@@ -1949,6 +2129,26 @@ export default function BrandDashboard() {
       });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleSaveNotificationPrefs = async (newPrefs) => {
+    try {
+      setIsSavingNotificationPrefs(true);
+      await updateBrandProfile({
+        notification_prefs: newPrefs,
+      });
+      setInitialNotificationPrefs(newPrefs);
+    } catch (error: any) {
+      console.error("Error saving notification prefs:", error);
+      toast({
+        title: "Error",
+        description:
+          error?.message || "Unable to save notification preferences.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotificationPrefs(false);
     }
   };
 
@@ -8816,7 +9016,7 @@ export default function BrandDashboard() {
                 {
                   id: "approvalReminders",
                   title: "Approval Reminders",
-                  desc: "48-hour countdown notifications",
+                  desc: "Approval reminder notifications",
                 },
                 {
                   id: "licenseExpirationAlerts",
@@ -8827,17 +9027,29 @@ export default function BrandDashboard() {
                   id: "monthlyAnalyticsSummary",
                   title: "Monthly Analytics Summary",
                   desc: "Monthly performance email report",
+                  comingSoon: true,
                 },
               ].map((pref) => (
                 <div
                   key={pref.id}
                   className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
                 >
-                  <div className="pr-12">
-                    <Label className="text-sm font-bold text-gray-900 block mb-1">
-                      {pref.title}
-                    </Label>
-                    <p className="text-xs font-medium text-gray-500">
+                  <div className="pr-12 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Label
+                        className={`text-sm font-bold ${pref.comingSoon ? "text-gray-400" : "text-gray-900"}`}
+                      >
+                        {pref.title}
+                      </Label>
+                      {pref.comingSoon && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-900 text-white">
+                          Coming Soon
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`text-xs font-medium ${pref.comingSoon ? "text-gray-400" : "text-gray-500"}`}
+                    >
                       {pref.desc}
                     </p>
                   </div>
@@ -8847,10 +9059,13 @@ export default function BrandDashboard() {
                         pref.id as keyof typeof notificationPrefs
                       ]
                     }
-                    onCheckedChange={(val) =>
-                      setNotificationPrefs((p) => ({ ...p, [pref.id]: val }))
-                    }
-                    className="data-[state=checked]:bg-[#F7B750]"
+                    onCheckedChange={(val) => {
+                      const newPrefs = { ...notificationPrefs, [pref.id]: val };
+                      setNotificationPrefs(newPrefs);
+                      handleSaveNotificationPrefs(newPrefs);
+                    }}
+                    disabled={pref.comingSoon}
+                    className="data-[state=checked]:bg-[#F7B750] disabled:opacity-30 disabled:cursor-not-allowed"
                   />
                 </div>
               ))}
@@ -8869,7 +9084,12 @@ export default function BrandDashboard() {
                   Billing Address
                 </Label>
                 <Textarea
-                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
+                  placeholder="Enter your billing address"
+                  defaultValue={
+                    brand.industry === "Retail & E-commerce"
+                      ? "123 Main St\nLos Angeles, CA 90001\nUnited States"
+                      : ""
+                  }
                   className="rounded-lg border border-gray-200 focus:border-gray-900 font-medium min-h-[120px]"
                 />
               </div>
@@ -8879,7 +9099,7 @@ export default function BrandDashboard() {
                     Billing Email
                   </Label>
                   <Input
-                    defaultValue="billing@urbanapparel.com"
+                    defaultValue={brand.contact_email}
                     className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 font-medium"
                   />
                 </div>
@@ -8895,20 +9115,21 @@ export default function BrandDashboard() {
               </div>
             </div>
 
-            <div className="mt-12 space-y-2">
-              <Label className="text-sm font-semibold text-gray-500 block mb-2">
+            <div className="mt-10 space-y-2">
+              <Label className="text-xs font-bold text-gray-500 block">
                 Payment Method
               </Label>
               <div className="p-4 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-gray-500" />
-                  <p className="text-sm font-medium text-gray-700 tracking-wider">
-                    .... .... .... 4242
-                  </p>
+                <div className="flex items-center gap-4">
+                  <CreditCard className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 tracking-widest">
+                    •••• •••• •••• 4242
+                  </span>
                 </div>
                 <Button
                   variant="outline"
-                  className="rounded-lg border border-gray-200 font-bold text-xs h-8 px-4"
+                  size="sm"
+                  className="rounded-lg border border-gray-200 font-bold text-xs"
                 >
                   Update
                 </Button>
@@ -9002,6 +9223,7 @@ export default function BrandDashboard() {
             <div className="space-y-4">
               <Button
                 variant="outline"
+                onClick={() => navigate("/forgot-password")}
                 className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
               >
                 Reset Admin Password <ChevronRight className="w-4 h-4" />
@@ -11364,12 +11586,11 @@ export default function BrandDashboard() {
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {notificationPrefs.newProjectAlerts &&
-                          inboxPendingCount > 0 && (
-                            <Badge className="bg-gray-200 text-gray-700">
-                              {inboxPendingCount}
-                            </Badge>
-                          )}
+                        {inboxUnreadCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {inboxUnreadCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => {
@@ -11401,6 +11622,11 @@ export default function BrandDashboard() {
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
+                        {pendingApprovalCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {pendingApprovalCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => {
@@ -11417,6 +11643,11 @@ export default function BrandDashboard() {
                       >
                         <Briefcase className="w-4 h-4" />
                         <span className="flex-1 text-left">Jobs</span>
+                        {jobsUnreadCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {jobsUnreadCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}

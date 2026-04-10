@@ -609,3 +609,62 @@ pub async fn booking_created_email(
         Ok(Json(json!({"status":"ok"})))
     }
 }
+
+pub async fn send_brand_notification(
+    state: &AppState,
+    brand_id: &str,
+    agency_id: Option<&str>,
+    subject: &str,
+    message: &str,
+    meta_json: serde_json::Value,
+    notify_email: bool,
+) -> Result<(), (StatusCode, String)> {
+    // 1. Resolve brand email
+    let resp = state
+        .pg
+        .from("brands")
+        .select("email")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "brand_not_found".to_string()));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let brand_data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let brand_email = brand_data.get("email").and_then(|v| v.as_str());
+
+    // 2. Persist to in-app inbox
+    let insert = json!({
+        "brand_id": brand_id,
+        "agency_id": agency_id,
+        "subject": subject,
+        "message": message,
+        "meta_json": meta_json,
+    });
+
+    let _ = state
+        .pg
+        .from("brand_notifications")
+        .insert(insert.to_string())
+        .execute()
+        .await;
+
+    // 3. Send email if enabled
+    if notify_email {
+        if let Some(email) = brand_email {
+            let _ = crate::email::send_plain_text_email(state, email, subject, message, None);
+        }
+    }
+
+    Ok(())
+}

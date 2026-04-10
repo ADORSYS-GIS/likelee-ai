@@ -233,6 +233,31 @@ export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 
+// Brand Notifications
+export const listBrandNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/brand/notifications`, { params });
+
+export const markBrandNotificationRead = (id: string) =>
+  base44Client.post(`/brand/notifications/${id}/read`);
+
+export const getBrandNotificationCount = () =>
+  base44Client.get(`/brand/notifications/count`);
+
+export const getInboxUnreadCount = () =>
+  base44Client.get(`/brand/inbox/unread-count`);
+
+export const markInboxPackagesViewed = () =>
+  base44Client.post(`/brand/inbox/mark-viewed`, {});
+
+export const getJobsUnreadCount = () =>
+  base44Client.get(`/brand/jobs/unread-count`);
+
+export const markJobApplicationsViewed = () =>
+  base44Client.post(`/brand/jobs/mark-viewed`, {});
+
+export const getLicensingContractsCount = () =>
+  base44Client.get(`/brand/licensing/contracts-count`);
+
 export const createBrandCampaignLicenseRequest = (
   campaignId: string,
   data: {
@@ -1121,3 +1146,21 @@ export const getAgencyBillingStatus = () =>
     stripe_current_period_end?: string | null;
     stripe_cancel_at_period_end: boolean;
   }>(`/api/agency/billing/status`);
+export const getBrandBillingStatus = () =>
+  base44Client.get<{
+    brand_id: string;
+    stripe_customer_id: string | null;
+    has_payment_method: boolean;
+  }>(`/api/brand/billing/status`);
+
+export const getBrandBillingOverview = () =>
+  base44Client.get<{
+    active_projects_count: number;
+    total_spent_cents: number;
+    pending_payments_cents: number;
+  }>(`/api/brand/billing/overview`);
+
+export const getBrandPaymentHistory = () =>
+  base44Client.get<{
+    payments: any[];
+  }>(`/api/brand/billing/history`);

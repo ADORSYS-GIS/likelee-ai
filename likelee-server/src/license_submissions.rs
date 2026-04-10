@@ -1025,6 +1025,58 @@ pub async fn finalize(
         "Failed to update submission (empty response)".to_string(),
     ))?;
 
+    // Send notification to brand that contract is ready
+    if let Some(brand_id) = submission.client_id.as_ref() {
+        let state_clone = state.clone();
+        let brand_id_clone = brand_id.clone();
+        let submission_id_clone = submission.id.clone();
+        let campaign_title = license_template.template_name.clone();
+
+        tokio::spawn(async move {
+            // Fetch brand notification preferences
+            if let Ok(brand_resp) = state_clone
+                .pg
+                .from("brands")
+                .select("notification_prefs")
+                .eq("id", &brand_id_clone)
+                .single()
+                .execute()
+                .await
+            {
+                if brand_resp.status().is_success() {
+                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
+                        let prefs = brand_data.get("notification_prefs");
+                        let notify_enabled = prefs
+                            .and_then(|p| p.get("newProjectAlerts"))
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(true);
+
+                        if notify_enabled {
+                            let subject = "Contract ready for signature";
+                            let message = format!(
+                                "An agency has sent you a contract for '{}'. Please review and sign.",
+                                campaign_title
+                            );
+                            let _ = crate::notifications::send_brand_notification(
+                                &state_clone,
+                                &brand_id_clone,
+                                None,
+                                subject,
+                                &message,
+                                json!({
+                                    "submission_id": submission_id_clone,
+                                    "type": "contract_ready"
+                                }),
+                                true,
+                            )
+                            .await;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // 6. Create a linked licensing_request — single request for all talents.
     // Resolve the list of talent IDs to use:
     //   1. talent_ids from the finalize request (array, preferred)
