@@ -614,7 +614,8 @@ export default function CreatorDashboard() {
       const { createCreatorBillingPortal } = await import("@/api/functions");
       const res = await createCreatorBillingPortal();
       // base44Client returns the payload directly
-      const url = (res as any)?.checkout_url || (res as any)?.data?.checkout_url;
+      const url =
+        (res as any)?.checkout_url || (res as any)?.data?.checkout_url;
       if (url) {
         window.location.href = url;
       } else {
@@ -3784,7 +3785,9 @@ export default function CreatorDashboard() {
   const effectivePlanTier = String(
     (creatorBilling as any)?.entitlement_tier || creatorPlanTier,
   );
-  const hasUsedProTrial = !!creatorBilling?.trial_pro_start_at || (!!creatorBilling?.trial_start_at && creatorPlanTier === "pro");
+  const hasUsedProTrial =
+    !!creatorBilling?.trial_pro_start_at ||
+    (!!creatorBilling?.trial_start_at && creatorPlanTier === "pro");
 
   const [trialCountdown, setTrialCountdown] = useState<string>("");
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
@@ -3874,9 +3877,13 @@ export default function CreatorDashboard() {
       : creatorPlanTier === "pro";
   const creatorPlanLabel =
     effectivePlanTier === "pro"
-      ? (trialActive ? "Pro Trial" : "Pro Plan")
+      ? trialActive
+        ? "Pro Trial"
+        : "Pro Plan"
       : effectivePlanTier === "basic"
-        ? (trialActive ? "Basic Trial" : "Basic Plan")
+        ? trialActive
+          ? "Basic Trial"
+          : "Basic Plan"
         : "Free Plan";
   const creatorPlanBadgeClass =
     effectivePlanTier === "pro"

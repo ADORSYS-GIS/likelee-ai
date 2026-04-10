@@ -4262,12 +4262,18 @@ async fn sync_creator_subscription_from_stripe(
     let mut update = serde_json::Map::new();
 
     if status == "trialing" {
-        let ts = chrono::DateTime::<chrono::Utc>::from_timestamp(sub.start_date, 0).map(|dt| dt.to_rfc3339()).unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+        let ts = chrono::DateTime::<chrono::Utc>::from_timestamp(sub.start_date, 0)
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
         update.insert("trial_started_at".into(), json!(ts));
 
         match plan_tier {
-            "basic" => { update.insert("trial_basic_started_at".into(), json!(ts)); }
-            "pro" => { update.insert("trial_pro_started_at".into(), json!(ts)); }
+            "basic" => {
+                update.insert("trial_basic_started_at".into(), json!(ts));
+            }
+            "pro" => {
+                update.insert("trial_pro_started_at".into(), json!(ts));
+            }
             _ => {}
         }
     } else {

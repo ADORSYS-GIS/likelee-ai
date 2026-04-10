@@ -175,7 +175,10 @@ export const getCreatorBillingStatus = () =>
   base44Client.get(`/creator/billing/status`);
 
 export const createCreatorBillingPortal = () =>
-  base44Client.post<{ checkout_url: string }>(`/api/creator/billing/portal`, {});
+  base44Client.post<{ checkout_url: string }>(
+    `/api/creator/billing/portal`,
+    {},
+  );
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
 

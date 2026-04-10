@@ -4,14 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Check,
-  ArrowLeft,
-  X,
-  Gift,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import { Check, ArrowLeft, X, Gift, ArrowRight, Loader2 } from "lucide-react";
 import {
   createCreatorSubscriptionCheckout,
   createCreatorBillingPortal,
@@ -28,7 +21,8 @@ export default function CreatorSubscribe() {
   const canceled = searchParams.get("canceled") === "1";
   const billingParam = String(searchParams.get("billing") || "").trim();
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string>("free");
-  const [effectivePlanTier, setEffectivePlanTier] = React.useState<string>("free");
+  const [effectivePlanTier, setEffectivePlanTier] =
+    React.useState<string>("free");
   const [checkingOut, setCheckingOut] = React.useState(false);
   const [billingInfo, setBillingInfo] = React.useState<{
     current_period_end?: string;
@@ -71,7 +65,7 @@ export default function CreatorSubscribe() {
         title: "Could not start trial",
         description: e?.message?.includes("trial_already_used")
           ? "You have already used your free trial. Please subscribe directly."
-          : (e?.message || String(e)),
+          : e?.message || String(e),
       });
     } finally {
       setStartingTrial(false);
@@ -115,11 +109,14 @@ export default function CreatorSubscribe() {
     return currentInterval !== billingInterval;
   };
 
-  const canSelectBasic = !checkingOut && (currentPlanTier !== "basic" || isIntervalChange("basic"));
-  const canSelectPro = !checkingOut && (currentPlanTier !== "pro" || isIntervalChange("pro"));
+  const canSelectBasic =
+    !checkingOut && (currentPlanTier !== "basic" || isIntervalChange("basic"));
+  const canSelectPro =
+    !checkingOut && (currentPlanTier !== "pro" || isIntervalChange("pro"));
 
   const hasActiveSubscription = !!billingInfo?.stripe_subscription_id;
-  const isPaidActive = hasActiveSubscription && currentPlanTier !== "free" && !trialInfo.active;
+  const isPaidActive =
+    hasActiveSubscription && currentPlanTier !== "free" && !trialInfo.active;
 
   const basicGroups = [
     {
@@ -189,7 +186,9 @@ export default function CreatorSubscribe() {
       try {
         const resp = await getCreatorBillingStatus();
         const tier = String((resp as any)?.plan_tier || "free");
-        const entitlementTier = String((resp as any)?.entitlement_tier || tier || "free");
+        const entitlementTier = String(
+          (resp as any)?.entitlement_tier || tier || "free",
+        );
         const interval = String((resp as any)?.plan_interval || "month");
 
         const trialActive = !!(resp as any)?.trial_active;
@@ -327,7 +326,11 @@ export default function CreatorSubscribe() {
   };
 
   const onCheckout = async (plan: "basic" | "pro", forceCheckout = false) => {
-    if (billingInfo?.stripe_subscription_id && !forceCheckout && !trialInfo.active) {
+    if (
+      billingInfo?.stripe_subscription_id &&
+      !forceCheckout &&
+      !trialInfo.active
+    ) {
       return onUpgrade(plan);
     }
     setCheckingOut(true);
@@ -353,9 +356,14 @@ export default function CreatorSubscribe() {
   };
 
   // Whether user has already used their trial (trial_started_at is set)
-  const hasUsedBasicTrial = !!trialInfo.basicStartAt || (!!trialInfo.startAt && currentPlanTier === "basic");
-  const hasUsedProTrial = !!trialInfo.proStartAt || (!!trialInfo.startAt && currentPlanTier === "pro");
-  const hasUsedAnyTrial = !!trialInfo.startAt || !!trialInfo.basicStartAt || !!trialInfo.proStartAt;
+  const hasUsedBasicTrial =
+    !!trialInfo.basicStartAt ||
+    (!!trialInfo.startAt && currentPlanTier === "basic");
+  const hasUsedProTrial =
+    !!trialInfo.proStartAt ||
+    (!!trialInfo.startAt && currentPlanTier === "pro");
+  const hasUsedAnyTrial =
+    !!trialInfo.startAt || !!trialInfo.basicStartAt || !!trialInfo.proStartAt;
 
   const hasActiveProTrial = trialInfo.active && !!trialInfo.proStartAt;
 
@@ -389,7 +397,6 @@ export default function CreatorSubscribe() {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
       <div className="max-w-6xl mx-auto px-6 pt-12 pb-24">
@@ -404,13 +411,15 @@ export default function CreatorSubscribe() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-[#56708F]">
-            Simple, affordable plans so creators can protect, license, and monetize their identity
-            in the AI era with the right level of access.
+            Simple, affordable plans so creators can protect, license, and
+            monetize their identity in the AI era with the right level of
+            access.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Badge className="rounded-full border border-[#D9E4F1] bg-white/80 px-4 py-2 text-xs font-semibold text-[#56708F] shadow-none">
-              Plans are billed {billingInterval === "year" ? "annually" : "monthly"}
+              Plans are billed{" "}
+              {billingInterval === "year" ? "annually" : "monthly"}
             </Badge>
 
             <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
@@ -602,7 +611,8 @@ export default function CreatorSubscribe() {
                     <span className="text-[#5eead4]">Free</span> Trial
                   </h2>
                   <p className="mt-2 text-sm text-white/60">
-                    Pick any plan below and enter your card — you won't be charged until the trial ends.
+                    Pick any plan below and enter your card — you won't be
+                    charged until the trial ends.
                   </p>
                 </div>
               </div>
@@ -611,7 +621,6 @@ export default function CreatorSubscribe() {
         )}
 
         <div className="mt-10 flex flex-wrap justify-center gap-6 items-stretch">
-
           <Card
             role="button"
             tabIndex={0}
@@ -640,7 +649,11 @@ export default function CreatorSubscribe() {
                 {!isPaidActive && !hasUsedBasicTrial && (
                   <motion.div
                     animate={{ y: [0, -5, 0], rotate: [0, -3, 3, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                     className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#15A9AD]/10 ring-1 ring-[#15A9AD]/20"
                   >
                     <Gift className="h-5 w-5 text-[#15A9AD]" />
@@ -668,56 +681,61 @@ export default function CreatorSubscribe() {
                 }}
                 disabled={!canSelectBasicUi || checkingOut || startingTrial}
               >
-                {currentPlanTier === "basic" && !isIntervalChange("basic")
-                  ? "Current Plan"
-                  : currentPlanTier === "basic" && isIntervalChange("basic")
-                    ? `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
-                  : isPaidActive && currentPlanTier === "pro"
-                    ? "Switch to Basic"
-                  : currentPlanTier === "pro" && !hasUsedBasicTrial
-                    ? (
-                      <span className="flex items-center gap-2">
-                        <motion.span
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Gift className="h-4 w-4" />
-                        </motion.span>
-                        Switch to Basic Trial
-                      </span>
-                    )
-                  : !hasUsedBasicTrial
-                    ? (
-                      <span className="flex items-center gap-2">
-                        <motion.span
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Gift className="h-4 w-4" />
-                        </motion.span>
-                        Start 30-Day Free Trial
-                      </span>
-                    )
-                    : "Subscribe to Basic"}
+                {currentPlanTier === "basic" && !isIntervalChange("basic") ? (
+                  "Current Plan"
+                ) : currentPlanTier === "basic" && isIntervalChange("basic") ? (
+                  `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
+                ) : isPaidActive && currentPlanTier === "pro" ? (
+                  "Switch to Basic"
+                ) : currentPlanTier === "pro" && !hasUsedBasicTrial ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Gift className="h-4 w-4" />
+                    </motion.span>
+                    Switch to Basic Trial
+                  </span>
+                ) : !hasUsedBasicTrial ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Gift className="h-4 w-4" />
+                    </motion.span>
+                    Start 30-Day Free Trial
+                  </span>
+                ) : (
+                  "Subscribe to Basic"
+                )}
               </Button>
-              {!isPaidActive && currentPlanTier === "pro" && !hasUsedBasicTrial && trialInfo.endsAt && (
-                <div className="mt-3 text-center">
-                  <p className="text-[11px] font-bold text-[#12A4A9]/70 uppercase tracking-wider">
-                    Trial Continuation
-                  </p>
-                  <p className="mt-1 text-[13px] text-[#26415F]/80 leading-snug">
-                    Downgrading to Basic trial. Your remaining trial days carry over. 
-                    Basic billing begins automatically on{" "}
-                    <span className="font-bold text-[#26415F]">
-                      {new Date(trialInfo.endsAt).toLocaleDateString(undefined, {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric"
-                      })}
-                    </span>.
-                  </p>
-                </div>
-              )}
+              {!isPaidActive &&
+                currentPlanTier === "pro" &&
+                !hasUsedBasicTrial &&
+                trialInfo.endsAt && (
+                  <div className="mt-3 text-center">
+                    <p className="text-[11px] font-bold text-[#12A4A9]/70 uppercase tracking-wider">
+                      Trial Continuation
+                    </p>
+                    <p className="mt-1 text-[13px] text-[#26415F]/80 leading-snug">
+                      Downgrading to Basic trial. Your remaining trial days
+                      carry over. Basic billing begins automatically on{" "}
+                      <span className="font-bold text-[#26415F]">
+                        {new Date(trialInfo.endsAt).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </span>
+                      .
+                    </p>
+                  </div>
+                )}
               <div className="mt-6 space-y-4">
                 {basicGroups.map((group) => (
                   <div key={group.title} className="space-y-2">
@@ -792,7 +810,11 @@ export default function CreatorSubscribe() {
                 {!isPaidActive && !hasUsedProTrial && (
                   <motion.div
                     animate={{ y: [0, -5, 0], rotate: [0, -3, 3, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                     className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur-md ml-auto"
                   >
                     <Gift className="h-5 w-5 text-[#89F4F7]" />
@@ -819,55 +841,61 @@ export default function CreatorSubscribe() {
                 }}
                 disabled={!canSelectPro || checkingOut || startingTrial}
               >
-                {currentPlanTier === "pro" && !isIntervalChange("pro")
-                  ? "Current Plan"
-                  : currentPlanTier === "pro" && isIntervalChange("pro")
-                    ? `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
-                  : isPaidActive && currentPlanTier === "basic"
-                    ? "Switch to Pro"
-                  : currentPlanTier === "basic" && !hasUsedProTrial
-                    ? (
-                      <span className="flex items-center gap-2">
-                        <motion.span
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Gift className="h-5 w-5" />
-                        </motion.span>
-                        Switch to Pro Trial
-                      </span>
-                    )
-                  : !hasUsedProTrial
-                    ? (
-                      <span className="flex items-center gap-2">
-                        <motion.span
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Gift className="h-5 w-5" />
-                        </motion.span>
-                        Start 30-Day Free Trial
-                      </span>
-                    )
-                    : "Subscribe to Pro"}
+                {currentPlanTier === "pro" && !isIntervalChange("pro") ? (
+                  "Current Plan"
+                ) : currentPlanTier === "pro" && isIntervalChange("pro") ? (
+                  `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
+                ) : isPaidActive && currentPlanTier === "basic" ? (
+                  "Switch to Pro"
+                ) : currentPlanTier === "basic" && !hasUsedProTrial ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Gift className="h-5 w-5" />
+                    </motion.span>
+                    Switch to Pro Trial
+                  </span>
+                ) : !hasUsedProTrial ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Gift className="h-5 w-5" />
+                    </motion.span>
+                    Start 30-Day Free Trial
+                  </span>
+                ) : (
+                  "Subscribe to Pro"
+                )}
               </Button>
-              {!isPaidActive && currentPlanTier === "basic" && !hasUsedProTrial && trialInfo.endsAt && (
-                <div className="mt-3 text-center">
-                  <p className="text-[11px] font-bold text-[#89F4F7]/70 uppercase tracking-wider">
-                    Trial Continuation
-                  </p>
-                  <p className="mt-1 text-[13px] text-white/80 leading-snug">
-                    You'll keep your remaining trial days. Pro billing begins automatically on{" "}
-                    <span className="font-bold text-white">
-                      {new Date(trialInfo.endsAt).toLocaleDateString(undefined, {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric"
-                      })}
-                    </span>.
-                  </p>
-                </div>
-              )}
+              {!isPaidActive &&
+                currentPlanTier === "basic" &&
+                !hasUsedProTrial &&
+                trialInfo.endsAt && (
+                  <div className="mt-3 text-center">
+                    <p className="text-[11px] font-bold text-[#89F4F7]/70 uppercase tracking-wider">
+                      Trial Continuation
+                    </p>
+                    <p className="mt-1 text-[13px] text-white/80 leading-snug">
+                      You'll keep your remaining trial days. Pro billing begins
+                      automatically on{" "}
+                      <span className="font-bold text-white">
+                        {new Date(trialInfo.endsAt).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </span>
+                      .
+                    </p>
+                  </div>
+                )}
               <div className="mt-6 space-y-4">
                 {proGroups.map((group) => (
                   <div key={group.title} className="space-y-2">
@@ -979,7 +1007,6 @@ export default function CreatorSubscribe() {
             Back to Dashboard
           </Button>
         </div>
-
       </div>
     </div>
   );
