@@ -369,19 +369,17 @@ export default function CreatorSubscribe() {
     canSelectBasic && !hasActiveProTrial && !disableBasicSwitchOnPaidProMonthly;
 
   const handlePlanSelection = (plan: "basic" | "pro") => {
-    if (plan === "basic" && !canSelectBasic) return;
-    if (plan === "pro" && !canSelectPro) return;
-
-    if (plan === "basic" && hasActiveProTrial) {
-      return;
-    }
-
-    if (plan === "basic" && disableBasicSwitchOnPaidProMonthly) {
-      return;
-    }
-
     if (billingInfo?.stripe_subscription_id) {
+      if (plan === "basic" && hasActiveProTrial) return;
+      if (plan === "basic" && disableBasicSwitchOnPaidProMonthly) return;
+
+      if (trialInfo.active) {
+        void onCheckout(plan, true);
+        return;
+      }
+
       void onManageSubscription();
+      return;
     } else if (plan === "basic" ? !hasUsedBasicTrial : !hasUsedProTrial) {
       // New trial
       void onStartTrial(plan);

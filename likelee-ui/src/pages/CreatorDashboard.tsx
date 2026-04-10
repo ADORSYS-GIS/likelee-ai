@@ -6062,14 +6062,9 @@ export default function CreatorDashboard() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <p
-                  className="text-base font-black tracking-tight text-[#0F172A] cursor-pointer hover:text-[#32C8D1] transition-colors"
-                  onClick={() => navigate("/CreatorSubscribe")}
-                >
-                  {creatorPlanLabel}
-                </p>
                 <div
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center min-w-[50px] ${creatorPlanBadgeClass}`}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center min-w-[50px] cursor-pointer hover:opacity-90 transition-opacity ${creatorPlanBadgeClass}`}
+                  onClick={() => navigate("/CreatorSubscribe")}
                 >
                   {effectivePlanTier}
                 </div>
