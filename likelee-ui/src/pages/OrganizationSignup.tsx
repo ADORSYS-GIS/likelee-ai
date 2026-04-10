@@ -2721,7 +2721,7 @@ export default function OrganizationSignup() {
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  {t("organizationSignup.terms.download", "Download")}
                 </Button>
               </div>
 
@@ -2739,16 +2739,23 @@ export default function OrganizationSignup() {
                     htmlFor="org-agree-terms"
                     className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                   >
-                    I agree to the{" "}
+                    {t("organizationSignup.terms.agreeTo", "I agree to the")}{" "}
                     <a
                       href="https://likelee.ai/privacypolicy"
                       target="_blank"
                       rel="noreferrer"
                       className="font-semibold underline text-indigo-600"
                     >
-                      Privacy Policy
+                      {t(
+                        "organizationSignup.terms.policyLink",
+                        "Privacy Policy",
+                      )}
                     </a>{" "}
-                    and Terms of Service.
+                    {t(
+                      "organizationSignup.terms.andTerms",
+                      "and Terms of Service",
+                    )}
+                    .
                   </label>
                   <p className="text-sm text-gray-500">
                     {t(
