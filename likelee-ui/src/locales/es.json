@@ -1658,6 +1658,17 @@
       "livenessFailedTitle": "Error de verificación de vida",
       "livenessFailedDesc": "Por favor, inténtelo de nuevo con buena iluminación y siga las instrucciones.",
       "kycErrorTitle": "Error de KYC"
+    },
+    "terms": {
+      "title": "Términos y Acuerdos",
+      "subtitle": "Por favor, revise y acepte nuestras políticas para finalizar su registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio",
+      "download": "Descargar",
+      "mustAgree": "Debe aceptar los términos para completar su registro.",
+      "mustAgreeTitle": "Acuerdo Requerido",
+      "completeRegistration": "Completar Registro"
     }
   },
   "forYou": {
