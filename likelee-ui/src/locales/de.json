@@ -1966,6 +1966,17 @@
       "livenessFailedTitle": "Liveness-Check fehlgeschlagen",
       "livenessFailedDesc": "Bitte versuchen Sie es erneut bei guter Beleuchtung und folgen Sie den Anweisungen.",
       "kycErrorTitle": "KYC-Fehler"
+    },
+    "terms": {
+      "title": "Bedingungen und Vereinbarungen",
+      "subtitle": "Bitte lesen und akzeptieren Sie unsere Richtlinien, um Ihre Registrierung abzuschließen.",
+      "agreeTo": "Ich akzeptiere die",
+      "policyLink": "Datenschutzrichtlinie",
+      "andTerms": "und die Nutzungsbedingungen",
+      "download": "Herunterladen",
+      "mustAgree": "Sie müssen die Bedingungen akzeptieren, um Ihre Registrierung abzuschließen.",
+      "mustAgreeTitle": "Zustimmung erforderlich",
+      "completeRegistration": "Registrierung abschließen"
     }
   },
   "forYou": {
