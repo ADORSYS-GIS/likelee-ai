@@ -530,7 +530,7 @@ pub async fn decline_invite_by_token(
         .eq("id", invite.id.as_str())
         .update(
             json!({
-                "status": "revoked",
+                "status": "declined",
                 "updated_at": now_rfc3339(),
             })
             .to_string(),

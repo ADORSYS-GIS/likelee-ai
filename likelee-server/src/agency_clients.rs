@@ -28,7 +28,7 @@ pub async fn list_agency_clients(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let access = require_agency_permission(&state, &user, Permission::ViewClients).await?;
     let agency_id = &access.organization_id;
 
     let resp = state
@@ -80,7 +80,7 @@ pub async fn share_comp_card(
     Json(payload): Json<ShareCompCardRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let access = require_agency_permission(&state, &user, Permission::ManageClients).await?;
     let agency_id = &access.organization_id;
 
     if payload.client_ids.is_empty() {

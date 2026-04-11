@@ -582,7 +582,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS for debugging
+        .auth(user.access_token.clone())
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands(company_name,email),creators(full_name,email,profile_photo_url)")
         .eq("agency_id", agency_id)
         .order("created_at.desc")

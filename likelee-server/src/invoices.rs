@@ -390,23 +390,38 @@ async fn get_booking(
         .get("talent_id")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if !talent_id.is_empty() {
-        let talent_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("id", talent_id)
-            .eq("agency_id", agency_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !talent_resp.status().is_success() {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "Booking does not belong to this agency".to_string(),
-            ));
-        }
+    if talent_id.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Cannot verify booking ownership: missing talent_id".to_string(),
+        ));
+    }
+
+    let talent_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("id", talent_id)
+        .eq("agency_id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !talent_resp.status().is_success() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Booking does not belong to this agency".to_string(),
+        ));
+    }
+
+    let talent_text = talent_resp.text().await.unwrap_or_default();
+    let talent_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&talent_text).unwrap_or_default();
+    if talent_rows.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Booking does not belong to this agency".to_string(),
+        ));
     }
 
     Ok(booking.clone())

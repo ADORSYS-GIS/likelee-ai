@@ -24,6 +24,7 @@ pub struct AuthUser {
     pub email: Option<String>,
     pub role: String,
     pub organization_id: Option<String>,
+    pub access_token: String,
 }
 
 impl AuthUser {
@@ -238,6 +239,7 @@ where
             email: token_data.claims.email,
             role,
             organization_id,
+            access_token: token,
         })
     }
 }

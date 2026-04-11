@@ -1462,6 +1462,7 @@ pub async fn resend(
         email: auth_user.email,
         role: auth_user.role,
         organization_id: auth_user.organization_id,
+        access_token: auth_user.access_token.clone(),
     };
 
     // Instead of calling create (which is a stub), we call create_draft then we can finalize it.
