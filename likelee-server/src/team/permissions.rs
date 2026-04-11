@@ -122,7 +122,6 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewLicenses,
         ],
         TeamRole::Reviewer => vec![
-            Permission::ApproveDeliverables,
             Permission::ViewDeliverables,
             Permission::ViewTeamMembers,
             Permission::ViewBrandConnections,

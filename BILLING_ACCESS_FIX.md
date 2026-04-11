@@ -169,10 +169,10 @@ location.reload();
 
 | Role | Permissions |
 |------|-------------|
-| Owner | create_campaigns, approve_deliverables, view_deliverables, **manage_billing**, invite_team_members, update_member_roles, view_team_members, view_brand_connections, manage_brand_connections, view_licenses, manage_licenses |
-| Admin | create_campaigns, approve_deliverables, view_deliverables, **manage_billing**, invite_team_members, update_member_roles, view_team_members, view_brand_connections, manage_brand_connections, view_licenses, manage_licenses |
-| Project Manager | create_campaigns, approve_deliverables, view_deliverables, view_team_members, view_brand_connections, manage_brand_connections, view_licenses, manage_licenses |
-| Reviewer | view_deliverables, view_team_members, view_brand_connections, view_licenses |
+| Owner | create_campaigns, approve_deliverables, view_deliverables, **manage_billing**, invite_team_members, update_member_roles, view_team_members, view_brand_connections, manage_brand_connections, disconnect_brand_connections, view_clients, manage_clients, view_licenses, manage_licenses, transfer_ownership, delete_organisation |
+| Admin | create_campaigns, approve_deliverables, view_deliverables, **manage_billing**, invite_team_members, update_member_roles, view_team_members, view_brand_connections, manage_brand_connections, disconnect_brand_connections, view_clients, manage_clients, view_licenses, manage_licenses |
+| Project Manager | create_campaigns, approve_deliverables, view_deliverables, view_team_members, view_brand_connections, manage_brand_connections, view_clients, manage_clients, view_licenses, manage_licenses |
+| Reviewer | view_deliverables, view_team_members, view_brand_connections, view_clients, view_licenses |
 
 ## Troubleshooting
 
