@@ -93,6 +93,8 @@ import {
   Info,
   Shield,
   ShieldCheck,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -4486,7 +4488,10 @@ export default function BrandDashboard() {
     }
   };
 
-  const getPublicUrl = (del: any) => {
+  const getPublicUrl = (
+    del: any,
+    options: { thumbnail?: boolean; download?: boolean } = {},
+  ) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const path = typeof del === "string" ? del : del?.asset_url;
     if (!path) return "";
@@ -4494,7 +4499,13 @@ export default function BrandDashboard() {
 
     if (typeof del === "object" && del?.id && del?.offer_id) {
       const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
-      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
+      const queryParams = new URLSearchParams();
+      if (authToken) queryParams.set("token", authToken);
+      if (options.thumbnail) queryParams.set("thumbnail", "true");
+      if (options.download) queryParams.set("download", "true");
+
+      const queryString = queryParams.toString();
+      return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
     }
 
     // Never expose private-bucket URLs directly; access must go through API proxies.
@@ -5310,16 +5321,28 @@ export default function BrandDashboard() {
                                         const isBusy =
                                           String(reviewing || "") ===
                                           String(del?.id || "");
+                                        const isPaid =
+                                          String(offer?.payment_status || "")
+                                            .trim()
+                                            .toLowerCase() === "paid";
                                         return (
                                           <Card
                                             key={String(del.id)}
-                                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${
+                                              isPaid
+                                                ? "cursor-zoom-in"
+                                                : "cursor-default"
+                                            }`}
                                             onClick={() => {
                                               setPreviewItems(
                                                 selectedOfferHubDeliverables,
                                               );
                                               setPreviewIndex(idx);
-                                              setPreviewImage(del);
+                                              setPreviewImage({
+                                                ...del,
+                                                payment_status:
+                                                  offer?.payment_status,
+                                              });
                                             }}
                                           >
                                             <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -5327,12 +5350,30 @@ export default function BrandDashboard() {
                                                 del?.asset_type || "",
                                               ).startsWith("image") ? (
                                                 <img
-                                                  src={getPublicUrl(del)}
+                                                  src={getPublicUrl(del, {
+                                                    thumbnail:
+                                                      offer?.payment_status !==
+                                                      "paid",
+                                                  })}
                                                   alt={
                                                     del.caption || "Deliverable"
                                                   }
                                                   className="w-full h-full object-cover"
                                                 />
+                                              ) : offer?.payment_status !==
+                                                "paid" ? (
+                                                <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all group-hover:bg-gray-900">
+                                                  <div className="relative mb-3 flex items-center justify-center">
+                                                    <Lock className="w-8 h-8 text-indigo-400/80" />
+                                                    <Sparkles className="w-5 h-5 text-indigo-400 absolute -top-4 -right-4 animate-pulse" />
+                                                  </div>
+                                                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-center px-4 leading-tight">
+                                                    Premium Video
+                                                  </span>
+                                                  <span className="text-[7px] mt-2 font-bold text-indigo-400/60 uppercase tracking-widest border border-indigo-500/20 px-1.5 py-0.5 rounded-none">
+                                                    Locked
+                                                  </span>
+                                                </div>
                                               ) : (
                                                 <video
                                                   src={getPublicUrl(del)}
@@ -5401,13 +5442,14 @@ export default function BrandDashboard() {
                                                   disabled={
                                                     isApproved || isBusy
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "approve",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   {isApproved
                                                     ? "Approved"
@@ -5420,13 +5462,14 @@ export default function BrandDashboard() {
                                                   disabled={
                                                     isApproved || isBusy
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "changes_requested",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   Request changes
                                                 </Button>
@@ -8866,24 +8909,31 @@ export default function BrandDashboard() {
           <TabsTrigger
             value="profile"
             className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+        <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
+          <TabsTrigger
+            value="profile"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
             className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
             Notifications
           </TabsTrigger>
           <TabsTrigger
             value="billing"
             className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
             Billing
           </TabsTrigger>
           <TabsTrigger
             value="team"
             className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
             Team
           </TabsTrigger>
@@ -8904,6 +8954,16 @@ export default function BrandDashboard() {
             className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
           >
             Support & Help
+            value="integrations"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Security & Legal
           </TabsTrigger>
         </TabsList>
 
@@ -8911,6 +8971,8 @@ export default function BrandDashboard() {
           {/* Company Logo */}
           <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">
+          <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
               Company Logo
             </h3>
             <div className="flex items-center gap-6">
@@ -8925,6 +8987,13 @@ export default function BrandDashboard() {
                   </AvatarFallback>
                 </Avatar>
                 <label className="absolute -bottom-2 -right-2 bg-white rounded-lg p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-sm">
+                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
+                  <AvatarImage src={brand.logo} alt={brand.name} />
+                  <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
+                    {getBrandInitials(brand.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
                   <Edit className="w-4 h-4 text-gray-900" />
                   <input
                     type="file"
@@ -8936,7 +9005,7 @@ export default function BrandDashboard() {
                 </label>
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900 mb-1">
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
                   Upload Official Logo
                 </p>
                 <p className="text-xs text-gray-500 font-medium">
@@ -8995,6 +9064,171 @@ export default function BrandDashboard() {
                   disabled
                   className="rounded-lg border border-gray-200 bg-gray-50 h-11 text-sm font-medium cursor-not-allowed"
                 />
+            </div>
+          </Card>
+
+          {/* Company Information */}
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Building2 className="w-6 h-6" /> Company Information
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Company Name
+                </Label>
+                <Input
+                  value={brand.name}
+                  onChange={(e) => setBrand({ ...brand, name: e.target.value })}
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Industry
+                </Label>
+                <Input
+                  value={brand.industry}
+                  onChange={(e) =>
+                    setBrand({ ...brand, industry: e.target.value })
+                  }
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Website
+                </Label>
+                <Input
+                  value={brand.website}
+                  onChange={(e) =>
+                    setBrand({ ...brand, website: e.target.value })
+                  }
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Contact Email
+                </Label>
+                <Input
+                  value={brand.contact_email}
+                  onChange={(e) =>
+                    setBrand({ ...brand, contact_email: e.target.value })
+                  }
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="mt-12">
+              <Button
+                onClick={handleSaveProfile}
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+              >
+                Save Profile Changes
+              </Button>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Bell className="w-6 h-6" /> Communication Preferences
+            </h3>
+            <div className="space-y-2">
+              {[
+                {
+                  title: "New Project Alerts",
+                  desc: "When talent accepts or delivers assets",
+                },
+                {
+                  title: "Deliverable Submissions",
+                  desc: "When creators submit work for approval",
+                },
+                {
+                  title: "Approval Reminders",
+                  desc: "48-hour countdown notifications",
+                },
+                {
+                  title: "License Expiration Alerts",
+                  desc: "30-day advance notice",
+                },
+                {
+                  title: "Monthly Analytics Summary",
+                  desc: "Monthly performance email report",
+                },
+              ].map((pref, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
+                >
+                  <div className="pr-12">
+                    <Label className="text-sm font-black text-gray-900 uppercase tracking-widest block mb-1">
+                      {pref.title}
+                    </Label>
+                    <p className="text-xs font-medium text-gray-500">
+                      {pref.desc}
+                    </p>
+                  </div>
+                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <CreditCard className="w-6 h-6" /> Billing & Payment
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Billing Address
+                </Label>
+                <Textarea
+                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
+                />
+              </div>
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    Billing Email
+                  </Label>
+                  <Input
+                    defaultValue="billing@urbanapparel.com"
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    Tax Identification
+                  </Label>
+                  <Input
+                    placeholder="XX-XXXXXXX"
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Primary Payment Method
+                  </p>
+                  <p className="text-sm font-black text-gray-900">
+                    Visa ending in 4242
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -9011,6 +9245,10 @@ export default function BrandDashboard() {
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
                 Save Profile Changes
+                variant="outline"
+                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
+              >
+                Manage
               </Button>
             </div>
           </Card>
@@ -9383,6 +9621,180 @@ export default function BrandDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+        <TabsContent value="team" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                <Users className="w-6 h-6" /> Organization Members
+              </h3>
+              <Badge className="rounded-none bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3">
+                {brand.team_seats} / 5 Seats
+              </Badge>
+            </div>
+
+            <div className="space-y-3 mb-8">
+              {[
+                {
+                  name: "John Smith",
+                  email: "john@urbanapparel.com",
+                  role: "Admin",
+                },
+                {
+                  name: "Sarah Jones",
+                  email: "sarah@urbanapparel.com",
+                  role: "PM",
+                },
+                {
+                  name: "Mike Chen",
+                  email: "mike@urbanapparel.com",
+                  role: "Reviewer",
+                },
+              ].map((member, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-5 bg-white border-2 border-gray-100 hover:border-gray-900 transition-colors rounded-none"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-10 h-10 rounded-none border border-gray-200">
+                      <AvatarFallback className="font-black text-xs bg-gray-100 uppercase">
+                        {member.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-black text-gray-900 text-sm uppercase tracking-tight">
+                        {member.name}
+                      </p>
+                      <p className="text-xs font-bold text-gray-400">
+                        {member.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
+                      {member.role}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-none text-gray-400 hover:text-red-500 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button className="w-full rounded-none bg-gray-950 hover:bg-gray-800 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[8px_8px_0px_rgba(31,41,55,0.2)]">
+              <Plus className="w-5 h-5 mr-3" />
+              Invite New Collaborator
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6 mt-0">
+          <Card className="p-12 bg-white border border-gray-200 rounded-none shadow-none flex flex-col items-center justify-center text-center">
+            <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
+              <Zap className="w-8 h-8 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
+              Extend Your Workflow
+            </h3>
+            <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
+              Connect Likelee with your favorite marketing tools to automate
+              deliverables, tracking, and payments.
+            </p>
+            <Button
+              disabled
+              className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6 mt-0">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <Settings className="w-6 h-6" /> Security Settings
+              </h3>
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Reset Admin Password <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Active Session Audit <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <FileText className="w-6 h-6" /> Legal & Governance
+              </h3>
+              <div className="space-y-3">
+                {[
+                  "Terms & Conditions",
+                  "Privacy Policy",
+                  "SAG-AFTRA Agreement",
+                  "Data Export (GDPR)",
+                ].map((legal, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
+                    {legal}
+                  </Button>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Support Section - Global Footer */}
+      <Card className="p-8 bg-gray-950 text-white rounded-none shadow-none mt-12 border-none">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
+              Need Assistance?
+            </h3>
+            <p className="text-gray-400 font-medium text-sm">
+              Our partner success team is available 24/7 to help you optimize
+              your campaigns.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12">
+              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-none border-white/20 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+            >
+              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
+            </Button>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 
@@ -12201,17 +12613,92 @@ export default function BrandDashboard() {
           <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
             <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900">
               {previewImage?.asset_type === "video" ? (
-                <video
-                  src={getPublicUrl(previewImage)}
-                  controls
-                  className="max-w-full max-h-full"
-                />
+                previewImage?.payment_status !== "paid" ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-950 p-8 text-center">
+                    <div className="w-24 h-24 mb-6 rounded-none border-2 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5">
+                      <video
+                        src={getPublicUrl(previewImage)}
+                        className="w-full h-full object-cover opacity-10 grayscale blur-sm"
+                        muted
+                      />
+                      <div className="absolute flex flex-col items-center">
+                        <Lock className="w-10 h-10 text-indigo-400 mb-2" />
+                        <Sparkles className="w-6 h-6 text-indigo-400/50 absolute -top-8 -right-8 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      Premium Campaign Asset
+                    </h3>
+                    <p className="text-sm text-gray-500 max-w-xs mb-8">
+                      This high-resolution deliverable is secured until the
+                      escrow payment is released.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => setPreviewImage(null)}
+                      >
+                        Go back
+                      </Button>
+                      <Button
+                        className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)]"
+                        onClick={() => {
+                          const billingTab = document.querySelector(
+                            '[id*="billing-management"]',
+                          ) as HTMLElement;
+                          if (billingTab) {
+                            billingTab.click();
+                          }
+                          setPreviewImage(null);
+                        }}
+                      >
+                        Pay Now
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    src={getPublicUrl(previewImage)}
+                    controls
+                    className="max-w-full max-h-full"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controlsList="nodownload noplaybackrate"
+                  />
+                )
               ) : (
-                <img
-                  src={previewImage ? getPublicUrl(previewImage) : ""}
-                  className="max-w-full max-h-full object-contain"
-                  alt="Preview"
-                />
+                <div className="relative group/preview">
+                  {/* Watermark Overlay for Unpaid Assets */}
+                  {previewImage?.payment_status !== "paid" && (
+                    <div
+                      className="absolute inset-0 z-10 pointer-events-none opacity-[0.08]"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='white' font-family='sans-serif' font-weight='black' text-anchor='middle' transform='rotate(-45 75 75)'%3ELIKELEE PREVIEW%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                      }}
+                    />
+                  )}
+
+                  {/* Interaction Shield - Transparent layer over the image */}
+                  <div
+                    className="absolute inset-0 z-20 cursor-default"
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+
+                  <img
+                    src={
+                      previewImage
+                        ? getPublicUrl(previewImage, {
+                            thumbnail: previewImage?.payment_status !== "paid",
+                          })
+                        : ""
+                    }
+                    className="max-w-full max-h-full object-contain"
+                    alt="Preview"
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
+                  />
+                </div>
               )}
               {previewItems.length > 1 && (
                 <>
@@ -12269,6 +12756,21 @@ export default function BrandDashboard() {
                 >
                   <X className="w-4 h-4" />
                 </Button>
+                {["approved", "accepted", "brand_approved"].includes(
+                  String(previewImage?.status || "").toLowerCase(),
+                ) && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
+                    onClick={() => {
+                      if (previewImage)
+                        void downloadOfferHubDeliverable(previewImage);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </Button>
+                )}
               </div>
             </div>
             {previewImage?.caption && (

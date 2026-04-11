@@ -370,6 +370,8 @@ pub struct OfferDeliverableFileQuery {
     /// When true, this request is considered an explicit user-initiated download.
     /// Previews (e.g. <img>/<video>) should omit it so they don't get blocked.
     pub download: Option<String>,
+    /// When true, serves a low-resolution thumbnail. Required for unpaid brands to view previews.
+    pub thumbnail: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -6995,21 +6997,48 @@ pub async fn serve_offer_deliverable(
         .map(|v| matches!(v.as_str(), "1" | "true" | "t" | "yes" | "y" | "on"))
         .unwrap_or(false);
 
-    // Brands can preview deliverables, but must pay before downloading them.
-    if is_download && user.role == "brand" {
+    let is_thumbnail = query
+        .thumbnail
+        .as_deref()
+        .map(|t| t.to_lowercase() == "true")
+        .unwrap_or(false);
+
+    // Brands can preview deliverables via thumbnails, but must pay before downloading or viewing high-res assets.
+    if user.role == "brand" {
         let payment_status = _offer
             .get("payment_status")
             .and_then(|v| v.as_str())
             .unwrap_or("unpaid")
             .trim()
             .to_lowercase();
+
         if payment_status != "paid" {
-            return Err((
-                StatusCode::PAYMENT_REQUIRED,
-                "payment_required_to_download_deliverables".to_string(),
-            ));
+            // Block explicit downloads
+            if is_download {
+                return Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    "payment_required_to_download_deliverables".to_string(),
+                ));
+            }
+
+            // Block high-resolution previews (if not a thumbnail request)
+            if !is_thumbnail {
+                return Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    "payment_required_to_view_high_res_deliverables".to_string(),
+                ));
+            }
+
+            // Also block videos entirely until paid (unless we have a video thumbnailer)
+            if asset_type == "video" {
+                return Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    "payment_required_to_preview_videos".to_string(),
+                ));
+            }
         }
     }
+
     if is_download && user.role == "brand" {
         let approved = deliverable_status == "brand_approved"
             || deliverable_status == "approved"
@@ -7023,10 +7052,17 @@ pub async fn serve_offer_deliverable(
     }
 
     let bucket = state.supabase_bucket_private.clone();
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
+    let storage_url = if is_thumbnail && asset_type == "image" {
+        format!(
+            "{}/storage/v1/render/image/authenticated/{}/{}?width=800&quality=80&resize=contain",
+            state.supabase_url, bucket, path
+        )
+    } else {
+        format!(
+            "{}/storage/v1/object/{}/{}",
+            state.supabase_url, bucket, path
+        )
+    };
 
     let http = reqwest::Client::new();
     let up = http
