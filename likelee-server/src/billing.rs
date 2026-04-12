@@ -1259,7 +1259,9 @@ pub async fn create_agency_subscription_checkout(
             ));
         }
 
-        if let Ok(parsed_subscription) = existing_subscription_id.parse::<stripe_sdk::SubscriptionId>() {
+        if let Ok(parsed_subscription) =
+            existing_subscription_id.parse::<stripe_sdk::SubscriptionId>()
+        {
             if let Ok(subscription) =
                 stripe_sdk::Subscription::retrieve(&client, &parsed_subscription, &[]).await
             {
@@ -1273,11 +1275,12 @@ pub async fn create_agency_subscription_checkout(
                     .map(|p| p.id.to_string())
                     .unwrap_or_default();
 
-                if is_trialing && !current_price_id.is_empty() && current_price_id != base_plan_price_id {
+                if is_trialing
+                    && !current_price_id.is_empty()
+                    && current_price_id != base_plan_price_id
+                {
                     let now = chrono::Utc::now().timestamp();
-                    let trial_end = subscription
-                        .trial_end
-                        .unwrap_or(0);
+                    let trial_end = subscription.trial_end.unwrap_or(0);
                     let seconds_left = trial_end.saturating_sub(now);
                     let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
                     let final_days = days_left.max(1) as u32;
