@@ -2838,7 +2838,7 @@ pub async fn upgrade_creator_subscription(
 
     let req_client = reqwest::Client::new();
     let res = req_client
-        .post(&format!(
+        .post(format!(
             "https://api.stripe.com/v1/subscriptions/{}",
             stripe_subscription_id
         ))
@@ -2945,7 +2945,7 @@ pub async fn get_creator_billing_status(
 
     let resolved_trial_start = current_plan_trial_start.or(latest_trial_start);
 
-    let trial_active = resolved_trial_start.map_or(false, |start_dt| {
+    let trial_active = resolved_trial_start.is_some_and(|start_dt| {
         chrono::Utc::now()
             .signed_duration_since(start_dt)
             .num_days()
