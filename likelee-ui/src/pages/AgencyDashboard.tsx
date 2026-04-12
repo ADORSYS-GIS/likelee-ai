@@ -17161,8 +17161,7 @@ export default function AgencyDashboard() {
     : "";
   const agencyTrialStartAt = agencyBilling?.trial_start_at;
   const agencyHasPaidAccess =
-    agencyBilling?.has_paid_access ??
-    agencyPlanTier !== "none";
+    agencyBilling?.has_paid_access ?? agencyPlanTier !== "none";
   const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyCanConnectMarketplace =
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
@@ -17193,7 +17192,9 @@ export default function AgencyDashboard() {
     const rawEffective = String(agencyBilling?.effective_plan_tier || "")
       .trim()
       .toLowerCase();
-    const rawTier = String(agencyBilling?.plan_tier || "").trim().toLowerCase();
+    const rawTier = String(agencyBilling?.plan_tier || "")
+      .trim()
+      .toLowerCase();
     const rawLabel = String(agencyBilling?.display_plan_label || "")
       .trim()
       .toLowerCase();
@@ -17206,7 +17207,12 @@ export default function AgencyDashboard() {
     if (agencyPlanTier === "pro") return "PRO";
     if (agencyPlanTier === "enterprise") return "ENTERPRISE";
     return "TRIAL";
-  }, [agencyBilling?.display_plan_label, agencyBilling?.effective_plan_tier, agencyBilling?.plan_tier, agencyPlanTier]);
+  }, [
+    agencyBilling?.display_plan_label,
+    agencyBilling?.effective_plan_tier,
+    agencyBilling?.plan_tier,
+    agencyPlanTier,
+  ]);
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   const handleOpenAgencyBillingPortal = async () => {
@@ -17309,8 +17315,7 @@ export default function AgencyDashboard() {
       await agencyProfileQuery.refetch();
       toast({
         title: "Pro trial started",
-        description:
-          "Your agency now has 30 days of Pro access.",
+        description: "Your agency now has 30 days of Pro access.",
       });
     } catch (e: any) {
       const msg = String(e?.message || e || "");
@@ -17325,8 +17330,7 @@ export default function AgencyDashboard() {
       if (msg.includes("trial_only_available_for_unsubscribed_accounts")) {
         toast({
           title: "Trial unavailable",
-          description:
-            "Trial is only available for unsubscribed agencies.",
+          description: "Trial is only available for unsubscribed agencies.",
           variant: "destructive" as any,
         });
         return;
@@ -18556,7 +18560,9 @@ export default function AgencyDashboard() {
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "roster",
@@ -18572,7 +18578,9 @@ export default function AgencyDashboard() {
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "licensing",
@@ -18656,7 +18664,9 @@ export default function AgencyDashboard() {
             label: "Brand Connections",
             icon: Link,
             disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires a paid plan",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18686,7 +18696,9 @@ export default function AgencyDashboard() {
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "roster",
@@ -18702,7 +18714,9 @@ export default function AgencyDashboard() {
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires Pro",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "scouting",
@@ -18797,7 +18811,9 @@ export default function AgencyDashboard() {
             label: "Brand Connections",
             icon: Link,
             disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
-            disabledReason: agencySubscriptionLocked ? "Choose a plan" : "Requires a paid plan",
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -18934,7 +18950,11 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                     return;
                   }
-                  if (agencySubscriptionLocked && item.id !== "dashboard" && item.id !== "settings") {
+                  if (
+                    agencySubscriptionLocked &&
+                    item.id !== "dashboard" &&
+                    item.id !== "settings"
+                  ) {
                     navigate("/AgencySubscribe");
                     setSidebarOpen(false);
                     return;
@@ -19817,7 +19837,9 @@ export default function AgencyDashboard() {
                         <span className="inline-flex items-center gap-2">
                           <span>
                             {agencyTrialTierLabel} TRIAL
-                            {agencyPlanIntervalLabel ? ` (${agencyPlanIntervalLabel.toUpperCase()})` : ""}
+                            {agencyPlanIntervalLabel
+                              ? ` (${agencyPlanIntervalLabel.toUpperCase()})`
+                              : ""}
                           </span>
                           {agencyTrialCountdown ? (
                             <span className="text-[11px] font-black tracking-normal opacity-95">

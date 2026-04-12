@@ -361,7 +361,10 @@ export default function AgencySubscribe() {
   const checkoutDisabled =
     !initialized || profileLoading || checkingOut || requiresContactSales;
   const irlAddonCheckoutDisabled =
-    !initialized || profileLoading || checkingOutIrlAddon || requiresContactSales;
+    !initialized ||
+    profileLoading ||
+    checkingOutIrlAddon ||
+    requiresContactSales;
   const planChangeRaisesCost =
     currentPlanTier !== null &&
     (selectedPlanRank > currentPlanRank ||
@@ -770,7 +773,10 @@ export default function AgencySubscribe() {
       return true;
 
     // Disable: already on this exact plan (during trial, allow changing interval)
-    if (currentPlanTier === targetPlan && currentPlanInterval === billingInterval) {
+    if (
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === billingInterval
+    ) {
       if (!(includeSeatsInPlan && seatCountChanged)) return true;
     }
 
@@ -941,11 +947,13 @@ export default function AgencySubscribe() {
   const showBasicTrialCountdown =
     !!currentTrialEndsAt &&
     (currentPlanTier === "basic" ||
-      ((currentPlanTier === "none" || currentPlanTier === null) && plan === "basic"));
+      ((currentPlanTier === "none" || currentPlanTier === null) &&
+        plan === "basic"));
   const showProTrialCountdown =
     !!currentTrialEndsAt &&
     (currentPlanTier === "pro" ||
-      ((currentPlanTier === "none" || currentPlanTier === null) && plan === "pro"));
+      ((currentPlanTier === "none" || currentPlanTier === null) &&
+        plan === "pro"));
 
   return (
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
@@ -1091,7 +1099,11 @@ export default function AgencySubscribe() {
           </div>
         </div>
 
-        {authenticated && isAgencyUser && currentPlanTier === "none" && !success && null}
+        {authenticated &&
+          isAgencyUser &&
+          currentPlanTier === "none" &&
+          !success &&
+          null}
 
         <div className="mt-12">
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
@@ -1207,7 +1219,8 @@ export default function AgencySubscribe() {
                   {trialCountdown}
                 </div>
                 <div className="mt-1 text-xs text-blue-800">
-                  After the trial ends, you’ll be charged for the Basic plan unless you cancel.
+                  After the trial ends, you’ll be charged for the Basic plan
+                  unless you cancel.
                 </div>
               </div>
             )}
@@ -1346,7 +1359,8 @@ export default function AgencySubscribe() {
                   {trialCountdown}
                 </div>
                 <div className="mt-1 text-xs text-gray-300">
-                  After the trial ends, you’ll be charged for the Pro plan unless you cancel.
+                  After the trial ends, you’ll be charged for the Pro plan
+                  unless you cancel.
                 </div>
               </div>
             )}
