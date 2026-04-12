@@ -4023,7 +4023,7 @@ fn aggregate_agency_subscription_state(
                 .map(|sub| sub.id.to_string())
                 .unwrap_or_else(|| fallback_subscription.id.to_string());
             (
-                "free",
+                "none",
                 "month",
                 if aggregated_seat_quantity > 0 {
                     aggregated_seat_quantity
@@ -4338,7 +4338,7 @@ async fn sync_creator_subscription_from_stripe(
                 .unwrap_or("month");
             (t, interval)
         }
-        _ => ("free", "month"),
+        _ => ("none", "month"),
     };
 
     let cancel_at_period_end = sub.cancel_at_period_end;

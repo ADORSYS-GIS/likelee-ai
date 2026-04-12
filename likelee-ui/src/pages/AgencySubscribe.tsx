@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Check, Gift } from "lucide-react";
 import {
   changeAgencySubscriptionPlan,
+  createAgencyBillingPortal,
   createAgencyIrlBookingAddonCheckout,
   createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
@@ -757,9 +758,6 @@ export default function AgencySubscribe() {
   };
 
   const isPlanDisabled = (targetPlan: "basic" | "pro") => {
-    // Disable: Pro -> Basic downgrade
-    if (currentPlanTier === "pro" && targetPlan === "basic") return true;
-
     const trialIsActiveNow = (trialDaysLeft ?? 0) > 0;
 
     // Disable: Annual -> Monthly switch (but allow during trial so user can switch interval)
@@ -777,6 +775,32 @@ export default function AgencySubscribe() {
     }
 
     return false;
+  };
+
+  const openAgencyBillingPortal = async () => {
+    try {
+      const resp: any = await createAgencyBillingPortal();
+      const url =
+        resp?.checkout_url ||
+        resp?.data?.checkout_url ||
+        resp?.data?.url ||
+        resp?.url;
+      if (typeof url === "string" && url.trim()) {
+        window.location.assign(url);
+        return;
+      }
+      toast({
+        title: "Billing portal unavailable",
+        description: "Could not open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Billing portal unavailable",
+        description: e?.message || "Could not open billing portal.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
@@ -855,6 +879,24 @@ export default function AgencySubscribe() {
     setPlan(targetPlan);
 
     const trialIsActiveNow = (trialDaysLeft ?? 0) > 0;
+    const periodEndDowngrade =
+      !trialIsActiveNow && currentPlanTier === "pro" && targetPlan === "basic";
+    const periodEndAnnualToMonthly =
+      !trialIsActiveNow &&
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === "year" &&
+      billingInterval === "month";
+
+    if (periodEndDowngrade || periodEndAnnualToMonthly) {
+      toast({
+        title: "Scheduled for period end",
+        description:
+          "This change will take effect at the end of your current billing period. Manage it in the billing portal.",
+      });
+      void openAgencyBillingPortal();
+      return;
+    }
+
     const switchingIntervalDuringTrial =
       trialIsActiveNow &&
       currentTrialEndsAt &&
@@ -1212,7 +1254,9 @@ export default function AgencySubscribe() {
                 type="button"
                 variant="outline"
                 className={`w-full h-12 rounded-lg font-bold border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
-                  currentPlanTier === "basic"
+                  currentPlanTier === "basic" &&
+                  currentPlanInterval === billingInterval &&
+                  !(includeSeatsInPlan && seatCountChanged)
                     ? "bg-slate-50 text-slate-400 cursor-default"
                     : ""
                 }`}
@@ -1348,7 +1392,9 @@ export default function AgencySubscribe() {
               <Button
                 type="button"
                 className={`w-full h-12 rounded-lg font-bold transition-colors ${
-                  currentPlanTier === "pro"
+                  currentPlanTier === "pro" &&
+                  currentPlanInterval === billingInterval &&
+                  !(includeSeatsInPlan && seatCountChanged)
                     ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-none"
                     : "bg-white text-[#0B1828] hover:bg-gray-100 shadow-sm"
                 }`}
@@ -1357,6 +1403,7 @@ export default function AgencySubscribe() {
                 }}
                 disabled={
                   checkoutDisabled ||
+                  isPlanDisabled("pro") ||
                   (!requiresContactSales &&
                     currentPlanTier === "pro" &&
                     currentPlanInterval === billingInterval)

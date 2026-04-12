@@ -55,7 +55,7 @@ impl AgencyAccessState {
             PlanTier::Pro => "Pro".to_string(),
             PlanTier::Basic => "Basic".to_string(),
             PlanTier::Free if self.trial_active => "Trial".to_string(),
-            PlanTier::Free => "Free".to_string(),
+            PlanTier::Free => "Unsubscribed".to_string(),
         };
 
         if self.trial_active {

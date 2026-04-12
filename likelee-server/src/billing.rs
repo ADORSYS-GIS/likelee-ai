@@ -1096,9 +1096,9 @@ pub async fn create_agency_subscription_checkout(
 
     let mut inherited_trial_days: Option<u32> = None;
     let mut previous_subscription_id: Option<String> = None;
-    let mut existing_subscription_id: String = String::new();
-    let mut current_plan_tier: String = "none".to_string();
-    let mut current_plan_interval: String = "month".to_string();
+    let existing_subscription_id: String;
+    let current_plan_tier: String;
+    let current_plan_interval: String;
 
     // Prevent Basic annual -> Basic monthly downgrade via direct checkout creation.
     // (Plan changes should be upgrades only; downgrades require support intervention.)
@@ -1277,7 +1277,6 @@ pub async fn create_agency_subscription_checkout(
                     let now = chrono::Utc::now().timestamp();
                     let trial_end = subscription
                         .trial_end
-                        .map(|t| t)
                         .unwrap_or(0);
                     let seconds_left = trial_end.saturating_sub(now);
                     let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
@@ -1684,7 +1683,7 @@ pub async fn change_agency_subscription_plan(
                 .to_string(),
             row.get("plan_tier")
                 .and_then(|v| v.as_str())
-                .unwrap_or("free")
+                .unwrap_or("none")
                 .trim()
                 .to_lowercase(),
             row.get("plan_interval")
@@ -1712,9 +1711,9 @@ pub async fn change_agency_subscription_plan(
             && target_interval == "month")
     {
         return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "downgrade_not_allowed",
-            "Downgrades are not allowed from this endpoint.",
+            StatusCode::CONFLICT,
+            "plan_change_requires_billing_portal",
+            "This plan change takes effect at the end of the current billing period. Please use the billing portal.",
         ));
     }
 
@@ -1968,7 +1967,7 @@ pub async fn create_or_update_agency_seat_addon(
     let current_plan_tier = row
         .get("plan_tier")
         .and_then(|value| value.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .trim()
         .to_lowercase();
     let _current_plan_interval = row
@@ -2078,7 +2077,7 @@ pub async fn create_or_update_agency_seat_addon(
 }
 
 pub async fn start_agency_pro_trial(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
     if user.role != "agency" {
@@ -2373,7 +2372,7 @@ pub async fn sync_agency_checkout_session(
     );
 
     let mut latest_state = AgencyCheckoutSessionSyncResponse {
-        plan_tier: "free".to_string(),
+        plan_tier: "none".to_string(),
         seats_limit: 1,
         addon_irl_booking_enabled: false,
     };
@@ -2883,7 +2882,7 @@ pub async fn upgrade_creator_subscription(
 
     let req_client = reqwest::Client::new();
     let res = req_client
-        .post(&format!(
+        .post(format!(
             "https://api.stripe.com/v1/subscriptions/{}",
             stripe_subscription_id
         ))
@@ -2960,7 +2959,7 @@ pub async fn get_creator_billing_status(
     let plan_tier = row
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .to_string();
 
     let trial_start_at_str = row.get("trial_started_at").and_then(|v| v.as_str());
@@ -2990,7 +2989,7 @@ pub async fn get_creator_billing_status(
 
     let resolved_trial_start = current_plan_trial_start.or(latest_trial_start);
 
-    let trial_active = resolved_trial_start.map_or(false, |start_dt| {
+    let trial_active = resolved_trial_start.is_some_and(|start_dt| {
         chrono::Utc::now()
             .signed_duration_since(start_dt)
             .num_days()
@@ -3622,7 +3621,7 @@ pub async fn create_agency_billing_portal(
     let resp = state
         .pg
         .from("agencies")
-        .select("stripe_customer_id")
+        .select("stripe_customer_id,email,agency_name")
         .eq("id", &agency_id)
         .limit(1)
         .execute()
@@ -3643,13 +3642,56 @@ pub async fn create_agency_billing_portal(
         .first()
         .ok_or((StatusCode::NOT_FOUND, "agency_not_found".to_string()))?;
 
-    let customer_id_str = row
+    let existing_customer = row
         .get("stripe_customer_id")
         .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty())
-        .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let name = row
+        .get("agency_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Agency")
+        .trim()
+        .to_string();
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id_str = if !existing_customer.is_empty() {
+        existing_customer
+    } else {
+        let mut params = stripe_sdk::CreateCustomer::new();
+        if !email.is_empty() {
+            params.email = Some(email.as_str());
+        }
+        if !name.is_empty() {
+            params.name = Some(name.as_str());
+        }
+        params.metadata = Some(std::collections::HashMap::from([(
+            "agency_id".to_string(),
+            agency_id.clone(),
+        )]));
+
+        let customer = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let cust_id = customer.id.to_string();
+        let _ = state
+            .pg
+            .from("agencies")
+            .eq("id", &agency_id)
+            .update(json!({ "stripe_customer_id": cust_id }).to_string())
+            .execute()
+            .await;
+        cust_id
+    };
+
     let customer_id = customer_id_str
         .parse::<stripe_sdk::CustomerId>()
         .map_err(|_| {
@@ -3660,9 +3702,10 @@ pub async fn create_agency_billing_portal(
         })?;
 
     let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
-    // Use the AgencySubscribe page as return URL so they come back to the pricing view
+
+    // Return to agency settings – user can still change plans inside the app pricing page.
     let return_url = format!(
-        "{}/agency/subscribe",
+        "{}/AgencyDashboard?tab=settings&subTab=General-settings",
         state.frontend_url.trim_end_matches('/')
     );
     params.return_url = Some(&return_url);

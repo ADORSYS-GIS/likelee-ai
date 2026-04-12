@@ -127,7 +127,7 @@ pub async fn upsert_profile(
         && body
             .get("visibility")
             .and_then(|v| v.as_str())
-            .map(|s| visibility_maps_to_public_profile(s))
+            .map(visibility_maps_to_public_profile)
             .unwrap_or(false)
     {
         return Err((

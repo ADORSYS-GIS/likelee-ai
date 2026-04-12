@@ -37,7 +37,7 @@ const ScoutingTrips = lazy(() =>
     default: m.ScoutingTrips,
   })),
 );
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -278,6 +278,7 @@ import {
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
   getAgencyBillingStatus,
+  createAgencyBillingPortal,
   startAgencyProTrial,
   getAgencyBrandLicenseRequests,
 } from "@/api/functions";
@@ -16599,8 +16600,14 @@ export default function AgencyDashboard() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user, profile, authenticated, logout, refreshProfile } = useAuth();
+
+  const isAgencyUser =
+    String((user as any)?.role || (profile as any)?.role || "")
+      .trim()
+      .toLowerCase() === "agency";
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
@@ -17155,7 +17162,7 @@ export default function AgencyDashboard() {
   const agencyTrialStartAt = agencyBilling?.trial_start_at;
   const agencyHasPaidAccess =
     agencyBilling?.has_paid_access ??
-    (agencyPlanTier !== "none" && agencyPlanTier !== "free");
+    agencyPlanTier !== "none";
   const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyCanConnectMarketplace =
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
@@ -17202,6 +17209,32 @@ export default function AgencyDashboard() {
   }, [agencyBilling?.display_plan_label, agencyBilling?.effective_plan_tier, agencyBilling?.plan_tier, agencyPlanTier]);
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
+  const handleOpenAgencyBillingPortal = async () => {
+    try {
+      const resp: any = await createAgencyBillingPortal();
+      const url =
+        resp?.checkout_url ||
+        resp?.data?.checkout_url ||
+        resp?.data?.url ||
+        resp?.url;
+      if (typeof url === "string" && url.trim()) {
+        window.location.assign(url);
+        return;
+      }
+      toast({
+        title: "Billing portal unavailable",
+        description: "Could not open billing portal. Please try again.",
+        variant: "destructive" as any,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Billing portal unavailable",
+        description: e?.message || "Could not open billing portal.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     const loadBilling = async () => {
@@ -17219,7 +17252,25 @@ export default function AgencyDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    if (!isAgencyUser) return;
+    if (agencyBillingLoading) return;
+    if (!agencySubscriptionLocked) return;
+
+    const current = String(location?.pathname || "").toLowerCase();
+    if (current === "/agencysubscribe") return;
+    navigate("/AgencySubscribe", { replace: true });
+  }, [
+    agencyBillingLoading,
+    agencySubscriptionLocked,
+    authenticated,
+    isAgencyUser,
+    location?.pathname,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!agencyTrialActive || !agencyTrialEndsAt) {
@@ -17271,7 +17322,7 @@ export default function AgencyDashboard() {
         await agencyProfileQuery.refetch();
         return;
       }
-      if (msg.includes("trial_only_available_for_free_accounts")) {
+      if (msg.includes("trial_only_available_for_unsubscribed_accounts")) {
         toast({
           title: "Trial unavailable",
           description:
@@ -19532,7 +19583,7 @@ export default function AgencyDashboard() {
                     <button
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
-                        navigate("/agencysubscribe");
+                        void handleOpenAgencyBillingPortal();
                         setShowProfileMenu(false);
                       }}
                     >
