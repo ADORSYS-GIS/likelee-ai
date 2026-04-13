@@ -51,6 +51,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getAgencyTalents } from "@/api/functions";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();
@@ -294,11 +295,24 @@ const BrandConnectionsView = () => {
   const rosterQuery = useQuery({
     queryKey: ["agency", "roster"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/roster");
-      if (Array.isArray(resp)) return resp;
-      if (Array.isArray(resp?.talents)) return resp.talents;
-      if (Array.isArray(resp?.data?.talents)) return resp.data.talents;
-      return [];
+      const resp: any = await getAgencyTalents();
+      const rows = Array.isArray(resp?.talents)
+        ? resp.talents
+        : Array.isArray(resp?.data?.talents)
+          ? resp.data.talents
+          : Array.isArray(resp)
+            ? resp
+            : [];
+      return rows.map((row: any) => ({
+        id: String(row?.id || row?.creator_id || ""),
+        creator_id: String(row?.creator_id || row?.id || ""),
+        stage_name: row?.full_name || "",
+        full_legal_name: row?.full_name || "",
+        profile_photo_url: row?.profile_photo_url || "",
+        img: row?.profile_photo_url || "",
+        has_creator_account: Boolean(row?.creator_id || row?.id),
+        is_connected_creator: Boolean(row?.is_connected_creator),
+      }));
     },
   });
 
@@ -343,6 +357,7 @@ const BrandConnectionsView = () => {
   const assignedTalentIds = useMemo(() => {
     return new Set(
       (offerAssignmentsQuery.data || []).map((a: any) =>
+        // Offer assignments are creator-first; talent_id is a legacy fallback.
         String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ),
@@ -629,11 +644,12 @@ const BrandConnectionsView = () => {
         : [];
       const currentByCreatorId = new Map<string, string>();
       current.forEach((a: any) => {
-        const tid = String(
+        const creatorScopedId = String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ).trim();
         const aid = String(a?.id || "").trim();
-        if (tid && aid) currentByCreatorId.set(tid, aid);
+        if (creatorScopedId && aid)
+          currentByCreatorId.set(creatorScopedId, aid);
       });
 
       const desiredIds = new Set(
@@ -655,13 +671,13 @@ const BrandConnectionsView = () => {
       }
 
       await Promise.all([
-        ...toAdd.map((talentId) =>
+        ...toAdd.map((creatorId) =>
           base44.post(`/api/campaign-offers/${offerId}/assignments`, {
-            creator_id: talentId,
+            creator_id: creatorId,
           }),
         ),
-        ...toRemove.map((talentId) => {
-          const assignmentId = currentByCreatorId.get(talentId);
+        ...toRemove.map((creatorId) => {
+          const assignmentId = currentByCreatorId.get(creatorId);
           if (!assignmentId) return Promise.resolve(null);
           return base44.delete(
             `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,

@@ -38,7 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import {
-  getAgencyTalents,
+  getAgencyRoster,
   getAgencyClients,
   getAgencyCalendlySettings,
   createAgencyClient,
@@ -278,10 +278,17 @@ export const NewBookingModal = ({
     const loadTalents = async () => {
       if (!open) return;
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         const mapped = Array.isArray(rows)
           ? rows.map((r: any) => ({
-              id: r.id || r.user_id,
+              id: r.id,
               name: r.full_name || r.name || "Unnamed",
               img: r.profile_photo_url || null,
             }))
@@ -456,13 +463,25 @@ export const NewBookingModal = ({
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const rows = await getAgencyTalents(
-          talentSearch ? { q: talentSearch } : undefined,
-        );
+        const resp = await getAgencyRoster();
         if (cancelled) return;
-        const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({
-              id: r.id || r.user_id,
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
+        const filteredRows = talentSearch
+          ? rows.filter((r: any) =>
+              String(r.full_name || r.name || "")
+                .toLowerCase()
+                .includes(talentSearch.toLowerCase()),
+            )
+          : rows;
+        const mapped = Array.isArray(filteredRows)
+          ? filteredRows.map((r: any) => ({
+              id: r.id,
               name: r.full_name || r.name || "Unnamed",
               img: r.profile_photo_url || null,
             }))
