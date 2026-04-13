@@ -20,11 +20,14 @@ pub async fn list(
     user: AuthUser,
     Query(params): Query<ExpenseListParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = crate::team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+
     let mut req = state
         .pg
         .from("agency_expenses")
         .select("*")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("expense_date.desc");
 
     if let Some(s) = params.category.as_ref().filter(|s| !s.is_empty()) {

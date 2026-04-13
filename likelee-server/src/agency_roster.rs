@@ -1,4 +1,8 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_access, require_agency_permission},
+};
 use axum::http::StatusCode;
 use axum::{
     extract::{Path, State},
@@ -193,78 +197,19 @@ pub struct AgencyRosterResponse {
     pub talents: Vec<TalentRow>,
 }
 
-async fn resolve_effective_agency_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    let by_id_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    let by_user_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_user_status = by_user_resp.status();
-    let by_user_text = by_user_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_user_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
-    }
-    let by_user_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_user_text).unwrap_or_default();
-    let agency_id = by_user_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if agency_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Agency profile not found".to_string(),
-        ));
-    }
-    Ok(agency_id)
-}
-
 pub async fn get_roster(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
-    let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, &agency_id).await?;
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
         .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
-        .eq("agency_id", &agency_id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -497,10 +442,8 @@ pub async fn get_roster(
                         if !ai_usage.contains(&"Video".to_string()) {
                             ai_usage.push("Video".to_string());
                         }
-                    } else {
-                        if !ai_usage.contains(&"Image".to_string()) {
-                            ai_usage.push("Image".to_string());
-                        }
+                    } else if !ai_usage.contains(&"Image".to_string()) {
+                        ai_usage.push("Image".to_string());
                     }
                 }
 
@@ -728,7 +671,7 @@ pub async fn get_roster(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
         if !digitals_status.is_success() {
-            warn!(agency_id = %user.id, status = %digitals_status, body = %digitals_text, "digitals lookup failed");
+            warn!(agency_id = %agency_id, status = %digitals_status, body = %digitals_text, "digitals lookup failed");
             return Err((StatusCode::INTERNAL_SERVER_ERROR, digitals_text));
         }
 
@@ -878,7 +821,7 @@ pub async fn get_roster(
             .pg
             .from("licensing_requests")
             .select("talent_id,status")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("talent_id", ids.clone())
             .eq("status", "pending")
             .execute()
@@ -919,7 +862,7 @@ pub async fn get_roster(
             .pg
             .from("licensing_payouts")
             .select("licensing_request_id,talent_id,talent_earnings_cents,talent_splits,paid_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1101,7 +1044,7 @@ pub async fn get_roster(
             let upd = state
                 .pg
                 .from("agency_users")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("id", t_id)
                 .update(body.to_string())
                 .execute()
@@ -1215,7 +1158,7 @@ pub async fn get_roster(
         let upd = state
             .pg
             .from("agency_users")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("id", &t_id)
             .update(body.to_string())
             .execute()
@@ -1243,12 +1186,14 @@ pub async fn list_talent_campaigns(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let talent_resp = state
         .pg
         .from("agency_users")
         .select("id")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("role", "talent")
         .limit(1)
         .execute()
@@ -1434,7 +1379,8 @@ pub async fn create_talent(
     user: AuthUser,
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let effective_agency_id = access.organization_id.clone();
     let licensing_rate_monthly_cents = match payload.licensing_rate_monthly_cents {
         Some(v) if v <= 0 => {
             return Err((
@@ -1777,7 +1723,8 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let effective_agency_id = access.organization_id.clone();
     let access_resp = state
         .pg
         .from("agency_talent_relationships")

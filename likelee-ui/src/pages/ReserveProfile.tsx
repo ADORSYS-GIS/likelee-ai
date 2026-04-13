@@ -55,7 +55,6 @@ import {
 } from "@/auth/onboarding";
 
 import { CreatorTermsContent } from "@/components/CreatorTermsContent";
-import { downloadTermsPdf } from "@/utils/termsDownload";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
@@ -306,7 +305,13 @@ export default function ReserveProfile() {
 
   const [showWarning, setShowWarning] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(() => {
+    return sessionStorage.getItem("reserve_agreedToTerms") === "true";
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("reserve_agreedToTerms", String(agreedToTerms));
+  }, [agreedToTerms]);
 
   const [profileId, setProfileId] = useState<string | null>(() => {
     return localStorage.getItem("reserve_profileId") || null;
@@ -483,8 +488,16 @@ export default function ReserveProfile() {
 
     if (!isOnboardingIncomplete(profile)) {
       const dashboardPath = getDashboardPath(profile);
+      // Prevent redirecting to dashboard if we are actively trying to agree to terms (step 4)
+      // or if we just returned from the terms page with local state indicating we are on step 4
+      const isActivelyOnboardingLocally = step > 1 && !profileSaveLoading;
+
+      // We only force you to dashboard if server says completed AND we aren't in the middle
+      // of confirming the final step locally (which can happen on a tab visibility change
+      // before finalizing the profile).
       if (
         !profileSaveLoading &&
+        !isActivelyOnboardingLocally &&
         window.location.pathname !== dashboardPath.split("?")[0]
       ) {
         navigate(dashboardPath, { replace: true });
@@ -1237,6 +1250,7 @@ export default function ReserveProfile() {
       localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      sessionStorage.removeItem("reserve_agreedToTerms");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
       navigate("/CreatorDashboard", { replace: true });
@@ -2269,22 +2283,22 @@ export default function ReserveProfile() {
               </div>
 
               <div className="border-2 border-gray-200 bg-white">
-                <ScrollArea className="h-96 p-4">
+                <ScrollArea className="h-[700px] p-4">
                   <div id="creator-terms-content">
                     <CreatorTermsContent />
                   </div>
                 </ScrollArea>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    downloadTermsPdf(
-                      "creator-terms-content",
-                      "Creator & Talent Terms and Conditions",
+                    window.open(
+                      "/creator-talent-terms-and-conditions.html",
+                      "_blank",
                     )
                   }
                 >
@@ -2293,7 +2307,7 @@ export default function ReserveProfile() {
                 </Button>
               </div>
 
-              <div className="p-4 border-2 border-gray-200 bg-gray-50">
+              <div className="p-4 border-2 border-gray-200 bg-gray-50 mt-4">
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="terms"

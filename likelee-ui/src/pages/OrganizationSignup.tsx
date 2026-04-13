@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgencyTermsContent } from "@/components/AgencyTermsContent";
-import { downloadTermsPdf } from "@/utils/termsDownload";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -2751,10 +2750,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    downloadTermsPdf(
-                      "agency-terms-content",
-                      "Agency Terms and Conditions",
-                    )
+                    window.open("/terms-and-conditions-agency.html", "_blank")
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />

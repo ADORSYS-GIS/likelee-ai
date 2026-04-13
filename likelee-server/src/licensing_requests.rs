@@ -3,6 +3,7 @@ use crate::{
     config::AppState,
     entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
     errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_access, require_agency_permission},
 };
 use axum::{
     extract::{Path, Query, State},
@@ -166,18 +167,18 @@ pub async fn list_for_agency(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<LicensingRequestGroup>>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
 
     // Optimization: Single query with resource embedding to fetch everything at once
     // Filter out archived records (archived_at IS NULL means not archived)
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
-        .eq("agency_id", &user.id)
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,context_type,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .eq("agency_id", agency_id)
         .is("archived_at", "null")  // Only show non-archived records
+        .or("context_type.is.null,context_type.neq.campaign")
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -195,7 +196,7 @@ pub async fn list_for_agency(
     }
 
     let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
-        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests JSON parse error");
+        tracing::error!(agency_id = %agency_id, error = %e, "licensing_requests JSON parse error");
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("JSON parse error: {}", e),
@@ -219,7 +220,7 @@ pub async fn list_for_agency(
             .pg
             .from("agency_payment_links")
             .select("id,licensing_request_id,stripe_payment_link_url,status,created_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("licensing_request_id", lr_refs)
             .order("created_at.desc")
             .execute()
@@ -247,7 +248,7 @@ pub async fn list_for_agency(
         }
     }
 
-    info!(agency_id = %user.id, count = requests.len(), "licensing_requests fetched (optimized)");
+    info!(agency_id = %agency_id, count = requests.len(), "licensing_requests fetched (optimized)");
 
     let mut groups: BTreeMap<String, LicensingRequestGroup> = BTreeMap::new();
 
@@ -275,11 +276,19 @@ pub async fn list_for_agency(
             .to_string();
 
         let campaign_title = value_to_non_empty_string(r.get("campaign_title"));
+        let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
+        let campaign = campaigns_arr.and_then(|a| a.first());
         let license_fee = r
             .get("license_submissions")
             .and_then(|ls| ls.get("license_fee"))
             .and_then(value_to_f64)
-            .map(|v| v / 100.0); // Convert cents to dollars for UI
+            .map(|v| v / 100.0)
+            .or_else(|| {
+                campaign
+                    .and_then(|c| c.get("payment_amount"))
+                    .and_then(value_to_f64)
+                    .map(|v| v / 100.0)
+            });
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
@@ -343,9 +352,6 @@ pub async fn list_for_agency(
             .filter(|s| !s.trim().is_empty())
             .or(talent_name_field)
             .unwrap_or_else(|| "Assigned Talent".to_string());
-
-        let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
-        let campaign = campaigns_arr.and_then(|a| a.first());
 
         let key = created_at_group_key(brand_key, &created_at);
 
@@ -521,8 +527,7 @@ pub async fn list_for_brand(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let resp = state
         .pg
@@ -552,9 +557,8 @@ pub async fn update_status_bulk(
     user: AuthUser,
     Json(payload): Json<UpdateLicensingRequestStatusBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if payload.licensing_request_ids.is_empty() {
         return Err((
@@ -605,7 +609,7 @@ pub async fn update_status_bulk(
     let resp = state
         .pg
         .from("licensing_requests")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .update(v.to_string())
         .execute()
@@ -729,9 +733,8 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateLicensingRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // Calculate end date
     let start_date =
@@ -745,7 +748,7 @@ pub async fn create(
 
     // 1. Create Licensing Request
     let request_json = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "talent_id": payload.talent_id,
         "client_name": payload.brand_name,
         "status": "approved",
@@ -782,7 +785,7 @@ pub async fn create(
     // 2. Create Campaign (for value)
     if !request_id.is_empty() {
         let campaign_json = json!({
-            "agency_id": user.id,
+            "agency_id": agency_id,
             "talent_id": payload.talent_id,
             "licensing_request_id": request_id,
             "name": payload.license_type,
@@ -1497,9 +1500,8 @@ pub async fn send_payment_link(
     use std::str::FromStr;
     use tracing::{error, warn};
 
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // 1. Fetch the licensing request (must belong to this agency)
     let lr_resp = state
@@ -1507,7 +1509,7 @@ pub async fn send_payment_link(
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1539,7 +1541,7 @@ pub async fn send_payment_link(
         .pg
         .from("licensing_requests")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(update_body.to_string())
         .execute()
         .await
@@ -1576,7 +1578,7 @@ pub async fn send_payment_link(
         .pg
         .from("agencies")
         .select("stripe_connect_account_id")
-        .eq("id", &user.id)
+        .eq("id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1599,7 +1601,7 @@ pub async fn send_payment_link(
     }
 
     // 5. Platform fee based on subscription plan
-    let tier = get_agency_plan_tier(&state, &user.id).await?;
+    let tier = get_agency_plan_tier(&state, agency_id).await?;
     let fee_pct: f64 = match tier {
         PlanTier::Free => 0.08,
         PlanTier::Basic => 0.05,
@@ -1650,7 +1652,7 @@ pub async fn send_payment_link(
 
     if client_email.is_none() {
         warn!(
-            agency_id = %user.id,
+            agency_id = %agency_id,
             licensing_request_id = %id,
             "No client email found for payment link - email sending will be skipped"
         );
@@ -1786,7 +1788,7 @@ pub async fn send_payment_link(
             .pg
             .from("agency_users")
             .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("creator_id", au_refs)
             .execute()
             .await;
@@ -2025,7 +2027,7 @@ pub async fn send_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .in_("tier_name", tn_refs),
         )
     } else {
@@ -2034,7 +2036,7 @@ pub async fn send_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
-                .eq("agency_id", &user.id),
+                .eq("agency_id", agency_id),
         )
     };
 
@@ -2141,7 +2143,7 @@ pub async fn send_payment_link(
     }
 
     tracing::info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         licensing_request_id = %id,
         net_amount_cents = net_amount_cents,
         agency_amount_cents = agency_amount_cents,
@@ -2358,9 +2360,8 @@ pub async fn get_pay_split(
     user: AuthUser,
     Query(q): Query<PaySplitQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if q.licensing_request_ids.is_empty() {
         return Err((
@@ -2375,7 +2376,7 @@ pub async fn get_pay_split(
         .pg
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,status,created_at,agency_users(full_legal_name,stage_name)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .execute()
         .await
@@ -2492,9 +2493,7 @@ pub async fn set_pay_split(
     user: AuthUser,
     Json(_payload): Json<PaySplitBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let _access = require_agency_permission(&_state, &user, Permission::ManageLicenses).await?;
 
     Err((
         StatusCode::BAD_REQUEST,

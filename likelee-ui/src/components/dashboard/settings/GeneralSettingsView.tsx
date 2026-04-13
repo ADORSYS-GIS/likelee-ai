@@ -3,8 +3,11 @@ import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
-import { getAgencyPayoutsAccountStatus } from "@/api/functions";
-import { RefreshCw } from "lucide-react";
+import {
+  getAgencyPayoutsAccountStatus,
+  getTeamAuditLogs,
+} from "@/api/functions";
+import { Loader2, RefreshCw } from "lucide-react";
 import {
   Building2,
   Upload,
@@ -203,12 +206,113 @@ const CalendlyAutosaveStatus = ({
   );
 };
 
+type TeamRoleValue = "owner" | "admin" | "project_manager" | "reviewer";
+
+type TeamMemberRecord = {
+  organization_type: string;
+  organization_id: string;
+  organization_name: string;
+  user_id: string;
+  email: string;
+  role: TeamRoleValue;
+  status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_role_changed_at?: string | null;
+};
+
+type TeamInviteRecord = {
+  id: string;
+  organization_type: string;
+  organization_id: string;
+  email: string;
+  role: Exclude<TeamRoleValue, "owner">;
+  status: string;
+  invited_by: string;
+  expires_at: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+type TeamContextResponse = {
+  organization_type: string;
+  organization_id: string;
+  organization_name: string;
+  membership_role: TeamRoleValue;
+  permissions: string[];
+  members: TeamMemberRecord[];
+  invites: TeamInviteRecord[];
+};
+
+type TeamAuditLogRecord = {
+  id: string;
+  organization_type: string;
+  organization_id: string;
+  actor_user_id: string;
+  target_user_id?: string | null;
+  target_email?: string | null;
+  action: string;
+  old_role?: string | null;
+  new_role?: string | null;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+};
+
+const TEAM_ROLE_OPTIONS: Array<{
+  value: Exclude<TeamRoleValue, "owner">;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "admin",
+    label: "Admin",
+    description: "Full team management, billing, campaigns, and approvals.",
+  },
+  {
+    value: "project_manager",
+    label: "Project Manager",
+    description: "Campaign creation and deliverable approvals without billing.",
+  },
+  {
+    value: "reviewer",
+    label: "Reviewer",
+    description: "Read-only access to deliverables with team visibility.",
+  },
+];
+
+const formatTeamRoleLabel = (role?: string) => {
+  switch (role) {
+    case "owner":
+      return "Owner";
+    case "admin":
+      return "Admin";
+    case "project_manager":
+      return "Project Manager";
+    case "reviewer":
+      return "Reviewer";
+    default:
+      return role || "Unknown";
+  }
+};
+
 const InviteTeamMemberModal = ({
   open,
   onOpenChange,
+  email,
+  role,
+  onEmailChange,
+  onRoleChange,
+  onSubmit,
+  submitting,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  email: string;
+  role: Exclude<TeamRoleValue, "owner">;
+  onEmailChange: (value: string) => void;
+  onRoleChange: (value: Exclude<TeamRoleValue, "owner">) => void;
+  onSubmit: () => void;
+  submitting: boolean;
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,35 +331,29 @@ const InviteTeamMemberModal = ({
               Email Address
             </Label>
             <Input
+              value={email}
+              onChange={(event) => onEmailChange(event.target.value)}
               placeholder="colleague@example.com"
               className="h-11 bg-gray-50 border-gray-200 rounded-xl"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-900">User Role</Label>
-            <Select defaultValue="booker">
+            <Select
+              value={role}
+              onValueChange={(value) =>
+                onRoleChange(value as Exclude<TeamRoleValue, "owner">)
+              }
+            >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">
-                  Admin - Full access, billing, settings
-                </SelectItem>
-                <SelectItem value="booker">
-                  Booker - Create/edit bookings, view earnings
-                </SelectItem>
-                <SelectItem value="scout">
-                  Scout - Add prospects, view scouting pipeline
-                </SelectItem>
-                <SelectItem value="accountant">
-                  Accountant - View/create invoices, reports
-                </SelectItem>
-                <SelectItem value="coordinator">
-                  Roster Coordinator - Manage roster profiles
-                </SelectItem>
-                <SelectItem value="readonly">
-                  Read-Only - View everything
-                </SelectItem>
+                {TEAM_ROLE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label} - {option.description}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -272,12 +370,21 @@ const InviteTeamMemberModal = ({
             variant="ghost"
             onClick={() => onOpenChange(false)}
             className="font-bold"
+            disabled={submitting}
           >
             Cancel
           </Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Send Invitation
+          <Button
+            onClick={onSubmit}
+            disabled={submitting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+          >
+            {submitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
+            {submitting ? "Sending..." : "Send Invitation"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -289,83 +396,73 @@ const EditPermissionsModal = ({
   open,
   onOpenChange,
   member,
+  nextRole,
+  onRoleChange,
+  onSubmit,
+  submitting,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  member: any;
+  member: TeamMemberRecord | null;
+  nextRole: Exclude<TeamRoleValue, "owner">;
+  onRoleChange: (value: Exclude<TeamRoleValue, "owner">) => void;
+  onSubmit: () => void;
+  submitting: boolean;
 }) => {
   if (!member) return null;
-
-  const sections = [
-    {
-      title: "Bookings & Calendar",
-      permissions: [
-        { label: "Can view bookings", default: true },
-        { label: "Can create bookings", default: false },
-        { label: "Can edit bookings", default: false },
-        { label: "Can delete bookings", default: false },
-      ],
-    },
-    {
-      title: "Finance & Invoicing",
-      permissions: [
-        { label: "Can view finances", default: false },
-        { label: "Can create invoices", default: false },
-      ],
-    },
-    {
-      title: "Roster",
-      permissions: [
-        { label: "Can view roster", default: true },
-        { label: "Can edit roster profiles", default: false },
-        { label: "Can add prospects", default: true },
-      ],
-    },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Edit Permissions - {member.name}
+            Update Team Role
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            Role: {member.role}
+            {member.email} is currently {formatTeamRoleLabel(member.role)}.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-8">
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-4">
-              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                {section.title}
-              </h4>
-              <div className="space-y-3">
-                {section.permissions.map((perm) => (
-                  <div
-                    key={perm.label}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
-                  >
-                    <span className="text-sm font-medium text-gray-700">
-                      {perm.label}
-                    </span>
-                    <Switch checked={perm.default} />
-                  </div>
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">New Role</Label>
+            <Select
+              value={nextRole}
+              onValueChange={(value) =>
+                onRoleChange(value as Exclude<TeamRoleValue, "owner">)
+              }
+            >
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                {TEAM_ROLE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label} - {option.description}
+                  </SelectItem>
                 ))}
-              </div>
-            </div>
-          ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+            This change takes effect immediately for the member’s active
+            session.
+          </div>
         </div>
         <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
             className="font-bold"
+            disabled={submitting}
           >
             Cancel
           </Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl">
-            Save Permissions
+          <Button
+            onClick={onSubmit}
+            disabled={submitting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
+          >
+            {submitting ? "Saving..." : "Confirm Role Change"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -376,87 +473,100 @@ const EditPermissionsModal = ({
 const ActivityLogModal = ({
   open,
   onOpenChange,
-  member,
+  logs,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  member: any;
+  logs: TeamAuditLogRecord[];
 }) => {
-  if (!member) return null;
-
-  const activities = [
-    {
-      action: "Created booking",
-      details: "Vogue Magazine - Emma Stone",
-      time: "Jan 12, 2024 10:15 AM",
-      icon: Calendar,
-      color: "text-blue-600 bg-blue-50",
-    },
-    {
-      action: "Updated roster profile",
-      details: "Milan Anderson - Added new headshots",
-      time: "Jan 12, 2024 9:45 AM",
-      icon: User,
-      color: "text-purple-600 bg-purple-50",
-    },
-    {
-      action: "Generated invoice",
-      details: "Invoice #2024-089 for Nike",
-      time: "Jan 11, 2024 4:30 PM",
-      icon: FileText,
-      color: "text-green-600 bg-green-50",
-    },
-    {
-      action: "Added prospect",
-      details: "Alex Johnson from Instagram",
-      time: "Jan 11, 2024 2:20 PM",
-      icon: Users,
-      color: "text-orange-600 bg-orange-50",
-    },
-    {
-      action: "Logged in",
-      details: "From Chrome on Windows",
-      time: "Jan 12, 2024 8:00 AM",
-      icon: Globe,
-      color: "text-gray-600 bg-gray-50",
-    },
-  ];
+  const decorateActivity = (log: TeamAuditLogRecord) => {
+    switch (log.action) {
+      case "team_invite_created":
+        return {
+          label: "Invitation created",
+          details: `${log.target_email || "A member"} invited as ${formatTeamRoleLabel(log.new_role || "")}`,
+          icon: Mail,
+          color: "text-indigo-600 bg-indigo-50",
+        };
+      case "member_role_updated":
+        return {
+          label: "Role updated",
+          details: `${log.target_email || "A member"} changed from ${formatTeamRoleLabel(
+            log.old_role || "",
+          )} to ${formatTeamRoleLabel(log.new_role || "")}`,
+          icon: Shield,
+          color: "text-amber-600 bg-amber-50",
+        };
+      case "team_invite_accepted":
+        return {
+          label: "Invitation accepted",
+          details: `${log.target_email || "A member"} joined the team as ${formatTeamRoleLabel(
+            log.new_role || "",
+          )}`,
+          icon: BadgeCheck,
+          color: "text-green-600 bg-green-50",
+        };
+      case "team_invite_declined":
+        return {
+          label: "Invitation declined",
+          details: `${log.target_email || "A member"} declined the invitation`,
+          icon: XCircle,
+          color: "text-red-600 bg-red-50",
+        };
+      default:
+        return {
+          label: log.action.replaceAll("_", " "),
+          details: log.target_email || "Team activity",
+          icon: Activity,
+          color: "text-gray-600 bg-gray-50",
+        };
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg rounded-2xl max-h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Activity Log - {member.name}
+            Team Activity Log
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            Recent actions and system events
+            Recent invite, role, and membership events
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
-          {activities.map((activity, idx) => (
-            <div
-              key={idx}
-              className="flex gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
-            >
-              <div
-                className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
-              >
-                <activity.icon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {activity.action}
-                </p>
-                <p className="text-xs text-gray-500 font-medium mt-0.5">
-                  {activity.details}
-                </p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">
-                  {activity.time}
-                </p>
-              </div>
+          {logs.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+              No team activity recorded yet.
             </div>
-          ))}
+          ) : (
+            logs.map((log) => {
+              const activity = decorateActivity(log);
+              return (
+                <div
+                  key={log.id}
+                  className="flex gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
+                  >
+                    <activity.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      {activity.label}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                      {activity.details}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium mt-1">
+                      {new Date(log.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
         <DialogFooter className="p-6 border-t border-gray-100">
           <Button
@@ -501,7 +611,21 @@ const GeneralSettingsView = ({
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<TeamMemberRecord | null>(
+    null,
+  );
+  const [teamContext, setTeamContext] = useState<TeamContextResponse | null>(
+    null,
+  );
+  const [isLoadingTeamContext, setIsLoadingTeamContext] = useState(false);
+  const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
+  const [isUpdatingTeamRole, setIsUpdatingTeamRole] = useState(false);
+  const [teamInviteEmail, setTeamInviteEmail] = useState("");
+  const [teamInviteRole, setTeamInviteRole] =
+    useState<Exclude<TeamRoleValue, "owner">>("reviewer");
+  const [pendingRoleValue, setPendingRoleValue] =
+    useState<Exclude<TeamRoleValue, "owner">>("reviewer");
+  const [teamAuditLogs, setTeamAuditLogs] = useState<TeamAuditLogRecord[]>([]);
   const [defaultCommissionRate, setDefaultCommissionRate] =
     useState<number>(20);
   const [isSavingCommissions, setIsSavingCommissions] = useState(false);
@@ -575,6 +699,158 @@ const GeneralSettingsView = ({
   const calendlyFieldStatusTimeoutsRef = useRef<Record<string, number>>({});
 
   const getAccessToken = () => token || "";
+
+  const fetchTeamContext = async () => {
+    try {
+      setIsLoadingTeamContext(true);
+      const resp = await fetch(
+        "/api/team/context?organization_type=agency&include_details=true",
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        },
+      );
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to load team members.",
+        );
+      }
+      setTeamContext(payload);
+    } catch (error: any) {
+      console.error("Failed to load team context", error);
+      toast({
+        title: "Failed to load team",
+        description:
+          error?.message || "Could not load team members and invitations.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingTeamContext(false);
+    }
+  };
+
+  const fetchTeamAuditLogs = async () => {
+    try {
+      const payload = (await getTeamAuditLogs()) as TeamAuditLogRecord[];
+      setTeamAuditLogs(Array.isArray(payload) ? payload : []);
+    } catch (error) {
+      console.error("Failed to load team audit logs", error);
+    }
+  };
+
+  const openRoleEditor = (member: TeamMemberRecord) => {
+    setSelectedMember(member);
+    setPendingRoleValue(
+      (member.role === "owner" ? "admin" : member.role) as Exclude<
+        TeamRoleValue,
+        "owner"
+      >,
+    );
+    setShowPermissionsModal(true);
+  };
+
+  const handleInviteTeamMember = async () => {
+    try {
+      const normalizedEmail = String(teamInviteEmail || "")
+        .trim()
+        .toLowerCase();
+      if (!normalizedEmail) {
+        throw new Error("Email is required.");
+      }
+      setIsSubmittingTeamInvite(true);
+      const resp = await fetch("/api/team/invites?organization_type=agency", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          role: teamInviteRole,
+        }),
+      });
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to send invitation.",
+        );
+      }
+      setShowInviteModal(false);
+      setTeamInviteEmail("");
+      setTeamInviteRole("reviewer");
+      toast({
+        title: "Invitation sent",
+        description: `${normalizedEmail} has been invited to your team.`,
+      });
+      await fetchTeamContext();
+      await fetchTeamAuditLogs();
+    } catch (error: any) {
+      toast({
+        title: "Invite failed",
+        description: error?.message || "Could not send the team invitation.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingTeamInvite(false);
+    }
+  };
+
+  const handleUpdateMemberRole = async () => {
+    if (!selectedMember) return;
+    try {
+      setIsUpdatingTeamRole(true);
+      const resp = await fetch(
+        `/api/team/members/${encodeURIComponent(selectedMember.user_id)}/role?organization_type=agency`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify({
+            role: pendingRoleValue,
+          }),
+        },
+      );
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to update member role.",
+        );
+      }
+      setShowPermissionsModal(false);
+      setSelectedMember(null);
+      toast({
+        title: "Role updated",
+        description: `${selectedMember.email} is now ${formatTeamRoleLabel(
+          pendingRoleValue,
+        )}.`,
+      });
+      await fetchTeamContext();
+      await fetchTeamAuditLogs();
+    } catch (error: any) {
+      toast({
+        title: "Role update failed",
+        description: error?.message || "Could not update the member role.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingTeamRole(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchTeamContext();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "Team") {
+      void fetchTeamContext();
+      void fetchTeamAuditLogs();
+    }
+  }, [activeTab]);
 
   const setCalendlyFieldStatus = (
     fieldKey: string,
@@ -1038,6 +1314,11 @@ const GeneralSettingsView = ({
 
   useEffect(() => {
     if (profile) {
+      // For team members, use organization_id for settings queries.
+      // This ensures team members see and modify the organization's settings,
+      // not their own (which shouldn't exist for team members).
+      const effectiveAgencyId = (profile as any).organization_id || profile.id;
+
       setFormData({
         agency_name: profile.agency_name || "",
         legal_entity_name: profile.legal_entity_name || "",
@@ -1061,7 +1342,7 @@ const GeneralSettingsView = ({
           const { data, error } = await supabase
             .from("agency_commission_settings")
             .select("default_commission_bps, division_commissions")
-            .eq("agency_id", profile.id)
+            .eq("agency_id", effectiveAgencyId)
             .maybeSingle();
 
           if (error) throw error;
@@ -1086,13 +1367,13 @@ const GeneralSettingsView = ({
           const { data, error } = await supabase
             .from("agency_notification_settings")
             .select("prefs, recipients")
-            .eq("agency_id", profile.id)
+            .eq("agency_id", effectiveAgencyId)
             .maybeSingle();
           if (error) throw error;
 
           if (!data) {
             const seedPayload = {
-              agency_id: profile.id,
+              agency_id: effectiveAgencyId,
               prefs: defaultNotificationPrefs,
               recipients: {
                 primaryEmail: profile.email || "",
@@ -1174,13 +1455,13 @@ const GeneralSettingsView = ({
             .select(
               "default_currency, currency_display_format, default_tax_rate, tax_display_name, include_tax_in_displayed_prices, default_payment_terms, late_payment_fee, invoice_prefix",
             )
-            .eq("agency_id", profile.id)
+            .eq("agency_id", effectiveAgencyId)
             .maybeSingle();
           if (error) throw error;
 
           if (!data) {
             const seedPayload = {
-              agency_id: profile.id,
+              agency_id: effectiveAgencyId,
               default_currency: taxCurrencySettings.defaultCurrency,
               currency_display_format:
                 taxCurrencySettings.currencyDisplayFormat,
@@ -1263,7 +1544,7 @@ const GeneralSettingsView = ({
           const { data, error } = await supabase
             .from("agency_email_templates")
             .select("id, template_key, name, subject, body, is_active")
-            .eq("agency_id", profile.id)
+            .eq("agency_id", effectiveAgencyId)
             .order("updated_at", { ascending: false });
 
           if (error) throw error;
@@ -1319,7 +1600,7 @@ const GeneralSettingsView = ({
           ];
 
           const seedPayload = defaults.map((t) => ({
-            agency_id: profile.id,
+            agency_id: effectiveAgencyId,
             template_key: t.template_key,
             name: t.name,
             subject: templateValueForStorage(t.subject),
@@ -1519,11 +1800,12 @@ const GeneralSettingsView = ({
 
   const handleSaveEmailTemplates = async () => {
     if (!profile?.id) return;
+    const effectiveAgencyId = (profile as any).organization_id || profile.id;
     try {
       setIsSavingEmailTemplates(true);
       const payload = emailTemplates.map((t) => ({
         id: t.id,
-        agency_id: profile.id,
+        agency_id: effectiveAgencyId,
         template_key: t.template_key,
         name: t.name,
         subject: templateValueForStorage(t.subject),
@@ -1554,11 +1836,12 @@ const GeneralSettingsView = ({
 
   const handleSaveCommissionSettings = async () => {
     if (!profile?.id) return;
+    const effectiveAgencyId = (profile as any).organization_id || profile.id;
     try {
       setIsSavingCommissions(true);
 
       const payload = {
-        agency_id: profile.id,
+        agency_id: effectiveAgencyId,
         default_commission_bps: Math.round(
           Math.max(0, Math.min(100, defaultCommissionRate)) * 100,
         ),
@@ -1591,6 +1874,9 @@ const GeneralSettingsView = ({
   };
 
   const handleSaveProfile = async () => {
+    if (!profile?.id) return;
+    // For team members, update the organization's profile (owner's profile)
+    const effectiveAgencyId = (profile as any).organization_id || profile.id;
     try {
       setIsSaving(true);
       // Exclude email from update payload as it's not allowed to be changed after sign-in
@@ -1603,7 +1889,7 @@ const GeneralSettingsView = ({
           secondary_color: secondaryColor,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", profile?.id);
+        .eq("id", effectiveAgencyId);
 
       if (error) throw error;
 
@@ -1628,10 +1914,13 @@ const GeneralSettingsView = ({
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
+    // For team members, update the organization's profile (owner's profile)
+    const effectiveAgencyId = (profile as any).organization_id || profile.id;
+
     try {
       setIsUploading(true);
       const fileExt = file.name.split(".").pop();
-      const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
+      const fileName = `${effectiveAgencyId}-${Math.random()}.${fileExt}`;
       const filePath = `agency-logos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -1647,7 +1936,7 @@ const GeneralSettingsView = ({
       const { error: updateError } = await supabase
         .from("agencies")
         .update({ logo_url: publicUrl })
-        .eq("id", profile.id);
+        .eq("id", effectiveAgencyId);
 
       if (updateError) throw updateError;
 
@@ -1737,29 +2026,32 @@ const GeneralSettingsView = ({
                     </div>
                   </div>
                 </div>
-                <Button
-                  asChild
-                  variant={
-                    planTier === "pro" ||
-                    planTier === "basic" ||
-                    planTier === "enterprise"
-                      ? "default"
-                      : "outline"
-                  }
-                  className={`rounded-xl font-bold ${
-                    planTier === "pro"
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-                      : planTier === "basic" || planTier === "agency"
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                        : planTier === "enterprise"
-                          ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <a href={createPageUrl("AgencySubscribe")}>
-                    Billing & Subscription
-                  </a>
-                </Button>
+                {(!teamContext ||
+                  teamContext.permissions?.includes("manage_billing")) && (
+                  <Button
+                    asChild
+                    variant={
+                      planTier === "pro" ||
+                      planTier === "basic" ||
+                      planTier === "enterprise"
+                        ? "default"
+                        : "outline"
+                    }
+                    className={`rounded-xl font-bold ${
+                      planTier === "pro"
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                        : planTier === "basic" || planTier === "agency"
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                          : planTier === "enterprise"
+                            ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <a href={createPageUrl("AgencySubscribe")}>
+                      Billing & Subscription
+                    </a>
+                  </Button>
+                )}
               </div>
             </Card>
 
@@ -2695,7 +2987,11 @@ const GeneralSettingsView = ({
                 </p>
               </div>
               <Button
-                disabled
+                onClick={() => setShowInviteModal(true)}
+                disabled={
+                  isLoadingTeamContext ||
+                  !teamContext?.permissions?.includes("invite_team_members")
+                }
                 className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
@@ -2703,31 +2999,170 @@ const GeneralSettingsView = ({
               </Button>
             </div>
 
-            <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Coming Soon
-                    </h4>
-                    <p className="text-sm text-gray-500 font-medium mt-1">
-                      Team management (members, roles, and permissions) is not
-                      available yet.
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium mt-3">
-                      You’ll be able to invite teammates, assign roles, and
-                      manage access from this page.
-                    </p>
-                  </div>
+            {isLoadingTeamContext ? (
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading team members…
                 </div>
-                <Badge className="bg-gray-50 text-gray-600 border-gray-200 font-bold text-[10px] h-6">
-                  Coming Soon
-                </Badge>
-              </div>
-            </Card>
+              </Card>
+            ) : (
+              <>
+                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
+                            Active Team Members
+                          </h4>
+                          <p className="text-sm text-gray-500 font-medium mt-1">
+                            Current access inside{" "}
+                            {teamContext?.organization_name || "your agency"}.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          className="rounded-xl"
+                          onClick={() => setShowActivityModal(true)}
+                        >
+                          <History className="w-4 h-4 mr-2" />
+                          Activity
+                        </Button>
+                        <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
+                          {teamContext?.members?.length || 0} Members
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(teamContext?.members || []).length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                          No active team members yet.
+                        </div>
+                      ) : (
+                        (teamContext?.members || []).map((member) => {
+                          const actorRole = teamContext?.membership_role;
+                          const canEditRole =
+                            teamContext?.permissions?.includes(
+                              "update_member_roles",
+                            ) &&
+                            member.role !== "owner" &&
+                            !(actorRole === "admin" && member.role === "admin");
+                          return (
+                            <div
+                              key={member.user_id}
+                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-sm font-bold text-gray-900 truncate">
+                                  {member.email}
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                    {formatTeamRoleLabel(member.role)}
+                                  </Badge>
+                                  <span>Status: {member.status}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {member.role === "owner" ? (
+                                  <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                                    Owner
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    disabled={!canEditRole}
+                                    onClick={() => openRoleEditor(member)}
+                                  >
+                                    <Edit2 className="w-4 h-4 mr-2" />
+                                    Edit Role
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
+                            Pending Invitations
+                          </h4>
+                          <p className="text-sm text-gray-500 font-medium mt-1">
+                            Outstanding invites waiting to be accepted.
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
+                        {
+                          (teamContext?.invites || []).filter(
+                            (invite) => invite.status === "pending",
+                          ).length
+                        }{" "}
+                        Pending
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(teamContext?.invites || []).filter(
+                        (invite) => invite.status === "pending",
+                      ).length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                          No pending invitations.
+                        </div>
+                      ) : (
+                        (teamContext?.invites || [])
+                          .filter((invite) => invite.status === "pending")
+                          .map((invite) => (
+                            <div
+                              key={invite.id}
+                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-sm font-bold text-gray-900 truncate">
+                                  {invite.email}
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                    {formatTeamRoleLabel(invite.role)}
+                                  </Badge>
+                                  <span>
+                                    Expires{" "}
+                                    {new Date(
+                                      invite.expires_at,
+                                    ).toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                                Pending
+                              </Badge>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </>
+            )}
           </div>
         )}
 
@@ -3172,8 +3607,10 @@ const GeneralSettingsView = ({
                     </Button>
                   )}
                   <Button
-                    onClick={handleSaveCalendlySettings}
-                    disabled={isSavingCalendlySettings || !hasCalendlyAccess}
+                    onClick={() => {
+                      void handleSaveCalendlySettings();
+                    }}
+                    disabled={isSavingCalendlySettings || !hasIrlBookingAddon}
                     className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     {isSavingCalendlySettings ? (
@@ -3194,16 +3631,26 @@ const GeneralSettingsView = ({
         <InviteTeamMemberModal
           open={showInviteModal}
           onOpenChange={setShowInviteModal}
+          email={teamInviteEmail}
+          role={teamInviteRole}
+          onEmailChange={setTeamInviteEmail}
+          onRoleChange={setTeamInviteRole}
+          onSubmit={handleInviteTeamMember}
+          submitting={isSubmittingTeamInvite}
         />
         <EditPermissionsModal
           open={showPermissionsModal}
           onOpenChange={setShowPermissionsModal}
           member={selectedMember}
+          nextRole={pendingRoleValue}
+          onRoleChange={setPendingRoleValue}
+          onSubmit={handleUpdateMemberRole}
+          submitting={isUpdatingTeamRole}
         />
         <ActivityLogModal
           open={showActivityModal}
           onOpenChange={setShowActivityModal}
-          member={selectedMember}
+          logs={teamAuditLogs}
         />
       </div>
     </div>
