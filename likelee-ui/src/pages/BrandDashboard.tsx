@@ -9284,10 +9284,7 @@ export default function BrandDashboard() {
                   title: "Terms & Conditions",
                   icon: FileText,
                   action: () =>
-                    window.open(
-                      "/creator-talent-terms-and-conditions.html",
-                      "_blank",
-                    ),
+                    window.open("/terms-and-conditions-agency.html", "_blank"),
                 },
                 {
                   title: "Privacy Policy",
