@@ -285,10 +285,13 @@ pub async fn get_roster(
 
     if let Some(array) = rows.as_array() {
         for item in array {
-            let talent = item
-                .get("agency_users")
-                .cloned()
-                .unwrap_or_else(|| serde_json::json!({}));
+            let Some(talent) = item.get("agency_users").cloned() else {
+                // The dashboard roster is backed by agency-owned talent identities only.
+                // External creator connections may exist in agency_talent_relationships
+                // without a corresponding agency_users row and should be handled through
+                // connection-aware surfaces instead of the internal roster.
+                continue;
+            };
             let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let talent_id_raw = item
                 .get("talent_id")
@@ -1586,7 +1589,7 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Reuse existing global talent row by email when possible, else insert identity row once.
+    // 3. Reuse an existing agency-owned talent row by email when possible, else insert a new one.
     let normalized_email = payload
         .email
         .as_deref()
@@ -1598,6 +1601,7 @@ pub async fn create_talent(
             .pg
             .from("agency_users")
             .select("id,creator_id")
+            .eq("agency_id", &effective_agency_id)
             .eq("role", "talent")
             .ilike("email", email)
             .order("updated_at.desc")

@@ -493,34 +493,6 @@ async fn activate_connection_from_contract_row(
         return Ok(());
     }
 
-    let creator_resp = state
-        .pg
-        .from("creators")
-        .select("full_name,email")
-        .eq("id", &creator_id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let creator_text = creator_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let creator_rows: Vec<Value> = serde_json::from_str(&creator_text).unwrap_or_default();
-    let creator_name = creator_rows
-        .first()
-        .and_then(|r| r.get("full_name"))
-        .and_then(|v| v.as_str())
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or("Creator")
-        .to_string();
-    let creator_email = creator_rows
-        .first()
-        .and_then(|r| r.get("email"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
     let au_lookup_resp = state
         .pg
         .from("agency_users")
@@ -536,128 +508,72 @@ async fn activate_connection_from_contract_row(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let mut au_rows: Vec<Value> = serde_json::from_str(&au_lookup_text).unwrap_or_default();
-
-    if au_rows.is_empty() {
-        let insert_payload = json!({
-            "agency_id": agency_id,
-            "creator_id": creator_id,
-            "full_legal_name": creator_name,
-            "email": creator_email,
-            "status": "active",
-            "role": "talent",
-            "updated_at": chrono::Utc::now().to_rfc3339(),
-        });
-        state
-            .pg
-            .from("agency_users")
-            .insert(insert_payload.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let fresh_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("agency_id", &agency_id)
-            .eq("creator_id", &creator_id)
-            .eq("role", "talent")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let fresh_text = fresh_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        au_rows = serde_json::from_str(&fresh_text).unwrap_or_default();
-    } else {
-        let _ = state
-            .pg
-            .from("agency_users")
-            .eq("agency_id", &agency_id)
-            .eq("creator_id", &creator_id)
-            .eq("role", "talent")
-            .update(
-                json!({
-                    "status": "active",
-                    "updated_at": chrono::Utc::now().to_rfc3339(),
-                })
-                .to_string(),
-            )
-            .execute()
-            .await;
-    }
-
+    let au_rows: Vec<Value> = serde_json::from_str(&au_lookup_text).unwrap_or_default();
     let talent_id = au_rows
         .first()
         .and_then(|r| r.get("id"))
         .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+        .map(|s| s.to_string());
 
-    if !talent_id.is_empty() {
-        let existing_rel_resp = state
+    let existing_rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("id,talent_id,creator_id")
+        .eq("agency_id", &agency_id)
+        .eq("creator_id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing_rel_status = existing_rel_resp.status();
+    let existing_rel_text = existing_rel_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !existing_rel_status.is_success() {
+        return Err(sanitize_db_error(
+            existing_rel_status.as_u16(),
+            existing_rel_text,
+        ));
+    }
+    let existing_rel_rows: Vec<Value> =
+        serde_json::from_str(&existing_rel_text).unwrap_or_default();
+
+    let rel_payload = json!({
+        "agency_id": agency_id,
+        "talent_id": talent_id,
+        "creator_id": creator_id,
+        "status": "active",
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let rel_resp = if let Some(existing_rel_id) = existing_rel_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .filter(|id| !id.trim().is_empty())
+    {
+        state
             .pg
             .from("agency_talent_relationships")
-            .select("id,talent_id,creator_id")
-            .eq("agency_id", &agency_id)
-            .eq("creator_id", &creator_id)
-            .limit(1)
+            .eq("id", existing_rel_id)
+            .update(rel_payload.to_string())
             .execute()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let existing_rel_status = existing_rel_resp.status();
-        let existing_rel_text = existing_rel_resp
-            .text()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    } else {
+        state
+            .pg
+            .from("agency_talent_relationships")
+            .insert(rel_payload.to_string())
+            .execute()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !existing_rel_status.is_success() {
-            return Err(sanitize_db_error(
-                existing_rel_status.as_u16(),
-                existing_rel_text,
-            ));
-        }
-        let existing_rel_rows: Vec<Value> =
-            serde_json::from_str(&existing_rel_text).unwrap_or_default();
-
-        let rel_payload = json!({
-            "agency_id": agency_id,
-            "talent_id": talent_id,
-            "creator_id": creator_id,
-            "status": "active",
-            "updated_at": chrono::Utc::now().to_rfc3339(),
-        });
-
-        let rel_resp = if let Some(existing_rel_id) = existing_rel_rows
-            .first()
-            .and_then(|r| r.get("id"))
-            .and_then(|v| v.as_str())
-            .filter(|id| !id.trim().is_empty())
-        {
-            state
-                .pg
-                .from("agency_talent_relationships")
-                .eq("id", existing_rel_id)
-                .update(rel_payload.to_string())
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        } else {
-            state
-                .pg
-                .from("agency_talent_relationships")
-                .insert(rel_payload.to_string())
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        };
-        let rel_status = rel_resp.status();
-        if !rel_status.is_success() {
-            let rel_err = rel_resp.text().await.unwrap_or_default();
-            return Err(sanitize_db_error(rel_status.as_u16(), rel_err));
-        }
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    };
+    let rel_status = rel_resp.status();
+    if !rel_status.is_success() {
+        let rel_err = rel_resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(rel_status.as_u16(), rel_err));
     }
 
     if !invite_id.is_empty() {
@@ -702,21 +618,6 @@ pub async fn remove_live_connection_for_contract_row(state: &AppState, row: &Val
         .eq("agency_id", &agency_id)
         .eq("creator_id", &creator_id)
         .delete()
-        .execute()
-        .await;
-    let _ = state
-        .pg
-        .from("agency_users")
-        .eq("agency_id", &agency_id)
-        .eq("creator_id", &creator_id)
-        .eq("role", "talent")
-        .update(
-            json!({
-                "status": "inactive",
-                "updated_at": chrono::Utc::now().to_rfc3339(),
-            })
-            .to_string(),
-        )
         .execute()
         .await;
 }
