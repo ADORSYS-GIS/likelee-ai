@@ -1,4 +1,7 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser, config::AppState, errors::sanitize_db_error, team::permissions::Permission,
+    team::require_agency_permission,
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -126,9 +129,8 @@ pub async fn list(
     user: AuthUser,
     Query(q): Query<ListActiveLicensesQuery>,
 ) -> Result<Json<Vec<ActiveLicense>>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
 
@@ -136,7 +138,7 @@ pub async fn list(
         .pg
         .from("licensing_requests")
         .select(select)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "approved");
 
     let today = Utc::now().date_naive();
@@ -161,12 +163,12 @@ pub async fn list(
 
     let rows: Vec<LicensingRequestRow> = serde_json::from_str(&text)
         .map_err(|e| {
-            tracing::error!(agency_id = %user.id, error = %e, response_body = %text, "active_licenses JSON parse error");
+            tracing::error!(agency_id = %agency_id, error = %e, response_body = %text, "active_licenses JSON parse error");
             (StatusCode::INTERNAL_SERVER_ERROR, format!("JSON parse error: {}", e))
         })?;
 
     tracing::info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         row_count = rows.len(),
         "Fetched licensing_requests with status=approved"
     );
@@ -320,9 +322,8 @@ pub async fn stats(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<ActiveLicensesStats>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // Optimization: Fetch only necessary columns for stats calculation
     let select = "license_end_date,deadline,campaigns(payment_amount)";
@@ -331,7 +332,7 @@ pub async fn stats(
         .pg
         .from("licensing_requests")
         .select(select)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "approved")
         .execute()
         .await

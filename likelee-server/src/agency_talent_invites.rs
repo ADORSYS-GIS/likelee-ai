@@ -1,4 +1,10 @@
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    auth::RoleGuard,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_permission},
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -452,6 +458,8 @@ pub async fn list_for_agency(
     user: AuthUser,
 ) -> Result<Json<ListAgencyTalentInvitesResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
@@ -459,7 +467,7 @@ pub async fn list_for_agency(
         .select(
             "id,agency_id,email,invited_name,status,expires_at,created_at,responded_at,updated_at",
         )
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(500)
         .execute()
@@ -532,6 +540,8 @@ pub async fn create_for_agency(
     Json(payload): Json<CreateAgencyTalentInvitePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     let email = payload.email.trim().to_lowercase();
     if email.is_empty() {
@@ -545,7 +555,7 @@ pub async fn create_for_agency(
             .pg
             .from("agency_talent_relationships")
             .select("id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("creator_id", creator_id)
             .eq("status", "active")
             .limit(1)
@@ -564,7 +574,7 @@ pub async fn create_for_agency(
             let _ = state
                 .pg
                 .from("agency_talent_invites")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("email", &email)
                 .eq("status", "pending")
                 .update(
@@ -590,7 +600,7 @@ pub async fn create_for_agency(
     let _ = state
         .pg
         .from("agency_talent_invites")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("email", &email)
         .eq("status", "pending")
         .update(
@@ -606,7 +616,7 @@ pub async fn create_for_agency(
     let token = uuid::Uuid::new_v4().to_string();
 
     let row = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "email": email,
         "invited_name": payload.invited_name,
         "token": token,
@@ -713,12 +723,14 @@ pub async fn revoke_for_agency(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     state
         .pg
         .from("agency_talent_invites")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "pending")
         .update(
             json!({

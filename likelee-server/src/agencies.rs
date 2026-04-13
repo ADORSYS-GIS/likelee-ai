@@ -1,4 +1,12 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{
+        ensure_owner_membership, permissions::Permission, require_agency_access,
+        require_agency_permission, OrganizationType,
+    },
+};
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::StatusCode,
@@ -9,65 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
 
-pub(crate) async fn resolve_effective_agency_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    let by_id_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    let by_user_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_user_status = by_user_resp.status();
-    let by_user_text = by_user_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_user_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
-    }
-    let by_user_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_user_text).unwrap_or_default();
-    let agency_id = by_user_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if agency_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Agency profile not found".to_string(),
-        ));
-    }
-    Ok(agency_id)
-}
+pub use crate::team::resolve_effective_agency_id;
 
 pub(crate) async fn resolve_effective_agency_talent_id(
     state: &AppState,
@@ -523,6 +473,8 @@ pub async fn update(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
+    let _ = ensure_owner_membership(&state, &user, OrganizationType::Agency, &user.id).await;
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -533,11 +485,16 @@ pub async fn get_profile(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Resolve the effective agency ID - for team members this returns the organization's ID,
+    // not the team member's user ID. This ensures team members see the same profile data
+    // as the organization owner (same subscriptions, plan_tier, etc.)
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+
     let resp = state
         .pg
         .from("agencies")
         .select("*")
-        .eq("id", &user.id)
+        .eq("id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -554,7 +511,7 @@ pub async fn get_profile(
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let roster_count = get_agency_roster_count(&state, &user.id).await?;
+    let roster_count = get_agency_roster_count(&state, &agency_id).await?;
     match rows.into_iter().next() {
         Some(mut v) => {
             if let Some(obj) = v.as_object_mut() {
@@ -794,8 +751,10 @@ pub async fn get_agency_storage_usage(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<StorageUsageOut>, (StatusCode, String)> {
-    let limit = ensure_storage_settings_row(&state, &user.id).await?;
-    let used = get_agency_used_storage_bytes(&state, &user.id).await?;
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+    let limit = ensure_storage_settings_row(&state, agency_id).await?;
+    let used = get_agency_used_storage_bytes(&state, agency_id).await?;
     Ok(Json(StorageUsageOut {
         used_bytes: used,
         limit_bytes: limit,
@@ -807,11 +766,13 @@ pub async fn list_agency_folders(
     user: AuthUser,
     Query(q): Query<ListAgencyFoldersQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let mut req = state
         .pg
         .from("agency_folders")
         .select("id,agency_id,parent_id,name,created_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.asc");
     if q.limit.is_some() || q.offset.is_some() {
         let limit = q.limit.unwrap_or(50) as usize;
@@ -888,8 +849,10 @@ pub async fn create_agency_folder(
     user: AuthUser,
     Json(input): Json<CreateAgencyFolderIn>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let body = serde_json::json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "parent_id": input.parent_id,
         "name": input.name,
     });
@@ -1024,12 +987,14 @@ pub async fn delete_agency_folder(
     user: AuthUser,
     Path(folder_id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     // Fetch files in folder for this agency
     let files_resp = state
         .pg
         .from("agency_files")
         .select("id,storage_bucket,storage_path")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("folder_id", &folder_id)
         .execute()
         .await
@@ -1110,7 +1075,7 @@ pub async fn delete_agency_folder(
         .from("agency_folders")
         .delete()
         .eq("id", &folder_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1171,11 +1136,13 @@ pub async fn list_agency_files(
     user: AuthUser,
     Query(q): Query<ListAgencyFilesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let mut req = state
         .pg
         .from("agency_files")
         .select("id,file_name,storage_bucket,storage_path,public_url,folder_id,size_bytes,mime_type,created_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc");
     if let Some(folder_id) = q.folder_id.as_ref().filter(|s| !s.is_empty()) {
         req = req.eq("folder_id", folder_id);
@@ -1653,11 +1620,13 @@ pub async fn get_payout_settings(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("agency_payout_settings")
         .select("*")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .single()
         .execute()
         .await
@@ -1701,8 +1670,10 @@ pub async fn update_payout_settings(
     user: AuthUser,
     Json(payload): Json<UpdatePayoutSettingsPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = &access.organization_id;
     let body = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "payout_frequency": payload.payout_frequency,
         "min_payout_threshold_cents": payload.min_payout_threshold_cents.max(0),
     });
@@ -1733,11 +1704,13 @@ pub async fn get_upcoming_payout_schedule(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("agency_payout_settings")
         .select("payout_frequency,min_payout_threshold_cents,last_payout_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1791,7 +1764,7 @@ pub async fn get_upcoming_payout_schedule(
         .pg
         .from("licensing_payouts")
         .select("amount_cents")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .gte("paid_at", &since)
         .limit(2000)
         .execute()
@@ -1843,11 +1816,13 @@ pub async fn list_client_files(
     user: AuthUser,
     Path(client_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("agency_files")
         .select("id,file_name,storage_bucket,storage_path,public_url,created_at")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("client_id", &client_id)
         .order("created_at.desc")
         .execute()
@@ -2719,6 +2694,8 @@ pub async fn list_clients(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     // 1. Fetch clients
     let resp = state
         .pg
@@ -2726,7 +2703,7 @@ pub async fn list_clients(
         .select(
             "id,agency_id,company,contact_name,email,phone,terms,industry,status,website,tags,notes,next_follow_up_date,preferences,created_at,updated_at",
         )
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -2749,7 +2726,7 @@ pub async fn list_clients(
         .pg
         .from("bookings")
         .select("client_id,rate_cents,date")
-        .eq("agency_user_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2933,6 +2910,8 @@ pub async fn update_client(
     Path(id): Path<String>,
     Json(payload): Json<UpdateAgencyClientPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
@@ -2953,7 +2932,7 @@ pub async fn update_client(
         .pg
         .from("agency_clients")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(v.to_string())
         .execute()
         .await
@@ -2973,11 +2952,13 @@ pub async fn delete_client(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("agency_clients")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .delete()
         .execute()
         .await
