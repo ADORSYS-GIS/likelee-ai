@@ -8,6 +8,7 @@ import {
   getDashboardPath,
   getOnboardingPath,
   getSignupPathForRole,
+  isOnboardingIncomplete,
   readAuthIntent,
   saveAuthIntent,
   type AuthIntentRole,
@@ -243,20 +244,18 @@ export default function Login() {
         return;
       }
 
-      // Check if onboarding is complete
-      const isOnboardingComplete =
-        !profile.onboarding_step || profile.onboarding_step === "complete";
+      // Check if onboarding is complete using the shared logic
+      const isOnboardingComplete = !isOnboardingIncomplete(profile);
 
       if (!isOnboardingComplete) {
         // Redirect to appropriate signup form to complete profile
         setIsRedirecting(true);
         const signupPath =
           getOnboardingPath({
-            role: profile.role,
-            agency_type: profile.agency_type,
+            ...profile,
             creator_type:
               profile.creator_type || authIntent?.creatorType || creatorType,
-          }) ||
+          } as any) ||
           getSignupPathForRole(
             profile.role as AuthIntentRole,
             authIntent?.creatorType || creatorType,
