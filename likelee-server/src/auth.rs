@@ -7,7 +7,7 @@ use axum::{
 };
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
@@ -23,6 +23,14 @@ pub struct AuthUser {
     pub id: String,
     pub email: Option<String>,
     pub role: String,
+    pub organization_id: Option<String>,
+    pub access_token: String,
+}
+
+impl AuthUser {
+    pub fn effective_org_id(&self) -> &str {
+        self.organization_id.as_ref().unwrap_or(&self.id)
+    }
 }
 
 fn supabase_auth_base_url(state: &AppState) -> String {
@@ -196,10 +204,42 @@ where
             "User role not found in token metadata".to_string(),
         ))?;
 
+        // 5. For team members, lookup organization_id from organization_memberships
+        let organization_id = if role == "agency" || role == "brand" {
+            let org_type = if role == "agency" { "agency" } else { "brand" };
+
+            let org_resp = app_state
+                .pg
+                .from("organization_memberships")
+                .select("organization_id")
+                .eq("user_id", &user_id)
+                .eq("organization_type", org_type)
+                .eq("status", "active")
+                .limit(1)
+                .execute()
+                .await;
+
+            match org_resp {
+                Ok(res) => {
+                    let text = res.text().await.unwrap_or_default();
+                    let data: Value = serde_json::from_str(&text).unwrap_or(json!([]));
+                    data.as_array()
+                        .and_then(|arr| arr.first())
+                        .and_then(|item| item.get("organization_id"))
+                        .and_then(|v| v.as_str().map(|s| s.to_string()))
+                }
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
         Ok(AuthUser {
             id: user_id,
             email: token_data.claims.email,
             role,
+            organization_id,
+            access_token: token,
         })
     }
 }

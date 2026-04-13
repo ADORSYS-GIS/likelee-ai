@@ -137,6 +137,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import {
   LineChart,
   Line,
@@ -1050,6 +1052,9 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const { hasPermission } = useTeamAccess("brand");
+  const canApproveDeliverables = hasPermission("approve_deliverables");
+  const canViewDeliverables = hasPermission("view_deliverables");
 
   const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
@@ -4407,6 +4412,15 @@ export default function BrandDashboard() {
     action: string,
     note?: string,
   ) => {
+    if (!canApproveDeliverables) {
+      toast({
+        title: "Permission required",
+        description:
+          "Your role cannot approve or request changes on deliverables.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
     const offer = brandOfferItems.find(
@@ -5396,7 +5410,9 @@ export default function BrandDashboard() {
                                                   size="sm"
                                                   className="flex-1 h-8 rounded-lg font-bold bg-gray-900"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -5415,7 +5431,9 @@ export default function BrandDashboard() {
                                                   variant="outline"
                                                   className="flex-1 h-8 rounded-lg font-bold"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={() =>
                                                     handleDeliverableReview(
@@ -11825,7 +11843,9 @@ export default function BrandDashboard() {
               <Button
                 className="flex-1 h-12 rounded-lg bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
-                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId
+                  !reviewDialog.note.trim() ||
+                  reviewing === reviewDialog.delId ||
+                  !canApproveDeliverables
                 }
                 onClick={() =>
                   handleDeliverableReview(

@@ -263,13 +263,14 @@ pub async fn signed_url_for_recording(
     }
 
     if !has_access && user.role == "agency" {
-        // check if this agency manages the owner_id (either as the agency_user ID or their creator_id)
+        let access = crate::team::require_agency_access(&state, &user).await?;
+        let agency_id = &access.organization_id;
         let or_cond = format!("id.eq.{},creator_id.eq.{}", owner_id, owner_id);
         let check_resp = state
             .pg
             .from("agency_users")
             .select("id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .or(&or_cond)
             .limit(1)
             .execute()
@@ -541,11 +542,13 @@ pub async fn list_voice_recordings(
     // If a talent_id is provided and the user is an agency, check management access
     if let Some(tid) = params.get("talent_id") {
         if user.role == "agency" {
+            let access = crate::team::require_agency_access(&state, &user).await?;
+            let agency_id = &access.organization_id;
             let resp = state
                 .pg
                 .from("agency_users")
                 .select("id, creator_id")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("id", tid)
                 .execute()
                 .await

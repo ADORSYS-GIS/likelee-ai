@@ -1,8 +1,6 @@
 use crate::{
-    agencies::{resolve_effective_agency_id, resolve_effective_agency_talent_id},
-    auth::AuthUser,
-    config::AppState,
-    errors::sanitize_db_error,
+    agencies::resolve_effective_agency_talent_id, auth::AuthUser, config::AppState,
+    errors::sanitize_db_error, team::resolve_effective_agency_id,
 };
 use axum::extract::Multipart;
 use axum::{
@@ -146,6 +144,7 @@ pub async fn create_with_files(
 
     let row = json!({
         "agency_user_id": user.id,
+        "agency_id": agency_id,
         "client_id": payload.client_id,
         "talent_id": resolved_talent_id,
         "talent_name": payload.talent_name,
@@ -295,6 +294,7 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateBookingPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
     // Enforce full-day booking times if all_day=true
     let is_all_day = payload.all_day.unwrap_or(false);
     let (call_time, wrap_time) = if is_all_day {
@@ -341,6 +341,7 @@ pub async fn create(
     // Compose row
     let row = json!({
         "agency_user_id": user.id,
+        "agency_id": agency_id,
         "client_id": payload.client_id,
         "talent_id": payload.talent_id,
         "talent_name": payload.talent_name,

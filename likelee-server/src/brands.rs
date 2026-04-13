@@ -1,11 +1,9 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
+use crate::team::{ensure_owner_membership, resolve_effective_brand_id, OrganizationType};
+use axum::{extract::State, http::StatusCode, Json};
+use axum::extract::Query;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -250,6 +248,8 @@ pub async fn update(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
+    let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &user.id).await;
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -260,8 +260,12 @@ pub async fn get_by_user(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Resolve the effective brand ID - for team members this returns the organization's ID,
+    // not the team member's user ID. This ensures team members see the same profile data
+    // as the organization owner (same subscriptions, plan_tier, etc.)
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     let state_for_notify = state.clone();
-    let brand_id_for_notify = user.id.clone();
+    let brand_id_for_notify = brand_id.clone();
     tokio::spawn(async move {
         if let Err(e) = crate::licensing_requests::notify_brand_license_expirations_lazy(
             &state_for_notify,
@@ -269,7 +273,11 @@ pub async fn get_by_user(
         )
         .await
         {
-            tracing::warn!(error = %e, brand_id = %brand_id_for_notify, "license expiration check failed");
+            tracing::warn!(
+                error = %e,
+                brand_id = %brand_id_for_notify,
+                "license expiration check failed"
+            );
         }
     });
 
@@ -277,7 +285,7 @@ pub async fn get_by_user(
         .pg
         .from("brands")
         .select("*")
-        .eq("id", &user.id)
+        .eq("id", &brand_id)
         .limit(1)
         .execute()
         .await

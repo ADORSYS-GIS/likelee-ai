@@ -119,7 +119,7 @@ pub async fn create_draft(
             format!("Invalid JSON: {}. Payload: {}", e, req_val),
         )
     })?;
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // 1. Fetch License Template metadata
     let template_resp = state
@@ -343,7 +343,7 @@ pub async fn preview(
     Path(id): Path<String>,
     Json(req): Json<PreviewSubmissionRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // 1. Fetch the draft submission
     let sub_resp = state
@@ -600,7 +600,7 @@ pub async fn finalize(
     Path(id): Path<String>,
     Json(req): Json<FinalizeSubmissionRequest>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // 1. Fetch the draft submission
     let sub_resp = state
@@ -1233,7 +1233,7 @@ pub async fn list(
     auth_user: AuthUser,
     Query(q): Query<ListQuery>,
 ) -> Result<Json<Vec<LicenseSubmission>>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let mut query = state
         .pg
@@ -1315,7 +1315,7 @@ pub async fn get(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let resp = state
         .pg
@@ -1377,7 +1377,7 @@ pub async fn resend(
     Path(id): Path<String>,
     req_payload: Option<Json<CreateSubmissionRequest>>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // 0. Fetch existing submission to get data (for archiving AND for resending if payload missing)
     let existing_sub_resp = state
@@ -1493,6 +1493,8 @@ pub async fn resend(
         id: agency_id.clone(),
         email: auth_user.email,
         role: auth_user.role,
+        organization_id: auth_user.organization_id,
+        access_token: auth_user.access_token.clone(),
     };
 
     // Instead of calling create (which is a stub), we call create_draft then we can finalize it.
@@ -1537,7 +1539,7 @@ pub async fn archive(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let update_data = json!({ "status": "archived" });
 
@@ -1572,7 +1574,7 @@ pub async fn recover(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // We recover to 'sent' if it was sent, or 'opened' etc.
     // For simplicity, let's look up the previous status or just set to 'sent'
@@ -1608,7 +1610,7 @@ pub async fn sync_status(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let sub_resp = state
         .pg
