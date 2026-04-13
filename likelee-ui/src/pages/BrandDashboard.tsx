@@ -11704,21 +11704,96 @@ export default function BrandDashboard() {
           setPreviewIndex(0);
         }}
       >
-        <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-lg">
+        <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-none">
           <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
             <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900">
               {previewImage?.asset_type === "video" ? (
-                <video
-                  src={getPublicUrl(previewImage)}
-                  controls
-                  className="max-w-full max-h-full"
-                />
+                previewImage?.payment_status !== "paid" ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-950 p-8 text-center">
+                    <div className="w-24 h-24 mb-6 rounded-none border-2 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5">
+                      <video
+                        src={getPublicUrl(previewImage)}
+                        className="w-full h-full object-cover opacity-10 grayscale blur-sm"
+                        muted
+                      />
+                      <div className="absolute flex flex-col items-center">
+                        <Lock className="w-10 h-10 text-indigo-400 mb-2" />
+                        <Sparkles className="w-6 h-6 text-indigo-400/50 absolute -top-8 -right-8 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      Premium Campaign Asset
+                    </h3>
+                    <p className="text-sm text-gray-500 max-w-xs mb-8">
+                      This high-resolution deliverable is secured until the
+                      escrow payment is released.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => setPreviewImage(null)}
+                      >
+                        Go back
+                      </Button>
+                      <Button
+                        className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)]"
+                        onClick={() => {
+                          const billingTab = document.querySelector(
+                            '[id*="billing-management"]',
+                          ) as HTMLElement;
+                          if (billingTab) {
+                            billingTab.click();
+                          }
+                          setPreviewImage(null);
+                        }}
+                      >
+                        Pay Now
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    src={getPublicUrl(previewImage)}
+                    controls
+                    className="max-w-full max-h-full"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controlsList="nodownload noplaybackrate"
+                  />
+                )
               ) : (
-                <img
-                  src={previewImage ? getPublicUrl(previewImage) : ""}
-                  className="max-w-full max-h-full object-contain"
-                  alt="Preview"
-                />
+                <div className="relative group/preview">
+                  {/* Watermark Overlay for Unpaid Assets */}
+                  {previewImage?.payment_status !== "paid" && (
+                    <div
+                      className="absolute inset-0 z-10 pointer-events-none opacity-[0.08]"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='white' font-family='sans-serif' font-weight='black' text-anchor='middle' transform='rotate(-45 75 75)'%3ELIKELEE PREVIEW%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                      }}
+                    />
+                  )}
+
+                  {/* Interaction Shield - Transparent layer over the image */}
+                  <div
+                    className="absolute inset-0 z-20 cursor-default"
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+
+                  <img
+                    src={
+                      previewImage
+                        ? getPublicUrl(previewImage, {
+                            thumbnail: previewImage?.payment_status !== "paid",
+                          })
+                        : ""
+                    }
+                    className="max-w-full max-h-full object-contain"
+                    alt="Preview"
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
+                  />
+                </div>
               )}
               {previewItems.length > 1 && (
                 <>
@@ -11753,29 +11828,21 @@ export default function BrandDashboard() {
                 </>
               )}
               <div className="absolute top-4 right-4 flex gap-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
-                  asChild
-                >
-                  <a
-                    href={previewImage ? getPublicUrl(previewImage) : ""}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
+                {["approved", "accepted", "brand_approved"].includes(
+                  String(previewImage?.status || "").toLowerCase(),
+                ) && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
+                    onClick={() => {
+                      if (previewImage)
+                        void downloadOfferHubDeliverable(previewImage);
+                    }}
                   >
                     <Download className="w-4 h-4 mr-2" /> Download
-                  </a>
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md h-8 w-8"
-                  onClick={() => setPreviewImage(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                  </Button>
+                )}
               </div>
             </div>
             {previewImage?.caption && (

@@ -24,17 +24,17 @@ export const BrandSettingsNotifications = ({
         {
           id: "newProjectAlerts",
           title: "New Project Alerts",
-          desc: "When talent accepts or delivers assets",
+          desc: "When offers are sent, accepted, or contracts are ready to sign",
         },
         {
           id: "deliverableSubmissions",
           title: "Deliverable Submissions",
-          desc: "When creators submit work for approval",
+          desc: "When creators submit deliverables directly to the brand",
         },
         {
           id: "approvalReminders",
           title: "Approval Reminders",
-          desc: "Approval reminder notifications",
+          desc: "When deliverables are ready for your review",
         },
         {
           id: "licenseExpirationAlerts",

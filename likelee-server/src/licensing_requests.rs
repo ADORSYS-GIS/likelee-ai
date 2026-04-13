@@ -13,7 +13,27 @@ use chrono::{Duration, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration as StdDuration, Instant};
 use tracing::info;
+
+const LICENSE_EXPIRATION_CHECK_THROTTLE: StdDuration = StdDuration::from_secs(300);
+static LICENSE_EXPIRATION_CHECKS: OnceLock<Mutex<HashMap<String, Instant>>> = OnceLock::new();
+
+fn should_run_license_expiration_check(brand_id: &str) -> bool {
+    let now = Instant::now();
+    let cache = LICENSE_EXPIRATION_CHECKS.get_or_init(|| Mutex::new(HashMap::new()));
+    let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
+
+    if let Some(last) = guard.get(brand_id) {
+        if now.duration_since(*last) < LICENSE_EXPIRATION_CHECK_THROTTLE {
+            return false;
+        }
+    }
+
+    guard.insert(brand_id.to_string(), now);
+    true
+}
 
 #[derive(Serialize, Clone)]
 pub struct LicensingRequestTalent {
@@ -565,6 +585,9 @@ pub async fn notify_brand_license_expirations_lazy(
     state: &AppState,
     brand_id: &str,
 ) -> Result<(), String> {
+    if !should_run_license_expiration_check(brand_id) {
+        return Ok(());
+    }
     let today = Utc::now().date_naive();
     let end_window = today + Duration::days(10);
 

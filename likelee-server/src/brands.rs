@@ -328,13 +328,14 @@ pub async fn list_notifications(
     user: AuthUser,
     Query(q): Query<ListBrandNotificationsQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     let limit = q.limit.unwrap_or(50).min(200);
 
     let resp = state
         .pg
         .from("brand_notifications")
         .select("id,agency_id,channel,from_label,subject,message,meta_json,read_at,created_at")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .order("created_at.desc")
         .limit(limit as usize)
         .execute()
@@ -362,6 +363,7 @@ pub async fn mark_notification_read(
     user: AuthUser,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     let update = json!({
         "read_at": chrono::Utc::now().to_rfc3339()
     });
@@ -370,7 +372,7 @@ pub async fn mark_notification_read(
         .pg
         .from("brand_notifications")
         .eq("id", &id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .update(update.to_string())
         .execute()
         .await
@@ -393,11 +395,12 @@ pub async fn get_notification_count(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     let resp = state
         .pg
         .from("brand_notifications")
         .select("id")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .is("read_at", "null")
         .execute()
         .await
@@ -427,13 +430,14 @@ pub async fn get_inbox_unread_count(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     // Count unread inbox events from brand_activity_events
     // Look for events with subject_table = 'campaign_offer_packages'
     let resp = state
         .pg
         .from("brand_activity_events")
         .select("id")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .eq("subject_table", "campaign_offer_packages")
         .execute()
         .await;
@@ -464,13 +468,14 @@ pub async fn get_jobs_unread_count(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     // Count new job application events from brand_activity_events
     // Look for events with subject_table = 'job_postings' and type containing 'application'
     let resp = state
         .pg
         .from("brand_activity_events")
         .select("id")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .eq("subject_table", "job_postings")
         .execute()
         .await;
@@ -501,12 +506,13 @@ pub async fn mark_inbox_packages_viewed(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     // Delete inbox activity events for this brand
     let resp = state
         .pg
         .from("brand_activity_events")
         .delete()
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .eq("subject_table", "campaign_offer_packages")
         .execute()
         .await;
@@ -529,12 +535,13 @@ pub async fn mark_job_applications_viewed(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     // Delete job application activity events for this brand
     let resp = state
         .pg
         .from("brand_activity_events")
         .delete()
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .eq("subject_table", "job_postings")
         .execute()
         .await;
