@@ -29,6 +29,7 @@ import {
 } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
+import { BrandSettingsPanel } from "@/components/brand-dashboard/settings/BrandSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -738,6 +739,9 @@ export default function BrandDashboard() {
   >("active");
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
+  const notificationSaveTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const pendingSectionOverrideRef = useRef<string | null>(null);
   const [brandJobs, setBrandJobs] = useState<any[]>([]);
   const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
@@ -1336,8 +1340,8 @@ export default function BrandDashboard() {
 
     loadNotifications();
 
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000);
+    // Refresh notifications every 60 seconds
+    const interval = setInterval(loadNotifications, 60000);
 
     return () => {
       mounted = false;
@@ -1375,8 +1379,8 @@ export default function BrandDashboard() {
 
     loadBadgeCounts();
 
-    // Refresh badge counts every 30 seconds
-    const interval = setInterval(loadBadgeCounts, 30000);
+    // Refresh badge counts every 60 seconds
+    const interval = setInterval(loadBadgeCounts, 60000);
 
     return () => {
       mounted = false;
@@ -1507,7 +1511,7 @@ export default function BrandDashboard() {
       }
     };
     loadInboxCount();
-    const timer = setInterval(loadInboxCount, 30000);
+    const timer = setInterval(loadInboxCount, 60000);
     return () => {
       mounted = false;
       clearInterval(timer);
@@ -2125,7 +2129,7 @@ export default function BrandDashboard() {
     }
   };
 
-  const handleSaveNotificationPrefs = async (newPrefs) => {
+  const handleSaveNotificationPrefs = useCallback(async (newPrefs) => {
     try {
       setIsSavingNotificationPrefs(true);
       await updateBrandProfile({
@@ -2143,7 +2147,27 @@ export default function BrandDashboard() {
     } finally {
       setIsSavingNotificationPrefs(false);
     }
-  };
+  }, []);
+
+  const scheduleNotificationPrefsSave = useCallback(
+    (newPrefs) => {
+      if (notificationSaveTimeoutRef.current) {
+        clearTimeout(notificationSaveTimeoutRef.current);
+      }
+      notificationSaveTimeoutRef.current = setTimeout(() => {
+        handleSaveNotificationPrefs(newPrefs);
+      }, 500);
+    },
+    [handleSaveNotificationPrefs],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (notificationSaveTimeoutRef.current) {
+        clearTimeout(notificationSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleShareBrief = (campaignId) => {
     const campaign = mockCampaigns.find((c) => c.id === campaignId);
@@ -8822,538 +8846,26 @@ export default function BrandDashboard() {
   );
 
   const renderSettings = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">
-          Manage your company profile and preferences
-        </p>
-      </div>
-
-      <Tabs
-        value={activeSettingsTab}
-        onValueChange={setActiveSettingsTab}
-        className="w-full"
-      >
-        <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-lg border-b border-gray-200 h-auto">
-          <TabsTrigger
-            value="profile"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Billing
-          </TabsTrigger>
-          <TabsTrigger
-            value="team"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Team
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Security
-          </TabsTrigger>
-          <TabsTrigger
-            value="legal"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Compliance & Legal
-          </TabsTrigger>
-          <TabsTrigger
-            value="support"
-            className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
-          >
-            Support & Help
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="space-y-6 mt-0">
-          {/* Company Logo */}
-          <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">
-              Company Logo
-            </h3>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <Avatar
-                  className="w-32 h-32 border-2 border-gray-200 rounded-lg bg-gray-50 cursor-pointer transition-opacity hover:opacity-80"
-                  onClick={() => setShowLogoPreview(true)}
-                >
-                  <AvatarImage src={brand.logo} alt={brand.name} />
-                  <AvatarFallback className="text-2xl font-bold text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    {getBrandInitials(brand.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-white rounded-lg p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-sm">
-                  <Edit className="w-4 h-4 text-gray-900" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                    disabled={uploadingLogo}
-                  />
-                </label>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900 mb-1">
-                  Upload Official Logo
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  JPG or PNG, max 5MB, square format recommended
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Company Information */}
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Building2 className="w-6 h-6" /> Company Information
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-500 block">
-                  Organization Name
-                </Label>
-                <Input
-                  value={brand.name}
-                  onChange={(e) => setBrand({ ...brand, name: e.target.value })}
-                  className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-500 block">
-                  Industry
-                </Label>
-                <Input
-                  value={brand.industry}
-                  onChange={(e) =>
-                    setBrand({ ...brand, industry: e.target.value })
-                  }
-                  className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-500 block">
-                  Website
-                </Label>
-                <Input
-                  value={brand.website}
-                  onChange={(e) =>
-                    setBrand({ ...brand, website: e.target.value })
-                  }
-                  className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 text-sm font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-500 block">
-                  Contact Email
-                </Label>
-                <Input
-                  value={brand.contact_email}
-                  disabled
-                  className="rounded-lg border border-gray-200 bg-gray-50 h-11 text-sm font-medium cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-gray-100">
-              <Button
-                onClick={handleSaveProfile}
-                disabled={
-                  JSON.stringify(brand) === JSON.stringify(originalBrand) ||
-                  isSavingProfile
-                }
-                className="w-full rounded-lg bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSavingProfile ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : null}
-                Save Profile Changes
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Bell className="w-6 h-6" /> Communication Preferences
-            </h3>
-            <div className="space-y-2">
-              {[
-                {
-                  id: "newProjectAlerts",
-                  title: "New Project Alerts",
-                  desc: "When talent accepts or delivers assets",
-                },
-                {
-                  id: "deliverableSubmissions",
-                  title: "Deliverable Submissions",
-                  desc: "When creators submit work for approval",
-                },
-                {
-                  id: "approvalReminders",
-                  title: "Approval Reminders",
-                  desc: "Approval reminder notifications",
-                },
-                {
-                  id: "licenseExpirationAlerts",
-                  title: "License Expiration Alerts",
-                  desc: "10-day advance notice",
-                },
-                {
-                  id: "monthlyAnalyticsSummary",
-                  title: "Monthly Analytics Summary",
-                  desc: "Monthly performance email report",
-                  comingSoon: true,
-                },
-              ].map((pref) => (
-                <div
-                  key={pref.id}
-                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
-                >
-                  <div className="pr-12 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Label
-                        className={`text-sm font-bold ${pref.comingSoon ? "text-gray-400" : "text-gray-900"}`}
-                      >
-                        {pref.title}
-                      </Label>
-                      {pref.comingSoon && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-900 text-white">
-                          Coming Soon
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className={`text-xs font-medium ${pref.comingSoon ? "text-gray-400" : "text-gray-500"}`}
-                    >
-                      {pref.desc}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={
-                      notificationPrefs[
-                        pref.id as keyof typeof notificationPrefs
-                      ]
-                    }
-                    onCheckedChange={(val) => {
-                      const newPrefs = { ...notificationPrefs, [pref.id]: val };
-                      setNotificationPrefs(newPrefs);
-                      handleSaveNotificationPrefs(newPrefs);
-                    }}
-                    disabled={pref.comingSoon}
-                    className="data-[state=checked]:bg-[#F7B750] disabled:opacity-30 disabled:cursor-not-allowed"
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="billing" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <CreditCard className="w-6 h-6" /> Billing & Payment
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-500 block">
-                  Billing Address
-                </Label>
-                <Textarea
-                  placeholder="Enter your billing address"
-                  defaultValue={
-                    brand.industry === "Retail & E-commerce"
-                      ? "123 Main St\nLos Angeles, CA 90001\nUnited States"
-                      : ""
-                  }
-                  className="rounded-lg border border-gray-200 focus:border-gray-900 font-medium min-h-[120px]"
-                />
-              </div>
-              <div className="space-y-8">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-gray-500 block">
-                    Billing Email
-                  </Label>
-                  <Input
-                    defaultValue={brand.contact_email}
-                    className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 font-medium"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-gray-500 block">
-                    Tax Identification
-                  </Label>
-                  <Input
-                    placeholder="XX-XXXXXXX"
-                    className="rounded-lg border border-gray-200 focus:border-gray-900 h-11 font-medium"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-10 space-y-2">
-              <Label className="text-xs font-bold text-gray-500 block">
-                Payment Method
-              </Label>
-              <div className="p-4 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <CreditCard className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 tracking-widest">
-                    •••• •••• •••• 4242
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg border border-gray-200 font-bold text-xs"
-                >
-                  Update
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="team" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                <Users className="w-6 h-6" /> Team Management
-              </h3>
-              <Badge className="rounded-lg bg-[#F7B750] text-white font-bold text-[10px] py-1.5 px-3">
-                {brand.team_seats} / 5 Seats
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-500 mb-8">
-              Manage your team ({brand.team_seats} / 5 seats used)
-            </p>
-
-            <div className="space-y-3 mb-8">
-              {[
-                {
-                  name: "John Smith",
-                  email: "john@urbanapparel.com",
-                  role: "Admin",
-                },
-                {
-                  name: "Sarah Jones",
-                  email: "sarah@urbanapparel.com",
-                  role: "PM",
-                },
-                {
-                  name: "Mike Chen",
-                  email: "mike@urbanapparel.com",
-                  role: "Reviewer",
-                },
-              ].map((member, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-5 bg-white border border-gray-100 hover:border-gray-900 transition-colors rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-10 h-10 rounded-lg border border-gray-200">
-                      <AvatarFallback className="font-bold text-xs bg-gray-100">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm tracking-tight">
-                        {member.name}
-                      </p>
-                      <p className="text-xs font-bold text-gray-400">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="px-3 py-1 rounded-md text-blue-600 bg-blue-50 border border-blue-200 text-[10px] font-bold">
-                      {member.role === "PM" ? "Project Manager" : member.role}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button className="w-full rounded-lg bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold h-12">
-              <Plus className="w-5 h-5 mr-3" />
-              Invite New Collaborator
-            </Button>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Shield className="w-6 h-6" /> Security Settings
-            </h3>
-            <div className="space-y-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/forgot-password")}
-                className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
-              >
-                Reset Admin Password <ChevronRight className="w-4 h-4" />
-              </Button>
-              <div className="relative group">
-                <Button
-                  variant="outline"
-                  disabled
-                  className="w-full justify-between rounded-lg border border-gray-200 font-bold text-sm h-12 opacity-50 blur-[1px] cursor-not-allowed"
-                >
-                  Enable 2FA Protection (Coming Soon){" "}
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <Badge variant="secondary" className="bg-gray-900 text-white">
-                    Coming Soon
-                  </Badge>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
-              >
-                View Active Sessions <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="legal" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              Compliance & Legal
-            </h3>
-            <div className="space-y-3">
-              {[
-                {
-                  title: "Terms & Conditions",
-                  icon: FileText,
-                  action: () =>
-                    window.open("/terms-and-conditions-agency.html", "_blank"),
-                },
-                {
-                  title: "Privacy Policy",
-                  icon: FileText,
-                  action: () =>
-                    window.open("https://likelee.ai/privacypolicy", "_blank"),
-                },
-                {
-                  title: "SAG-AFTRA Alignment Statement",
-                  icon: CircleSlash,
-                  action: () => {
-                    window.location.href = "/sagaftraalignment";
-                  },
-                },
-                {
-                  title: "Download My Data (GDPR) (Coming Soon)",
-                  icon: Download,
-                  action: () => {},
-                },
-              ].map((legal, i) => {
-                const Icon = legal.icon;
-                return legal.title.includes("Coming Soon") ? (
-                  <div key={i} className="relative group">
-                    <button
-                      disabled
-                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-400 text-left transition-colors opacity-50 blur-[1px] cursor-not-allowed"
-                    >
-                      <Icon className="w-4 h-4 text-gray-400 shrink-0" />
-                      {legal.title}
-                    </button>
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <Badge
-                        variant="secondary"
-                        className="bg-gray-900 text-white"
-                      >
-                        Coming Soon
-                      </Badge>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    key={i}
-                    onClick={legal.action}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
-                  >
-                    <Icon className="w-4 h-4 text-gray-500 shrink-0" />
-                    {legal.title}
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="support" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              Support & Help Center
-            </h3>
-            <div className="grid md:grid-cols-2 gap-3">
-              <button
-                onClick={() => (window.location.href = "/support")}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
-              >
-                <HelpCircle className="w-4 h-4 text-gray-500 shrink-0" />
-                Contact Support
-              </button>
-              <button
-                onClick={() => (window.location.href = "/aboutus")}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
-              >
-                <FileText className="w-4 h-4 text-gray-500 shrink-0" />
-                Knowledge Base
-              </button>
-              <button
-                onClick={() =>
-                  (window.location.href =
-                    "/book-demo?source=brand_company_hero")
-                }
-                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
-              >
-                <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
-                Schedule a Call
-              </button>
-              <button
-                onClick={() => (window.location.href = "/support")}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-semibold text-gray-800 text-left transition-colors"
-              >
-                <Info className="w-4 h-4 text-gray-500 shrink-0" />
-                Report a Bug
-              </button>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+    <BrandSettingsPanel
+      activeSettingsTab={activeSettingsTab}
+      onChangeTab={setActiveSettingsTab}
+      brand={brand}
+      originalBrand={originalBrand}
+      uploadingLogo={uploadingLogo}
+      isSavingProfile={isSavingProfile}
+      onUpdateBrand={setBrand}
+      onLogoUpload={handleLogoUpload}
+      onSaveProfile={handleSaveProfile}
+      onShowLogoPreview={() => setShowLogoPreview(true)}
+      notificationPrefs={notificationPrefs}
+      onToggleNotificationPref={(prefId, val) => {
+        const newPrefs = { ...notificationPrefs, [prefId]: val };
+        setNotificationPrefs(newPrefs);
+        scheduleNotificationPrefsSave(newPrefs);
+      }}
+      isSavingNotificationPrefs={isSavingNotificationPrefs}
+      onNavigate={navigate}
+    />
   );
 
   useEffect(() => {

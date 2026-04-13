@@ -8664,7 +8664,7 @@ pub async fn ensure_campaign_billing_stub(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) async fn log_activity_event_with_subject(
+pub async fn log_activity_event_with_subject(
     state: &AppState,
     brand_id: &str,
     campaign_id: Option<&str>,
