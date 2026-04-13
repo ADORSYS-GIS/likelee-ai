@@ -1,5 +1,6 @@
 use crate::email;
 use crate::errors::sanitize_db_error;
+use crate::team::{permissions::Permission, require_agency_permission};
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
     extract::{Path, State},
@@ -609,8 +610,11 @@ pub async fn approve_disconnect_request(
     Path(creator_id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, &user.id).await?;
-    let contract_row = get_latest_contract_for_connection(&state, &user.id, &creator_id)
+    let access =
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
+    let agency_id = &access.organization_id;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    let contract_row = get_latest_contract_for_connection(&state, agency_id, &creator_id)
         .await?
         .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
     let disconnect_status = contract_row
@@ -640,7 +644,7 @@ pub async fn approve_disconnect_request(
         .pg
         .from("agency_creator_marketplace_contracts")
         .eq("id", &contract_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(update.to_string())
         .execute()
         .await
@@ -673,7 +677,10 @@ pub async fn reject_disconnect_request(
     Path(creator_id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let contract_row = get_latest_contract_for_connection(&state, &user.id, &creator_id)
+    let access =
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
+    let agency_id = &access.organization_id;
+    let contract_row = get_latest_contract_for_connection(&state, agency_id, &creator_id)
         .await?
         .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
     let disconnect_status = contract_row
@@ -701,7 +708,7 @@ pub async fn reject_disconnect_request(
         .pg
         .from("agency_creator_marketplace_contracts")
         .eq("id", &contract_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(update.to_string())
         .execute()
         .await
