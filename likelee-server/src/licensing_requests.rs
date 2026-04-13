@@ -4,10 +4,10 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
+use chrono::{Duration, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use tracing::info;
 
 #[derive(Serialize, Clone)]
@@ -525,6 +525,16 @@ pub async fn list_for_brand(
     let effective_brand_id =
         crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
+    let state_for_notify = state.clone();
+    let brand_id_for_notify = effective_brand_id.clone();
+    tokio::spawn(async move {
+        if let Err(e) =
+            notify_brand_license_expirations_lazy(&state_for_notify, &brand_id_for_notify).await
+        {
+            tracing::warn!(error = %e, brand_id = %brand_id_for_notify, "license expiration check failed");
+        }
+    });
+
     let resp = state
         .pg
         .from("licensing_requests")
@@ -546,6 +556,184 @@ pub async fn list_for_brand(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(Json(rows))
+}
+
+pub async fn notify_brand_license_expirations_lazy(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<(), String> {
+    let today = Utc::now().date_naive();
+    let end_window = today + Duration::days(10);
+
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,effective_end_date,license_end_date,deadline,status,license_submissions!licensing_requests_submission_id_fkey(status,signed_at,agency_signed_at,requires_agency_signature)")
+        .eq("brand_id", brand_id)
+        .eq("status", "approved")
+        .gte("effective_end_date", today.to_string())
+        .lte("effective_end_date", end_window.to_string())
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(resp.text().await.unwrap_or_default());
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut candidates: Vec<(String, NaiveDate)> = Vec::new();
+    for row in rows {
+        let id = match row.get("id").and_then(|v| v.as_str()) {
+            Some(v) if !v.trim().is_empty() => v.to_string(),
+            _ => continue,
+        };
+
+        let submission = row.get("license_submissions");
+        let submission_status = submission
+            .and_then(|s| s.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let signed_at = submission
+            .and_then(|s| s.get("signed_at"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let agency_signed_at = submission
+            .and_then(|s| s.get("agency_signed_at"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let requires_agency_signature = submission
+            .and_then(|s| s.get("requires_agency_signature"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let fully_signed = if submission_status == "completed" || submission_status == "signed" {
+            if requires_agency_signature {
+                !signed_at.is_empty() && !agency_signed_at.is_empty()
+            } else {
+                !signed_at.is_empty()
+            }
+        } else {
+            false
+        };
+
+        if !fully_signed {
+            continue;
+        }
+
+        let date_str = row
+            .get("effective_end_date")
+            .and_then(|v| v.as_str())
+            .or_else(|| row.get("license_end_date").and_then(|v| v.as_str()))
+            .or_else(|| row.get("deadline").and_then(|v| v.as_str()));
+
+        let Some(date_str) = date_str else { continue };
+        let Ok(end_date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") else {
+            continue;
+        };
+
+        candidates.push((id, end_date));
+    }
+
+    if candidates.is_empty() {
+        return Ok(());
+    }
+
+    let ids: Vec<String> = candidates.iter().map(|(id, _)| id.clone()).collect();
+
+    let existing_resp = state
+        .pg
+        .from("brand_notifications")
+        .select("meta_json")
+        .eq("brand_id", brand_id)
+        .eq("meta_json->>type", "license_expiration")
+        .in_("meta_json->>licensing_request_id", ids.clone())
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut already_notified: HashSet<String> = HashSet::new();
+    if existing_resp.status().is_success() {
+        let existing_text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let existing_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&existing_text).unwrap_or_default();
+        for row in existing_rows {
+            if let Some(id) = row
+                .get("meta_json")
+                .and_then(|v| v.get("licensing_request_id"))
+                .and_then(|v| v.as_str())
+            {
+                already_notified.insert(id.to_string());
+            }
+        }
+    }
+
+    let prefs_resp = state
+        .pg
+        .from("brands")
+        .select("notification_prefs")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !prefs_resp.status().is_success() {
+        return Ok(());
+    }
+    let prefs: serde_json::Value = prefs_resp.json().await.unwrap_or(json!({}));
+    let notify_enabled = prefs
+        .get("notification_prefs")
+        .and_then(|p| p.get("licenseExpirationAlerts"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    if !notify_enabled {
+        return Ok(());
+    }
+
+    for (id, end_date) in candidates {
+        if already_notified.contains(&id) {
+            continue;
+        }
+        let days_until_expiry = (end_date - today).num_days();
+        if !(0..=10).contains(&days_until_expiry) {
+            continue;
+        }
+        let subject = format!("License expiring in {} days", days_until_expiry);
+        let message = format!(
+            "Your license will expire on {}. Please renew or extend before expiration.",
+            end_date.format("%Y-%m-%d")
+        );
+        let _ = crate::notifications::send_brand_notification(
+            state,
+            brand_id,
+            None,
+            &subject,
+            &message,
+            json!({
+                "licensing_request_id": id,
+                "expiry_date": end_date.format("%Y-%m-%d").to_string(),
+                "days_remaining": days_until_expiry,
+                "type": "license_expiration"
+            }),
+            true,
+        )
+        .await;
+    }
+
+    Ok(())
 }
 
 pub async fn update_status_bulk(
@@ -811,48 +999,24 @@ pub async fn update_status_bulk(
                                 )
                                 .await;
 
-                                // Check notification preferences
-                                if let Ok(brand_resp) = state_clone
-                                    .pg
-                                    .from("brands")
-                                    .select("notification_prefs")
-                                    .eq("id", &brand_id)
-                                    .single()
-                                    .execute()
-                                    .await
-                                {
-                                    if brand_resp.status().is_success() {
-                                        if let Ok(brand_data) =
-                                            brand_resp.json::<serde_json::Value>().await
-                                        {
-                                            let prefs = brand_data.get("notification_prefs");
-                                            let notify_enabled = prefs
-                                                .and_then(|p| p.get("newProjectAlerts"))
-                                                .and_then(|v| v.as_bool())
-                                                .unwrap_or(true);
-
-                                            if notify_enabled {
-                                                let subject =
-                                                    "Agency accepted your licensing request";
-                                                let message = "An agency has approved your licensing request and will send you a contract soon. Check your dashboard for details.";
-                                                let _ =
-                                                    crate::notifications::send_brand_notification(
-                                                        &state_clone,
-                                                        &brand_id,
-                                                        None,
-                                                        subject,
-                                                        message,
-                                                        json!({
-                                                            "licensing_request_id": request_id,
-                                                            "type": "licensing_request_accepted"
-                                                        }),
-                                                        true,
-                                                    )
-                                                    .await;
-                                            }
-                                        }
-                                    }
-                                }
+                                let subject = "Agency accepted your licensing request";
+                                let message = "An agency has approved your licensing request and will send you a contract soon. Check your dashboard for details.";
+                                let _ = crate::notifications::notify_brand_if_enabled(
+                                    &state_clone,
+                                    crate::notifications::BrandNotificationRequest {
+                                        brand_id: &brand_id,
+                                        agency_id: None,
+                                        pref_key: "newProjectAlerts",
+                                        subject,
+                                        message,
+                                        meta_json: json!({
+                                            "licensing_request_id": request_id,
+                                            "type": "licensing_request_accepted"
+                                        }),
+                                        notify_email: true,
+                                    },
+                                )
+                                .await;
                             }
                         }
                     }
@@ -996,54 +1160,30 @@ pub async fn create(
                             let state_clone = state.clone();
 
                             tokio::spawn(async move {
-                                if let Ok(brand_resp) = state_clone
-                                    .pg
-                                    .from("brands")
-                                    .select("notification_prefs")
-                                    .eq("id", &brand_id_str)
-                                    .single()
-                                    .execute()
-                                    .await
-                                {
-                                    if brand_resp.status().is_success() {
-                                        if let Ok(brand_data) =
-                                            brand_resp.json::<serde_json::Value>().await
-                                        {
-                                            let prefs = brand_data.get("notification_prefs");
-                                            let notify_enabled = prefs
-                                                .and_then(|p| p.get("licenseExpirationAlerts"))
-                                                .and_then(|v| v.as_bool())
-                                                .unwrap_or(true);
-
-                                            if notify_enabled {
-                                                let subject = format!(
-                                                    "License expiring in {} days",
-                                                    days_until_expiry
-                                                );
-                                                let message = format!(
-                                                    "Your license will expire on {}. Please renew or extend before expiration.",
-                                                    end_date_str
-                                                );
-                                                let _ =
-                                                    crate::notifications::send_brand_notification(
-                                                        &state_clone,
-                                                        &brand_id_str,
-                                                        None,
-                                                        &subject,
-                                                        &message,
-                                                        json!({
-                                                            "licensing_request_id": request_id_str,
-                                                            "expiry_date": end_date_str,
-                                                            "days_remaining": days_until_expiry,
-                                                            "type": "license_expiration"
-                                                        }),
-                                                        true,
-                                                    )
-                                                    .await;
-                                            }
-                                        }
-                                    }
-                                }
+                                let subject =
+                                    format!("License expiring in {} days", days_until_expiry);
+                                let message = format!(
+                                    "Your license will expire on {}. Please renew or extend before expiration.",
+                                    end_date_str
+                                );
+                                let _ = crate::notifications::notify_brand_if_enabled(
+                                    &state_clone,
+                                    crate::notifications::BrandNotificationRequest {
+                                        brand_id: &brand_id_str,
+                                        agency_id: None,
+                                        pref_key: "licenseExpirationAlerts",
+                                        subject: &subject,
+                                        message: &message,
+                                        meta_json: json!({
+                                            "licensing_request_id": request_id_str,
+                                            "expiry_date": end_date_str,
+                                            "days_remaining": days_until_expiry,
+                                            "type": "license_expiration"
+                                        }),
+                                        notify_email: true,
+                                    },
+                                )
+                                .await;
                             });
                         }
                     }

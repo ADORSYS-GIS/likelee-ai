@@ -2350,48 +2350,29 @@ pub async fn create_campaign_offers(
         let state_clone = state.clone();
 
         tokio::spawn(async move {
-            if let Ok(brand_resp) = state_clone
-                .pg
-                .from("brands")
-                .select("notification_prefs")
-                .eq("id", &brand_id_str)
-                .single()
-                .execute()
-                .await
-            {
-                if brand_resp.status().is_success() {
-                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
-                        let prefs = brand_data.get("notification_prefs");
-                        let notify_enabled = prefs
-                            .and_then(|p| p.get("newProjectAlerts"))
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(true);
-
-                        if notify_enabled {
-                            let subject = "Campaign offers sent successfully";
-                            let message = format!(
-                                "You've successfully sent {} offer{} for your campaign. Track responses on your dashboard.",
-                                offer_count,
-                                if offer_count == 1 { "" } else { "s" }
-                            );
-                            let _ = crate::notifications::send_brand_notification(
-                                &state_clone,
-                                &brand_id_str,
-                                None,
-                                subject,
-                                &message,
-                                json!({
-                                    "campaign_id": campaign_id_str,
-                                    "offer_count": offer_count,
-                                    "type": "new_project_alert"
-                                }),
-                                true,
-                            )
-                            .await;
-                        }
-                    }
-                }
-            }
+            let subject = "Campaign offers sent successfully";
+            let message = format!(
+                "You've successfully sent {} offer{} for your campaign. Track responses on your dashboard.",
+                offer_count,
+                if offer_count == 1 { "" } else { "s" }
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "campaign_id": campaign_id_str,
+                        "offer_count": offer_count,
+                        "type": "new_project_alert"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
         });
     }
 
@@ -2942,48 +2923,29 @@ pub async fn respond_to_campaign_offer(
         .await;
 
         tokio::spawn(async move {
-            if let Ok(brand_resp) = state_clone
-                .pg
-                .from("brands")
-                .select("notification_prefs")
-                .eq("id", &brand_id_str)
-                .single()
-                .execute()
-                .await
-            {
-                if brand_resp.status().is_success() {
-                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
-                        let prefs = brand_data.get("notification_prefs");
-                        let notify_enabled = prefs
-                            .and_then(|p| p.get("newProjectAlerts"))
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(true);
-
-                        if notify_enabled {
-                            let subject = format!("{} accepted your campaign offer", target_name);
-                            let message = format!(
-                                "{} has accepted your campaign offer. You can now proceed with the next steps on your dashboard.",
-                                target_name
-                            );
-                            let _ = crate::notifications::send_brand_notification(
-                                &state_clone,
-                                &brand_id_str,
-                                None,
-                                &subject,
-                                &message,
-                                json!({
-                                    "offer_id": offer_id_str,
-                                    "target_type": target_type,
-                                    "target_name": target_name,
-                                    "type": "offer_accepted"
-                                }),
-                                true,
-                            )
-                            .await;
-                        }
-                    }
-                }
-            }
+            let subject = format!("{} accepted your campaign offer", target_name);
+            let message = format!(
+                "{} has accepted your campaign offer. You can now proceed with the next steps on your dashboard.",
+                target_name
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject: &subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "target_type": target_type,
+                        "target_name": target_name,
+                        "type": "offer_accepted"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
         });
     }
 
@@ -5943,40 +5905,28 @@ pub async fn submit_offer_deliverable(
         let state_clone = state.clone();
 
         tokio::spawn(async move {
-            if let Ok(brand_resp) = state_clone
-                .pg
-                .from("brands")
-                .select("notification_prefs")
-                .eq("id", &brand_id_str)
-                .single()
-                .execute()
-                .await
-            {
-                if brand_resp.status().is_success() {
-                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
-                        let prefs = brand_data.get("notification_prefs");
-                        let notify_enabled = prefs
-                            .and_then(|p| p.get("deliverableSubmissions"))
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(true);
-
-                        if notify_enabled {
-                            let subject = "New deliverable submitted";
-                            let message = format!("A creator has submitted a new deliverable for offer {}. Please review it on your dashboard.", offer_id_str);
-                            let _ = crate::notifications::send_brand_notification(
-                                &state_clone,
-                                &brand_id_str,
-                                None,
-                                subject,
-                                &message,
-                                json!({"offer_id": offer_id_str, "deliverable_id": deliverable_id_str, "type": "deliverable_submission"}),
-                                true,
-                            )
-                            .await;
-                        }
-                    }
-                }
-            }
+            let subject = "New deliverable submitted";
+            let message = format!(
+                "A creator has submitted a new deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "deliverableSubmissions",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "deliverable_submission"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
         });
     }
 
@@ -7289,40 +7239,28 @@ pub async fn review_offer_deliverable(
         let state_clone = state.clone();
 
         tokio::spawn(async move {
-            if let Ok(brand_resp) = state_clone
-                .pg
-                .from("brands")
-                .select("notification_prefs")
-                .eq("id", &brand_id_str)
-                .single()
-                .execute()
-                .await
-            {
-                if brand_resp.status().is_success() {
-                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
-                        let prefs = brand_data.get("notification_prefs");
-                        let notify_enabled = prefs
-                            .and_then(|p| p.get("approvalReminders"))
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(true);
-
-                        if notify_enabled {
-                            let subject = "Deliverable ready for your review";
-                            let message = format!("An agency has approved a deliverable for offer {}. Please review it on your dashboard.", offer_id_str);
-                            let _ = crate::notifications::send_brand_notification(
-                                &state_clone,
-                                &brand_id_str,
-                                Some(&agency_id_str),
-                                subject,
-                                &message,
-                                json!({"offer_id": offer_id_str, "deliverable_id": deliverable_id_str, "type": "approval_reminder"}),
-                                true,
-                            )
-                            .await;
-                        }
-                    }
-                }
-            }
+            let subject = "Deliverable ready for your review";
+            let message = format!(
+                "An agency has approved a deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: Some(&agency_id_str),
+                    pref_key: "approvalReminders",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "approval_reminder"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
         });
     }
     let brand_name = resolve_brand_name(&state, brand_id_value)

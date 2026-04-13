@@ -1146,21 +1146,3 @@ export const getAgencyBillingStatus = () =>
     stripe_current_period_end?: string | null;
     stripe_cancel_at_period_end: boolean;
   }>(`/api/agency/billing/status`);
-export const getBrandBillingStatus = () =>
-  base44Client.get<{
-    brand_id: string;
-    stripe_customer_id: string | null;
-    has_payment_method: boolean;
-  }>(`/api/brand/billing/status`);
-
-export const getBrandBillingOverview = () =>
-  base44Client.get<{
-    active_projects_count: number;
-    total_spent_cents: number;
-    pending_payments_cents: number;
-  }>(`/api/brand/billing/overview`);
-
-export const getBrandPaymentHistory = () =>
-  base44Client.get<{
-    payments: any[];
-  }>(`/api/brand/billing/history`);

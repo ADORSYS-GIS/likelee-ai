@@ -2717,10 +2717,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const termsFile =
-                      flow === "brand"
-                        ? "/creator-talent-terms-and-conditions.html"
-                        : "/terms-and-conditions-agency.html";
+                    const termsFile = "/terms-and-conditions-agency.html";
                     window.open(termsFile, "_blank");
                   }}
                 >

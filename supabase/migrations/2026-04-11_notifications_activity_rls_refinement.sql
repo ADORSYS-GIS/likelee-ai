@@ -1,4 +1,4 @@
--- Migration to add missing INSERT and DELETE policies for brand_notifications and brand_activity_events
+-- Migration to add missing INSERT/DELETE policies for brand_notifications and DELETE for brand_activity_events
 BEGIN;
 
 -- 1. brand_notifications RLS refinements
@@ -11,8 +11,7 @@ CREATE POLICY "Brands can delete own notifications" ON public.brand_notification
   FOR DELETE USING (brand_id = auth.uid());
 
 -- 2. brand_activity_events RLS refinements
--- (SELECT was already refined in 2026-03-19, INSERT was defined in 2026-03-21)
--- We add DELETE to support clearing badges/events server-side/client-side
+-- Existing table/policies defined in earlier migrations; we add DELETE to support clearing badges/events
 
 DROP POLICY IF EXISTS "Brands can delete own activity events" ON public.brand_activity_events;
 CREATE POLICY "Brands can delete own activity events" ON public.brand_activity_events

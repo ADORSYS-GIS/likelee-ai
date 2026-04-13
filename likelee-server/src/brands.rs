@@ -260,6 +260,19 @@ pub async fn get_by_user(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let state_for_notify = state.clone();
+    let brand_id_for_notify = user.id.clone();
+    tokio::spawn(async move {
+        if let Err(e) = crate::licensing_requests::notify_brand_license_expirations_lazy(
+            &state_for_notify,
+            &brand_id_for_notify,
+        )
+        .await
+        {
+            tracing::warn!(error = %e, brand_id = %brand_id_for_notify, "license expiration check failed");
+        }
+    });
+
     let resp = state
         .pg
         .from("brands")
@@ -544,6 +557,7 @@ pub async fn get_licensing_contracts_count(
         .select("id")
         .eq("brand_id", &user.id)
         .is("read_at", "null")
+        .eq("meta_json->>type", "contract_ready")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -561,16 +575,7 @@ pub async fn get_licensing_contracts_count(
     let notifications: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Filter for contract_ready type
-    let contract_count = notifications
-        .iter()
-        .filter(|n| {
-            n.get("meta_json")
-                .and_then(|m| m.get("type"))
-                .and_then(|t| t.as_str())
-                == Some("contract_ready")
-        })
-        .count();
+    let contract_count = notifications.len();
 
     Ok(Json(json!({
         "count": contract_count

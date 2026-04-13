@@ -766,8 +766,9 @@ export default function BrandDashboard() {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [jobsUnreadCount, setJobsUnreadCount] = useState(0);
   const [licensingContractsCount, setLicensingContractsCount] = useState(0);
-  const [contractHubViewed, setContractHubViewed] = useState(false);
-  const [deliverablesViewed, setDeliverablesViewed] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" && window.innerWidth < 768,
+  );
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -845,8 +846,6 @@ export default function BrandDashboard() {
     } else if (nextSection === "licensing-requests") {
       setLicensingContractsCount(0);
     } else if (nextSection === "campaigns-contract-hub") {
-      // Clear contract hub badge
-      setContractHubViewed(true);
       // Mark related notifications as read
       const contractNotifications = brandNotifications.filter(
         (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
@@ -855,8 +854,6 @@ export default function BrandDashboard() {
         handleMarkNotificationRead(n.id);
       });
     } else if (nextSection === "campaigns-deliverables") {
-      // Clear deliverables badge
-      setDeliverablesViewed(true);
       // Mark related notifications as read
       const deliverableNotifications = brandNotifications.filter(
         (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
@@ -1995,43 +1992,19 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const contractHubPendingCount = useMemo(() => {
-    if (!notificationPrefs.newProjectAlerts || contractHubViewed) return 0;
+    if (!notificationPrefs.newProjectAlerts) return 0;
 
-    // Count from offers
-    const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
-    const offerCount = offers.filter((offer: any) => {
-      const st = String(offer?.status || "").toLowerCase();
-      return st === "contract_sent" || st === "contract_partially_signed";
-    }).length;
-
-    // Count from notifications
-    const notifCount = brandNotifications.filter(
+    return brandNotifications.filter(
       (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
     ).length;
-
-    return offerCount + notifCount;
-  }, [
-    brandOfferItems,
-    brandNotifications,
-    notificationPrefs.newProjectAlerts,
-    contractHubViewed,
-  ]);
+  }, [brandNotifications, notificationPrefs.newProjectAlerts]);
 
   const pendingApprovalCount = useMemo(() => {
-    if (!notificationPrefs.deliverableSubmissions || deliverablesViewed)
-      return 0;
+    if (!notificationPrefs.deliverableSubmissions) return 0;
 
-    // Count from campaigns
-    const campaignCount = mockCampaigns.filter(
-      (c) => c.status === "pending_approval",
-    ).length;
-
-    // Count from notifications
-    const notifCount = brandNotifications.filter(
+    return brandNotifications.filter(
       (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
     ).length;
-
-    return campaignCount + notifCount;
   }, [brandNotifications, notificationPrefs.deliverableSubmissions]);
   const activeLicenses = mockLicenses.filter(
     (l) => l.status === "active" || l.status === "expiring_soon",
@@ -9383,7 +9356,14 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSidebarDragStart = (e: React.MouseEvent) => {
     e.preventDefault();

@@ -1033,47 +1033,27 @@ pub async fn finalize(
         let campaign_title = license_template.template_name.clone();
 
         tokio::spawn(async move {
-            // Fetch brand notification preferences
-            if let Ok(brand_resp) = state_clone
-                .pg
-                .from("brands")
-                .select("notification_prefs")
-                .eq("id", &brand_id_clone)
-                .single()
-                .execute()
-                .await
-            {
-                if brand_resp.status().is_success() {
-                    if let Ok(brand_data) = brand_resp.json::<serde_json::Value>().await {
-                        let prefs = brand_data.get("notification_prefs");
-                        let notify_enabled = prefs
-                            .and_then(|p| p.get("newProjectAlerts"))
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(true);
-
-                        if notify_enabled {
-                            let subject = "Contract ready for signature";
-                            let message = format!(
-                                "An agency has sent you a contract for '{}'. Please review and sign.",
-                                campaign_title
-                            );
-                            let _ = crate::notifications::send_brand_notification(
-                                &state_clone,
-                                &brand_id_clone,
-                                None,
-                                subject,
-                                &message,
-                                json!({
-                                    "submission_id": submission_id_clone,
-                                    "type": "contract_ready"
-                                }),
-                                true,
-                            )
-                            .await;
-                        }
-                    }
-                }
-            }
+            let subject = "Contract ready for signature";
+            let message = format!(
+                "An agency has sent you a contract for '{}'. Please review and sign.",
+                campaign_title
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_clone,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "submission_id": submission_id_clone,
+                        "type": "contract_ready"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
         });
     }
 
