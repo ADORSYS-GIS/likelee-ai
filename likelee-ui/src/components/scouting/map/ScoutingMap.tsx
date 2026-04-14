@@ -291,7 +291,7 @@ export const ScoutingMap = ({
         upcomingEvents={rawCounts.events}
       />
 
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-3xl">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl sm:rounded-3xl">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -539,7 +539,7 @@ export const ScoutingMap = ({
             <ResizeMap isVisible={isVisible} />
           </MapContainer>
 
-          <div className="absolute bottom-6 right-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200 shadow-xl">
+          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1000] bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xl max-w-[200px] sm:max-w-none">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
               Legend
             </h5>

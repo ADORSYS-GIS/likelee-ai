@@ -131,7 +131,7 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
     .sort((a, b) => b.prospects - a.prospects);
 
   return (
-    <Card className="p-6 bg-indigo-50/30 border-indigo-100 shadow-sm rounded-[32px] space-y-6">
+    <Card className="p-4 sm:p-6 bg-indigo-50/30 border-indigo-100 shadow-sm rounded-2xl sm:rounded-[32px] space-y-4 sm:space-y-6">
       <div className="flex items-center gap-2 text-indigo-700">
         <TrendingUp className="w-5 h-5" />
         <h3 className="text-lg font-black tracking-tight">
@@ -140,14 +140,14 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
       </div>
 
       {/* Top Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
             Total Trips
           </p>
           <p className="text-3xl font-black text-indigo-600">{totalTrips}</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
             Prospects Discovered
           </p>
@@ -155,7 +155,7 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
             {totalProspects}
           </p>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
             Avg Conversion Rate
           </p>
@@ -163,7 +163,7 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
             {avgConversion}%
           </p>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
             Total Investment
           </p>
@@ -174,9 +174,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
       </div>
 
       {/* Bottom Details Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Scout Performance */}
-        <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-3 sm:space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
             Scout Performance
           </h4>
@@ -215,7 +215,7 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         </div>
 
         {/* Most Productive Locations */}
-        <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-3 sm:space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
             Most Productive Locations
           </h4>
@@ -247,7 +247,7 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         </div>
 
         {/* ROI by Trip Type */}
-        <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-3 sm:space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
             ROI by Trip Type
           </h4>
