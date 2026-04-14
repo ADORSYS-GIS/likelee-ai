@@ -59,6 +59,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+  DashboardTableSurface,
+} from "@/components/dashboard/DashboardResponsive";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();
@@ -1243,75 +1248,127 @@ const BrandConnectionsView = () => {
           </div>
         </div>
       )}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
-        <p className="text-gray-600">
-          Manage active connections and invitations.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="Brand Connections"
+        description="Manage active connections and invitations."
+      />
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={activeTab === "connections" ? "default" : "outline"}
-          onClick={() => setActiveTab("connections")}
-        >
-          Connected Brands
-        </Button>
-        <Button
-          variant={activeTab === "requests" ? "default" : "outline"}
-          onClick={() => setActiveTab("requests")}
-          className="relative"
-        >
-          Requests
-          {showRequestsBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingRequests - (seenCounts.requests || 0)}
-            </Badge>
-          )}
-        </Button>
-        <Button
-          variant={activeTab === "offers" ? "default" : "outline"}
-          onClick={() => setActiveTab("offers")}
-          className="relative"
-        >
-          Brand Offers
-          {showOffersBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingOffers - (seenCounts.offers || 0)}
-            </Badge>
-          )}
-        </Button>
-        <Button
-          variant={activeTab === "contract_hub" ? "default" : "outline"}
-          onClick={() => setActiveTab("contract_hub")}
-        >
-          Contract Hub
-        </Button>
-        <Button
-          variant={activeTab === "deliverables" ? "default" : "outline"}
-          onClick={() => {
-            navigate("/AgencyDashboard?tab=deliverables");
-            setActiveTab("connections");
-          }}
-        >
-          Deliverables
-        </Button>
-        <Button
-          variant={activeTab === "feedback" ? "default" : "outline"}
-          onClick={() => setActiveTab("feedback")}
-          className="relative"
-        >
-          Package Feedback
-          {showFeedbackBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingFeedback - (seenCounts.feedback || 0)}
-            </Badge>
-          )}
-        </Button>
+      <div className="grid grid-cols-2 gap-2 sm:hidden">
+        {[
+          {
+            id: "connections",
+            label: "Connected Brands",
+            active: activeTab === "connections",
+            onClick: () => setActiveTab("connections"),
+          },
+          {
+            id: "requests",
+            label: showRequestsBadge
+              ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
+              : "Requests",
+            active: activeTab === "requests",
+            onClick: () => setActiveTab("requests"),
+          },
+          {
+            id: "offers",
+            label: showOffersBadge
+              ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
+              : "Brand Offers",
+            active: activeTab === "offers",
+            onClick: () => setActiveTab("offers"),
+          },
+          {
+            id: "contract_hub",
+            label: "Contract Hub",
+            active: activeTab === "contract_hub",
+            onClick: () => setActiveTab("contract_hub"),
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            active: false,
+            onClick: () => {
+              navigate("/AgencyDashboard?tab=deliverables");
+              setActiveTab("connections");
+            },
+          },
+          {
+            id: "feedback",
+            label: showFeedbackBadge
+              ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
+              : "Package Feedback",
+            active: activeTab === "feedback",
+            onClick: () => setActiveTab("feedback"),
+          },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={item.onClick}
+            className={`min-h-[44px] rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+              item.active
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="hidden sm:block">
+        <DashboardTabRail
+          items={[
+            {
+              id: "connections",
+              label: "Connected Brands",
+              active: activeTab === "connections",
+              onClick: () => setActiveTab("connections"),
+            },
+            {
+              id: "requests",
+              label: showRequestsBadge
+                ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
+                : "Requests",
+              active: activeTab === "requests",
+              onClick: () => setActiveTab("requests"),
+            },
+            {
+              id: "offers",
+              label: showOffersBadge
+                ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
+                : "Brand Offers",
+              active: activeTab === "offers",
+              onClick: () => setActiveTab("offers"),
+            },
+            {
+              id: "contract_hub",
+              label: "Contract Hub",
+              active: activeTab === "contract_hub",
+              onClick: () => setActiveTab("contract_hub"),
+            },
+            {
+              id: "deliverables",
+              label: "Deliverables",
+              active: false,
+              onClick: () => {
+                navigate("/AgencyDashboard?tab=deliverables");
+                setActiveTab("connections");
+              },
+            },
+            {
+              id: "feedback",
+              label: showFeedbackBadge
+                ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
+                : "Package Feedback",
+              active: activeTab === "feedback",
+              onClick: () => setActiveTab("feedback"),
+            },
+          ]}
+        />
       </div>
 
       {activeTab === "connections" && (
-        <Card className="p-6 border border-gray-200 rounded-xl">
+        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
             Connected Brands
           </h3>
@@ -1349,17 +1406,17 @@ const BrandConnectionsView = () => {
                       key={String(
                         connection?.id || `${companyName}-${connectedAt}`,
                       )}
-                      className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4"
+                      className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 break-words">
                           {companyName}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 break-words">
                           {email || "No email provided"}
                         </p>
                       </div>
-                      <div className="text-right flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-3 sm:justify-end sm:text-right">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -2482,8 +2539,8 @@ const BrandConnectionsView = () => {
                                     Ready to Prepare
                                   </span>
                                 </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
+                                <DashboardTableSurface className="bg-white shadow-sm">
+                                  <table className="min-w-[620px] w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
@@ -2600,7 +2657,7 @@ const BrandConnectionsView = () => {
                                         })}
                                     </tbody>
                                   </table>
-                                </div>
+                                </DashboardTableSurface>
                               </section>
                             )}
 
@@ -2619,8 +2676,8 @@ const BrandConnectionsView = () => {
                                     Active Submissions
                                   </span>
                                 </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
+                                <DashboardTableSurface className="bg-white shadow-sm">
+                                  <table className="min-w-[760px] w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
@@ -2851,7 +2908,7 @@ const BrandConnectionsView = () => {
                                         })}
                                     </tbody>
                                   </table>
-                                </div>
+                                </DashboardTableSurface>
                               </section>
                             )}
                           </div>

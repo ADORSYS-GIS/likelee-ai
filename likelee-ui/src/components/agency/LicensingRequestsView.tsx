@@ -108,6 +108,33 @@ const LicensingRequestsView = ({
     });
   };
 
+  const DetailMetric = ({
+    label,
+    value,
+    compact = false,
+  }: {
+    label: string;
+    value: React.ReactNode;
+    compact?: boolean;
+  }) => (
+    <div
+      className={`rounded-xl border border-slate-200 bg-slate-50/70 ${
+        compact ? "p-2.5" : "p-3"
+      }`}
+    >
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+        {label}
+      </p>
+      <p
+        className={`font-bold text-slate-900 ${
+          compact ? "text-xs leading-4" : "text-sm leading-5"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+
   const updateGroupStatus = async (
     group: any,
     status:
@@ -311,12 +338,12 @@ const LicensingRequestsView = ({
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-bold text-gray-900">
               Licensing Requests
             </h2>
-            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
+            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1 sm:flex sm:w-fit">
               {["Active", "Archive", "Brand Requests"].map((tab) => {
                 let badgeCount = 0;
                 if (tab === "Active") {
@@ -351,7 +378,7 @@ const LicensingRequestsView = ({
                   <button
                     key={tab}
                     onClick={() => setActiveRequestTab(tab as any)}
-                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                    className={`min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 text-center ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                   >
                     {tab}
                     {badgeCount > 0 && (
@@ -366,7 +393,7 @@ const LicensingRequestsView = ({
           </div>
           <Button
             variant="outline"
-            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
+            className="flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto"
           >
             <Filter className="w-4 h-4" /> Filter
           </Button>
@@ -439,56 +466,36 @@ const LicensingRequestsView = ({
                   })}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        License Fee
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {formatLicenseFee(group.license_fee)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Regions
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {group.regions || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Usage Scope
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {(() => {
-                          const details = getRequestDetails(group);
-                          const territory = String(
-                            details?.territory || "",
-                          ).trim();
-                          if (territory) return territory;
-                          return (group.usage_scope || "").trim() || "\u2014";
-                        })()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {group.license_start_date ? "Duration" : "Deadline"}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {group.license_start_date && group.license_end_date
-                          ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
-                          : group.license_start_date
-                            ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
-                            : group.deadline
-                              ? new Date(group.deadline).toLocaleDateString()
-                              : "\u2014"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mb-8 grid grid-cols-2 gap-3">
+                  <DetailMetric
+                    label="License Fee"
+                    value={formatLicenseFee(group.license_fee)}
+                  />
+                  <DetailMetric
+                    label="Regions"
+                    value={group.regions || "\u2014"}
+                  />
+                  <DetailMetric
+                    label="Usage Scope"
+                    value={(() => {
+                      const details = getRequestDetails(group);
+                      const territory = String(details?.territory || "").trim();
+                      if (territory) return territory;
+                      return (group.usage_scope || "").trim() || "\u2014";
+                    })()}
+                  />
+                  <DetailMetric
+                    label={group.license_start_date ? "Duration" : "Deadline"}
+                    value={
+                      group.license_start_date && group.license_end_date
+                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                        : group.license_start_date
+                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                          : group.deadline
+                            ? new Date(group.deadline).toLocaleDateString()
+                            : "\u2014"
+                    }
+                  />
                 </div>
 
                 {group.status === "approved" ? (
@@ -616,67 +623,47 @@ const LicensingRequestsView = ({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        License Fee
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.license_fee
-                          ? `$${Number(req.license_fee).toLocaleString()}`
-                          : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Territory
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.territory || req.usage_scope || "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Exclusivity
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.exclusivity || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Duration
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.duration_days
-                          ? `${req.duration_days} Days`
-                          : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Timeline
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.license_start_date && req.license_end_date
-                          ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
-                          : req.license_start_date
-                            ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
-                            : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        Modifications Allowed
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.modifications_allowed || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mb-8 grid grid-cols-3 gap-2 sm:gap-3">
+                  <DetailMetric
+                    compact
+                    label="License Fee"
+                    value={
+                      req.license_fee
+                        ? `$${Number(req.license_fee).toLocaleString()}`
+                        : "\u2014"
+                    }
+                  />
+                  <DetailMetric
+                    compact
+                    label="Territory"
+                    value={req.territory || req.usage_scope || "\u2014"}
+                  />
+                  <DetailMetric
+                    compact
+                    label="Exclusivity"
+                    value={req.exclusivity || "\u2014"}
+                  />
+                  <DetailMetric
+                    compact
+                    label="Duration"
+                    value={req.duration_days ? `${req.duration_days} Days` : "\u2014"}
+                  />
+                  <DetailMetric
+                    compact
+                    label="Timeline"
+                    value={
+                      req.license_start_date && req.license_end_date
+                        ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
+                        : req.license_start_date
+                          ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
+                          : "\u2014"
+                    }
+                  />
+                  <DetailMetric
+                    compact
+                    label="Mods Allowed"
+                    value={req.modifications_allowed || "\u2014"}
+                  />
                 </div>
 
                 {req.custom_terms && (

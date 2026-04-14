@@ -145,6 +145,10 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
+import {
+  DashboardPageShell,
+  DashboardTabRail,
+} from "@/components/dashboard/DashboardResponsive";
 // ----------- LAZY TAB COMPONENTS -----------
 const CommunicationHub = lazy(() =>
   import("@/components/chat/CommunicationHub").then((m) => ({
@@ -19315,6 +19319,12 @@ export default function AgencyDashboard() {
           },
         ];
 
+  const activeSidebarItem = sidebarItems.find((item) => item.id === activeTab);
+  const shouldShowTopSubTabRail =
+    !!activeSidebarItem?.subItems &&
+    activeSidebarItem.subItems.length > 0 &&
+    (isMobile || (showLabels && !showSubItems));
+
   useEffect(() => {
     const validTabIds = new Set(sidebarItems.map((item) => item.id));
     if (!validTabIds.has(activeTab)) {
@@ -19874,7 +19884,7 @@ export default function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                <div className="fixed left-2 right-2 top-28 w-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(22rem,calc(100vw-1rem))]">
                   <div className="p-4 border-b border-gray-100 pb-0">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-gray-900">Notifications</h3>
@@ -19887,16 +19897,16 @@ export default function AgencyDashboard() {
                         </button>
                       )}
                     </div>
-                    <div className="flex gap-6">
+                    <div className="flex gap-4">
                       <button
                         onClick={() => setActiveNotificationTab("all")}
-                        className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                        className={`pb-3 text-sm font-semibold border-b-2 whitespace-nowrap ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
                         All
                       </button>
                       <button
                         onClick={() => setActiveNotificationTab("unread")}
-                        className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                        className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
                         Unread ({unreadCount})
                       </button>
@@ -20262,69 +20272,98 @@ export default function AgencyDashboard() {
         </Dialog>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
-          {activeTab === "dashboard" && (
-            <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-lg font-black text-gray-900">
-                    Welcome to your agency dashboard
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    This is your main hub for managing your agency.
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                  {!agencyBillingLoading && (
-                    <div
-                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
-                        agencyTrialActive
-                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
-                          : agencyPlanTier === "pro"
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
-                            : agencyPlanTier === "basic" ||
-                                agencyPlanTier === "agency"
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
-                              : agencyPlanTier === "enterprise"
-                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
-                                : "bg-white text-gray-900 ring-gray-200"
-                      }`}
-                      title="Current plan"
-                    >
-                      {agencyTrialActive ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span>PRO TRIAL</span>
-                          {agencyTrialCountdown ? (
-                            <span className="text-[11px] font-black tracking-normal opacity-95">
-                              {agencyTrialCountdown}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        String(agencyDisplayPlanLabel || "")
-                          .trim()
-                          .toUpperCase()
-                      )}
+        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden bg-gray-50">
+          <DashboardPageShell className="max-w-none px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+            {shouldShowTopSubTabRail ? (
+              <DashboardTabRail
+                className="mb-4"
+                items={(activeSidebarItem?.subItems || []).map((subItem) => ({
+                  id: `${activeTab}-${subItem}`,
+                  label: subItem,
+                  active: activeSubTab === subItem,
+                  onClick: () => {
+                    if (
+                      activeSidebarItem?.disabledSubItems &&
+                      activeSidebarItem.disabledSubItems[subItem]
+                    ) {
+                      navigate("/AgencySubscribe");
+                      return;
+                    }
+                    if (activeTab === "jobs" && subItem === "Open Job Board") {
+                      navigate(
+                        `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
+                          `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
+                        )}`,
+                      );
+                      return;
+                    }
+                    setActiveView(activeTab, subItem);
+                  },
+                }))}
+              />
+            ) : null}
+            {activeTab === "dashboard" && (
+              <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-lg font-black text-gray-900">
+                      Welcome to your agency dashboard
                     </div>
-                  )}
-
-                  {!agencyBillingLoading &&
-                    agencyPlanTier === "free" &&
-                    !agencyTrialActive && (
-                      <Button
-                        type="button"
-                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                        onClick={() => navigate("/agencysubscribe")}
+                    <div className="text-gray-500 font-medium mt-1">
+                      This is your main hub for managing your agency.
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    {!agencyBillingLoading && (
+                      <div
+                        className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                          agencyTrialActive
+                            ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                            : agencyPlanTier === "pro"
+                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                              : agencyPlanTier === "basic" ||
+                                  agencyPlanTier === "agency"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                                : agencyPlanTier === "enterprise"
+                                  ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                  : "bg-white text-gray-900 ring-gray-200"
+                        }`}
+                        title="Current plan"
                       >
-                        Upgrade
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                        {agencyTrialActive ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span>PRO TRIAL</span>
+                            {agencyTrialCountdown ? (
+                              <span className="text-[11px] font-black tracking-normal opacity-95">
+                                {agencyTrialCountdown}
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          String(agencyDisplayPlanLabel || "")
+                            .trim()
+                            .toUpperCase()
+                        )}
+                      </div>
                     )}
+
+                    {!agencyBillingLoading &&
+                      agencyPlanTier === "free" &&
+                      !agencyTrialActive && (
+                        <Button
+                          type="button"
+                          className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          Upgrade
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <Suspense fallback={<TabSkeleton />}>
+            )}
+            <Suspense fallback={<TabSkeleton />}>
             {activeTab === "dashboard" && (
               <AgencyDashboardView
                 isSportsAgency={isSportsAgency}
@@ -20696,7 +20735,8 @@ export default function AgencyDashboard() {
                   ))}
               </div>
             )}
-          </Suspense>
+            </Suspense>
+          </DashboardPageShell>
         </main>
 
         <Dialog

@@ -1062,7 +1062,7 @@ export function AgencyDeliverablesView() {
         </div>
       )}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white shadow-xl">
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
               Offer Deliverables
@@ -1075,7 +1075,7 @@ export function AgencyDeliverablesView() {
           <Button
             variant="outline"
             size="sm"
-            className="border-purple-300/50 text-white bg-white/10 hover:bg-white/20"
+            className="w-full border-purple-300/50 text-white bg-white/10 hover:bg-white/20 sm:w-auto"
             onClick={() => {
               setExpandedOfferId("");
               setSelectedCreatorId("");
@@ -1170,26 +1170,26 @@ export function AgencyDeliverablesView() {
                 className={`overflow-hidden border-gray-200 shadow-sm hover:shadow-md ${expanded ? "ring-2 ring-primary/10" : ""}`}
               >
                 <div
-                  className={`p-5 flex items-center justify-between cursor-pointer transition-colors ${expanded ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
+                  className={`p-4 sm:p-5 flex flex-col gap-4 cursor-pointer transition-colors ${expanded ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
                   onClick={() => openOffer(offerId)}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-start gap-4">
                     <div
                       className={`p-3 rounded-xl ${expanded ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}
                     >
                       <Briefcase className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-lg font-bold text-gray-900">
                         {offer?.offer_title ||
                           offer?.brand_campaigns?.name ||
                           "Offer"}
                       </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-400">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-400 break-words">
                           {offer?.brands?.company_name || "Brand"}
                         </span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className="hidden sm:block w-1 h-1 rounded-full bg-gray-300" />
                         <Badge
                           className={`text-[10px] py-0 ${offerStatusClass(offer?.status)}`}
                         >
@@ -1211,11 +1211,11 @@ export function AgencyDeliverablesView() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
+                      className="w-full border-blue-400/70 text-blue-700 hover:bg-blue-50 sm:w-auto"
                       onClick={(e) => {
                         e.stopPropagation();
                         openOffer(offerId);
@@ -1533,7 +1533,7 @@ export function AgencyDeliverablesView() {
           }
         }}
       >
-        <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+        <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               Assign Talent
@@ -1570,7 +1570,7 @@ export function AgencyDeliverablesView() {
             />
           </div>
 
-          <ScrollArea className="h-[450px] pr-2 sm:pr-4">
+          <ScrollArea className="h-[55vh] sm:h-[450px] pr-2 sm:pr-4">
             {loadingRoster ? (
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
@@ -1876,7 +1876,7 @@ export function AgencyDeliverablesView() {
         open={requestDialog.open}
         onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl flex flex-col max-h-[85vh]">
+        <DialogContent className="w-[95vw] sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl flex flex-col max-h-[85vh]">
           {(() => {
             const assigned = assignmentsByOffer[requestDialog.offerId] || [];
             const assignment = assigned.find(
@@ -2016,7 +2016,7 @@ export function AgencyDeliverablesView() {
         open={uploadDialog.open}
         onOpenChange={(open) => setUploadDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[520px] w-full rounded-lg p-6">
+        <DialogContent className="w-[95vw] sm:max-w-[520px] rounded-lg p-4 sm:p-6">
           <DialogHeader className="space-y-1">
             <DialogTitle>Upload Deliverable</DialogTitle>
             <p className="text-xs text-gray-500">
@@ -2085,7 +2085,7 @@ export function AgencyDeliverablesView() {
         open={reviewDialog.open}
         onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">
             <DialogHeader className="space-y-1 relative z-10">
               <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
@@ -2170,7 +2170,7 @@ export function AgencyDeliverablesView() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-6 text-white">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-xl font-bold text-white">
@@ -2209,14 +2209,14 @@ export function AgencyDeliverablesView() {
       </Dialog>
 
       <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border border-gray-900 bg-black text-white">
+        <DialogContent className="h-[100dvh] w-screen max-w-none rounded-none border-0 bg-black p-0 text-white sm:h-auto sm:w-[95vw] sm:max-w-5xl sm:rounded-xl sm:border sm:border-gray-900">
           {galleryItems[galleryIndex] ? (
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 pr-16">
-                <div className="text-sm font-semibold truncate">
+            <div className="flex min-h-[100dvh] flex-col sm:min-h-0">
+              <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 pr-16 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm font-semibold truncate pr-10 sm:pr-0">
                   {galleryItems[galleryIndex].caption}
                 </div>
-                <div className="flex items-center gap-2 mr-4">
+                <div className="mr-4 flex items-center gap-2 self-end sm:self-auto">
                   <button
                     type="button"
                     className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
@@ -2231,10 +2231,10 @@ export function AgencyDeliverablesView() {
                   </button>
                 </div>
               </div>
-              <div className="bg-black flex items-center justify-center min-h-[60vh] relative">
+              <div className="relative flex flex-1 items-center justify-center bg-black min-h-[60vh] sm:min-h-[60vh]">
                 <button
                   type="button"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 sm:left-4"
                   onClick={() =>
                     setGalleryIndex((idx) =>
                       idx <= 0 ? galleryItems.length - 1 : idx - 1,
@@ -2248,13 +2248,13 @@ export function AgencyDeliverablesView() {
                   <img
                     src={galleryItems[galleryIndex].url}
                     alt={galleryItems[galleryIndex].caption}
-                    className="max-h-[75vh] w-auto object-contain"
+                  className="max-h-[72vh] w-auto object-contain sm:max-h-[75vh]"
                   />
                 ) : galleryItems[galleryIndex].type === "video" ? (
                   <video
                     src={galleryItems[galleryIndex].url}
                     controls
-                    className="max-h-[75vh] w-auto bg-black"
+                    className="max-h-[72vh] w-auto bg-black sm:max-h-[75vh]"
                   />
                 ) : (
                   <div className="text-sm text-white/70">
@@ -2263,7 +2263,7 @@ export function AgencyDeliverablesView() {
                 )}
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 sm:right-4"
                   onClick={() =>
                     setGalleryIndex((idx) =>
                       idx >= galleryItems.length - 1 ? 0 : idx + 1,
