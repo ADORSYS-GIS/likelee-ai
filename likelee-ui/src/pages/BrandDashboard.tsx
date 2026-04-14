@@ -44,6 +44,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   Bell,
@@ -271,17 +272,6 @@ const getBrandInitials = (name: string) => {
   if (parts.length === 0) return "B";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
-};
-
-// Mock data
-const mockBrand = {
-  name: "Urban Apparel Co.",
-  logo: "",
-  industry: "Retail & E-commerce",
-  website: "www.urbanapparel.com",
-  contact_email: "team@urbanapparel.com",
-  plan: "Free",
-  team_seats: 3,
 };
 
 const mockCreators = [
@@ -792,7 +782,16 @@ export default function BrandDashboard() {
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(mockBrand);
+  const [brand, setBrand] = useState<{
+    name: string;
+    logo: string;
+    industry: string;
+    website: string;
+    contact_email: string;
+    plan: string;
+    team_seats: number;
+  }>({ name: "", logo: "", industry: "", website: "", contact_email: "", plan: "", team_seats: 0 });
+  const [loadingBrandProfile, setLoadingBrandProfile] = useState(true);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
@@ -1399,18 +1398,21 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadBrandProfile = async () => {
       try {
+        setLoadingBrandProfile(true);
         const profile = await getBrandProfile();
         if (!mounted || !profile) return;
         setBrand((prev) => ({
           ...prev,
-          name: profile?.company_name || profile?.name || prev.name || "Brand",
+          name: profile?.company_name || profile?.name || "",
           industry: profile?.industry || prev.industry,
           website: profile?.website || prev.website,
           contact_email: profile?.email || prev.contact_email,
           logo: profile?.logo_url || "",
         }));
       } catch {
-        // Keep mock fallback on failure.
+        // Keep empty fallback on failure.
+      } finally {
+        if (mounted) setLoadingBrandProfile(false);
       }
     };
     loadBrandProfile();
@@ -2578,7 +2580,11 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {brand.name}
+            Welcome back, {loadingBrandProfile ? (
+              <Skeleton className="inline-block h-9 w-48 align-middle" />
+            ) : (
+              brand.name
+            )}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
@@ -6648,7 +6654,7 @@ export default function BrandDashboard() {
             >
               {brandCanUseCampaignCollaboration
                 ? "Invite Agency"
-                : "Upgrade to Pro"}
+                : "Upgrade Plan"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
@@ -6671,7 +6677,7 @@ export default function BrandDashboard() {
               className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
               {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade to Basic"
+                ? "Upgrade Plan"
                 : brandSeatLimitReached
                   ? "Seat limit reached"
                   : `Up to ${brandSeatLimitLabel} seats`}
@@ -6694,8 +6700,8 @@ export default function BrandDashboard() {
               {brandHasStudioAddon
                 ? "Open Studio"
                 : brandCanSelfServeStudioAddon
-                  ? "Enable Add-On"
-                  : "Upgrade to Pro"}
+                  ? "Unlock Addon"
+                  : "Upgrade Plan"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
@@ -7699,7 +7705,7 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{mockBrand.name}</strong> ("Licensee")
+                , by and between <strong>{brand.name || "Licensee"}</strong> ("Licensee")
                 and <strong>{contract.creator_name}</strong> ("Licensor").
               </p>
 
@@ -7783,7 +7789,7 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until {mockBrand.name}{" "}
+                <strong>Payment:</strong> Held in escrow until {brand.name || "Licensee"}{" "}
                 approval of deliverables. Release upon approval or automatic
                 after 48 hours.
               </p>
@@ -7842,7 +7848,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
                     <p className="font-semibold text-gray-900 mb-2">
-                      {mockBrand.name}
+                      {brand.name || "Licensee"}
                     </p>
                     <p className="text-sm text-gray-600 mb-2">Licensee</p>
                     {contract.signed_date && (
@@ -7979,7 +7985,7 @@ export default function BrandDashboard() {
                     Contract created and sent to {contract.creator_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Created by: {mockBrand.name}
+                    Created by: {brand.name || "Licensee"}
                   </p>
                 </div>
               </div>
@@ -9144,10 +9150,8 @@ export default function BrandDashboard() {
                 </Label>
                 <Input
                   value={brand.contact_email}
-                  onChange={(e) =>
-                    setBrand({ ...brand, contact_email: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  disabled
+                  className="rounded-none border-2 border-gray-200 bg-gray-50 text-gray-500 h-12 text-sm font-bold cursor-not-allowed opacity-70"
                 />
               </div>
             </div>
@@ -9276,6 +9280,8 @@ export default function BrandDashboard() {
             organizationType="brand"
             title="Team Management"
             description="Manage members, roles, and invitations for your brand organization."
+            seatLimit={brandSeatLimit}
+            seatLimitReached={brandSeatLimitReached}
           />
         </TabsContent>
 
@@ -11380,7 +11386,11 @@ export default function BrandDashboard() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{brand.name}</p>
+                {loadingBrandProfile ? (
+                  <Skeleton className="h-5 w-24" />
+                ) : (
+                  <p className="font-bold text-gray-900 truncate">{brand.name}</p>
+                )}
                 <p className="text-xs text-gray-600 truncate">
                   {brandPlanLabel}
                 </p>

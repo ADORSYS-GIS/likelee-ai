@@ -267,3 +267,140 @@ pub fn voice_clone_limit(tier: PlanTier) -> u32 {
         PlanTier::Enterprise => 20,
     }
 }
+
+pub struct SeatLimitInfo {
+    pub limit: Option<usize>,
+    pub current_members: usize,
+    pub pending_invites: usize,
+    pub current_usage: usize,
+    pub available: usize,
+    pub plan_tier: PlanTier,
+}
+
+impl SeatLimitInfo {
+    pub fn can_add_member(&self) -> bool {
+        match self.limit {
+            Some(limit) => self.current_usage < limit,
+            None => true,
+        }
+    }
+
+    pub fn seats_remaining(&self) -> Option<usize> {
+        self.limit.map(|limit| limit.saturating_sub(self.current_usage))
+    }
+}
+
+pub async fn get_brand_seat_limit_info(
+    state: &AppState,
+    brand_id: &str,
+    current_members: usize,
+    pending_invites: usize,
+) -> Result<SeatLimitInfo, (StatusCode, String)> {
+    let tier = get_brand_plan_tier(state, brand_id).await?;
+    let limit = brand_seat_limit(tier);
+    let current_usage = current_members.saturating_add(pending_invites);
+    let available = match limit {
+        Some(l) => l.saturating_sub(current_usage),
+        None => usize::MAX,
+    };
+    Ok(SeatLimitInfo {
+        limit,
+        current_members,
+        pending_invites,
+        current_usage,
+        available,
+        plan_tier: tier,
+    })
+}
+
+pub async fn get_agency_seat_limit_info(
+    state: &AppState,
+    agency_id: &str,
+    current_members: usize,
+    pending_invites: usize,
+) -> Result<SeatLimitInfo, (StatusCode, String)> {
+    let access = get_agency_access_state(state, agency_id).await?;
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("seats_limit")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let db_seats_limit = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("seats_limit"))
+        .and_then(|v| v.as_i64());
+
+    let limit = match db_seats_limit {
+        Some(n) if n > 0 => Some(n as usize),
+        _ => match access.billed_tier {
+            PlanTier::Free => Some(1),
+            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise => Some(186),
+        },
+    };
+
+    let current_usage = current_members.saturating_add(pending_invites);
+    let available = match limit {
+        Some(l) => l.saturating_sub(current_usage),
+        None => usize::MAX,
+    };
+
+    Ok(SeatLimitInfo {
+        limit,
+        current_members,
+        pending_invites,
+        current_usage,
+        available,
+        plan_tier: access.billed_tier,
+    })
+}
+
+pub fn format_seat_limit_error(info: &SeatLimitInfo) -> String {
+    match info.limit {
+        Some(limit) => {
+            format!(
+                "SEAT_LIMIT_EXCEEDED: Your current plan allows {} team seat(s). You currently have {} member(s) and {} pending invite(s). Please upgrade your plan to add more team members.",
+                limit,
+                info.current_members,
+                info.pending_invites
+            )
+        }
+        None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
+    }
+}
+
+pub fn format_seat_limit_error_with_upgrade(info: &SeatLimitInfo, organization_type: &str) -> String {
+    match info.limit {
+        Some(limit) => {
+            let upgrade_hint = match organization_type {
+                "brand" => match info.plan_tier {
+                    PlanTier::Free => "Upgrade to Basic or Pro to unlock team seats.",
+                    PlanTier::Basic => "Upgrade to Pro for 5 seats or Enterprise for unlimited seats.",
+                    PlanTier::Pro => "Upgrade to Enterprise for unlimited seats.",
+                    PlanTier::Enterprise => "",
+                },
+                "agency" => "Purchase additional seats or upgrade your plan.",
+                _ => "Please upgrade your plan.",
+            };
+            format!(
+                "SEAT_LIMIT_EXCEEDED: Your current plan allows {} team seat(s). You currently have {} member(s) and {} pending invite(s). {}",
+                limit,
+                info.current_members,
+                info.pending_invites,
+                upgrade_hint
+            )
+        }
+        None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
+    }
+}

@@ -11,6 +11,7 @@ import {
   User,
   Edit2,
   Check,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 type TeamRoleValue = "owner" | "admin" | "project_manager" | "reviewer";
 
@@ -160,14 +162,19 @@ export function TeamManagementCard({
   title = "Team Management",
   description,
   accentClassName = "bg-[#F7B750] hover:bg-[#E6A640] text-white",
+  seatLimit,
+  seatLimitReached,
 }: {
   organizationType: "agency" | "brand";
   title?: string;
   description?: string;
   accentClassName?: string;
+  seatLimit?: number | null;
+  seatLimitReached?: boolean;
 }) {
   const { token } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [context, setContext] = React.useState<TeamContextResponse | null>(
     null,
   );
@@ -176,6 +183,8 @@ export function TeamManagementCard({
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const [showRoleModal, setShowRoleModal] = React.useState(false);
   const [showActivityModal, setShowActivityModal] = React.useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [seatLimitError, setSeatLimitError] = React.useState<string | null>(null);
   const [selectedMember, setSelectedMember] =
     React.useState<TeamMemberRecord | null>(null);
   const [inviteEmail, setInviteEmail] = React.useState("");
@@ -185,6 +194,8 @@ export function TeamManagementCard({
     React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [submittingInvite, setSubmittingInvite] = React.useState(false);
   const [updatingRole, setUpdatingRole] = React.useState(false);
+
+  const seatLimitBlocked = seatLimit === 0 || seatLimitReached === true;
 
   const inviteRoleOption = React.useMemo(
     () => TEAM_ROLE_OPTIONS.find((option) => option.value === inviteRole),
@@ -260,6 +271,18 @@ export function TeamManagementCard({
     context?.permissions?.includes("update_member_roles"),
   );
 
+  const handleInviteButtonClick = () => {
+    if (seatLimitBlocked) {
+      const message = seatLimit === 0
+        ? "Upgrade to Basic or above to unlock team seats."
+        : `You've reached your ${seatLimit ?? 0} seat limit. Upgrade to add more team members.`;
+      setSeatLimitError(message);
+      setShowUpgradeModal(true);
+    } else {
+      setShowInviteModal(true);
+    }
+  };
+
   const handleInvite = async () => {
     const normalizedEmail = String(inviteEmail || "")
       .trim()
@@ -283,9 +306,14 @@ export function TeamManagementCard({
       );
       const payload = await parseApiResponse(resp);
       if (!resp.ok) {
-        throw new Error(
-          payload?.message || payload?.error || "Failed to send invite.",
-        );
+        const errorMessage = payload?.message || payload?.error || "Failed to send invite.";
+        if (errorMessage.startsWith("SEAT_LIMIT_EXCEEDED:")) {
+          setSeatLimitError(errorMessage.replace("SEAT_LIMIT_EXCEEDED: ", ""));
+          setShowInviteModal(false);
+          setShowUpgradeModal(true);
+          throw new Error(errorMessage);
+        }
+        throw new Error(errorMessage);
       }
       setInviteEmail("");
       setInviteRole("reviewer");
@@ -297,11 +325,13 @@ export function TeamManagementCard({
         description: `${normalizedEmail} has been invited.`,
       });
     } catch (err: any) {
-      toast({
-        title: "Invite failed",
-        description: err?.message || "Could not send invite.",
-        variant: "destructive",
-      });
+      if (!err?.message?.startsWith("SEAT_LIMIT_EXCEEDED:")) {
+        toast({
+          title: "Invite failed",
+          description: err?.message || "Could not send invite.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSubmittingInvite(false);
     }
@@ -421,11 +451,11 @@ export function TeamManagementCard({
             </Button>
             <Button
               className={accentClassName}
-              onClick={() => setShowInviteModal(true)}
-              disabled={!canInvite}
+              onClick={handleInviteButtonClick}
+              disabled={!canInvite && !seatLimitBlocked}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Invite Team Member
+              {seatLimitBlocked ? "Upgrade to Add Members" : "Invite Team Member"}
             </Button>
           </div>
         </div>
@@ -800,6 +830,51 @@ export function TeamManagementCard({
               })
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className={organizationType === "brand" ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]" : "max-w-md rounded-2xl"}>
+          <DialogHeader>
+            <DialogTitle className={organizationType === "brand" ? "text-xl font-black text-gray-900 uppercase tracking-tighter" : "text-xl font-bold text-gray-900"}>
+              Seat Limit Reached
+            </DialogTitle>
+            <DialogDescription className={organizationType === "brand" ? "text-xs text-gray-500 font-bold uppercase tracking-widest" : "text-sm text-gray-500 font-medium"}>
+              {seatLimitError || "You've reached your team member limit."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className={organizationType === "brand" ? "p-4 bg-amber-50 border-2 border-amber-200 rounded-none" : "p-4 bg-indigo-50 border border-indigo-100 rounded-xl"}>
+            <p className={organizationType === "brand" ? "text-xs text-amber-900 font-bold leading-relaxed" : "text-xs text-indigo-700 font-medium leading-relaxed"}>
+              Upgrade your plan to add more team members and unlock additional features.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setSeatLimitError(null);
+              }}
+              className={organizationType === "brand" ? "font-black uppercase tracking-widest rounded-none" : "font-bold"}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setSeatLimitError(null);
+                if (organizationType === "brand") {
+                  navigate("/brandpricing");
+                } else {
+                  navigate("/agency/billing");
+                }
+              }}
+              className={organizationType === "brand" ? "rounded-none bg-[#F7B750] hover:bg-[#E6A640] text-white font-black uppercase tracking-widest px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none flex items-center gap-2" : "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"}
+            >
+              Upgrade Plan
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
