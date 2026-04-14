@@ -1684,7 +1684,7 @@ const BrandConnectionsView = () => {
 
                       <div className="p-4 sm:p-6 md:p-8 space-y-8">
                         {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-3 sm:p-4 rounded-xl border border-indigo-100/50">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50/50 p-2.5 sm:p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
                               <TooltipProvider>
@@ -1692,7 +1692,7 @@ const BrandConnectionsView = () => {
                                   <TooltipTrigger asChild>
                                     <span>
                                       <Button
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 sm:px-6 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1721,7 +1721,7 @@ const BrandConnectionsView = () => {
                                     <span>
                                       <Button
                                         variant="outline"
-                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold px-3 sm:px-4 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1759,15 +1759,15 @@ const BrandConnectionsView = () => {
                                   const token =
                                     offerPkg.meta?.agency_package_token;
                                   return (
-                                    <div className="flex items-center gap-3">
-                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4" />
+                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-1.5 sm:py-2 px-3 sm:px-4 rounded-full flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+                                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         Package Successfully Sent
                                       </Badge>
                                       {token && (
                                         <Button
                                           variant="secondary"
-                                          className="font-bold"
+                                          className="font-bold h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
                                           onClick={() =>
                                             window.open(
                                               `/share/package/${token}`,
@@ -1783,7 +1783,7 @@ const BrandConnectionsView = () => {
                                 }
                                 return (
                                   <Button
-                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold px-5 py-3 w-full sm:w-auto text-sm rounded-xl transition-all ring-1 ring-indigo-700/10"
+                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold px-4 sm:px-5 py-2 sm:py-3 w-full sm:w-auto h-9 sm:h-11 text-xs sm:text-sm rounded-xl transition-all ring-1 ring-indigo-700/10"
                                     onClick={() => {
                                       navigate(
                                         "/AgencyDashboard?tab=packages",
@@ -1806,11 +1806,11 @@ const BrandConnectionsView = () => {
                           )}
                           {isFullySigned &&
                             offer?.payment_status !== "paid" && (
-                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                                <span className="text-amber-700 text-sm font-semibold">
+                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 sm:px-4 py-2 sm:py-3">
+                                <span className="text-amber-700 text-[10px] sm:text-sm font-semibold">
                                   ⏳ Brand has not yet completed payment.
-                                  Deliverable uploads and submissions are
-                                  disabled until paid.
+                                  Deliverable uploads/submissions are
+                                  disabled.
                                 </span>
                               </div>
                             )}
@@ -1825,7 +1825,7 @@ const BrandConnectionsView = () => {
                             return (
                               <Button
                                 variant="outline"
-                                className="border-indigo-200 text-indigo-700 font-bold"
+                                className="bg-white border-indigo-200 text-indigo-700 font-bold h-8 sm:h-10 text-xs sm:text-sm"
                                 disabled={!canEdit}
                                 onClick={() =>
                                   setAssignDialog({
@@ -1842,16 +1842,16 @@ const BrandConnectionsView = () => {
                                     : undefined
                                 }
                               >
-                                <User className="h-4 w-4 mr-2" />
+                                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                                 Assign Talent
                               </Button>
                             );
                           })()}
                           {assignmentLockedForSelectedOffer && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-[10px] sm:text-xs text-gray-500">
                               {selectedOfferContractSigned
-                                ? "Contract is already signed and you can’t change assigned talents."
-                                : "Talent assignments are locked because the contract was already sent."}
+                                ? "Contract is already signed."
+                                : "Assignments are locked."}
                             </p>
                           )}
                         </div>
@@ -2038,22 +2038,22 @@ const BrandConnectionsView = () => {
                         onClick={() => setSelectedOfferId(offerId)}
                       >
                         {/* Row header */}
-                        <div className="flex items-center justify-between px-4 py-2.5 sm:px-6 sm:py-3 border-b border-blue-100 bg-white gap-4">
-                          <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 border-b border-blue-100 bg-white gap-3 sm:gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                             <div className="min-w-0">
-                              <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
+                              <h4 className="font-extrabold text-gray-900 text-sm sm:text-base tracking-tight truncate">
                                 {offer?.brand_campaigns?.name ||
                                   offer?.offer_title ||
                                   "Campaign Offer"}
                               </h4>
-                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-widest truncate">
                                 {offer?.offer_title || "Direct Request"}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
                             <Badge
-                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
                                 isAccepted
                                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                                   : "bg-indigo-100 text-indigo-700 border-indigo-200"
@@ -2063,7 +2063,7 @@ const BrandConnectionsView = () => {
                             </Badge>
                             {isFullySigned && (
                               <Badge
-                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
                                   offer?.payment_status === "paid"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : "bg-amber-50 text-amber-700 border-amber-200"
@@ -2075,14 +2075,14 @@ const BrandConnectionsView = () => {
                               </Badge>
                             )}
                             {isPending && (
-                              <>
+                              <div className="flex items-center gap-1.5 sm:gap-2">
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span>
                                         <Button
                                           size="sm"
-                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="h-7 sm:h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -2110,7 +2110,7 @@ const BrandConnectionsView = () => {
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="h-7 sm:h-8 border-red-200 text-red-600 hover:bg-red-50 font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -2131,7 +2131,7 @@ const BrandConnectionsView = () => {
                                     )}
                                   </Tooltip>
                                 </TooltipProvider>
-                              </>
+                              </div>
                             )}
                             {isAccepted &&
                               (() => {

@@ -509,15 +509,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <DialogContent
-        className={`max-w-5xl h-[92vh] p-0 border-none bg-slate-50 rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${step === 3 ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
+        className={`max-w-6xl w-[98vw] sm:w-[95vw] h-[95vh] sm:h-[92vh] p-0 border-none bg-slate-50 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${step === 3 ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
       >
         <DialogDescription className="sr-only">
           Fill in deal details, select talent, and finalize the contract.
         </DialogDescription>
         <div className="flex flex-col h-full overflow-hidden">
           {/* Wizard Header / Progress */}
-          <div className="bg-white p-8 border-b border-slate-100 rounded-t-3xl shrink-0">
-            <div className="flex items-center justify-between gap-8 mb-8">
+          <div className="bg-white p-4 sm:p-8 border-b border-slate-100 rounded-t-3xl shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-8 mb-6 sm:mb-8">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="bg-indigo-50 p-1.5 rounded-lg">
@@ -527,7 +527,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     Step {step} of 3
                   </span>
                 </div>
-                <DialogTitle className="text-2xl font-bold text-slate-900">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900">
                   {step === 1 ? "Deal Specifics" : "Content Review"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
@@ -536,11 +536,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     : "Review and personalize the contract content"}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Button
                   variant="ghost"
                   onClick={onClose}
-                  className="rounded-xl font-bold text-slate-500 px-6 h-10"
+                  className="rounded-xl font-bold text-slate-500 px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
                   Cancel
                 </Button>
@@ -548,23 +548,23 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   <Button
                     variant="outline"
                     onClick={() => setStep(step - 1)}
-                    className="rounded-xl font-bold border-slate-200 h-10"
+                    className="rounded-xl font-bold border-slate-200 h-9 sm:h-10 text-sm px-3 sm:px-4"
                   >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                    <ArrowLeft className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Back</span>
                   </Button>
                 )}
                 <Button
                   onClick={handleNext}
                   disabled={isSyncing}
-                  className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                 >
                   {isSyncing
-                    ? "Preparing..."
+                    ? "..."
                     : step === 3
                       ? "Finalize"
-                      : "Next Step"}
+                      : "Next"}
                   {!isSyncing && step < 3 && (
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-4 h-4 ml-1.5 sm:ml-2" />
                   )}
                 </Button>
               </div>
@@ -597,9 +597,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 scrollbar-hide">
             {step === 1 && (
-              <div className="max-w-3xl mx-auto space-y-8 pb-10">
+              <div className="max-w-full lg:max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-10">
                 {isRenewalPrefill && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
                     <div className="flex items-start gap-3">

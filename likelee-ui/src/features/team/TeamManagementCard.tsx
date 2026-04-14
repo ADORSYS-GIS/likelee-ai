@@ -9,6 +9,7 @@ import {
   XCircle,
   Activity,
   User,
+  Users,
   Edit2,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
@@ -358,31 +359,39 @@ export function TeamManagementCard({
 
   return (
     <>
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-            <p className="text-gray-600 mt-1">
-              {description ||
-                `Manage members, roles, and invitations for ${context?.organization_name || "your team"}.`}
-            </p>
+      <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
+                {title}
+              </h3>
+              <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
+                {description || "Manage team members, roles, and permissions."}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              className="border-2 border-gray-300"
+              size="sm"
+              className="h-8 rounded-xl bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold transition-all px-3"
               onClick={() => setShowActivityModal(true)}
             >
-              <History className="w-4 h-4 mr-2" />
-              Activity
+              <History className="w-3.5 h-3.5 mr-1.5" />
+              <span className="text-[10px] sm:text-xs">Activity</span>
             </Button>
             <Button
-              className={accentClassName}
+              size="sm"
+              className="h-8 sm:h-9 px-3 sm:px-4 bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all"
               onClick={() => setShowInviteModal(true)}
               disabled={!canInvite}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Invite Team Member
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm">Invite</span>
             </Button>
           </div>
         </div>
@@ -395,111 +404,126 @@ export function TeamManagementCard({
         ) : (
           <div className="mt-6 space-y-6">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                  Active Members
-                </h4>
-                <Badge variant="secondary">
-                  {(context?.members || []).length} Members
-                </Badge>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
+                    Active Members
+                  </h4>
+                  <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
+                    {context?.members?.length || 0}
+                  </Badge>
+                </div>
               </div>
-              <div className="space-y-3">
-                {(context?.members || []).map((member) => {
-                  const actorRole = context?.membership_role;
-                  const canEditRole =
-                    canUpdateRoles &&
-                    member.role !== "owner" &&
-                    !(actorRole === "admin" && member.role === "admin");
-                  return (
-                    <div
-                      key={member.user_id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {member.email}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Added{" "}
-                            {member.created_at
-                              ? new Date(member.created_at).toLocaleDateString()
-                              : "recently"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                          {formatTeamRoleLabel(member.role)}
-                        </Badge>
-                        {canEditRole ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-2 border-gray-300"
-                            onClick={() => openRoleEditor(member)}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(context?.members || []).length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                    No team members found yet.
+                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
+                    No active team members yet.
                   </div>
-                ) : null}
+                ) : (
+                  (context?.members || []).map((member) => {
+                    const actorRole = context?.membership_role;
+                    const canEditRole =
+                      canUpdateRoles &&
+                      member.role !== "owner" &&
+                      !(actorRole === "admin" && member.role === "admin");
+                    return (
+                      <div
+                        key={member.user_id}
+                        className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-indigo-100 transition-all duration-300"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                            {member.email}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
+                              {formatTeamRoleLabel(member.role)}
+                            </Badge>
+                            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              {member.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end border-t border-gray-100 pt-3">
+                          {member.role === "owner" ? (
+                            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-black uppercase tracking-widest px-2">
+                              Owner
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 sm:h-8 rounded-lg bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold text-[10px] sm:text-xs transition-all w-full sm:w-auto"
+                              disabled={!canEditRole}
+                              onClick={() => openRoleEditor(member)}
+                            >
+                              <Edit2 className="w-3 h-3 mr-1.5" />
+                              Edit Role
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                  Pending Invites
-                </h4>
-                <Badge variant="secondary">
-                  {
-                    (context?.invites || []).filter(
-                      (invite) => invite.status === "pending",
-                    ).length
-                  }{" "}
-                  Pending
-                </Badge>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
+                    Invitations
+                  </h4>
+                  <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
+                    {
+                      (context?.invites || []).filter(
+                        (invite) => invite.status === "pending",
+                      ).length
+                    }
+                  </Badge>
+                </div>
               </div>
-              <div className="space-y-3">
-                {(context?.invites || [])
-                  .filter((invite) => invite.status === "pending")
-                  .map((invite) => (
-                    <div
-                      key={invite.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {invite.email}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {formatTeamRoleLabel(invite.role)} · Expires{" "}
-                          {new Date(invite.expires_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
-                        Pending
-                      </Badge>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(context?.invites || []).filter(
                   (invite) => invite.status === "pending",
                 ).length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                    No pending invites.
+                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
+                    No pending invitations.
                   </div>
-                ) : null}
+                ) : (
+                  (context?.invites || [])
+                    .filter((invite) => invite.status === "pending")
+                    .map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-orange-100 transition-all duration-300"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                            {invite.email}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
+                              {formatTeamRoleLabel(invite.role)}
+                            </Badge>
+                            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Pending
+                            </span>
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <div className="text-[9px] sm:text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
+                            <History className="w-2.5 h-2.5" />
+                            Exp:{" "}
+                            {new Date(
+                              invite.expires_at,
+                            ).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           </div>
@@ -507,29 +531,29 @@ export function TeamManagementCard({
       </Card>
 
       <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">
+        <DialogContent className="max-w-md w-[95vw] rounded-2xl p-4 sm:p-6 overflow-hidden">
+          <DialogHeader className="space-y-1 sm:space-y-1.5 text-left">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
               Invite Team Member
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 font-medium">
+            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
               Send an email invitation to join your team
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">
+          <div className="space-y-4 sm:space-y-6 py-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm font-bold text-gray-900">
                 Email Address
               </Label>
               <Input
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
                 placeholder="colleague@example.com"
-                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm font-bold text-gray-900">
                 User Role
               </Label>
               <Select
@@ -538,31 +562,33 @@ export function TeamManagementCard({
                   setInviteRole(value as Exclude<TeamRoleValue, "owner">)
                 }
               >
-                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label} - {option.description}
+                    <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span>{option.label}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+            <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+              <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
                 <span className="font-bold">Note:</span> The invited user will
-                receive an email with instructions to set up their account and
-                access the dashboard with the assigned role.
+                receive instructions via email to access the dashboard.
               </p>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
               variant="ghost"
               onClick={() => setShowInviteModal(false)}
-              className="font-bold"
+              className="w-full sm:w-auto font-bold text-xs sm:text-sm"
               disabled={submittingInvite}
             >
               Cancel
@@ -570,7 +596,7 @@ export function TeamManagementCard({
             <Button
               onClick={handleInvite}
               disabled={submittingInvite}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               {submittingInvite ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -584,19 +610,19 @@ export function TeamManagementCard({
       </Dialog>
 
       <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-        <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle className="text-xl font-bold text-gray-900">
+        <DialogContent className="max-w-md w-[95vw] rounded-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
               Update Team Role
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 font-medium">
+            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
               {selectedMember?.email || "Member"} is currently{" "}
               {formatTeamRoleLabel(selectedMember?.role)}.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm font-bold text-gray-900">
                 New Role
               </Label>
               <Select
@@ -605,28 +631,31 @@ export function TeamManagementCard({
                   setPendingRoleValue(value as Exclude<TeamRoleValue, "owner">)
                 }
               >
-                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label} - {option.description}
+                    <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span>{option.label}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4 text-[10px] sm:text-xs font-medium text-amber-800">
               This change takes effect immediately for the member's active
               session.
             </div>
           </div>
-          <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
+          <DialogFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
               variant="ghost"
               onClick={() => setShowRoleModal(false)}
-              className="font-bold"
+              className="w-full sm:w-auto font-bold text-xs sm:text-sm"
               disabled={updatingRole}
             >
               Cancel
@@ -634,7 +663,7 @@ export function TeamManagementCard({
             <Button
               onClick={handleRoleUpdate}
               disabled={updatingRole}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-8 rounded-xl text-xs sm:text-sm"
             >
               {updatingRole ? "Saving..." : "Confirm Role Change"}
             </Button>
@@ -643,16 +672,16 @@ export function TeamManagementCard({
       </Dialog>
 
       <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Team Activity</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-lg w-[95vw] rounded-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">Team Activity Log</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
               Recent invite, role, and membership events.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-3 sm:space-y-4">
             {logs.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
                 No activity recorded yet.
               </div>
             ) : (
@@ -661,17 +690,19 @@ export function TeamManagementCard({
                 return (
                   <div
                     key={log.id}
-                    className="flex gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
                   >
-                    <activity.icon className="w-5 h-5 text-gray-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-900">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                      <activity.icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                         {activity.label}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-tight">
                         {activity.details}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wider">
                         {new Date(log.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -680,6 +711,15 @@ export function TeamManagementCard({
               })
             )}
           </div>
+          <DialogFooter className="p-4 sm:p-6 border-t border-gray-100">
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityModal(false)}
+              className="w-full font-bold rounded-xl h-9 sm:h-11 text-xs sm:text-sm"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
