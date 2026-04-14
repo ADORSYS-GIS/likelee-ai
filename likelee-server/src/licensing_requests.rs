@@ -1010,7 +1010,7 @@ pub async fn update_status_bulk(
                                 }
 
                                 // Log activity event
-                                let _ = crate::brand_campaigns::log_activity_event(
+                                let _ = crate::activity::log_activity_event(
                                     &state_clone,
                                     &brand_id,
                                     None,

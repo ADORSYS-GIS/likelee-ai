@@ -1,6 +1,5 @@
-use crate::brand_campaigns::{
-    log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
-};
+use crate::activity::log_activity_event_with_subject;
+use crate::brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};

@@ -1,6 +1,7 @@
 #![allow(clippy::uninlined_format_args)]
 
 pub mod active_licenses;
+pub mod activity;
 pub mod agencies;
 pub mod agency_clients;
 pub mod agency_dashboard;
