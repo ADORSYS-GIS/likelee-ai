@@ -382,6 +382,7 @@ All team management actions are logged:
 - Permissions are cached for performance
 - Cache is invalidated on role changes
 - TTL ensures eventual consistency
+- **See**: [Cache Invalidation System](./CACHE_INVALIDATION.md) for detailed documentation
 
 ---
 

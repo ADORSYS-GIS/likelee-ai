@@ -91,6 +91,21 @@ graph TB
 4. Handler queries Supabase via PostgREST client
 5. Response serialized and returned
 
+### Cache Flow
+
+The system uses a three-level caching strategy for performance optimization:
+
+1. **L1 (Request Cache)**: Per-request scoped cache in memory
+2. **L2 (Session Cache)**: User session-scoped cache with 5-30 min TTL
+3. **L3 (Application Cache)**: Application-wide cache with 1-60 min TTL
+
+**Key Cache Invalidation Points**:
+- Role changes → `invalidate_org_access_cache()` (L2)
+- Connection changes → `invalidate_brand_agency_connection_cache()` (L3)
+- Security events → `invalidate_session()` (L2)
+
+See [Cache Invalidation System](../CACHE_INVALIDATION.md) for detailed documentation.
+
 ### Webhook Flow
 
 1. External service (Stripe, Veriff, Calendly, DocuSeal) sends POST to `/webhooks/*` (DocuSeal has multiple endpoints by flow)
