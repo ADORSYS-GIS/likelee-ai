@@ -369,6 +369,14 @@
         "brand": "Brand",
         "agency": "Agency"
       }
+    },
+    "emailOtp": {
+      "enterCodePrefix": "Enter the 6-digit code sent to",
+      "verifying": "Verifying…",
+      "sending": "Sending…",
+      "resendAvailableIn": "Resend available in {{seconds}}s",
+      "resendCode": "Resend code",
+      "verifyLabel": "Verify code"
     }
   }
 }
