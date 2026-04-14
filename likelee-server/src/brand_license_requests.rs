@@ -3,7 +3,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_permission},
+};
 
 #[derive(Deserialize)]
 pub struct CreateBrandLicenseRequest {
@@ -188,8 +193,7 @@ pub async fn create(
         ));
     }
 
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
@@ -319,7 +323,7 @@ pub async fn create(
                 let restore_result = state
                     .pg
                     .from(connection_table)
-                    .auth(state.supabase_service_key.clone())
+                    .auth(state.supabase_service_key.clone()) // service key required: cross-tenant connection restore (brand updating agency-side record)
                     .update(restore_payload.to_string())
                     .eq("id", &connection_id)
                     .execute()
@@ -371,7 +375,7 @@ pub async fn create(
         let create_conn_resp = state
             .pg
             .from("brand_agency_connections")
-            .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+            .auth(state.supabase_service_key.clone()) // service key required: brand creating cross-tenant connection record
             .insert(connection_payload.to_string())
             .execute()
             .await;
@@ -385,6 +389,11 @@ pub async fn create(
                     tracing::info!(
                         "Successfully auto-created brand_agency_connection: {}",
                         text
+                    );
+                    crate::team::invalidate_brand_agency_connection_cache(
+                        &state,
+                        &effective_brand_id,
+                        &agency_id,
                     );
                 } else if crate::face_profiles::is_missing_relation_error(
                     &text,
@@ -406,7 +415,7 @@ pub async fn create(
                     let req_resp = state
                         .pg
                         .from("brand_agency_connection_requests")
-                        .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+                        .auth(state.supabase_service_key.clone()) // service key required: cross-tenant connection request (brand creating agency-side request record)
                         .insert(req_payload.to_string())
                         .execute()
                         .await;
@@ -487,7 +496,7 @@ pub async fn create(
     let create_resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+        .auth(user.access_token.clone())
         .insert(insert_payload.to_string())
         .select("id")
         .single()
@@ -530,12 +539,14 @@ pub async fn list_for_brand(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())
+        .auth(user.access_token.clone())
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &effective_brand_id)
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -567,16 +578,15 @@ pub async fn list_for_agency(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<BrandLicenseRequestListResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS for debugging
+        .auth(user.access_token.clone())
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands(company_name,email),creators(full_name,email,profile_photo_url)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -614,9 +624,8 @@ pub async fn update_status_for_agency(
     user: AuthUser,
     Json(payload): Json<UpdateBrandLicenseRequestStatus>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
     if payload.brand_request_ids.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "No brand_request_ids".to_string()));
     }
@@ -646,7 +655,7 @@ pub async fn update_status_for_agency(
         .from("brand_license_requests")
         .update(serde_json::Value::Object(update).to_string())
         .in_("id", ids)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

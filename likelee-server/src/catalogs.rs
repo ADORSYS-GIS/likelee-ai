@@ -1,4 +1,8 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_permission},
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -65,15 +69,14 @@ pub async fn list_catalogs(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
         .from("agency_catalogs")
         .select("id,agency_id,licensing_request_id,title,client_name,client_email,access_token,created_at,sent_at,notes,expires_at,items:agency_catalog_items(id,assets:agency_catalog_assets(count),recordings:agency_catalog_recordings(count))")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(200)
         .execute()
@@ -178,16 +181,17 @@ pub async fn list_eligible_requests(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // 1. Fetch signed licensing requests for this agency.
     let lr_resp = state
         .pg
-        .from("licensing_requests")
-        .select("id,client_name,campaign_title,talent_id,talent_ids,license_submissions!licensing_requests_submission_id_fkey(status,license_fee,client_name,client_email)")
-        .eq("agency_id", &user.id)
+        .from("agency_payment_links")
+        .select("id,licensing_request_id,client_name,client_email,total_amount_cents,paid_at,licensing_requests(talent_id,talent_ids,campaign_title)")
+        .eq("agency_id", agency_id)
+        .eq("status", "paid")
+        .order("paid_at.desc")
         .limit(200)
         .execute()
         .await
@@ -688,16 +692,15 @@ pub async fn delete_catalog(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
         .from("agency_catalogs")
         .delete()
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

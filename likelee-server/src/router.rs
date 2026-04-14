@@ -327,6 +327,29 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/talent-invites/:id/revoke",
             post(crate::agency_talent_invites::revoke_for_agency),
         )
+        .route("/api/team/context", get(crate::team::get_context))
+        .route("/api/team/members", get(crate::team::list_members))
+        .route("/api/team/audit-logs", get(crate::team::list_audit_logs))
+        .route(
+            "/api/team/invites",
+            get(crate::team::list_invites).post(crate::team::create_invite),
+        )
+        .route(
+            "/api/team/members/:user_id/role",
+            post(crate::team::update_member_role),
+        )
+        .route(
+            "/api/invites/team/:token",
+            get(crate::team::get_invite_by_token),
+        )
+        .route(
+            "/api/invites/team/:token/accept",
+            post(crate::team::accept_invite_by_token),
+        )
+        .route(
+            "/api/invites/team/:token/decline",
+            post(crate::team::decline_invite_by_token),
+        )
         .route(
             "/api/agency/campaigns/:id",
             post(crate::campaigns::update_campaign_split),
