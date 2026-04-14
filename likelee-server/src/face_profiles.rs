@@ -5,6 +5,10 @@ use crate::config::AppState;
 use crate::entitlements::{creator_has_brand_connection_access, PlanTier};
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
+use crate::team::permissions::Permission;
+use crate::team::{
+    require_agency_permission, resolve_effective_agency_id, resolve_effective_brand_id,
+};
 use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
     extract::{Path, Query, State},
@@ -1138,150 +1142,6 @@ pub async fn search_marketplace_profiles(
     }
 
     Ok(Json(serde_json::Value::Array(deduped_results)))
-}
-
-pub(crate) async fn resolve_effective_agency_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Ok(user.id.clone());
-    }
-
-    let by_id_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err(sanitize_db_error(by_id_status.as_u16(), by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    if let Ok(by_user_resp) = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-    {
-        if by_user_resp.status().is_success() {
-            if let Ok(by_user_text) = by_user_resp.text().await {
-                let rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&by_user_text).unwrap_or_default();
-                if let Some(org_id) = rows
-                    .first()
-                    .and_then(|r| r.get("id"))
-                    .and_then(|v| v.as_str())
-                {
-                    if !org_id.is_empty() {
-                        return Ok(org_id.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    if let Ok(by_member_resp) = state
-        .pg
-        .from("agency_users")
-        .select("agency_id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-    {
-        if by_member_resp.status().is_success() {
-            if let Ok(by_member_text) = by_member_resp.text().await {
-                let rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&by_member_text).unwrap_or_default();
-                if let Some(org_id) = rows
-                    .first()
-                    .and_then(|r| r.get("agency_id"))
-                    .and_then(|v| v.as_str())
-                {
-                    if !org_id.is_empty() {
-                        return Ok(org_id.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(user.id.clone())
-}
-
-pub(crate) async fn resolve_effective_brand_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Ok(user.id.clone());
-    }
-
-    let by_id_resp = state
-        .pg
-        .from("brands")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err(sanitize_db_error(by_id_status.as_u16(), by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    if let Ok(by_user_resp) = state
-        .pg
-        .from("brands")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-    {
-        if by_user_resp.status().is_success() {
-            if let Ok(by_user_text) = by_user_resp.text().await {
-                let rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&by_user_text).unwrap_or_default();
-                if let Some(org_id) = rows
-                    .first()
-                    .and_then(|r| r.get("id"))
-                    .and_then(|v| v.as_str())
-                {
-                    if !org_id.is_empty() {
-                        return Ok(org_id.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(user.id.clone())
 }
 
 pub(crate) async fn resolve_effective_creator_id(
@@ -2625,14 +2485,8 @@ pub async fn list_agency_brand_connection_requests(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::entitlements::require_agency_paid_access(
-        &state,
-        &effective_agency_id,
-        "paid_plan_required_for_brand_connections",
-    )
-    .await?;
+    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let effective_agency_id = access.organization_id;
 
     let resp = state
         .pg
@@ -2672,14 +2526,8 @@ pub async fn list_agency_brand_connections(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::entitlements::require_agency_paid_access(
-        &state,
-        &effective_agency_id,
-        "paid_plan_required_for_brand_connections",
-    )
-    .await?;
+    let access = require_agency_permission(&state, &user, Permission::ViewBrandConnections).await?;
+    let effective_agency_id = access.organization_id;
 
     let resp = state
         .pg
@@ -2718,14 +2566,9 @@ pub async fn accept_agency_brand_connection_request(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::entitlements::require_agency_paid_access(
-        &state,
-        &effective_agency_id,
-        "paid_plan_required_for_brand_connections",
-    )
-    .await?;
+    let access =
+        require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+    let effective_agency_id = access.organization_id;
 
     let pending_resp = state
         .pg
@@ -2818,6 +2661,8 @@ pub async fn accept_agency_brand_connection_request(
         return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
     }
 
+    crate::team::invalidate_brand_agency_connection_cache(&state, &brand_id, &effective_agency_id);
+
     let agency_name = resolve_agency_name(&state, &effective_agency_id)
         .await
         .unwrap_or_else(|| "Agency".to_string());
@@ -2842,14 +2687,9 @@ pub async fn decline_agency_brand_connection_request(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::entitlements::require_agency_paid_access(
-        &state,
-        &effective_agency_id,
-        "paid_plan_required_for_brand_connections",
-    )
-    .await?;
+    let access =
+        require_agency_permission(&state, &user, Permission::ManageBrandConnections).await?;
+    let effective_agency_id = access.organization_id;
 
     let pending_resp = state
         .pg
@@ -2964,6 +2804,8 @@ pub async fn disconnect_brand_agency_connection_as_brand(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
+    crate::team::invalidate_brand_agency_connection_cache(&state, &user.id, &agency_id);
+
     Ok(Json(serde_json::json!({"status":"ok"})))
 }
 
@@ -2972,14 +2814,9 @@ pub async fn disconnect_brand_agency_connection_as_agency(
     user: AuthUser,
     Path(brand_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::entitlements::require_agency_paid_access(
-        &state,
-        &effective_agency_id,
-        "paid_plan_required_for_brand_connections",
-    )
-    .await?;
+    let access =
+        require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
+    let effective_agency_id = access.organization_id;
 
     let resp = state
         .pg
@@ -3006,6 +2843,8 @@ pub async fn disconnect_brand_agency_connection_as_agency(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
+
+    crate::team::invalidate_brand_agency_connection_cache(&state, &brand_id, &effective_agency_id);
 
     Ok(Json(serde_json::json!({"status":"ok"})))
 }

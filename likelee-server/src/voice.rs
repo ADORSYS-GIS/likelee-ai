@@ -404,13 +404,14 @@ pub async fn signed_url_for_recording(
     }
 
     if !has_access && user.role == "agency" {
-        // check if this agency manages the owner_id (either as the agency_user ID or their creator_id)
+        let access = crate::team::require_agency_access(&state, &user).await?;
+        let agency_id = &access.organization_id;
         let or_cond = format!("id.eq.{},creator_id.eq.{}", owner_id, owner_id);
         let check_resp = state
             .pg
             .from("agency_users")
             .select("id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .or(&or_cond)
             .limit(1)
             .execute()
@@ -703,8 +704,46 @@ pub async fn list_voice_recordings(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // We will query recordings where user_id is IN this list
-    let target_user_ids =
-        resolve_voice_owner_ids(&state, &user, params.get("talent_id").map(String::as_str)).await?;
+    let mut target_user_ids = vec![user.id.clone()];
+
+    // If a talent_id is provided and the user is an agency, check management access
+    if let Some(tid) = params.get("talent_id") {
+        if user.role == "agency" {
+            let access = crate::team::require_agency_access(&state, &user).await?;
+            let agency_id = &access.organization_id;
+            let resp = state
+                .pg
+                .from("agency_users")
+                .select("id, creator_id")
+                .eq("agency_id", agency_id)
+                .eq("id", tid)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+            if let Some(row) = rows.first() {
+                target_user_ids.clear();
+                // 1. push the agency_users.id itself (where agency uploads might go)
+                target_user_ids.push(tid.clone());
+                // 2. push the creator_id (where talent's own recordings go)
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    if !creator_id.is_empty() {
+                        target_user_ids.push(creator_id.to_string());
+                    }
+                }
+            } else {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Not authorized to access this talent".into(),
+                ));
+            }
+        } else if user.role == "admin" {
+            target_user_ids = vec![tid.clone()];
+        }
+    }
 
     let t_refs: Vec<&str> = target_user_ids.iter().map(|s| s.as_str()).collect();
 

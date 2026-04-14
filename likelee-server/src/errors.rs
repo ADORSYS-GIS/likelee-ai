@@ -82,6 +82,17 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
                             .to_string(),
                         );
                     }
+                    "42501" => {
+                        // Permission denied - usually RLS or schema issues
+                        return (
+                            StatusCode::FORBIDDEN,
+                            json!({
+                                "error": "You do not have permission to access this record.",
+                                "code": code
+                            })
+                            .to_string(),
+                        );
+                    }
                     _ if contains_sensitive => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,

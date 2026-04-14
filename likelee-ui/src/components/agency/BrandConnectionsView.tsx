@@ -44,6 +44,7 @@ import {
   Wand2,
   AlertCircle,
   ArrowRight,
+  Lock,
 } from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,6 +52,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getAgencyTalents } from "@/api/functions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();
@@ -100,6 +109,12 @@ const BrandConnectionsView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
+  const canViewConnections = hasPermission("view_brand_connections");
+  const canManageConnections = hasPermission("manage_brand_connections");
+  const canDisconnectBrands = hasPermission("disconnect_brand_connections");
+  const isReadOnly = canViewConnections && !canManageConnections;
+
   const [activeTab, setActiveTab] = useState<
     | "connections"
     | "requests"
@@ -294,11 +309,24 @@ const BrandConnectionsView = () => {
   const rosterQuery = useQuery({
     queryKey: ["agency", "roster"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/roster");
-      if (Array.isArray(resp)) return resp;
-      if (Array.isArray(resp?.talents)) return resp.talents;
-      if (Array.isArray(resp?.data?.talents)) return resp.data.talents;
-      return [];
+      const resp: any = await getAgencyTalents();
+      const rows = Array.isArray(resp?.talents)
+        ? resp.talents
+        : Array.isArray(resp?.data?.talents)
+          ? resp.data.talents
+          : Array.isArray(resp)
+            ? resp
+            : [];
+      return rows.map((row: any) => ({
+        id: String(row?.id || row?.creator_id || ""),
+        creator_id: String(row?.creator_id || row?.id || ""),
+        stage_name: row?.full_name || "",
+        full_legal_name: row?.full_name || "",
+        profile_photo_url: row?.profile_photo_url || "",
+        img: row?.profile_photo_url || "",
+        has_creator_account: Boolean(row?.creator_id || row?.id),
+        is_connected_creator: Boolean(row?.is_connected_creator),
+      }));
     },
   });
 
@@ -343,6 +371,7 @@ const BrandConnectionsView = () => {
   const assignedTalentIds = useMemo(() => {
     return new Set(
       (offerAssignmentsQuery.data || []).map((a: any) =>
+        // Offer assignments are creator-first; talent_id is a legacy fallback.
         String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ),
@@ -629,11 +658,12 @@ const BrandConnectionsView = () => {
         : [];
       const currentByCreatorId = new Map<string, string>();
       current.forEach((a: any) => {
-        const tid = String(
+        const creatorScopedId = String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ).trim();
         const aid = String(a?.id || "").trim();
-        if (tid && aid) currentByCreatorId.set(tid, aid);
+        if (creatorScopedId && aid)
+          currentByCreatorId.set(creatorScopedId, aid);
       });
 
       const desiredIds = new Set(
@@ -655,13 +685,13 @@ const BrandConnectionsView = () => {
       }
 
       await Promise.all([
-        ...toAdd.map((talentId) =>
+        ...toAdd.map((creatorId) =>
           base44.post(`/api/campaign-offers/${offerId}/assignments`, {
-            creator_id: talentId,
+            creator_id: creatorId,
           }),
         ),
-        ...toRemove.map((talentId) => {
-          const assignmentId = currentByCreatorId.get(talentId);
+        ...toRemove.map((creatorId) => {
+          const assignmentId = currentByCreatorId.get(creatorId);
           if (!assignmentId) return Promise.resolve(null);
           return base44.delete(
             `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
@@ -1181,8 +1211,54 @@ const BrandConnectionsView = () => {
   const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
   const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
 
+  if (accessLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
+        <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">Verifying access...</p>
+      </div>
+    );
+  }
+
+  if (!canViewConnections) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Brand Connections
+          </h2>
+          <p className="text-gray-600">Access Restricted</p>
+        </div>
+        <Card className="p-12 flex flex-col items-center justify-center text-center border-dashed border-2">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Permission Required
+          </h3>
+          <p className="text-gray-600 max-w-sm">
+            You do not have the required permissions to view brand connections.
+            Please contact your agency administrator if you believe this is an
+            error.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <Eye className="w-5 h-5 text-amber-600" />
+          <div>
+            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="text-sm text-amber-700">
+              Your role allows viewing brand connections but not managing them.
+            </p>
+          </div>
+        </div>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
         <p className="text-gray-600">
@@ -1300,16 +1376,31 @@ const BrandConnectionsView = () => {
                         </p>
                       </div>
                       <div className="text-right flex items-center gap-3">
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          disabled={!brandId || isBusy}
-                          onClick={() => disconnectBrand(brandId)}
-                          aria-label="Disconnect from brand"
-                          title="Disconnect"
-                        >
-                          <Link2Off className="h-4 w-4" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  disabled={
+                                    !brandId || isBusy || !canDisconnectBrands
+                                  }
+                                  onClick={() => disconnectBrand(brandId)}
+                                  aria-label="Disconnect from brand"
+                                  className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Link2Off className="h-4 w-4" />
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canDisconnectBrands && (
+                              <TooltipContent>
+                                <p>Your role cannot disconnect brands</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                         <div>
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
                             Connected
@@ -1397,21 +1488,51 @@ const BrandConnectionsView = () => {
                         </p>
                       )}
                       <div className="flex gap-3">
-                        <Button
-                          onClick={() => updateStatus(requestId, "accept")}
-                          disabled={isBusy}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          {isBusy ? "Working..." : "Accept"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => updateStatus(requestId, "decline")}
-                          disabled={isBusy}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          Decline
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  onClick={() =>
+                                    updateStatus(requestId, "accept")
+                                  }
+                                  disabled={isBusy || !canManageConnections}
+                                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isBusy ? "Working..." : "Accept"}
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageConnections && (
+                              <TooltipContent>
+                                <p>Your role cannot accept requests</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="outline"
+                                  onClick={() =>
+                                    updateStatus(requestId, "decline")
+                                  }
+                                  disabled={isBusy || !canManageConnections}
+                                  className="border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Decline
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canManageConnections && (
+                              <TooltipContent>
+                                <p>Your role cannot decline requests</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   );
@@ -1524,25 +1645,63 @@ const BrandConnectionsView = () => {
                         <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
-                              <Button
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6"
-                                disabled={busyIds.has(selectedOfferId)}
-                                onClick={() =>
-                                  respondToOffer(selectedOfferId, "accept")
-                                }
-                              >
-                                Accept Offer
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                                disabled={busyIds.has(selectedOfferId)}
-                                onClick={() =>
-                                  respondToOffer(selectedOfferId, "decline")
-                                }
-                              >
-                                Decline
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <Button
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={
+                                          busyIds.has(selectedOfferId) ||
+                                          !canManageConnections
+                                        }
+                                        onClick={() =>
+                                          respondToOffer(
+                                            selectedOfferId,
+                                            "accept",
+                                          )
+                                        }
+                                      >
+                                        Accept Offer
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {!canManageConnections && (
+                                    <TooltipContent>
+                                      <p>Your role cannot accept offers</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <Button
+                                        variant="outline"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={
+                                          busyIds.has(selectedOfferId) ||
+                                          !canManageConnections
+                                        }
+                                        onClick={() =>
+                                          respondToOffer(
+                                            selectedOfferId,
+                                            "decline",
+                                          )
+                                        }
+                                      >
+                                        Decline
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {!canManageConnections && (
+                                    <TooltipContent>
+                                      <p>Your role cannot decline offers</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
                             </>
                           )}
                           {isAccepted && (
@@ -1875,29 +2034,61 @@ const BrandConnectionsView = () => {
                             )}
                             {isPending && (
                               <>
-                                <Button
-                                  size="sm"
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                                  disabled={busyIds.has(offerId)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    respondToOffer(offerId, "accept");
-                                  }}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
-                                  disabled={busyIds.has(offerId)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    respondToOffer(offerId, "decline");
-                                  }}
-                                >
-                                  Decline
-                                </Button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          disabled={
+                                            busyIds.has(offerId) ||
+                                            !canManageConnections
+                                          }
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            respondToOffer(offerId, "accept");
+                                          }}
+                                        >
+                                          Accept
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    {!canManageConnections && (
+                                      <TooltipContent>
+                                        <p>Your role cannot accept offers</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          disabled={
+                                            busyIds.has(offerId) ||
+                                            !canManageConnections
+                                          }
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            respondToOffer(offerId, "decline");
+                                          }}
+                                        >
+                                          Decline
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    {!canManageConnections && (
+                                      <TooltipContent>
+                                        <p>Your role cannot decline offers</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
                               </>
                             )}
                             {isAccepted &&
@@ -2635,13 +2826,9 @@ const BrandConnectionsView = () => {
                                                           variant="outline"
                                                           className="border-gray-200 hover:bg-gray-50"
                                                           onClick={() =>
-                                                            void handleDownloadContract(
-                                                              selectedOfferId,
-                                                              cId,
-                                                              String(
-                                                                c?.title ||
-                                                                  "signed-contract",
-                                                              ),
+                                                            window.open(
+                                                              downloadUrl,
+                                                              "_blank",
                                                             )
                                                           }
                                                           disabled={isBusy}
