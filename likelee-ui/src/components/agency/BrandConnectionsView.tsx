@@ -2038,7 +2038,7 @@ const BrandConnectionsView = () => {
                         onClick={() => setSelectedOfferId(offerId)}
                       >
                         {/* Row header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
+                        <div className="flex items-center justify-between px-4 py-2.5 sm:px-6 sm:py-3 border-b border-blue-100 bg-white gap-4">
                           <div className="flex items-center gap-4 min-w-0">
                             <div className="min-w-0">
                               <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
@@ -2171,7 +2171,7 @@ const BrandConnectionsView = () => {
                                 return (
                                   <Button
                                     size="sm"
-                                    className="bg-black hover:bg-gray-800 text-white font-bold"
+                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold h-8 px-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigate(
@@ -2214,84 +2214,78 @@ const BrandConnectionsView = () => {
 
                         {/* Brief & Scope body */}
                         <div className="px-4 py-3 sm:px-6 sm:py-5 space-y-5">
-                          <div className="flex items-center justify-between gap-4">
-                            <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
+                          <div className="flex items-center justify-between gap-4 mb-1">
+                            <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase">
                               Brief &amp; Scope
                             </h3>
                             <button
                               onClick={() => setSelectedOfferId(offerId)}
-                              className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                              className="text-[11px] font-bold text-blue-600 border border-blue-200 rounded-md px-2.5 py-1 hover:bg-blue-50 transition-colors whitespace-nowrap"
                             >
-                              View Full Details →
+                              Details →
                             </button>
                           </div>
 
-                          {/* Deliverables */}
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                              Deliverables
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              {deliverablesSummary}
-                            </p>
-                          </div>
+                          {/* Reorganized Metadata Grid: Deliverables | Timeline | Budget */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                            {/* Deliverables */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                Deliverables
+                              </p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {deliverablesSummary}
+                              </p>
+                            </div>
 
-                          {/* Timeline + Budget */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                            {/* Timeline */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                 Timeline
                               </p>
-                              {launchDate && (
-                                <p className="text-sm text-gray-800">
-                                  Start: {launchDate}
-                                </p>
-                              )}
-                              {deadlineDate && (
-                                <p className="text-sm text-gray-800">
-                                  Due: {deadlineDate}
-                                </p>
-                              )}
-                              {!launchDate && !deadlineDate && (
-                                <p className="text-sm text-gray-400">
-                                  Not specified
-                                </p>
-                              )}
+                              <div className="text-[13px] text-gray-700 font-medium">
+                                {launchDate || deadlineDate ? (
+                                  <>
+                                    {launchDate && <div>Start: {launchDate}</div>}
+                                    {deadlineDate && <div>Due: {deadlineDate}</div>}
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic font-normal">Not specified</span>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+
+                            {/* Budget */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                 Budget
                               </p>
-                              {budgetTotal && (
-                                <p className="text-sm font-bold text-gray-900">
-                                  Total: {budgetTotal}
-                                </p>
-                              )}
-                              {budgetCreator && (
-                                <p className="text-sm text-gray-700">
-                                  Creator: {budgetCreator}
-                                </p>
-                              )}
-                              {!budgetTotal && !budgetCreator && (
-                                <p className="text-sm text-gray-400">
-                                  Not specified
-                                </p>
-                              )}
+                              <div className="text-[13px] text-gray-700">
+                                {budgetTotal || budgetCreator ? (
+                                  <>
+                                    {budgetTotal && (
+                                      <div className="font-bold text-gray-900">Total: {budgetTotal}</div>
+                                    )}
+                                    {budgetCreator && (
+                                      <div className="text-gray-500 text-[11px]">Talent: {budgetCreator}</div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic font-normal">Not specified</span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           {/* Teaser — navigates to full-page detail */}
                           {(bs || offer?.message) && (
                             <div
-                              className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
+                              className="flex items-center gap-2 bg-blue-50/50 border border-blue-100/50 rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-100/50 transition-colors"
                               onClick={() => setSelectedOfferId(offerId)}
                             >
-                              <span className="text-blue-500 mt-0.5 shrink-0">
-                                ⓘ
-                              </span>
-                              <p className="text-sm font-medium text-blue-700">
-                                Click to view complete brief with dialogue,
-                                visuals, and contract details
+                              <span className="text-blue-500 text-xs shrink-0">ⓘ</span>
+                              <p className="text-[11px] font-medium text-blue-700">
+                                View complete brief, dialogue & visuals
                               </p>
                             </div>
                           )}
