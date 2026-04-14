@@ -22,7 +22,7 @@ import {
 import { ManageAvailabilityModal } from "../Modals/ManageAvailabilityModal";
 import { NewBookingModal } from "../Modals/NewBookingModal";
 import { BookingDetailsModal } from "../Modals/BookingDetailsModal";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyRoster } from "@/api/functions";
 
 export const CalendarScheduleTab = ({
   bookings,
@@ -82,12 +82,18 @@ export const CalendarScheduleTab = ({
     let cancelled = false;
     (async () => {
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
         if (cancelled) return;
-        const arr = Array.isArray(rows) ? rows : [];
+        const arr = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         const mapped = arr
           .map((r: any) => ({
-            id: String(r.id || r.user_id || r.creator_id || ""),
+            id: String(r.id || ""),
             name: String(r.full_name || r.name || r.stage_name || "Unnamed"),
           }))
           .filter((t: any) => t.id);
