@@ -1,0 +1,2001 @@
+{
+  "greeting": "¡Hola, bienvenido!",
+  "getStarted": "Empezar",
+  "agencies": "Agencias",
+  "aboutUs": "Sobre nosotros",
+  "contact": "Contacto",
+  "footerSlogan": "El ecosistema de talentos verificados para medios impulsados por IA.",
+  "resources": "Recursos",
+  "blog": "Blog",
+  "impact": "Impacto",
+  "support": "Soporte",
+  "contactUs": "Contáctenos",
+  "questionsContactUs": "¿Preguntas? Contáctenos:",
+  "landingHeadline": "¿Buscando algo real en la era de la IA?",
+  "readyToUse": "Listo para usar",
+  "verifiedProtection": "Protección verificada",
+  "licensedFaces": "Caras con licencia",
+  "heroTitle": "Cree asociaciones de atletas reales que paguen durante todo el año",
+  "heroSubtitle": "Un anticipo, presencia constante. Los atletas ganan, tú ganas.",
+  "forAgencies": "Para agencias",
+  "userTrustTitle": "No pierda la confianza del usuario usando avatares falsos",
+  "userTrustSubtitle": "Los creadores reales brindan una creencia genuina, y sus audiencias lo sienten al instante.",
+  "scaleCatalogTitle": "Amplíe su catálogo sin aumentar los costos",
+  "scaleCatalogSubtitle": "Mismo influencer. Infinitas variaciones de productos. Lanzamiento en horas.",
+  "allSizesTitle": "Creado para marcas de todos los tamaños",
+  "allSizesSubtitle": "Desde nuevas empresas de comercio electrónico hasta empresas, cree campañas de alto contacto con talento verificado para cada presupuesto.",
+  "legalAndCompliance": "Legal y Cumplimiento",
+  "sagAftraAlignment": "Alineación SAG-AFTRA",
+  "privacyPolicy": {
+    "title": "Política de privacidad de Likelee",
+    "lastUpdated": "Última actualización: octubre de 2025",
+    "intro": "Likelee (\"Likelee\", \"nosotros\", \"nos\") ayuda a talentos, creadores y marcas a gestionar el uso con licencia y consentimiento de su imagen en la IA. Esta Política de privacidad explica qué recopilamos, cómo lo usamos y sus opciones.",
+    "sections": {
+      "1": {
+        "title": "1) Información que recopilamos",
+        "accountData": {
+          "label": "Datos de cuenta y perfil:",
+          "content": "nombre, correo electrónico, contraseña (hash), ciudad/estado, fecha de nacimiento, etiquetas de estilo, preferencias, enlaces/nombres de usuario."
+        },
+        "likenessMedia": {
+          "label": "Imagen y medios:",
+          "content": "fotos que subas, metadatos y configuraciones que elijas para visibilidad/uso. Nota: Solo usamos la imagen/los medios de acuerdo con los controles que establezcas (por ejemplo, público/privado, usos permitidos)."
+        },
+        "usageData": {
+          "label": "Datos de uso:",
+          "content": "dispositivo/navegador, dirección IP, páginas vistas, clics, páginas de referencia."
+        },
+        "communications": {
+          "label": "Comunicaciones:",
+          "content": "mensajes y correos electrónicos que nos envíes."
+        },
+        "thirdParties": {
+          "label": "De terceros (opcional):",
+          "content": "enlaces sociales o información de marca/agencia que elijas conectar."
+        }
+      },
+      "2": {
+        "title": "2) Cómo usamos la información",
+        "list": [
+          "Proporcionar y asegurar el servicio (cuentas, incorporación, aprobaciones, pagos).",
+          "Hacer cumplir tus reglas de uso y crear un rastro de auditoría.",
+          "Comunicarnos contigo (correos electrónicos de servicio, invitaciones a cohortes, actualizaciones de políticas).",
+          "Mejorar las funciones, la seguridad y el rendimiento (análisis y depuración).",
+          "Cumplir con las obligaciones legales y prevenir el fraude/abuso."
+        ]
+      },
+      "3": {
+        "title": "3) Uso de IA e imagen",
+        "consentFirst": {
+          "label": "El consentimiento es lo primero:",
+          "content": "Tu imagen/medios se procesan solo según tus instrucciones (por ejemplo, para detectar/rastrear el uso, habilitar solicitudes con licencia)."
+        },
+        "training": {
+          "label": "Entrenamiento:",
+          "content": "No usamos tu imagen/medios para entrenar modelos públicos de terceros. Si ajustamos los sistemas internos de detección o seguridad, lo hacemos bajo tus permisos y controles de acceso seleccionados."
+        },
+        "takedowns": {
+          "label": "Retiradas:",
+          "content": "Si informas de un uso sin licencia, podemos procesar el contenido informado para investigar y actuar."
+        }
+      },
+      "4": {
+        "title": "4) Bases legales (EEE/Reino Unido)",
+        "content": "Procesamos datos personales basados en: contrato (para proporcionar el servicio), intereses legítimos (seguridad, mejora) y consentimiento (donde se requiera, por ejemplo, marketing)."
+      },
+      "5": {
+        "title": "5) Compartir",
+        "p1": "No vendemos información personal en el sentido tradicional. Podemos licenciar o poner a disposición información anónima y/o agregada a socios examinados (incluidos proveedores de tecnología de IA y análisis) para investigación, seguridad y desarrollo de productos. Exigimos a los destinatarios que la utilicen solo para fines aprobados y que eviten la reidentificación.",
+        "p2": "También compartimos información con:",
+        "list": [
+          "Proveedores de servicios (alojamiento, almacenamiento, análisis, correo electrónico) bajo contrato.",
+          "Contrapartes que apruebes (por ejemplo, marcas/agencias para solicitudes con licencia que aceptes).",
+          "Legal/Cumplimiento cuando lo exija la ley o para proteger derechos, seguridad e integridad."
+        ]
+      },
+      "6": {
+        "title": "6) Retención",
+        "content": "Conservamos los datos mientras tu cuenta esté activa y según sea necesario para los fines anteriores. Puedes solicitar la eliminación; algunos registros (por ejemplo, pagos, contratos, registros de seguridad) pueden conservarse según lo exija la ley."
+      },
+      "7": {
+        "title": "7) Seguridad",
+        "content": "Utilizamos salvaguardas estándar de la industria (cifrado en tránsito, controles de acceso). Ningún método es 100% seguro; informa de problemas a"
+      },
+      "8": {
+        "title": "8) Tus opciones y derechos",
+        "list": {
+          "0": "Acceder, corregir, descargar o eliminar tus datos (sujeto a límites legales).",
+          "1": "Optar por no recibir marketing en cualquier momento.",
+          "2": "Controlar la visibilidad del perfil y los usos permitidos para tu imagen/medios.",
+          "3": {
+            "label": "No vender/compartir (donde corresponda):",
+            "content": "Puedes optar por no participar en nuestra licencia de información anónima/agregada utilizando el enlace \"No vender ni compartir mi información personal\" o enviando un correo electrónico a",
+            "suffix": "con el asunto \"Do Not Sell/Share\"."
+          },
+          "4": "Para residentes de EEE/Reino Unido/Suiza: puedes oponerte/restringir el procesamiento y presentar una queja ante tu autoridad local."
+        },
+        "requests": "Solicitudes:"
+      },
+      "9": {
+        "title": "9) Cookies y análisis",
+        "content": "Utilizamos cookies y tecnologías similares para el inicio de sesión, las preferencias y el análisis. Puedes controlar las cookies en tu navegador; algunas funciones pueden no funcionar sin ellas."
+      },
+      "10": {
+        "title": "10) Niños",
+        "content": "Likelee no está dirigido a niños menores de 16 años (o la edad requerida por su región). No recopilamos datos de niños a sabiendas."
+      },
+      "11": {
+        "title": "11) Transferencias internacionales",
+        "content": "Si los datos se transfieren internacionalmente, utilizamos las salvaguardas adecuadas (por ejemplo, SCC)."
+      },
+      "12": {
+        "title": "12) Cambios",
+        "content": "Podemos actualizar esta Política. Publicaremos la nueva fecha arriba. Si los cambios son sustanciales, te notificaremos (por ejemplo, por correo electrónico o aviso en la aplicación)."
+      },
+      "13": {
+        "title": "13) Contacto",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
+  "commercialRights": "Derechos comerciales",
+  "copyright": " 2025 Likelee. Todos los derechos reservados.",
+  "followUs": "Síguenos en Instagram",
+  "javascriptRequired": "Se requiere JavaScript",
+  "javascriptRequiredMessage": "Likelee requiere JavaScript para mostrar contenido y proporcionar una funcionalidad completa.",
+  "aboutLikelee": "Acerca de Likelee:",
+  "protectionAndRights": "Protección y derechos",
+  "protectionAndRightsMessage": "Cada uso es rastreado, consentido y compensado a través de contratos inteligentes",
+  "enableJavascript": "Habilita JavaScript en tu navegador para acceder a la plataforma completa.",
+  "viewSimplifiedVersion": "Ver versión simplificada",
+  "javascriptRequiredFullExperience": "Se requiere JavaScript para una experiencia completa",
+  "interactivePlatformMessage": "Likelee es una plataforma interactiva que requiere JavaScript.",
+  "platformFeatures": "Características de la plataforma Likelee:",
+  "ethicalAiStandards": "🔒 <strong>Estándares éticos de IA:</strong> Alineado con SAG-AFTRA, compatible con GDPR/CCPA, con seguimiento de consentimiento automatizado y compensación justa para todos los creadores.",
+  "toAccessPlatform": "Para acceder a la plataforma interactiva completa:",
+  "enableJavascriptInBrowser": "Habilita JavaScript en la configuración de tu navegador",
+  "refreshPage": "Actualiza esta página",
+  "orViewOur": "O mira nuestra",
+  "simplifiedTextVersion": "versión de texto simplificada",
+  "mission": "Misión",
+  "missionSubtitle": "En la era de la IA, la identidad humana debe ser un activo, no una responsabilidad.",
+  "missionMessage": "Likelee construye la infraestructura para que los creadores, atletas y talentos posean, controlen y se beneficien de su imagen digital. Estamos creando una nueva economía donde el consentimiento es ley, cada uso se rastrea y los creadores ganan para siempre, no solo una vez.",
+  "guidingPrinciples": "Principios rectores",
+  "consentIsEverything": "El consentimiento lo es todo",
+  "consentIsEverythingMessage": "Si no lo apruebas explícitamente, no sucede.",
+  "compensationIsAutomatic": "La compensación es automática",
+  "compensationIsAutomaticMessage": "No hay que perseguir pagos. Las ganancias se enrutan instantáneamente.",
+  "transparencyOverSecrecy": "Transparencia sobre el secreto",
+  "transparencyOverSecrecyMessage": "Ves cada uso, cada vez, en tiempo real.",
+  "humanFirstTechnologySecond": "Humano primero, tecnología segundo",
+  "humanFirstTechnologySecondMessage": "Construimos lo que resuelve los problemas de hoy, no los de mañana.",
+  "theProblemIsReal": "El problema es real (y está sucediendo ahora)",
+  "theProblemIsRealMessage1": "Tu rostro puede ser replicado en segundos. Tu voz puede ser sintetizada. Tu imagen puede ser utilizada en anuncios, películas, juegos, en cualquier lugar, sin que lo sepas. Y no verás ni un centavo.",
+  "theProblemIsRealMessage2": "Los contratos tradicionales se crearon para el trabajo en el set. No tienen en cuenta la reutilización perpetua impulsada por software. Los representantes de talentos no pueden vigilar cada activación de marca o extracción de datos. Los creadores rara vez ven el valor que generan las versiones sintéticas de sí mismos.",
+  "theProblemIsRealMessage3": "La era de la IA creó un nuevo problema: ¿cómo se prueba el consentimiento a escala? ¿Cómo se rastrean las reutilizaciones infinitas? ¿Cómo se asegura de que se pague al talento?",
+  "likeleeSolvesAllThree": "Likelee resuelve los tres.",
+  "whyLikeleeWhyNow": "¿Por qué Likelee, por qué ahora?",
+  "whyLikeleeWhyNowMessage1": "La IA no creó el problema del uso de las imágenes de las personas sin su consentimiento, pero lo hizo infinitamente escalable. Deepfakes, medios sintéticos, gemelos digitales: estas no son amenazas futuras. Están aquí.",
+  "whyLikeleeWhyNowMessage2": "Las licencias tradicionales funcionan para usos únicos. Se rompen para la reutilización perpetua impulsada por software. El seguimiento del consentimiento es manual. Los pagos son esporádicos. Nadie gana.",
+  "whyLikeleeWhyNowMessage3": "Likelee está diseñado para la era de la IA, donde una sola imagen puede generar un valor infinito, y el seguimiento de ese valor requiere una infraestructura transparente, no hojas de cálculo.",
+  "whyLikeleeWhyNowMessage4": "No estamos tratando de detener la IA. Nos aseguramos de que cuando use tu rostro, tu voz, tu imagen, lo sepas, lo apruebes y te paguen por ello.",
+  "howItWorks": "Cómo funciona: de la captura a las ganancias",
+  "avatarCreation": "Creación de avatar",
+  "avatarCreationMessage": "Tu video de referencia se convierte en un doble digital seguro y encriptado. Obtienes un activo listo para licenciar. Tus datos biométricos brutos permanecen privados.",
+  "youSetTheRules": "Tú pones las reglas",
+  "youSetTheRulesMessage": "Define el alcance (¿anuncios sociales? ¿comerciales de televisión? ¿películas?), el territorio (¿solo en EE. UU.? ¿global?), el plazo (¿1 mes? ¿1 año?) y el precio. Sin jerga legal. Lenguaje sencillo.",
+  "youEarnAutomatically": "Ganas. Automáticamente.",
+  "youEarnAutomaticallyMessage": "Cada uso se registra en un libro mayor compartido que puedes ver en tiempo real. Los pagos se enrutan instantáneamente. Sin facturación. Sin infierno de hojas de cálculo.",
+  "youStayInControl": "Tú mantienes el control",
+  "youStayInControlMessage": "Los derechos expiran automáticamente. Las marcas no pueden renovar sin preguntar. Puedes revocar, pausar o ajustar los términos en cualquier momento.",
+  "whoUsesLikelee": "Quién usa Likelee",
+  "howWeOperate": "Cómo operamos",
+  "contractsYouActuallyUnderstand": "Contratos que realmente entiendes",
+  "contractsYouActuallyUnderstandMessage": "Sin palabrería legal. Acuerdos en lenguaje sencillo con fechas de vencimiento automáticas y cláusulas de extinción incorporadas.",
+  "sharedLedgerFullTransparency": "Libro mayor compartido, total transparencia",
+  "sharedLedgerFullTransparencyMessage": "Tanto usted como la marca ven el mismo registro en tiempo real de cada uso, cada pago, cada fecha de vencimiento.",
+  "securityByDesign": "Seguridad por diseño",
+  "securityByDesignMessage": "Archivos biométricos encriptados en reposo. No hay venta de datos a terceros. No hay raspado. Tus datos son tuyos.",
+  "builtWithUsersNotForUsers": "Construido con usuarios, no para usuarios",
+  "builtWithUsersNotForUsersMessage": "Solo lanzamos funciones cuando los creadores, las agencias y los estudios confirman una necesidad del mundo real. Sin sobrecarga de funciones.",
+  "thankYou": "¡Gracias!",
+  "thankYouMessage": "Hemos recibido tu mensaje y nos pondremos en contacto en 24 horas.",
+  "seeLikeleeInAction": "Ver Likelee en acción",
+  "seeLikeleeInActionMessage": "Nos encantaría mostrarte una demostración del producto con preguntas y respuestas de expertos.",
+  "fullName": "Nombre completo",
+  "phone": "Teléfono",
+  "continue": "Continuar",
+  "learnMore": "Aprende más",
+  "worldwide": "En todo el mundo",
+  "scheduleDemo": "Programar demostración",
+  "faq": "Preguntas frecuentes",
+  "faqRevisionsTitle": "¿Qué pasa si necesito revisiones?",
+  "faqRevisionsDescription": "Las revisiones son por proyecto según lo acordado por adelantado. Los ajustes menores suelen estar incluidos. Los cambios importantes en el alcance = nuevo proyecto con nuevos precios.",
+  "faqApprovalTimeTitle": "¿Cuánto tiempo tarda la aprobación?",
+  "faqApprovalTimeDescription": "La mayoría de los creadores responden en 24 horas. Algunos responden en horas. La urgencia se tiene en cuenta en el precio (entrega más rápida = precio más alto, generalmente).",
+  "faqGuaranteedDeliverablesTitle": "¿Pueden garantizar los entregables?",
+  "faqGuaranteedDeliverablesDescription": "El talento está incentivado a cumplir (no reciben el 50% al finalizar si no lo hacen). Si no cumplen, te ayudamos a encontrar un talento de reemplazo o emitimos un reembolso.",
+  "faqFormatsTitle": "¿Qué formatos entregan?",
+  "faqFormatsDescription": "Lo que solicites: MP4, MOV, ProRes, cortes optimizados para redes sociales, etc. Especifícalo en el brief.",
+  "faqExceedLicensedTimeframeTitle": "¿Qué pasa si excedo el plazo de la licencia?",
+  "faqExceedLicensedTimeframeDescription": "Puedes renovar la licencia volviendo a contratar al talento. La renovación suele ser del 20 al 30% del costo original del proyecto.",
+  "faqVerifiedConsentTitle": "¿Es este un consentimiento verificado?",
+  "faqVerifiedConsentDescription": "Sí. Todos los talentos en Likelee han verificado sus derechos de semejanza. Los contratos están alineados con SAG-AFTRA. Estás protegido.",
+  "faqNegotiatePricingTitle": "¿Podemos negociar el precio?",
+  "faqNegotiatePricingDescription": "Sí. Publica tu presupuesto. El talento responde con cotizaciones. Puedes contraofertar. Es por proyecto, por lo que hay flexibilidad.",
+  "faqWorkWithOwnAgencyTitle": "¿Puedo trabajar con mi propia agencia en Likelee?",
+  "faqWorkWithOwnAgencyDescription": "Sí. Invítalos a gestionar proyectos. Ellos buscan talento, envían briefs, tú apruebas. Se aplican los mismos precios transparentes.",
+  "faqAgenciesOnLikeleeTitle": "¿Hay agencias con las que pueda trabajar en Likelee?",
+  "faqAgenciesOnLikeleeDescription": "Sí. Explora las Agencias Asociadas en Likelee. Se especializan en diferentes industrias y pueden manejar todo el proyecto, desde la búsqueda hasta la entrega.",
+  "marketingCreativeAgencies": "Agencias de Marketing, Agencias Creativas",
+  "bookDemo": "Reservar Demo",
+  "seeHowItWorks": "Ver Cómo Funciona",
+  "threeThingsLikeleeDoes": "Tres Cosas que Hace Likelee",
+  "theMath": "Las Cuentas",
+  "challenge": "Desafío",
+  "before": "Antes",
+  "after": "Después",
+  "sameTeam": "Mismo equipo.",
+  "howItWorksMarketing": "Cómo Funciona",
+  "howItWorksStep1": "El cliente te informa sobre sus necesidades de campaña de IA con los activos de marca y el cronograma.",
+  "howItWorksStep2": "Licencias a creadores verificados y gestionas la producción, todo en un solo panel. Selecciona creadores, licencia sus imágenes, gestiona los flujos de trabajo de producción de IA, aprueba los entregables y realiza un seguimiento centralizado de todas las licencias de creadores.",
+  "howItWorksStep3": "Los entregables se envían al cliente con el licenciamiento de creador verificado totalmente integrado y documentado. Hecho.",
+  "bookADemo": "Reservar una Demo",
+  "seePlatformLive": "Ver la Plataforma en Vivo",
+  "scenario": "Escenario",
+  "traditional": "Tradicional",
+  "likelee": "Likelee",
+  "moreEarningPotential": "Potencial de ganancias 2-7 veces mayor.",
+  "fullComplianceControl": "Cumplimiento y Control Total",
+  "fullComplianceControlDescription": "Cada licencia NIL se verifica con contratos inteligentes que especifican exactamente qué puede hacer la marca, por cuánto tiempo y en qué regiones. Todo se alinea con las regulaciones de la NCAA, las leyes estatales de NIL y los estándares de los sindicatos de jugadores para que nunca expongas a tus atletas a riesgos legales.",
+  "whatYouGet": "Lo que obtienes:",
+  "verifiedIdentity": "Identidad verificada (coincide con la identificación del gobierno)",
+  "preClearedLicensing": "Licencia pre-aprobada (contratos inteligentes listos)",
+  "oneClickLicensing": "Licencia con un solo clic (acuerdos alineados con SAG-AFTRA)",
+  "repeatableUsage": "Uso repetible (licencia del mismo atleta en múltiples campañas de marca)",
+  "whyItMatters": "Por qué es importante:",
+  "whyItMattersDescription": "Tu equipo de cumplimiento pasa horas en contratos y verificación de NIL. Likelee elimina esa fricción y pone a atletas verificados frente a marcas que buscan activamente licenciar derechos de NIL.",
+  "adaptOrWatch": "Adáptate o Mira Pasar las Oportunidades",
+  "adaptOrWatchDescription": "Los atletas de hoy esperan flujos de ingresos diversificados, no solo patrocinios únicos. Las agencias que capturan participación de mercado son las que ofrecen ingresos recurrentes y estables de NIL junto con patrocinios tradicionales. Likelee te brinda la infraestructura para ofrecer ambos a escala.",
+  "reserveProfile": {
+    "errors": {
+      "emailRegistered": "Este correo electrónico ya está registrado. Por favor, use un correo electrónico diferente o inicie sesión.",
+      "invalidEmail": "Ingrese una dirección de correo válida.",
+      "weakPassword": "Elija una contraseña más segura (al menos 8 caracteres).",
+      "signInRequired": "Por favor, inicie sesión para continuar.",
+      "fileTooLarge": "El archivo es demasiado grande. Use una imagen más pequeña (máx. 5 MB).",
+      "invalidFileType": "Tipo de archivo no válido. Suba una imagen JPG, PNG o WebP.",
+      "networkError": "Error de red. Verifique su conexión e inténtelo de nuevo.",
+      "timeout": "Tiempo de espera agotado. Inténtelo de nuevo.",
+      "permissionDenied": "Permiso denegado. Verifique su configuración e inténtelo de nuevo.",
+      "genericFallback": "Algo salió mal. Por favor, inténtelo de nuevo.",
+      "unknownError": "Ocurrió un error. Por favor, inténtelo de nuevo o contacte al soporte si el problema persiste.",
+      "imageFlagged": "Imagen marcada por moderación",
+      "configurationError": "Error de Configuración",
+      "imageUploadNotConfigured": "La carga de imágenes no está configurada. Por favor, contacte al soporte.",
+      "photoFlagged": "Foto Marcada",
+      "photoFlaggedDescription": "Tu foto de {{side}} fue marcada y no puede ser usada. Por favor, sube una foto diferente.",
+      "uploadFailed": "Error al Subir",
+      "notReady": "No Listo",
+      "notReadyDescription": "Por favor, complete los pasos anteriores antes de iniciar la verificación.",
+      "profileCreationFailed": "Error al Crear el Perfil",
+      "profileUpdateFailed": "Error al Actualizar el Perfil",
+      "emailRequired": "Correo Electrónico Requerido",
+      "emailRequiredDescription": "Por favor, ingrese su dirección de correo electrónico.",
+      "passwordRequired": "Contraseña Requerida",
+      "passwordRequiredDescription": "Por favor, ingrese su contraseña.",
+      "confirmPassword": "Confirmar Contraseña Requerido",
+      "confirmPasswordDescription": "Por favor, confirme su contraseña.",
+      "passwordsDontMatch": "Las Contraseñas No Coinciden",
+      "passwordsDontMatchDescription": "Por favor, asegúrese de que sus contraseñas coincidan.",
+      "nameRequired": "Nombre Requerido",
+      "nameRequiredDescription": "Por favor, ingrese su nombre completo o nombre artístico.",
+      "emailAlreadyRegistered": "Correo de verificación enviado",
+      "emailAlreadyRegisteredDescription": "Se ha enviado un correo de verificación a su bandeja de entrada. Por favor, revise su correo y haga clic en el enlace de verificación para continuar.",
+      "signUpFailed": "Error al Registrarse",
+      "cityRequired": "Ciudad Requerida",
+      "cityRequiredDescription": "Por favor, ingrese su ciudad.",
+      "stateRequired": "Estado/País Requerido",
+      "stateRequiredDescription": "Por favor, ingrese su estado o país.",
+      "birthdateRequired": "Fecha de Nacimiento Requerida",
+      "birthdateRequiredDescription": "Por favor, ingrese su fecha de nacimiento.",
+      "ageRestriction": "Restricción de Edad",
+      "ageRestrictionDescription": "Debe tener al menos 18 años para registrarse.",
+      "genderRequired": "Género Requerido",
+      "genderRequiredDescription": "Por favor, seleccione su género.",
+      "pricingRequired": "Precios Requeridos",
+      "pricingRequiredDescription": "Por favor, establezca un precio base mensual de al menos $150.",
+      "campaignTypeRequired": "Tipo de Campaña Requerido",
+      "campaignTypeRequiredDescription": "Por favor, seleccione al menos un tipo de campaña.",
+      "industryRequired": "Industria Requerida",
+      "industryRequiredDescription": "Por favor, seleccione al menos una industria.",
+      "platformRequired": "Plataforma Requerida",
+      "platformRequiredDescription": "Por favor, seleccione su plataforma de redes sociales principal.",
+      "handleRequired": "Usuario Requerido",
+      "handleRequiredDescription": "Por favor, ingrese su usuario para la plataforma seleccionada.",
+      "visibilityRequired": "Visibilidad Requerida",
+      "visibilityRequiredDescription": "Por favor, establezca la visibilidad de su perfil.",
+      "profileSaveFailed": "Error al Guardar el Perfil",
+      "selectionLimit": "Límite de Selección Alcanzado",
+      "selectionLimitDescription": "Puede seleccionar un máximo de 3 tipos de trabajo.",
+      "livenessVerificationNotConfigured": "La verificación de vida no está configurada. Por favor, contacte al soporte.",
+      "duplicateEmail": "Este correo ya está registrado. Use otro correo o inicie sesión.",
+      "notAuthenticated": "Inicie sesión para continuar.",
+      "genericFailed": "Algo salió mal. Inténtelo de nuevo.",
+      "unknown": "Ocurrió un error. Inténtelo de nuevo o contacte al soporte si el problema persiste."
+    },
+    "photos": {
+      "label": "Sube al menos 3 fotos",
+      "description": "Estas se utilizarán para entrenar tu modelo de IA. Asegúrate de que sean de alta calidad y que tu rostro se vea claramente.",
+      "why": "¿Por qué funcionan estas fotos?",
+      "whyDesc": "Las fotos claras y bien iluminadas ayudan a los clientes potenciales a ver tu versatilidad.",
+      "drop": "Arrastra archivos aquí o haz clic para subir",
+      "front": "Frente",
+      "left": "Izquierda",
+      "right": "Derecha",
+      "consent": "Doy mi consentimiento para almacenar estas fotos de referencia como mi identidad digital.",
+      "uploading": "Subiendo…",
+      "saveAndFinish": "Guardar y Terminar",
+      "generating": "Generando…",
+      "generateAvatar": "Generar Avatar (Duix)",
+      "generatedAvatar": "Avatar Generado",
+      "photoFlagged": "Tu foto del lado {{side}} fue marcada y no se puede usar. Por favor, sube una foto diferente.",
+      "pending": "Pendiente"
+    },
+    "skipModal": {
+      "title": "¿Omitir Verificación?",
+      "description": "Tu perfil se guardará, pero no serás visible para las marcas hasta que verifiques tu identidad.",
+      "note": "Nota: Puedes volver a tu panel en cualquier momento para completar la verificación.",
+      "confirmSkip": "Omitir por ahora - Estoy seguro",
+      "actions": {
+        "back": "← Volver",
+        "confirm": "Omitir por ahora - Estoy seguro"
+      }
+    },
+    "actions": {
+      "next": "Siguiente",
+      "back": "Atrás",
+      "startLiveness": "Iniciar verificación en vivo",
+      "skip": "Omitir por ahora",
+      "verifyAndContinue": "Verificar y Continuar",
+      "close": "Cerrar",
+      "login": "Iniciar Sesión",
+      "signup": "Registrarse",
+      "continue": "Continuar",
+      "saveAndVerify": "Guardar y Verificar",
+      "startingVerification": "Iniciando...",
+      "verifyIdentity": "Verificar Identidad Ahora"
+    },
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "verification": {
+      "verificationFailedTitle": "Error de Verificación",
+      "statusCheckFailedTitle": "Error al Comprobar el Estado",
+      "identityVerified": "Identidad Verificada",
+      "identityVerifiedDescription": "Por favor, suba sus 3 fotos de referencia (Frente, Izquierda, Derecha) para completar su configuración.",
+      "verificationPending": "Verificación Pendiente",
+      "verificationPendingDescription": "La verificación aún no está completa. Estado: {{kyc}}.",
+      "title": "Verificación de Identidad",
+      "subtitle": "Verifica tu identidad para ser visible para las marcas y desbloquear oportunidades",
+      "description": "Utilizamos verificación de identidad segura para garantizar que todos los creadores en Likelee sean auténticos. Este proceso suele tardar de 2 a 3 minutos.",
+      "status": {
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "verifying": "Verificando",
+        "notStarted": "No Iniciado"
+      },
+      "whyVerify": {
+        "title": "¿Por qué verificar tu identidad?",
+        "reason1": "Sé descubierto por marcas que buscan creadores verificados",
+        "reason2": "Genera confianza y credibilidad con socios de licencias",
+        "reason3": "Desbloquea oportunidades de campaña de mayor valor"
+      },
+      "requirements": {
+        "title": "Lo que necesitarás:",
+        "item1": "Identificación emitida por el gobierno (licencia de conducir, pasaporte o identificación estatal)",
+        "item2": "Buena iluminación y acceso a cámara/micrófono",
+        "item3": "2–3 minutos en un espacio tranquilo"
+      },
+      "actions": {
+        "startingVerification": "Iniciando...",
+        "verifyIdentity": "Verificar Identidad Ahora",
+        "preparing": "Preparando...",
+        "startLiveness": "Iniciar Liveness Check",
+        "livenessApproved": "Liveness Aprobado"
+      }
+    },
+    "liveness": {
+      "alreadyApproved": "Ya Aprobado",
+      "alreadyApprovedDescription": "Su verificación de vida ya está aprobada. No se necesita más verificación.",
+      "sessionError": "Error en la Sesión de Liveness"
+    },
+    "createAccount": {
+      "title": "Crea Tu Cuenta",
+      "subtitle": "Empecemos con lo básico.",
+      "button": "Crear Cuenta",
+      "prompt": "¿No tienes una cuenta?",
+      "link": "Registrarse"
+    },
+    "signIn": {
+      "title": "Iniciar Sesión",
+      "subtitle": "Inicia sesión en tu cuenta de Likelee.",
+      "button": "Iniciar Sesión",
+      "prompt": "¿Ya tienes una cuenta?",
+      "link": "Iniciar Sesión"
+    },
+    "terms": {
+      "title": "Términos y Acuerdos",
+      "subtitle": "Por favor, revise y acepte nuestras políticas para finalizar su registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio",
+      "download": "Descargar",
+      "mustAgree": "Debe aceptar los términos para completar su registro.",
+      "mustAgreeTitle": "Acuerdo Requerido",
+      "completeRegistration": "Completar Registro"
+    },
+    "form": {
+      "labels": {
+        "fullName": "Nombre Completo",
+        "email": "Correo Electrónico",
+        "password": "Contraseña",
+        "confirmPassword": "Confirmar Contraseña",
+        "city": "Ciudad",
+        "state": "Provincia/Estado",
+        "socialLink": "Enlace de Redes Sociales",
+        "location": "Ubicación",
+        "dob": "Fecha de Nacimiento",
+        "age": "Edad",
+        "genderQuestion": "¿Cómo te identificas?"
+      },
+      "handle": "Nombre de usuario / Handle",
+      "socialLink": "Enlace de Redes Sociales (Instagram, TikTok, YouTube)",
+      "location": "Ubicación (Ciudad, País)",
+      "dob": "Fecha de Nacimiento",
+      "age": "Edad",
+      "genderQuestion": "¿Cómo te identificas?",
+      "genderOptions": {
+        "female": "Mujer",
+        "male": "Hombre",
+        "nonbinary": "No binario",
+        "genderFluid": "Género fluido",
+        "preferNotToSay": "Prefiero no decirlo"
+      },
+      "validation": {
+        "signInFailed": "Inicio de sesión fallido",
+        "selectionLimit": "Límite de Selección",
+        "selectionLimitDesc": "Por favor, selecciona hasta 3 opciones por ahora. Puedes añadir más tarde."
+      },
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "languages": "Idiomas",
+      "representationStatus": "Estado de Representación",
+      "instagramOptional": "Instagram (opcional)",
+      "twitterOptional": "Twitter/X (opcional)",
+      "brandCategories": "Intereses / Categorías de Marca",
+      "shortBio": "Biografía Corta",
+      "visibility": "Visibilidad del Perfil",
+      "visibilityOptions": {
+        "public": {
+          "label": "Público",
+          "description": "Visible para todos"
+        },
+        "private": {
+          "label": "Privado",
+          "description": "Solo visible para marcas y creadores de IA"
+        }
+      },
+      "step1": {
+        "athlete": "Crea tu cuenta lista para NIL",
+        "model_actor": "Crea tu cuenta de Likelee",
+        "influencer": "Empecemos con lo básico"
+      },
+      "placeholders": {
+        "fullName": "Tu nombre completo",
+        "stageName": "Tu nombre",
+        "bio": "Cuéntale a las marcas un poco sobre ti...",
+        "platform": "Seleccionar plataforma",
+        "city": "ej: Madrid",
+        "state": "ej: España",
+        "age": "21",
+        "email": "ej: juan@ejemplo.com",
+        "password": "••••••••",
+        "schoolName": "Nombre de la universidad",
+        "sport": "Selecciona tu deporte",
+        "languages": "ej: Inglés, Español",
+        "confirmPassword": "••••••••",
+        "handle": "@tuusuario",
+        "price": "",
+        "headshot": "URL de la imagen",
+        "specify": "Por favor especifique..."
+      },
+      "perMonth": "/mes",
+      "sport": "Deporte",
+      "athleteType": "Tipo de Atleta",
+      "athleteTypes": {
+        "University": "Universitario",
+        "Professional": "Profesional",
+        "Independent": "Independiente"
+      },
+      "schoolName": "Nombre de la Escuela",
+      "headshot": "Subir Foto de Perfil (opcional)",
+      "headshotHint": "Puedes subir tu foto de perfil después de crear tu cuenta",
+      "birthdate": "Fecha de Nacimiento",
+      "licensingPricing": "Precios de Licencia",
+      "basePrice": "Precio base mensual de licencia (USD)",
+      "basePriceHint": "Mínimo $150/mes. La moneda está fijada en USD.",
+      "campaignMatch": "Ayúdanos a encontrarte las campañas adecuadas",
+      "contentInterest": "¿En qué tipo de contenido te interesa aparecer?",
+      "selectMax3": "Selecciona hasta 3 por ahora",
+      "brandinterest": "¿Con qué tipos de marcas o industrias quieres trabajar?",
+      "industry": "Industria",
+      "primaryPlatform": "Plataforma Principal",
+      "gender": "¿Cómo te identificas?",
+      "raceEthnicity": "Raza/Etnia (selecciona todas las que apliquen)",
+      "vibes": "Etiquetas de Estilo / Vibe",
+      "save": "Guardar y Continuar a Verificación",
+      "verification": {
+        "title": "Verificación de Identidad",
+        "description": "Verifica tu identidad para ser visible para las marcas y desbloquear oportunidades",
+        "whyVerify": {
+          "title": "¿Por qué verificar tu identidad?",
+          "reason1": "Sé descubierto por marcas que buscan creadores verificados",
+          "reason2": "Construye confianza y credibilidad con socios de licencias",
+          "reason3": "Desbloquea oportunidades de campañas de mayor valor"
+        },
+        "processDesc": "Usamos verificación de identidad segura para asegurar que todos los creadores en Likelee sean auténticos. Este proceso toma típicamente 2–3 minutos.",
+        "requirements": {
+          "title": "Lo que necesitarás:",
+          "item1": "Identificación emitida por el gobierno (licencia de conducir, pasaporte o identificación estatal)",
+          "item2": "Buena iluminación y acceso a cámara/micrófono",
+          "item3": "2–3 minutos en un espacio tranquilo"
+        },
+        "actions": {
+          "start": "Verificar Identidad Ahora",
+          "liveness": "Iniciar Verificación de Vida",
+          "livenessApproved": "Verificación de Vida Aprobada"
+        }
+      },
+      "selectAll": "Seleccionar Todo"
+    },
+    "warning": {
+      "limitedBatches": "Estamos lanzando en lotes limitados para asegurar que cada Creador obtenga visibilidad y oportunidades de campaña. Reserva tu perfil para unirte a la primera cohorte de creadores."
+    },
+    "title": "Reserva tu Perfil (Beta)",
+    "steps": {
+      "accountSetup": "Configuración de Cuenta",
+      "personalDetails": "Detalles Personales",
+      "verification": "Verificación",
+      "photos": "Fotos",
+      "finalize": "Finalizar"
+    },
+    "stepTitles": {
+      "step1": "Crea Tu Cuenta",
+      "step2": {
+        "influencer": "Conceptos Básicos",
+        "model_actor": "Detalles del Talento",
+        "athlete": "Info del Atleta"
+      },
+      "step3": {
+        "influencer": "Oportunidades",
+        "model_actor": "Preferencias",
+        "athlete": "Configuración de Marca"
+      }
+    },
+    "stepProgress": "Paso {{step}} de {{total}}",
+    "authMode": {
+      "signup": "Registrarse",
+      "login": "Iniciar Sesión"
+    },
+    "success": {
+      "title": "Perfil reservado — bienvenido al ecosistema de Likelee",
+      "description": "Estamos incorporando talentos en oleadas para mantener un equilibrio entre la demanda y la visibilidad. Tu perfil está guardado; te notificaremos cuando sea el momento de completar la verificación y activarlo.",
+      "dashboardButton": "Ir al Panel de Control"
+    },
+    "stepDescriptions": {
+      "step1": {
+        "athlete": "Crea tu cuenta para comenzar.",
+        "model_actor": "Crea tu cuenta de Likelee",
+        "influencer": "Crea tu cuenta para comenzar."
+      },
+      "step2": {
+        "athlete": "Cuéntanos sobre tu deporte",
+        "model_actor": "Tu apariencia y habilidades",
+        "influencer": "Tu contenido y audiencia"
+      },
+      "step3": {
+        "influencer": "Define tus términos de colaboración"
+      }
+    },
+    "toasts": {
+      "configErrorTitle": "Error de configuración",
+      "configErrorDesc": "La verificación de vida no está configurada. Contacte al soporte.",
+      "livenessErrorTitle": "Error de sesión de vida",
+      "profileCreationFailed": "Error al crear perfil",
+      "profileUpdateFailed": "Error al actualizar perfil",
+      "emailRequiredTitle": "Correo requerido",
+      "emailRequiredDesc": "Ingrese su correo electrónico.",
+      "passwordRequiredTitle": "Contraseña requerida",
+      "passwordRequiredDesc": "Ingrese una contraseña.",
+      "confirmPasswordTitle": "Confirmar contraseña",
+      "confirmPasswordDesc": "Confirme su contraseña.",
+      "passwordsDoNotMatchTitle": "Las contraseñas no coinciden",
+      "passwordsDoNotMatchDesc": "Las contraseñas ingresadas no coinciden. Inténtelo de nuevo.",
+      "nameRequiredTitle": "Nombre requerido",
+      "nameRequiredDesc": "Ingrese su nombre completo.",
+      "emailRegisteredTitle": "Correo de verificación enviado",
+      "emailRegisteredDesc": "Se ha enviado un correo de verificación a su bandeja de entrada. Por favor, revise su correo y haga clic en el enlace de verificación para continuar.",
+      "verifyEmailDesc": "Verifique su correo para validar su cuenta antes de continuar.",
+      "signupFailed": "Error al registrarse",
+      "cityRequiredTitle": "Ciudad requerida",
+      "cityRequiredDesc": "Ingrese su ciudad.",
+      "stateRequiredTitle": "Estado requerido",
+      "stateRequiredDesc": "Ingrese su estado.",
+      "birthdateRequiredTitle": "Fecha de nacimiento requerida",
+      "birthdateRequiredDesc": "Ingrese su fecha de nacimiento.",
+      "ageRestrictionTitle": "Restricción de edad",
+      "ageRestrictionDesc": "Debe tener 18 años o más para registrarse.",
+      "genderRequiredTitle": "Género requerido",
+      "genderRequiredDesc": "Seleccione cómo se identifica.",
+      "pricingRequiredTitle": "Precio requerido",
+      "pricingRequiredDesc": "Establezca su precio de licencia mensual base (mínimo $150).",
+      "campaignTypeRequiredTitle": "Tipo de campaña requerido",
+      "campaignTypeRequiredDesc": "Seleccione al menos un tipo de campaña.",
+      "industryRequiredTitle": "Industria requerida",
+      "industryRequiredDesc": "Seleccione al menos una industria.",
+      "platformRequiredTitle": "Plataforma requerida",
+      "platformRequiredDesc": "Seleccione su plataforma principal.",
+      "handleRequiredTitle": "Usuario requerido",
+      "handleRequiredDesc": "Ingrese su usuario de plataforma.",
+      "visibilityRequiredTitle": "Visibilidad requerida",
+      "visibilityRequiredDesc": "Seleccione su preferencia de visibilidad de perfil.",
+      "notSignedInTitle": "No has iniciado sesión",
+      "notSignedInDesc": "Inicie sesión para continuar.",
+      "profileSaveFailed": "Error al guardar perfil",
+      "invalidCredentials": "Credenciales de inicio de sesión inválidas",
+      "uploadFailed": "Error de carga",
+      "avatarGenFailed": "Error al generar avatar",
+      "verificationFailed": "Verificación fallida",
+      "alreadyApproved": "Ya aprobado",
+      "alreadyApprovedDesc": "Su verificación de vida ya está aprobada. No se requiere más verificación.",
+      "identityVerified": "Identidad verificada",
+      "identityVerifiedDesc": "Suba sus 3 fotos de referencia (Frente, Izquierda, Derecha) para completar su configuración.",
+      "statusCheckFailed": "Error al verificar estado",
+      "cameraAccessRequiredTitle": "Acceso a la cámara requerido",
+      "cameraAccessRequiredDesc": "No se puede acceder a la cámara. Permita los permisos de la cámara en la configuración de su navegador.",
+      "consentRequiredTitle": "Consentimiento requerido",
+      "consentRequiredDesc": "Por favor, dé su consentimiento antes de subir sus fotos.",
+      "missingPhotosTitle": "Fotos faltantes",
+      "missingPhotosDesc": "Por favor, capture las tres vistas (frente, izquierda y derecha).",
+      "livenessFailedTitle": "Error de verificación de vida",
+      "livenessFailedDesc": "Por favor, inténtelo de nuevo con buena iluminación y siga las instrucciones.",
+      "kycErrorTitle": "Error de KYC"
+    }
+  },
+  "forYou": {
+    "hero": {
+      "title": "La Economía del Creador está Cambiando.",
+      "highlight": "¿Estás listo?"
+    },
+    "intro": {
+      "p1": "Durante la última década, te han contado la misma historia: construye una audiencia, publica constantemente y las marcas vendrán. Hiciste el trabajo. Construiste la comunidad. Dominaste el algoritmo.",
+      "whyBold": "Entonces, ¿por qué se siente más difícil que nunca crecer?",
+      "whyText": "",
+      "reality": "Porque las plataformas en las que construiste te están reemplazando silenciosamente. El alcance orgánico se está desvaneciendo, los costos de publicidad están aumentando y los modelos generados por IA están llenando los feeds.",
+      "punchline": "La economía del creador está pasando de recompensar el alcance a recompensar la propiedad.",
+      "bullets": {
+        "1": "→ Tu contenido es tu activo.",
+        "2": "→ Tu imagen es tu propiedad intelectual.",
+        "3": "→ Tu consentimiento es tu control."
+      },
+      "closing": "Likelee está construido para esta nueva realidad."
+    },
+    "algorithms": {
+      "title": "El Fin de la Era del Algoritmo",
+      "oldSystem": "El viejo sistema era simple:",
+      "list": {
+        "1": "Creabas contenido que las plataformas usaban para vender anuncios.",
+        "2": "A cambio, te daban alcance.",
+        "3": "Las marcas te pagaban por ese alcance."
+      },
+      "fading": "Ese trato se está desvaneciendo.",
+      "newEconomy": "En la nueva economía, el valor no se trata solo de globos oculares, se trata de imágenes repetibles, licenciables y de alta calidad que las marcas pueden usar para crear su propio contenido. No solo quieren patrocinar tus publicaciones; quieren presentarte en las suyas.",
+      "closing": "Aquí es donde ganas influencia."
+    },
+    "offer": {
+      "title": "Lo que Likelee Ofrece a los Creadores",
+      "items": {
+        "match": {
+          "title": "Conecta con Marcas y Estudios Verificados",
+          "description": "Deja de perseguir acuerdos entrantes. Te traemos socios verificados que buscan activamente licenciar a creadores humanos reales para sus campañas."
+        },
+        "earn": {
+          "title": "Obtén Ingresos Recurrentes",
+          "description": "Ve más allá de los pagos únicos. Licencia tu imagen por anticipos mensuales y cobra por cada campaña, cada mes."
+        },
+        "reach": {
+          "title": "Amplía tu Alcance, No tu Carga de Trabajo",
+          "description": "Tu gemelo digital puede aparecer en campañas globales mientras te concentras en crear lo que amas. Una imagen, infinitas oportunidades."
+        },
+        "control": {
+          "title": "Mantén el Control Total",
+          "description": "Apruebas cada solicitud de uso, estableces tus propias tarifas y defines exactamente cómo se puede usar tu imagen. Tu imagen, tus reglas."
+        }
+      }
+    },
+    "security": {
+      "title": "Tu Identidad, Asegurada",
+      "p1": "En un mundo de deepfakes y robo digital, proteger tu identidad lo es todo. Likelee se basa en la verificación y el seguimiento transparente, para que siempre sepas quién usa tu imagen y cómo.",
+      "p2": "Tu identidad digital es un activo. Te ayudamos a tratarla como tal.",
+      "features": {
+        "consent": {
+          "title": "Sistema Basado en el Consentimiento",
+          "description": "No pasa nada sin tu aprobación explícita. Cada campaña, cada caso de uso, cada vez."
+        },
+        "monitoring": {
+          "title": "Monitoreo y Bajas 24/7",
+          "description": "Nuestro sistema escanea continuamente en busca de usos no autorizados de tu imagen e inicia solicitudes de baja automatizadas en tu nombre."
+        },
+        "protection": {
+          "title": "Contratos Inteligentes y Protección Legal",
+          "description": "Cada acuerdo es un contrato inteligente con términos claros, fechas de vencimiento y derechos de uso, lo que te brinda respaldo legal para cada acuerdo."
+        }
+      },
+      "closing": "No eres una mercancía. Eres el propietario."
+    },
+    "nextPhase": {
+      "title": "La Próxima Fase de tu Carrera Comienza Aquí",
+      "p1": "El panorama de las redes sociales seguirá cambiando, pero tu participación en tu propia identidad digital es permanente. Es el activo que crece contigo, independientemente de cualquier plataforma única.",
+      "p2": "No se trata de reemplazar lo que haces. Se trata de agregar un flujo de ingresos pasivo y potente que escala contigo.",
+      "bullets": {
+        "1": "Menos dependencia de algoritmos impredecibles.",
+        "2": "Más tiempo creando, menos tiempo persiguiendo acuerdos.",
+        "3": "Un modelo de negocio escalable que realmente posees."
+      },
+      "closing": "Bienvenido a la economía de la propiedad."
+    },
+    "ready": {
+      "title": "¿Listo para Tomar el Control?",
+      "p1": "El primer paso es crear tu imagen digital verificada.",
+      "p2": "Es un proceso seguro y único que toma alrededor de 5 minutos.",
+      "p3": "Una vez verificado, podrás establecer tus tarifas, definir tus términos y ser descubierto por las marcas en el ecosistema de Likelee."
+    },
+    "cta": {
+      "title": "Tu Imagen Digital es tu Nuevo Activo",
+      "description": "Únete a la lista de espera para asegurar tu lugar en la nueva economía del creador.",
+      "button": "Reserva tu Perfil"
+    }
+  },
+  "salesInquiry": {
+    "success": {
+      "title": "¡Consulta Enviada!",
+      "message": "Gracias por contactarnos. Nuestro equipo revisará su consulta y se pondrá en contacto con usted dentro de 24-48 horas.",
+      "whatsNextTitle": "¿Qué Sigue?",
+      "whatsNextMessage": "Recibirá un enlace de calendario para programar una llamada con nuestro equipo para discutir sus necesidades con más detalle."
+    },
+    "title": "Contactar a Ventas",
+    "subtitle": "Hablemos de cómo Likelee puede ayudar a su negocio.",
+    "contactInfo": {
+      "companyName": "Nombre de la Empresa",
+      "yourName": "Su Nombre",
+      "workEmail": "Correo Electrónico de Trabajo",
+      "phone": "Teléfono",
+      "companySize": "Tamaño de la Empresa",
+      "monthlyBudget": "Presupuesto Mensual Esperado",
+      "primaryUseCase": "Caso de Uso Principal",
+      "tellUsMore": "Cuéntenos más sobre su proyecto"
+    },
+    "placeholders": {
+      "companyName": "Su Empresa, Inc.",
+      "yourName": "Juan Pérez",
+      "workEmail": "usted@empresa.com",
+      "phone": "+1 (555) 123-4567",
+      "selectSize": "Seleccione el tamaño de la empresa",
+      "selectRange": "Seleccione el rango de presupuesto",
+      "selectUseCase": "Seleccione el caso de uso principal",
+      "message": "Describa su proyecto, objetivos y cronograma..."
+    },
+    "options": {
+      "employees_1_10": "1-10 empleados",
+      "employees_11_50": "11-50 empleados",
+      "employees_51_200": "51-200 empleados",
+      "employees_201_500": "201-500 empleados",
+      "employees_501_plus": "501+ empleados",
+      "budget_under_5k": "<$5,000/mes",
+      "budget_5k_15k": "$5,000 - $15,000/mes",
+      "budget_15k_50k": "$15,000 - $50,000/mes",
+      "budget_50k_100k": "$50,000 - $100,000/mes",
+      "budget_100k_plus": "$100,000+/mes",
+      "useCase_ecommerce": "Catálogo de Productos de Comercio Electrónico",
+      "useCase_advertising": "Campañas de Publicidad y Marketing",
+      "useCase_social": "Contenido para Redes Sociales",
+      "useCase_video": "Video y Entretenimiento",
+      "useCase_other": "Otro"
+    },
+    "submitting": "Enviando...",
+    "submit": "Enviar Consulta",
+    "assistance": "Para asistencia inmediata, envíenos un correo electrónico a"
+  },
+  "bookDemoPage": {
+    "kicker": "Demostración en Vivo",
+    "title": "Elija un horario con el equipo de Likelee.",
+    "description": "Use nuestro calendario para escoger el mejor horario. Calendly gestiona automáticamente la invitación, los recordatorios y el enlace de la reunión.",
+    "autoInvitesTitle": "Invitaciones automáticas",
+    "autoInvitesDescription": "Use su correo de trabajo en Calendly y la reunión llegará a su calendario tan pronto como reserve.",
+    "expertWalkthroughTitle": "Recorrido guiado",
+    "expertWalkthroughDescription": "Adaptamos la sesión a su flujo de trabajo, la estructura de su equipo y sus preguntas sobre licencias.",
+    "fastFollowUpTitle": "Próximos pasos claros",
+    "fastFollowUpDescription": "Después de reservar, lo traeremos de vuelta a Likelee con el contexto necesario para la siguiente etapa.",
+    "processBadge": "Flujo de reserva",
+    "processTitle": "Reserva en 2 pasos",
+    "processDescription": "Primero recogemos sus datos profesionales para abrir Calendly con la reserva ya rellenada.",
+    "stepOneTitle": "Complete sus datos",
+    "stepOneDescription": "Use los datos de su empresa y de contacto de trabajo para que la invitación llegue al equipo correcto.",
+    "stepTwoTitle": "Elija un horario en Calendly",
+    "stepTwoDescription": "Seleccione el horario que mejor le encaje y Calendly enviará la invitación automáticamente.",
+    "statusBadge": "Programación",
+    "loadingTitle": "Comprobando el enlace de reserva...",
+    "statusTitle": "Complete sus datos para continuar.",
+    "statusDescription": "Rellene los campos obligatorios a continuación y le enviaremos a la página de reserva de Likelee en Calendly.",
+    "loading": "Cargando el enlace de reserva...",
+    "embedErrorTitle": "No pudimos abrir el calendario.",
+    "embedErrorDescription": "Use el enlace directo de Calendly a continuación o envíenos un correo y programaremos la demo manualmente.",
+    "companyNameLabel": "Nombre de la empresa",
+    "companyNamePlaceholder": "El nombre de su empresa",
+    "userNameLabel": "Nombre del usuario",
+    "userNamePlaceholder": "Su nombre completo",
+    "workEmailLabel": "Correo de trabajo",
+    "workEmailPlaceholder": "usted@empresa.com",
+    "phoneNumberLabel": "Número de teléfono",
+    "phoneNumberPlaceholder": "Su teléfono de trabajo",
+    "openInNewTab": "Continuar al calendario",
+    "redirecting": "Abriendo Calendly...",
+    "reassurance": "Tarda menos de 30 segundos. Completaremos su reserva antes de abrir Calendly.",
+    "helpBooking": "¿Necesita ayuda para reservar? Escriba a",
+    "emailButton": "Enviar un Correo al Equipo de Likelee",
+    "contactFallback": "¿Prefiere correo electrónico? Escríbanos a",
+    "notConfigured": "La reserva de Calendly todavía no está configurada.",
+    "calendarTip": "Consejo: use el mismo correo electrónico que desea ver en la invitación del calendario."
+  },
+  "bookDemoThanksPage": {
+    "title": "Su demo ya está reservada.",
+    "description": "La invitación al calendario y el recordatorio ya deberían estar en camino. Usaremos la sesión para mostrarle el flujo de Likelee adecuado para su equipo.",
+    "eventTypeLabel": "Sesión",
+    "dateLabel": "Cuándo",
+    "emailLabel": "Invitación enviada a",
+    "defaultEventName": "Demo de producto de Likelee",
+    "defaultDateValue": "Revise su invitación de calendario",
+    "defaultEmailValue": "Su correo de reserva",
+    "nextTitle": "Qué sigue",
+    "nextBody": "Traiga su caso de uso, la estructura de su equipo y cualquier pregunta sobre licencias. Cubriremos configuración, flujo de trabajo y la ruta más rápida para lanzar.",
+    "backHome": "Volver al Inicio",
+    "contact": "¿Necesita cambiar algo? Escriba a"
+  },
+  "faces.hero.flipper.0.line1": "Tu Imagen",
+  "faces.hero.flipper.0.line2": "Ganancias Ilimitadas",
+  "faces.hero.flipper.1.line1": "Tu Consentimiento",
+  "faces.hero.flipper.1.line2": "Control Total",
+  "faces.hero.flipper.2.line1": "Tus Términos",
+  "faces.hero.flipper.2.line2": "Ingresos Recurrentes",
+  "faces.meta.title": "Creadores - Monetiza Tu Imagen",
+  "faces.meta.description": "Atletas, influencers, actores y modelos: ganen anticipos de su gemelo digital. Establezcan sus propias tarifas, aprueben el uso y realicen un seguimiento de las regalías.",
+  "faces.meta.serviceType": "Gestión de Imagen Digital",
+  "faces.meta.audienceType": "Creadores, Atletas, Influencers, Modelos, Actores",
+  "faces.hero.alert": "Gana regalías recurrentes de tu imagen. No pagos únicos. Únete a la primera cohorte de creadores, atletas y talentos verificados que licencian su imagen en sus propios términos.",
+  "faces.hero.subtitle": "Licencia tu imagen a marcas, estudios y agencias. Establece tus tarifas. Mantén el control total. Gana cada mes que esté en uso.",
+  "faces.hero.forYouButton": "Para Ti",
+  "faces.whyChoose.title": "Por Qué los Creadores, Atletas y Talentos Eligen Likelee",
+  "faces.whyChoose.subtitle1": "La forma más rápida de ofrecer campañas de IA seguros para la marca y ganar regalías por cada uso.",
+  "faces.whyChoose.subtitle2": "Cada creador en Likelee licencia su imagen bajo derechos claros y de tiempo limitado y mantiene la capacidad de modificar, pausar o retirar permisos en cualquier momento.",
+  "faces.whyChoose.cards.0.title": "Ingresos Recurrentes, No Trabajos Únicos",
+  "faces.whyChoose.cards.0.description": "Establece tus tarifas. Gana un anticipo mensual por cada campaña activa que use tu imagen. Una sesión de $500 solía ser todo. Ahora paga mes tras mes.",
+  "faces.whyChoose.cards.1.title": "Control Total",
+  "faces.whyChoose.cards.1.description": "Tú apruebas cada uso. Pausa campañas en cualquier momento. Revoca derechos con un solo clic. Tu imagen, tus reglas.",
+  "faces.whyChoose.cards.2.title": "Transparencia Total",
+  "faces.whyChoose.cards.2.description": "Ve exactamente quién usa tu imagen, por cuánto tiempo, en qué regiones y cuánto has ganado. Cada campaña rastreada, cada pago verificado.",
+  "faces.whyChoose.cards.3.title": "Panel de Derechos de Uso",
+  "faces.whyChoose.cards.3.description": "Ve quién usa tu imagen, cuándo vencen los derechos y cuánto has ganado. Revoca o renueva con un solo clic.",
+  "faces.howItWorks.title": "Comienza a Ganar en 3 Sencillos Pasos",
+  "faces.howItWorks.subtitle": "De la carga a la ganancia, así de simple.",
+  "faces.howItWorks.steps.0.title": "Sube Tus Fotos",
+  "faces.howItWorks.steps.0.description": "Crea tu identidad digital verificada con fotos de alta calidad.",
+  "faces.howItWorks.steps.1.title": "Establece Tus Parámetros",
+  "faces.howItWorks.steps.1.description": "Define los derechos de uso, los precios y los requisitos de aprobación.",
+  "faces.howItWorks.steps.2.title": "Comienza a Ganar",
+  "faces.howItWorks.steps.2.description": "Aprueba solicitudes. Gana anticipos mensuales. Escala con múltiples campañas simultáneas.",
+  "faces.realFutures.title": "Rostros Reales. Futuros Reales.",
+  "faces.realFutures.line1": "Las marcas y los estudios ya están generando campañas de IA, la mayoría utiliza rostros sin licencia o sintéticos.",
+  "faces.realFutures.line2": "Likelee es donde el talento real impulsa el mundo de la IA.",
+  "faces.realFutures.line3": "Cada creador, modelo e intérprete es verificado, rastreado y pagado con anticipos mensuales.",
+  "faces.realFutures.line4": "No estás siendo reemplazado por la IA, te estás convirtiendo en su flujo de ingresos mensual.",
+  "faces.valueFloor.title": "Piso de Valor del Creador",
+  "faces.valueFloor.line1": "Ninguna licencia de imagen en Likelee paga por debajo del mínimo de la comunidad.",
+  "faces.valueFloor.line2": "También puedes establecer tu propio piso para que las marcas y los estudios no puedan hacerte ofertas bajas.",
+  "faces.valueFloor.line3": "La transparencia genera confianza. Publicamos las ganancias promedio de los creadores y datos de referencia para que siempre conozcas tu verdadero valor de mercado.",
+  "faces.valueFloor.cards.0.description": "Anticipo mensual mínimo por licencia activa",
+  "faces.valueFloor.cards.1.description": "Anticipo mensual promedio por campaña",
+  "faces.valueFloor.cards.2.title": "Mientras esté licenciado",
+  "faces.valueFloor.cards.2.description": "Pago recurrente mientras la marca usa tu imagen",
+  "faces.realEarnings.title": "Creadores Reales. Ganancias Reales.",
+  "faces.realEarnings.subtitle": "Ve lo que los creadores, modelos e intérpretes están ganando a través de la licencia mensual de su imagen.",
+  "faces.realEarnings.cards.0.title": "Anticipo recurrente en 3 licencias de marca activas",
+  "faces.realEarnings.cards.0.line1": "→ Licencia 1 (Marca A): $500/mes — Activa por 6 meses (hasta ahora)",
+  "faces.realEarnings.cards.0.line2": "→ Licencia 2 (Marca B): $600/mes — Activa por 4 meses (hasta ahora)",
+  "faces.realEarnings.cards.0.line3": "→ Licencia 3 (Marca C): $400/mes — Activa por 2 meses (hasta ahora)",
+  "faces.realEarnings.cards.0.total": "Total ganado hasta la fecha: $7,500 (y sigue ganando mensualmente mientras las licencias permanezcan activas)",
+  "faces.realEarnings.cards.1.title": "Anticipo único para la campaña de video musical de IA de un sello discográfico",
+  "faces.realEarnings.cards.1.line1": "→ Licenciado para una campaña de 12 meses",
+  "faces.realEarnings.cards.1.line2": "→ La marca usa tu imagen para la generación continua de contenido",
+  "faces.realEarnings.cards.1.line3": "→ Ganas $700/mes durante todo el año",
+  "faces.realEarnings.cards.1.total": "Total: $8,400",
+  "faces.realEarnings.cards.2.title": "Tres licencias acumuladas",
+  "faces.realEarnings.cards.2.line1": "→ Licencia 1 (Marca de tecnología): $400/mes × 9 meses = $3,600",
+  "faces.realEarnings.cards.2.line2": "→ Licencia 2 (Marca de moda): $300/mes × 6 meses = $1,800",
+  "faces.realEarnings.cards.2.line3": "→ Licencia 3 (Marca de bienestar): $250/mes × 4 meses = $1,000",
+  "faces.realEarnings.cards.2.total": "Ganancias combinadas: $6,400 (y se pueden agregar más licencias simultáneamente)",
+  "faces.retainerModel.title": "Cómo Funciona: Modelo de Anticipo Mensual",
+  "faces.retainerModel.steps.0.title": "Licencias tu imagen",
+  "faces.retainerModel.steps.0.description": "La marca obtiene los derechos de uso",
+  "faces.retainerModel.steps.1.title": "Ganas mensualmente",
+  "faces.retainerModel.steps.1.description": "Mientras tu licencia esté activa, te pagan cada mes",
+  "faces.retainerModel.steps.2.title": "La licencia está activa por X meses",
+  "faces.retainerModel.steps.2.description": "Acordaste un período de licencia de 90 días, 6 meses o 12 meses",
+  "faces.retainerModel.steps.3.title": "Cuando finaliza la licencia",
+  "faces.retainerModel.steps.3.description": "Decides renovar, revocar o pasar a nuevas marcas",
+  "faces.retainerModel.steps.4.title": "Puedes tener múltiples licencias a la vez",
+  "faces.retainerModel.steps.4.description": "Cada marca te paga por separado, cada mes",
+  "faces.retainerAdvantage.title": "La Ventaja del Anticipo Mensual",
+  "faces.retainerAdvantage.cards.0.title": "✓ Ingresos Predecibles",
+  "faces.retainerAdvantage.cards.0.description": "Sabe exactamente cuánto ganas cada mes",
+  "faces.retainerAdvantage.cards.1.title": "✓ Pasivo Mientras Está Activo",
+  "faces.retainerAdvantage.cards.1.description": "Tú no trabajas; la marca genera contenido; a ti te pagan",
+  "faces.retainerAdvantage.cards.2.title": "✓ Apila Múltiples Licencias",
+  "faces.retainerAdvantage.cards.2.description": "Trabaja con 3, 4 o 5 marcas a la vez; todas te pagan",
+  "faces.retainerAdvantage.cards.3.title": "✓ Transparencia Total",
+  "faces.retainerAdvantage.cards.3.description": "Sabe exactamente qué marcas te usan y cuánto ganas de cada una",
+  "faces.realMonthlyIncome.title": "Creadores Reales. Ingresos Mensuales Reales.",
+  "faces.realMonthlyIncome.subtitle1": "Los creadores en Likelee no esperan pagos. Ganan mensualmente, de manera predecible y pasiva.",
+  "faces.realMonthlyIncome.subtitle2": "Mientras creas contenido nuevo, tu imagen con licencia genera ingresos mensuales recurrentes.",
+  "faces.likenessStaysYours.title": "Tu Imagen Sigue Siendo Tuya",
+  "faces.likenessStaysYours.line1": "Tu consentimiento nunca expira por sí solo. Cada licencia tiene una fecha de finalización. Si dices que no, nosotros decimos que no.",
+  "faces.likenessStaysYours.line2": "Si una marca quiere seguir usando tu imagen, renuevan, y tú decides si vale la pena.",
+  "faces.likenessStaysYours.line3": "Contratos con marca de agua. Eliminaciones automatizadas. Protección legal real.",
+  "faces.faq.title": "Preguntas Frecuentes",
+  "faces.faq.subtitle": "Todo lo que necesitas saber sobre ser un Creador en Likelee",
+  "faces.faq.questions.0.title": "¿Qué es un \"Creador\"?",
+  "faces.faq.questions.0.description": "Un Creador es cualquier individuo verificado que licencia su imagen (rostro, voz o gemelo digital) para campañas o producciones asistidas por IA. Conservas la propiedad de tu imagen; Likelee solo facilita el uso con licencia bajo los términos que elijas.",
+  "faces.faq.questions.1.title": "¿Cómo me verifico?",
+  "faces.faq.questions.1.description": "Después de que se conceda tu cuenta en el ecosistema, recibirás un correo electrónico de bienvenida y un enlace de verificación. Enviarás una identificación y un video corto de selfie para que nuestro sistema pueda confirmar tu autenticidad y producir tu gemelo digital.",
+  "faces.faq.questions.2.title": "¿Se puede usar mi imagen sin mi consentimiento?",
+  "faces.faq.questions.2.description": "Nunca. Cada solicitud de uso requiere tu aprobación explícita. Ninguna marca, estudio o socio de IA puede usar tu imagen a menos que hayas otorgado permiso para ese contexto específico.",
+  "faces.faq.questions.3.title": "¿Puedo eliminar mi imagen de la plataforma?",
+  "faces.faq.questions.3.description": "Sí. Puedes desactivar o eliminar tu perfil en cualquier momento. Las licencias activas existentes expirarán automáticamente al final de su plazo contractual, y no se podrán realizar nuevos usos.",
+  "faces.faq.questions.4.title": "¿Qué pasa si una marca pide derechos \"a perpetuidad\"?",
+  "faces.faq.questions.4.description": "Likelee no permite cláusulas de uso perpetuo por defecto. Si eliges aceptar una, se te mostrará una advertencia clara sobre lo que significa y podrás negociar una compensación más alta o rechazarla.",
+  "faces.faq.questions.5.title": "¿Se puede usar mi imagen para entrenar modelos de IA?",
+  "faces.faq.questions.5.description": "Solo si habilitas explícitamente la opción de \"derechos de entrenamiento de IA\". Esta opción está deshabilitada por defecto. Siempre verás una divulgación cuando una campaña implique un uso generativo o sintético.",
+  "faces.faq.questions.6.title": "¿Qué protecciones existen si se hace un mal uso de mi imagen?",
+  "faces.faq.questions.6.description": "Likelee rastrea cada activo aprobado y mantiene pruebas digitales. Si se produce un mal uso, nuestro equipo de aplicación de derechos te ayuda con las eliminaciones y la documentación para el seguimiento legal.",
+  "faces.faq.questions.7.title": "¿Sigo siendo dueño de mi imagen digital?",
+  "faces.faq.questions.7.description": "Sí. Conservas la propiedad total. Estás licenciando el uso, no transfiriendo la propiedad. Todas las réplicas digitales permanecen vinculadas a tu identidad verificada.",
+  "faces.faq.questions.8.title": "¿Puedo negociar tarifas para diferentes tipos de uso?",
+  "faces.faq.questions.8.description": "Absolutamente. Puedes establecer precios separados para UGC grabado por humanos, campañas de IA y gemelos digitales de IA completos. Nuestro sistema aplica automáticamente la tarifa elegida según el tipo y la duración de la campaña.",
+  "faces.cta.title": "¿Listo para convertirte en propietario de un talento digital?",
+  "faces.cta.subtitle": "Únete a creadores, modelos e intérpretes que construyen ingresos sostenibles a través de la licencia mensual de su imagen.",
+  "faces.cta.howToGetStarted": "Cómo empezar:",
+  "faces.cta.steps.0": "→ Sube tu video de referencia — Graba un video corto de ti mismo (referencia de IA)",
+  "faces.cta.steps.1": "→ Sube imágenes de referencia — 15 fotos desde diferentes ángulos/estilos",
+  "faces.cta.steps.2": "→ Establece tu tarifa mínima — Tú decides tu precio mínimo ($350+/mes)",
+  "faces.cta.steps.3": "→ Las marcas te encuentran — Solicitan licencias, tú apruebas o rechazas",
+  "faces.cta.steps.4": "→ Comienza a ganar — Pagos mensuales mientras las licencias estén activas",
+  "faces.cta.reserveProfileButton": "Reserva Tu Perfil",
+  "common": {
+    "signIn": "Iniciar Sesión",
+    "dashboard": "Panel de Control",
+    "ongoing": "En curso",
+    "city": "Ciudad",
+    "state": "Estado",
+    "logout": "Cerrar Sesión",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "passwordRequired": "Contraseña *",
+    "confirmPassword": "Confirmar Contraseña",
+    "confirmPasswordRequired": "Confirmar Contraseña *",
+    "fullNameRequired": "Nombre Completo *",
+    "emailRequired": "Dirección de Correo Electrónico *",
+    "cityRequired": "Ciudad *",
+    "stateCountryRequired": "Estado / País *",
+    "experienceRequired": "Años de experiencia creativa en IA *",
+    "portfolioUrl": "URL del Portafolio",
+    "socialMediaUrl": "URL de Redes Sociales",
+    "profilePhotoOptional": "Foto de Perfil (opcional)",
+    "agencyOptional": "Agencia (si aplica)",
+    "johnDoe": "Juan Pérez",
+    "companyNamePlaceholder": "Nombre de su Empresa",
+    "websitePlaceholder": "https://suempresa.com",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "emailPlaceholder": "usted@ejemplo.com",
+    "instagramPlaceholder": "@suusuario",
+    "youtubePlaceholder": "@sucanal",
+    "agencyNamePlaceholder": "Nombre de su agencia",
+    "contentTypePlaceholder": "Por favor, especifique su tipo de contenido...",
+    "aiToolPlaceholder": "Por favor, especifique sus herramientas de IA...",
+    "cityPlaceholder": "Los Ángeles",
+    "statePlaceholder": "CA / EE. UU.",
+    "portfolioPlaceholder": "https://suportafolio.com",
+    "socialProfilePlaceholder": "https://instagram.com/superfil",
+    "saving": "Guardando...",
+    "submitting": "Enviando...",
+    "submit": "Enviar",
+    "checking": "Comprobando...",
+    "back": "Atrás",
+    "goBack": "Volver",
+    "continue": "Continuar",
+    "platforms": {
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "youtube": "YouTube",
+      "twitter": "Twitter/X",
+      "other": "Otro"
+    },
+    "loading": "Cargando...",
+    "raceEthnicity": {
+      "options": {
+        "Asian": "Asiático",
+        "Black / African American": "Negro / Afroamericano",
+        "Hispanic / Latino": "Hispano / Latino",
+        "Middle Eastern / North African": "Oriente Medio / Norteafricano",
+        "Native American / Indigenous": "Nativo Americano / Indígena",
+        "Pacific Islander": "Isleño del Pacífico",
+        "White / Caucasian": "Blanco / Caucásico",
+        "Mixed / Multiracial": "Mixto / Multirracial",
+        "Prefer not to say": "Prefiero no decirlo"
+      }
+    },
+    "genderOptions": {
+      "female": "Mujer",
+      "male": "Hombre",
+      "nonbinary": "No binario",
+      "genderFluid": "Género fluido",
+      "preferNotToSay": "Prefiero no decirlo"
+    },
+    "validation": {
+      "signInFailed": "Inicio de sesión fallido",
+      "selectionLimit": "Límite de selección",
+      "selectionLimitDesc": "Por favor, selecciona hasta 3 opciones por ahora. Puedes añadir más tarde."
+    },
+    "selectAll": "Seleccionar Todo",
+    "vibes": {
+      "Streetwear": "Ropa urbana",
+      "Glam": "Glamour",
+      "Natural": "Natural",
+      "Classic": "Clásico",
+      "Edgy": "Atrevido",
+      "Athletic": "Atlético",
+      "Runway": "Pasarela",
+      "Editorial": "Editorial",
+      "Commercial": "Comercial",
+      "Casual": "Casual"
+    },
+    "contentTypes": {
+      "Social-media ads": "Anuncios en redes sociales",
+      "Web & banner campaigns": "Campañas web y banners",
+      "TV / streaming commercials": "Comerciales de TV / streaming",
+      "Film & scripted streaming": "Cine y streaming con guión",
+      "Print & outdoor ads": "Anuncios impresos y exteriores",
+      "Music videos": "Videos musicales",
+      "Video-game / VR characters": "Personajes de videojuegos / VR",
+      "Stock photo / video libraries": "Bibliotecas de fotos / videos de stock",
+      "Educational / nonprofit spots": "Anuncios educativos / sin fines de lucro",
+      "Fashion & Beauty": "Moda y Belleza",
+      "Product Reviews": "Reseñas de productos",
+      "Testimonials": "Testimonios",
+      "Social Media Content": "Contenido de redes sociales",
+      "Educational Content": "Contenido educativo",
+      "Fitness/Wellness": "Fitness/Bienestar",
+      "Lifestyle Content": "Contenido de estilo de vida",
+      "Political Content": "Contenido político",
+      "Controversial Topics": "Temas controvertidos",
+      "Explicit/Adult Content": "Contenido explícito/adulto",
+      "Pharmaceutical Claims": "Afirmaciones farmacéuticas",
+      "Financial/Investment Advice": "Asesoramiento financiero/inversión",
+      "Other": "Otros",
+      "socialMediaAds": "Anuncios en redes sociales",
+      "webBanner": "Campañas web y banners",
+      "tvStreaming": "Comerciales de TV / streaming",
+      "filmScripted": "Películas y series guionizadas",
+      "printOutdoor": "Anuncios impresos y exteriores",
+      "musicVideos": "Videos musicales",
+      "videoGameVR": "Personajes de videojuegos / RV",
+      "stockLibraries": "Bibliotecas de fotos / videos de stock",
+      "educationalNonprofit": "Spots educativos / sin fines de lucro"
+    },
+    "industries": {
+      "Fashion / Beauty": "Moda / Belleza",
+      "Tech / Electronics": "Tecnología / Electrónica",
+      "Sports / Fitness": "Deportes / Fitness",
+      "Food / Beverage": "Alimentos / Bebidas",
+      "Film / Gaming / Music": "Cine / Juegos / Música",
+      "Automotive": "Automotriz",
+      "Finance / Fintech": "Finanzas / Fintech",
+      "Health / Wellness": "Salud / Bienestar",
+      "Luxury & Lifestyle": "Lujo y Estilo de vida",
+      "Travel / Hospitality": "Viajes / Hospitalidad",
+      "Education": "Educación",
+      "Real Estate": "Bienes Raíces",
+      "Entertainment": "Entretenimiento",
+      "Open to any industry": "Abierto a cualquier industria",
+      "sportsFitness": "Deportes / Fitness",
+      "foodBeverage": "Alimentos / Bebidas",
+      "tech": "Tecnología",
+      "fashionBeauty": "Moda / Belleza",
+      "techElectronics": "Tecnología / Electrónica",
+      "filmGamingMusic": "Cine / Juegos / Música",
+      "automotive": "Automotriz",
+      "financeFintech": "Finanzas / Fintech",
+      "healthWellness": "Salud / Bienestar",
+      "luxuryLifestyle": "Lujo y Estilo de vida",
+      "travelHospitality": "Viajes / Hospitalidad"
+    },
+    "sports": {
+      "Football": "Fútbol Americano",
+      "Basketball": "Baloncesto",
+      "Baseball": "Béisbol",
+      "Soccer": "Fútbol (Soccer)",
+      "Tennis": "Tenis",
+      "Golf": "Golf",
+      "Track & Field": "Atletismo",
+      "Swimming": "Natación",
+      "Gymnastics": "Gimnasia",
+      "Volleyball": "Voleibol",
+      "Wrestling": "Lucha",
+      "Boxing": "Boxeo",
+      "MMA": "MMA",
+      "Hockey": "Hockey",
+      "Lacrosse": "Lacrosse",
+      "Softball": "Softbol",
+      "Cheerleading": "Porristas",
+      "Dance": "Danza",
+      "Esports": "Esports",
+      "Other": "Otro"
+    },
+    "workTypes": {
+      "Print / Editorial": "Impreso / Editorial",
+      "Runway / Fashion Shows": "Pasarela / Desfiles de moda",
+      "Commercial / Lifestyle": "Comercial / Estilo de vida",
+      "Film / TV": "Cine / TV",
+      "Digital / Social": "Digital / Social",
+      "Fitness / Athletic": "Fitness / Atlético",
+      "Beauty / Cosmetics": "Belleza / Cosméticos",
+      "Luxury / High Fashion": "Lujo / Alta Costura",
+      "Street Style / Urban": "Estilo urbano",
+      "E-commerce / Catalog": "Comercio electrónico / Catálogo",
+      "Trade Shows / Events": "Ferias / Eventos",
+      "Parts Modeling (hands, feet)": "Modelado de partes (manos, pies)",
+      "Plus Size": "Talla grande",
+      "Mature / Senior": "Maduro / Senior",
+      "Petite": "Petite",
+      "Other": "Otro"
+    },
+    "brandCategories": {
+      "Sportswear / Athletic Apparel": "Ropa deportiva",
+      "Footwear": "Calzado",
+      "Sports Equipment": "Equipo deportivo",
+      "Health / Nutrition / Supplements": "Salud / Nutrición / Suplementos",
+      "Tech / Wearables": "Tecnología / Wearables",
+      "Energy Drinks / Beverages": "Bebidas energéticas",
+      "Gaming / Esports": "Juegos / Esports",
+      "Automotive": "Automotriz",
+      "Finance / Fintech": "Finanzas / Fintech",
+      "Education / Training": "Educación / Entrenamiento",
+      "Open to any brand": "Abierto a cualquier marca"
+    },
+    "regions": {
+      "northAmerica": "América del Norte",
+      "europe": "Europa",
+      "asia": "Asia",
+      "global": "Global"
+    },
+    "usageTypes": {
+      "socialMedia": "Redes Sociales",
+      "socialMediaCampaign": "Campaña en redes sociales",
+      "productLaunch": "Lanzamiento de producto",
+      "tvDigital": "TV y Digital",
+      "summerCampaign": "Campaña de verano"
+    },
+    "error": "Error",
+    "success": "Éxito",
+    "errors": {
+      "uploadFailed": "Error al subir. Por favor, inténtelo de nuevo.",
+      "uploadFailedSupport": "Error al subir. Contacte al soporte si esto persiste.",
+      "saveFailed": "No se pudieron guardar los cambios. Por favor, inténtelo de nuevo.",
+      "saveFailedSupport": "No se pudo guardar. Contacte al soporte si esto persiste.",
+      "storageError": "Error de almacenamiento. Por favor, inténtelo más tarde.",
+      "databaseError": "No se pudo procesar la solicitud. Por favor, inténtelo de nuevo.",
+      "genericError": "Algo salió mal. Por favor, inténtelo de nuevo o contacte al soporte.",
+      "bucketNotFound": "Servicio de carga no disponible. Por favor, inténtelo más tarde.",
+      "constraintViolation": "Datos inválidos. Por favor, verifique su entrada e inténtelo de nuevo."
+    }
+  },
+  "licensingSettingsPage": {
+    "title": "Configuración de Licencias",
+    "subtitle": "El precio es público y solo en USD. Establece tu precio base mensual.",
+    "basePriceLabel": "Precio base mensual de la licencia (USD)",
+    "perMonth": "/mes",
+    "minimumHint": "Mínimo $150/mes.",
+    "saveButton": "Guardar Precios",
+    "savingButton": "Guardando...",
+    "invalidPriceTitle": "Precio Inválido",
+    "invalidPriceDesc": "Mínimo $150/mes",
+    "successTitle": "Éxito",
+    "successDesc": "Precios actualizados"
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Fotos de cabeza - Expresión neutra",
+      "description": "Rostro de frente, expresión neutra (sin sonreír ni fruncir el ceño). Buena iluminación en el rostro. Ropa profesional o fondo liso. 1080x1080 mínimo.",
+      "bestFor": "Las marcas necesitan una referencia de rostro limpia"
+    },
+    "headshot_smiling": {
+      "title": "Fotos de cabeza - Sonriendo",
+      "description": "Rostro de frente, sonrisa natural (genuina, no forzada). Buena iluminación. Entorno profesional. 1080x1080 mínimo.",
+      "bestFor": "Las marcas quieren mostrarte feliz/accesible"
+    },
+    "fullbody_casual": {
+      "title": "Cuerpo completo - Atuendo casual",
+      "description": "Foto de cuerpo completo con ropa casual cotidiana. Pose natural.",
+      "bestFor": "Look casual cotidiano"
+    },
+    "fullbody_formal": {
+      "title": "Cuerpo completo - Formal/Profesional",
+      "description": "Foto de cuerpo completo con atuendo profesional o formal.",
+      "bestFor": "Contextos profesionales o de negocios"
+    },
+    "side_profile": {
+      "title": "Perfil lateral",
+      "description": "Vista lateral clara de tu rostro y parte superior del cuerpo.",
+      "bestFor": "Las marcas necesitan tu ángulo lateral"
+    },
+    "three_quarter": {
+      "title": "Ángulo 3/4",
+      "description": "Rostro girado en un ángulo de 45 grados, expresión natural.",
+      "bestFor": "Ángulo conversacional natural"
+    },
+    "hair_down": {
+      "title": "Cabello suelto - Suelto/Ondulado",
+      "description": "Cabello suelto en tu estilo natural.",
+      "bestFor": "Look casual y relajado"
+    },
+    "hair_up": {
+      "title": "Cabello recogido - Cola de caballo/Moño",
+      "description": "Cabello recogido/hacia atrás, look limpio.",
+      "bestFor": "Look profesional o activo"
+    },
+    "hair_styling": {
+      "title": "Peinado - Trenzas/Estilo específico",
+      "description": "Si tienes un peinado característico.",
+      "bestFor": "Si tienes un estilo característico"
+    },
+    "upper_body": {
+      "title": "Primer plano de la parte superior del cuerpo",
+      "description": "Hombros hacia arriba, rasgos faciales detallados visibles.",
+      "bestFor": "Primeros planos, rasgos faciales detallados"
+    },
+    "outdoors": {
+      "title": "En entorno - Exterior",
+      "description": "Tú en un entorno exterior (parque, calle, naturaleza).",
+      "bestFor": "Contenido contextual, estilo de vida"
+    },
+    "indoors": {
+      "title": "En entorno - Interior",
+      "description": "Tú en un entorno interior (casa, oficina, café).",
+      "bestFor": "Contextos de interior/oficina/hogar"
+    },
+    "makeup_variation": {
+      "title": "Estilo de maquillaje diferente",
+      "description": "Si varías tu estilo de maquillaje, muestra diferentes looks.",
+      "bestFor": "Si varías el maquillaje, las marcas deberían saberlo"
+    },
+    "seasonal": {
+      "title": "Variación estacional/Atuendo",
+      "description": "Diferentes estilos estacionales o variaciones de atuendo.",
+      "bestFor": "Campañas estacionales, diferentes looks"
+    },
+    "signature": {
+      "title": "Tu elección - Momento característico",
+      "description": "Una foto que realmente te representa y cómo la gente te reconoce.",
+      "bestFor": "Una foto que realmente te representa"
+    }
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "¡Campaña creada con éxito!"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Campos faltantes",
+      "missingFieldsDesc": "Complete todos los campos requeridos",
+      "projectUploaded": "¡Proyecto subido! (Modo demostración - no guardado)"
+    }
+  },
+  "landing": {
+    "hero": {
+      "tagline": "Deja de Dejar Dinero Sobre la Mesa Entre Reservas",
+      "title": "Plataforma de Gestión de Talentos\nNativa IA #1",
+      "subtitle": "Construida para agencias que gestionan tanto reservas tradicionales como ingresos por licencias de IA.",
+      "forBrandsButton": "Para Marcas",
+      "forAgenciesButton": "Para Agencias"
+    },
+    "section2": {
+      "title": "Escala Tu Lista\nSin Escalar\nPersonal",
+      "subtitle": "Mismo talento. Campañas de IA simultáneas. Crecimiento exponencial de ingresos."
+    },
+    "features": {
+      "card1": {
+        "title": "Convierte Brechas de Reservas\nen Ingresos Mensuales\nPredecibles",
+        "description": "Sesiones tradicionales más licencias de IA. Tu talento gana mientras espera su próximo trabajo."
+      },
+      "card2": {
+        "title": "Operaciones Impulsadas por IA\ncon Control de Nivel Agencia",
+        "description": "Omite la programación manual y accede a la automatización inteligente de reservas. Todo con supervisión contractual completa."
+      },
+      "card3": {
+        "title": "Construido para Agencias\nde Todos los Tamaños",
+        "description": "Desde tiendas boutique de talentos hasta listas empresariales—gestiona reservas tradicionales y licencias de IA en una plataforma construida para cada escala."
+      }
+    },
+    "section4": {
+      "title": "No Desperdicies Tu Lista\nEntre Reservas",
+      "subtitle": "Las licencias de IA mantienen al talento ganando consistentemente, y las agencias sienten los ingresos compuestos instantáneamente.",
+      "ctaButton": "Comenzar"
+    }
+  },
+  "aboutUsPage": {
+    "mission": {
+      "title": "Misión",
+      "subtitle": "En la era de la IA, las agencias de talento necesitan infraestructura que escale con la tecnología, no en su contra.",
+      "description": "Likelee construye la plataforma para que las agencias gestionen reservas tradicionales y licencias de IA en un solo lugar. Estamos creando un nuevo modelo de ingresos donde las brechas de reservas se convierten en oportunidades de ganancias, las operaciones funcionan con automatización y las agencias escalan sin agregar personal."
+    },
+    "principles": {
+      "title": "Principios Rectores",
+      "principle1": {
+        "title": "Control de Agencia, Siempre",
+        "description": "Apruebas cada reserva, ajustas cada precio, rechazas cualquier proyecto. Control operativo total."
+      },
+      "principle2": {
+        "title": "Seguimiento Transparente de Ingresos",
+        "description": "Ve reservas tradicionales e ingresos por licencias de IA en tiempo real. Un panel, visibilidad completa."
+      },
+      "principle3": {
+        "title": "Protección de Talento Integrada",
+        "description": "Los contratos inteligentes especifican derechos de uso exactos, duración y territorio. Cada licencia se rastrea y es revocable."
+      },
+      "principle4": {
+        "title": "Operaciones Primero, Tecnología Segundo",
+        "description": "Construimos lo que resuelve los desafíos actuales de las agencias, no problemas teóricos futuros."
+      }
+    },
+    "challenge": {
+      "title": "El Problema es Real (Y Está Sucediendo Ahora)",
+      "paragraph1": "Las reservas de talento tradicionales son festín o hambruna. Una sesión de $2K, luego semanas de silencio. Tu talento está inactivo entre trabajos. Tu agencia absorbe la volatilidad de ingresos. Mientras tanto, tus gastos operativos permanecen constantes: calendarios, contratos, coordinación de clientes, procesamiento de pagos.",
+      "paragraph2": "La infraestructura de agencias tradicionales fue construida para reservas físicas. No tiene en cuenta los flujos de ingresos por licencias de IA. Las agencias no pueden gestionar eficientemente tanto sesiones tradicionales como acuerdos de imagen digital. El talento ve ingresos inconsistentes. Las agencias dejan dinero sobre la mesa durante las brechas de reservas.",
+      "paragraph3": "La era de la IA creó nuevas preguntas: ¿Cómo gestionas reservas tradicionales y de IA simultáneamente? ¿Cómo escalas los ingresos sin escalar el personal? ¿Cómo aseguras que el talento permanezca leal durante los períodos secos?",
+      "conclusion": "Likelee resuelve las tres."
+    },
+    "whyNow": {
+      "title": "¿Por Qué Likelee, Por Qué Ahora?",
+      "paragraph1": "La IA no creó la naturaleza de festín o hambruna de las reservas de talento, pero creó una solución. Las licencias de IA permiten que el mismo talento trabaje en múltiples campañas simultáneamente mientras espera su próxima reserva tradicional.",
+      "paragraph2": "Las herramientas de agencias tradicionales gestionan un flujo de ingresos. Se rompen cuando agregas licencias de IA. La coordinación de reservas es manual. El seguimiento de ingresos está fragmentado en plataformas. La generación de contratos toma horas.",
+      "paragraph3": "Likelee está construido para agencias de doble ingreso, donde una lista genera tanto tarifas de reservas tradicionales como ingresos recurrentes por licencias de IA, y gestionar ambos requiere infraestructura integrada, no herramientas dispersas.",
+      "conclusion": "No estamos reemplazando las reservas tradicionales. Estamos agregando un segundo flujo de ingresos que llena las brechas y se compone con el tiempo."
+    },
+    "approach": {
+      "title": "Cómo Funciona: Desde la Carga de Lista hasta los Ingresos",
+      "step1": {
+        "title": "Agrega Tu Talento",
+        "description": "Sube tu lista con fotos y portafolios. Los perfiles de talento están disponibles tanto para reservas tradicionales como para solicitudes de licencias de IA."
+      },
+      "step2": {
+        "title": "Las Marcas Envían Solicitudes",
+        "description": "Estudios y marcas navegan por tu talento para sesiones tradicionales o campañas de licencias de IA. Ves el caso de uso, duración, territorio y compensación por adelantado."
+      },
+      "step3": {
+        "title": "Controlas Cada Acuerdo",
+        "description": "Revisa solicitudes en un panel. Aprueba reservas tradicionales, ajusta precios de licencias de IA o rechaza. Control total de agencia sobre ambos flujos de ingresos."
+      },
+      "step4": {
+        "title": "Generación Automática de Contratos",
+        "description": "El sistema genera acuerdos de reserva para sesiones tradicionales y contratos inteligentes para licencias de IA. Sin redacción manual, sin cuellos de botella legales."
+      },
+      "step5": {
+        "title": "Procesamiento de Pagos Protegido",
+        "description": "Fondos retenidos en depósito en garantía para acuerdos tradicionales y de IA. Divisiones automáticas de comisiones. El dinero se libera directamente a tu cuenta de agencia."
+      },
+      "step6": {
+        "title": "Seguimiento de Ingresos en Tiempo Real",
+        "description": "Un panel muestra el calendario de reservas tradicionales y acuerdos activos de licencias de IA. Ve qué talento está ganando de qué, cuándo expiran los contratos e ingresos recurrentes mensuales."
+      }
+    },
+    "users": {
+      "title": "Quién Usa Likelee",
+      "modelingAgencies": {
+        "title": "Agencias de Modelaje",
+        "description": "Gestiona castings, reservas de pasarela y sesiones editoriales junto con licencias de IA para comercio electrónico y campañas publicitarias."
+      },
+      "sportsAgencies": {
+        "title": "Agencias Deportivas",
+        "description": "Coordina patrocinios y respaldos tradicionales mientras licencias el NIL de atletas para contenido de marketing generado por IA."
+      },
+      "talentManagement": {
+        "title": "Empresas de Gestión de Talento",
+        "description": "Maneja reservas tradicionales para actores, influencers y creadores mientras monetizas su imagen durante las brechas de proyectos."
+      },
+      "allSizes": {
+        "title": "De Boutique a Empresa",
+        "description": "Tiendas de 5 personas a listas de más de 200 talentos. Misma plataforma, escala a tu tamaño."
+      }
+    },
+    "operations": {
+      "title": "Cómo Operamos",
+      "verification": {
+        "title": "Verificación Primero",
+        "description": "Cada creador pasa controles de identidad antes de que su avatar esté activo. Los malos actores no obtienen una plataforma."
+      },
+      "contracts": {
+        "title": "Contratos en Lenguaje Sencillo",
+        "description": "Sin jerga legal. Acuerdos en lenguaje sencillo con fechas de vencimiento automáticas y cláusulas de extinción incorporadas."
+      },
+      "ledger": {
+        "title": "Libro Mayor Compartido",
+        "description": "Tanto tú como la marca ven el mismo registro en tiempo real de cada uso, cada pago, cada fecha de vencimiento."
+      },
+      "security": {
+        "title": "Seguridad por Diseño",
+        "description": "Archivos biométricos encriptados en reposo. Sin ventas de datos a terceros. Sin raspado. Tus datos son tuyos."
+      },
+      "userBuilt": {
+        "title": "Construido Con Usuarios, No Para Usuarios",
+        "description": "Solo lanzamos funciones cuando creadores, agencias y estudios confirman una necesidad real. Sin sobrecarga de funciones."
+      }
+    }
+  },
+  "supportPage": {
+    "hero": {
+      "title": "Soporte",
+      "subtitle": "¿Necesitas ayuda? Te tenemos cubierto. La forma más rápida de contactarnos es",
+      "description": "Leemos cada mensaje. Por favor incluye tantos detalles como puedas (capturas de pantalla, enlaces, pasos para reproducir). Responderemos lo más rápido posible."
+    },
+    "form": {
+      "emailLabel": "Tu Correo Electrónico *",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "subjectLabel": "Asunto *",
+      "subjectPlaceholder": "¿Cómo podemos ayudar?",
+      "messageLabel": "Tu Pregunta *",
+      "messagePlaceholder": "Por favor incluye tantos detalles como sea posible: qué estás intentando hacer, qué está sucediendo, mensajes de error, capturas de pantalla, etc.",
+      "sendButton": "Enviar Mensaje",
+      "sending": "Enviando..."
+    },
+    "success": {
+      "title": "¡Mensaje Enviado!",
+      "description": "Gracias por tu mensaje. Te responderemos pronto."
+    },
+    "footer": {
+      "orEmail": "O envíanos un correo directamente a",
+      "copied": "Copiado al Portapapeles",
+      "copiedDescription": "La dirección de correo de soporte ha sido copiada a tu portapapeles."
+    }
+  },
+  "sagAftraPage": {
+    "hero": {
+      "title": "Alineación con SAG-AFTRA",
+      "description": "Likelee incorpora las salvaguardas de IA del Contrato Comercial SAG-AFTRA 2025 en cada licencia que emitimos, y aplicamos el mismo estándar a todos los creadores en la plataforma (actores, modelos, atletas, influencers, voz)."
+    },
+    "safeguards": {
+      "informedConsent": {
+        "title": "Consentimiento informado cada vez",
+        "description": "Un creador firma una autorización clara y específica del proyecto antes de cualquier captura, sintetización o reutilización de su rostro, voz o movimiento."
+      },
+      "fairPay": {
+        "title": "Pago justo y regalías en piloto automático",
+        "description": "Cada réplica activa compensación inicial, regalías continuas y contribuciones completas de pensión/salud (o equivalente), registradas y pagadas automáticamente por nuestro motor de regalías."
+      },
+      "scopeLocked": {
+        "title": "Uso con alcance bloqueado",
+        "description": "Los contratos especifican exactamente dónde (TV, streaming, redes sociales, en motor, impresión, etc.) y por cuánto tiempo puede aparecer una réplica. ¿Nuevo medio? ¿Nuevo proyecto? Nueva aprobación + pago."
+      },
+      "noBlanket": {
+        "title": "Sin derechos generales ni transferencias",
+        "description": "Las cláusulas \"todos los medios a perpetuidad\" son nulas aquí. El consentimiento no es transferible; la sublicencia requiere un nuevo acuerdo."
+      },
+      "aiTraining": {
+        "title": "El entrenamiento de IA es una licencia separada",
+        "description": "Alimentar datos de imagen en el entrenamiento de modelos es su propio caso de uso negociado con términos distintos y participación en ingresos."
+      },
+      "backgroundTalent": {
+        "title": "Talento de fondo protegido",
+        "description": "Los dobles digitales nunca cuentan para los mínimos de contratación de fondo ni reemplazan a los artistas en el set."
+      },
+      "enforceable": {
+        "title": "Salvaguardas ejecutables",
+        "description": "Respaldado por contratos SAG-AFTRA y la ley de California, dando a los creadores un recurso claro si se violan los términos."
+      }
+    },
+    "bottomLine": {
+      "title": "Conclusión",
+      "description": "Likelee licencia talento de la manera que las reglas de IA del sindicato pretendían: consentimiento primero, efectivo segundo, control del creador siempre, y mantenemos a cada marca y campaña en la plataforma con ese mismo estándar."
+    }
+  },
+  "impactPage": {
+    "hero": {
+      "title": "Nuestro",
+      "subtitle": "Compromiso Ambiental",
+      "description": "En Likelee, la creatividad y la tecnología son inseparables — y ambas dependen de recursos que tienen un impacto real. Cada renderizado, exportación y campaña que impulsamos funciona con energía. Reconocer esa huella es parte de nuestra responsabilidad como plataforma que sirve a creadores y estudios en todo el mundo."
+    },
+    "whyMatters": {
+      "title": "Por Qué Esto Importa",
+      "description": "Producir trabajo digital no está libre de impacto. Ya sea un modelo de IA ejecutando inferencia, un renderizado de video o datos almacenados en la nube, cada salida creativa tiene un costo ambiental. Para nosotros, reconocer esa conexión no es una declaración de marketing — es una base para operar con integridad en una industria en rápida expansión."
+    },
+    "approach": {
+      "title": "Nuestro Enfoque",
+      "infrastructure": {
+        "title": "1. Infraestructura Responsable",
+        "description": "Priorizamos proveedores de nube y socios que publican datos de sostenibilidad transparentes e informes de progreso medibles. Estas relaciones se revisan regularmente a medida que evolucionan los estándares y tecnologías."
+      },
+      "transparency": {
+        "title": "2. Transparencia por Defecto",
+        "description": "Estamos desarrollando señales en el producto que ayudan a los usuarios a entender cuándo sus configuraciones o métodos de generación consumen más recursos. Estos están diseñados para informar, no restringir, dando a artistas y estudios control sobre sus elecciones."
+      },
+      "collaboration": {
+        "title": "3. Colaboración y Responsabilidad",
+        "description": "Mantenemos un diálogo abierto con creadores, expertos en sostenibilidad y tecnólogos a través de discusiones continuas y sesiones de revisión trimestrales. Estas informan nuestra hoja de ruta de infraestructura y nuestras actualizaciones de producto."
+      }
+    },
+    "standBy": {
+      "title": "Lo Que Defendemos",
+      "description": "No ocultaremos las realidades del uso de energía detrás de afirmaciones vagas de sostenibilidad o promesas superficiales. Nuestro objetivo es ser específicos, medibles y abiertos a corrección a medida que evoluciona el campo. El progreso real depende de la claridad, no de eslóganes."
+    },
+    "yourRole": {
+      "title": "Tu Rol",
+      "description": "Cuando subes, licencias o produces a través de Likelee, estás participando en un sistema compartido construido sobre trazabilidad y responsabilidad. Acciones simples — como agrupar exportaciones o usar configuraciones de renderizado optimizadas — contribuyen significativamente a la eficiencia a escala. Las herramientas están disponibles; las elecciones son tuyas."
+    },
+    "lookingForward": {
+      "title": "Mirando Hacia Adelante",
+      "paragraph1": "La sostenibilidad no es un objetivo fijo sino un proceso continuo. A medida que la generación de IA se vuelve más avanzada y accesible, nuestro compromiso es mantener el equilibrio — innovar sin descuidar el impacto de esa innovación. Continuaremos refinando la infraestructura y las prácticas de informes de Likelee para garantizar que el progreso creativo y la responsabilidad ambiental puedan coexistir.",
+      "paragraph2": "Te invitamos a colaborar, criticar y ayudarnos a mejorar.",
+      "paragraph3": "Contáctanos con ideas, preocupaciones u oportunidades de asociación en"
+    }
+  },
+  "talentAgency": {
+    "hero": {
+      "title": "Tu Talento Podría Estar Ganando 10 Veces Más",
+      "subtitle": "Convierte sesiones de fotos únicas en ingresos recurrentes",
+      "description": "Las contrataciones tradicionales pagan $1,500 una vez y se acaba. Las licencias de Likelee pagan mensualmente, para siempre, y tu lista de talentos gana consistentemente.",
+      "cta": "Reservar una Demostración"
+    },
+    "bookingsDropping": {
+      "title": "Las contrataciones están bajando, las licencias están subiendo.",
+      "description": "Las marcas están cambiando sus presupuestos a experimentos de IA, pero todavía necesitan talento real y verificado para campañas auténticas. Likelee crea flujos de ingresos recurrentes para tu talento mientras la frecuencia de las contrataciones fluctúa. Ganas una comisión recurrente cada mes que permanecen con licencia."
+    },
+    "twoWays": {
+      "title": "Dos Maneras de Ganar",
+      "recurring": {
+        "title": "Licencias Mensuales Recurrentes",
+        "description": "La marca usa la imagen de tu talento en su sitio web indefinidamente y paga",
+        "highlight": "$400 cada mes",
+        "suffix": "mientras esas fotos permanezcan en línea."
+      },
+      "fixed": {
+        "title": "Licencias a Plazo Fijo",
+        "description": "La marca licencia el rostro de tu talento por una duración de campaña específica como 6 meses, paga",
+        "highlight": "$2,500 por adelantado",
+        "suffix": ", y renueva al final del plazo.",
+        "example": "Tu talento gana $2,500 por ciclo de renovación. En tres años, eso es",
+        "exampleHighlight": "$7,500 del mismo talento",
+        "exampleSuffix": "frente a $1,500 de una contratación tradicional."
+      }
+    },
+    "howItWorks": {
+      "title": "Cómo Funciona",
+      "step1": "Agrega a tu talento a Likelee para que puedan revisar las solicitudes de licencia y ver cómo se acumulan sus ganancias en tiempo real.",
+      "step2": "Las marcas descubren y solicitan licencias enviando su uso propuesto, territorio, duración y monto de pago directamente a través de la plataforma.",
+      "step3": "Revisas y apruebas los términos, estableces el monto final y la marca paga en un depósito en garantía para que la transacción esté protegida.",
+      "step4": "El dinero se libera después de 48 horas sin disputas directamente a la cuenta de tu agencia, donde decides cómo dividir las ganancias con tu talento."
+    },
+    "whyAgenciesWin": {
+      "title": "Por Qué Ganan las Agencias",
+      "revenue": {
+        "title": "Ingresos Recurrentes que Escalan",
+        "description": "El primer año genera $50K en licencias. El segundo año, estás en $150K. El tercer año supera los $300K. Usas el mismo equipo, la misma lista de talentos y no haces sesiones de fotos adicionales para alcanzar ese crecimiento."
+      },
+      "retention": {
+        "title": "El Talento se Queda Porque se Siente Seguro",
+        "description": "Los ingresos por licencias reemplazan la volatilidad de los ciclos de contratación, por lo que tu talento no entra en pánico cuando las contrataciones se ralentizan ni se va a agencias de la competencia. Saben que están ganando dinero predecible contigo."
+      },
+      "protection": {
+        "title": "Protección Legal Incorporada",
+        "description": "Cada licencia se verifica y rastrea con contratos inteligentes que especifican exactamente qué puede hacer la marca, por cuánto tiempo y en qué regiones. Todo se alinea con los estándares de SAG-AFTRA y el cumplimiento de GDPR, por lo que nunca expones legalmente a tu talento."
+      }
+    },
+    "cta": {
+      "title": "Adáptate Ahora o Reduce Más Tarde",
+      "description": "Las agencias que prosperan en este momento son las que poseen tanto el pipeline de contratación tradicional como el emergente panorama de la IA simultáneamente. Likelee te brinda la infraestructura para construir y administrar ambos a escala, convirtiendo tu lista existente en un motor de ingresos recurrentes.",
+      "bookDemo": "Reservar una Demostración",
+      "howItWorks": "Ver Cómo Funciona"
+    }
+  },
+  "sportsAgency": "Agencia de deportes",
+  "marketingAgency": "Agencia de marketing",
+  "whatTypeOfAgencyAreYou": "¿Qué tipo de agencia eres?",
+  "whatTypeOfAgencyAreYouMessage": "Selecciona tu tipo de agencia para obtener más información sobre cómo Likelee puede ayudarte",
+  "brandCompanyPage": {
+    "hero": {
+      "title": "Licencie Apariencias de Talentos para Contenido IA.",
+      "subtitle": "Legalmente. Instantáneamente.",
+      "description": "Creativo IA seguro para marcas con consentimiento de talento verificado en <48 horas. Trabaja con talento independiente o sus agencias.",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    },
+    "whyLikelee": {
+      "title": "Por Qué Likelee",
+      "verifiedConsent": {
+        "title": "Consentimiento Verificado",
+        "description": "Los talentos licencian activamente su apariencia—sin raspado, sin áreas grises legales. Cada permiso es explícito y ejecutable."
+      },
+      "aiSpeed": {
+        "title": "Velocidad Nativa IA",
+        "description": "Activos licenciados entregados en <48 horas. Envía tu brief, obtén permisos de talento con tu contenido IA, automáticamente."
+      },
+      "legalCompliance": {
+        "title": "Cumplimiento Legal Integrado",
+        "description": "Cada licencia documenta el alcance de uso, territorio, duración y compensación. Gestión transparente de derechos con activos verificados."
+      }
+    },
+    "useCases": {
+      "title": "Casos de Uso",
+      "paidSocial": {
+        "title": "Redes Sociales Pagadas y Rendimiento",
+        "description": "Creativo publicitario generado por IA con talento licenciado para campañas, regiones, duración"
+      },
+      "ecommerce": {
+        "title": "E-Commerce y Producto",
+        "description": "Talento verificado en páginas de productos y campañas"
+      },
+      "ooh": {
+        "title": "Publicidad Exterior y Retail",
+        "description": "Vallas publicitarias y en tienda con derechos pre-aprobados"
+      },
+      "content": {
+        "title": "Contenido y Juegos",
+        "description": "Integra apariencias en experiencias de marca"
+      }
+    },
+    "howItWorks": {
+      "title": "Cómo Funciona Likelee",
+      "step1": "Los talentos o agencias establecen términos de licencia",
+      "step2": "Navegas y envías tu brief",
+      "step3": "El talento aprueba con un clic",
+      "step4": "Recibes activos licenciados + acuerdo vinculante"
+    },
+    "pilot": {
+      "title": "Únete a Nuestro Programa Piloto",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Elige Tu Identidad",
+      "subtitle": "Únete al ecosistema diseñado para que los creadores posean, controlen y se beneficien de su imagen digital."
+    },
+    "influencer": {
+      "title": "Influencer y Creador de Contenido",
+      "description": "Monetiza tu presencia social licenciando tu doble digital para campañas enfocadas en redes sociales."
+    },
+    "model_actor": {
+      "title": "Modelo y Actor",
+      "description": "Asegura oportunidades comerciales y editoriales de alta gama con un gemelo digital verificado."
+    },
+    "athlete": {
+      "title": "Atleta (NIL)",
+      "description": "Escala tus asociaciones de marca y obtén ingresos pasivos con una imagen digital que cumple con NIL."
+    },
+    "selectButton": "Seleccionar y Continuar",
+    "authModal": {
+      "title": "Bienvenido a Likelee",
+      "selected": "Has seleccionado:",
+      "signUpAs": "Registrarse como",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta? Iniciar Sesión"
+    }
+  },
+  "faces": {
+    "hero": {
+      "flipper": {
+        "0": {
+          "line1": "Tu Imagen",
+          "line2": "Ganancias Ilimitadas"
+        },
+        "1": {
+          "line1": "Tu Consentimiento",
+          "line2": "Control Total"
+        },
+        "2": {
+          "line1": "Tus Términos",
+          "line2": "Ingresos Recurrentes"
+        }
+      },
+      "alert": "Gana regalías recurrentes de tu imagen. No pagos únicos. Únete a la primera cohorte de creadores, atletas y talentos verificados que licencian su imagen en sus propios términos.",
+      "subtitle": "Licencia tu imagen a marcas, estudios y agencias. Establece tus tarifas. Mantén el control total. Gana cada mes que esté en uso.",
+      "signUpButton": "Regístrate",
+      "forYouButton": "Para Ti"
+    },
+    "meta": {
+      "title": "Creadores - Monetiza Tu Imagen",
+      "description": "Atletas, influencers, actores y modelos: ganen anticipos de su gemelo digital. Establezcan sus propias tarifas, aprueben el uso y realicen un seguimiento de las regalías.",
+      "serviceType": "Gestión de Imagen Digital",
+      "audienceType": "Creadores, Atletas, Influencers, Modelos, Actores"
+    },
+    "whyChoose": {
+      "title": "Por Qué los Creadores, Atletas y Talentos Eligen Likelee",
+      "subtitle1": "La forma más rápida de ofrecer campañas de IA seguros para la marca y ganar regalías por cada uso.",
+      "subtitle2": "Cada creador en Likelee licencia su imagen bajo derechos claros y de tiempo limitado y mantiene la capacidad de modificar, pausar o retirar permisos en cualquier momento.",
+      "cards": {
+        "0": {
+          "title": "Ingresos Recurrentes, No Trabajos Únicos",
+          "description": "Establece tus tarifas. Gana un anticipo mensual por cada campaña activa que use tu imagen. Una sesión de $500 solía ser todo. Ahora paga mes tras mes."
+        },
+        "1": {
+          "title": "Control Total",
+          "description": "Tú apruebas cada uso. Pausa campañas en cualquier momento. Revoca derechos con un solo clic. Tu imagen, tus reglas."
+        },
+        "2": {
+          "title": "Transparencia Total",
+          "description": "Ve exactamente quién usa tu imagen, por cuánto tiempo, en qué regiones y cuánto has ganado. Cada campaña rastreada, cada pago verificado."
+        },
+        "3": {
+          "title": "Panel de Derechos de Uso",
+          "description": "Ve quién usa tu imagen, cuándo vencen los derechos y cuánto has ganado. Revoca o renueva con un solo clic."
+        }
+      }
+    },
+    "featuredCreator": {
+      "title": "Creador Destacado",
+      "royaltiesEarned": "Regalías Ganadas",
+      "royaltiesDescription": "De licencias a 5 marcas",
+      "usageRequests": "Solicitudes de Uso",
+      "controlSettings": "Configuración de Control",
+      "allowCommercialUse": "Permitir Uso Comercial",
+      "allowFilmUse": "Permitir Uso en Películas",
+      "viewUsageReportButton": "Ver Informe de Uso",
+      "updateSettingsButton": "Actualizar Configuración"
+    },
+    "howItWorks": {
+      "title": "Comienza a Ganar en 3 Sencillos Pasos",
+      "subtitle": "De la carga a la ganancia, así de simple.",
+      "steps": {
+        "0": {
+          "title": "Sube Tus Fotos",
+          "description": "Crea tu identidad digital verificada con fotos de alta calidad."
+        },
+        "1": {
+          "title": "Establece Tus Parámetros",
+          "description": "Define los derechos de uso, los precios y los requisitos de aprobación."
+        },
+        "2": {
+          "title": "Comienza a Ganar",
+          "description": "Aprueba solicitudes. Gana anticipos mensuales. Escala con múltiples campañas simultáneas."
+        }
+      }
+    },
+    "digitalTalentOwner": {
+      "title": "De Creador → Propietario de Talento Digital",
+      "subtitle": "Ya has construido tu imagen, ahora haz que trabaje para ti.",
+      "mainContent": "Licenciar tu imagen no es venderse; es escalar. Mientras filmas tu próximo proyecto, tu gemelo digital puede estar ganando en diez más.",
+      "comparison": {
+        "title": "Modelo Tradicional vs. Modelo de Imagen de Likelee",
+        "traditionalPath": "Camino Tradicional",
+        "traditionalPathDescription1": "Actúas o filmas manualmente",
+        "likeleeModel": "Modelo Likelee",
+        "likeleeModelDescription1": "Escalas automáticamente",
+        "traditionalPathDescription2": "Te pagan una vez por proyecto",
+        "likeleeModelDescription2": "Ganas anticipos mensuales mientras las marcas usen tu imagen",
+        "traditionalPathDescription3": "A menudo pierdes la propiedad intelectual",
+        "likeleeModelDescription3": "Conservas la propiedad intelectual",
+        "traditionalPathDescription4": "No puedes reutilizar ni readaptar",
+        "likeleeModelDescription4": "Apruebas cada reutilización"
+      },
+      "footer": "No eres un trabajador temporal. Eres un propietario."
+    },
+    "realFutures": {
+      "title": "Rostros Reales. Futuros Reales.",
+      "line1": "Las marcas y los estudios ya están generando campañas de IA, la mayoría utiliza rostros sin licencia o sintéticos.",
+      "line2": "Likelee es donde el talento real impulsa el mundo de la IA.",
+      "line3": "Cada creador, modelo e intérprete es verificado, rastreado y pagado con anticipos mensuales.",
+      "line4": "No estás siendo reemplazado por la IA, te estás convirtiendo en su flujo de ingresos mensual."
+    },
+    "valueFloor": {
+      "title": "Piso de Valor del Creador",
+      "line1": "Ninguna licencia de imagen en Likelee paga por debajo del mínimo de la comunidad.",
+      "line2": "También puedes establecer tu propio piso para que las marcas y los estudios no puedan hacerte ofertas bajas.",
+      "line3": "La transparencia genera confianza. Publicamos las ganancias promedio de los creadores y datos de referencia para que siempre conozcas tu verdadero valor de mercado.",
+      "cards": {
+        "0": {
+          "description": "Anticipo mensual mínimo por licencia activa"
+        },
+        "1": {
+          "description": "Anticipo mensual promedio por campaña"
+        },
+        "2": {
+          "title": "Mientras esté licenciado",
+          "description": "Pago recurrente mientras la marca usa tu imagen"
+        }
+      }
+    },
+    "realEarnings": {
+      "title": "Creadores Reales. Ganancias Reales.",
+      "subtitle": "Ve lo que los creadores, modelos e intérpretes están ganando a través de la licencia mensual de su imagen.",
+      "cards": {
+        "0": {
+          "title": "Anticipo recurrente en 3 licencias de marca activas",
+          "line1": "→ Licencia 1 (Marca A): $500/mes — Activa por 6 meses (hasta ahora)",
+          "line2": "→ Licencia 2 (Marca B): $600/mes — Activa por 4 meses (hasta ahora)",
+          "line3": "→ Licencia 3 (Marca C): $400/mes — Activa por 2 meses (hasta ahora)",
+          "total": "Total ganado hasta la fecha: $7,500 (y sigue ganando mensualmente mientras las licencias permanezcan activas)"
+        },
+        "1": {
+          "title": "Anticipo único para la campaña de video musical de IA de un sello discográfico",
+          "line1": "→ Licenciado para una campaña de 12 meses",
+          "line2": "→ La marca usa tu imagen para la generación continua de contenido",
+          "line3": "→ Ganas $700/mes durante todo el año",
+          "total": "Total: $8,400"
+        },
+        "2": {
+          "title": "Tres licencias acumuladas",
+          "line1": "→ Licencia 1 (Marca de tecnología): $400/mes × 9 meses = $3,600",
+          "line2": "→ Licencia 2 (Marca de moda): $300/mes × 6 meses = $1,800",
+          "line3": "→ Licencia 3 (Marca de bienestar): $250/mes × 4 meses = $1,000",
+          "total": "Ganancias combinadas: $6,400 (y se pueden agregar más licencias simultáneamente)"
+        }
+      }
+    },
+    "retainerModel": {
+      "title": "Cómo Funciona: Modelo de Anticipo Mensual",
+      "steps": {
+        "0": {
+          "title": "Licencias tu imagen",
+          "description": "La marca obtiene los derechos de uso"
+        },
+        "1": {
+          "title": "Ganas mensualmente",
+          "description": "Mientras tu licencia esté activa, te pagan cada mes"
+        },
+        "2": {
+          "title": "La licencia está activa por X meses",
+          "description": "Acordaste un período de licencia de 90 días, 6 meses o 12 meses"
+        },
+        "3": {
+          "title": "Cuando finaliza la licencia",
+          "description": "Decides renovar, revocar o pasar a nuevas marcas"
+        },
+        "4": {
+          "title": "Puedes tener múltiples licencias a la vez",
+          "description": "Cada marca te paga por separado, cada mes"
+        }
+      }
+    },
+    "retainerAdvantage": {
+      "title": "La Ventaja del Anticipo Mensual",
+      "cards": {
+        "0": {
+          "title": "✓ Ingresos Predecibles",
+          "description": "Sabe exactamente cuánto ganas cada mes"
+        },
+        "1": {
+          "title": "✓ Pasivo Mientras Está Activo",
+          "description": "Tú no trabajas; la marca genera contenido; a ti te pagan"
+        },
+        "2": {
+          "title": "✓ Apila Múltiples Licencias",
+          "description": "Trabaja con 3, 4 o 5 marcas a la vez; todas te pagan"
+        },
+        "3": {
+          "title": "✓ Transparencia Total",
+          "description": "Sabe exactamente qué marcas te usan y cuánto ganas de cada una"
+        }
+      }
+    },
+    "realMonthlyIncome": {
+      "title": "Creadores Reales. Ingresos Mensuales Reales.",
+      "subtitle1": "Los creadores en Likelee no esperan pagos. Ganan mensualmente, de manera predecible y pasiva.",
+      "subtitle2": "Mientras creas contenido nuevo, tu imagen con licencia genera ingresos mensuales recurrentes."
+    },
+    "likenessStaysYours": {
+      "title": "Tu Imagen Sigue Siendo Tuya",
+      "line1": "Tu consentimiento nunca expira por sí solo. Cada licencia tiene una fecha de finalización. Si dices que no, nosotros decimos que no.",
+      "line2": "Si una marca quiere seguir usando tu imagen, renuevan, y tú decides si vale la pena.",
+      "line3": "Contratos con marca de agua. Eliminaciones automatizadas. Protección legal real."
+    },
+    "faq": {
+      "title": "Preguntas Frecuentes",
+      "subtitle": "Todo lo que necesitas saber sobre ser un Creador en Likelee",
+      "questions": {
+        "0": {
+          "title": "¿Qué es un \"Creador\"?",
+          "description": "Un Creador es cualquier individuo verificado que licencia su imagen (rostro, voz o gemelo digital) para campañas o producciones asistidas por IA. Conservas la propiedad de tu imagen; Likelee solo facilita el uso con licencia bajo los términos que elijas."
+        },
+        "1": {
+          "title": "¿Cómo me verifico?",
+          "description": "Después de que se conceda tu cuenta en el ecosistema, recibirás un correo electrónico de bienvenida y un enlace de verificación. Enviarás una identificación y un video corto de selfie para que nuestro sistema pueda confirmar tu autenticidad y producir tu gemelo digital."
+        },
+        "2": {
+          "title": "¿Se puede usar mi imagen sin mi consentimiento?",
+          "description": "Nunca. Cada solicitud de uso requiere tu aprobación explícita. Ninguna marca, estudio o socio de IA puede usar tu imagen a menos que hayas otorgado permiso para ese contexto específico."
+        },
+        "3": {
+          "title": "¿Puedo eliminar mi imagen de la plataforma?",
+          "description": "Sí. Puedes desactivar o eliminar tu perfil en cualquier momento. Las licencias activas existentes expirarán automáticamente al final de su plazo contractual, y no se podrán realizar nuevos usos."
+        },
+        "4": {
+          "title": "¿Qué pasa si una marca pide derechos \"a perpetuidad\"?",
+          "description": "Likelee no permite cláusulas de uso perpetuo por defecto. Si eliges aceptar una, se te mostrará una advertencia clara sobre lo que significa y podrás negociar una compensación más alta o rechazarla."
+        },
+        "5": {
+          "title": "¿Se puede usar mi imagen para entrenar modelos de IA?",
+          "description": "Solo si habilitas explícitamente la opción de \"derechos de entrenamiento de IA\". Esta opción está deshabilitada por defecto. Siempre verás una divulgación cuando una campaña implique un uso generativo o sintético."
+        },
+        "6": {
+          "title": "¿Qué protecciones existen si se hace un mal uso de mi imagen?",
+          "description": "Likelee rastrea cada activo aprobado y mantiene pruebas digitales. Si se produce un mal uso, nuestro equipo de aplicación de derechos te ayuda con las eliminaciones y la documentación para el seguimiento legal."
+        },
+        "7": {
+          "title": "¿Sigo siendo dueño de mi imagen digital?",
+          "description": "Sí. Conservas la propiedad total. Estás licenciando el uso, no transfiriendo la propiedad. Todas las réplicas digitales permanecen vinculadas a tu identidad verificada."
+        },
+        "8": {
+          "title": "¿Puedo negociar tarifas para diferentes tipos de uso?",
+          "description": "Absolutamente. Puedes establecer precios separados para UGC grabado por humanos, campañas de IA y gemelos digitales de IA completos. Nuestro sistema aplica automáticamente la tarifa elegida según el tipo y la duración de la campaña."
+        }
+      }
+    },
+    "cta": {
+      "title": "¿Listo para convertirte en propietario de un talento digital?",
+      "subtitle": "Únete a creadores, modelos e intérpretes que construyen ingresos sostenibles a través de la licencia mensual de su imagen.",
+      "howToGetStarted": "Cómo empezar:",
+      "steps": {
+        "0": "→ Sube tu video de referencia — Graba un video corto de ti mismo (referencia de IA)",
+        "1": "→ Sube imágenes de referencia — 15 fotos desde diferentes ángulos/estilos",
+        "2": "→ Establece tu tarifa mínima — Tú decides tu precio mínimo ($350+/mes)",
+        "3": "→ Las marcas te encuentran — Solicitan licencias, tú apruebas o rechazas",
+        "4": "→ Comienza a ganar — Pagos mensuales mientras las licencias estén activas"
+      },
+      "reserveProfileButton": "Reserva Tu Perfil"
+    }
+  },
+  "forBusinessPage": {
+    "hero": {
+      "title": "Likelee para empresas",
+      "subtitle": "Diseñado para marcas, agencias y socios de talento que exigen creadores verificados, licencias transparentes y herramientas de producción listas para IA."
+    },
+    "businessTypes": {
+      "brands": {
+        "title": "Para marcas y empresas",
+        "description": "Lanza campañas auténticas impulsadas por IA con creadores humanos verificados. Licencia rostros directamente, colabora con artistas de IA y entrega contenido en horas, no en semanas."
+      },
+      "marketingAgencies": {
+        "title": "Para agencias de marketing",
+        "description": "Gestiona campañas de clientes basadas en creadores reales con licencia. Accede a rostros verificados, contrata artistas de IA y rastrea el rendimiento de las campañas en un solo lugar."
+      },
+      "talentAgencies": {
+        "title": "Para agencias de talento y modelaje",
+        "description": "Protege y monetiza las imágenes digitales de tu lista. Sube talento verificado, gestiona registros de consentimiento y genera regalías pasivas a través de colaboraciones impulsadas por IA."
+      },
+      "sportsAgencies": {
+        "title": "Para agencias deportivas y representantes de atletas",
+        "description": "Gestión NIL lista para IA con derechos verificados y regalías automatizadas. Protege las imágenes de los atletas, rastrea el uso y desbloquea nuevas fuentes de ingresos en la era de la IA."
+      }
+    },
+    "learnMore": "Aprende más",
+    "valueProposition": {
+      "title": "La infraestructura detrás de la economía de la identidad",
+      "description": "Likelee conecta creadores reales, talento de IA y estudios a través de licencias de imagen seguras y herramientas de colaboración transparentes. Cada campaña está verificada por humanos, respaldada por consentimiento y lista para el futuro de los medios."
+    }
+  }
+}
