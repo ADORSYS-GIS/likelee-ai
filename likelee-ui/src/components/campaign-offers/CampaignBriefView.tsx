@@ -106,7 +106,7 @@ export function CampaignBriefView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Brief Details */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+          <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-blue-500 rounded-full" />
               General Dialogue &amp; Voice Direction
@@ -175,7 +175,7 @@ export function CampaignBriefView({
             </div>
           </div>
 
-          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+          <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full" />
               Visual Requirements &amp; Style Guide
@@ -284,7 +284,7 @@ export function CampaignBriefView({
 
         {/* Right Column: Scope & Contract Summary */}
         <div className="space-y-6">
-          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+          <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
               Scope & Details
