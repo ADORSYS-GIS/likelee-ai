@@ -84,6 +84,7 @@ type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
   hasProAccess?: boolean;
   agencyDisplayPlanLabel?: string;
+  agencyPlanIntervalLabel?: string;
   kycStatus?: string;
 };
 
@@ -582,12 +583,14 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({
-  kycStatus,
-  hasIrlBookingAddon = false,
-  hasProAccess = false,
-  agencyDisplayPlanLabel,
-}: GeneralSettingsViewProps) => {
+const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
+  const {
+    hasIrlBookingAddon,
+    hasProAccess,
+    agencyDisplayPlanLabel,
+    agencyPlanIntervalLabel,
+    kycStatus,
+  } = props;
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -1119,7 +1122,6 @@ const GeneralSettingsView = ({
   const currentPlanDisplay = useMemo(() => {
     const label = String(agencyDisplayPlanLabel || "").trim();
     const normalized = label
-      .replace(/\b(annual|monthly)\b/gi, "")
       .replace(/\bplan\b/gi, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -2023,6 +2025,11 @@ const GeneralSettingsView = ({
                       }`}
                     >
                       {currentPlanDisplay}
+                      {agencyPlanIntervalLabel && (
+                        <span className="ml-1 text-sm font-bold opacity-60">
+                          ({agencyPlanIntervalLabel})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

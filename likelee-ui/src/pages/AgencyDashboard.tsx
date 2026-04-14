@@ -17854,8 +17854,13 @@ export default function AgencyDashboard() {
       .toLowerCase();
     if (raw.includes("annual") || raw.includes("year")) return "Annual";
     if (raw.includes("monthly") || raw.includes("month")) return "Monthly";
+
+    const interval = String(agencyBilling?.plan_interval || "").toLowerCase();
+    if (interval === "year" || interval === "annual") return "Annual";
+    if (interval === "month" || interval === "monthly") return "Monthly";
+
     return "";
-  }, [agencyBilling?.display_plan_label]);
+  }, [agencyBilling?.display_plan_label, agencyBilling?.plan_interval]);
 
   const agencyDisplayPlanLabel = (() => {
     const raw = String(agencyBilling?.display_plan_label || "").trim();
@@ -20515,12 +20520,7 @@ export default function AgencyDashboard() {
                     >
                       {agencyTrialActive ? (
                         <span className="inline-flex items-center gap-2">
-                          <span>
-                            {agencyTrialTierLabel} TRIAL
-                            {agencyPlanIntervalLabel
-                              ? ` (${agencyPlanIntervalLabel.toUpperCase()})`
-                              : ""}
-                          </span>
+                          <span>{agencyTrialTierLabel} TRIAL</span>
                           {agencyTrialCountdown ? (
                             <span className="text-[11px] font-black tracking-normal opacity-95">
                               {agencyTrialCountdown}
@@ -20528,7 +20528,7 @@ export default function AgencyDashboard() {
                           ) : null}
                         </span>
                       ) : (
-                        String(agencyDisplayPlanLabel || "")
+                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
                           .trim()
                           .toUpperCase()
                       )}
@@ -20788,6 +20788,7 @@ export default function AgencyDashboard() {
                   hasIrlBookingAddon={hasIrlBookingAddon}
                   hasProAccess={hasProAccess}
                   agencyDisplayPlanLabel={agencyDisplayPlanLabel}
+                  agencyPlanIntervalLabel={agencyPlanIntervalLabel}
                 />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (
