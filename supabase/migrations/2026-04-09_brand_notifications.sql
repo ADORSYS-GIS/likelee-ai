@@ -21,13 +21,30 @@ ALTER TABLE public.brand_notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Brands can read own notifications" ON public.brand_notifications;
 CREATE POLICY "Brands can read own notifications" ON public.brand_notifications
 FOR SELECT
-USING (brand_id = auth.uid());
+USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "Brands can update read status" ON public.brand_notifications;
 CREATE POLICY "Brands can update read status" ON public.brand_notifications
 FOR UPDATE
-USING (brand_id = auth.uid())
-WITH CHECK (brand_id = auth.uid());
+USING (public.is_brand_team_member(brand_id))
+WITH CHECK (public.is_brand_team_member(brand_id));
+
+DROP POLICY IF EXISTS "Brands can insert own notifications" ON public.brand_notifications;
+CREATE POLICY "Brands can insert own notifications" ON public.brand_notifications
+FOR INSERT
+WITH CHECK (public.is_brand_team_member(brand_id));
+
+DROP POLICY IF EXISTS "Brands can delete own notifications" ON public.brand_notifications;
+CREATE POLICY "Brands can delete own notifications" ON public.brand_notifications
+FOR DELETE
+USING (public.is_brand_team_member(brand_id));
+
+-- brand_activity_events RLS refinements
+-- Existing table/policies defined in earlier migrations; add DELETE to support clearing badges/events
+DROP POLICY IF EXISTS "Brands can delete own activity events" ON public.brand_activity_events;
+CREATE POLICY "Brands can delete own activity events" ON public.brand_activity_events
+FOR DELETE
+USING (public.is_brand_team_member(brand_id));
 
 ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS notification_prefs jsonb DEFAULT '{"newProjectAlerts": true, "deliverableSubmissions": true, "approvalReminders": true, "licenseExpirationAlerts": true, "monthlyAnalyticsSummary": false}'::jsonb;
 

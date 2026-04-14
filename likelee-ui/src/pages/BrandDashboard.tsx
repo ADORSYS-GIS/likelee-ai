@@ -165,7 +165,7 @@ const getBrandInitials = (name: string) => {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (parts.length === 0) return "B";
+  if (parts.length === 0) return "…";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
@@ -181,6 +181,16 @@ const mockBrand = {
   plan: "",
   team_seats: 3,
   secondary_color: "#F7B750",
+};
+
+const emptyBrand = {
+  ...mockBrand,
+  name: "",
+  industry: "",
+  website: "",
+  contact_email: "",
+  logo: "",
+  plan: "",
 };
 
 const mockCreators = [
@@ -684,8 +694,18 @@ export default function BrandDashboard() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState("home");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("brandSidebarOpen");
+    return stored === null ? true : stored === "true";
+  });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === "undefined") return 256;
+    const stored = window.localStorage.getItem("brandSidebarWidth");
+    const parsed = stored ? Number(stored) : NaN;
+    if (!Number.isFinite(parsed)) return 256;
+    return Math.max(80, Math.min(400, parsed));
+  });
   const [collapsedPopout, setCollapsedPopout] = useState<{
     itemId: string;
     top: number;
@@ -711,8 +731,9 @@ export default function BrandDashboard() {
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(mockBrand);
-  const [originalBrand, setOriginalBrand] = useState(mockBrand);
+  const [brand, setBrand] = useState(emptyBrand);
+  const [originalBrand, setOriginalBrand] = useState(emptyBrand);
+  const [isBrandProfileLoaded, setIsBrandProfileLoaded] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
@@ -1291,17 +1312,23 @@ export default function BrandDashboard() {
     const loadBrandProfile = async () => {
       try {
         const profile = await getBrandProfile();
-        if (!mounted || !profile) return;
+        if (!mounted) return;
+        if (!profile) return;
         const brandData = {
-          ...brand,
+          ...emptyBrand,
           id: profile?.id || "",
-          name: profile?.company_name || profile?.name || brand.name || "Brand",
-          industry: profile?.industry || brand.industry,
-          website: profile?.website || brand.website,
-          contact_email: profile?.email || brand.contact_email,
+          name:
+            profile?.company_name ||
+            profile?.name ||
+            emptyBrand.name ||
+            "Brand",
+          industry: profile?.industry || emptyBrand.industry,
+          website: profile?.website || emptyBrand.website,
+          contact_email: profile?.email || emptyBrand.contact_email,
           logo: profile?.logo_url || "",
           plan: profile?.plan_tier || profile?.plan || "",
-          secondary_color: profile?.secondary_color || brand.secondary_color,
+          secondary_color:
+            profile?.secondary_color || emptyBrand.secondary_color,
         };
         setBrand(brandData);
         setOriginalBrand(brandData);
@@ -1311,7 +1338,9 @@ export default function BrandDashboard() {
           setInitialNotificationPrefs(profile.notification_prefs);
         }
       } catch {
-        // Keep mock fallback on failure.
+        // Keep empty fallback on failure.
+      } finally {
+        if (mounted) setIsBrandProfileLoaded(true);
       }
     };
     loadBrandProfile();
@@ -8862,28 +8891,42 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderSettings = () => (
-    <BrandSettingsPanel
-      activeSettingsTab={activeSettingsTab}
-      onChangeTab={setActiveSettingsTab}
-      brand={brand}
-      originalBrand={originalBrand}
-      uploadingLogo={uploadingLogo}
-      isSavingProfile={isSavingProfile}
-      onUpdateBrand={setBrand}
-      onLogoUpload={handleLogoUpload}
-      onSaveProfile={handleSaveProfile}
-      onShowLogoPreview={() => setShowLogoPreview(true)}
-      notificationPrefs={notificationPrefs}
-      onToggleNotificationPref={(prefId, val) => {
-        const newPrefs = { ...notificationPrefs, [prefId]: val };
-        setNotificationPrefs(newPrefs);
-        scheduleNotificationPrefsSave(newPrefs);
-      }}
-      isSavingNotificationPrefs={isSavingNotificationPrefs}
-      onNavigate={navigate}
-    />
-  );
+  const renderSettings = () => {
+    if (!isBrandProfileLoaded) {
+      return (
+        <div className="rounded-lg border border-gray-200 bg-white p-8">
+          <div className="h-6 w-48 rounded bg-gray-100 mb-4" />
+          <div className="h-4 w-64 rounded bg-gray-100 mb-6" />
+          <div className="h-40 rounded bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">
+            Loading brand profile…
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <BrandSettingsPanel
+        activeSettingsTab={activeSettingsTab}
+        onChangeTab={setActiveSettingsTab}
+        brand={brand}
+        originalBrand={originalBrand}
+        uploadingLogo={uploadingLogo}
+        isSavingProfile={isSavingProfile}
+        onUpdateBrand={setBrand}
+        onLogoUpload={handleLogoUpload}
+        onSaveProfile={handleSaveProfile}
+        onShowLogoPreview={() => setShowLogoPreview(true)}
+        notificationPrefs={notificationPrefs}
+        onToggleNotificationPref={(prefId, val) => {
+          const newPrefs = { ...notificationPrefs, [prefId]: val };
+          setNotificationPrefs(newPrefs);
+          scheduleNotificationPrefsSave(newPrefs);
+        }}
+        isSavingNotificationPrefs={isSavingNotificationPrefs}
+        onNavigate={navigate}
+      />
+    );
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -8893,6 +8936,16 @@ export default function BrandDashboard() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("brandSidebarOpen", String(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("brandSidebarWidth", String(sidebarWidth));
+  }, [sidebarWidth]);
 
   const handleSidebarDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
