@@ -1143,6 +1143,10 @@ export default function BrandDashboard() {
   const { hasPermission } = useTeamAccess("brand");
   const canApproveDeliverables = hasPermission("approve_deliverables");
   const canViewDeliverables = hasPermission("view_deliverables");
+  const canManagePayOffers = hasPermission("manage_pay_offers");
+  const canViewPayOffers = hasPermission("view_pay_offers");
+  const canManageJobs = hasPermission("manage_jobs");
+  const canViewInbox = canViewPayOffers;
 
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
@@ -1470,6 +1474,14 @@ export default function BrandDashboard() {
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
+      if (!canManageJobs) {
+        toast({
+          title: "View-only access",
+          description: "You do not have permission to update jobs.",
+          variant: "destructive",
+        });
+        return;
+      }
       const res = await base44.put<{ job?: any }>(`/api/jobs/${jobId}`, {
         status,
       });
@@ -3986,54 +3998,74 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderInboxSubtab = () => (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
-        <p className="text-gray-600">
-          View packages and licensing proposals from agencies
-        </p>
-      </div>
+  const renderInboxSubtab = () => {
+    if (!canViewInbox) {
+      return (
+        <div className="space-y-5">
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Access Restricted
+            </h2>
+            <p className="text-gray-600">
+              You do not have permission to view the inbox.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Contact your team administrator to request access.
+            </p>
+          </Card>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+          <p className="text-gray-600">
+            View packages and licensing proposals from agencies
+          </p>
+        </div>
 
-      <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setInboxSubTab("talent_packages")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "talent_packages"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Talent Packages ({inboxPackages.length})
-        </button>
-        <button
-          onClick={() => setInboxSubTab("direct_requests")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "direct_requests"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Direct Requests
-        </button>
-      </div>
+        <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setInboxSubTab("talent_packages")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "talent_packages"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Talent Packages ({inboxPackages.length})
+          </button>
+          <button
+            onClick={() => setInboxSubTab("direct_requests")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "direct_requests"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Direct Requests
+          </button>
+        </div>
 
-      {inboxSubTab === "talent_packages" ? (
-        <div className="space-y-4">
-          {loadingInboxPackages && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <p className="text-sm text-gray-500">Loading packages...</p>
-            </Card>
-          )}
-          {!loadingInboxPackages && inboxPackages.length === 0 && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <p className="text-sm text-gray-500">No packages received yet.</p>
-            </Card>
-          )}
-          {inboxPackages.map((pkg: any) => {
-            const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
-            const isExpired = expiresAt
-              ? expiresAt.getTime() < Date.now()
+        {inboxSubTab === "talent_packages" ? (
+          <div className="space-y-4">
+            {loadingInboxPackages && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">Loading packages...</p>
+              </Card>
+            )}
+            {!loadingInboxPackages && inboxPackages.length === 0 && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">No packages received yet.</p>
+              </Card>
+            )}
+            {inboxPackages.map((pkg: any) => {
+              const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
+              const isExpired = expiresAt
+                ? expiresAt.getTime() < Date.now()
               : false;
             const isDone =
               pkg?.status === "feedback_received" ||
@@ -4099,12 +4131,13 @@ export default function BrandDashboard() {
                 <div className="flex gap-2">
                   <Button
                     className={`flex-1 rounded-none ${
-                      isExpired
+                      isExpired || !canManagePayOffers
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-black hover:bg-gray-800 text-white"
                     }`}
-                    disabled={isExpired || isDone}
+                    disabled={isExpired || isDone || !canManagePayOffers}
                     onClick={() => setConfirmingDonePkg(pkg)}
+                    title={!canManagePayOffers ? "You do not have permission to mark packages as done" : ""}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
@@ -4125,12 +4158,14 @@ export default function BrandDashboard() {
                   >
                     Open Package
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-none"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {canManagePayOffers && (
+                    <Button
+                      variant="outline"
+                      className="border border-gray-300 rounded-none"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </Card>
             );
@@ -4149,7 +4184,8 @@ export default function BrandDashboard() {
         </Card>
       )}
     </div>
-  );
+    );
+  };
 
   const loadOfferHubDetails = async (
     offerId: string,
@@ -6461,8 +6497,18 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="w-full border-2 border-gray-300"
+                      disabled={!canManagePayOffers}
                       onClick={(event) => {
                         event.stopPropagation();
+                        if (!canManagePayOffers) {
+                          toast({
+                            title: "View-only access",
+                            description:
+                              "You do not have permission to add collaborators.",
+                            variant: "destructive" as any,
+                          });
+                          return;
+                        }
                         const first = offers[0];
                         if (first) openAddCollaboratorFlow(first);
                       }}
@@ -6898,6 +6944,7 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -11451,17 +11498,23 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          navigateToSection("campaigns-inbox");
+                          if (canViewInbox) {
+                            navigateToSection("campaigns-inbox");
+                          }
                         }}
+                        disabled={!canViewInbox}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
+                            : canViewInbox
+                              ? "text-gray-600 hover:bg-gray-100"
+                              : "text-gray-400 cursor-not-allowed"
                         }`}
+                        title={!canViewInbox ? "You do not have permission to view the inbox" : ""}
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {inboxPendingCount > 0 && (
+                        {canViewInbox && inboxPendingCount > 0 && (
                           <Badge className="bg-gray-200 text-gray-700">
                             {inboxPendingCount}
                           </Badge>
@@ -11706,6 +11759,7 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }

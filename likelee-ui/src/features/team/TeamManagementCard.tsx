@@ -10,6 +10,7 @@ import {
   Activity,
   User,
   Edit2,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -177,6 +178,16 @@ export function TeamManagementCard({
     React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [submittingInvite, setSubmittingInvite] = React.useState(false);
   const [updatingRole, setUpdatingRole] = React.useState(false);
+
+  const inviteRoleOption = React.useMemo(
+    () => TEAM_ROLE_OPTIONS.find((option) => option.value === inviteRole),
+    [inviteRole],
+  );
+
+  const pendingRoleOption = React.useMemo(
+    () => TEAM_ROLE_OPTIONS.find((option) => option.value === pendingRoleValue),
+    [pendingRoleValue],
+  );
 
   const authHeaders = React.useMemo(
     () => ({
@@ -575,6 +586,57 @@ export function TeamManagementCard({
                 </SelectContent>
               </Select>
             </div>
+
+            {inviteRoleOption?.permissions?.length ? (
+              <div
+                className={
+                  organizationType === "brand"
+                    ? "border-2 border-gray-200 bg-gray-50 p-5 rounded-none"
+                    : "border border-gray-200 bg-gray-50 p-5 rounded-xl"
+                }
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div
+                    className={
+                      organizationType === "brand"
+                        ? "text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"
+                        : "text-xs font-bold text-gray-700 uppercase tracking-wide"
+                    }
+                  >
+                    Access Rights
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      organizationType === "brand"
+                        ? "rounded-none font-black uppercase tracking-widest text-[10px]"
+                        : ""
+                    }
+                  >
+                    {inviteRoleOption.permissions.length}
+                  </Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  {inviteRoleOption.permissions.map((permission) => (
+                    <div
+                      key={permission}
+                      className="flex items-start gap-2"
+                    >
+                      <Check className="w-4 h-4 text-gray-700 mt-0.5" />
+                      <div
+                        className={
+                          organizationType === "brand"
+                            ? "text-[13px] font-bold text-gray-900 leading-snug"
+                            : "text-xs font-medium text-gray-700 leading-snug"
+                        }
+                      >
+                        {permission}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className={organizationType === "brand" ? "p-4 bg-amber-50 border-2 border-amber-200 rounded-none" : "p-4 bg-indigo-50 border border-indigo-100 rounded-xl"}>
               <p className={organizationType === "brand" ? "text-xs text-amber-900 font-bold leading-relaxed" : "text-xs text-indigo-700 font-medium leading-relaxed"}>
                 <span className="font-bold">Note:</span> The invited user will
@@ -642,6 +704,32 @@ export function TeamManagementCard({
                 </SelectContent>
               </Select>
             </div>
+
+            {pendingRoleOption?.permissions?.length ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                    Access Rights
+                  </div>
+                  <Badge variant="secondary">
+                    {pendingRoleOption.permissions.length}
+                  </Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  {pendingRoleOption.permissions.map((permission) => (
+                    <div
+                      key={permission}
+                      className="flex items-start gap-2"
+                    >
+                      <Check className="w-4 h-4 text-gray-700 mt-0.5" />
+                      <div className="text-xs font-medium text-gray-700 leading-snug">
+                        {permission}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
               This change takes effect immediately for the member's active
               session.
