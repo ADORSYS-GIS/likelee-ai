@@ -2345,40 +2345,6 @@ pub async fn create_campaign_offers(
         created.push(row);
     }
 
-    // Notify brand about new project (newProjectAlerts)
-    if !created.is_empty() {
-        let brand_id_str = user.id.clone();
-        let campaign_id_str = campaign_id.clone();
-        let offer_count = created.len();
-        let state_clone = state.clone();
-
-        tokio::spawn(async move {
-            let subject = "Campaign offers sent successfully";
-            let message = format!(
-                "You've successfully sent {} offer{} for your campaign. Track responses on your dashboard.",
-                offer_count,
-                if offer_count == 1 { "" } else { "s" }
-            );
-            let _ = crate::notifications::notify_brand_if_enabled(
-                &state_clone,
-                crate::notifications::BrandNotificationRequest {
-                    brand_id: &brand_id_str,
-                    agency_id: None,
-                    pref_key: "newProjectAlerts",
-                    subject,
-                    message: &message,
-                    meta_json: json!({
-                        "campaign_id": campaign_id_str,
-                        "offer_count": offer_count,
-                        "type": "new_project_alert"
-                    }),
-                    notify_email: true,
-                },
-            )
-            .await;
-        });
-    }
-
     Ok(Json(json!({"status":"ok","offers":created})))
 }
 

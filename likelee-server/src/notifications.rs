@@ -665,7 +665,16 @@ pub async fn send_brand_notification(
     // 3. Send email if enabled
     if notify_email {
         if let Some(email) = brand_email {
-            let _ = crate::email::send_plain_text_email(state, email, subject, message, None);
+            if let Err((code, err)) =
+                crate::email::send_plain_text_email(state, email, subject, message, None)
+            {
+                tracing::warn!(
+                    status = %code,
+                    error = %err,
+                    brand_id,
+                    "failed to send brand notification email"
+                );
+            }
         }
     }
 

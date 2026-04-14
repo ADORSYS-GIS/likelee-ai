@@ -1161,61 +1161,6 @@ pub async fn create(
         }
     }
 
-    // Notify brand about license expiration if within 10 days (licenseExpirationAlerts)
-    let days_until_expiry = (end_date - chrono::Utc::now().date_naive()).num_days();
-    if (0..=10).contains(&days_until_expiry) {
-        // Find brand_id from the request (if it exists)
-        if let Ok(req_resp) = state
-            .pg
-            .from("licensing_requests")
-            .select("brand_id")
-            .eq("id", request_id)
-            .single()
-            .execute()
-            .await
-        {
-            if req_resp.status().is_success() {
-                if let Ok(req_text) = req_resp.text().await {
-                    if let Ok(req_data) = serde_json::from_str::<serde_json::Value>(&req_text) {
-                        if let Some(brand_id) = req_data.get("brand_id").and_then(|v| v.as_str()) {
-                            let brand_id_str = brand_id.to_string();
-                            let request_id_str = request_id.to_string();
-                            let end_date_str = end_date.to_string();
-                            let state_clone = state.clone();
-
-                            tokio::spawn(async move {
-                                let subject =
-                                    format!("License expiring in {} days", days_until_expiry);
-                                let message = format!(
-                                    "Your license will expire on {}. Please renew or extend before expiration.",
-                                    end_date_str
-                                );
-                                let _ = crate::notifications::notify_brand_if_enabled(
-                                    &state_clone,
-                                    crate::notifications::BrandNotificationRequest {
-                                        brand_id: &brand_id_str,
-                                        agency_id: None,
-                                        pref_key: "licenseExpirationAlerts",
-                                        subject: &subject,
-                                        message: &message,
-                                        meta_json: json!({
-                                            "licensing_request_id": request_id_str,
-                                            "expiry_date": end_date_str,
-                                            "days_remaining": days_until_expiry,
-                                            "type": "license_expiration"
-                                        }),
-                                        notify_email: true,
-                                    },
-                                )
-                                .await;
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     Ok(Json(json!({ "id": request_id, "ok": true })))
 }
 

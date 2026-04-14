@@ -564,13 +564,14 @@ pub async fn get_licensing_contracts_count(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let brand_id = resolve_effective_brand_id(&state, &user).await?;
     // Count licensing requests where agency has sent contract (status changed to contract_sent or similar)
     // This counts unread notifications of type "contract_ready"
     let resp = state
         .pg
         .from("brand_notifications")
         .select("id")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .is("read_at", "null")
         .eq("meta_json->>type", "contract_ready")
         .execute()
