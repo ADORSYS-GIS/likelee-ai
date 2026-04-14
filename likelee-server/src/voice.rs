@@ -704,8 +704,6 @@ pub async fn list_voice_recordings(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // We will query recordings where user_id is IN this list
-    let target_user_ids =
-        resolve_voice_owner_ids(&state, &user, params.get("talent_id").map(String::as_str)).await?;
     let mut target_user_ids = vec![user.id.clone()];
 
     // If a talent_id is provided and the user is an agency, check management access
