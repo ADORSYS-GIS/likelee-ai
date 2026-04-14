@@ -274,15 +274,15 @@ export const ScoutingMap = ({
         <div className="flex flex-wrap items-center gap-3"></div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-100">
-          <Calendar className="w-3.5 h-3.5" /> Calendar Sync Enabled
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-bold border border-blue-100 whitespace-nowrap">
+          <Calendar className="w-3 h-3" /> Calendar Sync Enabled
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-100">
-          <Share2 className="w-3.5 h-3.5" /> Social Activity Tracked
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-[9px] font-bold border border-purple-100 whitespace-nowrap">
+          <Share2 className="w-3 h-3" /> Social Activity Tracked
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-[11px] font-bold border border-green-100">
-          <Link className="w-3.5 h-3.5" /> Linked to Pipeline
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-[9px] font-bold border border-green-100 whitespace-nowrap">
+          <Link className="w-3 h-3" /> Linked to Pipeline
         </div>
       </div>
 
@@ -352,21 +352,25 @@ export const ScoutingMap = ({
                 </div>
                 <div className="lg:hidden grid grid-cols-2 gap-2">
                   {(showAllLayers ? layerDefs : layerDefs.slice(0, 4)).map(layer => renderLayerToggle(layer))}
-                  {!showAllLayers && (
-                    <button 
-                      onClick={() => setShowAllLayers(true)}
-                      className="flex flex-col items-center justify-center p-2 rounded-xl border border-gray-200 border-dashed text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all min-h-[48px]"
-                    >
-                      <span className="text-[11px] font-bold flex items-center gap-1"><Map className="w-3 h-3"/> + 2 More</span>
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => setShowAllLayers(!showAllLayers)}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-gray-200 border-dashed text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all min-h-[48px]"
+                  >
+                    <span className="text-[11px] font-bold flex items-center gap-1">
+                      {showAllLayers ? (
+                        <>Show Less</>
+                      ) : (
+                        <><Map className="w-3 h-3"/> + 2 More</>
+                      )}
+                    </span>
+                  </button>
                 </div>
               </>
             );
           })()}
         </div>
 
-        <div className="bg-gray-50 rounded-none lg:rounded-2xl -mx-4 sm:-mx-6 lg:mx-0 border-y lg:border border-gray-200 relative overflow-hidden group aspect-square lg:h-[800px]">
+        <div className="bg-gray-50 rounded-none lg:rounded-2xl -mx-4 sm:-mx-6 lg:mx-0 border-y lg:border border-gray-200 relative overflow-hidden group aspect-square lg:aspect-auto lg:h-[850px]">
           {loading && (
             <div className="absolute inset-0 z-[1000] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6">
               <div className="p-6 bg-white rounded-full mb-4 shadow-sm">
