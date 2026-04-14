@@ -1982,47 +1982,43 @@ export default function ReserveProfile() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                  {t("reserveProfile.verification.title")}
+                  {t("verification.title")}
                 </h3>
-                <p className="text-gray-700">
-                  {t("reserveProfile.verification.subtitle")}
-                </p>
+                <p className="text-gray-700">{t("verification.description")}</p>
               </div>
 
               {/* Why verify box */}
               <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
                 <h4 className="font-bold text-gray-900 mb-3">
-                  {t("reserveProfile.verification.whyVerify.title")}
+                  {t("verification.why.title")}
                 </h4>
                 <ul className="space-y-2 text-gray-800">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason1")}
+                    {t("verification.why.items.discovered")}
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason2")}
+                    {t("verification.why.items.trust")}
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason3")}
+                    {t("verification.why.items.opportunities")}
                   </li>
                 </ul>
               </div>
 
-              <p className="text-gray-700">
-                {t("reserveProfile.verification.description")}
-              </p>
+              <p className="text-gray-700">{t("verification.processDesc")}</p>
 
               {/* Requirements box */}
               <div className="p-5 border-2 border-gray-300 bg-gray-50">
                 <h4 className="font-bold text-gray-900 mb-2">
-                  {t("reserveProfile.verification.requirements.title")}
+                  {t("verification.requirements.title")}
                 </h4>
                 <ul className="list-disc list-inside text-gray-800 space-y-1">
-                  <li>{t("reserveProfile.verification.requirements.item1")}</li>
-                  <li>{t("reserveProfile.verification.requirements.item2")}</li>
-                  <li>{t("reserveProfile.verification.requirements.item3")}</li>
+                  <li>{t("verification.requirements.items.id")}</li>
+                  <li>{t("verification.requirements.items.camera")}</li>
+                  <li>{t("verification.requirements.items.time")}</li>
                 </ul>
               </div>
 
@@ -2033,31 +2029,28 @@ export default function ReserveProfile() {
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
                   {kycLoading
-                    ? t(
-                        "reserveProfile.actions.startingVerification",
-                        "Starting…",
-                      )
+                    ? t("verification.actions.starting", "Starting…")
                     : normalizedKycStatus === "pending"
                       ? savedKycSessionUrl
                         ? t(
                             hasKycFollowUp
-                              ? "reserveProfile.actions.continueVerification"
-                              : "reserveProfile.actions.resumeVerification",
+                              ? "verification.actions.continueVerification"
+                              : "verification.actions.resumeVerification",
                             hasKycFollowUp
                               ? "Continue Verification"
                               : "Resume Verification",
                           )
                         : t(
-                            "reserveProfile.actions.restartVerification",
+                            "verification.actions.startNewVerification",
                             "Start New Verification",
                           )
                       : isKycRejected
                         ? t(
-                            "reserveProfile.actions.retryVerification",
+                            "verification.actions.retryVerification",
                             "Retry Verification",
                           )
                         : t(
-                            "reserveProfile.actions.verifyIdentity",
+                            "verification.actions.start",
                             "Verify Identity Now",
                           )}
                 </Button>
@@ -2069,7 +2062,7 @@ export default function ReserveProfile() {
                     className="w-full h-12 border-2 border-black rounded-none"
                   >
                     {t(
-                      "reserveProfile.actions.startNewVerification",
+                      "verification.actions.startNewVerification",
                       "Start New Verification",
                     )}
                   </Button>
@@ -2087,19 +2080,17 @@ export default function ReserveProfile() {
                       }
                     >
                       {kycStatus === "not_started"
-                        ? t("reserveProfile.verification.status.notStarted")
+                        ? t("verification.status.notStarted")
                         : kycStatus === "approved"
-                          ? t("reserveProfile.verification.status.approved")
+                          ? t("verification.status.approved")
                           : hasKycFollowUp
                             ? t(
                                 "reserveProfile.verification.status.actionNeeded",
                                 "Action needed",
                               )
                             : kycStatus === "rejected"
-                              ? t("reserveProfile.verification.status.rejected")
-                              : t(
-                                  "reserveProfile.verification.status.verifying",
-                                )}
+                              ? t("verification.status.rejected")
+                              : t("verification.status.verifying")}
                     </strong>
                   </span>
                   <Button
@@ -2113,10 +2104,7 @@ export default function ReserveProfile() {
                     ) : (
                       <RefreshCw className="w-4 h-4 mr-2" />
                     )}
-                    {t(
-                      "reserveProfile.actions.refreshVerificationStatus",
-                      "Refresh Status",
-                    )}
+                    {t("verification.actions.refreshStatus", "Refresh Status")}
                   </Button>
                 </div>
                 {(hasKycFollowUp || isKycRejected) && currentKycReason && (
@@ -2158,30 +2146,30 @@ export default function ReserveProfile() {
                   {hasKycFollowUp
                     ? savedKycSessionUrl
                       ? t(
-                          "reserveProfile.verification.followUpResumeHint",
+                          "verification.hints.followUpResumeHint",
                           "Veriff requested another step. Use Continue Verification to finish approval, or start a new verification session if the earlier link no longer works.",
                         )
                       : t(
-                          "reserveProfile.verification.followUpRestartHint",
+                          "verification.hints.followUpRestartHint",
                           "Veriff requested another step. Start a new verification session if the earlier link is no longer available, or use Refresh Status if you already finished it.",
                         )
                     : isKycRejected
                       ? t(
-                          "reserveProfile.verification.rejectedHint",
+                          "verification.hints.rejectedHint",
                           "Your last verification was not approved. Review the note above and retry with a new verification session.",
                         )
                       : normalizedKycStatus === "pending"
                         ? savedKycSessionUrl
                           ? t(
-                              "reserveProfile.verification.resumeHint",
+                              "verification.hints.resumeHint",
                               "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
                             )
                           : t(
-                              "reserveProfile.verification.restartHint",
+                              "verification.hints.restartHint",
                               "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
                             )
                         : t(
-                            "reserveProfile.verification.refreshHint",
+                            "verification.hints.refreshHint",
                             "If the status does not update automatically a few seconds after verification, use Refresh Status.",
                           )}
                 </p>
@@ -2200,7 +2188,7 @@ export default function ReserveProfile() {
                       variant="outline"
                       className="w-full h-12 border-2 border-gray-300 rounded-none"
                     >
-                      {t("reserveProfile.actions.skip")}
+                      {t("verification.actions.skip")}
                     </Button>
                     <Button
                       onClick={verifyAndContinue}
@@ -2210,7 +2198,7 @@ export default function ReserveProfile() {
                       {kycLoading
                         ? t("common.checking", "Checking…")
                         : t(
-                            "reserveProfile.actions.verifyAndContinue",
+                            "verification.actions.verifyAndContinue",
                             "Verify & Continue",
                           )}
                     </Button>
@@ -2296,9 +2284,7 @@ export default function ReserveProfile() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const lang = i18n.language || "en";
-                    const fileName = `/creator-talent-terms-and-conditions-${lang}.html`;
-                    window.open(fileName, "_blank");
+                    window.open("/terms/creator", "_blank");
                   }}
                 >
                   <Download className="mr-2 h-4 w-4" />
