@@ -571,6 +571,16 @@
       "genericFailed": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
       "unknown": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht."
     },
+    "otp": {
+      "title": "Verifizieren Sie Ihre E-Mail",
+      "dialogDescription": "Bleiben Sie hier, überprüfen Sie Ihren Posteingang und geben Sie den 6-stelligen Code ein, um das Onboarding auf derselben Registerkarte fortzusetzen.",
+      "helperText": "Wenn der Code nicht sofort ankommt, verwenden Sie erneut senden und überprüfen Sie Ihren Spam-Ordner.",
+      "verifyLabel": "Fortfahren",
+      "description": "Wir haben einen neuen 6-stelligen Code an Ihren Posteingang gesendet.",
+      "successDescription": "E-Mail verifiziert. Fahren Sie unten mit der Einrichtung Ihres Profils fort.",
+      "codeSentTitle": "Code gesendet",
+      "codeSentDescription": "Wir haben einen neuen 6-stelligen Code an Ihren Posteingang gesendet."
+    },
     "photos": {
       "cameraRequiredTitle": "Kamerazugriff erforderlich",
       "cameraRequiredDescription": "Kamerazugriff nicht möglich. Bitte erlauben Sie die Kameraberechtigung in Ihren Browsereinstellungen.",
@@ -761,7 +771,8 @@
       "raceEthnicity": "Rasse/Ethnizität (alles Zutreffende auswählen)",
       "vibes": "Vibe- / Stil-Tags",
       "save": "Speichern & Weiter zur Überprüfung",
-      "selectAll": "Alle auswählen"
+      "selectAll": "Alle auswählen",
+      "specifyMoreLater": "Sie können später mehr angeben"
     },
     "liveness": {
       "alreadyApproved": "Bereits genehmigt",
@@ -1227,7 +1238,7 @@
   "faces.cta.reserveProfileButton": "Profil reservieren",
   "common": {
     "signIn": "Anmelden",
-    "dashboard": "Dashboard",
+    "dashboard": "Übersicht",
     "ongoing": "Laufend",
     "city": "Stadt",
     "state": "Bundesland",

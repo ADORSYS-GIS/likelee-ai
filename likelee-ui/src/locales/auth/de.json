@@ -339,12 +339,16 @@
       }
     },
     "emailOtp": {
+      "title": "Verifizieren Sie Ihre E-Mail",
+      "description": "Bleiben Sie hier, überprüfen Sie Ihren Posteingang und geben Sie den 6-stelligen Code ein, um das Onboarding auf derselben Registerkarte fortzusetzen.",
+      "helperText": "Wenn der Code nicht sofort ankommt, verwenden Sie erneut senden und überprüfen Sie Ihren Spam-Ordner.",
       "enterCodePrefix": "Geben Sie den 6-stelligen Code ein, der an",
       "verifying": "Überprüfung…",
       "sending": "Senden…",
       "resendAvailableIn": "Erneut senden verfügbar in {{seconds}}s",
       "resendCode": "Code erneut senden",
-      "verifyLabel": "Code überprüfen"
+      "verifyLabel": "Code überprüfen",
+      "continueButton": "Fortfahren"
     }
   }
 }

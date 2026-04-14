@@ -384,12 +384,16 @@
       }
     },
     "emailOtp": {
+      "title": "Verify your email",
+      "description": "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
+      "helperText": "If the code does not arrive right away, use resend and check your spam folder.",
       "enterCodePrefix": "Enter the 6-digit code sent to",
       "verifying": "Verifying…",
       "sending": "Sending…",
       "resendAvailableIn": "Resend available in {{seconds}}s",
       "resendCode": "Resend code",
-      "verifyLabel": "Verify code"
+      "verifyLabel": "Verify code",
+      "continueButton": "Continue"
     }
   }
 }

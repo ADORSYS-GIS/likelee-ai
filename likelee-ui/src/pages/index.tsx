@@ -114,6 +114,8 @@ import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
 import { PublicPackageView } from "./PublicPackageView";
 import PublicCatalogView from "./PublicCatalogView";
+import CreatorTerms from "./CreatorTerms";
+import AgencyTerms from "./AgencyTerms";
 
 import {
   BrowserRouter as Router,
@@ -557,6 +559,9 @@ function AppRoutes() {
         }
       />
       <Route path="/Unauthorized" element={<Unauthorized />} />
+
+      <Route path="/terms/creator" element={<CreatorTerms />} />
+      <Route path="/terms/agency" element={<AgencyTerms />} />
     </Routes>
   );
 

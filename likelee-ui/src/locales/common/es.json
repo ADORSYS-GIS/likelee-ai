@@ -324,6 +324,16 @@
       "genericFailed": "Algo salió mal. Inténtelo de nuevo.",
       "unknown": "Ocurrió un error. Inténtelo de nuevo o contacte al soporte si el problema persiste."
     },
+    "otp": {
+      "title": "Verifica tu correo electrónico",
+      "dialogDescription": "Quédate aquí, revisa tu bandeja de entrada e ingresa el código de 6 dígitos para continuar la incorporación en la misma pestaña.",
+      "helperText": "Si el código no llega de inmediato, usa reenviar y revisa tu carpeta de spam.",
+      "verifyLabel": "Continuar",
+      "description": "Enviamos un nuevo código de 6 dígitos a tu bandeja de entrada.",
+      "successDescription": "Correo verificado. Continúa la configuración de tu perfil a continuación.",
+      "codeSentTitle": "Código enviado",
+      "codeSentDescription": "Enviamos un nuevo código de 6 dígitos a tu bandeja de entrada."
+    },
     "photos": {
       "label": "Sube al menos 3 fotos",
       "description": "Estas se utilizarán para entrenar tu modelo de IA. Asegúrate de que sean de alta calidad y que tu rostro se vea claramente.",
@@ -554,7 +564,8 @@
           "livenessApproved": "Verificación de Vida Aprobada"
         }
       },
-      "selectAll": "Seleccionar Todo"
+      "selectAll": "Seleccionar Todo",
+      "specifyMoreLater": "Puedes especificar más tarde"
     },
     "warning": {
       "limitedBatches": "Estamos lanzando en lotes limitados para asegurar que cada Creador obtenga visibilidad y oportunidades de campaña. Reserva tu perfil para unirte a la primera cohorte de creadores."

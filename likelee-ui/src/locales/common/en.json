@@ -1072,6 +1072,16 @@
       "mustAgreeTitle": "Agreement Required",
       "completeRegistration": "Complete Registration"
     },
+    "otp": {
+      "title": "Verify your email",
+      "dialogDescription": "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
+      "helperText": "If the code does not arrive right away, use resend and check your spam folder.",
+      "verifyLabel": "Continue",
+      "description": "We sent a fresh 6-digit code to your inbox.",
+      "successDescription": "Email verified. Continue your profile setup below.",
+      "codeSentTitle": "Code sent",
+      "codeSentDescription": "We sent a fresh 6-digit code to your inbox."
+    },
     "errors": {
       "emailRegistered": "This email is already registered. Please use a different email or sign in instead.",
       "invalidEmail": "Please enter a valid email address.",
@@ -1373,7 +1383,8 @@
           "livenessApproved": "Liveness Approved"
         }
       },
-      "selectAll": "Select All"
+      "selectAll": "Select All",
+      "specifyMoreLater": "You can specify more later"
     },
     "warning": {
       "limitedBatches": "We're launching in limited batches to ensure every creator gets visibility and campaign opportunities. Reserve your profile now to join the first cohort of creators defining the future."

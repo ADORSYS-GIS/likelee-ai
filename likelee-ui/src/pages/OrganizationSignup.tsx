@@ -2717,9 +2717,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const lang = i18n.language || "en";
-                    const fileName = `/terms-and-conditions-agency-${lang}.html`;
-                    window.open(fileName, "_blank");
+                    window.open("/terms/agency", "_blank");
                   }}
                 >
                   <Download className="mr-2 h-4 w-4" />
@@ -2829,10 +2827,10 @@ export default function OrganizationSignup() {
           open={emailVerificationPending}
           onOpenChange={setEmailVerificationPending}
           email={normalizeEmail(formData.email)}
-          title="Verify your email"
-          description="Enter the 6-digit code from your inbox to keep setup on this tab."
-          helperText="Use resend if the email takes a moment to arrive."
-          verifyLabel="Continue"
+          title={t("auth.emailOtp.title")}
+          description={t("auth.emailOtp.description")}
+          helperText={t("auth.emailOtp.helperText")}
+          verifyLabel={t("auth.emailOtp.continueButton")}
           onVerify={handleOrganizationOtpVerify}
           onResend={handleOrganizationOtpResend}
           theme={colors.otpTheme}

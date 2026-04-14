@@ -380,6 +380,16 @@
       "verificationPending": "Vérification en attente",
       "verificationPendingDescription": "La vérification n'est pas encore terminée. Statut : {{kyc}}."
     },
+    "otp": {
+      "title": "Vérifiez votre e-mail",
+      "dialogDescription": "Restez ici, consultez votre boîte de réception et entrez le code à 6 chiffres pour continuer l'intégration sur le même onglet.",
+      "helperText": "Si le code n'arrive pas tout de suite, utilisez renvoyer et vérifiez votre dossier spam.",
+      "verifyLabel": "Continuer",
+      "description": "Nous avons envoyé un nouveau code à 6 chiffres dans votre boîte de réception.",
+      "successDescription": "E-mail vérifié. Continuez la configuration de votre profil ci-dessous.",
+      "codeSentTitle": "Code envoyé",
+      "codeSentDescription": "Nous avons envoyé un nouveau code à 6 chiffres dans votre boîte de réception."
+    },
     "errors": {
       "emailRegistered": "Cet e-mail est déjà enregistré. Veuillez utiliser un autre e-mail ou vous connecter.",
       "invalidEmail": "Veuillez entrer une adresse email valide.",
@@ -646,6 +656,7 @@
       },
       "forgotPassword": "Mot de passe oublié ?",
       "selectAll": "Tout sélectionner",
+      "specifyMoreLater": "Vous pouvez en préciser davantage plus tard",
       "vibes": "Tags d'Ambiance / Style",
       "headshot": "Télécharger une photo (facultatif)",
       "headshotHint": "Vous pouvez télécharger votre photo après avoir créé votre compte",

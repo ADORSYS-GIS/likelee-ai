@@ -325,12 +325,16 @@
       }
     },
     "emailOtp": {
+      "title": "Vérifiez votre e-mail",
+      "description": "Restez ici, consultez votre boîte de réception et entrez le code à 6 chiffres pour continuer l'intégration sur le même onglet.",
+      "helperText": "Si le code n'arrive pas tout de suite, utilisez renvoyer et vérifiez votre dossier spam.",
       "enterCodePrefix": "Entrez le code à 6 chiffres envoyé à",
       "verifying": "Vérification…",
       "sending": "Envoi…",
       "resendAvailableIn": "Renvoi disponible dans {{seconds}}s",
       "resendCode": "Renvoyer le code",
-      "verifyLabel": "Vérifier le code"
+      "verifyLabel": "Vérifier le code",
+      "continueButton": "Continuer"
     }
   }
 }
