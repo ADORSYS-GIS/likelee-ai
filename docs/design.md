@@ -1219,8 +1219,32 @@ Supabase Realtime is used for instant message delivery via `postgres_changes` su
 
 ---
 
+---
+
+## UI Components & Dashboard Patterns
+
+### Dashboard Navigation (Horizontal Rail)
+
+To ensure a professional experience on mobile while maintaining information density, the agency dashboard uses a unified "Rail" pattern for secondary navigation.
+
+- **Component**: `DashboardTabRail` (located in `src/components/dashboard/DashboardResponsive.tsx`)
+- **Key Features**:
+    - **Pill-Shaped Styling**: Modern, clickable elements with distinct active states.
+    - **Horizontal Scrolling**: Tabs scroll horizontally on small screens to prevent vertical stacking.
+    - **Visual Hints (Fade)**: Uses a CSS mask-image (`.scroll-fade-x` in `index.css`) to provide a subtle gradient fade on the edges, indicating more content is available.
+    - **Scrollbar-Free**: Hidden scrollbars (`.no-scrollbar`) for a cleaner app-like feel.
+
+### Responsive Headers
+
+Dashboard section headers follow a standard responsive pattern to maximize vertical space:
+
+- **Compact Layout**: Headers transition from a stacked layout on mobile to a side-by-side layout on larger screens.
+- **Icon-Only Actions**: Action buttons in the header (e.g., Export, Create) transition to icon-only versions on mobile using `hidden lg:inline` for labels.
+- **Spacing**: Unified padding and margins across all dashboard modules (`Roster`, `Connections`, `Analytics`) to ensure visual harmony.
+
 ## Milestones
 
 - [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Multi-stage deliverable review workflow and secure media proxy with JWT fallback.
 - [x] **Creator Payment Gate (2026-03-17)**: Payment gating for campaign deliverables; Stripe-based campaign offer checkout.
-- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.
+- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos.
+- [x] **Agency Dashboard Responsiveness (2026-04-14)**: Optimized the agency dashboard for professional mobile and desktop experience. Unified tab navigation with the new `DashboardTabRail` featuring CSS mask-fading for horizontal scrolling and compact mobile headers.

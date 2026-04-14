@@ -66,4 +66,5 @@
 
 - [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Implemented multi-stage deliverable review workflow (draft -> submitted -> approved) and secure media proxy with JWT token fallback in query parameters for browser-native media elements.
 - [x] **Creator Payment Gate (2026-03-17)**: Implemented comprehensive payment gating for campaign deliverables. Restricted uploads and submissions for unpaid offers on both Agency and Creator dashboards, enhanced backend API with payment status, and integrated Stripe-based campaign offer checkout.
+- [x] **Agency Dashboard Responsiveness (2026-04-14)**: Optimized the agency dashboard for professional mobile and desktop experience. Unified tab navigation with the new `DashboardTabRail` featuring CSS mask-fading for horizontal scrolling, refactored view headers for compact mobile display, and improved global UI/UX consistency.
 - [x] **Messaging Hub Enhancements (2026-04-02)**: Enhanced messaging UI with circular send buttons, rounded bubbles, and green ticks. Implemented message editing and soft deletion support in backend and frontend. Added search and filtering (All/Unread) to the thread list.

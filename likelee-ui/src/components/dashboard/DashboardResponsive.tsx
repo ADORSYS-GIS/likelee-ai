@@ -73,18 +73,18 @@ export function DashboardTabRail({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto", className)}>
-      <div className="flex min-w-max items-center gap-2 rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+    <div className={cn("overflow-x-auto no-scrollbar scroll-fade-x py-1", className)}>
+      <div className="flex min-w-max items-center gap-1.5 p-1">
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={item.onClick}
             className={cn(
-              "rounded-xl px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors sm:px-4",
+              "rounded-xl px-4 py-2 text-sm font-bold whitespace-nowrap transition-all duration-200",
               item.active
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                ? "bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-600/20"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
             )}
           >
             {item.label}
