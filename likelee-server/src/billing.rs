@@ -2071,11 +2071,11 @@ pub async fn start_agency_pro_trial(
         team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
     let agency_id = agency_access.organization_id.clone();
 
-    Err(billing_error(
+    return Err(billing_error(
         StatusCode::BAD_REQUEST,
         "trial_requires_checkout",
         "Agency trials must be started via Stripe Checkout.",
-    ))
+    ));
     let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
     if access.trial_active {
         return Err(billing_error(
