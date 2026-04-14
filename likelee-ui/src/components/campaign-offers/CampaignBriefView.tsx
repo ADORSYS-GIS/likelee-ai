@@ -82,359 +82,308 @@ export function CampaignBriefView({
   }, [lightboxIndex, referenceImageUrls.length]);
 
   return (
-    <>
-      <Card className="p-6 bg-white border border-gray-200 space-y-6 rounded-none">
-        <h2 className="text-2xl font-bold text-slate-900">
-          General Dialogue &amp; Voice Direction
-        </h2>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Brand Voice &amp; Tone
-          </h3>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none space-y-2">
-            <p className="text-slate-900">
-              <span className="font-semibold">Voice:</span>{" "}
-              {briefValue("voice")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Tone:</span> {briefValue("tone")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Personality:</span>{" "}
-              {briefValue("personality")}
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Header Grid: Summary Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Voice</p>
+          <p className="text-sm font-semibold text-slate-900">{briefValue("voice")}</p>
         </div>
-
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">Key Messages</h3>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-            {briefLines("key_messages").length > 0 ? (
-              <ul className="list-disc pl-5 space-y-1 text-slate-900">
-                {briefLines("key_messages").map((line, idx) => (
-                  <li key={`key-message-${idx}`}>
-                    {line.replace(/^[•-]\s*/, "")}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-slate-500">Not specified</p>
-            )}
-          </div>
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tone</p>
+          <p className="text-sm font-semibold text-slate-900">{briefValue("tone")}</p>
         </div>
-
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Script Guidelines (For Video/Audio)
-          </h3>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none space-y-2">
-            <p className="text-slate-900">
-              <span className="font-semibold">Opening (0-5s):</span>{" "}
-              {briefValue("script_opening")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Middle (5-20s):</span>{" "}
-              {briefValue("script_middle")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Closing (20-30s):</span>{" "}
-              {briefValue("script_closing")}
-            </p>
-          </div>
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Personality</p>
+          <p className="text-sm font-semibold text-slate-900">{briefValue("personality")}</p>
         </div>
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Duration</p>
+          <p className="text-sm font-semibold text-slate-900">{briefValue("overview_campaign_duration")}</p>
+        </div>
+      </div>
 
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Do&apos;s &amp; Don&apos;ts
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-none">
-              <p className="font-semibold text-emerald-900 mb-2">✓ DO:</p>
-              {briefLines("dos").length > 0 ? (
-                <ul className="list-disc pl-5 space-y-1 text-emerald-900">
-                  {briefLines("dos").map((line, idx) => (
-                    <li key={`dos-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Brief Details */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-blue-500 rounded-full" />
+              General Dialogue &amp; Voice Direction
+            </h2>
+            
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Key Messages</h3>
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                {briefLines("key_messages").length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                    {briefLines("key_messages").map((line, idx) => (
+                      <li key={`key-message-${idx}`} className="text-sm">
+                        {line.replace(/^[•-]\s*/, "")}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-400 italic">Not specified</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Script Guidelines</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Opening (0-5s)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_opening")}</p>
+                </div>
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Middle (5-20s)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_middle")}</p>
+                </div>
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Closing (20-30s)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_closing")}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">✓ DO:</p>
+                {briefLines("dos").length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 text-emerald-900">
+                    {briefLines("dos").map((line, idx) => (
+                      <li key={`dos-${idx}`} className="text-sm">{line.replace(/^[•-]\s*/, "")}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-emerald-600 italic">Not specified</p>
+                )}
+              </div>
+              <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl">
+                <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">✗ DON&apos;T:</p>
+                {briefLines("donts").length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 text-red-900">
+                    {briefLines("donts").map((line, idx) => (
+                      <li key={`donts-${idx}`} className="text-sm">{line.replace(/^[•-]\s*/, "")}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-red-600 italic">Not specified</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+              Visual Requirements &amp; Style Guide
+            </h2>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                <p className="text-xs font-bold text-slate-500 mb-1">Instagram Reels</p>
+                <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
+                  {briefValue("deliverables_reels")}
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                <p className="text-xs font-bold text-slate-500 mb-1">Hero Image</p>
+                <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
+                  {briefValue("deliverables_hero_image")}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Style &amp; Aesthetic</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Palette</p>
+                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_color_palette")}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Setting</p>
+                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_setting")}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Framing</p>
+                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_framing")}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Editing</p>
+                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_editing")}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Reference Images</h3>
+              {referenceImages.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {referenceImages.map((img: any, idx: number) => (
+                    <div
+                      key={`ref-img-${idx}`}
+                      className="group relative border border-gray-100 rounded-xl overflow-hidden cursor-pointer aspect-square"
+                      onClick={() => {
+                        const url = String(img?.url || "").trim();
+                        const index = referenceImageUrls.indexOf(url);
+                        setLightboxIndex(index >= 0 ? index : idx);
+                      }}
+                    >
+                      <img
+                        src={String(img?.url || "")}
+                        alt={`Ref ${idx + 1}`}
+                        className="w-full h-full object-cover bg-gray-50 transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-black/40 backdrop-blur-sm text-[10px] text-white truncate">
+                        {`Ref ${idx + 1}`}
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : (
-                <p className="text-emerald-700">Not specified</p>
+                <div className="p-6 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400">
+                  No reference images provided.
+                </div>
               )}
             </div>
-            <div className="p-4 bg-red-50 border border-red-200 rounded-none">
-              <p className="font-semibold text-red-900 mb-2">✗ DON&apos;T:</p>
-              {briefLines("donts").length > 0 ? (
-                <ul className="list-disc pl-5 space-y-1 text-red-900">
-                  {briefLines("donts").map((line, idx) => (
-                    <li key={`donts-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Brand Assets (PDFs)</h3>
+              {brandAssets.length > 0 ? (
+                <div className="space-y-1.5 mt-2">
+                  {brandAssets.map((asset: any, idx: number) => (
+                    <div
+                      key={`asset-${idx}`}
+                      className="p-2 bg-white border border-slate-100 rounded-lg flex items-center justify-between gap-2"
+                    >
+                      <span className="text-[10px] font-medium text-slate-700 truncate">
+                        {String(asset?.name || `Asset ${idx + 1}`)}
+                      </span>
+                      {asset?.url && (
+                        <a
+                          href={String(asset.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : (
-                <p className="text-red-700">Not specified</p>
+                <p className="text-[11px] text-slate-400 italic">No assets provided.</p>
               )}
             </div>
           </div>
         </div>
-      </Card>
 
-      <Card className="p-6 bg-white border border-gray-200 space-y-6 rounded-none">
-        <h2 className="text-2xl font-bold text-slate-900">
-          Visual Requirements &amp; Style Guide
-        </h2>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Required Deliverables
-          </h3>
-          <div className="space-y-3">
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-              <p className="font-semibold text-slate-900 mb-1">
-                Instagram Reels
-              </p>
-              <p className="text-slate-900 whitespace-pre-wrap">
-                {briefValue("deliverables_reels")}
-              </p>
-            </div>
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-              <p className="font-semibold text-slate-900 mb-1">Hero Image</p>
-              <p className="text-slate-900 whitespace-pre-wrap">
-                {briefValue("deliverables_hero_image")}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Visual Style &amp; Aesthetic
-          </h3>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none space-y-2">
-            <p className="text-slate-900">
-              <span className="font-semibold">Color Palette:</span>{" "}
-              {briefValue("visual_color_palette")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Setting:</span>{" "}
-              {briefValue("visual_setting")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Framing:</span>{" "}
-              {briefValue("visual_framing")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Editing:</span>{" "}
-              {briefValue("visual_editing")}
-            </p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Reference Images
-          </h3>
-          {referenceImages.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-3">
-              {referenceImages.map((img: any, idx: number) => (
-                <div
-                  key={`ref-img-${idx}`}
-                  className="border border-gray-200 rounded-none overflow-hidden cursor-pointer"
-                  onClick={() => {
-                    const url = String(img?.url || "").trim();
-                    const index = referenceImageUrls.indexOf(url);
-                    setLightboxIndex(index >= 0 ? index : idx);
-                  }}
-                >
-                  <img
-                    src={String(img?.url || "")}
-                    alt={`Ref ${idx + 1}`}
-                    className="w-full h-40 object-contain bg-gray-100"
-                  />
-                  <div className="p-2 text-xs text-gray-700 truncate">
-                    {`Ref ${idx + 1}`}
+        {/* Right Column: Scope & Contract Summary */}
+        <div className="space-y-6">
+          <div className="p-3 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
+              Scope & Details
+            </h2>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Objective</p>
+                  <p className="text-xs font-medium text-slate-900">{briefValue("overview_objective")}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Target Audience</p>
+                  <p className="text-xs font-medium text-slate-900">{briefValue("overview_target_audience")}</p>
+                </div>
+                <div className="flex items-center justify-between gap-4 pt-1">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Budget</p>
+                    <p className="text-xs font-bold text-slate-900">{briefValue("budget_total")}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Launch Date</p>
+                    <p className="text-xs font-bold text-slate-900">{briefValue("overview_launch_date")}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-none text-slate-500">
-              No reference images provided.
-            </div>
-          )}
-        </div>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            Deliverable Expectations &amp; Brand Guidelines (PDFs)
-          </h3>
-          {brandAssets.length > 0 ? (
-            <div className="space-y-2">
-              {brandAssets.map((asset: any, idx: number) => (
-                <div
-                  key={`asset-${idx}`}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-none text-slate-900 flex items-center justify-between gap-3"
-                >
-                  <span className="truncate">
-                    {String(asset?.name || `Asset ${idx + 1}`)}
-                  </span>
-                  {asset?.url ? (
-                    <a
-                      href={String(asset.url)}
-                      target="_blank"
-                      rel="noreferrer"
-                      download={String(asset?.name || `asset-${idx + 1}`)}
-                      title="Download file"
-                      className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-none hover:bg-slate-100 transition-colors"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <Download className="w-4 h-4" />
-                    </a>
-                  ) : (
-                    <span className="text-xs text-slate-500">No file URL</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-none text-slate-500">
-              No brand assets provided.
-            </div>
-          )}
-        </div>
-      </Card>
+              </div>
 
-      <Card className="p-6 bg-white border border-gray-200 space-y-6 rounded-none">
-        <h2 className="text-2xl font-bold text-slate-900">
-          Campaign Scope &amp; Contract Details
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4 text-sm">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none space-y-2">
-            <p className="text-slate-900">
-              <span className="font-semibold">Objective:</span>{" "}
-              {briefValue("overview_objective")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Target Audience:</span>{" "}
-              {briefValue("overview_target_audience")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Campaign Duration:</span>{" "}
-              {briefValue("overview_campaign_duration")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Launch Date:</span>{" "}
-              {briefValue("overview_launch_date")}
-            </p>
+              <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl space-y-2">
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Revisions</p>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-amber-700">Included</span>
+                  <span className="font-bold text-amber-900">{briefValue("revision_included")}</span>
+                </div>
+                <div className="text-[10px] text-amber-600 leading-tight">
+                  <span className="font-semibold italic">Turnaround:</span> {briefValue("revision_turnaround")}
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Approval Process</p>
+                {briefLines("approval_process").length > 0 ? (
+                  <ol className="list-decimal pl-4 space-y-1.5">
+                    {briefLines("approval_process").map((line, idx) => (
+                      <li key={`approval-${idx}`} className="text-[11px] text-slate-700 leading-tight font-medium">
+                        {line.replace(/^[•-]?\s*\d*\s*/, "")}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-[11px] text-slate-400 italic">Not specified</p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button
+                onClick={() => generateBriefPDF(brief, brandName, campaignName)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
+              >
+                <FileDown className="w-4 h-4" />
+                Download Brief PDF
+              </button>
+            </div>
           </div>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-none space-y-2">
-            <p className="text-slate-900">
-              <span className="font-semibold">Total Budget:</span>{" "}
-              {briefValue("budget_total")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Creator Payment:</span>{" "}
-              {briefValue("budget_creator_payment")}
-            </p>
-            <p className="text-slate-900">
-              <span className="font-semibold">Submission Deadline:</span>{" "}
-              {briefValue("budget_submission_deadline")}
-            </p>
-          </div>
         </div>
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-          <p className="text-slate-900">
-            <span className="font-semibold">Renewal Terms:</span>{" "}
-            {briefValue("budget_renewal_terms")}
-          </p>
-        </div>
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-none space-y-2">
-          <p className="text-slate-900">
-            <span className="font-semibold">Included Revisions:</span>{" "}
-            {briefValue("revision_included")}
-          </p>
-          <p className="text-slate-900">
-            <span className="font-semibold">Major Changes:</span>{" "}
-            {briefValue("revision_major_changes")}
-          </p>
-          <p className="text-slate-900">
-            <span className="font-semibold">Turnaround for Revisions:</span>{" "}
-            {briefValue("revision_turnaround")}
-          </p>
-        </div>
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-          <p className="font-semibold text-slate-900 mb-2">Approval Process</p>
-          {briefLines("approval_process").length > 0 ? (
-            <ol className="list-decimal pl-5 space-y-1 text-slate-900">
-              {briefLines("approval_process").map((line, idx) => (
-                <li key={`approval-${idx}`}>
-                  {line.replace(/^[•-]?\s*\d*\s*/, "")}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-slate-500">Not specified</p>
-          )}
-        </div>
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-          <p className="font-semibold text-slate-900 mb-1">
-            Watermark &amp; Protection
-          </p>
-          <p className="text-slate-900 whitespace-pre-wrap">
-            {briefValue("watermark_protection")}
-          </p>
-        </div>
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-none">
-          <p className="font-semibold text-slate-900 mb-1">Legal Terms</p>
-          {briefLines("legal_terms").length > 0 ? (
-            <ul className="list-disc pl-5 space-y-1 text-slate-900">
-              {briefLines("legal_terms").map((line, idx) => (
-                <li key={`legal-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-slate-500">Not specified</p>
-          )}
-        </div>
-        <div className="pt-6 border-t border-gray-100 flex justify-center">
-          <button
-            onClick={() => generateBriefPDF(brief, brandName, campaignName)}
-            className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95"
-          >
-            <FileDown className="w-5 h-5" />
-            Download Full Campaign Brief (PDF)
-          </button>
-        </div>
-      </Card>
+      </div>
 
       {lightboxUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/70"
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"
             onClick={closeLightbox}
-            aria-label="Close gallery"
           />
-          <div className="relative z-10 w-full max-w-5xl mx-4 bg-white border border-gray-200">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <div className="text-sm font-semibold text-slate-800">
+          <div className="relative z-10 w-full max-w-5xl bg-white rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="text-sm font-bold text-slate-900">
                 {lightboxIndex !== null
                   ? `Reference ${lightboxIndex + 1} of ${referenceImageUrls.length}`
                   : "Reference"}
               </div>
               <button
                 type="button"
-                className="h-9 w-9 inline-flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+                className="h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                 onClick={closeLightbox}
-                aria-label="Close"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="relative bg-black">
+            <div className="relative bg-slate-50 flex items-center justify-center">
               <img
                 src={lightboxUrl}
                 alt="Reference"
-                className="w-full max-h-[80vh] object-contain"
+                className="max-w-full max-h-[75vh] object-contain"
               />
               {referenceImageUrls.length > 1 && (
                 <>
                   <button
                     type="button"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/90 hover:bg-white border border-gray-200 inline-flex items-center justify-center"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 bg-white/80 hover:bg-white backdrop-blur shadow-lg rounded-full inline-flex items-center justify-center transition-all"
                     onClick={() =>
                       setLightboxIndex((prev) => {
                         if (prev === null) return prev;
@@ -442,13 +391,12 @@ export function CampaignBriefView({
                         return (prev - 1 + total) % total;
                       })
                     }
-                    aria-label="Previous image"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/90 hover:bg-white border border-gray-200 inline-flex items-center justify-center"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 bg-white/80 hover:bg-white backdrop-blur shadow-lg rounded-full inline-flex items-center justify-center transition-all"
                     onClick={() =>
                       setLightboxIndex((prev) => {
                         if (prev === null) return prev;
@@ -456,9 +404,8 @@ export function CampaignBriefView({
                         return (prev + 1) % total;
                       })
                     }
-                    aria-label="Next image"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
                 </>
               )}
@@ -466,6 +413,6 @@ export function CampaignBriefView({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

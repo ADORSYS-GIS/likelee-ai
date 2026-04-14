@@ -1280,11 +1280,12 @@ const BrandConnectionsView = () => {
         description="Manage active connections and invitations."
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:hidden">
+      {/* Mobile Tabs: Horizontal Scroll */}
+      <div className="flex gap-2 mb-6 sm:hidden overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
         {[
           {
             id: "connections",
-            label: "Connected Brands",
+            label: "Brands",
             active: activeTab === "connections",
             onClick: () => setActiveTab("connections"),
           },
@@ -1299,14 +1300,14 @@ const BrandConnectionsView = () => {
           {
             id: "offers",
             label: showOffersBadge
-              ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
-              : "Brand Offers",
+              ? `Offers (${pendingOffers - (seenCounts.offers || 0)})`
+              : "Offers",
             active: activeTab === "offers",
             onClick: () => setActiveTab("offers"),
           },
           {
             id: "contract_hub",
-            label: "Contract Hub",
+            label: "Contracts",
             active: activeTab === "contract_hub",
             onClick: () => setActiveTab("contract_hub"),
           },
@@ -1322,8 +1323,8 @@ const BrandConnectionsView = () => {
           {
             id: "feedback",
             label: showFeedbackBadge
-              ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
-              : "Package Feedback",
+              ? `Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
+              : "Feedback",
             active: activeTab === "feedback",
             onClick: () => setActiveTab("feedback"),
           },
@@ -1332,10 +1333,10 @@ const BrandConnectionsView = () => {
             key={item.id}
             type="button"
             onClick={item.onClick}
-            className={`min-h-[44px] rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap ${
               item.active
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                ? "bg-indigo-50 text-indigo-700 shadow-sm"
+                : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
             }`}
           >
             {item.label}
@@ -1415,7 +1416,7 @@ const BrandConnectionsView = () => {
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length > 0 && (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {connections.map((connection: any) => {
                   const companyName = String(
                     connection?.brands?.company_name || "Brand",
@@ -1505,7 +1506,7 @@ const BrandConnectionsView = () => {
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length > 0 && (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {requests.map((req: any) => {
                   const requestId = String(req?.id || "");
                   const isBusy = busyIds.has(requestId);
@@ -1809,7 +1810,7 @@ const BrandConnectionsView = () => {
                                 }
                                 return (
                                   <Button
-                                    className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-5 py-3 w-full sm:w-auto text-sm rounded-xl transition-all"
                                     onClick={() => {
                                       navigate(
                                         "/AgencyDashboard?tab=packages",
@@ -1974,7 +1975,7 @@ const BrandConnectionsView = () => {
                         {/* Full brief — shown directly, no duplicate summary */}
                         {offer?.brief_snapshot &&
                         typeof offer.brief_snapshot === "object" ? (
-                          <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                          <div className="-mx-4 sm:ml-0 sm:mr-0 lg:-mr-12 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                             <CampaignBriefView
                               brief={offer.brief_snapshot}
                               brandName={String(
@@ -2405,8 +2406,8 @@ const BrandConnectionsView = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Sidebar: Offer List */}
-              <div className="md:col-span-1 space-y-3">
+              {/* Sidebar: Offer List - Hidden on mobile if an offer is selected */}
+              <div className={`${selectedOfferId ? "hidden md:block" : "block"} md:col-span-1 space-y-3`}>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Campaign Offers
                 </p>
@@ -2452,8 +2453,20 @@ const BrandConnectionsView = () => {
                 </div>
               </div>
 
-              {/* Main: Contract Management */}
-              <div className="md:col-span-2">
+              {/* Main: Contract Management - Full width on mobile if selected */}
+              <div className={`${selectedOfferId ? "block" : "hidden md:block"} md:col-span-2`}>
+                {selectedOfferId && (
+                  <div className="md:hidden mb-4">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setSelectedOfferId("")}
+                      className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 -ml-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Offers
+                    </Button>
+                  </div>
+                )}
                 {!selectedOfferId ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50 rounded-2xl border border-gray-200">
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
@@ -2477,13 +2490,13 @@ const BrandConnectionsView = () => {
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                           <TabsTrigger
                             value="submissions"
-                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
                           >
                             Submissions
                           </TabsTrigger>
                           <TabsTrigger
                             value="upload"
-                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
                           >
                             New Contract
                           </TabsTrigger>
@@ -2500,25 +2513,23 @@ const BrandConnectionsView = () => {
                       )}
                       {!agencyStripeReadyForPayouts && (
                         <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
-                          <AlertCircle className="h-4 w-4 text-blue-600" />
-                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
-                            <span>
-                              Before sending contracts, connect your agency
-                              Stripe account and complete onboarding. Brands
-                              can’t pay until payouts are set up, and
-                              commissions/talent earnings can’t be transferred
-                              unless transfers are enabled.
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
-                              onClick={() =>
-                                navigate("/AgencyDashboard?tab=payouts")
-                              }
-                            >
-                              Go to Payouts
-                            </Button>
+                          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+                          <AlertDescription className="text-blue-900 text-sm font-medium mt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <p className="flex-1">
+                                Before sending contracts, connect your agency Stripe account and complete onboarding. Brands can’t pay until payouts are set up, and commissions/talent earnings can’t be transferred unless transfers are enabled.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100 whitespace-nowrap"
+                                onClick={() =>
+                                  navigate("/AgencyDashboard?tab=payouts")
+                                }
+                              >
+                                Go to Payouts
+                              </Button>
+                            </div>
                           </AlertDescription>
                         </Alert>
                       )}

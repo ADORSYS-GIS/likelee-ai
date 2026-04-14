@@ -971,20 +971,21 @@ const RosterView = ({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 font-medium">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-gray-500 font-medium">
                 {!!agencyEmail && (
-                  <span className="flex items-center gap-1 truncate">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                     <span className="truncate">{agencyEmail}</span>
                   </span>
                 )}
                 {!!agencyWebsite && (
                   <a
-                    className="flex items-center gap-1 truncate hover:underline"
+                    className="flex items-center gap-2 min-w-0 hover:underline hover:text-[#0B9DA2] transition-colors"
                     href={agencyWebsite}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <Globe className="w-4 h-4 text-gray-400" />
+                    <Globe className="w-4 h-4 text-gray-400 shrink-0" />
                     <span className="truncate">{agencyWebsite}</span>
                   </a>
                 )}
@@ -994,14 +995,14 @@ const RosterView = ({
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <Button
               type="button"
-              className="w-full bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2 sm:w-auto"
+              className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-semibold gap-2 transition-all sm:w-auto shadow-sm"
               onClick={() => navigate("/agencysubscribe")}
             >
               Upgrade plan
             </Button>
             <Button
               variant="outline"
-              className="w-full text-gray-700 border-gray-300 gap-2 sm:w-auto"
+              className="w-full text-blue-600 border-blue-200 bg-white/50 hover:bg-blue-50 gap-2 sm:w-auto transition-all shadow-sm"
               onClick={() => onEditProfile?.()}
               disabled={!onEditProfile}
             >
@@ -1010,7 +1011,7 @@ const RosterView = ({
             </Button>
             <Button
               variant="outline"
-              className="w-full text-gray-700 border-gray-300 gap-2 sm:w-auto"
+              className="w-full text-blue-600 border-blue-200 bg-white/50 hover:bg-blue-50 gap-2 sm:w-auto transition-all shadow-sm"
               onClick={() => onViewMarketplace?.()}
               disabled={!onViewMarketplace}
             >
@@ -1230,9 +1231,9 @@ const RosterView = ({
 
       {/* Roster Table Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <DashboardTabRail
-            className="-mx-1 px-1"
+            className="-mx-1 px-1 flex-1 min-w-0"
             items={[
               "Roster",
               "Digitals Tracking",
@@ -1255,26 +1256,31 @@ const RosterView = ({
                 onClick: () => setRosterTab(tab.toLowerCase().split(" ")[0]),
               }))}
           />
-          <div className="flex w-full md:w-auto flex-wrap gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Button
               variant="outline"
-              className="gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
+              size="sm"
+              className="gap-2 font-bold h-9 rounded-lg shrink-0"
             >
-              <Download className="w-4 h-4" /> Export CSV
+              <Download className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Export CSV</span>
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={handleInviteTalentClick}
-              className="border-gray-200 gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
+              className="border-gray-200 gap-2 font-bold h-9 rounded-lg shrink-0"
             >
-              <Mail className="w-4 h-4" /> Send Portal Invite
+              <Mail className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Invite</span>
             </Button>
             <Button
+              size="sm"
               onClick={handleAddTalentClick}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-9 rounded-lg px-4 shrink-0"
             >
               <Plus className="w-4 h-4" />{" "}
-              {isSportsAgency ? "Add Athlete" : "Add Talent"}
+              <span>{isSportsAgency ? "Add Athlete" : "Add Talent"}</span>
             </Button>
           </div>
         </div>
