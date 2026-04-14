@@ -1326,6 +1326,13 @@ import {
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11108,20 +11115,29 @@ const ProspectPipelineTab = ({
             </React.Fragment>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-8">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
-            >
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
-                {stat.label}
-              </p>
-              <p className="text-4xl font-black text-gray-900 tracking-tight">
-                {stat.count}
-              </p>
-            </div>
-          ))}
+
+        {/* Mobile/Tablet Stats Carousel */}
+        <div className="lg:hidden mb-8 relative w-[85%] mx-auto">
+          <Carousel opts={{ align: "start", dragFree: true }}>
+            <CarouselContent>
+              {stats.map((stat) => (
+                <CarouselItem key={stat.label} className="basis-1/2 sm:basis-1/3">
+                  <div
+                    className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all h-full flex flex-col justify-center`}
+                  >
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-tight mb-1 sm:mb-2 w-full truncate">
+                      {stat.label}
+                    </p>
+                    <p className="text-3xl font-black text-gray-900 tracking-tight">
+                      {stat.count}
+                    </p>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-6 sm:-left-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50 shadow-sm" />
+            <CarouselNext className="-right-6 sm:-right-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50 shadow-sm" />
+          </Carousel>
         </div>
 
         {isLoading ? (
