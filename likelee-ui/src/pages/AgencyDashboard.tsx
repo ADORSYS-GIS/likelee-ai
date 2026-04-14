@@ -10116,34 +10116,79 @@ const ScoutingHubView = ({
             {`Discover, track, and manage ${entityPluralLower} prospects`}
           </p>
         </div>
-        <div className="flex w-full md:w-auto items-center gap-3 overflow-x-auto pb-1">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
-            onClick={() => {
-              setProspectToEdit(null);
-              setIsProspectModalOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
-          </Button>
-          <Button
-            variant="default"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
-            onClick={() => {
-              setActiveTab("Open Calls");
-              setEventToEdit(null);
-              setIsEventModalOpen(true);
-            }}
-          >
-            <Calendar className="w-4 h-4" /> Create Event
-          </Button>
-          <Button
-            onClick={() => setActiveTab("Plan Trip")}
-            className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
-          >
-            <MapPin className="w-4 h-4" /> Plan Scouting Trip
-          </Button>
+        <div className="flex w-full md:w-auto items-center justify-end gap-3 pb-1">
+          {/* Mobile Actions Dropdown */}
+          <div className="md:hidden w-full flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-lg border-indigo-200 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/50"
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-[200] p-2 rounded-xl border border-gray-100 shadow-xl bg-white/95 backdrop-blur-sm">
+                <DropdownMenuItem 
+                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+                  onClick={() => {
+                    setProspectToEdit(null);
+                    setIsProspectModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-3 text-indigo-500" /> Add Prospect
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
+                  onClick={() => {
+                    setActiveTab("Open Calls");
+                    setEventToEdit(null);
+                    setIsEventModalOpen(true);
+                  }}
+                >
+                  <Calendar className="w-4 h-4 mr-3 text-indigo-500" /> Create Event
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
+                  onClick={() => setActiveTab("Plan Trip")}
+                >
+                  <MapPin className="w-4 h-4 mr-3 text-indigo-500" /> Plan Scouting Trip
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 border-indigo-200 font-bold text-indigo-600 bg-indigo-50/50 shadow-sm rounded-lg h-9 text-sm hover:bg-indigo-100/50"
+              onClick={() => {
+                setProspectToEdit(null);
+                setIsProspectModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4" /> Add Prospect
+            </Button>
+            <Button
+              variant="default"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+              onClick={() => {
+                setActiveTab("Open Calls");
+                setEventToEdit(null);
+                setIsEventModalOpen(true);
+              }}
+            >
+              <Calendar className="w-4 h-4" /> Create Event
+            </Button>
+            <Button
+              onClick={() => setActiveTab("Plan Trip")}
+              className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
+            >
+              <MapPin className="w-4 h-4" /> Plan Scouting Trip
+            </Button>
+          </div>
         </div>
       </div>
 

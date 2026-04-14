@@ -299,7 +299,7 @@ export const ScoutingMap = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
             {[
               {
                 id: "discoveries",
@@ -539,56 +539,56 @@ export const ScoutingMap = ({
             <ResizeMap isVisible={isVisible} />
           </MapContainer>
 
-          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1000] bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xl max-w-[200px] sm:max-w-none">
-            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+          <div className="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 z-[1000] bg-white/95 backdrop-blur-md p-2 sm:p-4 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xl max-w-[160px] sm:max-w-none">
+            <h5 className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-3 px-1 sm:px-0">
               Legend
             </h5>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-orange-100 text-orange-700">
-                  <Layers className="w-3.5 h-3.5 stroke-[2.5px]" />
+            <div className="space-y-1 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-orange-700">
+                  <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Talent Discovery
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-blue-100 text-blue-700">
-                  <User className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-blue-700">
+                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Signed Talent
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700">
-                  <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-amber-700">
+                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Prospect (Non-Signed)
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-purple-100 text-purple-700">
-                  <Plane className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-purple-700">
+                  <Plane className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Scouting Trip
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-pink-100 text-pink-700">
-                  <Calendar className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-pink-700">
+                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Event
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-red-100 text-red-700">
-                  <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
+                <div className="p-1 sm:p-1.5 rounded text-red-700">
+                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
                 </div>
-                <span className="text-[11px] font-bold text-gray-700">
+                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
                   Declined prospect
                 </span>
               </div>
