@@ -2112,7 +2112,6 @@ export default function BrandDashboard() {
         company_name: brand.name, // Usually both are updated
         industry: brand.industry,
         website: brand.website,
-        updated_at: new Date().toISOString(),
       };
 
       await updateBrandProfile(updateData);
