@@ -1,0 +1,278 @@
+{
+  "organizationSignup": {
+    "selectAndContinue": "Sélectionner et continuer",
+    "selectAll": "Tout sélectionner",
+    "missingFieldsTitle": "Champs manquants",
+    "missingFieldsDescription": "Veuillez remplir tous les champs obligatoires pour continuer.",
+    "passwordMismatchTitle": "Les mots de passe ne correspondent pas",
+    "passwordMismatchDescription": "Veuillez vérifier vos champs de mot de passe et de confirmation.",
+    "orgType": {
+      "brandCompany": "Marque / Entreprise",
+      "productionStudio": "Studio de production",
+      "marketingAgency": "Agence de marketing",
+      "talentAgency": "Agence de talents"
+    },
+    "profileNotFoundTitle": "Profil non trouvé",
+    "profileNotFoundDescription": "Impossible de trouver le profil de l'organisation. Veuillez réessayer.",
+    "kycError": "Impossible de démarrer la session KYC. Veuillez contacter le support.",
+    "kycFail": "Échec de l'initiation du KYC de l'organisation.",
+    "kycVerifiedTitle": "Vérification terminée",
+    "onboardingInProgressTitle": "Intégration en cours",
+    "kycVerifiedDescription": "Votre organisation a été vérifiée avec succès. Vous avez maintenant un accès complet à la plateforme Likelee.",
+    "onboardingInProgressDescription": "Merci d'avoir soumis vos coordonnées. Notre équipe examine votre demande.",
+    "whatsNext": "Et après ?",
+    "kycRedirect": "Veuillez compléter votre vérification d'identité pour continuer.",
+    "calendarLink": "Planifiez un appel avec notre équipe d'intégration pour accélérer votre approbation.",
+    "completeKycButton": "Compléter la vérification",
+    "signUpAs": "S'inscrire en tant que",
+    "step": "Étape",
+    "of": "sur",
+    "companyInfo": "Informations sur l'entreprise",
+    "startWithBasics": "Commençons par l'essentiel.",
+    "emailPlaceholder": "entreprise@exemple.com",
+    "passwordPlaceholder": "••••••••",
+    "errors": {
+      "not_admin": "Vous n'avez pas la permission d'effectuer cette action.",
+      "user_not_allowed": "Utilisateur non autorisé à inscrire cette organisation.",
+      "duplicate_email": "Cet e-mail est déjà associé à une organisation.",
+      "generic": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      "invalidCredentials": "E-mail ou mot de passe incorrect. Veuillez vérifier vos informations et réessayer.",
+      "weakPassword": "Votre mot de passe est trop court. Veuillez utiliser au moins 6 caractères.",
+      "emailNotConfirmed": "Veuillez vérifier votre adresse e-mail. Consultez votre boîte de réception pour un lien de confirmation.",
+      "rateLimit": "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
+      "networkError": "Connexion perdue. Veuillez vérifier votre connexion internet."
+    },
+    "companyEmail": "E-mail de l'entreprise",
+    "confirmPassword": "Confirmer le mot de passe",
+    "organizationName": "Nom de l'organisation",
+    "agencyName": "Nom de l'agence",
+    "contactName": "Nom du contact",
+    "contactTitle": "Titre du contact",
+    "contactTitlePlaceholder": "ex: Responsable marketing",
+    "website": "Site web",
+    "phoneNumber": "Numéro de téléphone",
+    "saving": "Enregistrement...",
+    "continue": "Continuer",
+    "back": "Retour",
+    "submitting": "Envoi en cours...",
+    "completeSignUp": "Terminer l'inscription",
+    "terms": {
+      "title": "Conditions générales",
+      "subtitle": "Veuillez lire et accepter nos politiques pour finaliser votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de confidentialité",
+      "andTerms": "et les Conditions d'utilisation",
+      "mustAgreeTitle": "Accord requis",
+      "mustAgree": "Vous devez accepter la politique de confidentialité pour finaliser votre inscription.",
+      "completeRegistration": "Finaliser l'inscription",
+      "download": "Télécharger"
+    },
+    "industries": {
+      "fashion": "Mode",
+      "beauty": "Beauté",
+      "technology": "Technologie",
+      "automotive": "Automobile",
+      "foodBeverage": "Alimentation et Boissons",
+      "travel": "Voyage",
+      "entertainment": "Divertissement",
+      "healthWellness": "Santé et Bien-être",
+      "finance": "Finance",
+      "other": "Autre"
+    },
+    "brandDetails": {
+      "title": "Détails de la marque",
+      "subtitle": "Dites-nous en plus sur vos objectifs de marque.",
+      "industry": "Secteur d'activité",
+      "selectIndustry": "Sélectionnez votre secteur",
+      "primaryGoal": "Objectif principal",
+      "selectAll": "Tout sélectionner",
+      "geographicTarget": "Cible géographique",
+      "geographicTargetPlaceholder": "ex: Global, France, Europe",
+      "provideCreatorsQuestion": "Représentez-vous des créateurs ?",
+      "provideCreators": "Oui, nous avons un roster",
+      "uploadOwnAssets": "Non, nous voulons trouver des talents"
+    },
+    "continueToVerification": "Continuer vers la vérification",
+    "productionStudio": {
+      "title": "Détails du studio",
+      "subtitle": "Dites-nous en plus sur votre travail de production",
+      "primaryProductionType": "Type de production principal *",
+      "budgetRangeLabel": "Plage de budget de production typique",
+      "selectProductionType": "Sélectionnez le type de production",
+      "selectBudgetRange": "Sélectionnez le budget mensuel",
+      "budgetRangeUnder10k": "Moins de 10 000 $",
+      "budgetRange10k50k": "10 000 $ - 50 000 $",
+      "budgetRange50k250k": "50 000 $ - 250 000 $",
+      "budgetRange250k1m": "250 000 $ - 1 M$",
+      "budgetRangeOver1m": "Plus de 1 M$",
+      "createsForQuestion": "Créez-vous pour des clients ou votre propre propriété intellectuelle ?",
+      "forClients": "Pour les clients",
+      "ownIp": "Propre PI",
+      "both": "Les deux",
+      "usesAiQuestion": "Utilisez-vous déjà l'IA dans votre flux de production ?",
+      "rolesNeededLabel": "Quels rôles cherchez-vous à pourvoir via Likelee ?"
+    },
+    "marketingAgency": {
+      "title": "Détails de l'agence",
+      "subtitle": "Dites-nous en plus sur votre agence",
+      "clientCountLabel": "Nombre de marques clientes actuellement gérées",
+      "clientCountPlaceholder": "ex: 5",
+      "campaignBudgetLabel": "Budget de campagne typique par marque",
+      "campaignBudgetPlaceholder": "Sélectionnez une plage budgétaire",
+      "budgetUnder5k": "Moins de 5 000 $",
+      "budget5k25k": "5 000 $ - 25 000 $",
+      "budget25k100k": "25 000 $ - 100 000 $",
+      "budget100k500k": "100 000 $ - 500 000 $",
+      "budgetOver500k": "Plus de 500 000 $",
+      "servicesLabel": "Principaux services offerts",
+      "matchCreatorsQuestion": "Souhaitez-vous que Likelee vous mette en relation avec des créateurs ou fournisse simplement des outils de licence ?",
+      "matchWithCreators": "Me mettre en relation avec des créateurs",
+      "justProvideTools": "Fournir uniquement des outils de licence",
+      "handleContractsQuestion": "Gérez-vous les contrats et les redevances pour les clients ou voulez-vous que Likelee automatise cela ?",
+      "weHandleIt": "Nous le gérons",
+      "automateWithLikelee": "Automatiser avec Likelee"
+    },
+    "talentAgency": {
+      "title": "Détails de l'agence",
+      "subtitle": "Dites-nous en plus sur votre roster de talents",
+      "talentCountLabel": "Nombre de modèles ou de talents représentés",
+      "talentCountPlaceholder": "ex: 25",
+      "licenseLikenessQuestion": "Accordez-vous actuellement des licences pour l'image de vos modèles ?",
+      "openToAiQuestion": "Vos talents sont-ils ouverts à la recréation par IA ou uniquement à la protection de leur image ?",
+      "campaignsPursuedLabel": "Quels types de campagnes ou de collaborations poursuivez-vous le plus ?",
+      "bulkOnboardQuestion": "Souhaitez-vous intégrer massivement votre roster sur Likelee ?"
+    },
+    "options": {
+      "aiUsage": {
+        "yes": "Oui",
+        "no": "Non",
+        "exploring": "En cours d'exploration",
+        "maybeLater": "Peut-être plus tard"
+      },
+      "productionTypes": {
+        "film": "Film",
+        "tv": "Télévision",
+        "commercial": "Publicité",
+        "musicVideo": "Clip musical",
+        "animation": "Animation",
+        "mixedAiLive": "Mélange IA/Live"
+      },
+      "services": {
+        "socialMediaManagement": "Gestion des réseaux sociaux",
+        "influencerCampaigns": "Campagnes d'influence",
+        "videoAds": "Publicités vidéo",
+        "ugcProduction": "Production UGC",
+        "contentCreation": "Création de contenu",
+        "brandStrategy": "Stratégie de marque"
+      },
+      "campaignTypes": {
+        "fashion": "Mode",
+        "music": "Musique",
+        "fitness": "Fitness",
+        "lifestyle": "Lifestyle",
+        "beauty": "Beauté",
+        "sports": "Sports",
+        "entertainment": "Divertissement"
+      },
+      "primaryGoals": {
+        "runAdCampaigns": "Lancer des campagnes publicitaires",
+        "findBrandAmbassadors": "Trouver des ambassadeurs de marque",
+        "licenseAiReadyFaces": "Licencier des visages prêts pour l'IA"
+      },
+      "rolesNeeded": {
+        "talentFacesVoices": "Talents (visages/voix)",
+        "postproductionAiGeneration": "Post-production / Génération IA",
+        "creativeCollaboration": "Collaboration créative"
+      },
+      "openToAiOptions": {
+        "aiRecreation": "Recréation par IA",
+        "likenessProtectionOnly": "Protection de l'image uniquement",
+        "variesByTalent": "Varie selon le talent"
+      }
+    }
+  },
+  "identityVerification": "Vérification d'identité",
+  "identityVerificationMessage": "Vous enregistrez une vidéo guidée de 60 secondes. Nous vérifions votre identité par rapport à votre pièce d'identité gouvernementale et confirmons le mouvement facial (contrôle de vivacité). Cela arrête les imposteurs avant qu'ils n'entrent dans le système.",
+  "verificationFirst": "La vérification d'abord",
+  "verificationFirstMessage": "Chaque créateur passe des contrôles d'identité avant que son avatar ne soit mis en ligne. Les mauvais acteurs n'ont pas de plateforme.",
+  "faqUnauthorizedUseTitle": "Que se passe-t-il si quelqu'un utilise mon actif sans permission ?",
+  "faqUnauthorizedUseDescription": "Filigranes + retraits DMCA automatisés. Nous scannons le web et effectuons des retraits automatiquement.",
+  "forgotPasswordPage": {
+    "title": "Réinitialisez votre mot de passe",
+    "instructions": "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "emailLabel": "E-mail",
+    "submitButton": {
+      "sending": "Envoi...",
+      "default": "Envoyer le lien de réinitialisation"
+    },
+    "backToSignIn": "Retour à la connexion",
+    "successMessage": "Si un compte existe pour cet e-mail, un lien de réinitialisation du mot de passe a été envoyé.",
+    "errorMessage": "Échec de l'envoi du lien de réinitialisation"
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Votre mot de passe a été mis à jour."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Échec de la connexion"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choisissez Votre Identité",
+      "subtitle": "Rejoignez l'écosystème conçu pour que les créateurs possèdent, contrôlent et profitent de leur double numérique."
+    },
+    "influencer": {
+      "title": "Influenceur & Créateur de Contenu",
+      "description": "Monétisez votre présence sociale en licenciant votre double numérique pour des campagnes axées sur les réseaux sociaux."
+    },
+    "model_actor": {
+      "title": "Mannequin & Acteur",
+      "description": "Sécurisez des opportunités commerciales et éditoriales haut de gamme avec un jumeau numérique vérifié."
+    },
+    "athlete": {
+      "title": "Athlète (NIL)",
+      "description": "Développez vos partenariats de marque et générez des revenus passifs avec une image numérique conforme NIL."
+    },
+    "selectButton": "Sélectionner & Continuer",
+    "authModal": {
+      "title": "Bienvenue chez Likelee",
+      "selected": "Vous avez sélectionné :",
+      "signUpAs": "S'inscrire en tant que",
+      "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Se connecter",
+      "welcome": "Bienvenue sur Likelee",
+      "signInToContinue": "Connectez-vous pour continuer",
+      "loading": "Chargement...",
+      "alreadySignedIn": "Vous êtes déjà connecté.",
+      "goToDashboard": "Aller au tableau de bord",
+      "comingSoonTitle": "Bientôt disponible",
+      "comingSoonMessage": "Nous intégrons actuellement les agences manuellement. Rejoignez la liste d'attente pour obtenir un accès anticipé.",
+      "learnMore": "En savoir plus",
+      "googleSignInFailed": "Échec de la connexion Google",
+      "continueWithGoogle": "Continuer avec Google",
+      "or": "OU",
+      "emailLabel": "E-mail",
+      "companyEmailLabel": "E-mail de l'entreprise",
+      "emailPlaceholder": "vous@exemple.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signingIn": "Connexion...",
+      "signInButton": "Se connecter",
+      "needAccount": "Besoin d'un compte ?",
+      "signUp": "S'inscrire",
+      "tabs": {
+        "creator": "Créateur",
+        "brand": "Marque",
+        "agency": "Agence"
+      }
+    }
+  }
+}
