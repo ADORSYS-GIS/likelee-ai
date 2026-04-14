@@ -94,13 +94,6 @@ export function formatBrandStudioAddonStatus(profile: any): string {
   if (brandIncludesStudioAccess(profile)) {
     return "Included";
   }
-  const status = String(profile?.studio_addon_status || "")
-    .trim()
-    .toLowerCase();
-  if (status === "active") return "Active";
-  if (status === "trialing") return "Trialing";
-  if (status === "past_due") return "Past due";
-  if (status === "canceled") return "Canceled";
-  if (status === "unpaid") return "Unpaid";
+  if (Boolean(profile?.studio_addon_active)) return "Active";
   return "Not active";
 }

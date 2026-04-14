@@ -54,8 +54,7 @@ pub async fn create(
         ));
     }
 
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
     let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
     if !brand_allows_campaign_collaboration(tier) {
         return Err((

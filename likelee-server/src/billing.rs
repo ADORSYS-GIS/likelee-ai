@@ -684,6 +684,26 @@ fn brand_billing_frontend_url(
     Ok(url.to_string())
 }
 
+fn agency_studio_frontend_url(state: &AppState) -> Result<String, (StatusCode, String)> {
+    let base = state.frontend_url.trim();
+    if base.is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "frontend_url_not_configured".to_string(),
+        ));
+    }
+
+    let mut url = Url::parse(base).map_err(|e| {
+        (
+            StatusCode::PRECONDITION_FAILED,
+            format!("invalid_frontend_url:{e}"),
+        )
+    })?;
+    url.set_path("/studio");
+    url.set_query(None);
+    Ok(url.to_string())
+}
+
 async fn get_brand_checkout_row(
     state: &AppState,
     brand_id: &str,
@@ -1007,6 +1027,7 @@ struct AgencyBillingContext {
     agency_name: String,
     customer_id: String,
     addon_irl_booking_enabled: bool,
+    studio_addon_active: bool,
 }
 
 async fn get_or_create_agency_billing_context(
@@ -1016,7 +1037,9 @@ async fn get_or_create_agency_billing_context(
     let agency_resp = state
         .pg
         .from("agencies")
-        .select("id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled")
+        .select(
+            "id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled,studio_addon_active",
+        )
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -1060,6 +1083,10 @@ async fn get_or_create_agency_billing_context(
         .get("addon_irl_booking_enabled")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let studio_addon_active = row
+        .get("studio_addon_active")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = if !existing_customer.trim().is_empty() {
@@ -1098,6 +1125,7 @@ async fn get_or_create_agency_billing_context(
         agency_name,
         customer_id,
         addon_irl_booking_enabled,
+        studio_addon_active,
     })
 }
 
@@ -2189,6 +2217,104 @@ pub async fn create_agency_irl_booking_addon_checkout(
     }))
 }
 
+pub async fn create_agency_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id;
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    if state.stripe_brand_studio_addon_price_id.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured",
+            "Studio add-on Stripe price is not configured on the server.",
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
+    if billing_ctx.studio_addon_active {
+        let studio_url = agency_studio_frontend_url(&state)?;
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: studio_url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        }));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let studio_url = agency_studio_frontend_url(&state)?;
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(studio_url.as_str());
+    cs_params.cancel_url = Some(studio_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
+        billing_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id",
+            "Invalid Stripe customer ID.",
+        )
+    })?);
+    cs_params.client_reference_id = Some(agency_id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(state.stripe_brand_studio_addon_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("billing_domain".to_string(), "studio".to_string());
+    md.insert("billing_target".to_string(), "agency_studio_addon".to_string());
+    md.insert("user_id".to_string(), agency_id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
+    md.insert("studio_plan".to_string(), BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
+    md.insert(
+        "credits".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
+    );
+    cs_params.metadata = Some(md);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err(billing_error(
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
+        ));
+    }
+
+    info!(
+        agency_id = %agency_id,
+        "created agency studio add-on checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
+    }))
+}
+
 pub async fn sync_agency_checkout_session(
     State(state): State<AppState>,
     user: AuthUser,
@@ -2631,25 +2757,22 @@ pub async fn create_brand_studio_addon_checkout(
         ));
     }
 
-    if current_plan_tier != "pro" {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "studio_addon_requires_pro_plan".to_string(),
-        ));
-    }
-
     if studio_addon_active {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "studio_addon_already_active".to_string(),
-        ));
+        let studio_url = agency_studio_frontend_url(&state)?;
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: studio_url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        }));
     }
 
     let customer_id =
         ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
 
     let next_path = sanitize_next_path(payload.next_path.as_deref());
-    let success_url = brand_billing_frontend_url(
+    let success_url_base = brand_billing_frontend_url(
         &state,
         vec![
             ("success", "1".to_string()),
@@ -2657,6 +2780,8 @@ pub async fn create_brand_studio_addon_checkout(
             ("next", next_path.clone().unwrap_or_default()),
         ],
     )?;
+    // Append the Stripe session ID template so the frontend can verify immediately on redirect.
+    let success_url = format!("{success_url_base}&session_id={{CHECKOUT_SESSION_ID}}");
     let cancel_url = brand_billing_frontend_url(
         &state,
         vec![
@@ -2670,7 +2795,7 @@ pub async fn create_brand_studio_addon_checkout(
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
     cs_params.success_url = Some(success_url.as_str());
     cs_params.cancel_url = Some(cancel_url.as_str());
-    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
     cs_params.customer = Some(customer_id.parse().map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -2686,34 +2811,17 @@ pub async fn create_brand_studio_addon_checkout(
 
     let mut md = std::collections::HashMap::new();
     md.insert("brand_id".to_string(), user.id.clone());
-    md.insert("billing_domain".to_string(), "brand".to_string());
-    md.insert("billing_target".to_string(), "studio_addon".to_string());
+    md.insert("billing_domain".to_string(), "studio".to_string());
+    md.insert("billing_target".to_string(), "brand_studio_addon".to_string());
     md.insert(
         "studio_plan".to_string(),
         BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
     );
     md.insert(
-        "studio_credits".to_string(),
+        "credits".to_string(),
         BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
     );
     cs_params.metadata = Some(md);
-
-    let mut sub_md = std::collections::HashMap::new();
-    sub_md.insert("brand_id".to_string(), user.id.clone());
-    sub_md.insert("billing_domain".to_string(), "brand".to_string());
-    sub_md.insert("billing_target".to_string(), "studio_addon".to_string());
-    sub_md.insert(
-        "studio_plan".to_string(),
-        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
-    );
-    sub_md.insert(
-        "studio_credits".to_string(),
-        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
-    );
-    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
-        metadata: Some(sub_md),
-        ..Default::default()
-    });
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
@@ -2740,6 +2848,169 @@ pub async fn create_brand_studio_addon_checkout(
         invoice_status: None,
         invoice_url: None,
     }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BrandStudioAddonVerifyRequest {
+    pub session_id: String,
+}
+
+/// Verifies a completed Stripe checkout session for the brand studio add-on and provisions
+/// access immediately. Called from the success-redirect page so activation does not depend
+/// solely on the webhook arriving.
+pub async fn verify_brand_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandStudioAddonVerifyRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let session_id_raw = payload.session_id.trim().to_string();
+    if session_id_raw.is_empty() {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "missing_session_id",
+            "session_id is required.",
+        ));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    // Retrieve the session from Stripe.
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let session_id = session_id_raw.parse::<stripe_sdk::CheckoutSessionId>().map_err(|_| {
+        billing_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_session_id",
+            "Invalid checkout session id.",
+        )
+    })?;
+    let session = stripe_sdk::CheckoutSession::retrieve(&client, &session_id, &[])
+        .await
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+    // Verify the session belongs to this brand.
+    let session_brand_id = session
+        .client_reference_id
+        .as_deref()
+        .or_else(|| {
+            session
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("brand_id"))
+                .map(|v| v.as_str())
+        })
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if session_brand_id.is_empty() || session_brand_id != user.id {
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "checkout_session_not_owned",
+            "Checkout session does not belong to this brand.",
+        ));
+    }
+
+    // Verify it is a paid studio addon session.
+    let billing_target = session
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("billing_target"))
+        .map(|v| v.trim().to_lowercase())
+        .unwrap_or_default();
+    if billing_target != "brand_studio_addon" {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "not_studio_addon_session",
+            "Checkout session is not a studio add-on session.",
+        ));
+    }
+
+    let is_paid = matches!(
+        session.payment_status,
+        stripe_sdk::CheckoutSessionPaymentStatus::Paid
+    );
+    if !is_paid {
+        return Ok(Json(json!({ "studio_addon_active": false, "payment_status": "unpaid" })));
+    }
+
+    // Idempotency: skip if already active.
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select("studio_addon_active")
+        .eq("id", user.id.as_str())
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows_text = brand_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_default();
+    let already_active = rows
+        .first()
+        .and_then(|row| row.get("studio_addon_active"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if already_active {
+        return Ok(Json(json!({ "studio_addon_active": true })));
+    }
+
+    // Check wallet idempotency via session id.
+    let session_str = session_id_raw.as_str();
+    let already_credited = crate::studio::wallet::has_stripe_credit_transaction(&state.pg, session_str)
+        .await
+        .unwrap_or(false);
+
+    if !already_credited {
+        let credits = session
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("credits"))
+            .and_then(|v| v.parse::<i64>().ok())
+            .filter(|&c| c > 0)
+            .unwrap_or(BRAND_STUDIO_ADDON_STUDIO_CREDITS);
+
+        let studio_plan = session
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("studio_plan"))
+            .map(|v| v.trim().to_lowercase())
+            .filter(|v| v == "lite" || v == "pro")
+            .unwrap_or_else(|| BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
+
+        let _ = crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str)).await;
+        let _ = crate::studio::wallet::set_current_plan(&state.pg, &user.id, Some(studio_plan.as_str())).await;
+    }
+
+    // Mark the brand as active.
+    let _ = state
+        .pg
+        .from("brands")
+        .eq("id", user.id.as_str())
+        .update(
+            json!({
+                "studio_addon_active": true,
+                "studio_addon_activated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    info!(brand_id = %user.id, stripe_session_id = %session_id_raw, "brand studio add-on verified and activated");
+    Ok(Json(json!({ "studio_addon_active": true })))
 }
 
 #[derive(Debug, Serialize)]

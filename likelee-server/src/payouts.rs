@@ -1993,6 +1993,12 @@ async fn handle_studio_checkout_session_completed(
     }
 
     let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let billing_target = md
+        .get("billing_target")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
     let user_id = md
         .get("user_id")
         .and_then(|v| v.as_str())
@@ -2009,6 +2015,163 @@ async fn handle_studio_checkout_session_completed(
         .and_then(|v| v.as_str())
         .and_then(|s| s.trim().parse::<i64>().ok())
         .unwrap_or(0);
+    let agency_id = md
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let studio_plan = md
+        .get("studio_plan")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| s == "lite" || s == "pro")
+        .unwrap_or_else(|| crate::billing::BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
+
+    if billing_target == "brand_studio_addon" {
+        let brand_id = md
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        if brand_id.is_empty() || credits <= 0 {
+            return Ok(());
+        }
+
+        let brand_resp = state
+            .pg
+            .from("brands")
+            .select("studio_addon_active")
+            .eq("id", brand_id.as_str())
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        if !brand_resp.status().is_success() {
+            let error_text = brand_resp.text().await.unwrap_or_default();
+            return Err(error_text);
+        }
+        let rows_text = brand_resp.text().await.map_err(|e| e.to_string())?;
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_default();
+        let already_active = rows
+            .first()
+            .and_then(|row| row.get("studio_addon_active"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if already_active {
+            let _ =
+                crate::studio::wallet::set_current_plan(&state.pg, &brand_id, Some(&studio_plan))
+                    .await;
+            return Ok(());
+        }
+
+        if crate::studio::wallet::has_stripe_credit_transaction(&state.pg, &session_id)
+            .await
+            .map_err(|e| e.to_string())?
+        {
+            return Ok(());
+        }
+
+        crate::studio::wallet::add_credits(&state.pg, &brand_id, credits, Some(&session_id))
+            .await
+            .map_err(|e| e.to_string())?;
+        let _ =
+            crate::studio::wallet::set_current_plan(&state.pg, &brand_id, Some(&studio_plan))
+                .await;
+
+        let _ = state
+            .pg
+            .from("brands")
+            .eq("id", brand_id.as_str())
+            .update(
+                json!({
+                    "studio_addon_active": true,
+                    "studio_addon_activated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        info!(
+            brand_id = %brand_id,
+            credits = credits,
+            stripe_session_id = %session_id,
+            "brand studio add-on activated via stripe checkout"
+        );
+        return Ok(());
+    }
+
+    if billing_target == "agency_studio_addon" {
+        if agency_id.is_empty() || user_id.is_empty() || credits <= 0 {
+            return Ok(());
+        }
+
+        let agency_resp = state
+            .pg
+            .from("agencies")
+            .select("studio_addon_active")
+            .eq("id", agency_id.as_str())
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        if !agency_resp.status().is_success() {
+            let error_text = agency_resp.text().await.unwrap_or_default();
+            return Err(error_text);
+        }
+        let rows_text = agency_resp.text().await.map_err(|e| e.to_string())?;
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_default();
+        let already_active = rows
+            .first()
+            .and_then(|row| row.get("studio_addon_active"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if already_active {
+            let _ =
+                crate::studio::wallet::set_current_plan(&state.pg, &user_id, Some(&studio_plan))
+                    .await;
+            return Ok(());
+        }
+
+        if crate::studio::wallet::has_stripe_credit_transaction(&state.pg, &session_id)
+            .await
+            .map_err(|e| e.to_string())?
+        {
+            return Ok(());
+        }
+
+        crate::studio::wallet::add_credits(&state.pg, &user_id, credits, Some(&session_id))
+            .await
+            .map_err(|e| e.to_string())?;
+        let _ = crate::studio::wallet::set_current_plan(&state.pg, &user_id, Some(&studio_plan))
+            .await;
+
+        let _ = state
+            .pg
+            .from("agencies")
+            .eq("id", agency_id.as_str())
+            .update(
+                json!({
+                    "studio_addon_active": true,
+                    "studio_addon_activated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        info!(
+            agency_id = %agency_id,
+            user_id = %user_id,
+            credits = credits,
+            stripe_session_id = %session_id,
+            "agency studio add-on activated via stripe checkout"
+        );
+        return Ok(());
+    }
 
     if user_id.is_empty() || credits <= 0 {
         return Ok(());

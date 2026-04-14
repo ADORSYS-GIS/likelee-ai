@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, Check, Loader2, Lock, Sparkles, X } from "lucide-react";
+import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import {
   createBrandStudioAddonCheckout,
   createBrandSubscriptionCheckout,
+  verifyBrandStudioAddonCheckout,
 } from "@/api/functions";
 import {
   BRAND_STUDIO_ADDON_CREDITS,
@@ -162,10 +163,6 @@ const brandPlans: BrandPlanCard[] = [
           { label: "Per-asset comment threads" },
           { label: "Contracts & Licensing tab" },
           { label: "Analytics & reporting" },
-          {
-            label: "AI Studio Add-On",
-            detail: `+$${BRAND_STUDIO_ADDON_PRICE}/mo · ${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} credits`,
-          },
         ],
       },
     ],
@@ -328,14 +325,14 @@ const comparisonSections: ComparisonSection[] = [
     title: "AI Studio",
     rows: [
       {
-        feature: "AI Studio Add-On",
-        basic: "cross",
-        pro: `+$${BRAND_STUDIO_ADDON_PRICE}/mo + ${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} credits`,
+        feature: "AI Studio (one-time activation)",
+        basic: `$${BRAND_STUDIO_ADDON_PRICE} one-time`,
+        pro: `$${BRAND_STUDIO_ADDON_PRICE} one-time`,
         enterprise: "Included",
       },
       {
         feature: '"Edit in Studio" on deliverables',
-        basic: "cross",
+        basic: "Add-On only",
         pro: "Add-On only",
         enterprise: "check",
       },
@@ -355,8 +352,8 @@ const pricingFaqs: PricingFaq[] = [
       "Any campaign with a status of Active or Pending Approval counts toward your limit. Completed campaigns don't count.",
   },
   {
-    question: "Is AI Studio included in Pro?",
-    answer: `AI Studio is an optional add-on for Pro at $${BRAND_STUDIO_ADDON_PRICE}/month. When enabled, it automatically provisions the Studio Pro plan with ${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} credits each month. Enterprise includes Studio access at no extra charge.`,
+    question: "How does AI Studio access work?",
+    answer: `AI Studio is a one-time add-on for $${BRAND_STUDIO_ADDON_PRICE}. After purchase, your brand gets permanent access to /studio and ${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial Studio credits. Enterprise includes Studio access at no extra charge.`,
   },
   {
     question: "Do agency invites count as seats?",
@@ -436,9 +433,6 @@ function getCheckoutErrorMessage(message: string): string {
   }
   if (message.includes("brand_plan_change_not_supported_in_checkout")) {
     return "Base plan changes are not self-serve yet. Contact the team to switch plans.";
-  }
-  if (message.includes("studio_addon_requires_pro_plan")) {
-    return "Upgrade to Pro before enabling the AI Studio add-on.";
   }
   if (message.includes("studio_addon_already_active")) {
     return "The AI Studio add-on is already active.";
@@ -579,6 +573,7 @@ export default function BrandSubscribe() {
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
   const focusStudio = searchParams.get("focus") === "studio";
+  const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
   const nextParam = String(searchParams.get("next") || "").trim();
   const nextPath =
     nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "";
@@ -592,6 +587,7 @@ export default function BrandSubscribe() {
     null | "basic" | "pro_trial" | "pro_paid"
   >(null);
   const [checkingOutAddon, setCheckingOutAddon] = React.useState(false);
+  const verifyCalledRef = React.useRef(false);
   const [billingCycle, setBillingCycle] =
     React.useState<BillingCycle>(searchBillingCycle);
   const autoCheckoutStartedRef = React.useRef(false);
@@ -608,14 +604,29 @@ export default function BrandSubscribe() {
   const currentPeriodEnd = formatDateLabel(
     profile?.subscription_current_period_end,
   );
-  const studioAddonPeriodEnd = formatDateLabel(
-    profile?.studio_addon_current_period_end,
-  );
-
   React.useEffect(() => {
     if (!success || !authenticated) return;
-    void refreshProfile();
-  }, [authenticated, refreshProfile, success]);
+    // Guard: only run once per mount even if deps change (refreshProfile reference
+    // changes on every render, which would cause an infinite loop without this).
+    if (verifyCalledRef.current) return;
+    verifyCalledRef.current = true;
+
+    const run = async () => {
+      // If we have a session ID (studio addon success redirect), verify and provision
+      // immediately instead of waiting for the Stripe webhook.
+      if (focusStudio && checkoutSessionId) {
+        try {
+          await verifyBrandStudioAddonCheckout({ session_id: checkoutSessionId });
+        } catch {
+          // Ignore — webhook will handle it if verify fails
+        }
+      }
+      await refreshProfile();
+    };
+
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, success]);
 
   React.useEffect(() => {
     if (!focusStudio || !addonRef.current) return;
@@ -760,44 +771,29 @@ export default function BrandSubscribe() {
       return;
     }
 
-    if (planTier === "pro") {
-      setCheckingOutAddon(true);
-      try {
-        const response = await createBrandStudioAddonCheckout({
-          next_path: nextPath || undefined,
-        });
-        const checkoutUrl = (response as any)?.checkout_url as
-          | string
-          | undefined;
-        if (!checkoutUrl) {
-          throw new Error("No checkout URL returned.");
-        }
-        window.location.href = checkoutUrl;
-      } catch (error: any) {
-        toast({
-          title: "Checkout failed",
-          description: getCheckoutErrorMessage(
-            String(error?.message || error || ""),
-          ),
-          variant: "destructive",
-        });
-      } finally {
-        setCheckingOutAddon(false);
-      }
-      return;
-    }
-
-    if (hasBaseSubscription && planTier !== "free") {
-      toast({
-        title: "Upgrade required",
-        description:
-          "AI Studio is a Pro add-on. Contact sales to switch your current base plan to Pro.",
+    setCheckingOutAddon(true);
+    try {
+      const response = await createBrandStudioAddonCheckout({
+        next_path: nextPath || undefined,
       });
-      navigate("/SalesInquiry");
-      return;
+      const checkoutUrl = (response as any)?.checkout_url as
+        | string
+        | undefined;
+      if (!checkoutUrl) {
+        throw new Error("No checkout URL returned.");
+      }
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      toast({
+        title: "Checkout failed",
+        description: getCheckoutErrorMessage(
+          String(error?.message || error || ""),
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingOutAddon(false);
     }
-
-    await handleBaseAction("pro", false);
   };
 
   return (
@@ -853,8 +849,8 @@ export default function BrandSubscribe() {
 
             <p className="mx-auto mt-4 max-w-2xl text-sm text-[#7D8CA9]">
               {billingCycle === "annual"
-                ? "Annual base plans are billed upfront and save 20%. AI Studio remains a separate monthly add-on."
-                : "Choose a base plan first, then add AI Studio only if your team wants in-house generation."}
+                ? "Annual base plans are billed upfront and save 20%. AI Studio is a separate one-time add-on."
+                : "Choose a base plan first, then unlock AI Studio with a one-time add-on."}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -1106,11 +1102,9 @@ export default function BrandSubscribe() {
                 {!trialEndsAt && currentPeriodEnd && (
                   <p>Base plan renews on {currentPeriodEnd}.</p>
                 )}
-                {studioAddonPeriodEnd &&
-                  hasStudioAddon &&
-                  planTier !== "enterprise" && (
-                    <p>AI Studio renews on {studioAddonPeriodEnd}.</p>
-                  )}
+                {hasStudioAddon && planTier !== "enterprise" && (
+                  <p>AI Studio access is active (lifetime).</p>
+                )}
               </div>
             </div>
           </Card>
@@ -1149,26 +1143,25 @@ export default function BrandSubscribe() {
                   </div>
                 </div>
                 <p className="mt-4 text-sm text-[#6E7E9F] sm:text-base">
-                  Pro brands can add AI Studio for{" "}
+                  Unlock AI Studio with a single one-time payment of{" "}
                   <span className="font-semibold text-[#17315E]">
-                    ${BRAND_STUDIO_ADDON_PRICE}/month
+                    ${BRAND_STUDIO_ADDON_PRICE}
                   </span>
-                  . Each paid cycle automatically provisions the Studio Pro plan
-                  with{" "}
+                  . Your brand gets permanent access to{" "}
+                  <span className="font-semibold text-[#17315E]">/studio</span>{" "}
+                  and{" "}
                   <span className="font-semibold text-[#17315E]">
-                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} credits
+                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial credits
                   </span>{" "}
-                  in the brand's Studio wallet. Enterprise includes Studio
-                  access automatically. This add-on remains a monthly line item
-                  even when you are comparing annual base-plan pricing.
+                  credited to your Studio wallet. Enterprise includes Studio
+                  access automatically.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {[
-                    `${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} Studio credits / month`,
+                    `${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial Studio credits`,
                     "Studio Pro wallet plan",
-                    "Separate billing line item",
-                    "Pro required",
-                    "Monthly add-on billing",
+                    "One-time payment",
+                    "Permanent /studio access",
                     "Included with Enterprise",
                   ].map((item) => (
                     <Badge
@@ -1187,7 +1180,7 @@ export default function BrandSubscribe() {
                     <div className="font-serif text-4xl font-bold text-[#17315E]">
                       ${BRAND_STUDIO_ADDON_PRICE}
                     </div>
-                    <p className="mt-1 text-sm text-[#8D7459]">per month</p>
+                    <p className="mt-1 text-sm text-[#8D7459]">one-time</p>
                   </div>
                   <Badge className="border border-[#F4DCC5] bg-white text-[#9A6A37] hover:bg-white">
                     {studioStatusLabel}
@@ -1208,15 +1201,10 @@ export default function BrandSubscribe() {
                     isBrandAccount &&
                     (hasStudioAddon || planTier === "enterprise") ? (
                     "Open Studio"
-                  ) : authenticated && isBrandAccount && planTier === "pro" ? (
-                    "Enable add-on"
                   ) : authenticated && isBrandAccount ? (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Upgrade to Pro
-                    </>
+                    "Activate Studio"
                   ) : (
-                    "Get Pro + Studio"
+                    "Get Studio Add-On"
                   )}
                 </Button>
               </div>
