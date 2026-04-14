@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Loader2, Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ export function EmailOtpDialog({
   helperText,
   theme,
 }: EmailOtpDialogProps) {
+  const { t } = useTranslation();
   const [code, setCode] = React.useState("");
   const [verifyLoading, setVerifyLoading] = React.useState(false);
   const [resendLoading, setResendLoading] = React.useState(false);
@@ -211,7 +213,7 @@ export function EmailOtpDialog({
               resolvedTheme.infoClassName,
             )}
           >
-            Enter the 6-digit code sent to{" "}
+            {t("auth.emailOtp.enterCodePrefix")}{" "}
             <span className="font-semibold">{email}</span>.
           </div>
 
@@ -297,10 +299,10 @@ export function EmailOtpDialog({
               {verifyLoading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Verifying…
+                  {t("auth.emailOtp.verifying")}
                 </span>
               ) : (
-                verifyLabel
+                verifyLabel || t("auth.emailOtp.verifyLabel")
               )}
             </Button>
 
@@ -313,12 +315,12 @@ export function EmailOtpDialog({
               {resendLoading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending…
+                  {t("auth.emailOtp.sending")}
                 </span>
               ) : cooldownSec > 0 ? (
-                `Resend available in ${cooldownSec}s`
+                t("auth.emailOtp.resendAvailableIn", { seconds: cooldownSec })
               ) : (
-                "Resend code"
+                t("auth.emailOtp.resendCode")
               )}
             </Button>
           </div>
