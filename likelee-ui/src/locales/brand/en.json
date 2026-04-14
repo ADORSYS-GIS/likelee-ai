@@ -1,0 +1,104 @@
+{
+  "brands": "Brands",
+  "company": "Company",
+  "forBusinesses": "For Businesses",
+  "forBusinessesMessage": "Access verified creator likenesses with transparent licensing and fast turnaround",
+  "forBusinessesMessage1": "Launch campaigns with verified, consented creators",
+  "forBusinessesMessage2": "Get brand-safe content in under 48 hours",
+  "forBusinessesMessage3": "Smart contracts with watermarked assets",
+  "forBusinessesMessage4": "Transparent licensing and usage tracking",
+  "forBrands": "For Brands",
+  "brandsRequestYouApprove": "Brands Request. You Approve.",
+  "brandsRequestYouApproveMessage": "Studios and brands browse your profile, submit their brief, and wait for your approval. Reject or accept in one click.",
+  "studiosAndBrandsProfile": "Studios & Brands",
+  "studiosAndBrandsProfileMessage": "Access verified, cleared avatars for ads, games, and campaigns—without months of legal negotiation or consent risk.",
+  "businessEmail": "Business Email",
+  "brandCampaignSolutions": "Brand & Company Campaign Solutions",
+  "brandCampaignSolutionsDescription": "Launch verified talent campaigns. Project-based. Transparent pricing. No hidden costs. Access verified creators and AI filmmakers.",
+  "brandMarketingLicensing": "Brand Marketing & Creator Licensing",
+  "brandAudiences": "Brands, Companies, Marketing Teams",
+  "dontLoseBrandTrust": "Don't Lose Brand Trust Using False Avatars",
+  "browseMarketplace": "Browse Marketplace",
+  "faqMultipleCampaignsTitle": "Can I hire the same talent for multiple campaigns?",
+  "faqMultipleCampaignsDescription": "Yes. If a creator's contract allows renewal, you can re-book them at the same rates (or renegotiate). Most creators prefer repeat work.",
+  "onePlatformForAICampaigns": "One Platform For AI-Powered Creator Campaigns",
+  "theProblemWeSolve": "The Problem We Solve",
+  "theProblemWeSolveDescription": "Your clients are moving to AI-powered creator content. Your team is juggling multiple vendors and platforms to source, manage, and deliver these campaigns. Likelee consolidates everything— verified creator licensing, production workflows, compliance, and brand exposure—into one streamlined platform so you deliver AI campaigns faster without building infrastructure.",
+  "streamlinedAICampaignWorkflow": "Streamlined AI Campaign Workflow",
+  "streamlinedAICampaignWorkflowDescription": "Brief → License creators → Manage AI production → Approve deliverables → Client handoff. Same workflow your team knows. 3-5 day turnaround. All creator licensing embedded in final assets.",
+  "directBrandExposure": "Direct Brand Exposure",
+  "directBrandExposureDescription": "Brands discover your agency on Likelee when searching for AI campaign partners. Inbound pipeline. New business finds you because you're positioned as AI-campaign ready.",
+  "licensingComplianceTime": "Creator licensing + compliance time",
+  "licensingComplianceTimeBefore": "8 hours",
+  "licensingComplianceTimeAfter": "2 hours",
+  "campaignsPerTeamPerMonth": "AI campaigns per team per month",
+  "campaignsPerTeamPerMonthBefore": "4",
+  "campaignsPerTeamPerMonthAfter": "12",
+  "timeToDeliverAICampaign": "Time to deliver AI campaign",
+  "timeToDeliverAICampaignBefore": "2-3 weeks",
+  "timeToDeliverAICampaignAfter": "3-5 days",
+  "moreCampaignsBetterMargins": "3x more AI campaigns. Better margins.",
+  "operationalSimplicity": "Operational Simplicity for AI Campaigns",
+  "operationalSimplicityDescription": "One dashboard replaces five tools for managing creator-licensed content. Your team doesn't learn new systems. No more spreadsheets tracking who licensed what. No more vendor coordination across compliance, licensing, and production.",
+  "fasterAICampaignDelivery": "Faster AI Campaign Delivery",
+  "fasterAICampaignDeliveryDescription": "2-3 weeks becomes 3-5 days because everything's in one place. Creator licensing is pre-cleared. Compliance is built in. No back-and-forth delays. Your clients see you as fast and capable of executing AI campaigns reliably.",
+  "newBusinessFromBrands": "New Business From Brands Moving to AI",
+  "newBusinessFromBrandsDescription": "Brands actively search Likelee for agencies that can execute verified creator AI campaigns. You get inbound leads just by being on the platform. Less cold calling. More inbound from brands shifting to AI- powered creator content.",
+  "leadAICampaigns": "Lead AI-Powered Creator Campaigns",
+  "leadAICampaignsDescription": "Likelee gives you one platform for licensing verified creators, managing AI production, compliance, and brand exposure. Your team focuses on creative strategy. Your clients get faster AI-powered campaigns. You operate with less overhead while positioning as an AI-forward agency.",
+  "brandCompanyPage": {
+    "hero": {
+      "title": "License Talent Likenesses for AI Content.",
+      "subtitle": "Legally. Instantly.",
+      "description": "Brand-safe AI creative with verified talent consent in <48 hours. Work with independent talent or their agencies.",
+      "getStartedButton": "Get Started",
+      "bookDemoButton": "Book a Demo"
+    },
+    "whyLikelee": {
+      "title": "Why Likelee",
+      "verifiedConsent": {
+        "title": "Verified Consent",
+        "description": "Talent actively license their likeness—no scraping, no legal gray areas. Every permission is explicit and enforceable."
+      },
+      "aiSpeed": {
+        "title": "AI-Native Speed",
+        "description": "Licensed assets delivered in <48 hours. Submit your brief, get talent permissions with your AI content, automatically."
+      },
+      "legalCompliance": {
+        "title": "Legal Compliance Built-In",
+        "description": "Every license documents usage scope, territory, duration, and compensation. Transparent rights management with verified assets."
+      }
+    },
+    "useCases": {
+      "title": "Use Cases",
+      "paidSocial": {
+        "title": "Paid Social & Performance",
+        "description": "AI-generated ad creative with licensed talent for campaigns, regions, duration"
+      },
+      "ecommerce": {
+        "title": "E-Commerce & Product",
+        "description": "Verified talent on product pages and campaigns"
+      },
+      "ooh": {
+        "title": "OOH & Retail",
+        "description": "Billboard and in-store with pre-cleared rights"
+      },
+      "content": {
+        "title": "Content & Gaming",
+        "description": "Integrate likenesses into brand experiences"
+      }
+    },
+    "howItWorks": {
+      "title": "How Likelee Works",
+      "step1": "Talent or agencies set licensing terms",
+      "step2": "You browse and submit your brief",
+      "step3": "Talent approves in one click",
+      "step4": "You receive licensed assets + binding agreement"
+    },
+    "pilot": {
+      "title": "Join Our Pilot Program",
+      "getStartedButton": "Get Started",
+      "bookDemoButton": "Book a Demo"
+    }
+  }
+}

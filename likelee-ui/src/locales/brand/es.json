@@ -1,0 +1,104 @@
+{
+  "brands": "Marcas",
+  "forBrands": "Para marcas",
+  "company": "Empresa",
+  "forBusinesses": "Para empresas",
+  "forBusinessesMessage": "Accede a imágenes de creadores verificados con licencias transparentes y entrega rápida",
+  "forBusinessesMessage1": "Lanza campañas con creadores verificados y consentidos",
+  "forBusinessesMessage2": "Obtén contenido seguro para la marca en menos de 48 horas",
+  "forBusinessesMessage3": "Contratos inteligentes con activos con marca de agua",
+  "forBusinessesMessage4": "Licencias y seguimiento de uso transparentes",
+  "brandsRequestYouApprove": "Las marcas solicitan. Tú apruebas.",
+  "brandsRequestYouApproveMessage": "Los estudios y las marcas exploran tu perfil, envían su resumen y esperan tu aprobación. Rechaza o acepta con un solo clic.",
+  "studiosAndBrandsProfile": "Estudios y marcas",
+  "studiosAndBrandsProfileMessage": "Acceda a avatares verificados y autorizados para anuncios, juegos y campañas, sin meses de negociación legal o riesgo de consentimiento.",
+  "businessEmail": "Correo electrónico de la empresa",
+  "brandCampaignSolutions": "Soluciones de Campañas para Marcas y Empresas",
+  "brandCampaignSolutionsDescription": "Lanza campañas de talentos verificados. Basado en proyectos. Precios transparentes. Sin costos ocultos. Accede a creadores verificados y cineastas de IA.",
+  "brandMarketingLicensing": "Marketing de Marca y Licenciamiento de Creadores",
+  "brandAudiences": "Marcas, Empresas, Equipos de Marketing",
+  "dontLoseBrandTrust": "No pierdas la confianza en la marca usando avatares falsos",
+  "browseMarketplace": "Explorar Marketplace",
+  "faqMultipleCampaignsTitle": "¿Puedo contratar al mismo talento para múltiples campañas?",
+  "faqMultipleCampaignsDescription": "Sí. Si el contrato de un creador permite la renovación, puedes volver a contratarlos con las mismas tarifas (o renegociar). La mayoría de los creadores prefieren trabajos repetidos.",
+  "onePlatformForAICampaigns": "Una Plataforma para Campañas de Creadores Impulsadas por IA",
+  "theProblemWeSolve": "El Problema que Resolvemos",
+  "theProblemWeSolveDescription": "Tus clientes se están pasando al contenido de creadores impulsado por IA. Tu equipo está haciendo malabares con múltiples proveedores y plataformas para buscar, gestionar y entregar estas campañas. Likelee consolida todo —licenciamiento de creadores verificados, flujos de trabajo de producción, cumplimiento y exposición de marca— en una plataforma optimizada para que entregues campañas de IA más rápido sin construir infraestructura.",
+  "streamlinedAICampaignWorkflow": "Flujo de Trabajo de Campañas de IA Optimizado",
+  "streamlinedAICampaignWorkflowDescription": "Brief → Licencia de creadores → Gestión de producción de IA → Aprobación de entregables → Entrega al cliente. El mismo flujo de trabajo que tu equipo conoce. Entrega en 3-5 días. Todo el licenciamiento de creadores incrustado en los activos finales.",
+  "directBrandExposure": "Exposición Directa a la Marca",
+  "directBrandExposureDescription": "Las marcas descubren tu agencia en Likelee cuando buscan socios para campañas de IA. Pipeline de entrada. Nuevos negocios te encuentran porque estás posicionado como listo para campañas de IA.",
+  "licensingComplianceTime": "Tiempo de licenciamiento de creadores + cumplimiento",
+  "licensingComplianceTimeBefore": "8 horas",
+  "licensingComplianceTimeAfter": "2 horas",
+  "campaignsPerTeamPerMonth": "Campañas de IA por equipo al mes",
+  "campaignsPerTeamPerMonthBefore": "4",
+  "campaignsPerTeamPerMonthAfter": "12",
+  "timeToDeliverAICampaign": "Tiempo para entregar una campaña de IA",
+  "timeToDeliverAICampaignBefore": "2-3 semanas",
+  "timeToDeliverAICampaignAfter": "3-5 días",
+  "moreCampaignsBetterMargins": "3 veces más campañas de IA. Mejores márgenes.",
+  "operationalSimplicity": "Simplicidad Operativa para Campañas de IA",
+  "operationalSimplicityDescription": "Un panel de control reemplaza cinco herramientas para gestionar contenido con licencia de creador. Tu equipo no aprende nuevos sistemas. No más hojas de cálculo para rastrear quién licenció qué. No más coordinación de proveedores entre cumplimiento, licencias y producción.",
+  "fasterAICampaignDelivery": "Entrega de Campañas de IA más Rápida",
+  "fasterAICampaignDeliveryDescription": "De 2-3 semanas a 3-5 días porque todo está en un solo lugar. El licenciamiento de creadores está pre-autorizado. El cumplimiento está integrado. Sin demoras por idas y venidas. Tus clientes te ven como rápido y capaz de ejecutar campañas de IA de manera confiable.",
+  "newBusinessFromBrands": "Nuevos Negocios de Marcas que se Pasan a la IA",
+  "newBusinessFromBrandsDescription": "Las marcas buscan activamente en Likelee agencias que puedan ejecutar campañas de IA con creadores verificados. Obtienes clientes potenciales solo por estar en la plataforma. Menos llamadas en frío. Más clientes potenciales de marcas que se están pasando al contenido de creadores impulsado por IA.",
+  "leadAICampaigns": "Lidera Campañas de Creadores Impulsadas por IA",
+  "leadAICampaignsDescription": "Likelee te ofrece una plataforma para licenciar creadores verificados, gestionar la producción de IA, el cumplimiento y la exposición de la marca. Tu equipo se centra en la estrategia creativa. Tus clientes obtienen campañas impulsadas por IA más rápidas. Operas con menos gastos generales mientras te posicionas como una agencia avanzada en IA.",
+  "brandCompanyPage": {
+    "hero": {
+      "title": "Licencie Apariencias de Talentos para Contenido IA.",
+      "subtitle": "Legalmente. Instantáneamente.",
+      "description": "Creativo IA seguro para marcas con consentimiento de talento verificado en <48 horas. Trabaja con talento independiente o sus agencias.",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    },
+    "whyLikelee": {
+      "title": "Por Qué Likelee",
+      "verifiedConsent": {
+        "title": "Consentimiento Verificado",
+        "description": "Los talentos licencian activamente su apariencia—sin raspado, sin áreas grises legales. Cada permiso es explícito y ejecutable."
+      },
+      "aiSpeed": {
+        "title": "Velocidad Nativa IA",
+        "description": "Activos licenciados entregados en <48 horas. Envía tu brief, obtén permisos de talento con tu contenido IA, automáticamente."
+      },
+      "legalCompliance": {
+        "title": "Cumplimiento Legal Integrado",
+        "description": "Cada licencia documenta el alcance de uso, territorio, duración y compensación. Gestión transparente de derechos con activos verificados."
+      }
+    },
+    "useCases": {
+      "title": "Casos de Uso",
+      "paidSocial": {
+        "title": "Redes Sociales Pagadas y Rendimiento",
+        "description": "Creativo publicitario generado por IA con talento licenciado para campañas, regiones, duración"
+      },
+      "ecommerce": {
+        "title": "E-Commerce y Producto",
+        "description": "Talento verificado en páginas de productos y campañas"
+      },
+      "ooh": {
+        "title": "Publicidad Exterior y Retail",
+        "description": "Vallas publicitarias y en tienda con derechos pre-aprobados"
+      },
+      "content": {
+        "title": "Contenido y Juegos",
+        "description": "Integra apariencias en experiencias de marca"
+      }
+    },
+    "howItWorks": {
+      "title": "Cómo Funciona Likelee",
+      "step1": "Los talentos o agencias establecen términos de licencia",
+      "step2": "Navegas y envías tu brief",
+      "step3": "El talento aprueba con un clic",
+      "step4": "Recibes activos licenciados + acuerdo vinculante"
+    },
+    "pilot": {
+      "title": "Únete a Nuestro Programa Piloto",
+      "getStartedButton": "Comenzar",
+      "bookDemoButton": "Reservar una Demo"
+    }
+  }
+}

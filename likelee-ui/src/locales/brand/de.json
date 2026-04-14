@@ -1,0 +1,104 @@
+{
+  "brands": "Marken",
+  "forBrands": "Für Marken",
+  "company": "Unternehmen",
+  "forBusinesses": "Für Unternehmen",
+  "forBusinessesMessage": "Greifen Sie auf verifizierte Schöpfer-Abbilder mit transparenten Lizenzen und schneller Lieferung zu",
+  "forBusinessesMessage1": "Starten Sie Kampagnen mit verifizierten, zugstimmten Schöpfern",
+  "forBusinessesMessage2": "Erhalten Sie markensichere Inhalte in weniger als 48 Stunden",
+  "forBusinessesMessage3": "Smart Contracts mit Wasserzeichen-Assets",
+  "forBusinessesMessage4": "Transparente Lizenzierung und Nutzungsverfolgung",
+  "brandsRequestYouApprove": "Marken fragen an. Sie genehmigen.",
+  "brandsRequestYouApproveMessage": "Studios und Marken durchsuchen Ihr Profil, reichen ihr Briefing ein und warten auf Ihre Genehmigung. Ablehnen oder akzeptieren mit einem Klick.",
+  "studiosAndBrandsProfile": "Studios & Marken",
+  "studiosAndBrandsProfileMessage": "Greifen Sie auf verifizierte, freigegebene Avatare für Anzeigen, Spiele und Kampagnen zu – ohne monatelange rechtliche Verhandlungen oder Zustimmungsrisiko.",
+  "brandCompanyPage": {
+    "hero": {
+      "title": "Lizenzieren Sie Talent-Abbilder für KI-Inhalte.",
+      "subtitle": "Legal. Sofort.",
+      "description": "Markensichere KI-Kreativität mit verifizierter Talent-Zustimmung in <48 Stunden. Arbeiten Sie mit unabhängigen Talenten oder deren Agenturen.",
+      "getStartedButton": "Loslegen",
+      "bookDemoButton": "Demo buchen"
+    },
+    "whyLikelee": {
+      "title": "Warum Likelee",
+      "verifiedConsent": {
+        "title": "Verifizierte Zustimmung",
+        "description": "Talente lizenzieren aktiv ihr Abbild – kein Scraping, keine rechtlichen Grauzonen. Jede Berechtigung ist explizit und durchsetzbar."
+      },
+      "aiSpeed": {
+        "title": "KI-native Geschwindigkeit",
+        "description": "Lizenzierte Assets in <48 Stunden geliefert. Reichen Sie Ihr Briefing ein, erhalten Sie Talent-Berechtigungen mit Ihren KI-Inhalten, automatisch."
+      },
+      "legalCompliance": {
+        "title": "Rechtliche Compliance integriert",
+        "description": "Jede Lizenz dokumentiert Nutzungsumfang, Gebiet, Dauer und Vergütung. Transparente Rechteverwaltung mit verifizierten Assets."
+      }
+    },
+    "useCases": {
+      "title": "Anwendungsfälle",
+      "paidSocial": {
+        "title": "Bezahlte soziale Medien & Performance",
+        "description": "KI-generierte Werbekreativität mit lizenzierten Talenten für Kampagnen, Regionen, Dauer"
+      },
+      "ecommerce": {
+        "title": "E-Commerce & Produkt",
+        "description": "Verifizierte Talente auf Produktseiten und Kampagnen"
+      },
+      "ooh": {
+        "title": "OOH & Einzelhandel",
+        "description": "Plakatwände und im Geschäft mit vorab geklärten Rechten"
+      },
+      "content": {
+        "title": "Inhalt & Gaming",
+        "description": "Integrieren Sie Abbilder in Markenerlebnisse"
+      }
+    },
+    "howItWorks": {
+      "title": "Wie Likelee funktioniert",
+      "step1": "Talente oder Agenturen legen Lizenzbedingungen fest",
+      "step2": "Sie durchsuchen und reichen Ihr Briefing ein",
+      "step3": "Talent genehmigt mit einem Klick",
+      "step4": "Sie erhalten lizenzierte Assets + verbindliche Vereinbarung"
+    },
+    "pilot": {
+      "title": "Treten Sie unserem Pilotprogramm bei",
+      "getStartedButton": "Loslegen",
+      "bookDemoButton": "Demo buchen"
+    }
+  },
+  "businessEmail": "Geschäftliche E-Mail",
+  "brandCampaignSolutions": "Marken- und Unternehmens-Kampagnenlösungen",
+  "brandCampaignSolutionsDescription": "Starten Sie verifizierte Talentkampagnen. Projektbasiert. Transparente Preise. Keine versteckten Kosten. Greifen Sie auf verifizierte Schöpfer und KI-Filmemacher zu.",
+  "brandMarketingLicensing": "Markenmarketing & Schöpferlizenzierung",
+  "brandAudiences": "Marken, Unternehmen, Marketingteams",
+  "dontLoseBrandTrust": "Verlieren Sie nicht das Markenvertrauen durch die Verwendung gefälschter Avatare",
+  "browseMarketplace": "Marktplatz durchsuchen",
+  "faqMultipleCampaignsTitle": "Kann ich dasselbe Talent für mehrere Kampagnen engagieren?",
+  "faqMultipleCampaignsDescription": "Ja. Wenn der Vertrag eines Schöpfers eine Verlängerung zulässt, können Sie ihn zu den gleichen Sätzen wieder engagieren (oder neu verhandeln). Die meisten Schöpfer bevorzugen Wiederholungsaufträge.",
+  "onePlatformForAICampaigns": "Eine Plattform für KI-gesteuerte Schöpferkampagnen",
+  "theProblemWeSolve": "Das Problem, das wir lösen",
+  "theProblemWeSolveDescription": "Ihre Kunden wechseln zu KI-gesteuerten Schöpferinhalten. Ihr Team jongliert mit mehreren Anbietern und Plattformen, um diese Kampagnen zu beschaffen, zu verwalten und zu liefern. Likelee konsolidiert alles – Lizenzierung verifizierter Schöpfer, Produktions-Workflows, Compliance und Markenpräsenz – in einer optimierten Plattform, damit Sie KI-Kampagnen schneller liefern können, ohne eine Infrastruktur aufbauen zu müssen.",
+  "streamlinedAICampaignWorkflow": "Optimierter KI-Kampagnen-Workflow",
+  "streamlinedAICampaignWorkflowDescription": "Briefing → Schöpferlizenzierung → KI-Produktionsmanagement → Genehmigung der Ergebnisse → Lieferung an den Kunden. Derselbe Workflow, den Ihr Team kennt. Lieferung in 3-5 Tagen. Alle Schöpferlizenzen sind in die endgültigen Assets eingebettet.",
+  "directBrandExposure": "Direkte Markenpräsenz",
+  "directBrandExposureDescription": "Marken entdecken Ihre Agentur auf Likelee, wenn sie nach Partnern für KI-Kampagnen suchen. Inbound-Pipeline. Neue Geschäfte finden Sie, weil Sie als bereit für KI-Kampagnen positioniert sind.",
+  "licensingComplianceTime": "Zeit für Schöpferlizenzierung + Compliance",
+  "licensingComplianceTimeBefore": "8 Stunden",
+  "licensingComplianceTimeAfter": "2 Stunden",
+  "campaignsPerTeamPerMonth": "KI-Kampagnen pro Team pro Monat",
+  "campaignsPerTeamPerMonthBefore": "4",
+  "campaignsPerTeamPerMonthAfter": "12",
+  "timeToDeliverAICampaign": "Zeit zur Lieferung einer KI-Kampagne",
+  "timeToDeliverAICampaignBefore": "2-3 Wochen",
+  "timeToDeliverAICampaignAfter": "3-5 Tage",
+  "moreCampaignsBetterMargins": "3x mehr KI-Kampagnen. Bessere Margen.",
+  "operationalSimplicity": "Betriebliche Einfachheit für KI-Kampagnen",
+  "operationalSimplicityDescription": "Ein Dashboard ersetzt fünf Tools zur Verwaltung von lizenzierten Schöpferinhalten. Ihr Team lernt keine neuen Systeme. Keine Tabellenkalkulationen mehr, um zu verfolgen, wer was lizenziert hat. Keine Anbieterkoordination mehr über Compliance, Lizenzierung und Produktion hinweg.",
+  "fasterAICampaignDelivery": "Schnellere Lieferung von KI-Kampagnen",
+  "fasterAICampaignDeliveryDescription": "2-3 Wochen werden zu 3-5 Tagen, weil alles an einem Ort ist. Die Schöpferlizenzierung ist vorab geklärt. Compliance ist integriert. Keine Verzögerungen durch Hin und Her. Ihre Kunden sehen Sie als schnell und fähig, KI-Kampagnen zuverlässig umzusetzen.",
+  "newBusinessFromBrands": "Neugeschäft von Marken, die auf KI umsteigen",
+  "newBusinessFromBrandsDescription": "Marken suchen aktiv auf Likelee nach Agenturen, die verifizierte Schöpfer-KI-Kampagnen durchführen können. Sie erhalten Inbound-Leads, nur weil Sie auf der Plattform sind. Weniger Kaltakquise. Mehr Inbound von Marken, die auf KI-gestützte Schöpferinhalte umsteigen.",
+  "leadAICampaigns": "Führen Sie KI-gesteuerte Schöpferkampagnen an",
+  "leadAICampaignsDescription": "Likelee bietet Ihnen eine Plattform für die Lizenzierung verifizierter Schöpfer, die Verwaltung der KI-Produktion, Compliance und Markenpräsenz. Ihr Team konzentriert sich auf die kreative Strategie. Ihre Kunden erhalten schnellere KI-gestützte Kampagnen. Sie arbeiten mit weniger Overhead und positionieren sich als KI-orientierte Agentur."
+}
