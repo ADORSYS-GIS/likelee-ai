@@ -163,7 +163,7 @@ const TripCard = ({
         className={`mb-4 overflow-hidden transition-all duration-300 border-gray-200 shadow-sm hover:shadow-md cursor-pointer ${isExpanded ? "ring-1 ring-indigo-100" : ""}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
@@ -216,44 +216,44 @@ const TripCard = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
                 Approached
               </p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
                 {trip.prospects_approached}
               </p>
             </div>
-            <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+            <div className="p-2 sm:p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
                 Submitted
               </p>
-              <p className="text-xl font-bold text-indigo-600">
+              <p className="text-lg sm:text-xl font-bold text-indigo-600">
                 {trip.prospects_agreed}
               </p>
             </div>
-            <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+            <div className="p-2 sm:p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
                 Added to Pipeline
               </p>
-              <p className="text-xl font-bold text-green-600">
+              <p className="text-lg sm:text-xl font-bold text-green-600">
                 {trip.prospects_added}
               </p>
             </div>
-            <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+            <div className="p-2 sm:p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
                 Conversion Rate
               </p>
-              <p className="text-xl font-bold text-purple-600">
+              <p className="text-lg sm:text-xl font-bold text-purple-600">
                 {trip.conversion_rate}%
               </p>
             </div>
-            <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+            <div className="p-2 sm:p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
                 Total Cost
               </p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
                 ${trip.total_cost?.toLocaleString()}
               </p>
             </div>
@@ -422,7 +422,7 @@ export const ScoutingTrips = () => {
             setEditingTrip(null);
             setIsModalOpen(true);
           }}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 shadow-lg shadow-indigo-100 flex items-center gap-2"
+          className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 rounded-xl px-4 py-2 font-bold shadow-sm flex items-center gap-2 h-9"
         >
           <Plus className="w-4 h-4" />
           Plan New Trip
@@ -459,8 +459,7 @@ export const ScoutingTrips = () => {
                 </p>
                 <Button
                   onClick={() => setIsModalOpen(true)}
-                  variant="outline"
-                  className="mt-6 rounded-xl border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                  className="mt-6 bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 rounded-xl px-4 py-2 font-bold shadow-sm flex mx-auto h-9"
                 >
                   Plan Your First Trip
                 </Button>

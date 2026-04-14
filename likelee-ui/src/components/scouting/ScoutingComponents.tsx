@@ -486,8 +486,8 @@ export const ProspectPipelineTab = ({
 
   return (
     <div className="space-y-6">
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <Card className="p-4 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl sm:rounded-3xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8">
           <h2 className="text-xl font-bold text-gray-900">Prospect Pipeline</h2>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
@@ -523,7 +523,7 @@ export const ProspectPipelineTab = ({
               </SelectContent>
             </Select>
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm"
+              className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 font-bold h-10 px-4 sm:px-6 rounded-lg shadow-sm shrink-0"
               onClick={onAddProspect}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Prospect
@@ -531,11 +531,11 @@ export const ProspectPipelineTab = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+              className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
             >
               <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
                 {stat.label}
@@ -562,9 +562,9 @@ export const ProspectPipelineTab = ({
             filteredProspects.map((prospect) => (
               <div
                 key={prospect.id}
-                className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all group"
+                className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all group"
               >
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 font-bold text-lg shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 font-bold text-lg shrink-0">
                   {prospect.full_name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
