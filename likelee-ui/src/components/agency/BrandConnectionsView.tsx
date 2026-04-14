@@ -1809,8 +1809,7 @@ const BrandConnectionsView = () => {
                               <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 sm:px-4 py-2 sm:py-3">
                                 <span className="text-amber-700 text-[10px] sm:text-sm font-semibold">
                                   ⏳ Brand has not yet completed payment.
-                                  Deliverable uploads/submissions are
-                                  disabled.
+                                  Deliverable uploads/submissions are disabled.
                                 </span>
                               </div>
                             )}
@@ -2246,11 +2245,17 @@ const BrandConnectionsView = () => {
                               <div className="text-[13px] text-gray-700 font-medium">
                                 {launchDate || deadlineDate ? (
                                   <>
-                                    {launchDate && <div>Start: {launchDate}</div>}
-                                    {deadlineDate && <div>Due: {deadlineDate}</div>}
+                                    {launchDate && (
+                                      <div>Start: {launchDate}</div>
+                                    )}
+                                    {deadlineDate && (
+                                      <div>Due: {deadlineDate}</div>
+                                    )}
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic font-normal">Not specified</span>
+                                  <span className="text-gray-400 italic font-normal">
+                                    Not specified
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -2264,14 +2269,20 @@ const BrandConnectionsView = () => {
                                 {budgetTotal || budgetCreator ? (
                                   <>
                                     {budgetTotal && (
-                                      <div className="font-bold text-gray-900">Total: {budgetTotal}</div>
+                                      <div className="font-bold text-gray-900">
+                                        Total: {budgetTotal}
+                                      </div>
                                     )}
                                     {budgetCreator && (
-                                      <div className="text-gray-500 text-[11px]">Talent: {budgetCreator}</div>
+                                      <div className="text-gray-500 text-[11px]">
+                                        Talent: {budgetCreator}
+                                      </div>
                                     )}
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic font-normal">Not specified</span>
+                                  <span className="text-gray-400 italic font-normal">
+                                    Not specified
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -2283,7 +2294,9 @@ const BrandConnectionsView = () => {
                               className="flex items-center gap-2 bg-blue-50/50 border border-blue-100/50 rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-100/50 transition-colors"
                               onClick={() => setSelectedOfferId(offerId)}
                             >
-                              <span className="text-blue-500 text-xs shrink-0">ⓘ</span>
+                              <span className="text-blue-500 text-xs shrink-0">
+                                ⓘ
+                              </span>
                               <p className="text-[11px] font-medium text-blue-700">
                                 View complete brief, dialogue & visuals
                               </p>
@@ -2374,7 +2387,9 @@ const BrandConnectionsView = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Sidebar: Offer List - Hidden on mobile if an offer is selected */}
-              <div className={`${selectedOfferId ? "hidden md:block" : "block"} md:col-span-1 space-y-3`}>
+              <div
+                className={`${selectedOfferId ? "hidden md:block" : "block"} md:col-span-1 space-y-3`}
+              >
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Campaign Offers
                 </p>
@@ -2421,7 +2436,9 @@ const BrandConnectionsView = () => {
               </div>
 
               {/* Main: Contract Management - Full width on mobile if selected */}
-              <div className={`${selectedOfferId ? "block" : "hidden md:block"} md:col-span-2`}>
+              <div
+                className={`${selectedOfferId ? "block" : "hidden md:block"} md:col-span-2`}
+              >
                 {selectedOfferId && (
                   <div className="md:hidden mb-4">
                     <Button
@@ -2484,7 +2501,11 @@ const BrandConnectionsView = () => {
                           <AlertDescription className="text-blue-900 text-sm font-medium mt-1">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                               <p className="flex-1">
-                                Before sending contracts, connect your agency Stripe account and complete onboarding. Brands can’t pay until payouts are set up, and commissions/talent earnings can’t be transferred unless transfers are enabled.
+                                Before sending contracts, connect your agency
+                                Stripe account and complete onboarding. Brands
+                                can’t pay until payouts are set up, and
+                                commissions/talent earnings can’t be transferred
+                                unless transfers are enabled.
                               </p>
                               <Button
                                 size="sm"

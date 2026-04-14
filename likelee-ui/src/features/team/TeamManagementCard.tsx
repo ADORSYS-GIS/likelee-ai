@@ -516,9 +516,7 @@ export function TeamManagementCard({
                           <div className="text-[9px] sm:text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
                             <History className="w-2.5 h-2.5" />
                             Exp:{" "}
-                            {new Date(
-                              invite.expires_at,
-                            ).toLocaleDateString()}
+                            {new Date(invite.expires_at).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
@@ -567,10 +565,16 @@ export function TeamManagementCard({
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-xs font-bold py-2.5"
+                    >
                       <div className="flex flex-col gap-0.5">
                         <span>{option.label}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          {option.description}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -636,10 +640,16 @@ export function TeamManagementCard({
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-xs font-bold py-2.5"
+                    >
                       <div className="flex flex-col gap-0.5">
                         <span>{option.label}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          {option.description}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -674,7 +684,9 @@ export function TeamManagementCard({
       <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
         <DialogContent className="max-w-lg w-[95vw] rounded-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
-            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">Team Activity Log</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
+              Team Activity Log
+            </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
               Recent invite, role, and membership events.
             </DialogDescription>

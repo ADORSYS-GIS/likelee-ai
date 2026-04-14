@@ -73,7 +73,12 @@ export function DashboardTabRail({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto no-scrollbar scroll-fade-x py-1", className)}>
+    <div
+      className={cn(
+        "overflow-x-auto no-scrollbar scroll-fade-x py-1",
+        className,
+      )}
+    >
       <div className="flex min-w-max items-center gap-1.5 p-1">
         {items.map((item) => (
           <button
@@ -122,7 +127,12 @@ export function DashboardTableSurface({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto rounded-2xl border border-gray-200", className)}>
+    <div
+      className={cn(
+        "overflow-x-auto rounded-2xl border border-gray-200",
+        className,
+      )}
+    >
       {children}
     </div>
   );

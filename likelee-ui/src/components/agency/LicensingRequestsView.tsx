@@ -646,7 +646,9 @@ const LicensingRequestsView = ({
                   <DetailMetric
                     compact
                     label="Duration"
-                    value={req.duration_days ? `${req.duration_days} Days` : "\u2014"}
+                    value={
+                      req.duration_days ? `${req.duration_days} Days` : "\u2014"
+                    }
                   />
                   <DetailMetric
                     compact

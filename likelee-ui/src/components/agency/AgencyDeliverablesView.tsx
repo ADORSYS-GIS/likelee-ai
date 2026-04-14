@@ -2248,7 +2248,7 @@ export function AgencyDeliverablesView() {
                   <img
                     src={galleryItems[galleryIndex].url}
                     alt={galleryItems[galleryIndex].caption}
-                  className="max-h-[72vh] w-auto object-contain sm:max-h-[75vh]"
+                    className="max-h-[72vh] w-auto object-contain sm:max-h-[75vh]"
                   />
                 ) : galleryItems[galleryIndex].type === "video" ? (
                   <video

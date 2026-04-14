@@ -342,7 +342,9 @@ const InviteTeamMemberModal = ({
             />
           </div>
           <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">User Role</Label>
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              User Role
+            </Label>
             <Select
               value={role}
               onValueChange={(value) =>
@@ -354,10 +356,16 @@ const InviteTeamMemberModal = ({
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-xs font-bold py-2.5"
+                  >
                     <div className="flex flex-col gap-0.5">
                       <span>{option.label}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {option.description}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -430,7 +438,9 @@ const EditPermissionsModal = ({
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
           <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">New Role</Label>
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              New Role
+            </Label>
             <Select
               value={nextRole}
               onValueChange={(value) =>
@@ -442,10 +452,16 @@ const EditPermissionsModal = ({
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="text-xs font-bold py-2.5">
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-xs font-bold py-2.5"
+                  >
                     <div className="flex flex-col gap-0.5">
                       <span>{option.label}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">{option.description}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {option.description}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -3036,7 +3052,9 @@ const GeneralSettingsView = ({
                           onClick={() => setShowActivityModal(true)}
                         >
                           <History className="w-3.5 h-3.5 mr-1.5" />
-                          <span className="text-[10px] sm:text-xs">Activity</span>
+                          <span className="text-[10px] sm:text-xs">
+                            Activity
+                          </span>
                         </Button>
                         <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
                           {teamContext?.members?.length || 0}

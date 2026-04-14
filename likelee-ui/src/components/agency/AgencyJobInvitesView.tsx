@@ -18,9 +18,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
-import {
-  DashboardSectionHeader,
-} from "@/components/dashboard/DashboardResponsive";
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardResponsive";
 
 const AgencyJobInvitesView = () => {
   const { toast } = useToast();

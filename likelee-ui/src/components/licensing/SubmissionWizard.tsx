@@ -550,7 +550,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     onClick={() => setStep(step - 1)}
                     className="rounded-xl font-bold border-slate-200 h-9 sm:h-10 text-sm px-3 sm:px-4"
                   >
-                    <ArrowLeft className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Back</span>
+                    <ArrowLeft className="w-4 h-4 sm:mr-2" />{" "}
+                    <span className="hidden sm:inline">Back</span>
                   </Button>
                 )}
                 <Button
@@ -558,11 +559,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   disabled={isSyncing}
                   className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                 >
-                  {isSyncing
-                    ? "..."
-                    : step === 3
-                      ? "Finalize"
-                      : "Next"}
+                  {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
                   {!isSyncing && step < 3 && (
                     <ArrowRight className="w-4 h-4 ml-1.5 sm:ml-2" />
                   )}

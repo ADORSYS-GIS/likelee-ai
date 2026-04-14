@@ -10064,8 +10064,11 @@ const ScoutingHubView = ({
                   <Plus className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 z-[200] p-2 rounded-xl border border-gray-100 shadow-xl bg-white/95 backdrop-blur-sm">
-                <DropdownMenuItem 
+              <DropdownMenuContent
+                align="end"
+                className="w-56 z-[200] p-2 rounded-xl border border-gray-100 shadow-xl bg-white/95 backdrop-blur-sm"
+              >
+                <DropdownMenuItem
                   className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
                   onClick={() => {
                     setProspectToEdit(null);
@@ -10074,7 +10077,7 @@ const ScoutingHubView = ({
                 >
                   <Plus className="w-4 h-4 mr-3 text-indigo-500" /> Add Prospect
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
                   onClick={() => {
                     setActiveTab("Open Calls");
@@ -10082,13 +10085,15 @@ const ScoutingHubView = ({
                     setIsEventModalOpen(true);
                   }}
                 >
-                  <Calendar className="w-4 h-4 mr-3 text-indigo-500" /> Create Event
+                  <Calendar className="w-4 h-4 mr-3 text-indigo-500" /> Create
+                  Event
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
                   onClick={() => setActiveTab("Plan Trip")}
                 >
-                  <MapPin className="w-4 h-4 mr-3 text-indigo-500" /> Plan Scouting Trip
+                  <MapPin className="w-4 h-4 mr-3 text-indigo-500" /> Plan
+                  Scouting Trip
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -10986,7 +10991,10 @@ const ProspectPipelineTab = ({
           <Carousel opts={{ align: "start", dragFree: true }}>
             <CarouselContent>
               {stats.map((stat) => (
-                <CarouselItem key={stat.label} className="basis-1/2 sm:basis-1/3">
+                <CarouselItem
+                  key={stat.label}
+                  className="basis-1/2 sm:basis-1/3"
+                >
                   <div
                     className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all h-full flex flex-col justify-center`}
                   >
@@ -20425,377 +20433,380 @@ export default function AgencyDashboard() {
               </div>
             )}
             <Suspense fallback={<TabSkeleton />}>
-            {activeTab === "dashboard" && (
-              <AgencyDashboardView
-                isSportsAgency={isSportsAgency}
-                onKYC={handleKYC}
-                agencyName={agencyName}
-                rosterData={rosterTalents}
-                licensingRequestsCount={pendingLicensingRequestsCount}
-                overview={dashboardOverviewQuery.data}
-                talentPerformance={talentPerformanceQuery.data}
-                revenueBreakdown={revenueBreakdownQuery.data}
-                licensingPipeline={licensingPipelineQuery.data}
-                recentActivity={recentActivityQuery.data}
-                kycStatus={agencyKycStatus}
-                kycRejectionReason={agencyKycRejectionReason}
-                kycLoading={kycLoading}
-                onRefreshStatus={refreshAgencyKycStatus}
-                refreshLoading={kycStatusRefreshing}
-                canResumeKyc={
-                  String(agencyKycStatus || "")
-                    .trim()
-                    .toLowerCase() === "pending" && !!savedKycSessionUrl
-                }
-              />
-            )}
-            {activeTab === "roster" && isRosterPrimarySubTab && (
-              <AgencyRosterView
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                categoryFilter={categoryFilter}
-                setCategoryFilter={setCategoryFilter}
-                sortConfig={sortConfig}
-                setSortConfig={setSortConfig}
-                agencyMode={effectiveAgencyMode}
-                rosterData={rosterTalents}
-                activeCampaigns={activeCampaigns}
-                earnings30dTotalCents={earnings30dTotalCents}
-                earningsPrev30dTotalCents={earningsPrev30dTotalCents}
-                agencyName={agencyName}
-                agencyEmail={agencyEmail}
-                agencyWebsite={agencyWebsite}
-                logoUrl={agencyLogoUrl}
-                kycStatus={agencyKycStatus}
-                onEditProfile={goToEditProfile}
-                onViewMarketplace={goToMarketplace}
-                seatsLimit={seatsLimit}
-                isLoading={rosterQuery.isLoading}
-                onRosterChanged={() => rosterQuery.refetch()}
-                isSportsAgency={isSportsAgency}
-              />
-            )}
-            {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-              <PerformanceTiers isSportsAgency={isSportsAgency} />
-            )}
-            {activeTab === "jobs" &&
-              activeSubTab === "Job Invites" &&
-              (hasProAccess ? (
-                <AgencyJobInvitesView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Jobs are available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "licensing" &&
-              activeSubTab === "Licensing Requests" && (
-                <LicensingRequestsView
+              {activeTab === "dashboard" && (
+                <AgencyDashboardView
                   isSportsAgency={isSportsAgency}
-                  onBrandRequestAccepted={(ctx) => {
-                    console.log("Brand request accepted, context:", ctx);
-                    setBrandRequestContext(ctx);
-                    setActiveView("licensing", "License Templates");
-                  }}
-                />
-              )}
-            {activeTab === "licensing" &&
-              activeSubTab === "Brand Connections" &&
-              (agencyCanUseBrandConnections ? (
-                <BrandConnectionsView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Brand Connections are available on paid agency plans only.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "brand-connections" &&
-              (agencyCanUseBrandConnections ? (
-                <BrandConnectionsView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Brand Connections are available on paid agency plans only.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "licensing" &&
-              activeSubTab === "License Submissions" && (
-                <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
-              )}
-            {activeTab === "licensing" &&
-              activeSubTab === "Active Licenses" && (
-                <ActiveLicensesView
-                  onRenew={handleRenew}
-                  isSportsAgency={isSportsAgency}
-                />
-              )}
-            {activeTab === "licensing" &&
-              activeSubTab === "License Templates" && (
-                <LicenseTemplatesTab
-                  isSportsAgency={isSportsAgency}
-                  renewalLaunchContext={renewalLaunchContext}
-                  onRenewalLaunchHandled={() => {
-                    setRenewalLaunchContext(null);
-                  }}
-                  brandRequestContext={
-                    brandRequestContext
-                      ? {
-                          brand_id: brandRequestContext.brandId,
-                          brand_name: brandRequestContext.brandName,
-                          brand_email: brandRequestContext.brandEmail,
-                          licensing_request_id:
-                            brandRequestContext.licensingRequestId,
-                          talent_id: brandRequestContext.talentId,
-                          talent_name: brandRequestContext.talentName,
-                        }
-                      : null
+                  onKYC={handleKYC}
+                  agencyName={agencyName}
+                  rosterData={rosterTalents}
+                  licensingRequestsCount={pendingLicensingRequestsCount}
+                  overview={dashboardOverviewQuery.data}
+                  talentPerformance={talentPerformanceQuery.data}
+                  revenueBreakdown={revenueBreakdownQuery.data}
+                  licensingPipeline={licensingPipelineQuery.data}
+                  recentActivity={recentActivityQuery.data}
+                  kycStatus={agencyKycStatus}
+                  kycRejectionReason={agencyKycRejectionReason}
+                  kycLoading={kycLoading}
+                  onRefreshStatus={refreshAgencyKycStatus}
+                  refreshLoading={kycStatusRefreshing}
+                  canResumeKyc={
+                    String(agencyKycStatus || "")
+                      .trim()
+                      .toLowerCase() === "pending" && !!savedKycSessionUrl
                   }
-                  onBrandRequestContextHandled={() => {
-                    console.log("Brand request context handled, clearing");
-                    setBrandRequestContext(null);
-                  }}
                 />
               )}
-            {activeTab === "protection" && (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Coming soon
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Protection & Usage is coming soon.
-                </div>
-              </Card>
-            )}
-            {activeTab === "analytics" &&
-              activeSubTab === "Analytics Dashboard" &&
-              (effectiveAgencyMode === "IRL" ? (
+              {activeTab === "roster" && isRosterPrimarySubTab && (
+                <AgencyRosterView
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  categoryFilter={categoryFilter}
+                  setCategoryFilter={setCategoryFilter}
+                  sortConfig={sortConfig}
+                  setSortConfig={setSortConfig}
+                  agencyMode={effectiveAgencyMode}
+                  rosterData={rosterTalents}
+                  activeCampaigns={activeCampaigns}
+                  earnings30dTotalCents={earnings30dTotalCents}
+                  earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+                  agencyName={agencyName}
+                  agencyEmail={agencyEmail}
+                  agencyWebsite={agencyWebsite}
+                  logoUrl={agencyLogoUrl}
+                  kycStatus={agencyKycStatus}
+                  onEditProfile={goToEditProfile}
+                  onViewMarketplace={goToMarketplace}
+                  seatsLimit={seatsLimit}
+                  isLoading={rosterQuery.isLoading}
+                  onRosterChanged={() => rosterQuery.refetch()}
+                  isSportsAgency={isSportsAgency}
+                />
+              )}
+              {activeTab === "roster" &&
+                activeSubTab === "Performance Tiers" && (
+                  <PerformanceTiers isSportsAgency={isSportsAgency} />
+                )}
+              {activeTab === "jobs" &&
+                activeSubTab === "Job Invites" &&
+                (hasProAccess ? (
+                  <AgencyJobInvitesView />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Jobs are available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeTab === "licensing" &&
+                activeSubTab === "Licensing Requests" && (
+                  <LicensingRequestsView
+                    isSportsAgency={isSportsAgency}
+                    onBrandRequestAccepted={(ctx) => {
+                      console.log("Brand request accepted, context:", ctx);
+                      setBrandRequestContext(ctx);
+                      setActiveView("licensing", "License Templates");
+                    }}
+                  />
+                )}
+              {activeTab === "licensing" &&
+                activeSubTab === "Brand Connections" &&
+                (agencyCanUseBrandConnections ? (
+                  <BrandConnectionsView />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Brand Connections are available on paid agency plans only.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeTab === "brand-connections" &&
+                (agencyCanUseBrandConnections ? (
+                  <BrandConnectionsView />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Brand Connections are available on paid agency plans only.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeTab === "licensing" &&
+                activeSubTab === "License Submissions" && (
+                  <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
+                )}
+              {activeTab === "licensing" &&
+                activeSubTab === "Active Licenses" && (
+                  <ActiveLicensesView
+                    onRenew={handleRenew}
+                    isSportsAgency={isSportsAgency}
+                  />
+                )}
+              {activeTab === "licensing" &&
+                activeSubTab === "License Templates" && (
+                  <LicenseTemplatesTab
+                    isSportsAgency={isSportsAgency}
+                    renewalLaunchContext={renewalLaunchContext}
+                    onRenewalLaunchHandled={() => {
+                      setRenewalLaunchContext(null);
+                    }}
+                    brandRequestContext={
+                      brandRequestContext
+                        ? {
+                            brand_id: brandRequestContext.brandId,
+                            brand_name: brandRequestContext.brandName,
+                            brand_email: brandRequestContext.brandEmail,
+                            licensing_request_id:
+                              brandRequestContext.licensingRequestId,
+                            talent_id: brandRequestContext.talentId,
+                            talent_name: brandRequestContext.talentName,
+                          }
+                        : null
+                    }
+                    onBrandRequestContextHandled={() => {
+                      console.log("Brand request context handled, clearing");
+                      setBrandRequestContext(null);
+                    }}
+                  />
+                )}
+              {activeTab === "protection" && (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
                     Coming soon
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    Analytics Dashboard for IRL Mode is coming soon.
+                    Protection & Usage is coming soon.
                   </div>
                 </Card>
-              ) : hasProAccess ? (
-                <AnalyticsDashboardView
-                  onRenewLicense={handleRenew}
-                  agencyMode={effectiveAgencyMode}
-                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                  talentData={TALENT_DATA}
-                />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Advanced Analytics is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "analytics" &&
-              activeSubTab === "Royalties & Payouts" && (
-                <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
               )}
-            {activeTab === "deliverables" && <AgencyDeliverablesView />}
+              {activeTab === "analytics" &&
+                activeSubTab === "Analytics Dashboard" &&
+                (effectiveAgencyMode === "IRL" ? (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Coming soon
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Analytics Dashboard for IRL Mode is coming soon.
+                    </div>
+                  </Card>
+                ) : hasProAccess ? (
+                  <AnalyticsDashboardView
+                    onRenewLicense={handleRenew}
+                    agencyMode={effectiveAgencyMode}
+                    licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                    talentData={TALENT_DATA}
+                  />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Advanced Analytics is available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeTab === "analytics" &&
+                activeSubTab === "Royalties & Payouts" && (
+                  <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
+                )}
+              {activeTab === "deliverables" && <AgencyDeliverablesView />}
 
-            {activeTab === "packages" && (
-              <PackagesView isSportsAgency={isSportsAgency} />
-            )}
-            {activeTab === "catalogs" && (
-              <CatalogsView isSportsAgency={isSportsAgency} />
-            )}
-            {activeTab === "payouts" && (
-              <ConnectBankView isSportsAgency={isSportsAgency} />
-            )}
-            {activeTab === "settings" &&
-              activeSubTab === "General Settings" && (
-                <GeneralSettingsView
-                  hasIrlBookingAddon={hasIrlBookingAddon}
-                  hasProAccess={hasProAccess}
-                  agencyDisplayPlanLabel={agencyDisplayPlanLabel}
-                />
+              {activeTab === "packages" && (
+                <PackagesView isSportsAgency={isSportsAgency} />
               )}
-            {activeTab === "settings" && activeSubTab === "File Storage" && (
-              <FileStorageView />
-            )}
-            {activeTab === "scouting" && (
-              <ScoutingHubView
-                isSportsAgency={isSportsAgency}
-                activeTab={activeScoutingTab}
-                setActiveTab={setActiveScoutingTab}
-                isEventModalOpen={isEventModalOpen}
-                setIsEventModalOpen={setIsEventModalOpen}
-                eventToEdit={eventToEdit}
-                setEventToEdit={setEventToEdit}
-                isPlanTripModalOpen={isPlanTripModalOpen}
-                setIsPlanTripModalOpen={setIsPlanTripModalOpen}
-                isProspectModalOpen={isProspectModalOpen}
-                setIsProspectModalOpen={setIsProspectModalOpen}
-                prospectToEdit={prospectToEdit}
-                setProspectToEdit={setProspectToEdit}
-              />
-            )}
-            {activeTab === "talent-packages" && (
-              <TalentPackagesView
-                isSportsAgency={isSportsAgency}
-                agencyId={profile?.id}
-              />
-            )}
-            {activeTab === "marketplace" && (
-              <MarketplaceTab
-                connectLocked={!agencyCanConnectMarketplace}
-                onConnectLocked={() => navigate("/agencysubscribe")}
-              />
-            )}
-            {activeTab === "messages" &&
-              (hasProAccess ? (
-                <CommunicationHub />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Messaging is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "client-crm" && <ClientCRMView />}
-            {activeTab === "file-storage" && <FileStorageView />}
-            {activeTab === "bookings" && (
-              <BookingsView
-                activeSubTab={activeSubTab}
-                bookings={bookings}
-                onAddBooking={onAddBooking}
-                onUpdateBooking={onUpdateBooking}
-                onCancelBooking={onCancelBooking}
-                bookOuts={bookOuts}
-                onAddBookOut={onAddBookOut}
-                onRemoveBookOut={onRemoveBookOut}
-                isSportsAgency={isSportsAgency}
-                agencyMode={effectiveAgencyMode}
-              />
-            )}
-            {activeTab === "accounting" && (
-              <div>
-                {activeSubTab === "Connect Bank" && (
-                  <ConnectBankView isSportsAgency={isSportsAgency} />
-                )}
-                {activeSubTab === "Invoice Generation" && (
-                  <GenerateInvoiceView />
-                )}
-                {activeSubTab === "Invoice Management" && (
-                  <InvoiceManagementView
-                    setActiveSubTab={setActiveSubTab}
-                    activeSubTab={activeSubTab}
-                    isSportsAgency={isSportsAgency}
+              {activeTab === "catalogs" && (
+                <CatalogsView isSportsAgency={isSportsAgency} />
+              )}
+              {activeTab === "payouts" && (
+                <ConnectBankView isSportsAgency={isSportsAgency} />
+              )}
+              {activeTab === "settings" &&
+                activeSubTab === "General Settings" && (
+                  <GeneralSettingsView
+                    hasIrlBookingAddon={hasIrlBookingAddon}
+                    hasProAccess={hasProAccess}
+                    agencyDisplayPlanLabel={agencyDisplayPlanLabel}
                   />
                 )}
-                {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
-                {(activeSubTab === "Talent Statements" ||
-                  activeSubTab === "Athlete Statements") && (
-                  <TalentStatementsView isSportsAgency={isSportsAgency} />
-                )}
-                {activeSubTab === "Financial Reports" &&
-                  (hasProAccess ? (
-                    <FinancialReportsView />
-                  ) : (
-                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                      <div className="text-lg font-black text-gray-900">
-                        Upgrade required
-                      </div>
-                      <div className="text-gray-500 font-medium mt-1">
-                        Financial Reports are available on the Pro plan.
-                      </div>
-                      <div className="mt-4">
-                        <Button
-                          className="rounded-xl font-bold"
-                          onClick={() => navigate("/agencysubscribe")}
-                        >
-                          View plans
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                {activeSubTab === "Expense Tracking" &&
-                  (hasProAccess ? (
-                    <ExpenseTrackingView />
-                  ) : (
-                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                      <div className="text-lg font-black text-gray-900">
-                        Upgrade required
-                      </div>
-                      <div className="text-gray-500 font-medium mt-1">
-                        Expense Tracking is available on the Pro plan.
-                      </div>
-                      <div className="mt-4">
-                        <Button
-                          className="rounded-xl font-bold"
-                          onClick={() => navigate("/agencysubscribe")}
-                        >
-                          View plans
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            )}
+              {activeTab === "settings" && activeSubTab === "File Storage" && (
+                <FileStorageView />
+              )}
+              {activeTab === "scouting" && (
+                <ScoutingHubView
+                  isSportsAgency={isSportsAgency}
+                  activeTab={activeScoutingTab}
+                  setActiveTab={setActiveScoutingTab}
+                  isEventModalOpen={isEventModalOpen}
+                  setIsEventModalOpen={setIsEventModalOpen}
+                  eventToEdit={eventToEdit}
+                  setEventToEdit={setEventToEdit}
+                  isPlanTripModalOpen={isPlanTripModalOpen}
+                  setIsPlanTripModalOpen={setIsPlanTripModalOpen}
+                  isProspectModalOpen={isProspectModalOpen}
+                  setIsProspectModalOpen={setIsProspectModalOpen}
+                  prospectToEdit={prospectToEdit}
+                  setProspectToEdit={setProspectToEdit}
+                />
+              )}
+              {activeTab === "talent-packages" && (
+                <TalentPackagesView
+                  isSportsAgency={isSportsAgency}
+                  agencyId={profile?.id}
+                />
+              )}
+              {activeTab === "marketplace" && (
+                <MarketplaceTab
+                  connectLocked={!agencyCanConnectMarketplace}
+                  onConnectLocked={() => navigate("/agencysubscribe")}
+                />
+              )}
+              {activeTab === "messages" &&
+                (hasProAccess ? (
+                  <CommunicationHub />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Messaging is available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeTab === "client-crm" && <ClientCRMView />}
+              {activeTab === "file-storage" && <FileStorageView />}
+              {activeTab === "bookings" && (
+                <BookingsView
+                  activeSubTab={activeSubTab}
+                  bookings={bookings}
+                  onAddBooking={onAddBooking}
+                  onUpdateBooking={onUpdateBooking}
+                  onCancelBooking={onCancelBooking}
+                  bookOuts={bookOuts}
+                  onAddBookOut={onAddBookOut}
+                  onRemoveBookOut={onRemoveBookOut}
+                  isSportsAgency={isSportsAgency}
+                  agencyMode={effectiveAgencyMode}
+                />
+              )}
+              {activeTab === "accounting" && (
+                <div>
+                  {activeSubTab === "Connect Bank" && (
+                    <ConnectBankView isSportsAgency={isSportsAgency} />
+                  )}
+                  {activeSubTab === "Invoice Generation" && (
+                    <GenerateInvoiceView />
+                  )}
+                  {activeSubTab === "Invoice Management" && (
+                    <InvoiceManagementView
+                      setActiveSubTab={setActiveSubTab}
+                      activeSubTab={activeSubTab}
+                      isSportsAgency={isSportsAgency}
+                    />
+                  )}
+                  {activeSubTab === "Payment Tracking" && (
+                    <PaymentTrackingView />
+                  )}
+                  {(activeSubTab === "Talent Statements" ||
+                    activeSubTab === "Athlete Statements") && (
+                    <TalentStatementsView isSportsAgency={isSportsAgency} />
+                  )}
+                  {activeSubTab === "Financial Reports" &&
+                    (hasProAccess ? (
+                      <FinancialReportsView />
+                    ) : (
+                      <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                        <div className="text-lg font-black text-gray-900">
+                          Upgrade required
+                        </div>
+                        <div className="text-gray-500 font-medium mt-1">
+                          Financial Reports are available on the Pro plan.
+                        </div>
+                        <div className="mt-4">
+                          <Button
+                            className="rounded-xl font-bold"
+                            onClick={() => navigate("/agencysubscribe")}
+                          >
+                            View plans
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  {activeSubTab === "Expense Tracking" &&
+                    (hasProAccess ? (
+                      <ExpenseTrackingView />
+                    ) : (
+                      <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                        <div className="text-lg font-black text-gray-900">
+                          Upgrade required
+                        </div>
+                        <div className="text-gray-500 font-medium mt-1">
+                          Expense Tracking is available on the Pro plan.
+                        </div>
+                        <div className="mt-4">
+                          <Button
+                            className="rounded-xl font-bold"
+                            onClick={() => navigate("/agencysubscribe")}
+                          >
+                            View plans
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              )}
             </Suspense>
           </DashboardPageShell>
         </main>
