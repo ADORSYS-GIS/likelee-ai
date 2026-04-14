@@ -34,6 +34,7 @@ pub struct AgencyAccessState {
     pub trial_active: bool,
     pub trial_ends_at: Option<chrono::DateTime<chrono::Utc>>,
     pub addon_irl_booking_enabled: bool,
+    pub addon_studio_enabled: bool,
 }
 
 impl AgencyAccessState {
@@ -100,7 +101,7 @@ pub async fn get_agency_access_state(
     let resp = state
         .pg
         .from("agencies")
-        .select("plan_tier,trial_ends_at,plan_interval,addon_irl_booking_enabled")
+        .select("plan_tier,trial_ends_at,plan_interval,addon_irl_booking_enabled,addon_studio_enabled")
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -151,6 +152,10 @@ pub async fn get_agency_access_state(
         trial_ends_at,
         addon_irl_booking_enabled: row
             .and_then(|o| o.get("addon_irl_booking_enabled"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        addon_studio_enabled: row
+            .and_then(|o| o.get("addon_studio_enabled"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
     })

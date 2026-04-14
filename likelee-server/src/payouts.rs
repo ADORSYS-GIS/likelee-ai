@@ -1671,6 +1671,17 @@ pub async fn stripe_webhook(
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
+            // Handle one-time studio addon purchase (no subscription)
+            if subscription_kind.eq_ignore_ascii_case("studio_addon") && !agency_id.is_empty() {
+                tracing::info!(
+                    agency_id = %agency_id,
+                    subscription_kind = %subscription_kind,
+                    "checkout.session.completed detected as studio addon one-time purchase"
+                );
+                let _ = handle_agency_studio_addon_checkout_completed(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             if !agency_id_from_meta.is_empty() && !licensing_request_ids_from_meta.is_empty() {
                 tracing::info!(
                     agency_id_from_meta = %agency_id_from_meta,
@@ -1952,6 +1963,153 @@ async fn handle_studio_checkout_session_completed(
         crate::studio::wallet::set_current_plan(&state.pg, &user_id, plan_type.as_deref()).await;
 
     info!(user_id = %user_id, credits = credits, stripe_session_id = %session_id, "studio credits purchased via stripe checkout");
+    Ok(())
+}
+
+async fn handle_agency_studio_addon_checkout_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let agency_id = md
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if agency_id.is_empty() {
+        return Ok(());
+    }
+
+    let existing_resp = state
+        .pg
+        .from("agency_studio_credit_transactions")
+        .select("id")
+        .eq("stripe_session_id", &session_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    if existing_resp.status().is_success() {
+        let text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if !rows.is_empty() {
+            info!(agency_id = %agency_id, session_id = %session_id, "studio addon purchase already processed");
+            return Ok(());
+        }
+    }
+
+    let agency_resp = state
+        .pg
+        .from("agencies")
+        .select("id,addon_studio_enabled")
+        .eq("id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let agency_text = agency_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let agency_rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
+    let already_enabled = agency_rows
+        .first()
+        .and_then(|r| r.get("addon_studio_enabled"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if already_enabled {
+        info!(agency_id = %agency_id, "studio addon already enabled");
+        return Ok(());
+    }
+
+    let _ = state
+        .pg
+        .from("agencies")
+        .eq("id", &agency_id)
+        .update(json!({"addon_studio_enabled": true, "addon_studio_purchased_at": chrono::Utc::now().to_rfc3339()}).to_string())
+        .execute()
+        .await;
+
+    let wallet_resp = state
+        .pg
+        .auth(state.supabase_service_key.clone())
+        .from("agency_studio_wallets")
+        .select("id")
+        .eq("agency_id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let wallet_text = wallet_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let wallet_rows: Vec<serde_json::Value> = serde_json::from_str(&wallet_text).unwrap_or_default();
+    
+    let (wallet_id, initial_credits) = if let Some(wallet_row) = wallet_rows.first() {
+        let wid = wallet_row.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        (wid, 2000_i64)
+    } else {
+        let create_resp = state
+            .pg
+            .auth(state.supabase_service_key.clone())
+            .from("agency_studio_wallets")
+            .insert(json!({"agency_id": agency_id, "balance": 2000}).to_string())
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        let create_text = create_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let create_rows: Vec<serde_json::Value> = serde_json::from_str(&create_text).unwrap_or_default();
+        let new_wallet_id = create_rows
+            .first()
+            .and_then(|r| r.get("id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        (new_wallet_id, 2000_i64)
+    };
+
+    if !wallet_id.is_empty() && initial_credits > 0 {
+        if wallet_rows.is_empty() {
+            info!(agency_id = %agency_id, wallet_id = %wallet_id, initial_credits = initial_credits, "created agency studio wallet with initial credits");
+        } else {
+            let _ = state
+                .pg
+                .auth(state.supabase_service_key.clone())
+                .from("agency_studio_wallets")
+                .eq("id", &wallet_id)
+                .update(json!({"balance": initial_credits, "updated_at": chrono::Utc::now().to_rfc3339()}).to_string())
+                .execute()
+                .await;
+            
+            let _ = state
+                .pg
+                .auth(state.supabase_service_key.clone())
+                .from("agency_studio_credit_transactions")
+                .insert(json!({
+                    "wallet_id": wallet_id,
+                    "delta": initial_credits,
+                    "balance_after": initial_credits,
+                    "reason": "addon_purchase",
+                    "stripe_session_id": session_id,
+                    "metadata": json!({"source": "ai_studio_addon_initial_credits"})
+                }).to_string())
+                .execute()
+                .await;
+            
+            info!(agency_id = %agency_id, wallet_id = %wallet_id, initial_credits = initial_credits, "allocated initial credits for studio addon");
+        }
+    }
+
+    info!(agency_id = %agency_id, "agency studio addon purchase completed");
     Ok(())
 }
 
@@ -3622,6 +3780,7 @@ struct AggregatedAgencySubscriptionState {
     plan_interval: &'static str,
     seats_limit: i64,
     addon_irl_booking_enabled: bool,
+    addon_studio_enabled: bool,
     primary_subscription_id: String,
 }
 
@@ -3761,6 +3920,9 @@ fn aggregate_agency_subscription_state(
     let addon_irl_booking_enabled = active_subscriptions
         .iter()
         .any(|sub| stripe_subscription_has_irl_booking_addon(state, sub));
+    let addon_studio_enabled = active_subscriptions
+        .iter()
+        .any(|sub| stripe_subscription_metadata_flag(sub, "addon_studio").unwrap_or(false));
     let aggregated_seat_quantity = active_subscriptions
         .iter()
         .filter_map(|sub| stripe_subscription_seat_quantity(state, sub))
@@ -3801,6 +3963,7 @@ fn aggregate_agency_subscription_state(
         plan_interval,
         seats_limit,
         addon_irl_booking_enabled,
+        addon_studio_enabled,
         primary_subscription_id,
     }
 }
@@ -3904,6 +4067,10 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     update.insert(
         "addon_irl_booking_enabled".into(),
         json!(aggregated.addon_irl_booking_enabled),
+    );
+    update.insert(
+        "addon_studio_enabled".into(),
+        json!(aggregated.addon_studio_enabled),
     );
     if !is_seat_addon_subscription {
         update.insert(

@@ -362,6 +362,8 @@ pub struct AgencyCheckoutAddons {
     pub irl_booking: bool,
     #[serde(default)]
     pub seats_in_plan: bool,
+    #[serde(default)]
+    pub studio: bool,
 
     // Optional quantities (0/None means disabled)
     pub deepfake_protection_models: Option<u32>,
@@ -485,6 +487,7 @@ pub struct AgencyCheckoutSessionSyncResponse {
     pub plan_tier: String,
     pub seats_limit: i64,
     pub addon_irl_booking_enabled: bool,
+    pub addon_studio_enabled: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -492,6 +495,7 @@ pub struct AgencyPlanChangeResponse {
     pub plan_tier: String,
     pub seats_limit: i64,
     pub addon_irl_booking_enabled: bool,
+    pub addon_studio_enabled: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -677,7 +681,7 @@ async fn fetch_agency_checkout_sync_state(
     let agency_resp = state
         .pg
         .from("agencies")
-        .select("plan_tier,seats_limit,addon_irl_booking_enabled")
+        .select("plan_tier,seats_limit,addon_irl_booking_enabled,addon_studio_enabled")
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -706,6 +710,10 @@ async fn fetch_agency_checkout_sync_state(
         seats_limit: row.get("seats_limit").and_then(|v| v.as_i64()).unwrap_or(1),
         addon_irl_booking_enabled: row
             .get("addon_irl_booking_enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        addon_studio_enabled: row
+            .get("addon_studio_enabled")
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
     })
@@ -853,6 +861,7 @@ struct AgencyBillingContext {
     agency_name: String,
     customer_id: String,
     addon_irl_booking_enabled: bool,
+    addon_studio_enabled: bool,
 }
 
 async fn get_or_create_agency_billing_context(
@@ -862,7 +871,7 @@ async fn get_or_create_agency_billing_context(
     let agency_resp = state
         .pg
         .from("agencies")
-        .select("id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled")
+        .select("id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled,addon_studio_enabled")
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -906,6 +915,10 @@ async fn get_or_create_agency_billing_context(
         .get("addon_irl_booking_enabled")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let addon_studio_enabled = row
+        .get("addon_studio_enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = if !existing_customer.trim().is_empty() {
@@ -944,6 +957,7 @@ async fn get_or_create_agency_billing_context(
         agency_name,
         customer_id,
         addon_irl_booking_enabled,
+        addon_studio_enabled,
     })
 }
 
@@ -2025,6 +2039,106 @@ pub async fn create_agency_irl_booking_addon_checkout(
         agency_id = %agency_id,
         agency_name = %billing_ctx.agency_name,
         "created stripe IRL booking addon checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
+    }))
+}
+
+pub async fn create_agency_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id.clone();
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+    if state.stripe_agency_studio_addon_price_id.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured",
+            "Missing Stripe price configuration: STRIPE_AGENCY_STUDIO_ADDON_PRICE_ID",
+        ));
+    }
+    if state.stripe_checkout_success_url.trim().is_empty()
+        || state.stripe_checkout_cancel_url.trim().is_empty()
+    {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_checkout_urls_not_configured",
+            "Stripe checkout URLs are not configured on the server.",
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
+    if billing_ctx.addon_studio_enabled {
+        return Err(billing_error(
+            StatusCode::CONFLICT,
+            "addon_studio_already_enabled",
+            "AI Studio add-on is already enabled.",
+        ));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    let success_url = agency_checkout_success_url(state.stripe_checkout_success_url.as_str());
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_checkout_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
+        billing_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id",
+            "Server has an invalid Stripe customer ID configured for this agency.",
+        )
+    })?);
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(state.stripe_agency_studio_addon_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+    cs_params.client_reference_id = Some(agency_id.as_str());
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("agency_id".to_string(), agency_id.clone());
+    md.insert("billing_domain".to_string(), "agency".to_string());
+    md.insert("subscription_kind".to_string(), "studio_addon".to_string());
+    md.insert("addon_studio".to_string(), "1".to_string());
+    cs_params.metadata = Some(md);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err(billing_error(
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
+        ));
+    }
+
+    info!(
+        agency_id = %agency_id,
+        agency_name = %billing_ctx.agency_name,
+        "created stripe studio addon checkout session"
     );
     Ok(Json(AgencyCheckoutResponse {
         checkout_url: url,
