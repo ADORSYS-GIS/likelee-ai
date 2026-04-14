@@ -712,7 +712,7 @@ async fn get_brand_checkout_row(
         .pg
         .from("brands")
         .select(
-            "id,email,company_name,stripe_customer_id,plan_tier,subscription_status,studio_addon_active",
+            "id,email,company_name,stripe_customer_id,stripe_subscription_id,plan_tier,subscription_status,studio_addon_active",
         )
         .eq("id", brand_id)
         .limit(1)
@@ -2586,10 +2586,17 @@ pub async fn create_brand_subscription_checkout(
         .unwrap_or("")
         .trim()
         .to_lowercase();
+    let current_subscription_id = row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
     let has_active_base_subscription =
         current_subscription_status == "active" || current_subscription_status == "trialing";
     let target_plan = payload.plan.trim().to_lowercase();
 
+    // Bug Fix #2: Handle subscription changes by canceling old subscription before creating new checkout
     if has_active_base_subscription {
         if current_plan_tier == target_plan {
             return Err((
@@ -2597,10 +2604,40 @@ pub async fn create_brand_subscription_checkout(
                 "brand_subscription_already_active".to_string(),
             ));
         }
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "brand_plan_change_not_supported_in_checkout".to_string(),
-        ));
+        
+        // Cancel the existing subscription before creating new checkout
+        if !current_subscription_id.is_empty() {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            let subscription_id = current_subscription_id.parse::<stripe_sdk::SubscriptionId>()
+                .map_err(|_| billing_error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "invalid_subscription_id",
+                    "Invalid Stripe subscription ID.",
+                ))?;
+            
+            // Cancel the subscription immediately
+            let mut cancel_params = stripe_sdk::CancelSubscription::new();
+            cancel_params.prorate = Some(true);
+            
+            match stripe_sdk::Subscription::cancel(&client, &subscription_id, cancel_params).await {
+                Ok(_) => {
+                    info!(
+                        brand_id = %user.id,
+                        old_plan = %current_plan_tier,
+                        new_plan = %target_plan,
+                        "canceled existing brand subscription for plan change"
+                    );
+                }
+                Err(e) => {
+                    warn!(
+                        error = %e,
+                        brand_id = %user.id,
+                        subscription_id = %current_subscription_id,
+                        "failed to cancel existing subscription, proceeding with checkout anyway"
+                    );
+                }
+            }
+        }
     }
 
     let customer_id =
@@ -3613,6 +3650,66 @@ pub async fn create_agency_billing_portal(
         Err(e) => {
             warn!(error = %e, agency_id = %agency_id, "failed to create stripe billing portal session");
             Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        }
+    }
+}
+
+pub async fn create_brand_billing_portal(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| billing_error(
+            StatusCode::BAD_REQUEST,
+            "no_stripe_customer",
+            "No Stripe customer found for this brand.",
+        ))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id",
+                "Invalid Stripe customer ID.",
+            )
+        })?;
+
+    let return_url = format!(
+        "{}/brandpricing",
+        state.frontend_url.trim_end_matches('/')
+    );
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(AgencyCheckoutResponse {
+            checkout_url: session.url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        })),
+        Err(e) => {
+            warn!(error = %e, brand_id = %user.id, "failed to create stripe billing portal session for brand");
+            Err(billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))
         }
     }
 }

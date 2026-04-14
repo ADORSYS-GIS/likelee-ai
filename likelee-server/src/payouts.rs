@@ -4346,7 +4346,7 @@ fn brand_subscription_has_studio_addon(state: &AppState, sub: &stripe_sdk::Subsc
     sub.items.data.iter().any(|item| {
         item.price
             .as_ref()
-            .map(|price| price.id.to_string() == state.stripe_brand_studio_addon_price_id)
+            .map(|price| price.id == state.stripe_brand_studio_addon_price_id)
             .unwrap_or(false)
     })
 }

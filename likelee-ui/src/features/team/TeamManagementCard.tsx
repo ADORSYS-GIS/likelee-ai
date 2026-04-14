@@ -75,21 +75,46 @@ const TEAM_ROLE_OPTIONS: Array<{
   value: Exclude<TeamRoleValue, "owner">;
   label: string;
   description: string;
+  permissions: string[];
 }> = [
   {
     value: "admin",
     label: "Admin",
     description: "Full team management, billing, campaigns, and approvals.",
+    permissions: [
+      "Full team management",
+      "Billing & subscriptions",
+      "Campaigns & approvals",
+      "Pay offers",
+      "Jobs management",
+      "Contracts management",
+    ],
   },
   {
     value: "project_manager",
     label: "Project Manager",
     description: "Campaign creation and deliverable approvals without billing.",
+    permissions: [
+      "Pay offers",
+      "Manage jobs",
+      "Manage contracts",
+      "View subscriptions & billing",
+      "Campaign creation",
+      "Deliverable approvals",
+    ],
   },
   {
     value: "reviewer",
     label: "Reviewer",
     description: "Read-only access to deliverables with team visibility.",
+    permissions: [
+      "View pay offers",
+      "View jobs",
+      "View contracts",
+      "View subscriptions & billing",
+      "View deliverables",
+      "View team members",
+    ],
   },
 ];
 

@@ -49,6 +49,15 @@ pub enum Permission {
     ManageLicenses,
     TransferOwnership,
     DeleteOrganisation,
+    // Brand-specific permissions
+    ManageJobs,
+    ViewJobs,
+    ManageContracts,
+    ViewContracts,
+    ManageSubscriptions,
+    ViewSubscriptions,
+    ManagePayOffers,
+    ViewPayOffers,
 }
 
 impl Permission {
@@ -70,6 +79,14 @@ impl Permission {
             Self::ManageLicenses => "manage_licenses",
             Self::TransferOwnership => "transfer_ownership",
             Self::DeleteOrganisation => "delete_organisation",
+            Self::ManageJobs => "manage_jobs",
+            Self::ViewJobs => "view_jobs",
+            Self::ManageContracts => "manage_contracts",
+            Self::ViewContracts => "view_contracts",
+            Self::ManageSubscriptions => "manage_subscriptions",
+            Self::ViewSubscriptions => "view_subscriptions",
+            Self::ManagePayOffers => "manage_pay_offers",
+            Self::ViewPayOffers => "view_pay_offers",
         }
     }
 }
@@ -93,6 +110,14 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ManageLicenses,
             Permission::TransferOwnership,
             Permission::DeleteOrganisation,
+            Permission::ManageJobs,
+            Permission::ViewJobs,
+            Permission::ManageContracts,
+            Permission::ViewContracts,
+            Permission::ManageSubscriptions,
+            Permission::ViewSubscriptions,
+            Permission::ManagePayOffers,
+            Permission::ViewPayOffers,
         ],
         TeamRole::Admin => vec![
             Permission::CreateCampaigns,
@@ -109,6 +134,14 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ManageClients,
             Permission::ViewLicenses,
             Permission::ManageLicenses,
+            Permission::ManageJobs,
+            Permission::ViewJobs,
+            Permission::ManageContracts,
+            Permission::ViewContracts,
+            Permission::ManageSubscriptions,
+            Permission::ViewSubscriptions,
+            Permission::ManagePayOffers,
+            Permission::ViewPayOffers,
         ],
         TeamRole::ProjectManager => vec![
             Permission::CreateCampaigns,
@@ -120,6 +153,13 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewClients,
             Permission::ManageClients,
             Permission::ViewLicenses,
+            Permission::ManageJobs,
+            Permission::ViewJobs,
+            Permission::ManageContracts,
+            Permission::ViewContracts,
+            Permission::ViewSubscriptions,
+            Permission::ManagePayOffers,
+            Permission::ViewPayOffers,
         ],
         TeamRole::Reviewer => vec![
             Permission::ViewDeliverables,
@@ -127,6 +167,10 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewBrandConnections,
             Permission::ViewClients,
             Permission::ViewLicenses,
+            Permission::ViewJobs,
+            Permission::ViewContracts,
+            Permission::ViewSubscriptions,
+            Permission::ViewPayOffers,
         ],
     }
 }

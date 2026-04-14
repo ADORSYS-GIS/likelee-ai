@@ -807,6 +807,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_brand_subscription_checkout),
         )
         .route(
+            "/api/brand/billing/portal",
+            post(crate::billing::create_brand_billing_portal),
+        )
+        .route(
             "/api/brand/billing/studio-addon/checkout",
             post(crate::billing::create_brand_studio_addon_checkout),
         )

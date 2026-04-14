@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
 import {
+  createBrandBillingPortal,
   createBrandStudioAddonCheckout,
   createBrandSubscriptionCheckout,
   verifyBrandStudioAddonCheckout,
@@ -431,9 +432,6 @@ function getCheckoutErrorMessage(message: string): string {
   if (message.includes("brand_subscription_already_active")) {
     return "This base plan is already active.";
   }
-  if (message.includes("brand_plan_change_not_supported_in_checkout")) {
-    return "Base plan changes are not self-serve yet. Contact the team to switch plans.";
-  }
   if (message.includes("studio_addon_already_active")) {
     return "The AI Studio add-on is already active.";
   }
@@ -731,12 +729,9 @@ export default function BrandSubscribe() {
         return;
       }
 
-      toast({
-        title: "Plan change not self-serve",
-        description:
-          "Your base plan is already active. Contact sales if you need to switch plans.",
-      });
-      navigate("/SalesInquiry");
+      // Bug Fix #2: Directly proceed to checkout for plan changes
+      // The backend will automatically cancel the old subscription before creating the new one
+      await beginBrandCheckout(tier, startTrial);
       return;
     }
 

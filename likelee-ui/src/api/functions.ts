@@ -171,6 +171,9 @@ export const createBrandSubscriptionCheckout = (data: {
   next_path?: string;
 }) => base44Client.post(`/brand/billing/checkout`, data);
 
+export const createBrandBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(`/brand/billing/portal`, {});
+
 export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
   base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
 
