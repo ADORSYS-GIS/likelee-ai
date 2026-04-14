@@ -8,6 +8,7 @@ import { geocode } from "./geocoding";
 import { MapMarkers } from "./MapMarkers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   MapPin,
   RefreshCw,
@@ -28,6 +29,7 @@ import {
   Diamond,
   Clock,
   Trash2,
+  Map,
 } from "lucide-react";
 import { MapStats } from "./MapStats";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,6 +106,7 @@ export const ScoutingMap = ({
   // Modal states
 
   // Layer states
+  const [showAllLayers, setShowAllLayers] = useState(false);
   const [layers, setLayers] = useState({
     discoveries: true,
     signedTalent: true,
@@ -291,190 +294,79 @@ export const ScoutingMap = ({
         upcomingEvents={rawCounts.events}
       />
 
-      <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl sm:rounded-3xl">
+      <Card className="p-4 sm:p-6 bg-white sm:border-y sm:border-x-0 sm:border border-y border-gray-200 shadow-sm rounded-none sm:rounded-3xl -mx-4 sm:mx-0 w-[calc(100%+2rem)] sm:w-auto">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 px-1">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-gray-400" /> Map Layers
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-            {[
-              {
-                id: "discoveries",
-                label: "Total Discoveries",
-                count: rawCounts.totalDiscoveries,
-                icon: Layers,
-                color: "orange",
-              },
-              {
-                id: "signedTalent",
-                label: "Signed Talent",
-                count: rawCounts.signed,
-                icon: User,
-                color: "blue",
-              },
-              {
-                id: "prospects",
-                label: "Prospects",
-                count: rawCounts.prospects,
-                icon: Clock,
-                color: "amber",
-              },
-              {
-                id: "declined",
-                label: "Declined prospect",
-                count: rawCounts.declined,
-                icon: Clock,
-                color: "red",
-              },
-              {
-                id: "scoutingTrips",
-                label: "Scouting Trips",
-                count: rawCounts.trips,
-                icon: Plane,
-                color: "purple",
-              },
-              {
-                id: "events",
-                label: "Events",
-                count: rawCounts.events,
-                icon: Calendar,
-                color: "pink",
-              },
-            ].map((layer) => {
+          {(() => {
+            const layerDefs = [
+              { id: "discoveries", label: "Total Discoveries", count: rawCounts.totalDiscoveries, icon: Layers, color: "orange" },
+              { id: "signedTalent", label: "Signed Talent", count: rawCounts.signed, icon: User, color: "blue" },
+              { id: "prospects", label: "Prospects", count: rawCounts.prospects, icon: Clock, color: "amber" },
+              { id: "declined", label: "Declined prospect", count: rawCounts.declined, icon: Clock, color: "red" },
+              { id: "scoutingTrips", label: "Scouting Trips", count: rawCounts.trips, icon: Plane, color: "purple" },
+              { id: "events", label: "Events", count: rawCounts.events, icon: Calendar, color: "pink" },
+            ];
+
+            const renderLayerToggle = (layer: any) => {
               const isSelected = layers[layer.id as keyof typeof layers];
-
-              // Define literal classes to avoid Tailwind JIT issues with dynamic interpolation
-              const colorClasses = {
-                orange: {
-                  bg: isSelected
-                    ? "bg-orange-50 border-orange-200 ring-orange-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-orange-600 text-white shadow-orange-200"
-                    : "bg-orange-100 text-orange-700",
-                  text: isSelected ? "text-orange-900" : "text-gray-700",
-                  subtext: isSelected ? "text-orange-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-orange-600 border-orange-600"
-                    : "bg-white border-gray-200",
-                },
-                blue: {
-                  bg: isSelected
-                    ? "bg-blue-50 border-blue-200 ring-blue-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-blue-600 text-white shadow-blue-200"
-                    : "bg-blue-100 text-blue-700",
-                  text: isSelected ? "text-blue-900" : "text-gray-700",
-                  subtext: isSelected ? "text-blue-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-blue-600 border-blue-600"
-                    : "bg-white border-gray-200",
-                },
-                purple: {
-                  bg: isSelected
-                    ? "bg-purple-50 border-purple-200 ring-purple-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-purple-600 text-white shadow-purple-200"
-                    : "bg-purple-100 text-purple-700",
-                  text: isSelected ? "text-purple-900" : "text-gray-700",
-                  subtext: isSelected ? "text-purple-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-purple-600 border-purple-600"
-                    : "bg-white border-gray-200",
-                },
-                amber: {
-                  bg: isSelected
-                    ? "bg-amber-50 border-amber-200 ring-amber-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-amber-600 text-white shadow-amber-200"
-                    : "bg-amber-100 text-amber-700",
-                  text: isSelected ? "text-amber-900" : "text-gray-700",
-                  subtext: isSelected ? "text-amber-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-amber-600 border-amber-600"
-                    : "bg-white border-gray-200",
-                },
-                pink: {
-                  bg: isSelected
-                    ? "bg-pink-50 border-pink-200 ring-pink-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-pink-600 text-white shadow-pink-200"
-                    : "bg-pink-100 text-pink-700",
-                  text: isSelected ? "text-pink-900" : "text-gray-700",
-                  subtext: isSelected ? "text-pink-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-pink-600 border-pink-600"
-                    : "bg-white border-gray-200",
-                },
-                red: {
-                  bg: isSelected
-                    ? "bg-red-50 border-red-200 ring-red-100"
-                    : "bg-white border-gray-100",
-                  iconBg: isSelected
-                    ? "bg-red-600 text-white shadow-red-200"
-                    : "bg-red-100 text-red-700",
-                  text: isSelected ? "text-red-900" : "text-gray-700",
-                  subtext: isSelected ? "text-red-700" : "text-gray-400",
-                  check: isSelected
-                    ? "bg-red-600 border-red-600"
-                    : "bg-white border-gray-200",
-                },
-              }[
-                layer.color as
-                  | "orange"
-                  | "blue"
-                  | "purple"
-                  | "pink"
-                  | "amber"
-                  | "red"
-              ];
-
+              const colors = {
+                orange: { bg: isSelected ? "bg-orange-50 border-orange-200 ring-orange-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-orange-600 text-white shadow-orange-200" : "bg-orange-100 text-orange-700", text: isSelected ? "text-orange-900" : "text-gray-700", subtext: isSelected ? "text-orange-700" : "text-gray-400", check: isSelected ? "bg-orange-600 border-orange-600" : "bg-white border-gray-200" },
+                blue: { bg: isSelected ? "bg-blue-50 border-blue-200 ring-blue-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-blue-600 text-white shadow-blue-200" : "bg-blue-100 text-blue-700", text: isSelected ? "text-blue-900" : "text-gray-700", subtext: isSelected ? "text-blue-700" : "text-gray-400", check: isSelected ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200" },
+                purple: { bg: isSelected ? "bg-purple-50 border-purple-200 ring-purple-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-purple-600 text-white shadow-purple-200" : "bg-purple-100 text-purple-700", text: isSelected ? "text-purple-900" : "text-gray-700", subtext: isSelected ? "text-purple-700" : "text-gray-400", check: isSelected ? "bg-purple-600 border-purple-600" : "bg-white border-gray-200" },
+                amber: { bg: isSelected ? "bg-amber-50 border-amber-200 ring-amber-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-amber-600 text-white shadow-amber-200" : "bg-amber-100 text-amber-700", text: isSelected ? "text-amber-900" : "text-gray-700", subtext: isSelected ? "text-amber-700" : "text-gray-400", check: isSelected ? "bg-amber-600 border-amber-600" : "bg-white border-gray-200" },
+                pink: { bg: isSelected ? "bg-pink-50 border-pink-200 ring-pink-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-pink-600 text-white shadow-pink-200" : "bg-pink-100 text-pink-700", text: isSelected ? "text-pink-900" : "text-gray-700", subtext: isSelected ? "text-pink-700" : "text-gray-400", check: isSelected ? "bg-pink-600 border-pink-600" : "bg-white border-gray-200" },
+                red: { bg: isSelected ? "bg-red-50 border-red-200 ring-red-100" : "bg-white border-gray-100", iconBg: isSelected ? "bg-red-600 text-white shadow-red-200" : "bg-red-100 text-red-700", text: isSelected ? "text-red-900" : "text-gray-700", subtext: isSelected ? "text-red-700" : "text-gray-400", check: isSelected ? "bg-red-600 border-red-600" : "bg-white border-gray-200" },
+              };
+              const c = colors[layer.color as keyof typeof colors];
               return (
                 <button
                   key={layer.id}
                   onClick={() => toggleLayer(layer.id as keyof typeof layers)}
-                  className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-300 cursor-pointer ${colorClasses.bg} ${isSelected ? "shadow-md ring-1 hover:shadow-lg hover:scale-[1.02]" : "hover:border-gray-300 hover:shadow-md hover:scale-[1.02]"} active:scale-[0.98]`}
+                  className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-300 cursor-pointer ${c.bg} ${isSelected ? "shadow-md ring-1 hover:shadow-lg hover:scale-[1.02]" : "hover:border-gray-300 hover:shadow-md hover:scale-[1.02]"} active:scale-[0.98] w-full min-h-[48px]`}
                 >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div
-                      className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${colorClasses.iconBg} ${isSelected ? "shadow-lg" : ""}`}
-                    >
+                  <div className="flex items-center gap-2 overflow-hidden flex-1 px-1">
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${c.iconBg} ${isSelected ? "shadow-lg" : ""}`}>
                       <layer.icon className="w-3.5 h-3.5 stroke-[2.5px]" />
                     </div>
-                    <div className="text-left min-w-0">
-                      <p
-                        className={`text-[10px] font-bold transition-colors duration-300 truncate ${colorClasses.text}`}
-                      >
-                        {layer.label}
-                      </p>
-                      <p
-                        className={`text-[9px] font-medium transition-colors duration-300 truncate ${colorClasses.subtext}`}
-                      >
-                        {layer.count} items
-                      </p>
+                    <div className="text-left w-full overflow-hidden flex flex-col justify-center max-w-[80%]">
+                      <p className={`text-[10px] font-bold transition-colors duration-300 truncate w-full block ${c.text}`}>{layer.label}</p>
+                      <p className={`text-[9px] font-medium transition-colors duration-300 truncate w-full block ${c.subtext}`}>{layer.count} items</p>
                     </div>
                   </div>
-                  <div
-                    className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-300 ${colorClasses.check} ${isSelected ? "scale-110 shadow-sm" : "scale-100"}`}
-                  >
-                    {isSelected && (
-                      <Check className="w-2.5 h-2.5 text-white stroke-[3px]" />
-                    )}
+                  <div className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-300 ${c.check} ${isSelected ? "scale-110 shadow-sm" : "scale-100"}`}>
+                    {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3px]" />}
                   </div>
                 </button>
               );
-            })}
-          </div>
+            };
+
+            return (
+              <>
+                <div className="hidden lg:grid lg:grid-cols-6 gap-3">
+                  {layerDefs.map(layer => renderLayerToggle(layer))}
+                </div>
+                <div className="lg:hidden grid grid-cols-2 gap-2">
+                  {(showAllLayers ? layerDefs : layerDefs.slice(0, 4)).map(layer => renderLayerToggle(layer))}
+                  {!showAllLayers && (
+                    <button 
+                      onClick={() => setShowAllLayers(true)}
+                      className="flex flex-col items-center justify-center p-2 rounded-xl border border-gray-200 border-dashed text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all min-h-[48px]"
+                    >
+                      <span className="text-[11px] font-bold flex items-center gap-1"><Map className="w-3 h-3"/> + 2 More</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
-        <div className="bg-gray-50 rounded-2xl h-[800px] border border-gray-200 relative overflow-hidden group">
+        <div className="bg-gray-50 rounded-none lg:rounded-2xl -mx-4 sm:-mx-6 lg:mx-0 border-y lg:border border-gray-200 relative overflow-hidden group aspect-square lg:h-[800px]">
           {loading && (
             <div className="absolute inset-0 z-[1000] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6">
               <div className="p-6 bg-white rounded-full mb-4 shadow-sm">
@@ -539,60 +431,58 @@ export const ScoutingMap = ({
             <ResizeMap isVisible={isVisible} />
           </MapContainer>
 
-          <div className="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 z-[1000] bg-white/95 backdrop-blur-md p-2 sm:p-4 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xl max-w-[160px] sm:max-w-none">
-            <h5 className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-3 px-1 sm:px-0">
-              Legend
-            </h5>
-            <div className="space-y-1 sm:space-y-2">
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-orange-700">
-                  <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
+          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col items-end pointer-events-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-white/95 backdrop-blur shadow-lg border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl px-3 font-bold h-9">
+                  <Layers className="w-4 h-4 mr-2 text-indigo-600" />
+                  Legend
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="end" className="w-[180px] p-3 rounded-2xl shadow-xl z-[1000] mb-2 border-gray-200 bg-white/95 backdrop-blur-sm">
+                <div className="space-y-0 text-gray-700">
+                  <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-2 pl-2">
+                    Legend
+                  </p>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-orange-700 bg-orange-50">
+                      <Layers className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Talent Discovery</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-blue-700 bg-blue-50">
+                      <User className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Signed Talent</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-amber-700 bg-amber-50">
+                      <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Prospect</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-purple-700 bg-purple-50">
+                      <Plane className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Scouting Trip</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-pink-700 bg-pink-50">
+                      <Calendar className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Event</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-1 rounded text-red-700 bg-red-50">
+                      <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">Declined prospect</span>
+                  </div>
                 </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Talent Discovery
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-blue-700">
-                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
-                </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Signed Talent
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-amber-700">
-                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
-                </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Prospect (Non-Signed)
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-purple-700">
-                  <Plane className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
-                </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Scouting Trip
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-pink-700">
-                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
-                </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Event
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-3 p-1 sm:p-0 hover:bg-gray-50 rounded-lg sm:rounded-none">
-                <div className="p-1 sm:p-1.5 rounded text-red-700">
-                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]" />
-                </div>
-                <span className="text-[9px] sm:text-[11px] font-bold text-gray-700 truncate">
-                  Declined prospect
-                </span>
-              </div>
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </Card>
