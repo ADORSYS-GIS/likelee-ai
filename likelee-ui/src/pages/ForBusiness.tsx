@@ -1,11 +1,13 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Building2, Users, UserCircle, Trophy } from "lucide-react";
 
 export default function ForBusiness() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Add JSON-LD structured data
@@ -57,33 +59,35 @@ export default function ForBusiness() {
 
   const businessTypes = [
     {
-      title: "For Brands & Companies",
-      description:
-        "Launch authentic, AI-powered campaigns featuring verified human creators. License faces directly, collaborate with AI artists, and deliver content in hours—not weeks.",
+      title: t("forBusinessPage.businessTypes.brands.title"),
+      description: t("forBusinessPage.businessTypes.brands.description"),
       icon: Building2,
       gradient: "from-[#F7B750] to-[#FAD54C]",
       path: "BrandCompany",
     },
     {
-      title: "For Marketing Agencies",
-      description:
-        "Manage client campaigns built on real, licensed creators. Access verified faces, hire AI artists, and track campaign performance in one place.",
+      title: t("forBusinessPage.businessTypes.marketingAgencies.title"),
+      description: t(
+        "forBusinessPage.businessTypes.marketingAgencies.description",
+      ),
       icon: Users,
       gradient: "from-[#32C8D1] to-teal-500",
       path: "MarketingAgency",
     },
     {
-      title: "For Talent & Modeling Agencies",
-      description:
-        "Protect and monetize your roster's digital likenesses. Upload verified talent, manage consent logs, and generate passive royalties through AI-driven collaborations.",
+      title: t("forBusinessPage.businessTypes.talentAgencies.title"),
+      description: t(
+        "forBusinessPage.businessTypes.talentAgencies.description",
+      ),
       icon: UserCircle,
       gradient: "from-indigo-600 to-purple-600",
       path: "TalentAgency",
     },
     {
-      title: "For Sports Agencies & Athlete Representatives",
-      description:
-        "AI-ready NIL management with verified rights and automated royalties. Protect athlete likenesses, track usage, and unlock new earning streams in the age of AI.",
+      title: t("forBusinessPage.businessTypes.sportsAgencies.title"),
+      description: t(
+        "forBusinessPage.businessTypes.sportsAgencies.description",
+      ),
       icon: Trophy,
       gradient: "from-emerald-600 to-teal-600",
       path: "SportsAgency",
@@ -96,11 +100,10 @@ export default function ForBusiness() {
       <section className="relative px-6 pt-24 pb-16 overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 mb-8">
-            Likelee for Business
+            {t("forBusinessPage.hero.title")}
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Built for brands, agencies, and talent partners who demand verified
-            creators, transparent licensing, and AI-ready production tools.
+            {t("forBusinessPage.hero.subtitle")}
           </p>
         </div>
       </section>
@@ -133,7 +136,7 @@ export default function ForBusiness() {
                     </p>
 
                     <div className="flex items-center text-gray-900 font-semibold group-hover:gap-3 gap-2 transition-all">
-                      Learn More
+                      {t("forBusinessPage.learnMore")}
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
@@ -148,13 +151,10 @@ export default function ForBusiness() {
       <section className="px-6 py-20 bg-gray-900">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            The Infrastructure Behind the Identity Economy
+            {t("forBusinessPage.valueProposition.title")}
           </h2>
           <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
-            Likelee connects real creators, AI talent, and studios through
-            secure likeness licensing and transparent collaboration tools. Every
-            campaign is human-verified, consent-backed, and ready for the future
-            of media.
+            {t("forBusinessPage.valueProposition.description")}
           </p>
         </div>
       </section>
