@@ -61,6 +61,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DashboardTabRail,
+  DashboardTableSurface,
+} from "@/components/dashboard/DashboardResponsive";
 
 interface RosterViewProps {
   searchTerm: string;
@@ -144,6 +148,12 @@ const RosterView = ({
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
       Number.isFinite(value) ? value : 0,
     );
+
+  const formatRosterStatus = (value: string | null | undefined) => {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) return "Unknown";
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
 
   const openSeatBreakdown = async () => {
     setSeatBreakdownOpen(true);
@@ -981,17 +991,17 @@ const RosterView = ({
               </div>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <Button
               type="button"
-              className="bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2"
+              className="w-full bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2 sm:w-auto"
               onClick={() => navigate("/agencysubscribe")}
             >
               Upgrade plan
             </Button>
             <Button
               variant="outline"
-              className="text-gray-700 border-gray-300 gap-2"
+              className="w-full text-gray-700 border-gray-300 gap-2 sm:w-auto"
               onClick={() => onEditProfile?.()}
               disabled={!onEditProfile}
             >
@@ -1000,7 +1010,7 @@ const RosterView = ({
             </Button>
             <Button
               variant="outline"
-              className="text-gray-700 border-gray-300 gap-2"
+              className="w-full text-gray-700 border-gray-300 gap-2 sm:w-auto"
               onClick={() => onViewMarketplace?.()}
               disabled={!onViewMarketplace}
             >
@@ -1045,7 +1055,7 @@ const RosterView = ({
       </Card>
 
       <Dialog open={seatBreakdownOpen} onOpenChange={setSeatBreakdownOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl">
           <DialogHeader>
             <DialogTitle>Seat Breakdown</DialogTitle>
             <DialogDescription>
@@ -1147,27 +1157,27 @@ const RosterView = ({
       </Dialog>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
               Active {pluralTitleLabel}
             </p>
-            <div className="text-3xl font-bold text-gray-900">
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
               {activeTalentCount}
             </div>
             <p className="text-xs text-gray-400 mt-1">
               of {rosterData.length} total
             </p>
           </div>
-          <Users className="w-10 h-10 text-gray-100" />
+          <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
         </Card>
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
               Monthly Earnings
             </p>
-            <div className="text-3xl font-bold text-gray-900">
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
               {formatCurrency(totalMonthlyEarnings)}
             </div>
             {(earnings30dTotalCents !== 0 ||
@@ -1184,36 +1194,36 @@ const RosterView = ({
               </p>
             )}
           </div>
-          <DollarSign className="w-10 h-10 text-gray-100" />
+          <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
         </Card>
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
               Active Campaigns
             </p>
-            <div className="text-3xl font-bold text-gray-900">
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
               {activeCampaigns}
             </div>
             <p className="text-xs text-gray-400 mt-1">
               across all {pluralLabel}
             </p>
           </div>
-          <Briefcase className="w-10 h-10 text-gray-100" />
+          <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
         </Card>
         {agencyMode === "AI" && (
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
             <div>
               <p className="text-sm font-semibold text-gray-500 mb-1">
                 Expiring Licenses
               </p>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {expiringLicensesCount}
               </div>
               <p className="text-xs text-orange-500 font-medium mt-1">
                 require renewal
               </p>
             </div>
-            <AlertCircle className="w-10 h-10 text-gray-100" />
+            <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
           </Card>
         )}
       </div>
@@ -1221,44 +1231,30 @@ const RosterView = ({
       {/* Roster Table Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
-            {[
+          <DashboardTabRail
+            className="-mx-1 px-1"
+            items={[
               "Roster",
               "Digitals Tracking",
               "Campaigns",
               "Licenses",
               "Analytics",
-            ].map((tab) => {
-              const isLicenses = tab === "Licenses";
-              const isCampaigns = tab === "Campaigns";
-              const isAiMode = agencyMode === "AI";
-
-              // Filter logic:
-              // 1. Hide Licenses in IRL mode
-              // 2. Hide Campaigns in AI mode
-              if (isLicenses && !isAiMode) return null;
-              if (isCampaigns && isAiMode) return null;
-
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setRosterTab(tab.toLowerCase().split(" ")[0])}
-                  className={`px-4 py-2 text-sm font-bold transition-colors relative ${
-                    rosterTab === tab.toLowerCase().split(" ")[0]
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  {tab}
-                  {tab === "Analytics" && (
-                    <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                      Pro
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+            ]
+              .filter((tab) => {
+                const isLicenses = tab === "Licenses";
+                const isCampaigns = tab === "Campaigns";
+                const isAiMode = agencyMode === "AI";
+                if (isLicenses && !isAiMode) return false;
+                if (isCampaigns && isAiMode) return false;
+                return true;
+              })
+              .map((tab) => ({
+                id: tab.toLowerCase().split(" ")[0],
+                label: tab === "Analytics" ? "Analytics Pro" : tab,
+                active: rosterTab === tab.toLowerCase().split(" ")[0],
+                onClick: () => setRosterTab(tab.toLowerCase().split(" ")[0]),
+              }))}
+          />
           <div className="flex w-full md:w-auto flex-wrap gap-3">
             <Button
               variant="outline"
@@ -1358,65 +1354,181 @@ const RosterView = ({
                       {`No ${pluralLabel} to display.`}
                     </div>
                   ) : (
-                    filteredTalent.map((talent) => (
-                      <button
-                        key={talent.id}
-                        type="button"
-                        className="w-full text-left bg-white border border-gray-200 rounded-xl p-4"
-                        onClick={() => setSelectedTalent(talent)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={talent.img || "https://placehold.co/150"}
-                            alt={talent.name}
-                            className="w-12 h-12 rounded-lg object-contain bg-gray-50"
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold text-gray-900 truncate">
-                                {talent.name}
-                              </span>
-                              {talent.is_verified && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              {String(talent.role || "Model")}
-                            </div>
-                          </div>
-                        </div>
-                        <div
-                          className={`grid gap-3 mt-3 text-sm ${
-                            agencyMode === "IRL" ? "grid-cols-1" : "grid-cols-2"
-                          }`}
+                    filteredTalent.map((talent) => {
+                      const displayStatus = formatRosterStatus(talent.status);
+                      const roleLabels =
+                        Array.isArray((talent as any).role_types) &&
+                        (talent as any).role_types.length > 0
+                          ? (talent as any).role_types
+                              .filter(
+                                (item: any) =>
+                                  typeof item === "string" &&
+                                  item.trim().length > 0,
+                              )
+                              .slice(0, 3)
+                          : [String(talent.role || "Model")];
+                      const sportsLabel = Array.isArray(talent.sports)
+                        ? talent.sports.join(", ")
+                        : talent.sport || talent.sports || "—";
+
+                      return (
+                        <button
+                          key={talent.id}
+                          type="button"
+                          className="w-full text-left rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300"
+                          onClick={() => setSelectedTalent(talent)}
                         >
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              Followers
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <img
+                                src={talent.img || "https://placehold.co/150"}
+                                alt={talent.name}
+                                className="h-12 w-12 rounded-xl bg-slate-50 object-contain"
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="truncate text-lg font-bold text-slate-900">
+                                    {talent.name}
+                                  </span>
+                                  {talent.is_verified && (
+                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                                  )}
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                  {roleLabels.map((label: string) => (
+                                    <Badge
+                                      key={label}
+                                      variant="secondary"
+                                      className="border-none bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
+                                    >
+                                      {label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
-                            <div className="font-bold text-gray-900">
-                              {talent.followers || "0"}
-                            </div>
+                            <Badge
+                              variant="secondary"
+                              className={`shrink-0 border px-2.5 py-1 text-[10px] font-bold ${
+                                displayStatus === "Active"
+                                  ? "border-green-200 bg-green-50 text-green-700"
+                                  : displayStatus === "Pending"
+                                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                                    : "border-slate-200 bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {displayStatus}
+                            </Badge>
                           </div>
-                          {agencyMode !== "IRL" && (
+
+                          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm">
                             <div>
-                              <div className="text-xs text-gray-500">
-                                Revenue
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Followers
                               </div>
-                              <div className="font-bold text-gray-900">
-                                {formatCurrency(
-                                  Number(talent?.earnings_val ?? 0),
-                                )}
+                              <div className="mt-1 text-base font-bold text-slate-900">
+                                {formatNumber(Number(talent.followers || 0))}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </button>
-                    ))
+                            <div>
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                {agencyMode === "IRL" ? "Assets" : "30D Revenue"}
+                              </div>
+                              <div className="mt-1 text-base font-bold text-slate-900">
+                                {agencyMode === "IRL"
+                                  ? formatNumber(Number(talent.assets || 0))
+                                  : formatCurrency(
+                                      Number(talent?.earnings_val ?? 0),
+                                    )}
+                              </div>
+                            </div>
+                            {agencyMode === "AI" && (
+                              <>
+                                <div>
+                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Top Brand
+                                  </div>
+                                  <div className="mt-1 truncate text-sm font-semibold text-slate-900">
+                                    {talent.top_brand || "—"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    License Expiry
+                                  </div>
+                                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                                    {talent.expiry || "—"}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                            {isSportsAgency ? (
+                              <>
+                                <div>
+                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Organization
+                                  </div>
+                                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
+                                    {talent.organization || talent.school || "—"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Sports
+                                  </div>
+                                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
+                                    {sportsLabel}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Assets
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-slate-900">
+                                  {formatNumber(Number(talent.assets || 0))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {agencyMode === "AI" &&
+                            Array.isArray(talent.ai_usage) &&
+                            talent.ai_usage.length > 0 && (
+                              <div className="mt-3">
+                                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  AI Usage
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {talent.ai_usage.map((usage: string) => {
+                                    let Icon = null;
+                                    if (usage === "Video") Icon = Video;
+                                    else if (usage === "Image")
+                                      Icon = ImageIcon;
+                                    else if (usage === "Voice") Icon = Mic;
+
+                                    return (
+                                      <Badge
+                                        key={usage}
+                                        variant="outline"
+                                        className="flex items-center gap-1.5 rounded-md border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700"
+                                      >
+                                        {Icon && <Icon className="h-3.5 w-3.5" />}
+                                        {usage}
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                        </button>
+                      );
+                    })
                   )}
                 </div>
 
-                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
+                <DashboardTableSurface className="hidden rounded-xl border border-gray-100 md:block">
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
@@ -1654,7 +1766,7 @@ const RosterView = ({
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </DashboardTableSurface>
               </div>
             </>
           )}
@@ -2033,7 +2145,7 @@ const RosterView = ({
       />
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="w-[95vw] max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               Send Portal Invite
@@ -2087,7 +2199,7 @@ const RosterView = ({
                       return (
                         <div
                           key={t?.id || `${name}:${email}`}
-                          className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
+                          className="flex flex-col gap-3 rounded-lg border bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">
@@ -2098,7 +2210,7 @@ const RosterView = ({
                             </div>
                           </div>
                           <Button
-                            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
+                            className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700 sm:w-auto"
                             disabled={inviteSending || rowSending || !email}
                             onClick={async () => {
                               if (!email) return;
@@ -2183,7 +2295,7 @@ const RosterView = ({
             </div>
 
             <div className="pt-2 border-t">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm font-semibold text-gray-900">
                   Pending invites
                 </div>
@@ -2222,7 +2334,7 @@ const RosterView = ({
                   return pending.slice(0, 20).map((inv: any) => (
                     <div
                       key={inv.id}
-                      className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
+                      className="flex flex-col gap-3 rounded-lg border bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-gray-900 truncate">
@@ -2235,10 +2347,10 @@ const RosterView = ({
                             : "—"}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Button
                           variant="outline"
-                          className="h-9"
+                          className="h-9 w-full sm:w-auto"
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
@@ -2257,7 +2369,7 @@ const RosterView = ({
                           Revoke
                         </Button>
                         <Button
-                          className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
+                          className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700 sm:w-auto"
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
@@ -2299,7 +2411,7 @@ const RosterView = ({
       </Dialog>
 
       <Dialog open={reminderOpen} onOpenChange={setReminderOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="w-[95vw] max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               Send digitals reminder

@@ -42,6 +42,12 @@ import {
 
 import CampaignBuilder from "../components/CampaignBuilder";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  DashboardActionBar,
+  DashboardPageShell,
+  DashboardSectionHeader,
+  DashboardTabRail,
+} from "@/components/dashboard/DashboardResponsive";
 
 const mockAgency = {
   name: "CreativeWorks Agency",
@@ -260,12 +266,22 @@ export default function MarketingAgencyDashboard() {
     return acc;
   }, {});
 
+  const navItems = [
+    { id: "home", label: "Home" },
+    { id: "marketplace", label: "Marketplace" },
+    { id: "clients", label: "Clients" },
+    { id: "campaigns", label: "Campaigns" },
+    { id: "studio", label: "Studio" },
+    { id: "performance", label: "Performance" },
+    { id: "settings", label: "Settings" },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-3">
+            <div className="flex min-w-0 items-center gap-4 lg:gap-8">
               <div className="flex items-center gap-3">
                 <img
                   src={mockAgency.logo}
@@ -277,7 +293,7 @@ export default function MarketingAgencyDashboard() {
                 </span>
               </div>
 
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden xl:flex items-center gap-1">
                 <Button
                   variant={activeTab === "home" ? "default" : "ghost"}
                   onClick={() => setActiveTab("home")}
@@ -337,13 +353,13 @@ export default function MarketingAgencyDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <label className="text-sm text-gray-600 mr-2">Client:</label>
+            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end">
+              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+                <label className="text-sm text-gray-600">Client:</label>
                 <select
                   value={selectedClient}
                   onChange={(e) => setSelectedClient(e.target.value)}
-                  className="border-2 border-gray-300 px-4 py-2 rounded-none text-sm font-medium bg-white"
+                  className="w-full border-2 border-gray-300 bg-white px-4 py-2 text-sm font-medium md:w-auto"
                 >
                   <option value="all">All Clients</option>
                   {mockClients.map((client) => (
@@ -353,28 +369,47 @@ export default function MarketingAgencyDashboard() {
                   ))}
                 </select>
               </div>
-              <Button variant="ghost" size="icon" className="rounded-none">
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-none">
-                <Bell className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-none">
-                <HelpCircle className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-none">
-                <User className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-2 self-end md:self-auto">
+                <Button variant="ghost" size="icon" className="rounded-none">
+                  <Search className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-none">
+                  <Bell className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-none">
+                  <HelpCircle className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-none">
+                  <User className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
+          <DashboardTabRail
+            className="pb-4 xl:hidden"
+            items={[
+              ...navItems.map((item) => ({
+                id: item.id,
+                label: item.label,
+                active: activeTab === item.id,
+                onClick: () => setActiveTab(item.id),
+              })),
+              {
+                id: "jobs-link",
+                label: "Jobs",
+                active: false,
+                onClick: () => navigate(createPageUrl("Jobs")),
+              },
+            ]}
+          />
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <DashboardPageShell>
         {selectedClient !== "all" && (
-          <Alert className="mb-8 bg-white border-2 border-cyan-600 rounded-none">
+          <Alert className="mb-6 bg-white border-2 border-cyan-600 rounded-none">
             <Building2 className="h-5 w-5 text-cyan-600" />
-            <AlertDescription className="text-gray-900 font-medium flex items-center justify-between">
+            <AlertDescription className="flex flex-col gap-3 text-gray-900 md:flex-row md:items-center md:justify-between">
               <span>
                 Viewing data for:{" "}
                 <strong>
@@ -406,18 +441,16 @@ export default function MarketingAgencyDashboard() {
 
         {activeTab === "home" && (
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, {mockAgency.name}
-              </h1>
-              <p className="text-gray-600">
-                {selectedClient === "all"
+            <DashboardSectionHeader
+              title={`Welcome back, ${mockAgency.name}`}
+              description={
+                selectedClient === "all"
                   ? `You're managing ${mockAgency.clients} clients and ${mockAgency.active_campaigns} active campaigns.`
-                  : `Viewing ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}'s account with ${clientStats.campaigns} campaigns.`}
-              </p>
-            </div>
+                  : `Viewing ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}'s account with ${clientStats.campaigns} campaigns.`
+              }
+            />
 
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <div className="flex items-center justify-between mb-4">
                   <FileText className="w-8 h-8 text-cyan-600" />
@@ -463,7 +496,7 @@ export default function MarketingAgencyDashboard() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Quick Actions
               </h2>
-              <div className="grid md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Button
                   onClick={() => setActiveTab("marketplace")}
                   className="h-24 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:opacity-90 text-white flex-col gap-2 rounded-none"
@@ -561,7 +594,7 @@ export default function MarketingAgencyDashboard() {
               </Card>
             )}
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Recent Activity
@@ -641,22 +674,18 @@ export default function MarketingAgencyDashboard() {
 
         {activeTab === "marketplace" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Creator Marketplace
-                </h1>
-                <p className="text-gray-600">
-                  Discover and connect with creators and AI talent
-                </p>
-              </div>
-              <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
-                <Filter className="w-4 h-4 mr-2" />
-                Advanced Filters
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="Creator Marketplace"
+              description="Discover and connect with creators and AI talent"
+              actions={
+                <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Advanced Filters
+                </Button>
+              }
+            />
 
-            <div className="flex gap-4">
+            <DashboardActionBar className="border-0 p-0 shadow-none bg-transparent sm:bg-white sm:border sm:border-gray-200 sm:p-4">
               <Input
                 placeholder="Search creators by name, niche, or platform..."
                 className="flex-1 border-2 border-gray-300 rounded-none"
@@ -665,9 +694,9 @@ export default function MarketingAgencyDashboard() {
                 <Search className="w-4 h-4 mr-2" />
                 Search
               </Button>
-            </div>
+            </DashboardActionBar>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {mockCreators.map((creator) => (
                 <Card
                   key={creator.id}
@@ -759,22 +788,18 @@ export default function MarketingAgencyDashboard() {
 
         {activeTab === "clients" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Your Clients
-                </h1>
-                <p className="text-gray-600">
-                  Manage your client accounts and relationships
-                </p>
-              </div>
-              <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Client
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="Your Clients"
+              description="Manage your client accounts and relationships"
+              actions={
+                <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Client
+                </Button>
+              }
+            />
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {mockClients.map((client) => (
                 <Card
                   key={client.id}
@@ -836,25 +861,23 @@ export default function MarketingAgencyDashboard() {
 
         {activeTab === "campaigns" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Campaigns
-                </h1>
-                <p className="text-gray-600">
-                  {selectedClient === "all"
-                    ? "All active campaigns across clients"
-                    : `Campaigns for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`}
-                </p>
-              </div>
-              <Button
-                onClick={() => setShowCampaignBuilder(true)}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Campaign
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="Campaigns"
+              description={
+                selectedClient === "all"
+                  ? "All active campaigns across clients"
+                  : `Campaigns for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`
+              }
+              actions={
+                <Button
+                  onClick={() => setShowCampaignBuilder(true)}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Campaign
+                </Button>
+              }
+            />
 
             <div className="space-y-4">
               {filteredCampaigns.map((campaign) => (
@@ -862,7 +885,7 @@ export default function MarketingAgencyDashboard() {
                   key={campaign.id}
                   className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
                         {campaign.name}
@@ -883,7 +906,7 @@ export default function MarketingAgencyDashboard() {
                     </Button>
                   </div>
 
-                  <div className="grid md:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Start Date</p>
                       <p className="font-medium text-gray-900">
@@ -916,7 +939,7 @@ export default function MarketingAgencyDashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex gap-3">
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
@@ -1050,18 +1073,16 @@ export default function MarketingAgencyDashboard() {
 
         {activeTab === "performance" && (
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Performance & Analytics
-              </h1>
-              <p className="text-gray-600">
-                {selectedClient === "all"
+            <DashboardSectionHeader
+              title="Performance & Analytics"
+              description={
+                selectedClient === "all"
                   ? "Track ROI and engagement across all campaigns"
-                  : `Performance analytics for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`}
-              </p>
-            </div>
+                  : `Performance analytics for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`
+              }
+            />
 
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <p className="text-sm text-gray-600 mb-1">Total Campaigns</p>
                 <p className="text-3xl font-bold text-gray-900">
@@ -1082,7 +1103,7 @@ export default function MarketingAgencyDashboard() {
               </Card>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-cyan-100 rounded-none flex items-center justify-center">
@@ -1339,7 +1360,7 @@ export default function MarketingAgencyDashboard() {
             </Card>
           </div>
         )}
-      </div>
+      </DashboardPageShell>
 
       {showCampaignBuilder && (
         <CampaignBuilder
@@ -1350,14 +1371,14 @@ export default function MarketingAgencyDashboard() {
 
       {showCreatorProfile && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="min-h-screen flex items-center justify-center p-6">
-            <Card className="w-full max-w-4xl bg-white p-8 rounded-none">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-start gap-6">
+          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+            <Card className="w-full max-w-4xl rounded-none bg-white p-4 sm:p-8">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
                   <img
                     src={showCreatorProfile.image}
                     alt={showCreatorProfile.name}
-                    className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+                    className="h-24 w-24 rounded-full border-2 border-gray-200 object-cover sm:h-32 sm:w-32"
                   />
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -1366,7 +1387,7 @@ export default function MarketingAgencyDashboard() {
                     <p className="text-gray-600 mb-3">
                       {showCreatorProfile.tagline}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {showCreatorProfile.platforms.map((platform) => (
                         <Badge
                           key={platform}
@@ -1388,7 +1409,7 @@ export default function MarketingAgencyDashboard() {
                 </Button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Followers</p>
@@ -1423,7 +1444,7 @@ export default function MarketingAgencyDashboard() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                   Add to Campaign
                 </Button>
@@ -1443,9 +1464,9 @@ export default function MarketingAgencyDashboard() {
 
       {showPreviewModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
             <div className="w-full max-w-3xl">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-xl font-bold text-white">
                   {showPreviewModal.name} - Preview Reel
                 </h3>
@@ -1470,7 +1491,7 @@ export default function MarketingAgencyDashboard() {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                   Request Full Access
                 </Button>

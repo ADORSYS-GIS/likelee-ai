@@ -80,6 +80,10 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+} from "@/components/dashboard/DashboardResponsive";
 
 type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
@@ -2005,17 +2009,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   return (
     <div className="max-w-full mx-auto">
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Agency Settings
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Configure your agency profile and preferences
-          </p>
-        </div>
+        <DashboardSectionHeader
+          title="Agency Settings"
+          description="Configure your agency profile and preferences"
+        />
 
-        <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
-          {[
+        <DashboardTabRail
+          items={[
             "Profile",
             "Commissions",
             "Email Templates",
@@ -2024,20 +2024,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             "Team",
             "File Storage",
             "Integrations",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+          ].map((tab) => ({
+            id: tab,
+            label: tab,
+            active: activeTab === tab,
+            onClick: () => setActiveTab(tab),
+          }))}
+        />
 
         {activeTab === "Profile" && (
           <div className="space-y-6">
@@ -2299,7 +2292,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <Label className="text-sm font-bold text-gray-900">
                     Agency Logo
                   </Label>
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
                       {profile?.logo_url ? (
                         <img
@@ -2324,7 +2317,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+                      className="h-10 w-full px-4 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 sm:w-auto"
                     >
                       {isUploading ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
