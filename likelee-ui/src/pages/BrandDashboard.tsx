@@ -1146,6 +1146,8 @@ export default function BrandDashboard() {
   const canManagePayOffers = hasPermission("manage_pay_offers");
   const canViewPayOffers = hasPermission("view_pay_offers");
   const canManageJobs = hasPermission("manage_jobs");
+  const canViewSubscriptions = hasPermission("view_subscriptions");
+  const canManageBilling = hasPermission("manage_billing");
   const canViewInbox = canViewPayOffers;
 
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
@@ -2055,7 +2057,7 @@ export default function BrandDashboard() {
       icon: FileText,
       badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
     },
-    { id: "billing", label: "Billing", icon: CreditCard },
+    ...(canViewSubscriptions ? [{ id: "billing", label: "Billing", icon: CreditCard }] : []),
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -4548,47 +4550,53 @@ export default function BrandDashboard() {
                     ⏳ Contract signed. Payment required before deliverables can
                     start.
                   </span>
-                  <Button
-                    size="sm"
-                    className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                    disabled={payingOfferId === offerId}
-                    onClick={async () => {
-                      setPayingOfferId(offerId);
-                      try {
-                        const data: any = await base44.post(
-                          `/api/brand/campaign-offers/${offerId}/checkout`,
-                          {},
-                        );
-                        if (data?.url) {
-                          window.location.href = data.url;
-                        } else {
+                  {canManagePayOffers ? (
+                    <Button
+                      size="sm"
+                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                      disabled={payingOfferId === offerId}
+                      onClick={async () => {
+                        setPayingOfferId(offerId);
+                        try {
+                          const data: any = await base44.post(
+                            `/api/brand/campaign-offers/${offerId}/checkout`,
+                            {},
+                          );
+                          if (data?.url) {
+                            window.location.href = data.url;
+                          } else {
+                            toast({
+                              title: "Payment Error",
+                              description:
+                                data?.message || "Could not start checkout.",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (e: any) {
+                          const msg = String(e?.message || "");
                           toast({
-                            title: "Payment Error",
-                            description:
-                              data?.message || "Could not start checkout.",
-                            variant: "destructive",
+                            title: msg.includes("no_talents_assigned")
+                              ? "Talent assignment required"
+                              : "Payment Error",
+                            description: msg.includes("no_talents_assigned")
+                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                              : msg || "Could not start checkout.",
+                            variant: "destructive" as any,
                           });
+                        } finally {
+                          setPayingOfferId(null);
                         }
-                      } catch (e: any) {
-                        const msg = String(e?.message || "");
-                        toast({
-                          title: msg.includes("no_talents_assigned")
-                            ? "Talent assignment required"
-                            : "Payment Error",
-                          description: msg.includes("no_talents_assigned")
-                            ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                            : msg || "Could not start checkout.",
-                          variant: "destructive" as any,
-                        });
-                      } finally {
-                        setPayingOfferId(null);
-                      }
-                    }}
-                  >
-                    {payingOfferId === offerId
-                      ? "Redirecting…"
-                      : "💳 Pay Offer"}
-                  </Button>
+                      }}
+                    >
+                      {payingOfferId === offerId
+                        ? "Redirecting…"
+                        : "💳 Pay Offer"}
+                    </Button>
+                  ) : (
+                    <span className="ml-auto text-xs text-amber-600 italic">
+                      View only - payment requires admin or project manager role
+                    </span>
+                  )}
                 </div>
               )}
               {isFullySigned && offer?.payment_status === "paid" && (
@@ -6945,6 +6953,7 @@ export default function BrandDashboard() {
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
+                              title={!canManageJobs ? "You do not have permission to manage jobs" : ""}
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -8686,141 +8695,147 @@ export default function BrandDashboard() {
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
           <p className="text-4xl font-bold text-gray-900">$45.2K</p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {brandNextInvoiceDate || "Not set"}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            {brandPlanTier === "enterprise"
-              ? "Custom enterprise contract"
-              : (brandRecurringAmount || 0) > 0
-                ? `$${brandRecurringAmount}/mo recurring`
-                : "No active subscription"}
-          </p>
-        </Card>
+        {canViewSubscriptions && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {brandNextInvoiceDate || "Not set"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {brandPlanTier === "enterprise"
+                ? "Custom enterprise contract"
+                : (brandRecurringAmount || 0) > 0
+                  ? `$${brandRecurringAmount}/mo recurring`
+                  : "No active subscription"}
+            </p>
+          </Card>
+        )}
       </div>
 
       {/* Current Plan */}
-      <Card
-        className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
-      >
-        <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
-        <div className="p-6">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div>
-              <Badge className={brandSummaryTheme.badgeClass}>
-                {brandSummaryTheme.eyebrow}
-              </Badge>
-              <h3
-                className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
-              >
-                Current Plan: {brandPlanLabel}
-              </h3>
-              <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
-                {brandTrialEndsAt
-                  ? `Free trial ends on ${brandTrialEndsAt}`
-                  : brandCurrentPeriodEnd
-                    ? `Renews on ${brandCurrentPeriodEnd}`
-                    : brandSubscriptionStatus}
-              </p>
+      {canViewSubscriptions && (
+        <Card
+          className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
+        >
+          <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
+          <div className="p-6">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <Badge className={brandSummaryTheme.badgeClass}>
+                  {brandSummaryTheme.eyebrow}
+                </Badge>
+                <h3
+                  className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
+                >
+                  Current Plan: {brandPlanLabel}
+                </h3>
+                <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
+                  {brandTrialEndsAt
+                    ? `Free trial ends on ${brandTrialEndsAt}`
+                    : brandCurrentPeriodEnd
+                      ? `Renews on ${brandCurrentPeriodEnd}`
+                      : brandSubscriptionStatus}
+                </p>
+              </div>
+              {canManageBilling && (
+                <Button
+                  className={`font-semibold ${brandSummaryTheme.buttonClass}`}
+                  onClick={() => navigate(brandSummaryTheme.actionPath)}
+                >
+                  {brandSummaryTheme.actionLabel}
+                </Button>
+              )}
             </div>
-            <Button
-              className={`font-semibold ${brandSummaryTheme.buttonClass}`}
-              onClick={() => navigate(brandSummaryTheme.actionPath)}
-            >
-              {brandSummaryTheme.actionLabel}
-            </Button>
-          </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            <div
-              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-            >
-              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
-                Base Subscription
-              </p>
-              <p
-                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+            <div className="grid md:grid-cols-4 gap-4">
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                {brandBasePrice == null
-                  ? brandPlanTier === "enterprise"
-                    ? "Custom"
-                    : "$0"
-                  : `$${brandBasePrice}`}
-              </p>
-              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
-                {brandSubscriptionStatus}
-              </p>
-            </div>
-            <div
-              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-            >
-              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
-                AI Studio Add-On
-              </p>
-              <p
-                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                  Base Subscription
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandBasePrice == null
+                    ? brandPlanTier === "enterprise"
+                      ? "Custom"
+                      : "$0"
+                    : `$${brandBasePrice}`}
+                </p>
+                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                  {brandSubscriptionStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                {brandHasIncludedStudio
-                  ? "Included"
-                  : brandHasStudioAddon
-                    ? `$${BRAND_STUDIO_ADDON_PRICE}`
-                    : "Inactive"}
-              </p>
-              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
-                {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
-                  ? `Renews on ${brandStudioCurrentPeriodEnd}`
-                  : brandStudioStatus}
-              </p>
-            </div>
-            <div
-              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-            >
-              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
-                Campaign Slots
-              </p>
-              <p
-                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                  AI Studio Add-On
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandHasIncludedStudio
+                    ? "Included"
+                    : brandHasStudioAddon
+                      ? `$${BRAND_STUDIO_ADDON_PRICE}`
+                      : "Inactive"}
+                </p>
+                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                  {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
+                    ? `Renews on ${brandStudioCurrentPeriodEnd}`
+                    : brandStudioStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                {brandCampaignLimit == null
-                  ? "Unlimited"
-                  : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
-              </p>
-              <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
-                {campaignMetrics.active_projects_count} active,{" "}
-                {campaignMetrics.pending_approvals_count} pending approval
-              </p>
-            </div>
-            <div
-              className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-            >
-              <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
-                Team Seats
-              </p>
-              <p
-                className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                  Campaign Slots
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandCampaignLimit == null
+                    ? "Unlimited"
+                    : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
+                </p>
+                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                  {campaignMetrics.active_projects_count} active,{" "}
+                  {campaignMetrics.pending_approvals_count} pending approval
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                {brandTeamSeatsUsed} / {brandSeatLimitLabel}
-              </p>
+                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                  Team Seats
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandTeamSeatsUsed} / {brandSeatLimitLabel}
+                </p>
+              </div>
             </div>
-          </div>
 
-          {(brandCampaignLimitReached || brandSeatLimitReached) && (
-            <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
-              <AlertDescription>
-                {brandCampaignLimitReached
-                  ? brandCampaignLimit === 0
-                    ? "Upgrade to a paid brand plan to launch campaigns."
-                    : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
-                  : brandSeatLimit === 0
-                    ? "Upgrade to Basic or above to unlock company seats."
-                    : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </Card>
+            {(brandCampaignLimitReached || brandSeatLimitReached) && (
+              <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
+                <AlertDescription>
+                  {brandCampaignLimitReached
+                    ? brandCampaignLimit === 0
+                      ? "Upgrade to a paid brand plan to launch campaigns."
+                      : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
+                    : brandSeatLimit === 0
+                      ? "Upgrade to Basic or above to unlock company seats."
+                      : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Payment Status / Project Billing */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -11760,6 +11775,7 @@ export default function BrandDashboard() {
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
+                              title={!canManageJobs ? "You do not have permission to manage jobs" : ""}
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }

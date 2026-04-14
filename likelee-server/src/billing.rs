@@ -3061,7 +3061,7 @@ pub async fn create_campaign_offer_checkout(
     axum::extract::Path(offer_id): axum::extract::Path<String>,
 ) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
     let brand_access =
-        team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
+        team::require_brand_permission(&state, &user, Permission::ManagePayOffers).await?;
     let brand_id = brand_access.organization_id;
 
     if state.stripe_secret_key.trim().is_empty() {

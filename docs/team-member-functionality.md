@@ -56,10 +56,10 @@ The Team Member functionality allows organization owners (agencies or brands) to
 
 | Role | Permissions |
 |------|-------------|
-| **owner** | Full access to all organization features, billing management, team management |
-| **admin** | All permissions except managing billing (configurable) |
-| **project_manager** | Create campaigns, approve deliverables, view team, manage brand connections |
-| **reviewer** | Approve deliverables, view team members, view brand connections (read-only) |
+| **owner** | Full access to all organization features, billing management, team management, ownership transfer |
+| **admin** | All permissions except ownership transfer and organization deletion; includes billing and team management |
+| **project_manager** | Create campaigns, approve deliverables, manage connections, licenses, contracts, jobs, and pay offers (no billing or team management) |
+| **reviewer** | Read-only access to all resources except billing/subscriptions (view deliverables, team, connections, clients, licenses, jobs, contracts, pay offers) |
 
 ### Permission Enum (Backend)
 
@@ -67,31 +67,123 @@ The Team Member functionality allows organization owners (agencies or brands) to
 pub enum Permission {
     CreateCampaigns,
     ApproveDeliverables,
+    ViewDeliverables,
     ManageBilling,
     InviteTeamMembers,
     UpdateMemberRoles,
     ViewTeamMembers,
     ViewBrandConnections,
     ManageBrandConnections,
+    DisconnectBrandConnections,
+    ViewClients,
+    ManageClients,
     ViewLicenses,
     ManageLicenses,
+    TransferOwnership,
+    DeleteOrganisation,
+    ManageJobs,
+    ViewJobs,
+    ManageContracts,
+    ViewContracts,
+    ManageSubscriptions,
+    ViewSubscriptions,
+    ManagePayOffers,
+    ViewPayOffers,
 }
 ```
 
-### Role to Permission Mapping
+### Role to Permission Mapping (Current Implementation)
 
 | Permission | Owner | Admin | Project Manager | Reviewer |
 |------------|-------|-------|-----------------|----------|
 | CreateCampaigns | ✅ | ✅ | ✅ | ❌ |
-| ApproveDeliverables | ✅ | ✅ | ✅ | ✅ |
-| ManageBilling | ✅ | ❌ | ❌ | ❌ |
+| ApproveDeliverables | ✅ | ✅ | ✅ | ❌ |
+| ViewDeliverables | ✅ | ✅ | ✅ | ✅ |
+| ManageBilling | ✅ | ✅ | ❌ | ❌ |
 | InviteTeamMembers | ✅ | ✅ | ❌ | ❌ |
 | UpdateMemberRoles | ✅ | ✅ | ❌ | ❌ |
 | ViewTeamMembers | ✅ | ✅ | ✅ | ✅ |
 | ViewBrandConnections | ✅ | ✅ | ✅ | ✅ |
 | ManageBrandConnections | ✅ | ✅ | ✅ | ❌ |
+| DisconnectBrandConnections | ✅ | ✅ | ✅ | ❌ |
+| ViewClients | ✅ | ✅ | ✅ | ✅ |
+| ManageClients | ✅ | ✅ | ✅ | ❌ |
 | ViewLicenses | ✅ | ✅ | ✅ | ✅ |
 | ManageLicenses | ✅ | ✅ | ✅ | ❌ |
+| ManageJobs | ✅ | ✅ | ✅ | ❌ |
+| ViewJobs | ✅ | ✅ | ✅ | ✅ |
+| ManageContracts | ✅ | ✅ | ✅ | ❌ |
+| ViewContracts | ✅ | ✅ | ✅ | ✅ |
+| ManageSubscriptions | ✅ | ✅ | ❌ | ❌ |
+| ViewSubscriptions | ✅ | ✅ | ✅ | ❌ |
+| ManagePayOffers | ✅ | ✅ | ✅ | ❌ |
+| ViewPayOffers | ✅ | ✅ | ✅ | ✅ |
+| TransferOwnership | ✅ | ❌ | ❌ | ❌ |
+| DeleteOrganisation | ✅ | ❌ | ❌ | ❌ |
+
+### Permission Categories by Role
+
+#### **Reviewer** (Read-Only Access)
+**Can View:**
+- Deliverables
+- Team members
+- Brand connections
+- Clients
+- Licenses
+- Jobs
+- Contracts
+- Pay offers
+
+**Cannot Do:**
+- Create, edit, or approve anything
+- Manage billing or subscriptions
+- Invite team members or update roles
+- Pay offers or manage any resources
+
+#### **Project Manager** (Operational Access)
+**Can Do Everything Reviewer Can Do PLUS:**
+- Create campaigns
+- Approve deliverables
+- Pay offers
+- Manage jobs, contracts, licenses
+- Manage brand connections and clients
+- View subscriptions & billing (read-only)
+
+**Cannot Do:**
+- Manage billing/subscriptions (upgrade plans)
+- Invite team members
+- Update member roles
+
+#### **Admin** (Full Management Access)
+**Can Do Everything Project Manager Can Do PLUS:**
+- Manage billing & subscriptions
+- Invite team members
+- Update member roles
+- Manage all organization settings
+
+**Cannot Do:**
+- Transfer ownership
+- Delete organization
+
+#### **Owner** (Complete Access)
+**Can Do Everything Admin Can Do PLUS:**
+- Transfer ownership to another member
+- Delete the organization
+
+### Organization Type Context
+
+The permission system applies to both **Brands** and **Agencies** with context-specific meanings:
+
+| Permission | Brand Context | Agency Context |
+|------------|---------------|----------------|
+| ViewBrandConnections | View creator relationships | View brand partnerships |
+| ManageBrandConnections | Manage creator relationships | Manage brand partnerships |
+| DisconnectBrandConnections | Disconnect from creators | Disconnect from brands |
+| ManageClients | Manage brand's customers | Manage agency's clients (brands) |
+| ManageLicenses | Manage licensing requests from creators | Manage licensing for talents |
+| ManagePayOffers | Pay creator offers | Pay talent offers |
+
+**Note:** The permission system is unified across both organization types, ensuring consistent behavior while respecting each organization's context.
 
 ---
 
