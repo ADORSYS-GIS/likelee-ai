@@ -2065,66 +2065,13 @@ pub async fn create_or_update_agency_seat_addon(
 
 pub async fn start_agency_pro_trial(
     State(_state): State<AppState>,
-    user: AuthUser,
+    _user: AuthUser,
 ) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
-    let agency_access =
-        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
-    let agency_id = agency_access.organization_id.clone();
-
-    return Err(billing_error(
+    Err(billing_error(
         StatusCode::BAD_REQUEST,
         "trial_requires_checkout",
         "Agency trials must be started via Stripe Checkout.",
-    ));
-    let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
-    if access.trial_active {
-        return Err(billing_error(
-            StatusCode::CONFLICT,
-            "trial_already_active",
-            "Trial is already active.",
-        ));
-    }
-    if access.trial_ends_at.is_some() {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_already_used",
-            "This agency has already used its trial.",
-        ));
-    }
-    if access.billed_tier != crate::entitlements::PlanTier::Free {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_only_available_for_free_accounts",
-            "Trial is only available for free agencies.",
-        ));
-    }
-
-    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(30);
-    let update = json!({
-        "trial_ends_at": trial_ends_at.to_rfc3339(),
-        "plan_updated_at": chrono::Utc::now().to_rfc3339(),
-        "plan_interval": "month"
-    });
-
-    let resp = state
-        .pg
-        .from("agencies")
-        .eq("id", &agency_id)
-        .update(update.to_string())
-        .execute()
-        .await
-        .map_err(map_postgrest_transport_error)?;
-    let status = resp.status();
-    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
-    if !status.is_success() {
-        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
-    }
-
-    Ok(Json(AgencyTrialStartResponse {
-        trial_active: true,
-        trial_ends_at: Some(trial_ends_at.to_rfc3339()),
-        display_plan_label: "Trial".to_string(),
-    }))
+    ))
 }
 
 pub async fn create_agency_irl_booking_addon_checkout(
