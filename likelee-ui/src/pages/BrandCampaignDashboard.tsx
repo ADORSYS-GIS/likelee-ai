@@ -2240,7 +2240,7 @@ export default function BrandCampaignDashboard({
                   Invite Agency
                 </>
               ) : (
-                "Upgrade to Pro"
+                "Upgrade Plan"
               )}
             </Button>
           </Card>
@@ -2278,7 +2278,7 @@ export default function BrandCampaignDashboard({
             </p>
             <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none">
               {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade to Basic"
+                ? "Upgrade Plan"
                 : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
                   ? "Seat limit reached"
                   : `Up to ${brandSeatLimitLabel} seats`}
@@ -2316,7 +2316,7 @@ export default function BrandCampaignDashboard({
               ) : (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
-                  {brandPlanTier === "pro" ? "Enable Add-On" : "Upgrade to Pro"}
+                  {brandPlanTier === "pro" ? "Unlock Addon" : "Upgrade Plan"}
                 </>
               )}
             </Button>

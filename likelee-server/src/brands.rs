@@ -164,9 +164,29 @@ pub async fn update(
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
+    // Resolve the effective brand ID - for team members this returns the organization's ID,
+    // not the team member's user ID. For new users without a membership, fall back to user.id.
+    let brand_id = match resolve_effective_brand_id(&state, &user).await {
+        Ok(id) => {
+            tracing::debug!(
+                user_id = %user.id,
+                brand_id = %id,
+                "Using resolved brand ID for profile update"
+            );
+            id
+        }
+        Err(_) => {
+            tracing::debug!(
+                user_id = %user.id,
+                "No membership found, using user ID for profile update (new user)"
+            );
+            user.id.clone()
+        }
+    };
+
     if let serde_json::Value::Object(ref mut map) = v {
-        // Include the user's id for upsert matching
-        map.insert("id".into(), json!(user.id));
+        // Include the effective brand ID for upsert matching
+        map.insert("id".into(), json!(brand_id));
         map.insert("onboarding_step".into(), json!("complete"));
 
         // For new profiles (OAuth signup), set default values
@@ -191,6 +211,7 @@ pub async fn update(
     // This supports both:
     // - OAuth users creating their profile for the first time
     // - Existing users updating their profile
+    // - Team members updating their organization's profile
     let resp = state
         .pg
         .from("brands")
@@ -210,7 +231,7 @@ pub async fn update(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &user.id).await;
+    let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &brand_id).await;
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
