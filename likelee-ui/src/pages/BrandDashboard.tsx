@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
+import { CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
@@ -917,11 +919,9 @@ export default function BrandDashboard() {
       });
       return;
     }
-    toast({
-      title: "Company seats coming soon",
-      description:
-        "The invite flow is not live yet, but your plan entitlement is now checked before a seat can be added.",
-    });
+    // Navigate to Settings → Team tab to manage team members
+    setActiveSettingsTab("team");
+    navigateToSection("settings", { replace: false });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -1144,7 +1144,6 @@ export default function BrandDashboard() {
   const canApproveDeliverables = hasPermission("approve_deliverables");
   const canViewDeliverables = hasPermission("view_deliverables");
 
-  const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
@@ -1256,6 +1255,22 @@ export default function BrandDashboard() {
       }
     }
   }, [location.search, location.state]);
+
+  // Handle URL parameters for opening settings and team tab
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+    const section = params.get("section");
+    const tab = params.get("tab");
+    
+    // Support both 'view=settings' and 'section=settings' for backward compatibility
+    if (view === "settings" || section === "settings") {
+      setActiveSection("settings");
+      if (tab === "team") {
+        setActiveSettingsTab("team");
+      }
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -9195,77 +9210,11 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
-                <Users className="w-6 h-6" /> Organization Members
-              </h3>
-              <Badge className="rounded-none bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3">
-                {brand.team_seats} / 5 Seats
-              </Badge>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              {[
-                {
-                  name: "John Smith",
-                  email: "john@urbanapparel.com",
-                  role: "Admin",
-                },
-                {
-                  name: "Sarah Jones",
-                  email: "sarah@urbanapparel.com",
-                  role: "PM",
-                },
-                {
-                  name: "Mike Chen",
-                  email: "mike@urbanapparel.com",
-                  role: "Reviewer",
-                },
-              ].map((member, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-5 bg-white border-2 border-gray-100 hover:border-gray-900 transition-colors rounded-none"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-10 h-10 rounded-none border border-gray-200">
-                      <AvatarFallback className="font-black text-xs bg-gray-100 uppercase">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-black text-gray-900 text-sm uppercase tracking-tight">
-                        {member.name}
-                      </p>
-                      <p className="text-xs font-bold text-gray-400">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-                      {member.role}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-none text-gray-400 hover:text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button className="w-full rounded-none bg-gray-950 hover:bg-gray-800 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[8px_8px_0px_rgba(31,41,55,0.2)]">
-              <Plus className="w-5 h-5 mr-3" />
-              Invite New Collaborator
-            </Button>
-          </Card>
+          <TeamManagementCard
+            organizationType="brand"
+            title="Team Management"
+            description="Manage members, roles, and invitations for your brand organization."
+          />
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6 mt-0">
@@ -9356,12 +9305,21 @@ export default function BrandDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12">
+            <Button 
+              onClick={() => {
+                // Open support email
+                window.location.href = CONTACT_EMAIL_MAILTO;
+              }}
+              className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+            >
               <HelpCircle className="w-4 h-4 mr-2" /> Live Support
             </Button>
             <Button
-              variant="outline"
-              className="rounded-none border-white/20 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+              onClick={() => {
+                // Navigate to book demo page
+                navigate(createBookDemoUrl("brand_dashboard_settings"));
+              }}
+              className="rounded-none bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12 border-2 border-purple-500"
             >
               <Calendar className="w-4 h-4 mr-2" /> Book a Demo
             </Button>

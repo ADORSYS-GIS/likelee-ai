@@ -358,11 +358,11 @@ export function TeamManagementCard({
 
   return (
     <>
-      <Card className="p-6 bg-white border border-gray-200">
+      <Card className={organizationType === "brand" ? "p-6 bg-white border-2 border-gray-900 rounded-none shadow-none" : "p-6 bg-white border border-gray-200"}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-            <p className="text-gray-600 mt-1">
+            <h3 className={organizationType === "brand" ? "text-xl font-black text-gray-900 uppercase tracking-tighter" : "text-xl font-bold text-gray-900"}>{title}</h3>
+            <p className={organizationType === "brand" ? "text-xs text-gray-500 font-bold uppercase tracking-widest mt-2" : "text-gray-600 mt-1"}>
               {description ||
                 `Manage members, roles, and invitations for ${context?.organization_name || "your team"}.`}
             </p>
@@ -370,7 +370,7 @@ export function TeamManagementCard({
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              className="border-2 border-gray-300"
+              className={organizationType === "brand" ? "rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white" : "border-2 border-gray-300"}
               onClick={() => setShowActivityModal(true)}
             >
               <History className="w-4 h-4 mr-2" />
@@ -396,10 +396,10 @@ export function TeamManagementCard({
           <div className="mt-6 space-y-6">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                <h4 className={organizationType === "brand" ? "text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]" : "text-sm font-bold text-gray-900 uppercase tracking-wide"}>
                   Active Members
                 </h4>
-                <Badge variant="secondary">
+                <Badge variant="secondary" className={organizationType === "brand" ? "rounded-none font-black uppercase tracking-widest text-[10px]" : ""}>
                   {(context?.members || []).length} Members
                 </Badge>
               </div>
@@ -413,17 +413,17 @@ export function TeamManagementCard({
                   return (
                     <div
                       key={member.user_id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                      className={organizationType === "brand" ? "flex items-center justify-between p-4 bg-gray-50 border-2 border-gray-200 rounded-none" : "flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-600" />
+                        <div className={organizationType === "brand" ? "w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center" : "w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"}>
+                          <User className={organizationType === "brand" ? "w-5 h-5 text-white" : "w-5 h-5 text-gray-600"} />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
+                          <p className={organizationType === "brand" ? "font-black text-gray-900 text-sm" : "font-semibold text-gray-900"}>
                             {member.email}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className={organizationType === "brand" ? "text-[10px] text-gray-500 font-bold uppercase tracking-widest" : "text-sm text-gray-600"}>
                             Added{" "}
                             {member.created_at
                               ? new Date(member.created_at).toLocaleDateString()
@@ -432,14 +432,14 @@ export function TeamManagementCard({
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
+                        <Badge className={organizationType === "brand" ? "bg-amber-100 text-amber-900 border-2 border-amber-300 rounded-none font-black uppercase tracking-widest text-[10px]" : "bg-blue-100 text-blue-700 border border-blue-300"}>
                           {formatTeamRoleLabel(member.role)}
                         </Badge>
                         {canEditRole ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-2 border-gray-300"
+                            className={organizationType === "brand" ? "rounded-none border-2 border-gray-900 hover:bg-gray-950 hover:text-white" : "border-2 border-gray-300"}
                             onClick={() => openRoleEditor(member)}
                           >
                             <Edit2 className="w-4 h-4" />
@@ -450,7 +450,7 @@ export function TeamManagementCard({
                   );
                 })}
                 {(context?.members || []).length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+                  <div className={organizationType === "brand" ? "rounded-none border-2 border-dashed border-gray-300 p-4 text-xs text-gray-500 font-bold uppercase tracking-widest" : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"}>
                     No team members found yet.
                   </div>
                 ) : null}
@@ -459,10 +459,10 @@ export function TeamManagementCard({
 
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                <h4 className={organizationType === "brand" ? "text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]" : "text-sm font-bold text-gray-900 uppercase tracking-wide"}>
                   Pending Invites
                 </h4>
-                <Badge variant="secondary">
+                <Badge variant="secondary" className={organizationType === "brand" ? "rounded-none font-black uppercase tracking-widest text-[10px]" : ""}>
                   {
                     (context?.invites || []).filter(
                       (invite) => invite.status === "pending",
@@ -477,18 +477,18 @@ export function TeamManagementCard({
                   .map((invite) => (
                     <div
                       key={invite.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                      className={organizationType === "brand" ? "flex items-center justify-between p-4 bg-gray-50 border-2 border-gray-200 rounded-none" : "flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"}
                     >
                       <div>
-                        <p className="font-semibold text-gray-900">
+                        <p className={organizationType === "brand" ? "font-black text-gray-900 text-sm" : "font-semibold text-gray-900"}>
                           {invite.email}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className={organizationType === "brand" ? "text-[10px] text-gray-500 font-bold uppercase tracking-widest" : "text-sm text-gray-600"}>
                           {formatTeamRoleLabel(invite.role)} · Expires{" "}
                           {new Date(invite.expires_at).toLocaleString()}
                         </p>
                       </div>
-                      <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
+                      <Badge className={organizationType === "brand" ? "bg-amber-100 text-amber-900 border-2 border-amber-300 rounded-none font-black uppercase tracking-widest text-[10px]" : "bg-amber-100 text-amber-700 border border-amber-300"}>
                         Pending
                       </Badge>
                     </div>
@@ -496,7 +496,7 @@ export function TeamManagementCard({
                 {(context?.invites || []).filter(
                   (invite) => invite.status === "pending",
                 ).length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+                  <div className={organizationType === "brand" ? "rounded-none border-2 border-dashed border-gray-300 p-4 text-xs text-gray-500 font-bold uppercase tracking-widest" : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"}>
                     No pending invites.
                   </div>
                 ) : null}
@@ -507,29 +507,29 @@ export function TeamManagementCard({
       </Card>
 
       <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className={organizationType === "brand" ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]" : "max-w-md rounded-2xl"}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">
+            <DialogTitle className={organizationType === "brand" ? "text-xl font-black text-gray-900 uppercase tracking-tighter" : "text-xl font-bold text-gray-900"}>
               Invite Team Member
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 font-medium">
-              Send an email invitation to join your team
+            <DialogDescription className={organizationType === "brand" ? "text-xs text-gray-500 font-bold uppercase tracking-widest" : "text-sm text-gray-500 font-medium"}>
+              {organizationType === "brand" ? "Add a new collaborator to your brand" : "Send an email invitation to join your team"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">
+              <Label className={organizationType === "brand" ? "text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block" : "text-sm font-bold text-gray-900"}>
                 Email Address
               </Label>
               <Input
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
                 placeholder="colleague@example.com"
-                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                className={organizationType === "brand" ? "rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold" : "h-11 bg-gray-50 border-gray-200 rounded-xl"}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-900">
+              <Label className={organizationType === "brand" ? "text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block" : "text-sm font-bold text-gray-900"}>
                 User Role
               </Label>
               <Select
@@ -538,7 +538,7 @@ export function TeamManagementCard({
                   setInviteRole(value as Exclude<TeamRoleValue, "owner">)
                 }
               >
-                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectTrigger className={organizationType === "brand" ? "rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold" : "h-11 bg-gray-50 border-gray-200 rounded-xl"}>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -550,8 +550,8 @@ export function TeamManagementCard({
                 </SelectContent>
               </Select>
             </div>
-            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+            <div className={organizationType === "brand" ? "p-4 bg-amber-50 border-2 border-amber-200 rounded-none" : "p-4 bg-indigo-50 border border-indigo-100 rounded-xl"}>
+              <p className={organizationType === "brand" ? "text-xs text-amber-900 font-bold leading-relaxed" : "text-xs text-indigo-700 font-medium leading-relaxed"}>
                 <span className="font-bold">Note:</span> The invited user will
                 receive an email with instructions to set up their account and
                 access the dashboard with the assigned role.
@@ -562,7 +562,7 @@ export function TeamManagementCard({
             <Button
               variant="ghost"
               onClick={() => setShowInviteModal(false)}
-              className="font-bold"
+              className={organizationType === "brand" ? "font-black uppercase tracking-widest rounded-none" : "font-bold"}
               disabled={submittingInvite}
             >
               Cancel
@@ -570,7 +570,7 @@ export function TeamManagementCard({
             <Button
               onClick={handleInvite}
               disabled={submittingInvite}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              className={organizationType === "brand" ? "rounded-none bg-[#F7B750] hover:bg-[#E6A640] text-white font-black uppercase tracking-widest px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none flex items-center gap-2" : "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"}
             >
               {submittingInvite ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

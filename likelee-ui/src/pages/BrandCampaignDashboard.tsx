@@ -566,11 +566,8 @@ export default function BrandCampaignDashboard({
       });
       return;
     }
-    toast({
-      title: "Company seats coming soon",
-      description:
-        "The invite flow is not live yet, but your plan entitlement is now checked before a seat can be added.",
-    });
+    // Navigate to Brand Dashboard Settings → Team tab to manage team members
+    navigate("/BrandDashboard?section=settings&tab=team");
   };
 
   const setBudgetPart = (part: "min" | "max", nextValue: string) => {
