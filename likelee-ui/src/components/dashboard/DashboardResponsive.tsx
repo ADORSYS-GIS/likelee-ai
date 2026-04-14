@@ -83,7 +83,7 @@ export function DashboardTabRail({
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-bold whitespace-nowrap transition-all duration-200",
               item.active
-                ? "bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-600/20"
+                ? "bg-indigo-50/70 text-indigo-600 shadow-sm ring-1 ring-indigo-600/20"
                 : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
             )}
           >

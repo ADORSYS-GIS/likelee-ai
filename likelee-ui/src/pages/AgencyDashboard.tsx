@@ -20688,7 +20688,7 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden bg-gray-50">
-          <DashboardPageShell className="max-w-none px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+          <DashboardPageShell className="max-w-none px-2 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
             {shouldShowTopSubTabRail ? (
               <DashboardTabRail
                 className="mb-4"

@@ -1335,7 +1335,7 @@ const BrandConnectionsView = () => {
             onClick={item.onClick}
             className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap ${
               item.active
-                ? "bg-indigo-50 text-indigo-700 shadow-sm"
+                ? "bg-indigo-50/70 text-indigo-700 shadow-sm ring-1 ring-indigo-700/10"
                 : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
             }`}
           >
@@ -1613,7 +1613,7 @@ const BrandConnectionsView = () => {
 
       {activeTab === "offers" && (
         <>
-          <Card className="p-6 border border-gray-200 rounded-xl">
+          <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -1668,7 +1668,7 @@ const BrandConnectionsView = () => {
                   return (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
                       {/* Fixed Header Style */}
-                      <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
+                      <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:py-6 border-b border-gray-200">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
@@ -1709,9 +1709,9 @@ const BrandConnectionsView = () => {
                         </div>
                       </div>
 
-                      <div className="p-6 md:p-8 space-y-8">
+                      <div className="p-4 sm:p-6 md:p-8 space-y-8">
                         {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
+                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-3 sm:p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
                               <TooltipProvider>
@@ -1810,7 +1810,7 @@ const BrandConnectionsView = () => {
                                 }
                                 return (
                                   <Button
-                                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-5 py-3 w-full sm:w-auto text-sm rounded-xl transition-all"
+                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold px-5 py-3 w-full sm:w-auto text-sm rounded-xl transition-all ring-1 ring-indigo-700/10"
                                     onClick={() => {
                                       navigate(
                                         "/AgencyDashboard?tab=packages",
@@ -1883,7 +1883,7 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
 
-                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                        <div className="rounded-xl border border-indigo-100 bg-white p-3 sm:p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-gray-900">
                               Assigned Talent
@@ -1972,10 +1972,10 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
 
-                        {/* Full brief — shown directly, no duplicate summary */}
+                        {/* Full brief — shown directly, no duplicate summary, full width of container */}
                         {offer?.brief_snapshot &&
                         typeof offer.brief_snapshot === "object" ? (
-                          <div className="-mx-4 sm:ml-0 sm:mr-0 lg:-mr-12 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                          <div className="-mx-4 sm:-mx-6 md:-mx-8 -mb-4 sm:-mb-6 md:-mb-8 border-t border-gray-200 bg-slate-50 overflow-hidden">
                             <CampaignBriefView
                               brief={offer.brief_snapshot}
                               brandName={String(
@@ -2240,7 +2240,7 @@ const BrandConnectionsView = () => {
                         </div>
 
                         {/* Brief & Scope body */}
-                        <div className="px-6 py-5 space-y-5">
+                        <div className="px-4 py-3 sm:px-6 sm:py-5 space-y-5">
                           <div className="flex items-center justify-between gap-4">
                             <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
                               Brief &amp; Scope
@@ -2389,7 +2389,7 @@ const BrandConnectionsView = () => {
       )}
 
       {activeTab === "contract_hub" && (
-        <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
+        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900">Contract Hub</h3>
             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
@@ -2490,13 +2490,13 @@ const BrandConnectionsView = () => {
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                           <TabsTrigger
                             value="submissions"
-                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
                           >
                             Submissions
                           </TabsTrigger>
                           <TabsTrigger
                             value="upload"
-                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
                           >
                             New Contract
                           </TabsTrigger>
@@ -2611,7 +2611,7 @@ const BrandConnectionsView = () => {
                                               key={cId}
                                               className="hover:bg-gray-50/50 transition-colors"
                                             >
-                                              <td className="px-6 py-4">
+                                              <td className="px-3 sm:px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                   <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                                                     <FileText className="w-5 h-5 text-blue-500" />
@@ -2633,7 +2633,7 @@ const BrandConnectionsView = () => {
                                                   </div>
                                                 </div>
                                               </td>
-                                              <td className="px-6 py-4 text-right">
+                                              <td className="px-3 sm:px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                   <Button
                                                     size="sm"
@@ -2789,7 +2789,7 @@ const BrandConnectionsView = () => {
                                                   {statusLabel}
                                                 </Badge>
                                               </td>
-                                              <td className="px-6 py-4 text-right">
+                                              <td className="px-3 sm:px-6 py-4 text-right">
                                                 {(() => {
                                                   const agencySignUrl =
                                                     String(
