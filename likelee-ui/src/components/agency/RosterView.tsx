@@ -150,7 +150,9 @@ const RosterView = ({
     );
 
   const formatRosterStatus = (value: string | null | undefined) => {
-    const normalized = String(value || "").trim().toLowerCase();
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase();
     if (!normalized) return "Unknown";
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
@@ -1262,7 +1264,7 @@ const RosterView = ({
               size="sm"
               className="gap-2 font-bold h-9 rounded-lg shrink-0"
             >
-              <Download className="w-4 h-4" /> 
+              <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export CSV</span>
             </Button>
             <Button
@@ -1271,7 +1273,7 @@ const RosterView = ({
               onClick={handleInviteTalentClick}
               className="border-gray-200 gap-2 font-bold h-9 rounded-lg shrink-0"
             >
-              <Mail className="w-4 h-4" /> 
+              <Mail className="w-4 h-4" />
               <span className="hidden sm:inline">Invite</span>
             </Button>
             <Button
@@ -1438,7 +1440,9 @@ const RosterView = ({
                             </div>
                             <div>
                               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                {agencyMode === "IRL" ? "Assets" : "30D Revenue"}
+                                {agencyMode === "IRL"
+                                  ? "Assets"
+                                  : "30D Revenue"}
                               </div>
                               <div className="mt-1 text-base font-bold text-slate-900">
                                 {agencyMode === "IRL"
@@ -1475,7 +1479,9 @@ const RosterView = ({
                                     Organization
                                   </div>
                                   <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
-                                    {talent.organization || talent.school || "—"}
+                                    {talent.organization ||
+                                      talent.school ||
+                                      "—"}
                                   </div>
                                 </div>
                                 <div>
@@ -1520,7 +1526,9 @@ const RosterView = ({
                                         variant="outline"
                                         className="flex items-center gap-1.5 rounded-md border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700"
                                       >
-                                        {Icon && <Icon className="h-3.5 w-3.5" />}
+                                        {Icon && (
+                                          <Icon className="h-3.5 w-3.5" />
+                                        )}
                                         {usage}
                                       </Badge>
                                     );

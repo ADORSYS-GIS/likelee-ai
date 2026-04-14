@@ -86,20 +86,36 @@ export function CampaignBriefView({
       {/* Header Grid: Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Voice</p>
-          <p className="text-sm font-semibold text-slate-900">{briefValue("voice")}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Voice
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {briefValue("voice")}
+          </p>
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tone</p>
-          <p className="text-sm font-semibold text-slate-900">{briefValue("tone")}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Tone
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {briefValue("tone")}
+          </p>
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Personality</p>
-          <p className="text-sm font-semibold text-slate-900">{briefValue("personality")}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Personality
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {briefValue("personality")}
+          </p>
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Duration</p>
-          <p className="text-sm font-semibold text-slate-900">{briefValue("overview_campaign_duration")}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Duration
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {briefValue("overview_campaign_duration")}
+          </p>
         </div>
       </div>
 
@@ -111,9 +127,11 @@ export function CampaignBriefView({
               <span className="w-1.5 h-6 bg-blue-500 rounded-full" />
               General Dialogue &amp; Voice Direction
             </h2>
-            
+
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Key Messages</h3>
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Key Messages
+              </h3>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 {briefLines("key_messages").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-slate-900">
@@ -130,42 +148,66 @@ export function CampaignBriefView({
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Script Guidelines</h3>
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Script Guidelines
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Opening (0-5s)</p>
-                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_opening")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Opening (0-5s)
+                  </p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {briefValue("script_opening")}
+                  </p>
                 </div>
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Middle (5-20s)</p>
-                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_middle")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Middle (5-20s)
+                  </p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {briefValue("script_middle")}
+                  </p>
                 </div>
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Closing (20-30s)</p>
-                  <p className="text-xs text-slate-700 leading-relaxed">{briefValue("script_closing")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Closing (20-30s)
+                  </p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {briefValue("script_closing")}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
-                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">✓ DO:</p>
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">
+                  ✓ DO:
+                </p>
                 {briefLines("dos").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-emerald-900">
                     {briefLines("dos").map((line, idx) => (
-                      <li key={`dos-${idx}`} className="text-sm">{line.replace(/^[•-]\s*/, "")}</li>
+                      <li key={`dos-${idx}`} className="text-sm">
+                        {line.replace(/^[•-]\s*/, "")}
+                      </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-emerald-600 italic">Not specified</p>
+                  <p className="text-sm text-emerald-600 italic">
+                    Not specified
+                  </p>
                 )}
               </div>
               <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl">
-                <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">✗ DON&apos;T:</p>
+                <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">
+                  ✗ DON&apos;T:
+                </p>
                 {briefLines("donts").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-red-900">
                     {briefLines("donts").map((line, idx) => (
-                      <li key={`donts-${idx}`} className="text-sm">{line.replace(/^[•-]\s*/, "")}</li>
+                      <li key={`donts-${idx}`} className="text-sm">
+                        {line.replace(/^[•-]\s*/, "")}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -180,16 +222,20 @@ export function CampaignBriefView({
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full" />
               Visual Requirements &amp; Style Guide
             </h2>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                <p className="text-xs font-bold text-slate-500 mb-1">Instagram Reels</p>
+                <p className="text-xs font-bold text-slate-500 mb-1">
+                  Instagram Reels
+                </p>
                 <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
                   {briefValue("deliverables_reels")}
                 </p>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                <p className="text-xs font-bold text-slate-500 mb-1">Hero Image</p>
+                <p className="text-xs font-bold text-slate-500 mb-1">
+                  Hero Image
+                </p>
                 <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
                   {briefValue("deliverables_hero_image")}
                 </p>
@@ -197,29 +243,49 @@ export function CampaignBriefView({
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Style &amp; Aesthetic</h3>
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Style &amp; Aesthetic
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Palette</p>
-                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_color_palette")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Palette
+                  </p>
+                  <p className="text-xs font-medium text-slate-700 truncate">
+                    {briefValue("visual_color_palette")}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Setting</p>
-                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_setting")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Setting
+                  </p>
+                  <p className="text-xs font-medium text-slate-700 truncate">
+                    {briefValue("visual_setting")}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Framing</p>
-                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_framing")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Framing
+                  </p>
+                  <p className="text-xs font-medium text-slate-700 truncate">
+                    {briefValue("visual_framing")}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Editing</p>
-                  <p className="text-xs font-medium text-slate-700 truncate">{briefValue("visual_editing")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Editing
+                  </p>
+                  <p className="text-xs font-medium text-slate-700 truncate">
+                    {briefValue("visual_editing")}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Reference Images</h3>
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Reference Images
+              </h3>
               {referenceImages.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {referenceImages.map((img: any, idx: number) => (
@@ -251,7 +317,9 @@ export function CampaignBriefView({
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Brand Assets (PDFs)</h3>
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Brand Assets (PDFs)
+              </h3>
               {brandAssets.length > 0 ? (
                 <div className="space-y-1.5 mt-2">
                   {brandAssets.map((asset: any, idx: number) => (
@@ -276,7 +344,9 @@ export function CampaignBriefView({
                   ))}
                 </div>
               ) : (
-                <p className="text-[11px] text-slate-400 italic">No assets provided.</p>
+                <p className="text-[11px] text-slate-400 italic">
+                  No assets provided.
+                </p>
               )}
             </div>
           </div>
@@ -289,52 +359,80 @@ export function CampaignBriefView({
               <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
               Scope & Details
             </h2>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Objective</p>
-                  <p className="text-xs font-medium text-slate-900">{briefValue("overview_objective")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                    Objective
+                  </p>
+                  <p className="text-xs font-medium text-slate-900">
+                    {briefValue("overview_objective")}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Target Audience</p>
-                  <p className="text-xs font-medium text-slate-900">{briefValue("overview_target_audience")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                    Target Audience
+                  </p>
+                  <p className="text-xs font-medium text-slate-900">
+                    {briefValue("overview_target_audience")}
+                  </p>
                 </div>
                 <div className="flex items-center justify-between gap-4 pt-1">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Budget</p>
-                    <p className="text-xs font-bold text-slate-900">{briefValue("budget_total")}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      Budget
+                    </p>
+                    <p className="text-xs font-bold text-slate-900">
+                      {briefValue("budget_total")}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Launch Date</p>
-                    <p className="text-xs font-bold text-slate-900">{briefValue("overview_launch_date")}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      Launch Date
+                    </p>
+                    <p className="text-xs font-bold text-slate-900">
+                      {briefValue("overview_launch_date")}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl space-y-2">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Revisions</p>
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                  Revisions
+                </p>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-amber-700">Included</span>
-                  <span className="font-bold text-amber-900">{briefValue("revision_included")}</span>
+                  <span className="font-bold text-amber-900">
+                    {briefValue("revision_included")}
+                  </span>
                 </div>
                 <div className="text-[10px] text-amber-600 leading-tight">
-                  <span className="font-semibold italic">Turnaround:</span> {briefValue("revision_turnaround")}
+                  <span className="font-semibold italic">Turnaround:</span>{" "}
+                  {briefValue("revision_turnaround")}
                 </div>
               </div>
 
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Approval Process</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Approval Process
+                </p>
                 {briefLines("approval_process").length > 0 ? (
                   <ol className="list-decimal pl-4 space-y-1.5">
                     {briefLines("approval_process").map((line, idx) => (
-                      <li key={`approval-${idx}`} className="text-[11px] text-slate-700 leading-tight font-medium">
+                      <li
+                        key={`approval-${idx}`}
+                        className="text-[11px] text-slate-700 leading-tight font-medium"
+                      >
                         {line.replace(/^[•-]?\s*\d*\s*/, "")}
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-[11px] text-slate-400 italic">Not specified</p>
+                  <p className="text-[11px] text-slate-400 italic">
+                    Not specified
+                  </p>
                 )}
               </div>
             </div>
@@ -354,7 +452,7 @@ export function CampaignBriefView({
 
       {lightboxUrl && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"
             onClick={closeLightbox}
           />

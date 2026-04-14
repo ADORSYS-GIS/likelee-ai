@@ -749,13 +749,17 @@ export default function SportsAgencyDashboard() {
                         </p>
                         <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <div className="text-xs text-gray-500">Followers</div>
+                            <div className="text-xs text-gray-500">
+                              Followers
+                            </div>
                             <div className="font-semibold text-gray-900">
                               {athlete.social_followers.toLocaleString()}
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-gray-500">30D earnings</div>
+                            <div className="text-xs text-gray-500">
+                              30D earnings
+                            </div>
                             <div className="font-semibold text-gray-900">
                               ${athlete.earnings_30d.toLocaleString()}
                             </div>
