@@ -1,0 +1,985 @@
+{
+  "talentAgencyLabel": "Talent / Modeling Agency",
+  "talentAgencySub": "Talent representation",
+  "sportsAgency": "Sports Agency",
+  "sportsAgencySub": "NIL & athlete representation",
+  "creators": "Creators",
+  "forCreators": "For Creators",
+  "forCreatorsMessage": "License your digital likeness, set your rates, and earn royalties automatically",
+  "forAiArtists": "For AI Artists",
+  "forAiArtistsMessage": "Build your portfolio and connect with studios for campaigns and projects",
+  "forCreatorsAndAthletes": "👤 For Creators & Athletes",
+  "forCreatorsAndAthletesMessage1": "License your digital likeness and earn passive income",
+  "forCreatorsAndAthletesMessage2": "Set your own rates and approval parameters",
+  "forCreatorsAndAthletesMessage3": "Track every usage with automated royalty payments",
+  "forCreatorsAndAthletesMessage4": "Full control over who uses your image and where",
+  "forAiArtistsAndFilmmakers": "🎨 For AI Artists & Filmmakers",
+  "forAiArtistsAndFilmmakersMessage1": "Build professional portfolio showcasing AI creative work",
+  "forAiArtistsAndFilmmakersMessage2": "Connect directly with brands and studios",
+  "forAiArtistsAndFilmmakersMessage3": "Access exclusive AI filmmaking opportunities",
+  "forAiArtistsAndFilmmakersMessage4": "Browse curated job board for AI creative roles",
+  "transformTalentTitle": "Don't Lose User Trust using Fake Avatars",
+  "transformTalentSubtitle": "Real creators bring genuine belief, and your audiences feel it instantly.",
+  "premiumTalentTitle": "Premium Talent with Zero Production Headaches",
+  "premiumTalentSubtitle": "Skip shoot day and access verified models from top agencies. All with premium results.",
+  "creatorsAndAthletesProfile": "Creators & Athletes",
+  "creatorsAndAthletesProfileMessage": "Earn recurring income from their likeness while keeping total control. One dashboard for all approvals and earnings.",
+  "talentAgenciesAndUnionsProfile": "Talent Agencies & Unions",
+  "talentAgenciesAndUnionsProfileMessage": "Scale NIL and digital-replica deals across entire rosters. Bulk onboarding, unified compliance tracking, instant payouts.",
+  "talentModelingAgency": "Talent / Modeling Agency",
+  "talentModelingAgencyMessage": "Represent actors, models, and influencers",
+  "sportsAgencyMessage": "Manage athletes and sports talent",
+  "licenseRealTalent": "License real athletes, influencers, and creator likenesses with Likelee.",
+  "faqVerifiedCreatorVsAiFilmmakerTitle": "What's the difference between a Verified Creator and an AI Filmmaker?",
+  "faqVerifiedCreatorVsAiFilmmakerDescription": "Verified Creators are real people who've licensed their likeness (influencers, athletes, actors, models). AI Filmmakers create content using AI tools (Sora, Runway, Pika, etc.). Both are available on Likelee.",
+  "verifiedCreatorLicensingMarketplace": "Verified Creator Licensing Marketplace",
+  "verifiedCreatorLicensingMarketplaceDescription": "Browse pre-verified creators already cleared for AI-powered commercial campaigns. License their likeness for AI content production. No hunting. No vetting. Everything's pre-cleared. Your sourcing goes from weeks to minutes.",
+  "sportsAgencyHowItWorksStep3Title": "Activate your Clone",
+  "sportsAgencyHowItWorksStep3Description": "Deploy your AI clone across platforms to engage with fans, create content, and secure brand deals.",
+  "sportsAgencyJoinWaitlist": "Join the Waitlist",
+  "sportsAgencyNILPlatform": "Sports Agency NIL Platform",
+  "sportsAgenciesAthleteReps": "Sports Agencies, Athlete Representatives",
+  "turnAthletesYearRoundEarners": "Turn Your Athletes Into\nYear-Round Earners",
+  "nilLicensingGrows": "NIL AI licensing that grows revenue no matter the season",
+  "traditionalEndorsementsPayOnce": "Traditional endorsements require constant deliverables. Likelee licensing pays monthly, forever. Your athletes earn recurring revenue from their name, image, and likeness while you manage contracts in one place and collect commission on every renewal.",
+  "endorsementDealsNotEnough": "Endorsement Deals Aren't Enough Anymore",
+  "endorsementDealsNotEnoughDescription": "Your athletes are looking for stable income beyond traditional sponsorships. Endorsement opportunities are unpredictable and one-time. Likelee creates additional revenue streams where athletes earn recurring money from brands using their likeness for marketing, social content, and digital campaigns without requiring new contracts each time.",
+  "twoNILRevenueStreams": "Two NIL Revenue Streams",
+  "fixedTermNILLicensing": "Fixed-Term NIL Licensing",
+  "fixedTermNILLicensingDescription1": "Brand licenses athlete's image for a specific campaign duration like 6 months, pays <1>$5K upfront</1>, and can renew the agreement when it expires.",
+  "fixedTermNILLicensingDescription2": "Your athlete earns $5K per renewal cycle. Over three years, that's <1>$15K from the same likeness</1> versus a single $5K traditional endorsement deal.",
+  "recurringMonthlyNIL": "Recurring Monthly NIL",
+  "recurringMonthlyNILDescription1": "Brand uses athlete's image on their website or in ongoing marketing and pays <1>$1K every month</1> while those assets remain active.",
+  "recurringMonthlyNILDescription2": "Your athlete controls the arrangement and can revoke access anytime they want. Over three years, that same athlete earns <1>$36K versus a one-time $5K endorsement payment</1>.",
+  "theMathSports": "The Math",
+  "sportsDrinkEndorsement": "Sports drink endorsement (1 year)",
+  "sportsDrinkEndorsementBefore": "$5K",
+  "sportsDrinkEndorsementAfter": "$5K + renewals",
+  "recurringBrandPartnership": "Recurring brand partnership (ongoing)",
+  "recurringBrandPartnershipBefore": "$5K",
+  "recurringBrandPartnershipAfter": "$1K/mo = $36K/3yrs",
+  "apparelBrandNILLicensing": "Apparel brand NIL licensing (6 mo)",
+  "apparelBrandNILLicensingBefore": "$3K",
+  "apparelBrandNILLicensingAfter": "$5K + renewals",
+  "sameAthleteMultipleStreams": "Same athlete. Multiple income streams.",
+  "howItWorksSports": "How It Works",
+  "howItWorksSportsStep1Title": "Roster Integration",
+  "howItWorksSportsStep1": "Upload athlete profiles with verified identity documentation. Athletes receive dashboard access to monitor licensing activity and revenue tracking.",
+  "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",
+  "howItWorksSportsStep2": "Brands (on or off-platform) access your verified athlete roster and submit licensing proposals specifying campaign scope, geographic territories, usage duration, and compensation terms.",
+  "howItWorksSportsStep3Title": "Agency Review & Contract Execution",
+  "howItWorksSportsStep3": "Review incoming requests against your pricing structure and athlete availability. Approve terms, finalize compensation amounts, and execute agreements.",
+  "howItWorksSportsStep4Title": "Revenue Distribution",
+  "howItWorksSportsStep4": "Funds release to your agency account following a 48-hour dispute window. You control revenue splits with athletes according to your existing representation agreements. All transactions generate compliance documentation automatically.",
+  "diversifiedAthleteIncome": "Diversified Athlete Income",
+  "diversifiedAthleteIncomeDescription1": "Traditional endorsements are volatile and unpredictable. NIL licensing creates stable monthly income that compounds over time.",
+  "diversifiedAthleteIncomeDescription2": "Year one brings in $60K from athlete licensing. Year two you're at $180K. Year three breaks $360K. Same roster. Same team. No additional negotiation burden.",
+  "athletesStayProtected": "Athletes Stay Because They're Protected",
+  "athletesStayProtectedDescription": "Recurring NIL income replaces the uncertainty of endorsement deals, so your athletes don't chase other representation or feel financially vulnerable. They know they're earning predictable money with you while you manage every licensing agreement legally.",
+  "verifiedAthleteAccess": "Verified Athlete Access",
+  "confirmedNILOwnership": "Confirmed NIL ownership (athlete controls their likeness)",
+  "exploreAthleteMarketplace": "Explore Athlete Marketplace",
+  "talentAgency": {
+    "hero": {
+      "title": "Your Talent Could Earn 10x More",
+      "subtitle": "Turn one-time shoots into recurring revenue",
+      "description": "Traditional bookings pay $1.5K once and you're done. Likelee licensing pays monthly, forever, and your roster earns consistently.",
+      "cta": "Book Demo"
+    },
+    "bookingsDropping": {
+      "title": "Bookings are dropping, licensing is rising.",
+      "description": "Brands are shifting budgets toward AI experiments, but they still need real verified talent for authentic campaigns. Likelee creates recurring income streams for your talent while booking frequency fluctuates. You earn recurring commission every month they stay licensed."
+    },
+    "twoWays": {
+      "title": "Two Ways to Earn",
+      "recurring": {
+        "title": "Recurring Monthly Licensing",
+        "description": "Brand uses your talent's likeness on their website indefinitely and pays",
+        "highlight": "$400 every month",
+        "suffix": "while those photos remain live."
+      },
+      "fixed": {
+        "title": "Fixed-Term Licensing",
+        "description": "Brand licenses your talent's face for a specific campaign duration like 6 months, pays",
+        "highlight": "$2.5K upfront",
+        "suffix": ", and renews at the end of the term.",
+        "example": "Your talent earns $2.5K per renewal cycle. Over three years, that's",
+        "exampleHighlight": "$7.5K from the same talent",
+        "exampleSuffix": "versus $1.5K with traditional booking."
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": "Add your talent to Likelee so they can review licensing requests and watch their earnings accumulate in real time.",
+      "step2": "Brands discover and request licenses by submitting their proposed use, territory, duration, and payment amount directly through the platform.",
+      "step3": "You review and approve terms, set the final payment amount, and the brand pays into escrow so the transaction is protected.",
+      "step4": "Money releases after 48 hours of no disputes straight to your agency account, where you decide how to split earnings with your talent."
+    },
+    "whyAgenciesWin": {
+      "title": "Why Agencies Win",
+      "revenue": {
+        "title": "Recurring Revenue That Scales",
+        "description": "Year one brings in $50K from licensing. Year two you're at $150K. Year three breaks $300K. You're using the same team, the same talent roster, and conducting zero additional shoots to reach that growth."
+      },
+      "retention": {
+        "title": "Talent Stays Because They Feel Secure",
+        "description": "Licensing income replaces the volatility of booking cycles, so your talent doesn't panic when bookings slow down or jump to competing agencies. They know they're earning predictable money with you."
+      },
+      "protection": {
+        "title": "Legal Protection Built In",
+        "description": "Every license is verified and tracked with smart contracts that spell out exactly what the brand can do, for how long, and in which regions. Everything aligns with SAG-AFTRA standards and GDPR compliance so you're never exposing your talent legally."
+      }
+    },
+    "cta": {
+      "title": "Adapt Now or Shrink Later",
+      "description": "The agencies thriving right now are the ones that own both the traditional booking pipeline and the emerging AI landscape simultaneously. Likelee gives you the infrastructure to build and manage both at scale, turning your existing roster into a recurring revenue engine.",
+      "bookDemo": "Book a Demo",
+      "howItWorks": "See How It Works"
+    }
+  },
+  "faces.featuredCreator.title": "Featured Creator",
+  "faces.featuredCreator.royaltiesEarned": "Royalties Earned",
+  "faces.featuredCreator.royaltiesDescription": "From licensing to 5 brands",
+  "faces.featuredCreator.usageRequests": "Usage Requests",
+  "faces.featuredCreator.controlSettings": "Control Settings",
+  "faces.featuredCreator.allowCommercialUse": "Allow Commercial Use",
+  "faces.featuredCreator.allowFilmUse": "Allow Film Use",
+  "faces.featuredCreator.viewUsageReportButton": "View Usage Report",
+  "faces.featuredCreator.updateSettingsButton": "Update Settings",
+  "faces.digitalTalentOwner.title": "From Creator → Digital Talent Owner",
+  "faces.digitalTalentOwner.subtitle": "You've already built your image — now make it work for you.",
+  "faces.digitalTalentOwner.mainContent": "Licensing your likeness isn't selling out; it's scaling up. While you're filming your next project, your digital twin can be earning in ten more.",
+  "faces.digitalTalentOwner.comparison.title": "Traditional Model vs. Likelee Likeness Model",
+  "faces.digitalTalentOwner.comparison.traditionalPath": "Traditional Path",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription1": "You perform or shoot manually",
+  "faces.digitalTalentOwner.comparison.likeleeModel": "Likelee Model",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription1": "You scale automatically",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription2": "You get paid once per project",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription2": "You earn monthly retainers as long as brands use your likeness",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription3": "You often lose IP",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription3": "You retain IP",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription4": "You can't reuse or repurpose",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
+  "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
+  "creatorDashboard": {
+    "myLikeness": "My Likeness",
+    "activeCampaigns": "Active Campaigns",
+    "licensesAndContracts": "Licenses & Contracts",
+    "earningsDashboard": "Earnings Dashboard",
+    "settings": {
+      "myRules": "My Rules",
+      "profileSettings": "Profile Settings"
+    },
+    "publicProfile": {
+      "title": "Public Profile Preview",
+      "subtitle": "This is how brands see your profile",
+      "viewCard": "View Card",
+      "hideCard": "Hide Card",
+      "editProfile": "Edit Profile",
+      "verifiedUser": "Verified User",
+      "verifiedCreator": "Verified Creator",
+      "kycVerified": "KYC Verified",
+      "verifyBannerTitle": "Verify your account",
+      "verifyBannerDesc": "Complete identity verification to become visible to brands.",
+      "verifyBannerCta": "Verify now",
+      "verifyBannerPending": "Verification pending",
+      "hireCreator": "Hire Creator",
+      "followers": "Followers",
+      "activeCampaigns": "Active Campaigns",
+      "completedProjects": "Completed Projects",
+      "voiceProfiles": "Voice Profiles",
+      "openToWork": "Open to work",
+      "industries": "Industries",
+      "licensingRate": "Licensing Rate",
+      "baseRateDescription": "Your base monthly licensing rate",
+      "openToNegotiations": "Open to negotiations",
+      "perWeek": "/mo",
+      "portfolio": "Portfolio",
+      "previewNote": "This is a preview of what brands will see. Update your profile details in Settings.",
+      "engagement": "Engagement",
+      "turnaround": "Turnaround",
+      "from": "From",
+      "preview": "Preview",
+      "profile": "Profile"
+    },
+    "profileSettings": "Profile Settings",
+    "myRules": "My Rules",
+    "completeness": {
+      "profileCompleteness": "Profile Completeness: {{percentage}}%",
+      "missingSections": "You're missing {{count}} sections"
+    },
+    "settingsView": {
+      "title": "Settings",
+      "subtitle": "Manage your profile and preferences",
+      "tabs": {
+        "profile": "Profile Settings",
+        "rules": "My Rules"
+      },
+      "profile": {
+        "photoTitle": "Profile Photo",
+        "placeholders": {
+          "fullName": "Your full name",
+          "bio": "Tell us about yourself...",
+          "city": "City",
+          "state": "State",
+          "instagram": "@yourhandle",
+          "youtube": "@yourhandle",
+          "tiktok": "@yourhandle",
+          "portfolio": "https://yourportfolio.com",
+          "website": "https://yourwebsite.com",
+          "linkedin": "https://linkedin.com/in/yourprofile"
+        },
+        "uploadText": "Upload a professional headshot",
+        "uploadHint": "JPG or PNG, max 10MB",
+        "basicInfo": "Basic Information",
+        "name": "Name",
+        "email": "Email",
+        "location": "Location",
+        "bio": "Bio",
+        "saveProfile": "Save Profile",
+        "socialMedia": "Social Media",
+        "instagram": "Instagram Handle",
+        "tiktok": "TikTok Handle",
+        "portfolio": "Portfolio Link",
+        "saveSocial": "Save Social Links",
+        "visibility": "Visibility Settings",
+        "visibleToBrands": "Visible to Brands",
+        "visibleToBrandsDesc": "Allow brands to discover and contact you",
+        "enableLicensing": "Enable Licensing",
+        "enableLicensingDesc": "Accept licensing requests from brands",
+        "emailNotifications": "Email Notifications",
+        "emailNotificationsDesc": "Receive updates about campaigns and approvals"
+      },
+      "rules": {
+        "title": "My Rules",
+        "subtitle": "Set your licensing preferences and rates",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "save": "Save",
+        "contentOpenTo": "Content I'm Open To",
+        "editRate": "Edit Rate",
+        "industries": "Industries I Work With",
+        "notComfortableWith": "Content I'm NOT Comfortable With",
+        "noRestrictions": "No restrictions set",
+        "conflictingCampaigns": "Conflicting Campaigns (Brand Exclusivity)",
+        "conflictingCampaignsDesc": "Brands you won't work with simultaneously",
+        "noBrandExclusivity": "No brand exclusivity set",
+        "initialLicensingRate": "Initial Licensing Rate",
+        "baseRateDesc": "This is your base monthly rate for standard social media licensing",
+        "month": "Month",
+        "acceptNegotiations": "Accept Negotiations",
+        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
+        "negotiationEnabled": "Negotiation enabled!",
+        "negotiationDisabled": "Negotiation disabled!"
+      }
+    },
+    "referenceImageLibrary": {
+      "title": "REFERENCE IMAGE LIBRARY",
+      "subtitle": "Brands use these to match your appearance across different contexts",
+      "completenessFilled": "Completeness: {{filled}}/{{total}} sections filled",
+      "sectionsNeeded": "{{count}} sections needed for \"Complete Profile\""
+    },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Complete profiles earn 15% more.",
+        "text": "Brands pay premium rates for creators with full reference libraries."
+      },
+      "howThisWorks": {
+        "title": "How This Works:",
+        "text": "Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "qualityStandards": {
+        "title": "Quality Standards:",
+        "text": "High-resolution (minimum 1080x1080), clear lighting, face/body clearly visible, no heavy filters, professional quality preferred."
+      },
+      "imageActions": {
+        "view": "View",
+        "replace": "Replace",
+        "delete": "Delete",
+        "upload": "Upload",
+        "uploadImage": "Upload Image"
+      },
+      "imageStatus": {
+        "uploaded": "UPLOADED",
+        "missing": "MISSING",
+        "bestFor": "Best For:"
+      }
+    },
+    "usageGuidelines": {
+      "title": "USAGE GUIDELINES",
+      "subtitle": "Tell brands what you're comfortable with",
+      "comfortableWith": "Comfortable With:",
+      "notComfortableWith": "Not Comfortable With:",
+      "editPreferences": "Edit Preferences"
+    },
+    "verificationStatus": {
+      "title": "Verification & Status",
+      "identityVerification": "Identity Verification",
+      "likenessRights": "Likeness Rights",
+      "confirmed": "Confirmed",
+      "notStarted": "Not Started",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "viewVerification": "View Verification Details",
+      "updateRights": "Update Rights Agreement",
+      "completeVerification": "Complete Verification",
+      "refreshStatus": "Refresh Status"
+    },
+    "contracts": {
+      "title": "Licenses & Contracts",
+      "subtitle": "Manage your active agreements and rights usage",
+      "welcome": {
+        "title": "Welcome!",
+        "message": "Manage your active contracts here. Pause, revoke, or renew anytime."
+      },
+      "activeTab": "Active ({{count}})",
+      "expiredTab": "Expired ({{count}})",
+      "status": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon",
+        "expired": "Expired"
+      },
+      "yourMonthlyFee": "Your Monthly Fee",
+      "earnedToDate": "Earned to Date",
+      "daysRemainingLabel": "Days Remaining",
+      "expiringIn": "Expiring in {{count}} days",
+      "renewLicensePrompt": "- renew license?",
+      "viewDetails": "View Details",
+      "renew": "Renew",
+      "noExpiredContracts": "No Expired Contracts",
+      "completedContractsWillAppearHere": "Completed contracts will appear here",
+      "backToContracts": "Back to Contracts",
+      "whatYoureEarning": "What You're Earning",
+      "monthlyPayment": "Monthly Payment",
+      "totalEarnedSoFar": "Total Earned So Far",
+      "paymentStatus": "Payment Status",
+      "paid": "PAID",
+      "amountReceived": "${{amount}} received this month",
+      "yourTimeline": "Your Timeline",
+      "started": "Started",
+      "today": "Today",
+      "expires": "Expires",
+      "daysRemaining": "{{count}} days remaining in contract",
+      "autoRenewal": {
+        "title": "Auto-Renewal Active:",
+        "message": "This contract will automatically renew for another term unless cancelled."
+      },
+      "howLikenessIsUsed": "How Your Likeness Is Being Used",
+      "whatTheyreUsing": "What They're Using",
+      "whereTheyCanUseIt": "Where They Can Use It",
+      "territory": "Territory:",
+      "channels": "Channels:",
+      "whatTheyCantDo": "What They CAN'T Do",
+      "revisions": "Revisions",
+      "roundsIncluded": "{{count}} rounds included",
+      "manageLicense": "Manage License",
+      "pauseLicense": "Pause License",
+      "revokeLicense": "Revoke License",
+      "messageBrand": "Message Brand",
+      "viewFullLegalContract": "View Full Legal Contract",
+      "modals": {
+        "pause": {
+          "title": "Pause This License?",
+          "warningTitle": "⚠️ IMPORTANT PAYMENT WARNING",
+          "warningDescription": "If you pause NOW (mid-month):",
+          "warningBullets": {
+            "noPayment": "You will NOT receive payment for {{month}}",
+            "earnedSoFar": "Even though you've earned ${{amount}} so far this month",
+            "forfeited": "That money will be forfeited"
+          },
+          "option1": {
+            "title": "OPTION 1: Pause Immediately",
+            "effective": "Effective:",
+            "effectiveToday": "Today",
+            "thisMonthPayment": "This Month's Payment:",
+            "forfeited": "✗ FORFEITED (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this if you want to stop immediately and are okay losing this month's partial payment."
+          },
+          "option2": {
+            "title": "OPTION 2: Pause Next Month",
+            "recommended": "Recommended",
+            "effective": "Effective:",
+            "thisMonthPayment": "This Month's Payment:",
+            "willBePaid": "✓ YOU'LL GET PAID (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this to keep earning through the end of this month, then pause starting next month."
+          },
+          "cancel": "Cancel - Don't Pause"
+        },
+        "revoke": {
+          "title": "Revoke This License?",
+          "whatHappens": "What happens when you revoke:",
+          "bullets": {
+            "endPermanently": "You're requesting to END this license permanently",
+            "noticePeriod": "30-day notice period begins (they keep rights for 30 more days)",
+            "takedown": "After 30 days, they must take down all content",
+            "earningsStop": "Your earnings STOP after the 30-day period ends",
+            "cannotReactivate": "The license cannot be reactivated"
+          },
+          "timeline": {
+            "title": "Revocation Timeline",
+            "noticeStarts": "Notice Starts",
+            "finalTakedown": "Final Takedown"
+          },
+          "days1to30": "Days 1-30: {{brand}} can still use your likeness (final payments due)",
+          "day30": "Day 30: All content must be taken down",
+          "finalPayment": "Your Final Payment: ${{amount}} on {{date}}",
+          "reasonLabel": "Reason for revoking (optional):",
+          "reasonPlaceholder": "e.g., I don't want to work with this brand anymore",
+          "cancel": "Cancel",
+          "confirm": "Yes, Revoke License"
+        }
+      }
+    },
+    "archive": {
+      "title": "Campaign Archive",
+      "subtitle": "View your completed campaigns and manage portfolio visibility",
+      "completedCount": "{{count}} Completed",
+      "welcome": {
+        "title": "Welcome to your Campaign Archive!",
+        "message": "This is an example of what your completed campaigns will look like. You don't have any archived campaigns yet — but when you do, they'll appear here just like this!"
+      },
+      "completedOn": "Completed {{date}}",
+      "status": {
+        "completed": "Completed"
+      },
+      "duration": "Duration:",
+      "monthlyRate": "Monthly Rate:",
+      "totalEarned": "Total Earned:",
+      "regions": "Regions:",
+      "showOnPortfolio": "Show on Portfolio",
+      "visibleOnPortfolio": "Visible to brands viewing your profile",
+      "hiddenFromPortfolio": "Hidden from public portfolio",
+      "viewDetails": "View Details"
+    },
+    "approvals": {
+      "backToQueue": "Back to Queue",
+      "contractReviewTitle": "{{brand}} - Contract Review",
+      "contractReviewSubtitle": "Review terms before approving",
+      "whatYouWillEarn": "What You'll Earn",
+      "yourMonthlyPayment": "Your Monthly Payment:",
+      "ifYouKeepThisFor": "If you keep this for {{term}}:",
+      "totalEstimatedEarnings": "Total estimated earnings",
+      "contractTerms": "Contract Terms",
+      "duration": "Duration:",
+      "territory": "Territory:",
+      "usageType": "Usage Type:",
+      "industries": "Industries:",
+      "yourRightsAndProtections": "Your Rights & Protections",
+      "canPause": "You can pause this license anytime (temporarily stop usage)",
+      "canRevoke": "You can revoke with 30 days notice (permanently end)",
+      "licenseExpires": "License expires on a specific date (not forever)",
+      "paymentProtected": "Payment protected in escrow until brand approves deliverables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Perpetual Use Warning:",
+        "message": "This brand wants to use your likeness forever. You should negotiate for time-limited terms (6 months, 1 year) instead."
+      },
+      "decline": "Decline",
+      "counterOffer": "Counter Offer",
+      "acceptAndSign": "Accept & Sign",
+      "title": "Approval Queue",
+      "subtitle": "Review and approve licensing requests",
+      "pendingCount": "{{count}} Pending",
+      "welcome": {
+        "title": "Welcome to your Approval Queue!",
+        "message": "This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!"
+      },
+      "requestedOn": "Requested {{date}}",
+      "perpetualRequest": "Perpetual Request",
+      "proposedRate": "Proposed Rate:",
+      "termLength": "Term Length:",
+      "estimatedMonthly": "Estimated Monthly:",
+      "regions": "Regions:",
+      "warning": {
+        "title": "Warning:",
+        "message": "This is a perpetual-use request. You would give up long-term control of your likeness for this campaign. Consider negotiating for time-limited terms instead."
+      },
+      "viewContract": "View Contract",
+      "labels": {
+        "industries": "Industries:",
+        "regions": "Regions:",
+        "estimatedMonthly": "Estimated Monthly:",
+        "termLength": "Term Length:",
+        "proposedRate": "Proposed Rate:",
+        "requestedOn": "Requested {{date}}",
+        "pricePerMonth": "${{price}}/month",
+        "months": "{{count}} months"
+      },
+      "actions": {
+        "viewContract": "View Contract",
+        "decline": "Decline",
+        "counterOffer": "Counter Offer",
+        "acceptAndSign": "Accept & Sign",
+        "backToQueue": "Back to Queue"
+      },
+      "contractReview": {
+        "title": "Review Contract from {{brand}}",
+        "subtitle": "Carefully review all terms below before accepting."
+      }
+    },
+    "campaigns": {
+      "title": "Active Campaigns",
+      "subtitle": "Track and manage your licensing agreements",
+      "activeCount": "{{count}} Active",
+      "welcome": {
+        "title": "Welcome to your Active Campaigns!",
+        "message": "This is an example of what your campaigns will look like. You don't have any active campaigns yet — but when brands start working with you, they'll appear here!"
+      },
+      "table": {
+        "brand": "Brand",
+        "usageType": "Usage Type",
+        "rate": "Rate",
+        "activeUntil": "Active Until",
+        "status": "Status",
+        "thisMonth": "This Month",
+        "actions": "Actions"
+      },
+      "autoRenew": "Auto-Renew",
+      "statusValues": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon"
+      },
+      "revoke": "Revoke",
+      "rateLabel": "Rate:",
+      "activeUntilLabel": "Active Until:",
+      "statusLabel": "Status:",
+      "thisMonthLabel": "This Month:",
+      "impressionsLabel": "Impressions/Week:",
+      "pause": "Pause",
+      "viewDetails": "View Details",
+      "status": {
+        "active": "Active",
+        "expiringSoon": "Expiring Soon"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "revoke": "Revoke",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Auto-Renew",
+        "monthlyRate": "Monthly Rate:",
+        "activeUntil": "Active Until:",
+        "regions": "Regions:",
+        "weeklyImpressions": "Weekly Impressions:",
+        "impressionsPerWeek": "{{count}} impressions/week"
+      },
+      "consent": {
+        "title": "Your consent required for all uses.",
+        "message": "{{count}} active campaigns, all time-limited, all approved by you. You can pause/revoke anytime."
+      }
+    },
+    "earnings": {
+      "title": "Earnings Dashboard",
+      "subtitle": "Track your revenue and payments",
+      "readyTitle": "Ready to Cash Out?",
+      "readyMessage": "Connect your payout method to withdraw your earnings. It only takes a few minutes to get set up.",
+      "announcement": {
+        "title": "New: Flexible Cash Out!",
+        "message": "You can now withdraw your earnings via Stripe Connect. PayPal and Wise coming soon!"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total Earned (YTD)",
+        "willUpdate": "Updates after each payout",
+        "thisMonthRecurring": "This Month (Recurring)",
+        "waitingForCampaigns": "Waiting for active campaigns",
+        "projectedNextMonth": "Projected Next Month",
+        "willCalculate": "Will calculate based on active licenses",
+        "nextPayment": "Next Payment",
+        "toBeDetermined": "TBD",
+        "noActiveContracts": "No active contracts yet"
+      },
+      "actions": {
+        "cashOut": "Cash Out",
+        "loading": "Processing...",
+        "downloadTax": "Download Tax Documents (PDF)"
+      },
+      "charts": {
+        "revenueTrend": "Revenue Trend (Last 6 Months)",
+        "revenuePlaceholder": "Your revenue trend will appear here",
+        "activePlaceholder": "Once you have active campaigns",
+        "industryBreakdown": "Earnings by Industry",
+        "industryPlaceholder": "Your industry breakdown will appear here"
+      },
+      "comparison": {
+        "title": "This is what your earnings could look like",
+        "subtitle": "See how Likelee's recurring model compares to traditional one-time payments",
+        "traditionalModel": "Traditional Model:",
+        "traditionalDesc": "One-time payment per campaign",
+        "likeleeModel": "Likelee Model:",
+        "likeleeAmount": "$2,500+/month",
+        "likeleeDesc": "Per active license • Recurring revenue"
+      },
+      "campaigns": {
+        "title": "Earnings by Campaign",
+        "placeholderTitle": "Your campaigns will appear here",
+        "placeholderMessage": "Once you have active licenses generating revenue",
+        "thisMonth": "this month"
+      },
+      "history": {
+        "title": "Payment History",
+        "placeholderTitle": "Your payment history will appear here",
+        "placeholderMessage": "Once you receive your first payout"
+      }
+    },
+    "voice": {
+      "title": "Voice & Recordings",
+      "subtitle": "Build your voice library for different emotions and tones",
+      "voiceBadge": "Voice",
+      "voiceBadgePlural": "Voices",
+      "recordingModal": {
+        "title": "Record {{emotion}} Voice Sample",
+        "ready": "Ready to Record?",
+        "instruction": "The script will scroll slowly. Speak naturally and expressively.",
+        "start": "Start Recording",
+        "stop": "Stop Recording"
+      },
+      "deleteConfirmation": {
+        "title": "Delete Recording?",
+        "description": "This action cannot be undone.",
+        "action": "Delete"
+      },
+      "emotionNames": {
+        "happy": "Happy",
+        "emotional": "Emotional",
+        "excited": "Excited",
+        "mellow": "Mellow",
+        "relaxed": "Relaxed",
+        "angry": "Angry"
+      },
+      "overview": {
+        "title": "Voice Profile Overview",
+        "totalRecordings": "Total Recordings",
+        "elevenLabsProfiles": "ElevenLabs Profiles",
+        "totalUsage": "Total Usage"
+      },
+      "record": {
+        "title": "Record New Voice Sample",
+        "subtitle": "Record samples with different emotions to create a versatile voice profile",
+        "duration": "~60 seconds",
+        "recorded": "Recorded"
+      },
+      "library": {
+        "title": "Voice Library",
+        "used": "Used {{count}} times",
+        "elevenLabsReady": "ElevenLabs Ready",
+        "reRecord": "Re-record",
+        "creatingProfile": "Creating Voice Profile...",
+        "createProfile": "Create Voice Profile with ElevenLabs"
+      },
+      "tips": {
+        "title": "Voice Training Tips:",
+        "message": "Speak clearly, avoid background noise, record in a quiet room, and maintain consistent volume throughout the recording."
+      }
+    },
+    "dashboard": {
+      "totalMonthlyRevenue": "Total Monthly Revenue",
+      "revenueInfo": "Current recurring monthly income",
+      "activeCampaigns": "Active Campaigns",
+      "activeCampaignsInfo": "Generating revenue right now",
+      "pendingApprovals": "Pending Approvals",
+      "pendingApprovalsInfo": "Campaigns waiting for your review",
+      "annualRunRate": "Annual Run Rate",
+      "annualRunRateInfo": "Projected yearly earnings",
+      "quickActions": "Quick Actions",
+      "priority": "PRIORITY",
+      "completeProfile": "Complete Your Profile",
+      "completeProfileInfo": "You're missing X sections. Complete them to get verified.",
+      "uploadVoiceTone": "Upload Voice Tone",
+      "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
+      "recentActivity": "Recent Activity",
+      "previewExamples": {
+        "title": "Preview Examples:",
+        "message": "These are example campaigns to show you what your dashboard will look like."
+      },
+      "active": "ACTIVE",
+      "noCampaigns": "No Active Campaigns",
+      "noCampaignsInfo": "Complete your profile to start getting offers!",
+      "profileStatus": "Profile Status",
+      "completeToGetDiscovered": "Complete to get discovered",
+      "referenceImages": "Reference Images",
+      "voiceRecordings": "Voice Recordings",
+      "missing": "MISSING"
+    },
+    "content": {
+      "title": "Content",
+      "subtitle": "Track content created with your likeness",
+      "welcome": {
+        "title": "Welcome to your Content page!",
+        "message": "This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+      },
+      "tabs": {
+        "brandContent": "Brand Content",
+        "detections": "Detections"
+      },
+      "brandContent": {
+        "info": "This feed shows all authorized content that brands have published using your likeness.",
+        "views": "Views",
+        "engagement": "Engagement",
+        "published": "Published {{date}}",
+        "noContent": "No brand content found."
+      },
+      "detections": {
+        "info": "Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+        "needsReview": "Needs Review",
+        "takedownRequested": "Takedown Requested",
+        "resolved": "Resolved",
+        "detected": "Detected",
+        "matchConfidence": "Match Confidence",
+        "viewOriginal": "View Original Content",
+        "requestTakedown": "Request Takedown",
+        "dismiss": "Dismiss (It's Authorized)",
+        "takedownSent": "Takedown request sent. Platforms typically respond within 24-72 hours.",
+        "contentRemoved": "Content has been removed or verified as authorized.",
+        "noDetections": "No detections found.",
+        "howItWorks": {
+          "title": "How Detection Works",
+          "scanning": {
+            "title": "Continuous Scanning",
+            "desc": "We scan major platforms for facial matches"
+          },
+          "ai": {
+            "title": "AI Matching",
+            "desc": "Advanced AI compares against your likeness"
+          },
+          "takedown": {
+            "title": "Takedown Support",
+            "desc": "We help file DMCA and platform reports"
+          }
+        }
+      },
+      "examples": {
+        "instagramReel": "Instagram Reel",
+        "webBanner": "Web Banner",
+        "tvCommercial": "TV Commercial"
+      }
+    },
+    "voiceScripts": {
+      "happy": "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+      "emotional": "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+      "excited": "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+      "mellow": "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+      "relaxed": "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+      "angry": "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+    },
+    "imageSections": {
+      "headshot_neutral": {
+        "title": "Headshots - Neutral Expression",
+        "description": "Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+        "bestFor": "Brands need a clean face reference"
+      },
+      "headshot_smiling": {
+        "title": "Headshots - Smiling",
+        "description": "Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+        "bestFor": "Brands want to show you happy/approachable"
+      },
+      "fullbody_casual": {
+        "title": "Full Body - Casual Outfit",
+        "description": "Full body shot in casual everyday clothing. Natural pose.",
+        "bestFor": "Everyday casual look"
+      },
+      "fullbody_formal": {
+        "title": "Full Body - Formal/Professional",
+        "description": "Full body shot in professional or formal attire.",
+        "bestFor": "Professional or business contexts"
+      },
+      "side_profile": {
+        "title": "Side Profile",
+        "description": "Clean side view of your face and upper body.",
+        "bestFor": "Brands need your side angle"
+      },
+      "three_quarter": {
+        "title": "3/4 Angle",
+        "description": "Face turned at a 45-degree angle, natural expression.",
+        "bestFor": "Natural conversational angle"
+      },
+      "hair_down": {
+        "title": "Hair Down - Loose/Wavy",
+        "description": "Hair worn down in your natural style.",
+        "bestFor": "Casual, relaxed look"
+      },
+      "hair_up": {
+        "title": "Hair Up - Ponytail/Bun",
+        "description": "Hair pulled up/back, clean look.",
+        "bestFor": "Professional or active look"
+      },
+      "hair_styling": {
+        "title": "Hair Styling - Braids/Specific Style",
+        "description": "If you have a signature hairstyle.",
+        "bestFor": "If you have a signature style"
+      },
+      "upper_body": {
+        "title": "Upper Body Close-Up",
+        "description": "Shoulders and up, detailed facial features visible.",
+        "bestFor": "Close-up shots, detailed facial features"
+      },
+      "outdoors": {
+        "title": "In Environment - Outdoors",
+        "description": "You in an outdoor setting (park, street, nature).",
+        "bestFor": "Contextual, lifestyle content"
+      },
+      "indoors": {
+        "title": "In Environment - Indoors",
+        "description": "You in an indoor setting (home, office, cafe).",
+        "bestFor": "Indoor/office/home contexts"
+      },
+      "makeup_variation": {
+        "title": "Different Makeup Style",
+        "description": "If you vary your makeup style, show different looks.",
+        "bestFor": "If you vary makeup, brands should know"
+      },
+      "seasonal": {
+        "title": "Seasonal/Outfit Variation",
+        "description": "Different seasonal styles or outfit variations.",
+        "bestFor": "Seasonal campaigns, different looks"
+      },
+      "signature": {
+        "title": "Your Choice - Signature Moment",
+        "description": "A photo that really represents YOU and how people recognize you.",
+        "bestFor": "A photo that really represents YOU"
+      }
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "content": "Content",
+      "likeness": "My Likeness",
+      "voice": "Voice",
+      "campaigns": "Active Campaigns",
+      "approvals": "Approval Queue",
+      "archive": "Campaign Archives",
+      "contracts": "Licenses & Contracts",
+      "earnings": "Earnings",
+      "payouts": "Payouts",
+      "settings": "Settings",
+      "profile": {
+        "edit": "Edit Profile",
+        "viewPublic": "View Public Profile",
+        "help": "Help / Support",
+        "logout": "Logout"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profilePhotoUpdated": "Profile photo updated!",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "saveFailed": "Failed to save.",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}",
+      "error": "Error"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Requirements Checklist:",
+      "resolution": "At least 1080x1080 resolution",
+      "faceVisible": "Face/body clearly visible",
+      "goodLighting": "Good lighting (natural or studio)",
+      "recentPhoto": "Recent photo (from last 3 months)",
+      "noFilters": "No heavy filters",
+      "professionalQuality": "Professional quality preferred (not selfie-style)",
+      "dragOrClick": "Drag photos here or click to browse",
+      "fileInfo": "File Size: Max 10MB | Formats: JPG, PNG, WebP",
+      "preview": "Preview:",
+      "cancel": "Cancel",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "modalTitle": "Upload Reference Image",
+      "sectionLabel": "Section:",
+      "bestForLabel": "Best For:"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Social media ads",
+      "webBannerCampaigns": "Web & banner campaigns",
+      "tvStreamingCommercials": "TV / streaming commercials",
+      "filmScriptedStreaming": "Film & scripted streaming",
+      "printOutdoorAds": "Print & outdoor ads",
+      "musicVideos": "Music videos",
+      "videoGameVRCharacters": "Video-game / VR characters",
+      "stockPhotoVideoLibraries": "Stock photo / video libraries",
+      "educationalNonprofitSpots": "Educational / nonprofit spots"
+    },
+    "industries": {
+      "fashionBeauty": "Fashion / Beauty",
+      "techElectronics": "Tech / Electronics",
+      "sportsFitness": "Sports / Fitness",
+      "foodBeverage": "Food / Beverage",
+      "filmGamingMusic": "Film / Gaming / Music",
+      "automotive": "Automotive",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Health / Wellness",
+      "luxuryLifestyle": "Luxury & Lifestyle",
+      "travelHospitality": "Travel / Hospitality",
+      "education": "Education",
+      "realEstate": "Real Estate",
+      "entertainment": "Entertainment",
+      "openToAny": "Open to any industry"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Customize Content Type Rate",
+        "description": "Select content types you're open to creating",
+        "customRatesTitle": "Custom Rates",
+        "customRatesDesc": "Set custom rates for specific content types or industries. Your base rate is ${rate}/mo.",
+        "usingBaseRate": "Using base rate: ${rate}/mo",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "customizeIndustryRate": {
+        "title": "Customize Industry Rate",
+        "description": "Select industries you're interested in working with",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "contentRestrictions": {
+        "title": "Content Restrictions",
+        "description": "Specify any content you're not comfortable with",
+        "currentRestrictions": "Current Restrictions",
+        "clickToAdd": "Click to add restrictions",
+        "addCustomRestriction": "Add Custom Restriction",
+        "customPlaceholder": "e.g., No political content",
+        "brandExclusivity": "Brand Exclusivity",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      }
+    },
+    "restrictions": {
+      "politicalContent": "Political Content",
+      "controversialTopics": "Controversial Topics",
+      "explicitAdultContent": "Explicit/Adult Content",
+      "pharmaceuticalClaims": "Pharmaceutical Claims",
+      "financialInvestmentAdvice": "Financial/Investment Advice",
+      "tobaccoVapingProducts": "Tobacco/Vaping Products",
+      "gamblingUnlicensed": "Gambling (Unlicensed)",
+      "alcohol": "Alcohol",
+      "byproductsAnimalTesting": "Byproducts/Animal Testing",
+      "weaponsFirearms": "Weapons/Firearms",
+      "cryptocurrencyNFT": "Cryptocurrency/NFT",
+      "mlmMultiLevelMarketing": "MLM/Multi-Level Marketing",
+      "unlicensedFinancialProducts": "Unlicensed Financial Products",
+      "healthMedicalClaims": "Health/Medical Claims"
+    }
+  }
+}
