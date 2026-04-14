@@ -210,6 +210,9 @@ export default function BrandCampaignDashboard({
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
   const previousCollaboratorTypeRef = useRef<string>("");
   const isFetchingCampaignCardsRef = useRef(false);
+  const [previewImage, setPreviewImage] = useState<any>(null);
+  const [previewItems, setPreviewItems] = useState<any[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const [campaignForm, setCampaignForm] = useState({
     name: "",
@@ -814,6 +817,7 @@ export default function BrandCampaignDashboard({
               ...deliverable,
               offer_id: offerId,
               collaborator_label: collaboratorLabelFromOffer(offer),
+              payment_status: offer?.payment_status,
             }));
           } catch {
             return [];
@@ -1654,17 +1658,24 @@ export default function BrandCampaignDashboard({
     };
   }, []);
 
-  const deliverablePreviewSrc = (deliverable: any) => {
+  const deliverablePreviewSrc = (
+    deliverable: any,
+    options: { thumbnail?: boolean } = {},
+  ) => {
     const raw = String(deliverable?.asset_url || "").trim();
     if (!raw) return "";
     if (raw.startsWith("http")) return raw;
     const offerId = String(deliverable?.offer_id || "").trim();
     const deliverableId = String(deliverable?.id || "").trim();
     if (!offerId || !deliverableId) return raw;
+
     const proxyUrl = `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/file`;
-    return authToken
-      ? `${proxyUrl}?token=${encodeURIComponent(authToken)}`
-      : proxyUrl;
+    const queryParams = new URLSearchParams();
+    if (authToken) queryParams.set("token", authToken);
+    if (options.thumbnail) queryParams.set("thumbnail", "true");
+
+    const queryString = queryParams.toString();
+    return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
   };
 
   const deliverableFileSrc = (deliverable: any) =>
@@ -3909,6 +3920,10 @@ export default function BrandCampaignDashboard({
                             ].includes(status);
                             const displayStatus =
                               status === "brand_approved" ? "approved" : status;
+                            const isPaid =
+                              String(deliverable?.payment_status || "")
+                                .trim()
+                                .toLowerCase() === "paid";
                             const statusClass =
                               displayStatus === "approved" ||
                               displayStatus === "accepted"
@@ -3935,7 +3950,17 @@ export default function BrandCampaignDashboard({
                             return (
                               <Card
                                 key={deliverableId || idx}
-                                className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none"
+                                className={`p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none ${
+                                  isPaid ? "cursor-zoom-in" : "cursor-default"
+                                }`}
+                                onClick={() => {
+                                  setPreviewItems(selectedCampaignDeliverables);
+                                  setPreviewIndex(idx);
+                                  setPreviewImage({
+                                    ...deliverable,
+                                    payment_status: offer?.payment_status,
+                                  });
+                                }}
                               >
                                 <div className="flex items-start gap-6">
                                   <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
@@ -3944,10 +3969,32 @@ export default function BrandCampaignDashboard({
                                     ).startsWith("image") &&
                                     deliverable?.asset_url ? (
                                       <img
-                                        src={deliverablePreviewSrc(deliverable)}
+                                        src={deliverablePreviewSrc(
+                                          deliverable,
+                                          {
+                                            thumbnail:
+                                              deliverable?.payment_status !==
+                                              "paid",
+                                          },
+                                        )}
                                         alt={`Deliverable ${idx + 1}`}
                                         className="w-full h-full object-cover"
+                                        onContextMenu={(e) =>
+                                          e.preventDefault()
+                                        }
+                                        draggable={false}
                                       />
+                                    ) : deliverable?.payment_status !==
+                                      "paid" ? (
+                                      <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all">
+                                        <div className="relative mb-2 flex items-center justify-center">
+                                          <Lock className="w-6 h-6 text-indigo-400/80" />
+                                          <Sparkles className="w-4 h-4 text-indigo-400 absolute -top-3 -right-3 animate-pulse" />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-center px-2 leading-tight">
+                                          Video Locked
+                                        </span>
+                                      </div>
                                     ) : (
                                       <video
                                         src={deliverablePreviewSrc(deliverable)}
@@ -3955,6 +4002,10 @@ export default function BrandCampaignDashboard({
                                         playsInline
                                         preload="metadata"
                                         className="w-full h-full object-cover bg-gray-900"
+                                        onContextMenu={(e) =>
+                                          e.preventDefault()
+                                        }
+                                        controlsList="nodownload noplaybackrate"
                                       />
                                     )}
                                   </div>
@@ -3978,12 +4029,13 @@ export default function BrandCampaignDashboard({
                                           size="sm"
                                           className="bg-green-600 hover:bg-green-700 text-white rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
                                           disabled={isApproved || isBusy}
-                                          onClick={() =>
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             void reviewSelectedCampaignDeliverable(
                                               deliverable,
                                               "approve",
-                                            )
-                                          }
+                                            );
+                                          }}
                                         >
                                           {isApproved
                                             ? "Approved"
@@ -3996,12 +4048,13 @@ export default function BrandCampaignDashboard({
                                           size="sm"
                                           className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-4 shadow-none"
                                           disabled={isApproved || isBusy}
-                                          onClick={() =>
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             void reviewSelectedCampaignDeliverable(
                                               deliverable,
                                               "changes_requested",
-                                            )
-                                          }
+                                            );
+                                          }}
                                         >
                                           Request Edit
                                         </Button>
@@ -4011,9 +4064,9 @@ export default function BrandCampaignDashboard({
                                             size="sm"
                                             className="border-2 border-gray-200 hover:border-gray-900 rounded-none h-8 text-[10px] font-black uppercase tracking-widest px-3 shadow-none"
                                             onClick={() =>
-                                              window.open(
-                                                deliverableFileSrc(deliverable),
-                                                "_blank",
+                                              downloadSelectedCampaignDeliverable(
+                                                deliverable,
+                                                idx,
                                               )
                                             }
                                           >
@@ -4141,6 +4194,142 @@ export default function BrandCampaignDashboard({
           </div>
         </div>
       )}
+      {/* Image Preview Dialog */}
+      <Dialog
+        open={!!previewImage}
+        onOpenChange={() => {
+          setPreviewImage(null);
+          setPreviewItems([]);
+          setPreviewIndex(0);
+        }}
+      >
+        <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-none">
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
+            <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900 border border-white/5">
+              {previewImage?.asset_type === "video" ? (
+                previewImage?.payment_status !== "paid" ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-950 p-8 text-center">
+                    <div className="w-24 h-24 mb-6 rounded-none border-2 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5">
+                      <video
+                        src={getPublicUrl(previewImage)}
+                        className="w-full h-full object-cover opacity-10 grayscale blur-sm"
+                        muted
+                      />
+                      <div className="absolute flex flex-col items-center">
+                        <Lock className="w-10 h-10 text-indigo-400 mb-2" />
+                        <Sparkles className="w-6 h-6 text-indigo-400/50 absolute -top-8 -right-8 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      Premium Campaign Asset
+                    </h3>
+                    <p className="text-sm text-gray-500 max-w-xs mb-8 font-medium">
+                      This high-resolution deliverable is secured until the
+                      escrow payment is released.
+                    </p>
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => setPreviewImage(null)}
+                      >
+                        Go back
+                      </Button>
+                      <Button
+                        className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] px-8"
+                        onClick={() => {
+                          setPreviewImage(null);
+                          // In campaign dashboard, we don't have the billing tab directly
+                          toast({
+                            title: "Redirecting...",
+                            description:
+                              "Please visit Brand Settings to manage payments.",
+                          });
+                        }}
+                      >
+                        View Billing
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    src={getPublicUrl(previewImage)}
+                    controls
+                    className="max-w-full max-h-full"
+                    onContextMenu={(e) => e.preventDefault()}
+                    controlsList="nodownload noplaybackrate"
+                  />
+                )
+              ) : (
+                <div className="relative group/preview">
+                  {/* Watermark Overlay for Unpaid Assets */}
+                  {previewImage?.payment_status !== "paid" && (
+                    <div
+                      className="absolute inset-0 z-10 pointer-events-none opacity-[0.08]"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='white' font-family='sans-serif' font-weight='black' text-anchor='middle' transform='rotate(-45 75 75)'%3ELIKELEE PREVIEW%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                      }}
+                    />
+                  )}
+
+                  {/* Interaction Shield - Transparent layer over the image */}
+                  <div
+                    className="absolute inset-0 z-20 cursor-default"
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+
+                  <img
+                    src={
+                      previewImage
+                        ? deliverablePreviewSrc(previewImage, {
+                            thumbnail: previewImage?.payment_status !== "paid",
+                          })
+                        : ""
+                    }
+                    className="max-w-full max-h-full object-contain"
+                    alt="Preview"
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
+                  />
+                </div>
+              )}
+              {previewItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center z-30"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex > 0
+                          ? previewIndex - 1
+                          : previewItems.length - 1;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center z-30"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex < previewItems.length - 1
+                          ? previewIndex + 1
+                          : 0;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ArrowLeft className="w-5 h-5 rotate-180" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={markDoneOpen} onOpenChange={setMarkDoneOpen}>
         <AlertDialogContent>

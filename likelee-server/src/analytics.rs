@@ -95,7 +95,7 @@ pub async fn get_analytics_dashboard(
     auth_user: AuthUser,
 ) -> Result<Json<AnalyticsDashboard>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let mode = parse_mode(q.mode.as_deref());
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
@@ -105,7 +105,6 @@ pub async fn get_analytics_dashboard(
     let ten_days_hence = (now + chrono::Duration::days(10))
         .format("%Y-%m-%d")
         .to_string();
-    let agency_id_owned = agency_id.clone();
 
     if mode == AnalyticsMode::Ai {
         // --- AI MODE: earnings from licensing_payouts, licenses from licensing_requests ---
@@ -237,7 +236,7 @@ pub async fn get_analytics_dashboard(
             .pg
             .from("agency_users")
             .select("id, consent_status, is_verified_talent")
-            .eq("agency_id", &agency_id_owned)
+            .eq("agency_id", agency_id)
             .eq("role", "talent")
             .execute()
             .await
@@ -276,7 +275,7 @@ pub async fn get_analytics_dashboard(
             .pg
             .from("licensing_requests")
             .select("talent_id")
-            .eq("agency_id", &agency_id_owned)
+            .eq("agency_id", agency_id)
             .eq("status", "approved")
             .gte("deadline", &today)
             .lte("deadline", &ten_days_hence)
@@ -700,7 +699,7 @@ pub async fn get_clients_campaigns_analytics(
     auth_user: AuthUser,
 ) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
     let mode = parse_mode(q.mode.as_deref());
 
@@ -1955,7 +1954,7 @@ pub async fn get_royalties_payouts(
     auth_user: AuthUser,
 ) -> Result<Json<RoyaltiesPayoutsResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let now = Utc::now();
 
     // Calculate month boundaries

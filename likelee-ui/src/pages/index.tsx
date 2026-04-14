@@ -123,14 +123,14 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-const __pagesQueryClient = new QueryClient();
+
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import Login from "./Login";
 import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import UpdatePassword from "./UpdatePassword";
 import AgencyInviteLanding from "./AgencyInviteLanding";
+import TeamInviteLanding from "./TeamInviteLanding";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 import Unauthorized from "./Unauthorized";
@@ -283,7 +283,9 @@ function AppRoutes() {
   const location = useLocation();
   const isPublicPackage = location.pathname.startsWith("/share/package/");
   const isPublicCatalog = location.pathname.startsWith("/share/catalog/");
-  const isInviteFlow = location.pathname.startsWith("/invite/agency/");
+  const isInviteFlow =
+    location.pathname.startsWith("/invite/agency/") ||
+    location.pathname.startsWith("/invite/team/");
   const isPasswordRecoveryFlow = location.pathname === "/update-password";
 
   const currentPage = _getCurrentPage(location.pathname);
@@ -440,9 +442,29 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/AgencySubscribe" element={<AgencySubscribe />} />
+      <Route
+        path="/AgencySubscribe"
+        element={
+          <ProtectedRoute
+            allowedRoles={["agency"]}
+            requiredPermissions={["manage_billing"]}
+          >
+            <AgencySubscribe />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/agencysubscribe" element={<AgencySubscribe />} />
+      <Route
+        path="/agencysubscribe"
+        element={
+          <ProtectedRoute
+            allowedRoles={["agency"]}
+            requiredPermissions={["manage_billing"]}
+          >
+            <AgencySubscribe />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
       <Route
@@ -471,7 +493,10 @@ function AppRoutes() {
       <Route
         path="/BrandCampaignDashboard"
         element={
-          <ProtectedRoute allowedRoles={["brand"]}>
+          <ProtectedRoute
+            allowedRoles={["brand"]}
+            requiredPermissions={["create_campaigns"]}
+          >
             <BrandCampaignDashboard />
           </ProtectedRoute>
         }
@@ -551,6 +576,7 @@ function AppRoutes() {
       <Route path="/update-password" element={<UpdatePassword />} />
 
       <Route path="/invite/agency/:token" element={<AgencyInviteLanding />} />
+      <Route path="/invite/team/:token" element={<TeamInviteLanding />} />
       <Route
         path="/TwoFactorSetup"
         element={
@@ -588,10 +614,8 @@ function AppRoutes() {
 
 export default function Pages() {
   return (
-    <QueryClientProvider client={__pagesQueryClient}>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </QueryClientProvider>
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 }
