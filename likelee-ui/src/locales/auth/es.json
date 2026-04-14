@@ -274,6 +274,14 @@
         "brand": "Marca",
         "agency": "Agencia"
       }
+    },
+    "emailOtp": {
+      "enterCodePrefix": "Ingresa el código de 6 dígitos enviado a",
+      "verifying": "Verificando…",
+      "sending": "Enviando…",
+      "resendAvailableIn": "Reenvío disponible en {{seconds}}s",
+      "resendCode": "Reenviar código",
+      "verifyLabel": "Verificar código"
     }
   }
 }
