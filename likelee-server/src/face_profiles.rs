@@ -237,7 +237,9 @@ pub async fn search_faces(
         .from("creators")
         .select("*")
         .eq("role", "creator")
-        .eq("public_profile_visible", "true");
+        .eq("public_profile_visible", "true")
+        .eq("kyc_status", "approved")
+        .in_("plan_tier", vec!["basic", "pro", "enterprise"]);
 
     if let Some(search) = q.query {
         if !search.is_empty() {
