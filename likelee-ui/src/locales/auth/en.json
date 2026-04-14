@@ -284,7 +284,20 @@
       "preparing": "Preparing...",
       "skip": "Skip for now",
       "verifyAndContinue": "Verify & Continue",
-      "checking": "Checking..."
+      "checking": "Checking...",
+      "refreshStatus": "Refresh Status",
+      "resumeVerification": "Resume Verification",
+      "continueVerification": "Continue Verification",
+      "startNewVerification": "Start New Verification",
+      "retryVerification": "Retry Verification"
+    },
+    "hints": {
+      "refreshHint": "If the status does not update automatically a few seconds after verification, use Refresh Status.",
+      "resumeHint": "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
+      "restartHint": "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
+      "followUpResumeHint": "Veriff requested another step. Use Continue Verification to finish approval, or start a new verification session if the earlier link no longer works.",
+      "followUpRestartHint": "Veriff requested another step. Start a new verification session if the earlier link is no longer available, or use Refresh Status if you already finished it.",
+      "rejectedHint": "Your last verification was not approved. Review the note above and retry with a new verification session."
     },
     "status": {
       "notStarted": "Not Started",
