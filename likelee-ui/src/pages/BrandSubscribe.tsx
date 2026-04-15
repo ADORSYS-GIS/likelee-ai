@@ -614,7 +614,9 @@ export default function BrandSubscribe() {
       // immediately instead of waiting for the Stripe webhook.
       if (focusStudio && checkoutSessionId) {
         try {
-          await verifyBrandStudioAddonCheckout({ session_id: checkoutSessionId });
+          await verifyBrandStudioAddonCheckout({
+            session_id: checkoutSessionId,
+          });
         } catch {
           // Ignore — webhook will handle it if verify fails
         }
@@ -771,9 +773,7 @@ export default function BrandSubscribe() {
       const response = await createBrandStudioAddonCheckout({
         next_path: nextPath || undefined,
       });
-      const checkoutUrl = (response as any)?.checkout_url as
-        | string
-        | undefined;
+      const checkoutUrl = (response as any)?.checkout_url as string | undefined;
       if (!checkoutUrl) {
         throw new Error("No checkout URL returned.");
       }
@@ -1013,35 +1013,35 @@ export default function BrandSubscribe() {
                               )}
                             </Button>
                             <p className="text-center text-xs text-[#B8C8E5]">
-                              Trial is optional. Start paid immediately or launch
-                              with a trial first.
+                              Trial is optional. Start paid immediately or
+                              launch with a trial first.
                             </p>
                           </>
                         )}
                       </div>
                     ) : (
-                       <Button
-                         disabled={
-                           !initialized || (isCurrentPlan && hasBaseSubscription)
-                         }
-                         className={`h-11 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
-                         onClick={() =>
-                           handleBaseAction(plan.tier, plan.tier === "pro")
-                         }
-                       >
-                         {isLoading ? (
-                           <>
-                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                             Redirecting
-                           </>
-                         ) : isCurrentPlan ? (
-                           "Current plan"
-                         ) : hasBaseSubscription ? (
-                           "Upgrade plan"
-                         ) : (
-                           plan.cta
-                         )}
-                       </Button>
+                      <Button
+                        disabled={
+                          !initialized || (isCurrentPlan && hasBaseSubscription)
+                        }
+                        className={`h-11 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
+                        onClick={() =>
+                          handleBaseAction(plan.tier, plan.tier === "pro")
+                        }
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Redirecting
+                          </>
+                        ) : isCurrentPlan ? (
+                          "Current plan"
+                        ) : hasBaseSubscription ? (
+                          "Upgrade plan"
+                        ) : (
+                          plan.cta
+                        )}
+                      </Button>
                     )}
                   </div>
 
@@ -1154,7 +1154,8 @@ export default function BrandSubscribe() {
                   <span className="font-semibold text-[#17315E]">/studio</span>{" "}
                   and{" "}
                   <span className="font-semibold text-[#17315E]">
-                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial credits
+                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial
+                    credits
                   </span>{" "}
                   credited to your Studio wallet. Enterprise includes Studio
                   access automatically.

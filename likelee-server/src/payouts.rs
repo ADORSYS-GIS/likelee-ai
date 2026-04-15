@@ -2078,8 +2078,7 @@ async fn handle_studio_checkout_session_completed(
             .await
             .map_err(|e| e.to_string())?;
         let _ =
-            crate::studio::wallet::set_current_plan(&state.pg, &brand_id, Some(&studio_plan))
-                .await;
+            crate::studio::wallet::set_current_plan(&state.pg, &brand_id, Some(&studio_plan)).await;
 
         let _ = state
             .pg
@@ -2146,8 +2145,8 @@ async fn handle_studio_checkout_session_completed(
         crate::studio::wallet::add_credits(&state.pg, &user_id, credits, Some(&session_id))
             .await
             .map_err(|e| e.to_string())?;
-        let _ = crate::studio::wallet::set_current_plan(&state.pg, &user_id, Some(&studio_plan))
-            .await;
+        let _ =
+            crate::studio::wallet::set_current_plan(&state.pg, &user_id, Some(&studio_plan)).await;
 
         let _ = state
             .pg

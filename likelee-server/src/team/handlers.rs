@@ -486,18 +486,12 @@ pub async fn accept_invite_by_token(
     .await?;
 
     if existing_membership.is_none() {
-        let current_members = count_active_members(
-            &state,
-            organization_type,
-            invite.organization_id.as_str(),
-        )
-        .await?;
-        let pending_invites = count_pending_invites(
-            &state,
-            organization_type,
-            invite.organization_id.as_str(),
-        )
-        .await?;
+        let current_members =
+            count_active_members(&state, organization_type, invite.organization_id.as_str())
+                .await?;
+        let pending_invites =
+            count_pending_invites(&state, organization_type, invite.organization_id.as_str())
+                .await?;
 
         let seat_info = match organization_type {
             OrganizationType::Brand => {

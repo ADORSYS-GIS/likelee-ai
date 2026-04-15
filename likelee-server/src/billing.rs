@@ -2275,10 +2275,16 @@ pub async fn create_agency_studio_addon_checkout(
 
     let mut md = std::collections::HashMap::new();
     md.insert("billing_domain".to_string(), "studio".to_string());
-    md.insert("billing_target".to_string(), "agency_studio_addon".to_string());
+    md.insert(
+        "billing_target".to_string(),
+        "agency_studio_addon".to_string(),
+    );
     md.insert("user_id".to_string(), agency_id.clone());
     md.insert("agency_id".to_string(), agency_id.clone());
-    md.insert("studio_plan".to_string(), BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
+    md.insert(
+        "studio_plan".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
+    );
     md.insert(
         "credits".to_string(),
         BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
@@ -2604,21 +2610,24 @@ pub async fn create_brand_subscription_checkout(
                 "brand_subscription_already_active".to_string(),
             ));
         }
-        
+
         // Cancel the existing subscription before creating new checkout
         if !current_subscription_id.is_empty() {
             let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-            let subscription_id = current_subscription_id.parse::<stripe_sdk::SubscriptionId>()
-                .map_err(|_| billing_error(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "invalid_subscription_id",
-                    "Invalid Stripe subscription ID.",
-                ))?;
-            
+            let subscription_id = current_subscription_id
+                .parse::<stripe_sdk::SubscriptionId>()
+                .map_err(|_| {
+                    billing_error(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "invalid_subscription_id",
+                        "Invalid Stripe subscription ID.",
+                    )
+                })?;
+
             // Cancel the subscription immediately
             let mut cancel_params = stripe_sdk::CancelSubscription::new();
             cancel_params.prorate = Some(true);
-            
+
             match stripe_sdk::Subscription::cancel(&client, &subscription_id, cancel_params).await {
                 Ok(_) => {
                     info!(
@@ -2849,7 +2858,10 @@ pub async fn create_brand_studio_addon_checkout(
     let mut md = std::collections::HashMap::new();
     md.insert("brand_id".to_string(), user.id.clone());
     md.insert("billing_domain".to_string(), "studio".to_string());
-    md.insert("billing_target".to_string(), "brand_studio_addon".to_string());
+    md.insert(
+        "billing_target".to_string(),
+        "brand_studio_addon".to_string(),
+    );
     md.insert(
         "studio_plan".to_string(),
         BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
@@ -2923,13 +2935,15 @@ pub async fn verify_brand_studio_addon_checkout(
 
     // Retrieve the session from Stripe.
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-    let session_id = session_id_raw.parse::<stripe_sdk::CheckoutSessionId>().map_err(|_| {
-        billing_error(
-            StatusCode::BAD_REQUEST,
-            "invalid_session_id",
-            "Invalid checkout session id.",
-        )
-    })?;
+    let session_id = session_id_raw
+        .parse::<stripe_sdk::CheckoutSessionId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::BAD_REQUEST,
+                "invalid_session_id",
+                "Invalid checkout session id.",
+            )
+        })?;
     let session = stripe_sdk::CheckoutSession::retrieve(&client, &session_id, &[])
         .await
         .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
@@ -2976,7 +2990,9 @@ pub async fn verify_brand_studio_addon_checkout(
         stripe_sdk::CheckoutSessionPaymentStatus::Paid
     );
     if !is_paid {
-        return Ok(Json(json!({ "studio_addon_active": false, "payment_status": "unpaid" })));
+        return Ok(Json(
+            json!({ "studio_addon_active": false, "payment_status": "unpaid" }),
+        ));
     }
 
     // Idempotency: skip if already active.
@@ -3006,9 +3022,10 @@ pub async fn verify_brand_studio_addon_checkout(
 
     // Check wallet idempotency via session id.
     let session_str = session_id_raw.as_str();
-    let already_credited = crate::studio::wallet::has_stripe_credit_transaction(&state.pg, session_str)
-        .await
-        .unwrap_or(false);
+    let already_credited =
+        crate::studio::wallet::has_stripe_credit_transaction(&state.pg, session_str)
+            .await
+            .unwrap_or(false);
 
     if !already_credited {
         let credits = session
@@ -3027,8 +3044,14 @@ pub async fn verify_brand_studio_addon_checkout(
             .filter(|v| v == "lite" || v == "pro")
             .unwrap_or_else(|| BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
 
-        let _ = crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str)).await;
-        let _ = crate::studio::wallet::set_current_plan(&state.pg, &user.id, Some(studio_plan.as_str())).await;
+        let _ = crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str))
+            .await;
+        let _ = crate::studio::wallet::set_current_plan(
+            &state.pg,
+            &user.id,
+            Some(studio_plan.as_str()),
+        )
+        .await;
     }
 
     // Mark the brand as active.
@@ -3675,11 +3698,13 @@ pub async fn create_brand_billing_portal(
         .get("stripe_customer_id")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| billing_error(
-            StatusCode::BAD_REQUEST,
-            "no_stripe_customer",
-            "No Stripe customer found for this brand.",
-        ))?;
+        .ok_or_else(|| {
+            billing_error(
+                StatusCode::BAD_REQUEST,
+                "no_stripe_customer",
+                "No Stripe customer found for this brand.",
+            )
+        })?;
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = customer_id_str
@@ -3692,10 +3717,7 @@ pub async fn create_brand_billing_portal(
             )
         })?;
 
-    let return_url = format!(
-        "{}/brandpricing",
-        state.frontend_url.trim_end_matches('/')
-    );
+    let return_url = format!("{}/brandpricing", state.frontend_url.trim_end_matches('/'));
     let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
     params.return_url = Some(&return_url);
 
@@ -3709,7 +3731,11 @@ pub async fn create_brand_billing_portal(
         })),
         Err(e) => {
             warn!(error = %e, brand_id = %user.id, "failed to create stripe billing portal session for brand");
-            Err(billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))
+            Err(billing_error_msg(
+                StatusCode::BAD_GATEWAY,
+                "stripe_error",
+                e.to_string(),
+            ))
         }
     }
 }
