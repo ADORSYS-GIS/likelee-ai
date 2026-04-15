@@ -123,8 +123,9 @@ fn extract_bank_last4(acct: &stripe_sdk::Account) -> Option<String> {
         for ea in ea_list.data.iter() {
             if let stripe_sdk::ExternalAccount::BankAccount(ba) = ea {
                 if let Some(last4) = ba.last4.as_ref() {
+                    let last4 = last4.to_string();
                     if !last4.trim().is_empty() {
-                        return Some(last4.clone());
+                        return Some(last4);
                     }
                 }
             }
@@ -1131,10 +1132,10 @@ pub async fn request_payout(
         );
     }
 
-    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-    let stripe_available_cents = fetch_connected_available_cents(&client, &account_id, &currency)
-        .await
-        .unwrap_or(0);
+    let stripe_available_cents =
+        fetch_connected_available_cents(state.stripe_secret_key.as_str(), &account_id, &currency)
+            .await
+            .unwrap_or(0);
     if stripe_available_cents < payload.amount_cents {
         return (
             StatusCode::BAD_REQUEST,
@@ -1314,7 +1315,8 @@ async fn execute_payout(
         .await;
 
     let stripe_available_cents =
-        fetch_connected_available_cents(&client, &account_id, currency).await;
+        fetch_connected_available_cents(state.stripe_secret_key.as_str(), &account_id, currency)
+            .await;
     info!(
         payout_request_id = %payout_request_id,
         connected_account_id = %account_id,
@@ -3484,35 +3486,29 @@ fn stripe_subscription_to_plan_tier_from_price_id(
 fn stripe_subscription_to_plan_tier_from_metadata(
     sub: &stripe_sdk::Subscription,
 ) -> Option<&'static str> {
-    match sub
-        .metadata
-        .get("plan")
-        .map(|plan| plan.trim().to_lowercase())
-        .as_deref()
-    {
-        Some("basic") => Some("basic"),
-        Some("pro") => Some("pro"),
-        Some("enterprise") => Some("enterprise"),
+    let plan = sub.metadata.get("plan")?.to_string();
+    let plan = plan.trim().to_lowercase();
+    match plan.as_str() {
+        "basic" => Some("basic"),
+        "pro" => Some("pro"),
+        "enterprise" => Some("enterprise"),
         _ => None,
     }
 }
 
 fn stripe_subscription_roster_models(sub: &stripe_sdk::Subscription) -> Option<i64> {
-    sub.metadata
-        .get("roster_models")
-        .and_then(|value| value.trim().parse::<i64>().ok())
-        .filter(|value| *value > 0)
+    let value = sub.metadata.get("roster_models")?.to_string();
+    value.trim().parse::<i64>().ok().filter(|value| *value > 0)
 }
 
 fn stripe_subscription_metadata_flag(sub: &stripe_sdk::Subscription, key: &str) -> Option<bool> {
-    sub.metadata
-        .get(key)
-        .map(|value| value.trim().to_lowercase())
-        .and_then(|value| match value.as_str() {
-            "1" | "true" | "yes" | "on" => Some(true),
-            "0" | "false" | "no" | "off" => Some(false),
-            _ => None,
-        })
+    let value = sub.metadata.get(key)?.to_string();
+    let value = value.trim().to_lowercase();
+    match value.as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
+    }
 }
 
 fn stripe_subscription_has_irl_booking_addon(
@@ -3693,8 +3689,8 @@ fn aggregate_agency_subscription_state(
     fn is_seat_addon_subscription(sub: &stripe_sdk::Subscription) -> bool {
         sub.metadata
             .get("subscription_kind")
-            .map(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
-            .unwrap_or(false)
+            .map(|value| value.to_string())
+            .is_some_and(|value| value.trim().eq_ignore_ascii_case("seat_addon"))
     }
 
     let exact_matches: Vec<&stripe_sdk::Subscription> = subscriptions
@@ -3702,8 +3698,8 @@ fn aggregate_agency_subscription_state(
         .filter(|sub| {
             sub.metadata
                 .get("agency_id")
-                .map(|value| value.trim() == agency_id)
-                .unwrap_or(false)
+                .map(|value| value.to_string())
+                .is_some_and(|value| value.trim() == agency_id)
         })
         .collect();
 
@@ -4316,11 +4312,13 @@ pub async fn request_agency_payout(
 
     // Payouts are executed on the CONNECTED account balance.
     // Therefore, the cashout ceiling must be based on Stripe (not internal ledger balances).
-    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-    let stripe_available_cents =
-        fetch_connected_available_cents(&client, &stripe_account_id, &currency)
-            .await
-            .unwrap_or(0);
+    let stripe_available_cents = fetch_connected_available_cents(
+        state.stripe_secret_key.as_str(),
+        &stripe_account_id,
+        &currency,
+    )
+    .await
+    .unwrap_or(0);
     if stripe_available_cents < net_cents {
         return (
             StatusCode::BAD_REQUEST,
@@ -4495,8 +4493,12 @@ pub async fn execute_agency_payout(
         .execute()
         .await;
 
-    let stripe_available_cents =
-        fetch_connected_available_cents(&client, stripe_account_id, currency).await;
+    let stripe_available_cents = fetch_connected_available_cents(
+        state.stripe_secret_key.as_str(),
+        stripe_account_id,
+        currency,
+    )
+    .await;
     info!(
         agency_payout_request_id = %payout_request_id,
         connected_account_id = %stripe_account_id,
@@ -4616,12 +4618,12 @@ pub async fn execute_agency_payout(
 }
 
 async fn fetch_connected_available_cents(
-    client: &stripe_sdk::Client,
+    stripe_secret_key: &str,
     connected_account_id: &str,
     currency: &str,
 ) -> Option<i64> {
     let acct = connected_account_id.parse::<stripe_sdk::AccountId>().ok()?;
-    let connected_client = client.clone().with_stripe_account(acct);
+    let connected_client = stripe_sdk::Client::new(stripe_secret_key).with_stripe_account(acct);
     let bal = stripe_sdk::Balance::retrieve(&connected_client, None)
         .await
         .ok()?;
