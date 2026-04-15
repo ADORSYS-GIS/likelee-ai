@@ -7,4 +7,13 @@ ignore = [
   # Transitive via postgrest -> reqwest 0.11.27 -> rustls 0.21.12 -> rustls-webpki 0.101.7
   # CRL validation issue - low impact for typical web applications
   "RUSTSEC-2026-0049",
+  # Transitive via async-stripe -> rustls 0.21.12 -> rustls-webpki 0.101.7
+  # Name constraints for URI names - waiting for async-stripe update
+  "RUSTSEC-2026-0098",
+  # Transitive via async-stripe -> rustls 0.21.12 -> rustls-webpki 0.101.7
+  # Name constraints for wildcard names - waiting for async-stripe update
+  "RUSTSEC-2026-0099",
+  # Transitive via reqwest -> rand 0.7.3 and rand 0.9.2
+  # Unsound with custom logger - low impact for our use case
+  "RUSTSEC-2026-0097",
 ]
