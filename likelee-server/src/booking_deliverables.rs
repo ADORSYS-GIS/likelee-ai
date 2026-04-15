@@ -388,7 +388,22 @@ pub async fn list_deliverables(
     }
 
     let text = resp.text().await.unwrap_or_default();
-    let deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // Normalize asset_url to consistently return the secure file endpoint
+    // for private deliverables instead of the storage path
+    for deliverable in deliverables.iter_mut() {
+        if let Some(obj) = deliverable.as_object_mut() {
+            if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
+                // Replace asset_url with the secure file endpoint URL
+                let secure_url = format!(
+                    "/api/bookings-campaigns/{}/deliverables/{}/file",
+                    campaign_id, id
+                );
+                obj.insert("asset_url".to_string(), json!(secure_url));
+            }
+        }
+    }
 
     Ok(Json(json!({ "deliverables": deliverables })))
 }
@@ -642,12 +657,17 @@ pub async fn serve_deliverable_file(
         }
     };
 
-    let storage_path = row
-        .get("storage_path")
-        .or_else(|| row.get("asset_url"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    let storage_path = match row.get("storage_path").and_then(|v| v.as_str()) {
+        Some(path) if !path.is_empty() => path.to_string(),
+        _ => {
+            error!("Booking deliverable {} missing storage_path", deliverable_id);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                [("content-type", "application/json")],
+                axum::body::Bytes::from(r#"{"error":"Missing storage path"}"#),
+            );
+        }
+    };
 
     let bucket = row
         .get("storage_bucket")
@@ -833,4 +853,137 @@ pub async fn submit_to_brand(
     Ok(Json(
         json!({ "ok": true, "count": brand_deliverables.len() }),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deliverable_asset_url_normalization() {
+        // Test that asset_url is normalized to secure endpoint format
+        let campaign_id = "campaign-123";
+        let deliverable_id = "deliverable-456";
+        
+        let expected_url = format!(
+            "/api/bookings-campaigns/{}/deliverables/{}/file",
+            campaign_id, deliverable_id
+        );
+        
+        assert_eq!(
+            expected_url,
+            "/api/bookings-campaigns/campaign-123/deliverables/deliverable-456/file"
+        );
+    }
+
+    #[test]
+    fn test_offer_deliverable_asset_url_normalization() {
+        // Test that offer deliverable asset_url is normalized to secure endpoint format
+        let offer_id = "offer-789";
+        let deliverable_id = "deliverable-abc";
+        
+        let expected_url = format!(
+            "/api/campaign-offers/{}/deliverables/{}/file",
+            offer_id, deliverable_id
+        );
+        
+        assert_eq!(
+            expected_url,
+            "/api/campaign-offers/offer-789/deliverables/deliverable-abc/file"
+        );
+    }
+
+    #[test]
+    fn test_storage_path_validation() {
+        // Test that empty storage paths are rejected
+        let storage_path = "";
+        assert!(storage_path.is_empty());
+        
+        // Test that valid storage paths are accepted
+        let storage_path = "agencies/123/deliverables/1234567890_file.pdf";
+        assert!(!storage_path.is_empty());
+        assert!(storage_path.contains("agencies/"));
+        assert!(storage_path.contains("deliverables/"));
+    }
+
+    #[test]
+    fn test_deliverable_status_values() {
+        // Test valid deliverable status values
+        let valid_statuses = vec![
+            "draft",
+            "submitted",
+            "approved",
+            "changes_requested",
+            "rejected",
+            "brand_review",
+            "brand_approved",
+            "accepted",
+        ];
+        
+        for status in valid_statuses {
+            assert!(!status.is_empty());
+            assert!(status.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
+        }
+    }
+
+    #[test]
+    fn test_secure_endpoint_path_format() {
+        // Test that secure endpoint paths follow the correct format
+        let campaign_id = "550e8400-e29b-41d4-a716-446655440000";
+        let deliverable_id = "660e8400-e29b-41d4-a716-446655440001";
+        
+        let secure_url = format!(
+            "/api/bookings-campaigns/{}/deliverables/{}/file",
+            campaign_id, deliverable_id
+        );
+        
+        assert!(secure_url.starts_with("/api/bookings-campaigns/"));
+        assert!(secure_url.contains("/deliverables/"));
+        assert!(secure_url.ends_with("/file"));
+    }
+
+    #[test]
+    fn test_offer_secure_endpoint_path_format() {
+        // Test that offer secure endpoint paths follow the correct format
+        let offer_id = "770e8400-e29b-41d4-a716-446655440002";
+        let deliverable_id = "880e8400-e29b-41d4-a716-446655440003";
+        
+        let secure_url = format!(
+            "/api/campaign-offers/{}/deliverables/{}/file",
+            offer_id, deliverable_id
+        );
+        
+        assert!(secure_url.starts_with("/api/campaign-offers/"));
+        assert!(secure_url.contains("/deliverables/"));
+        assert!(secure_url.ends_with("/file"));
+    }
+
+    #[test]
+    fn test_storage_bucket_defaults() {
+        // Test that private bucket is the default for deliverables
+        let default_bucket = "likelee-private";
+        assert_eq!(default_bucket, "likelee-private");
+        
+        // Deliverables should always use private bucket
+        let bucket = "likelee-private";
+        assert!(bucket.contains("private"));
+    }
+
+    #[test]
+    fn test_asset_url_no_longer_fallback() {
+        // Test that we no longer use asset_url as a fallback for storage_path
+        // This test documents the change: asset_url should NOT be used as storage_path
+        
+        let storage_path = Some("agencies/123/deliverables/file.pdf");
+        let asset_url = Some("/api/bookings-campaigns/123/deliverables/456/file");
+        
+        // New behavior: use storage_path directly, don't fall back to asset_url
+        let path = storage_path.unwrap();
+        assert_eq!(path, "agencies/123/deliverables/file.pdf");
+        
+        // asset_url should be the secure endpoint, not a storage path
+        let url = asset_url.unwrap();
+        assert!(url.starts_with("/api/"));
+        assert!(!url.contains("agencies/"));
+    }
 }

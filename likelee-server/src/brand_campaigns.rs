@@ -6255,11 +6255,19 @@ pub async fn list_offer_deliverables(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
-    // for approval/download. Preview is allowed to support review workflows.
-    if user.role == "brand" && payment_status != "paid" {
-        for row in rows.iter_mut() {
-            if let Some(obj) = row.as_object_mut() {
+    // Normalize asset_url to consistently return the secure file endpoint
+    // for private deliverables instead of the storage path
+    for row in rows.iter_mut() {
+        if let Some(obj) = row.as_object_mut() {
+            if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
+                // Replace asset_url with the secure file endpoint URL
+                let secure_url = format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
+                obj.insert("asset_url".to_string(), json!(secure_url));
+            }
+
+            // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
+            // for approval/download. Preview is allowed to support review workflows.
+            if user.role == "brand" && payment_status != "paid" {
                 let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
                 meta_obj.insert("payment_required".to_string(), json!(true));
