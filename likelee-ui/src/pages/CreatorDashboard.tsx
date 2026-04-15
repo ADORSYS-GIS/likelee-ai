@@ -487,6 +487,8 @@ export default function CreatorDashboard() {
   };
   const [activeSection, setActiveSection] = useState(initialSection);
   const [settingsTab, setSettingsTab] = useState(initialSettingsTab); // 'profile' or 'rules'
+  const [creatorBilling, setCreatorBilling] = useState<any>(null);
+  const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);

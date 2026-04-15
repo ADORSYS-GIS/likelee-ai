@@ -609,3 +609,129 @@ pub async fn booking_created_email(
         Ok(Json(json!({"status":"ok"})))
     }
 }
+
+pub async fn send_brand_notification(
+    state: &AppState,
+    brand_id: &str,
+    agency_id: Option<&str>,
+    subject: &str,
+    message: &str,
+    meta_json: serde_json::Value,
+    notify_email: bool,
+) -> Result<(), (StatusCode, String)> {
+    // 1. Resolve brand email
+    let resp = state
+        .pg
+        .from("brands")
+        .select("email")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "brand_not_found".to_string()));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let brand_data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let brand_email = brand_data.get("email").and_then(|v| v.as_str());
+
+    // 2. Persist to in-app inbox
+    let insert = json!({
+        "brand_id": brand_id,
+        "agency_id": agency_id,
+        "subject": subject,
+        "message": message,
+        "meta_json": meta_json,
+    });
+
+    if let Err(e) = state
+        .pg
+        .from("brand_notifications")
+        .insert(insert.to_string())
+        .execute()
+        .await
+    {
+        tracing::warn!(error = %e, brand_id, "failed to persist brand notification");
+    }
+
+    // 3. Send email if enabled
+    if notify_email {
+        if let Some(email) = brand_email {
+            if let Err((code, err)) =
+                crate::email::send_plain_text_email(state, email, subject, message, None)
+            {
+                tracing::warn!(
+                    status = %code,
+                    error = %err,
+                    brand_id,
+                    "failed to send brand notification email"
+                );
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub struct BrandNotificationRequest<'a> {
+    pub brand_id: &'a str,
+    pub agency_id: Option<&'a str>,
+    pub pref_key: &'a str,
+    pub subject: &'a str,
+    pub message: &'a str,
+    pub meta_json: serde_json::Value,
+    pub notify_email: bool,
+}
+
+pub async fn notify_brand_if_enabled(
+    state: &AppState,
+    request: BrandNotificationRequest<'_>,
+) -> Result<(), (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brands")
+        .select("notification_prefs")
+        .eq("id", request.brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Ok(());
+    }
+
+    let prefs: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let notify_enabled = prefs
+        .get("notification_prefs")
+        .and_then(|p| p.get(request.pref_key))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    if !notify_enabled {
+        return Ok(());
+    }
+
+    send_brand_notification(
+        state,
+        request.brand_id,
+        request.agency_id,
+        request.subject,
+        request.message,
+        request.meta_json,
+        request.notify_email,
+    )
+    .await
+}

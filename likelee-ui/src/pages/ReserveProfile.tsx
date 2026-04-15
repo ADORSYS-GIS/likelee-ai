@@ -1253,7 +1253,7 @@ export default function ReserveProfile() {
       sessionStorage.removeItem("reserve_agreedToTerms");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
-      navigate("/CreatorDashboard", { replace: true });
+      navigate("/CreatorSubscribe", { replace: true });
     } catch (e: any) {
       toast({
         title: t("reserveProfile.toasts.profileSaveFailed"),
