@@ -36,8 +36,9 @@ lettre = { version = "0.11", default-features = false, features = [
 ] }
 urlencoding = "2"
 jsonwebtoken = "9"
- stripe-sdk = { package = "async-stripe", version = "0.38", features = [
-    "runtime-tokio-hyper-rustls-webpki",
+ stripe-sdk = { package = "async-stripe", version = "0.41.0", features = [
+    "runtime-tokio-hyper",
+    "hyper-tls",
     "billing",
     "checkout",
     "connect",
