@@ -1,5 +1,10 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
+use crate::storage::{
+    canonical_object_path, delete_object, insert_asset_record, public_object_url,
+    sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
+    StorageContextType, StorageOwnerType, StorageVisibility,
+};
 use axum::{
     body::Bytes,
     extract::{Path, Query, State},
@@ -8,7 +13,7 @@ use axum::{
 };
 use serde::Deserialize;
 use serde::Serialize;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[derive(Deserialize)]
 pub struct UploadQuery {
@@ -82,8 +87,8 @@ pub async fn delete_reference_image(
 
     // 2) Delete storage objects (STRICT)
     // If any storage deletion fails, do not delete DB rows.
-    let http = reqwest::Client::new();
     for r in rows.iter() {
+        let row_id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let bucket = r
             .get("storage_bucket")
             .and_then(|v| v.as_str())
@@ -95,25 +100,17 @@ pub async fn delete_reference_image(
                 "missing storage metadata for reference image".into(),
             ));
         }
-        let del_url = format!("{}/storage/v1/object/{}/{path}", state.supabase_url, bucket);
-        let del = http
-            .delete(&del_url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", state.supabase_service_key),
-            )
-            .header("apikey", state.supabase_service_key.clone())
-            .send()
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-        let del_status = del.status();
-        if !del_status.is_success() {
-            let txt = del.text().await.unwrap_or_default();
-            error!(status=?del_status, body=%txt, "reference image storage delete failed");
+        if let Err(err) = delete_object(&state, bucket, path).await {
+            error!(status=?err.0, body=%err.1, "reference image storage delete failed");
             return Err((
                 StatusCode::BAD_GATEWAY,
                 "failed to delete reference image from storage".into(),
             ));
+        }
+        if !row_id.is_empty() {
+            if let Err(err) = soft_delete_asset_record(&state, "reference_images", row_id).await {
+                warn!(reference_image_id = %row_id, error = %err.1, "failed to soft-delete storage_assets row for reference image");
+            }
         }
     }
 
@@ -211,66 +208,39 @@ pub async fn upload_reference_image(
         ));
     }
 
-    // 2) Upload to Supabase Storage (public bucket) using service key
-    let bucket = state.supabase_bucket_public.clone();
     let owner = user.id.replace(
         |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
         "_",
     );
-    let path = format!(
-        "likeness/{}/sections/{}/{}.{}",
-        owner,
-        q.section_id,
+    let file_name = format!("section_{}.{}", q.section_id, ext);
+    let path = canonical_object_path(
+        &format!("likeness/{owner}/sections/{}", q.section_id),
+        &sanitize_file_name(&file_name),
         chrono::Utc::now().timestamp_millis(),
-        ext
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::builder()
-        .http1_only()
-        .tcp_keepalive(std::time::Duration::from_secs(30))
-        .pool_idle_timeout(std::time::Duration::from_secs(30))
-        .timeout(std::time::Duration::from_secs(60))
-        .build()
-        .unwrap();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .header("content-type", ct)
-        .body(body)
-        .send()
-        .await
-        .map_err(|e| {
-            let m = e.to_string();
-            error!(error=%m, "storage upload error");
-            (StatusCode::BAD_GATEWAY, m)
-        })?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    let public_url = format!(
-        "{}/storage/v1/object/public/{}/{}",
-        state.supabase_url, bucket, path
-    );
+    let uploaded = upload_object(
+        &state,
+        StorageVisibility::Public,
+        &path,
+        body.to_vec(),
+        Some(&ct),
+    )
+    .await
+    .map_err(|err| {
+        error!(error=%err.1, "storage upload error");
+        err
+    })?;
+    let public_url = uploaded
+        .public_url
+        .clone()
+        .unwrap_or_else(|| public_object_url(&state, &uploaded.bucket, &uploaded.path));
 
     // 3) Persist to reference_images via Postgrest
     let payload = serde_json::json!({
         "user_id": user.id,
         "section_id": q.section_id,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
         "moderation_status": "approved",
     });
@@ -278,10 +248,59 @@ pub async fn upload_reference_image(
         .pg
         .from("reference_images")
         .insert(payload.to_string())
+        .select("id")
         .execute()
         .await
     {
-        Ok(_) => {}
+        Ok(resp) => {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+            if !status.is_success() {
+                info!(status=?status, body=%text, "insert reference_images failed; continuing");
+                return Ok(Json(UploadResponse {
+                    public_url,
+                    storage_bucket: payload
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    storage_path: payload
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                }));
+            }
+            let source_id = serde_json::from_str::<serde_json::Value>(&text)
+                .ok()
+                .and_then(|value| value.as_array().and_then(|rows| rows.first()).cloned())
+                .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()));
+            if let Some(source_id) = source_id {
+                let storage_record = StorageAssetRecord {
+                    owner_type: StorageOwnerType::Creator,
+                    owner_id: user.id.clone(),
+                    context_type: StorageContextType::ReferenceImage,
+                    context_id: Some(q.section_id.clone()),
+                    visibility: StorageVisibility::Public,
+                    object_path: payload
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    original_file_name: Some(file_name.clone()),
+                    mime_type: Some(ct.clone()),
+                    size_bytes: Some(body.len() as i64),
+                    checksum_sha256: None,
+                    source_table: Some("reference_images".to_string()),
+                    source_id: Some(source_id),
+                    created_by: Some(user.id.clone()),
+                    counts_toward_quota: false,
+                };
+                if let Err(err) = insert_asset_record(&state, &storage_record).await {
+                    warn!(section_id = %q.section_id, user_id = %user.id, error = %err.1, "failed to mirror reference image into storage_assets");
+                }
+            }
+        }
         Err(e) => {
             info!(err=%e, "insert reference_images failed; continuing");
         }
@@ -289,7 +308,15 @@ pub async fn upload_reference_image(
 
     Ok(Json(UploadResponse {
         public_url,
-        storage_bucket: bucket,
-        storage_path: path,
+        storage_bucket: payload
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        storage_path: payload
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
     }))
 }

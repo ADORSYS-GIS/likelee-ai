@@ -548,6 +548,21 @@ pub struct UpdateAgencyFolderIn {
     pub name: Option<String>,
 }
 
+fn normalize_agency_folder_row(
+    row: &serde_json::Value,
+    file_count: i64,
+) -> serde_json::Value {
+    let obj = row.as_object().cloned().unwrap_or_default();
+    serde_json::json!({
+        "id": obj.get("id").cloned().unwrap_or(serde_json::Value::Null),
+        "agency_id": obj.get("agency_id").cloned().unwrap_or(serde_json::Value::Null),
+        "parent_id": obj.get("parent_id").cloned().unwrap_or(serde_json::Value::Null),
+        "name": obj.get("name").cloned().unwrap_or(serde_json::Value::Null),
+        "created_at": obj.get("created_at").cloned().unwrap_or(serde_json::Value::Null),
+        "file_count": file_count,
+    })
+}
+
 async fn ensure_storage_settings_row(
     state: &AppState,
     agency_id: &str,
@@ -731,7 +746,7 @@ pub async fn list_agency_folders(
 
     let mut enriched = Vec::with_capacity(rows.len());
     for row in rows {
-        let mut obj = row.as_object().cloned().unwrap_or_default();
+        let obj = row.as_object().cloned().unwrap_or_default();
         let folder_id = obj
             .get("id")
             .and_then(|v| v.as_str())
@@ -744,7 +759,7 @@ pub async fn list_agency_folders(
                 .pg
                 .from("agency_files")
                 .select("id")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("folder_id", &folder_id)
                 .execute()
                 .await
@@ -762,11 +777,7 @@ pub async fn list_agency_folders(
             file_count = files_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
         }
 
-        obj.insert(
-            "file_count".to_string(),
-            serde_json::Value::from(file_count),
-        );
-        enriched.push(serde_json::Value::Object(obj));
+        enriched.push(normalize_agency_folder_row(row, file_count));
     }
 
     Ok(Json(serde_json::Value::Array(enriched)))
@@ -808,106 +819,11 @@ pub async fn create_agency_folder(
     let Some(rows) = v.as_array() else {
         return Ok(Json(v));
     };
-
-    let http = reqwest::Client::new();
-    let mut patched: Vec<serde_json::Value> = Vec::with_capacity(rows.len());
-
-    for row in rows {
-        let mut obj = row.as_object().cloned().unwrap_or_default();
-        let size_bytes = obj.get("size_bytes").and_then(|v| v.as_i64()).unwrap_or(0);
-
-        if size_bytes <= 0 {
-            let file_id = obj
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let bucket = obj
-                .get("storage_bucket")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let path = obj
-                .get("storage_path")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            if !file_id.is_empty() && !bucket.is_empty() && !path.is_empty() {
-                let storage_url = format!(
-                    "{}/storage/v1/object/{}/{}",
-                    state.supabase_url, bucket, path
-                );
-                let head = http
-                    .head(&storage_url)
-                    .header(
-                        "Authorization",
-                        format!("Bearer {}", state.supabase_service_key),
-                    )
-                    .header("apikey", state.supabase_service_key.clone())
-                    .send()
-                    .await;
-
-                if let Ok(resp) = head {
-                    if resp.status().is_success() {
-                        let mut discovered_len = resp
-                            .headers()
-                            .get(reqwest::header::CONTENT_LENGTH)
-                            .and_then(|v| v.to_str().ok())
-                            .and_then(|s| s.parse::<i64>().ok());
-
-                        if discovered_len.is_none() {
-                            // Some storage gateways omit Content-Length on HEAD.
-                            // Fallback to a ranged GET and parse Content-Range: "bytes 0-0/12345".
-                            let ranged = http
-                                .get(&storage_url)
-                                .header(
-                                    "Authorization",
-                                    format!("Bearer {}", state.supabase_service_key),
-                                )
-                                .header("apikey", state.supabase_service_key.clone())
-                                .header(reqwest::header::RANGE, "bytes=0-0")
-                                .send()
-                                .await;
-
-                            if let Ok(r) = ranged {
-                                if r.status().is_success() || r.status().as_u16() == 206 {
-                                    if let Some(cr) = r
-                                        .headers()
-                                        .get(reqwest::header::CONTENT_RANGE)
-                                        .and_then(|v| v.to_str().ok())
-                                    {
-                                        if let Some(total) = cr.split('/').nth(1) {
-                                            discovered_len = total.trim().parse::<i64>().ok();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if let Some(len) = discovered_len {
-                            obj.insert("size_bytes".to_string(), serde_json::Value::from(len));
-
-                            // Best-effort persist the discovered size to DB.
-                            let update = serde_json::json!({ "size_bytes": len });
-                            let _ = state
-                                .pg
-                                .from("agency_files")
-                                .update(update.to_string())
-                                .eq("id", &file_id)
-                                .eq("agency_id", &user.id)
-                                .execute()
-                                .await;
-                        }
-                    }
-                }
-            }
-        }
-
-        patched.push(serde_json::Value::Object(obj));
-    }
-
-    Ok(Json(serde_json::Value::Array(patched)))
+    let normalized = rows
+        .iter()
+        .map(|row| normalize_agency_folder_row(row, 0))
+        .collect::<Vec<_>>();
+    Ok(Json(serde_json::Value::Array(normalized)))
 }
 
 pub async fn delete_agency_folder(
@@ -943,7 +859,6 @@ pub async fn delete_agency_folder(
     let files = files_json.as_array().cloned().unwrap_or_default();
 
     // Delete each file from storage and DB
-    let http = reqwest::Client::new();
     for f in files {
         let file_id = f.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let bucket = f
@@ -955,27 +870,7 @@ pub async fn delete_agency_folder(
             continue;
         }
 
-        let storage_url = format!(
-            "{}/storage/v1/object/{}/{}",
-            state.supabase_url, bucket, path
-        );
-        let del = http
-            .delete(&storage_url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", state.supabase_service_key),
-            )
-            .header("apikey", state.supabase_service_key.clone())
-            .send()
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-        if !del.status().is_success() {
-            let msg = del.text().await.unwrap_or_default();
-            return Err((
-                StatusCode::BAD_GATEWAY,
-                format!("storage delete failed: {msg}"),
-            ));
-        }
+        delete_object(&state, bucket, path).await?;
 
         let resp = state
             .pg
@@ -994,6 +889,9 @@ pub async fn delete_agency_folder(
             let code =
                 StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
             return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        if let Err(err) = soft_delete_asset_record(&state, "agency_files", file_id).await {
+            warn!(agency_id = %agency_id, file_id = %file_id, error = %err.1, "failed to soft-delete storage_assets row for folder file");
         }
     }
 
@@ -1025,6 +923,8 @@ pub async fn update_agency_folder(
     Path(folder_id): Path<String>,
     Json(body): Json<UpdateAgencyFolderIn>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = access.organization_id;
     let name = body.name.unwrap_or_default().trim().to_string();
     if name.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "name is required".into()));
@@ -1036,7 +936,7 @@ pub async fn update_agency_folder(
         .from("agency_folders")
         .update(update.to_string())
         .eq("id", &folder_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .select("id,agency_id,parent_id,name,created_at")
         .limit(1)
         .execute()
@@ -1056,7 +956,12 @@ pub async fn update_agency_folder(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+    let out = v
+        .as_array()
+        .and_then(|rows| rows.first())
+        .map(|row| normalize_agency_folder_row(row, 0))
+        .unwrap_or(v);
+    Ok(Json(out))
 }
 
 pub async fn list_agency_files(
@@ -2301,7 +2206,7 @@ pub async fn delete_talent_asset(
     let file_resp = state
         .pg
         .from("agency_files")
-        .select("storage_path")
+        .select("storage_bucket,storage_path")
         .eq("id", &asset_id)
         .eq("agency_id", &agency_id)
         .eq("talent_id", &effective_talent_id)
@@ -2322,6 +2227,12 @@ pub async fn delete_talent_asset(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let file_json: serde_json::Value = serde_json::from_str(&file_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let storage_bucket = file_json["storage_bucket"].as_str().ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Storage bucket not found for asset".to_string(),
+        )
+    })?;
     let storage_path = file_json["storage_path"].as_str().ok_or_else(|| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -2329,40 +2240,33 @@ pub async fn delete_talent_asset(
         )
     })?;
 
-    // 3. Delete the file from Supabase Storage.
-    let storage_url = format!("{}/storage/v1/object/{}", state.supabase_url, storage_path);
-    let http = reqwest::Client::new();
-    let delete_resp = http
-        .delete(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !delete_resp.status().is_success() {
-        // Log the error but proceed to delete the DB record anyway.
-        // It's better to have a dangling DB record than an orphaned file.
-        let error_body = delete_resp.text().await.unwrap_or_default();
-        tracing::error!(
-            "Failed to delete file from storage: {}. Path: {}",
-            error_body,
-            storage_path
-        );
-    }
+    delete_object(&state, storage_bucket, storage_path).await?;
 
     // 4. Delete the record from the `agency_files` table.
-    state
+    let delete_row = state
         .pg
         .from("agency_files")
         .delete()
         .eq("id", &asset_id)
+        .eq("agency_id", &agency_id)
+        .eq("talent_id", &effective_talent_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let delete_status = delete_row.status();
+    let delete_text = delete_row
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !delete_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            delete_status.as_u16(),
+            delete_text,
+        ));
+    }
+    if let Err(err) = soft_delete_asset_record(&state, "agency_files", &asset_id).await {
+        warn!(agency_id = %agency_id, file_id = %asset_id, error = %err.1, "failed to soft-delete storage_assets row for talent asset");
+    }
 
     Ok(StatusCode::NO_CONTENT)
 }
