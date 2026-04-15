@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyRoster } from "@/api/functions";
 
 export const AddBookOutModal = ({
   open,
@@ -53,11 +53,18 @@ export const AddBookOutModal = ({
     let cancelled = false;
     const load = async () => {
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
         if (cancelled) return;
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         const mapped = Array.isArray(rows)
           ? rows.map((r: any) => ({
-              id: r.id || r.user_id || r.creator_id,
+              id: r.id,
               name: r.full_name || r.name || r.stage_name || "Unnamed",
             }))
           : [];

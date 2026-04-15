@@ -1,10 +1,11 @@
-use super::access::resolve_scope;
+use super::access::{invalidate_org_access_cache, resolve_scope};
 use super::permissions::{Permission, TeamRole};
 use super::queries::{
-    ensure_member_not_active, ensure_pending_invite_not_exists, expire_invite_if_needed,
-    fetch_invite_by_raw_token, fetch_membership_by_user, fetch_organization_name,
-    fetch_target_membership, latest_invite_for_email, list_audit_logs_for_scope,
-    list_invites_for_scope, list_members_for_scope, write_audit_log, AuditLogEntry,
+    count_active_members, count_pending_invites, ensure_member_not_active,
+    ensure_pending_invite_not_exists, expire_invite_if_needed, fetch_invite_by_raw_token,
+    fetch_membership_by_user, fetch_organization_name, fetch_target_membership,
+    latest_invite_for_email, list_audit_logs_for_scope, list_invites_for_scope,
+    list_members_for_scope, write_audit_log, AuditLogEntry,
 };
 use super::support::{
     ensure_assignable_role, ensure_permission, hash_token, internal_error, normalize_email,
@@ -14,7 +15,14 @@ use super::types::{
     ActionResponse, CreateInvitePayload, InviteRecord, MembershipRecord, OrganizationType,
     TeamContextResponse, TeamScopeQuery, UpdateMemberRolePayload,
 };
-use crate::{auth::AuthUser, config::AppState, email};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    email,
+    entitlements::{
+        format_seat_limit_error_with_upgrade, get_agency_seat_limit_info, get_brand_seat_limit_info,
+    },
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -159,6 +167,48 @@ pub async fn create_invite(
     let invited_role = parse_assignable_role(payload.role.as_str())?;
 
     ensure_assignable_role(&scope.membership.role, invited_role)?;
+
+    let current_members = count_active_members(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+    )
+    .await?;
+    let pending_invites = count_pending_invites(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+    )
+    .await?;
+
+    let seat_info = match scope.organization_type {
+        OrganizationType::Brand => {
+            get_brand_seat_limit_info(
+                &state,
+                scope.organization_id.as_str(),
+                current_members,
+                pending_invites,
+            )
+            .await?
+        }
+        OrganizationType::Agency => {
+            get_agency_seat_limit_info(
+                &state,
+                scope.organization_id.as_str(),
+                current_members,
+                pending_invites,
+            )
+            .await?
+        }
+    };
+
+    if !seat_info.can_add_member() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format_seat_limit_error_with_upgrade(&seat_info, scope.organization_type.as_str()),
+        ));
+    }
+
     ensure_member_not_active(
         &state,
         scope.organization_type,
@@ -338,6 +388,16 @@ pub async fn update_member_role(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
+    invalidate_org_access_cache(&state, &target_user_id, scope.organization_type.as_str());
+
+    tracing::info!(
+        user_id = %target_user_id,
+        org_type = %scope.organization_type.as_str(),
+        old_role = %target_role.as_str(),
+        new_role = %next_role.as_str(),
+        "User role updated and cache invalidated"
+    );
+
     write_audit_log(
         &state,
         AuditLogEntry {
@@ -426,6 +486,61 @@ pub async fn accept_invite_by_token(
     .await?;
 
     if existing_membership.is_none() {
+        let current_members =
+            count_active_members(&state, organization_type, invite.organization_id.as_str())
+                .await?;
+        let pending_invites =
+            count_pending_invites(&state, organization_type, invite.organization_id.as_str())
+                .await?;
+
+        let seat_info = match organization_type {
+            OrganizationType::Brand => {
+                get_brand_seat_limit_info(
+                    &state,
+                    invite.organization_id.as_str(),
+                    current_members,
+                    pending_invites.saturating_sub(1),
+                )
+                .await?
+            }
+            OrganizationType::Agency => {
+                get_agency_seat_limit_info(
+                    &state,
+                    invite.organization_id.as_str(),
+                    current_members,
+                    pending_invites.saturating_sub(1),
+                )
+                .await?
+            }
+        };
+
+        if !seat_info.can_add_member() {
+            let update_resp = state
+                .pg
+                .from("organization_invites")
+                .eq("id", invite.id.as_str())
+                .update(
+                    json!({
+                        "status": "expired",
+                        "updated_at": now_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await
+                .map_err(internal_error)?;
+            if !update_resp.status().is_success() {
+                tracing::warn!(
+                    invite_id = %invite.id,
+                    "Failed to mark invite as expired due to seat limit"
+                );
+            }
+            return Err((
+                StatusCode::FORBIDDEN,
+                format_seat_limit_error_with_upgrade(&seat_info, organization_type.as_str()),
+            ));
+        }
+
         let resp = state
             .pg
             .from("organization_memberships")
@@ -451,6 +566,14 @@ pub async fn accept_invite_by_token(
             let text = resp.text().await.unwrap_or_default();
             return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
         }
+
+        invalidate_org_access_cache(&state, &user.id, organization_type.as_str());
+        tracing::info!(
+            user_id = %user.id,
+            org_type = %organization_type.as_str(),
+            role = %invite.role,
+            "User accepted invite, cache invalidated"
+        );
     }
 
     let update_resp = state

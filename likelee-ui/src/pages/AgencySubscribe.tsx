@@ -1318,6 +1318,7 @@ export default function AgencySubscribe() {
                 "Agency dashboard access",
                 "Agency profile and organization setup",
                 "Read-only platform exploration",
+                "1 team seat (owner only)",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -1440,6 +1441,7 @@ export default function AgencySubscribe() {
                 "Invoice Generation & Management",
                 "Payment Tracking",
                 "Talent Statements",
+                "5 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
@@ -1559,6 +1561,7 @@ export default function AgencySubscribe() {
                 "Royalties & Payouts Dashboard",
                 "Financial Reports & Expense Tracking",
                 "Calendly integration",
+                "10 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">

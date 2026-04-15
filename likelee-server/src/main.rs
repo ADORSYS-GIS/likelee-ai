@@ -145,6 +145,10 @@ async fn main() {
             .stripe_agency_basic_headcount_annual_price_id
             .clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+        stripe_creator_basic_price_id: cfg.stripe_creator_basic_price_id.clone(),
+        stripe_creator_pro_price_id: cfg.stripe_creator_pro_price_id.clone(),
+        stripe_creator_basic_annual_price_id: cfg.stripe_creator_basic_annual_price_id.clone(),
+        stripe_creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
         stripe_agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
         stripe_agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
         stripe_agency_pro_headcount_annual_price_id: cfg
@@ -190,6 +194,22 @@ async fn main() {
             )
         } else {
             cfg.stripe_licensing_cancel_url.trim().to_string()
+        },
+        stripe_creator_success_url: if cfg.stripe_creator_success_url.trim().is_empty() {
+            format!(
+                "{}/CreatorSubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_creator_success_url.trim().to_string()
+        },
+        stripe_creator_cancel_url: if cfg.stripe_creator_cancel_url.trim().is_empty() {
+            format!(
+                "{}/CreatorSubscribe?canceled=1",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_creator_cancel_url.trim().to_string()
         },
 
         stripe_studio_success_url: {

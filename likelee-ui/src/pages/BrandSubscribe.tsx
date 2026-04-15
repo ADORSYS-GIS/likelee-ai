@@ -989,29 +989,35 @@ export default function BrandSubscribe() {
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Redirecting
                             </>
+                          ) : hasBaseSubscription ? (
+                            "Upgrade plan"
                           ) : (
                             plan.cta
                           )}
                         </Button>
-                        <Button
-                          disabled={!initialized || isLoading}
-                          variant="outline"
-                          className="h-11 w-full rounded-xl border border-[#4A6494] bg-transparent font-semibold text-white hover:bg-[#203C6C] disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() => handleBaseAction("pro", true)}
-                        >
-                          {isProTrialLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Redirecting
-                            </>
-                          ) : (
-                            "Start 14-day free trial"
-                          )}
-                        </Button>
-                        <p className="text-center text-xs text-[#B8C8E5]">
-                          Trial is optional. Start paid immediately or launch
-                          with a trial first.
-                        </p>
+                        {!hasBaseSubscription && (
+                          <>
+                            <Button
+                              disabled={!initialized || isLoading}
+                              variant="outline"
+                              className="h-11 w-full rounded-xl border border-[#4A6494] bg-transparent font-semibold text-white hover:bg-[#203C6C] disabled:cursor-not-allowed disabled:opacity-60"
+                              onClick={() => handleBaseAction("pro", true)}
+                            >
+                              {isProTrialLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Redirecting
+                                </>
+                              ) : (
+                                "Start 14-day free trial"
+                              )}
+                            </Button>
+                            <p className="text-center text-xs text-[#B8C8E5]">
+                              Trial is optional. Start paid immediately or
+                              launch with a trial first.
+                            </p>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <Button
@@ -1030,6 +1036,8 @@ export default function BrandSubscribe() {
                           </>
                         ) : isCurrentPlan ? (
                           "Current plan"
+                        ) : hasBaseSubscription ? (
+                          "Upgrade plan"
                         ) : (
                           plan.cta
                         )}

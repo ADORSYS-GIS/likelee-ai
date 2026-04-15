@@ -24,7 +24,7 @@ import {
 import {
   createOfferAssetRequest,
   createOfferTalentAssignment,
-  getAgencyRoster,
+  getAgencyTalents,
   listMyCampaignOffers,
   listOfferAssetRequests,
   listOfferDeliverables,
@@ -261,14 +261,24 @@ export function AgencyDeliverablesView() {
   const rosterQuery = useIndexedDbQuery<{ talents: any[] }>({
     queryKey: ["agency-roster", "deliverables"],
     queryFn: async () => {
-      const resp = await getAgencyRoster();
-      const talents = Array.isArray(resp)
-        ? resp
-        : Array.isArray((resp as any)?.talents)
-          ? (resp as any).talents
-          : Array.isArray((resp as any)?.data?.talents)
-            ? (resp as any).data.talents
+      const resp: any = await getAgencyTalents();
+      const rows = Array.isArray(resp?.talents)
+        ? resp.talents
+        : Array.isArray(resp?.data?.talents)
+          ? resp.data.talents
+          : Array.isArray(resp)
+            ? resp
             : [];
+      const talents = rows.map((row: any) => ({
+        id: String(row?.id || row?.creator_id || ""),
+        creator_id: String(row?.creator_id || row?.id || ""),
+        stage_name: row?.full_name || "",
+        full_legal_name: row?.full_name || "",
+        profile_photo_url: row?.profile_photo_url || "",
+        img: row?.profile_photo_url || "",
+        has_creator_account: Boolean(row?.creator_id || row?.id),
+        is_connected_creator: Boolean(row?.is_connected_creator),
+      }));
       return { talents };
     },
     maxAge: 5 * 60 * 1000, // 5 minutes

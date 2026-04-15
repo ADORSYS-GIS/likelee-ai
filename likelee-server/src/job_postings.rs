@@ -1,9 +1,7 @@
 use crate::{
+    activity::log_activity_event_with_subject,
     auth::AuthUser,
-    brand_campaigns::{
-        log_activity_event_with_subject, resolve_agency_name, resolve_brand_name,
-        resolve_creator_name,
-    },
+    brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name},
     config::AppState,
     errors::sanitize_db_error,
     team::require_brand_permission,

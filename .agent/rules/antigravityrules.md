@@ -70,3 +70,4 @@ trigger: always_on
 
 - [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Implemented multi-stage deliverable review workflow (draft -> submitted -> approved) and secure media proxy with JWT token fallback in query parameters for browser-native media elements.
 - [x] **Creator Payment Gate (2026-03-17)**: Implemented comprehensive payment gating for campaign deliverables. Restricted uploads and submissions for unpaid offers on both Agency and Creator dashboards, enhanced backend API with payment status, and integrated Stripe-based campaign offer checkout.
+- [x] **Creator Dashboard UI Optimization (2026-03-31)**: Decluttered the Creator Dashboard by removing the prominent plan banner and integrating plan status and 14-day trial information into the sidebar profile view with interactive redirection to billing settings.
