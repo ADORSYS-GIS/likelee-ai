@@ -1589,7 +1589,8 @@ export default function BrandDashboard() {
     // Campaign sharing is now handled through real API data
     toast({
       title: "Success",
-      description: "Brief shared with talent! They will receive an email with campaign details and contract.",
+      description:
+        "Brief shared with talent! They will receive an email with campaign details and contract.",
     });
   };
 
@@ -6659,7 +6660,10 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         {/* Assets are now loaded from real API data - no mock assets shown */}
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
-          <p className="text-gray-500">No assets available yet. Assets will appear here once campaigns are completed.</p>
+          <p className="text-gray-500">
+            No assets available yet. Assets will appear here once campaigns are
+            completed.
+          </p>
         </Card>
       </div>
 
@@ -7152,8 +7156,9 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{brand?.name || "Brand"}</strong> ("Licensee")
-                and <strong>{contract.creator_name}</strong> ("Licensor").
+                , by and between <strong>{brand?.name || "Brand"}</strong>{" "}
+                ("Licensee") and <strong>{contract.creator_name}</strong>{" "}
+                ("Licensor").
               </p>
 
               <p className="mb-6">
@@ -7236,9 +7241,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until {brand?.name || "Brand"}{" "}
-                approval of deliverables. Release upon approval or automatic
-                after 48 hours.
+                <strong>Payment:</strong> Held in escrow until{" "}
+                {brand?.name || "Brand"} approval of deliverables. Release upon
+                approval or automatic after 48 hours.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -7764,7 +7769,10 @@ export default function BrandDashboard() {
           <div className="space-y-4">
             {/* Contracts are now loaded from real API data */}
             <Card className="p-12 bg-white border border-gray-200 text-center">
-              <p className="text-gray-500">No contracts available yet. Contracts will appear here once campaigns are created.</p>
+              <p className="text-gray-500">
+                No contracts available yet. Contracts will appear here once
+                campaigns are created.
+              </p>
             </Card>
           </div>
         )}
@@ -7906,8 +7914,12 @@ export default function BrandDashboard() {
                   <tbody className="divide-y divide-gray-200">
                     {/* Licenses are now loaded from real API data */}
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
-                        No licenses available yet. Licenses will appear here once campaigns are completed.
+                      <td
+                        colSpan={8}
+                        className="px-4 py-12 text-center text-gray-500"
+                      >
+                        No licenses available yet. Licenses will appear here
+                        once campaigns are completed.
                       </td>
                     </tr>
                   </tbody>
@@ -7927,7 +7939,9 @@ export default function BrandDashboard() {
               <div className="grid md:grid-cols-3 gap-4">
                 {/* Expiring licenses are now loaded from real API data */}
                 <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">No expiring licenses at this time.</p>
+                  <p className="text-gray-500">
+                    No expiring licenses at this time.
+                  </p>
                 </div>
               </div>
             </Card>
@@ -8177,8 +8191,12 @@ export default function BrandDashboard() {
             <tbody className="divide-y divide-gray-200">
               {/* Campaigns are now loaded from real API data */}
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
-                  No campaigns available yet. Campaigns will appear here once you create them.
+                <td
+                  colSpan={5}
+                  className="px-4 py-12 text-center text-gray-500"
+                >
+                  No campaigns available yet. Campaigns will appear here once
+                  you create them.
                 </td>
               </tr>
             </tbody>

@@ -24,26 +24,26 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 
 ### Talent Portal
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/talent/me` | Get talent profile |
-| POST | `/api/talent/profile` | Update profile |
-| GET | `/api/talent/settings` | Get portal settings |
-| POST | `/api/talent/settings` | Update settings |
-| GET | `/api/talent/licensing-requests` | List pending license requests |
-| POST | `/api/talent/licensing-requests/:id/approve` | Approve license |
-| POST | `/api/talent/licensing-requests/:id/decline` | Decline license |
-| GET | `/api/talent/licenses` | List active licenses |
-| GET | `/api/talent/licensing/revenue` | Revenue summary |
-| GET | `/api/talent/bookings` | List bookings |
-| GET | `/api/talent/book-outs` | List book-outs |
-| POST | `/api/talent/book-outs` | Create book-out |
-| DELETE | `/api/talent/book-outs/:id` | Delete book-out |
-| GET | `/api/talent/payouts/account-status` | Stripe Connect status |
-| POST | `/api/talent/payouts/onboarding-link` | Get onboarding link |
-| GET | `/api/talent/payouts/balance` | Available balance |
-| POST | `/api/talent/payouts/request` | Request payout |
-| GET | `/api/talent/analytics` | Creator analytics with plan-aware advanced fields |
+| Method | Path                                         | Description                                       |
+| ------ | -------------------------------------------- | ------------------------------------------------- |
+| GET    | `/api/talent/me`                             | Get talent profile                                |
+| POST   | `/api/talent/profile`                        | Update profile                                    |
+| GET    | `/api/talent/settings`                       | Get portal settings                               |
+| POST   | `/api/talent/settings`                       | Update settings                                   |
+| GET    | `/api/talent/licensing-requests`             | List pending license requests                     |
+| POST   | `/api/talent/licensing-requests/:id/approve` | Approve license                                   |
+| POST   | `/api/talent/licensing-requests/:id/decline` | Decline license                                   |
+| GET    | `/api/talent/licenses`                       | List active licenses                              |
+| GET    | `/api/talent/licensing/revenue`              | Revenue summary                                   |
+| GET    | `/api/talent/bookings`                       | List bookings                                     |
+| GET    | `/api/talent/book-outs`                      | List book-outs                                    |
+| POST   | `/api/talent/book-outs`                      | Create book-out                                   |
+| DELETE | `/api/talent/book-outs/:id`                  | Delete book-out                                   |
+| GET    | `/api/talent/payouts/account-status`         | Stripe Connect status                             |
+| POST   | `/api/talent/payouts/onboarding-link`        | Get onboarding link                               |
+| GET    | `/api/talent/payouts/balance`                | Available balance                                 |
+| POST   | `/api/talent/payouts/request`                | Request payout                                    |
+| GET    | `/api/talent/analytics`                      | Creator analytics with plan-aware advanced fields |
 
 ### Agency Dashboard
 
@@ -121,12 +121,12 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 
 ### Billing
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/stripe/create-checkout-session` | Create Stripe checkout |
-| POST | `/api/agency/billing/checkout` | Agency subscription checkout |
-| POST | `/api/creator/billing/checkout` | Creator subscription checkout |
-| GET | `/api/creator/billing/status` | Creator billing state and entitlements |
+| Method | Path                                  | Description                            |
+| ------ | ------------------------------------- | -------------------------------------- |
+| POST   | `/api/stripe/create-checkout-session` | Create Stripe checkout                 |
+| POST   | `/api/agency/billing/checkout`        | Agency subscription checkout           |
+| POST   | `/api/creator/billing/checkout`       | Creator subscription checkout          |
+| GET    | `/api/creator/billing/status`         | Creator billing state and entitlements |
 
 ## Webhooks
 

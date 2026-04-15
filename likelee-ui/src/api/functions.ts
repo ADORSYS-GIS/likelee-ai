@@ -183,7 +183,6 @@ export const verifyBrandStudioAddonCheckout = (data: { session_id: string }) =>
     data,
   );
 
-
 export const createCreatorSubscriptionCheckout = (data: {
   plan: "basic" | "pro";
   interval?: "month" | "year";

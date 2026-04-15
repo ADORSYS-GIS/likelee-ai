@@ -41,7 +41,7 @@ Creator entitlements are enforced server-side before UI gating:
 - `STRIPE_CREATOR_PRO_PRICE_ID`
 - `STRIPE_CREATOR_SUCCESS_URL`
 - `STRIPE_CREATOR_CANCEL_URL`
-The AI creation ecosystem connecting Faces, AI Creators, and Brands
+  The AI creation ecosystem connecting Faces, AI Creators, and Brands
 
 ## Marketplace Creator Connections
 
