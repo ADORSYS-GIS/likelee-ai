@@ -101,51 +101,101 @@ pub async fn upsert_profile(
         body.as_object_mut().unwrap().remove("updated_date");
     }
 
-    let exists = match state
-        .pg
-        .from("creators")
-        .select("id")
-        .eq("email", &email)
-        .limit(1)
-        .execute()
-        .await
-    {
-        Ok(resp) => {
-            let text = resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let rows: serde_json::Value = serde_json::from_str(&text)
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
-        }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("42703") || (msg.contains("relation") && msg.contains("does not exist"))
-            {
-                warn!(%msg, "profiles table missing; cannot upsert");
-                return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    "profiles table missing".into(),
-                ));
+    let existing_row = {
+        let by_id = match state
+            .pg
+            .from("creators")
+            .select("id")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            Ok(resp) => {
+                let text = resp
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let rows: serde_json::Value = serde_json::from_str(&text)
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                rows.as_array().and_then(|a| a.first()).cloned()
             }
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+            Err(e) => {
+                let msg = e.to_string();
+                if msg.contains("42703")
+                    || (msg.contains("relation") && msg.contains("does not exist"))
+                {
+                    warn!(%msg, "profiles table missing; cannot upsert");
+                    return Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        "profiles table missing".into(),
+                    ));
+                }
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+            }
+        };
+
+        if by_id.is_some() {
+            by_id
+        } else {
+            match state
+                .pg
+                .from("creators")
+                .select("id")
+                .eq("email", &email)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(resp) => {
+                    let text = resp
+                        .text()
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    let rows: serde_json::Value = serde_json::from_str(&text)
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    rows.as_array().and_then(|a| a.first()).cloned()
+                }
+                Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+            }
         }
     };
 
     let body_str =
         serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-    if exists {
+    if let Some(existing) = existing_row {
+        let target_id = existing
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&user.id)
+            .to_string();
+
         let resp = state
             .pg
             .from("creators")
-            .eq("email", &email)
+            .eq("id", &target_id)
             .update(body_str)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let text = resp.text().await.unwrap_or_else(|_| "{}".into());
-        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
+        if !resp.status().is_success() {
+            let err = resp.text().await.unwrap_or_default();
+            warn!(creator_id = %target_id, body = %err, "creator profile update failed");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        }
+
+        let refreshed = state
+            .pg
+            .from("creators")
+            .select("*")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = refreshed.text().await.unwrap_or_else(|_| "[]".into());
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
         Ok(Json(v))
     } else {
         if body.get("created_at").is_none() {
@@ -165,8 +215,24 @@ pub async fn upsert_profile(
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let text = resp.text().await.unwrap_or_else(|_| "{}".into());
-        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
+        if !resp.status().is_success() {
+            let err = resp.text().await.unwrap_or_default();
+            warn!(creator_id = %user.id, body = %err, "creator profile insert failed");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        }
+
+        let refreshed = state
+            .pg
+            .from("creators")
+            .select("*")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = refreshed.text().await.unwrap_or_else(|_| "[]".into());
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
         Ok(Json(v))
     }
 }
@@ -308,6 +374,12 @@ pub async fn upload_profile_photo(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        warn!(creator_id = %user_id, body = %err, "creator profile photo update failed");
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
 
     let text = resp
         .text()
