@@ -227,7 +227,12 @@ export function CreatePackageWizard({
           const embeddedTalent =
             it?.talent || it?.agency_users || it?.talent_profile || null;
           const talentId = String(
-            it?.talent_id || embeddedTalent?.id || it?.id || "",
+            it?.talent_id ||
+              embeddedTalent?.id ||
+              it?.creator_id ||
+              it?.relationship_id ||
+              it?.id ||
+              "",
           ).trim();
           if (!talentId) return null;
           const assets = Array.isArray(it?.assets)

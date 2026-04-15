@@ -33,6 +33,42 @@ interface Asset {
   };
 }
 
+type AssetUploadResponse = {
+  id?: string;
+  file_name?: string;
+  public_url?: string | null;
+  created_at?: string | null;
+};
+
+const toAsset = (raw: any): Asset | null => {
+  const id = String(raw?.id || "").trim();
+  if (!id) return null;
+
+  const directUrl = String(raw?.url || raw?.public_url || "").trim();
+  if (!directUrl) return null;
+
+  const fileName = String(raw?.file_name || "").toLowerCase();
+  const type =
+    raw?.type === "video" ||
+    fileName.endsWith(".mp4") ||
+    fileName.endsWith(".mov") ||
+    fileName.endsWith(".webm")
+      ? "video"
+      : "image";
+
+  return {
+    id,
+    url: directUrl,
+    type,
+    metadata: {
+      section: String(raw?.metadata?.section || "agency_upload"),
+      created_at: String(
+        raw?.metadata?.created_at || raw?.created_at || new Date().toISOString(),
+      ),
+    },
+  };
+};
+
 interface AssetSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,10 +105,37 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     enabled: open && !!talentId,
   });
 
+  const normalizedAssets = React.useMemo(() => {
+    if (Array.isArray(assets)) {
+      return assets
+        .map((asset) => toAsset(asset))
+        .filter((asset): asset is Asset => Boolean(asset));
+    }
+    const single = toAsset(assets);
+    return single ? [single] : [];
+  }, [assets]);
+
   const uploadMutation = useMutation({
     mutationFn: (formData: FormData) =>
       packageApi.uploadTalentAsset(talentId, formData),
-    onSuccess: () => {
+    onSuccess: (uploaded: AssetUploadResponse) => {
+      const uploadedAsset = toAsset(uploaded);
+      if (uploadedAsset) {
+        queryClient.setQueryData(
+          ["talent-assets", talentId],
+          (previous: any) => {
+            const current = Array.isArray(previous)
+              ? previous
+                  .map((asset) => toAsset(asset))
+                  .filter((asset): asset is Asset => Boolean(asset))
+              : [];
+            const withoutDuplicate = current.filter(
+              (asset) => asset.id !== uploadedAsset.id,
+            );
+            return [uploadedAsset, ...withoutDuplicate];
+          },
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["talent-assets", talentId] });
     },
     onSettled: () => {
@@ -148,7 +211,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
   const handleConfirm = async () => {
     setIsApplying(true);
     await new Promise((r) => setTimeout(r, 400));
-    const selectedAssetObjects = assets.filter((asset: Asset) =>
+    const selectedAssetObjects = normalizedAssets.filter((asset: Asset) =>
       tempSelection.includes(asset.id),
     );
     onSelect(selectedAssetObjects);
@@ -214,9 +277,9 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
             </div>
           ) : (
             <ScrollArea className="h-full pr-4 mt-6">
-              {assets && assets.length > 0 ? (
+              {normalizedAssets.length > 0 ? (
                 <div className="grid grid-cols-3 gap-6">
-                  {assets.map((asset: Asset) => {
+                  {normalizedAssets.map((asset: Asset) => {
                     const isSelected = tempSelection.includes(asset.id);
                     return (
                       <motion.div
