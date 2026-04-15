@@ -286,7 +286,8 @@ impl SeatLimitInfo {
     }
 
     pub fn seats_remaining(&self) -> Option<usize> {
-        self.limit.map(|limit| limit.saturating_sub(self.current_usage))
+        self.limit
+            .map(|limit| limit.saturating_sub(self.current_usage))
     }
 }
 
@@ -346,7 +347,7 @@ pub async fn get_agency_seat_limit_info(
         Some(n) if n > 0 => Some(n as usize),
         _ => match access.billed_tier {
             PlanTier::Free => Some(1),
-            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise => Some(186),
+            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise => Some(5),
         },
     };
 
@@ -380,13 +381,18 @@ pub fn format_seat_limit_error(info: &SeatLimitInfo) -> String {
     }
 }
 
-pub fn format_seat_limit_error_with_upgrade(info: &SeatLimitInfo, organization_type: &str) -> String {
+pub fn format_seat_limit_error_with_upgrade(
+    info: &SeatLimitInfo,
+    organization_type: &str,
+) -> String {
     match info.limit {
         Some(limit) => {
             let upgrade_hint = match organization_type {
                 "brand" => match info.plan_tier {
                     PlanTier::Free => "Upgrade to Basic or Pro to unlock team seats.",
-                    PlanTier::Basic => "Upgrade to Pro for 5 seats or Enterprise for unlimited seats.",
+                    PlanTier::Basic => {
+                        "Upgrade to Pro for 5 seats or Enterprise for unlimited seats."
+                    }
                     PlanTier::Pro => "Upgrade to Enterprise for unlimited seats.",
                     PlanTier::Enterprise => "",
                 },

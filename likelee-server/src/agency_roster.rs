@@ -1499,7 +1499,7 @@ pub async fn create_talent(
         .unwrap_or(0);
     if seats_limit <= 0 {
         seats_limit = match plan_tier.as_str() {
-            "basic" | "pro" | "enterprise" => 186,
+            "basic" | "pro" | "enterprise" => 5,
             _ => 1,
         };
     }

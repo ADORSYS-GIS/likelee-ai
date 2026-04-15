@@ -461,7 +461,33 @@ fetch('/api/team/context?organization_type=brand', {
 
 ---
 
+## Subscription Plan Limits
+
+### Agency Team Seat Limits
+
+Agency team seat limits define the maximum number of internal team members (Owner, Admin, Project Manager, Reviewer) that can be invited to an agency organization.
+
+| Plan Tier | Team Seat Limit |
+|-----------|-----------------|
+| Free      | 1               |
+| Basic     | 5               |
+| Pro       | 5               |
+| Enterprise| 5               |
+
+**Note:** Team seats are separate from roster seats (talent/models). Roster seats are purchased separately and have different pricing tiers.
+
+### Implementation
+
+- **Backend**: `likelee-server/src/entitlements.rs` - `get_seat_limit_info()` function
+- **Backend**: `likelee-server/src/agency_roster.rs` - Seat limit validation for roster operations
+
+---
+
 ## Change History
+
+### 2026-04-15
+- **Updated**: Agency team seat limits changed from 186 to 5 for Basic/Pro/Enterprise plans
+- **Added**: Subscription plan limits documentation section
 
 ### 2026-04-14
 - **Added**: `ManageLicenses` permission to Project Manager role
