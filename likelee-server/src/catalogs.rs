@@ -1263,6 +1263,59 @@ pub async fn get_public_catalog(
     let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".into());
     let items: Vec<serde_json::Value> = serde_json::from_str(&items_text).unwrap_or_default();
 
+    let mut talent_name_by_any_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut talent_photo_by_any_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !agency_id.is_empty() {
+        if let Ok(refs) =
+            crate::agency_talent_refs::list_agency_talent_refs(&state, agency_id, None).await
+        {
+            for r in refs {
+                let name = r.full_name.trim().to_string();
+                if name.is_empty() {
+                    continue;
+                }
+                let photo = r
+                    .profile_photo_url
+                    .as_deref()
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if !r.id.trim().is_empty() {
+                    talent_name_by_any_id.insert(r.id.clone(), name.clone());
+                    if !photo.is_empty() {
+                        talent_photo_by_any_id.insert(r.id.clone(), photo.clone());
+                    }
+                }
+                if let Some(v) = r.agency_user_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+                if let Some(v) = r.relationship_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+                if let Some(v) = r.creator_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // 3. For each item, fetch assets and recordings
     let mut enriched_items: Vec<serde_json::Value> = Vec::new();
 
@@ -1478,61 +1531,31 @@ pub async fn get_public_catalog(
             }
         }
 
-        // Fetch talent display name + photo
-        let (talent_name, talent_stage_name, talent_photo_url) = {
-            let tn_resp = state
-                .pg
-                .from("agency_users")
-                .auth(state.supabase_service_key.clone())
-                .select("full_legal_name,stage_name,profile_photo_url")
-                .eq("id", talent_id)
-                .limit(1)
-                .execute()
-                .await;
-
-            let tn_rows: Vec<serde_json::Value> = if let Ok(resp) = tn_resp {
-                if let Ok(text) = resp.text().await {
-                    serde_json::from_str(&text).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            } else {
-                Vec::new()
-            };
-
-            let row = tn_rows.into_iter().next();
-            let name = row
-                .as_ref()
-                .and_then(|r| {
-                    r.get("stage_name")
-                        .or_else(|| r.get("full_legal_name"))
-                        .and_then(|v| v.as_str())
-                })
-                .unwrap_or("Talent")
-                .to_string();
-            let stage = row
-                .as_ref()
-                .and_then(|r| r.get("stage_name").and_then(|v| v.as_str()))
-                .map(|s| s.to_string());
-            let photo = row
-                .as_ref()
-                .and_then(|r| r.get("profile_photo_url").and_then(|v| v.as_str()))
-                .map(|s| s.to_string());
-            (name, stage, photo)
+        let talent_name = talent_name_by_any_id
+            .get(talent_id)
+            .cloned()
+            .unwrap_or_else(|| "Talent".to_string());
+        let talent_stage_name: Option<String> = if talent_name.trim().is_empty()
+            || talent_name.trim().eq_ignore_ascii_case("talent")
+        {
+            None
+        } else {
+            Some(talent_name.clone())
         };
+        let talent_photo_url = talent_photo_by_any_id.get(talent_id).cloned();
 
         enriched_items.push(json!({
             "talent_id": talent_id,
-            "talent_name": talent_name,
+            "talent_name": if talent_name.is_empty() { serde_json::Value::Null } else { json!(talent_name) },
             "talent_stage_name": talent_stage_name,
             "talent_photo_url": talent_photo_url,
             "sort_order": item.get("sort_order"),
             "assets": assets,
             "recordings": recordings,
         }));
+
     }
 
-    // 4. Retrieve licensing receipt details (if linked)
     let receipt = if let Some(ref lr_id) = licensing_request_id {
         let lr_resp = state
             .pg
