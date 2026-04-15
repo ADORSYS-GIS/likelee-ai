@@ -471,8 +471,8 @@ Agency team seat limits define the maximum number of internal team members (Owne
 |-----------|-----------------|
 | Free      | 1               |
 | Basic     | 5               |
-| Pro       | 5               |
-| Enterprise| 5               |
+| Pro       | 10              |
+| Enterprise| 10              |
 
 **Note:** Team seats are separate from roster seats (talent/models). Roster seats are purchased separately and have different pricing tiers.
 

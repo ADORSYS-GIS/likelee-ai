@@ -1561,7 +1561,7 @@ export default function AgencySubscribe() {
                 "Royalties & Payouts Dashboard",
                 "Financial Reports & Expense Tracking",
                 "Calendly integration",
-                "5 team seats",
+                "10 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">

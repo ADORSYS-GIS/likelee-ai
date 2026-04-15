@@ -347,7 +347,8 @@ pub async fn get_agency_seat_limit_info(
         Some(n) if n > 0 => Some(n as usize),
         _ => match access.billed_tier {
             PlanTier::Free => Some(1),
-            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise => Some(5),
+            PlanTier::Basic => Some(5),
+            PlanTier::Pro | PlanTier::Enterprise => Some(10),
         },
     };
 
