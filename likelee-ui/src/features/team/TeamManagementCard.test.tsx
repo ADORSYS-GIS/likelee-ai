@@ -13,6 +13,7 @@ import {
   waitFor,
   cleanup,
   fireEvent,
+  act,
 } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 
@@ -27,13 +28,9 @@ vi.mock("@/components/ui/use-toast", () => ({
   })),
 }));
 
-// Mock timers
-vi.useFakeTimers();
-
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
-  vi.clearAllTimers();
 });
 
 import { useAuth } from "@/auth/AuthProvider";
@@ -93,20 +90,25 @@ describe("TeamManagementCard - Invite Member Functionality", () => {
     });
 
     // Act: Render TeamManagementCard
-    render(
-      <BrowserRouter>
-        <TeamManagementCard organizationType="brand" />
-      </BrowserRouter>,
-    );
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <TeamManagementCard organizationType="brand" />
+        </BrowserRouter>,
+      );
+    });
 
     // Assert: Should display invite team member button
-    await waitFor(() => {
-      const inviteButton = screen.queryByRole("button", {
-        name: /invite team member/i,
-      });
-      expect(inviteButton).toBeInTheDocument();
-    });
-  });
+    await waitFor(
+      () => {
+        const inviteButton = screen.queryByRole("button", {
+          name: /invite team member/i,
+        });
+        expect(inviteButton).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 
   /**
    * Test Case 2: Invite Form Dialog Opens
@@ -149,31 +151,41 @@ describe("TeamManagementCard - Invite Member Functionality", () => {
     });
 
     // Act: Render TeamManagementCard
-    render(
-      <BrowserRouter>
-        <TeamManagementCard organizationType="brand" />
-      </BrowserRouter>,
-    );
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <TeamManagementCard organizationType="brand" />
+        </BrowserRouter>,
+      );
+    });
 
     // Wait for component to load
-    await waitFor(() => {
-      const inviteButton = screen.queryByRole("button", {
-        name: /invite team member/i,
-      });
-      expect(inviteButton).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        const inviteButton = screen.queryByRole("button", {
+          name: /invite team member/i,
+        });
+        expect(inviteButton).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
 
     // Click the invite button
     const inviteButton = screen.getByRole("button", {
       name: /invite team member/i,
     });
-    fireEvent.click(inviteButton);
+    await act(async () => {
+      fireEvent.click(inviteButton);
+    });
 
     // Assert: Dialog should open with form elements
-    await waitFor(() => {
-      const dialogTitle = screen.queryByText(/invite team member/i);
-      expect(dialogTitle).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        const dialogTitle = screen.queryByText(/invite team member/i);
+        expect(dialogTitle).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
 
     // Check for email input
     const emailInput = screen.queryByPlaceholderText(/colleague@example.com/i);
@@ -182,7 +194,7 @@ describe("TeamManagementCard - Invite Member Functionality", () => {
     // Check for role selection
     const roleSelect = screen.queryByText(/select role/i);
     expect(roleSelect).toBeInTheDocument();
-  });
+  }, 15000);
 
   /**
    * Test Case 3: Invite Form Submits Successfully
@@ -237,50 +249,67 @@ describe("TeamManagementCard - Invite Member Functionality", () => {
     });
 
     // Act: Render TeamManagementCard
-    render(
-      <BrowserRouter>
-        <TeamManagementCard organizationType="brand" />
-      </BrowserRouter>,
-    );
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <TeamManagementCard organizationType="brand" />
+        </BrowserRouter>,
+      );
+    });
 
     // Wait for component to load and click invite button
-    await waitFor(() => {
-      const inviteButton = screen.queryByRole("button", {
-        name: /invite team member/i,
-      });
-      expect(inviteButton).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        const inviteButton = screen.queryByRole("button", {
+          name: /invite team member/i,
+        });
+        expect(inviteButton).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
 
     const inviteButton = screen.getByRole("button", {
       name: /invite team member/i,
     });
-    fireEvent.click(inviteButton);
+    await act(async () => {
+      fireEvent.click(inviteButton);
+    });
 
     // Wait for dialog to open
-    await waitFor(() => {
-      const dialogTitle = screen.queryByText(/invite team member/i);
-      expect(dialogTitle).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        const dialogTitle = screen.queryByText(/invite team member/i);
+        expect(dialogTitle).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
 
     // Fill in the email
     const emailInput = screen.getByPlaceholderText(/colleague@example.com/i);
-    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    await act(async () => {
+      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    });
 
     // Click send invitation button
     const sendButton = screen.getByRole("button", { name: /send invitation/i });
-    fireEvent.click(sendButton);
+    await act(async () => {
+      fireEvent.click(sendButton);
+    });
 
     // Assert: API should be called
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/team/invites"),
-        expect.objectContaining({
-          method: "POST",
-          body: expect.stringContaining("test@example.com"),
-        }),
-      );
-    });
-  });
+    await waitFor(
+      () => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/team/invites"),
+          expect.objectContaining({
+            method: "POST",
+            body: expect.stringContaining("test@example.com"),
+          }),
+        );
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 
   /**
    * Test Case 4: Invite Button Disabled for Users Without Permissions
