@@ -189,7 +189,8 @@ export function PublicPackageView() {
   const rawPackageData = packageData as any;
 
   const getTalentId = (item: any) => {
-    const talent = item?.talent || item?.agency_users || item?.creator || item || {};
+    const talent =
+      item?.talent || item?.agency_users || item?.creator || item || {};
     const id =
       talent?.id ||
       item?.talent_id ||
@@ -200,7 +201,8 @@ export function PublicPackageView() {
   };
 
   const getTalentName = (item: any) => {
-    const talent = item?.talent || item?.agency_users || item?.creator || item || {};
+    const talent =
+      item?.talent || item?.agency_users || item?.creator || item || {};
     return String(
       talent?.stage_name ||
         talent?.full_legal_name ||

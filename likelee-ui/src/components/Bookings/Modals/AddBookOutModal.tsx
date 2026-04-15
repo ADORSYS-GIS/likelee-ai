@@ -93,8 +93,8 @@ export const AddBookOutModal = ({
       id: `bo-${Date.now()}`,
       talentId,
       creator_id: talents.find((talent) => talent.id === talentId)?.creator_id,
-      relationship_id:
-        talents.find((talent) => talent.id === talentId)?.relationship_id,
+      relationship_id: talents.find((talent) => talent.id === talentId)
+        ?.relationship_id,
       reason,
       startDate,
       endDate,

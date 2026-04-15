@@ -209,7 +209,8 @@ pub async fn get_roster(
     let agency_id = &access.organization_id;
     crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
     let talent_refs = list_agency_talent_refs(&state, agency_id, None).await?;
-    let mut ref_by_key: HashMap<String, crate::agency_talent_refs::AgencyTalentRef> = HashMap::new();
+    let mut ref_by_key: HashMap<String, crate::agency_talent_refs::AgencyTalentRef> =
+        HashMap::new();
     for talent_ref in talent_refs {
         ref_by_key.insert(talent_ref.id.clone(), talent_ref.clone());
         if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {

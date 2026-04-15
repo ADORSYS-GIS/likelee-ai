@@ -11,7 +11,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-
 async fn enforce_voice_clone_limit_for_agency(
     state: &AppState,
     agency_id: &str,
@@ -548,12 +547,9 @@ pub async fn list_voice_recordings(
             let access = crate::team::require_agency_access(&state, &user).await?;
             let agency_id = &access.organization_id;
 
-            let talent_ref = crate::agency_talent_refs::resolve_agency_talent_ref(
-                &state,
-                agency_id,
-                tid,
-            )
-            .await?;
+            let talent_ref =
+                crate::agency_talent_refs::resolve_agency_talent_ref(&state, agency_id, tid)
+                    .await?;
 
             let effective_agency_user_id = talent_ref
                 .agency_user_id

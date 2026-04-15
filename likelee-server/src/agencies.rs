@@ -1863,12 +1863,15 @@ pub async fn list_talent_assets(
         .pg
         .from("reference_images")
         .select("id,public_url,section_id,created_at")
-        .or(
-            effective_creator_id
-                .as_ref()
-                .map(|creator_id| format!("user_id.eq.{},user_id.eq.{}", effective_talent_id, creator_id))
-                .unwrap_or_else(|| format!("user_id.eq.{}", effective_talent_id)),
-        )
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "user_id.eq.{},user_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("user_id.eq.{}", effective_talent_id)))
         .eq("moderation_status", "approved")
         .order("created_at.desc")
         .execute()
@@ -1888,12 +1891,15 @@ pub async fn list_talent_assets(
         .from("agency_files")
         .select("id,file_name,public_url,created_at,storage_path")
         .eq("agency_id", &agency_id)
-        .or(
-            effective_creator_id
-                .as_ref()
-                .map(|creator_id| format!("talent_id.eq.{},creator_id.eq.{}", effective_talent_id, creator_id))
-                .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)),
-        )
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .order("created_at.desc")
         .execute()
         .await
@@ -1970,12 +1976,15 @@ pub async fn delete_talent_asset(
         .select("storage_path")
         .eq("id", &asset_id)
         .eq("agency_id", &agency_id)
-        .or(
-            effective_creator_id
-                .as_ref()
-                .map(|creator_id| format!("talent_id.eq.{},creator_id.eq.{}", effective_talent_id, creator_id))
-                .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)),
-        )
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .single()
         .execute()
         .await

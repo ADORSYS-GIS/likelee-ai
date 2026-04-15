@@ -63,7 +63,9 @@ const toAsset = (raw: any): Asset | null => {
     metadata: {
       section: String(raw?.metadata?.section || "agency_upload"),
       created_at: String(
-        raw?.metadata?.created_at || raw?.created_at || new Date().toISOString(),
+        raw?.metadata?.created_at ||
+          raw?.created_at ||
+          new Date().toISOString(),
       ),
     },
   };

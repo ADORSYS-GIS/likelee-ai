@@ -355,13 +355,19 @@ pub async fn create_package(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
             if !lookup_status.is_success() {
                 tracing::error!("Failed to lookup package item id: {}", lookup_text);
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Item ID missing".to_string()));
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Item ID missing".to_string(),
+                ));
             }
             let v: serde_json::Value = serde_json::from_str(&lookup_text)
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
             v.get("id")
                 .and_then(|x| x.as_str())
-                .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Item ID missing".to_string()))?
+                .ok_or((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Item ID missing".to_string(),
+                ))?
                 .to_string()
         };
 

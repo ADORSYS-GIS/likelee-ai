@@ -12,7 +12,9 @@ function App() {
   const isPublicShareRoute = (() => {
     try {
       const path = window.location?.pathname || "";
-      return path.startsWith("/share/package/") || path.startsWith("/share/catalog/");
+      return (
+        path.startsWith("/share/package/") || path.startsWith("/share/catalog/")
+      );
     } catch {
       return false;
     }

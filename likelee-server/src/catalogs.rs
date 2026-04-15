@@ -1,7 +1,7 @@
 use crate::{
+    agency_talent_refs::list_agency_talent_refs,
     auth::AuthUser,
     config::AppState,
-    agency_talent_refs::list_agency_talent_refs,
     team::{permissions::Permission, require_agency_permission},
 };
 use axum::{
@@ -259,15 +259,13 @@ pub async fn list_eligible_requests(
     for row in lr_rows {
         let lrid = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
-        let submission = row
-            .get("license_submissions")
-            .and_then(|v| {
-                if v.is_array() {
-                    v.as_array().and_then(|arr| arr.first()).cloned()
-                } else {
-                    Some(v.clone())
-                }
-            });
+        let submission = row.get("license_submissions").and_then(|v| {
+            if v.is_array() {
+                v.as_array().and_then(|arr| arr.first()).cloned()
+            } else {
+                Some(v.clone())
+            }
+        });
         let submission_status = submission
             .as_ref()
             .and_then(|ls| ls.get("status"))
@@ -539,7 +537,10 @@ pub async fn list_eligible_requests(
 
             // Some flows store agency_users.id in talent_ids, others store relationship.id.
             // Try both: match on talent_id and on relationship row id.
-            for (col, selector) in [("talent_id", "talent_id,creator_id"), ("id", "id,talent_id,creator_id")] {
+            for (col, selector) in [
+                ("talent_id", "talent_id,creator_id"),
+                ("id", "id,talent_id,creator_id"),
+            ] {
                 let rel_resp = state
                     .pg
                     .from("agency_talent_relationships")
@@ -641,7 +642,8 @@ pub async fn list_eligible_requests(
             .cloned()
             .collect();
         if !missing_name_keys.is_empty() {
-            let mut creator_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+            let mut creator_ids: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
             for key in &missing_name_keys {
                 let cid = talent_creator_map
                     .get(key)
@@ -705,7 +707,8 @@ pub async fn list_eligible_requests(
 
         // 4e. Final override: if we still have placeholder names but do have a creator_id mapping,
         // force the creators.full_name (covers relationship-id keys for connected creators).
-        let mut creator_ids_all: std::collections::HashSet<String> = std::collections::HashSet::new();
+        let mut creator_ids_all: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
         for cid in talent_creator_map.values() {
             if !cid.trim().is_empty() {
                 creator_ids_all.insert(cid.clone());
@@ -765,10 +768,7 @@ pub async fn list_eligible_requests(
                     }
 
                     for key in &all_talent_ids {
-                        let current = talent_name_map
-                            .get(key)
-                            .cloned()
-                            .unwrap_or_default();
+                        let current = talent_name_map.get(key).cloned().unwrap_or_default();
                         let is_placeholder = current.trim().is_empty()
                             || current.trim().eq_ignore_ascii_case("talent")
                             || current.trim().eq_ignore_ascii_case("user")
@@ -1535,13 +1535,12 @@ pub async fn get_public_catalog(
             .get(talent_id)
             .cloned()
             .unwrap_or_else(|| "Talent".to_string());
-        let talent_stage_name: Option<String> = if talent_name.trim().is_empty()
-            || talent_name.trim().eq_ignore_ascii_case("talent")
-        {
-            None
-        } else {
-            Some(talent_name.clone())
-        };
+        let talent_stage_name: Option<String> =
+            if talent_name.trim().is_empty() || talent_name.trim().eq_ignore_ascii_case("talent") {
+                None
+            } else {
+                Some(talent_name.clone())
+            };
         let talent_photo_url = talent_photo_by_any_id.get(talent_id).cloned();
 
         enriched_items.push(json!({
@@ -1553,7 +1552,6 @@ pub async fn get_public_catalog(
             "assets": assets,
             "recordings": recordings,
         }));
-
     }
 
     let receipt = if let Some(ref lr_id) = licensing_request_id {

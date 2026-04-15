@@ -105,11 +105,21 @@ pub async fn create_with_files(
     let resolved_creator_id = resolved_talent_ref
         .as_ref()
         .and_then(|talent_ref| talent_ref.creator_id.clone())
-        .or_else(|| payload.creator_id.clone().filter(|value| !value.trim().is_empty()));
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
     let resolved_relationship_id = resolved_talent_ref
         .as_ref()
         .and_then(|talent_ref| talent_ref.relationship_id.clone())
-        .or_else(|| payload.relationship_id.clone().filter(|value| !value.trim().is_empty()));
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
 
     // Reuse create logic: normalize times
     let is_all_day = payload.all_day.unwrap_or(false);
@@ -339,11 +349,21 @@ pub async fn create(
     let resolved_creator_id = resolved_talent_ref
         .as_ref()
         .and_then(|talent_ref| talent_ref.creator_id.clone())
-        .or_else(|| payload.creator_id.clone().filter(|value| !value.trim().is_empty()));
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
     let resolved_relationship_id = resolved_talent_ref
         .as_ref()
         .and_then(|talent_ref| talent_ref.relationship_id.clone())
-        .or_else(|| payload.relationship_id.clone().filter(|value| !value.trim().is_empty()));
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
     // Enforce full-day booking times if all_day=true
     let is_all_day = payload.all_day.unwrap_or(false);
     let (call_time, wrap_time) = if is_all_day {

@@ -203,9 +203,11 @@ pub async fn list_agency_talent_refs(
             .and_then(|v| v.as_str())
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        let rel_row = rel_by_talent_id
-            .get(&agency_user_id)
-            .or_else(|| creator_id.as_ref().and_then(|cid| rel_by_creator_id.get(cid)));
+        let rel_row = rel_by_talent_id.get(&agency_user_id).or_else(|| {
+            creator_id
+                .as_ref()
+                .and_then(|cid| rel_by_creator_id.get(cid))
+        });
         let creator_row = creator_id.as_ref().and_then(|cid| creators_by_id.get(cid));
         let full_name = preferred_name(
             row.get("stage_name").and_then(|v| v.as_str()),
@@ -241,7 +243,11 @@ pub async fn list_agency_talent_refs(
         let status = rel_row
             .and_then(|v| v.get("status"))
             .and_then(|v| v.as_str())
-            .unwrap_or_else(|| row.get("status").and_then(|v| v.as_str()).unwrap_or("active"))
+            .unwrap_or_else(|| {
+                row.get("status")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("active")
+            })
             .to_string();
 
         by_key.insert(
@@ -307,7 +313,10 @@ pub async fn list_agency_talent_refs(
         by_key.insert(
             key.clone(),
             AgencyTalentRef {
-                id: creator_id.clone().or_else(|| talent_id.clone()).unwrap_or(key),
+                id: creator_id
+                    .clone()
+                    .or_else(|| talent_id.clone())
+                    .unwrap_or(key),
                 agency_id: agency_id.to_string(),
                 relationship_id: if relationship_id.is_empty() {
                     None
@@ -360,7 +369,10 @@ pub async fn resolve_agency_talent_ref(
 ) -> Result<AgencyTalentRef, (StatusCode, String)> {
     let needle = input_id.trim();
     if needle.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Talent selection is required".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Talent selection is required".to_string(),
+        ));
     }
 
     let refs = list_agency_talent_refs(state, agency_id, None).await?;
@@ -371,5 +383,8 @@ pub async fn resolve_agency_talent_ref(
                 || item.creator_id.as_deref() == Some(needle)
                 || item.relationship_id.as_deref() == Some(needle)
         })
-        .ok_or((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()))
+        .ok_or((
+            StatusCode::FORBIDDEN,
+            "Access denied to this talent".to_string(),
+        ))
 }
