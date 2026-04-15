@@ -39,9 +39,6 @@ jsonwebtoken = "9"
 stripe-sdk = { package = "async-stripe", version = "0.41", features = [
     "runtime-tokio-hyper-rustls",
 ] }
-
-# Security: Force newer rustls-webpki to fix RUSTSEC-2026-0098
-rustls-webpki = "0.103.12"
 base64 = "0.22.1"
 bcrypt = "0.18.0"
 printpdf = "0.7"
@@ -53,6 +50,3 @@ futures = "0.3"
 
 [patch.crates-io]
 postgrest = { git = "https://github.com/supabase-community/postgrest-rs" }
-
-[package.metadata]
-audit = { ignore = [] }

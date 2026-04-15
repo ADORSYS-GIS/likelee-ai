@@ -1360,7 +1360,6 @@ dependencies = [
  "pulldown-cmark",
  "regex",
  "reqwest",
- "rustls-webpki 0.103.12",
  "serde",
  "serde_json",
  "sha2",

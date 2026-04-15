@@ -15,4 +15,8 @@ ignore = [
   # Unsound with custom logger - requires async-stripe upgrade to 1.0.0+ (breaking changes)
   # Low risk: only affects custom logger implementations using rand::rng()
   "RUSTSEC-2026-0097",
+  # Transitive via async-stripe 0.41.0 -> hyper-rustls 0.24.2 -> rustls 0.21.12 -> rustls-webpki 0.101.7
+  # Wildcard name constraint issue - requires async-stripe upgrade to 1.0.0+ (breaking changes)
+  # Low risk: affects X.509 certificate validation edge cases with wildcard names
+  "RUSTSEC-2026-0099",
 ]
