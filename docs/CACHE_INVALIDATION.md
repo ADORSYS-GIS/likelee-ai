@@ -43,12 +43,12 @@ The Likelee platform implements a multi-level caching strategy for performance o
 
 ### Key Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| L1 Cache | `cache/l1_request.rs` | Request-scoped, per-request isolation |
-| L2 Cache | `cache/l2_session.rs` | Session-scoped, user-specific data |
-| L3 Cache | `cache/l3_application.rs` | Application-wide, shared data |
-| Cache Helpers | `cache/helpers.rs` | Fallback chain and invalidation utilities |
+| Component     | Location                  | Purpose                                   |
+| ------------- | ------------------------- | ----------------------------------------- |
+| L1 Cache      | `cache/l1_request.rs`     | Request-scoped, per-request isolation     |
+| L2 Cache      | `cache/l2_session.rs`     | Session-scoped, user-specific data        |
+| L3 Cache      | `cache/l3_application.rs` | Application-wide, shared data             |
+| Cache Helpers | `cache/helpers.rs`        | Fallback chain and invalidation utilities |
 
 ---
 
@@ -59,14 +59,16 @@ The Likelee platform implements a multi-level caching strategy for performance o
 **Scope**: Single HTTP request  
 **Storage**: In-memory (RwLock<HashMap>)  
 **TTL**: Request lifetime  
-**Thread Safety**: RwLock for concurrent reads  
+**Thread Safety**: RwLock for concurrent reads
 
 **Use Cases**:
+
 - Prevent duplicate queries within the same request
 - Temporary storage for derived data
 - Request-local computations
 
 **Example**:
+
 ```rust
 // Within a single request, repeated lookups hit L1
 let access1 = require_brand_permission(&state, &user, Permission::CreateCampaigns).await?;
@@ -79,16 +81,18 @@ let access2 = require_brand_permission(&state, &user, Permission::ViewTeamMember
 **Scope**: User session (multiple requests)  
 **Storage**: DashMap (concurrent HashMap)  
 **TTL**: 5-30 minutes (configurable per entry)  
-**Namespace**: `session_id:cache_key`  
+**Namespace**: `session_id:cache_key`
 
 **Use Cases**:
+
 - Organization access permissions
 - User profile data
 - Session-specific computed values
 
 **Key Structure**:
+
 ```rust
-let cache_key = format!("{}:{}", 
+let cache_key = format!("{}:{}",
     CACHE_NAMESPACE_ORG_ACCESS,  // "org_access"
     cache_key(&user_id, &org_type)  // "user123:brand"
 );
@@ -105,16 +109,18 @@ let cache_key = format!("{}:{}",
 
 **Scope**: Application-wide (all users)  
 **Storage**: DashMap (concurrent HashMap)  
-**TTL**: 1-60 minutes (configurable per entry)  
+**TTL**: 1-60 minutes (configurable per entry)
 
 **Use Cases**:
+
 - Brand-agency connections
 - Global configuration
 - Shared reference data
 
 **Key Structure**:
+
 ```rust
-let cache_key = format!("{}:{}", 
+let cache_key = format!("{}:{}",
     CACHE_NAMESPACE_BRAND_AGENCY_CONN,
     cache_key(&brand_id, &agency_id)
 );
@@ -149,13 +155,14 @@ Cache Entry Created ──────────────▶ TTL Expired �
 
 **Function**: `invalidate_org_access_cache()`  
 **Location**: `team/access.rs:260-274`  
-**Purpose**: Clear user's organization permissions after role changes  
+**Purpose**: Clear user's organization permissions after role changes
 
 **Implementation**:
+
 ```rust
 pub fn invalidate_org_access_cache(
-    state: &AppState, 
-    user_id: &str, 
+    state: &AppState,
+    user_id: &str,
     organization_type: &str
 ) {
     let cache_key = format!(
@@ -175,10 +182,12 @@ pub fn invalidate_org_access_cache(
 ```
 
 **When Called**:
+
 1. **Role Updates** - `team/handlers.rs:341` (after database update)
 2. **Invite Acceptance** - `team/handlers.rs:465` (after membership creation)
 
 **Example Flow**:
+
 ```
 1. Admin updates user role from "reviewer" to "admin"
    ↓
@@ -195,13 +204,14 @@ pub fn invalidate_org_access_cache(
 
 **Function**: `invalidate_brand_agency_connection_cache()`  
 **Location**: `team/connections.rs:113-127`  
-**Purpose**: Clear connection status after relationship changes  
+**Purpose**: Clear connection status after relationship changes
 
 **Implementation**:
+
 ```rust
 pub fn invalidate_brand_agency_connection_cache(
-    state: &AppState, 
-    brand_id: &str, 
+    state: &AppState,
+    brand_id: &str,
     agency_id: &str
 ) {
     let cache_key = format!(
@@ -221,6 +231,7 @@ pub fn invalidate_brand_agency_connection_cache(
 ```
 
 **When Called**:
+
 1. **Connection Accepted** - `face_profiles.rs:2645`
 2. **Connection Disconnected** - `face_profiles.rs:2788, 2828`
 3. **Connection Request Handled** - `brand_license_requests.rs:411`
@@ -229,9 +240,10 @@ pub fn invalidate_brand_agency_connection_cache(
 
 **Function**: `invalidate_all_levels()`  
 **Location**: `cache/helpers.rs:142-153`  
-**Purpose**: Clear a key across all cache levels  
+**Purpose**: Clear a key across all cache levels
 
 **Implementation**:
+
 ```rust
 pub fn invalidate_all_levels(
     l1: &Arc<RwLock<RequestCache>>,
@@ -248,6 +260,7 @@ pub fn invalidate_all_levels(
 ```
 
 **When Called**:
+
 - Complex mutations that affect multiple cache layers
 - Rare scenarios requiring complete cache reset
 
@@ -255,9 +268,10 @@ pub fn invalidate_all_levels(
 
 **Function**: `invalidate_session()`  
 **Location**: `cache/helpers.rs:156-159`  
-**Purpose**: Clear all cache entries for a session  
+**Purpose**: Clear all cache entries for a session
 
 **Implementation**:
+
 ```rust
 pub fn invalidate_session(l2: &Arc<SessionCache>, session_id: &str) {
     l2.clear_session(session_id);
@@ -266,6 +280,7 @@ pub fn invalidate_session(l2: &Arc<SessionCache>, session_id: &str) {
 ```
 
 **When Called**:
+
 - User logout
 - Session expiration
 - Security-related session termination
@@ -279,6 +294,7 @@ pub fn invalidate_session(l2: &Arc<SessionCache>, session_id: &str) {
 The platform follows a consistent pattern for cache invalidation:
 
 **Step 1**: Perform database mutation
+
 ```rust
 let resp = state
     .pg
@@ -289,11 +305,13 @@ let resp = state
 ```
 
 **Step 2**: Invalidate cache immediately
+
 ```rust
 invalidate_org_access_cache(&state, &user_id, org_type);
 ```
 
 **Step 3**: Log for observability
+
 ```rust
 tracing::info!(
     user_id = %user_id,
@@ -303,6 +321,7 @@ tracing::info!(
 ```
 
 **Step 4**: Write audit log
+
 ```rust
 write_audit_log(&state, AuditLogEntry { /* ... */ }).await?;
 ```
@@ -364,22 +383,23 @@ function getAccessCacheKey(organizationType: string) {
 
 // Cache read
 const cachedRaw = window.sessionStorage.getItem(
-  getAccessCacheKey(organizationType)
+  getAccessCacheKey(organizationType),
 );
 
 // Cache write
 window.sessionStorage.setItem(
   getAccessCacheKey(organizationType),
-  JSON.stringify(context)
+  JSON.stringify(context),
 );
 ```
 
 **Frontend Cache Invalidation** (Future Enhancement):
+
 ```typescript
 // Should be called when receiving role change notification
 const refresh = React.useCallback(async () => {
   sessionStorage.removeItem(getAccessCacheKey(organizationType));
-  await load();  // Force API fetch
+  await load(); // Force API fetch
 }, [organizationType]);
 ```
 
@@ -390,6 +410,7 @@ const refresh = React.useCallback(async () => {
 ### DO ✅
 
 1. **Always invalidate cache after database mutations**
+
    ```rust
    // ✅ Good
    state.pg.update(/* ... */).await?;
@@ -397,15 +418,17 @@ const refresh = React.useCallback(async () => {
    ```
 
 2. **Use specific invalidation functions**
+
    ```rust
    // ✅ Good - Specific invalidation
    invalidate_org_access_cache(&state, &user_id, "brand");
-   
+
    // ❌ Bad - Overly broad
    state.cache_l2.clear_session(&session_id);  // Clears everything
    ```
 
 3. **Log cache invalidation events**
+
    ```rust
    // ✅ Good
    tracing::info!(user_id = %user_id, "Cache invalidated");
@@ -422,6 +445,7 @@ const refresh = React.useCallback(async () => {
 ### DON'T ❌
 
 1. **Don't forget to invalidate after writes**
+
    ```rust
    // ❌ Bad - Missing invalidation
    state.pg.update(/* ... */).await?;
@@ -429,12 +453,14 @@ const refresh = React.useCallback(async () => {
    ```
 
 2. **Don't rely solely on TTL**
+
    ```rust
    // ❌ Bad - Waiting for TTL
    // "Permissions will update in 5 minutes" is unacceptable UX
    ```
 
 3. **Don't invalidate before database success**
+
    ```rust
    // ❌ Bad - Premature invalidation
    invalidate_cache();  // What if DB update fails?
@@ -449,12 +475,12 @@ const refresh = React.useCallback(async () => {
 
 ### Performance Considerations
 
-| Scenario | Approach | Reason |
-|----------|----------|--------|
-| Single user affected | L2 invalidation | Minimal impact |
+| Scenario                | Approach                  | Reason              |
+| ----------------------- | ------------------------- | ------------------- |
+| Single user affected    | L2 invalidation           | Minimal impact      |
 | Multiple users affected | Loop with L2 invalidation | Batch if >100 users |
-| Global config change | L3 invalidation | Affects all users |
-| Security event | `invalidate_session()` | Complete clearance |
+| Global config change    | L3 invalidation           | Affects all users   |
+| Security event          | `invalidate_session()`    | Complete clearance  |
 
 ---
 
@@ -467,6 +493,7 @@ const refresh = React.useCallback(async () => {
 **Symptom**: User's permissions don't update after role change  
 **Cause**: Missing `invalidate_org_access_cache()` call  
 **Diagnosis**:
+
 ```bash
 # Check logs for invalidation
 grep "cache invalidated" /var/log/likelee-server.log
@@ -482,6 +509,7 @@ grep "invalidate_org_access_cache" likelee-server/src/**/*.rs
 **Symptom**: Brand-agency connection shows wrong status  
 **Cause**: Missing `invalidate_brand_agency_connection_cache()` call  
 **Diagnosis**:
+
 ```rust
 // Add debug logging
 tracing::debug!("Connection updated, invalidating cache");
@@ -514,10 +542,10 @@ println!("L3 hits: {}", metrics.hits(CacheLevel::L3));
 
 ```javascript
 // Browser console
-const orgType = 'brand';
+const orgType = "brand";
 const key = `team_access_context:${orgType}`;
 const cached = sessionStorage.getItem(key);
-console.log('Cached permissions:', JSON.parse(cached));
+console.log("Cached permissions:", JSON.parse(cached));
 
 // Clear if stale
 sessionStorage.removeItem(key);
@@ -525,12 +553,12 @@ sessionStorage.removeItem(key);
 
 ### Common Issues and Solutions
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Permissions not updating | Missing invalidation | Add `invalidate_org_access_cache()` |
-| Slow permission refresh | Cache not cleared | Invalidate after role update |
-| Frontend shows old data | sessionStorage not cleared | Add refresh mechanism |
-| Inconsistent across tabs | Different session caches | Use broadcast channel |
+| Issue                    | Cause                      | Solution                            |
+| ------------------------ | -------------------------- | ----------------------------------- |
+| Permissions not updating | Missing invalidation       | Add `invalidate_org_access_cache()` |
+| Slow permission refresh  | Cache not cleared          | Invalidate after role update        |
+| Frontend shows old data  | sessionStorage not cleared | Add refresh mechanism               |
+| Inconsistent across tabs | Different session caches   | Use broadcast channel               |
 
 ---
 
@@ -570,6 +598,7 @@ When implementing a mutation that affects cached data:
 ## Change History
 
 ### 2026-04-14
+
 - **Added**: Cache invalidation for `update_member_role` function
 - **Added**: Cache invalidation for `accept_invite_by_token` function
 - **Documented**: Complete cache invalidation system

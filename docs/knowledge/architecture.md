@@ -100,6 +100,7 @@ The system uses a three-level caching strategy for performance optimization:
 3. **L3 (Application Cache)**: Application-wide cache with 1-60 min TTL
 
 **Key Cache Invalidation Points**:
+
 - Role changes → `invalidate_org_access_cache()` (L2)
 - Connection changes → `invalidate_brand_agency_connection_cache()` (L3)
 - Security events → `invalidate_session()` (L2)

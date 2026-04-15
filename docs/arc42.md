@@ -196,6 +196,7 @@ See [Team Member Functionality](./team-member-functionality.md) for comprehensiv
 - Implementation checklist
 
 Key points:
+
 - Team members share the same account data as the organization owner (subscriptions, plan_tier, settings)
 - The organization ID equals the owner's auth.users.id
 - Team members access data via organization_memberships.organization_id

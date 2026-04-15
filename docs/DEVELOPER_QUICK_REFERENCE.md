@@ -4,12 +4,12 @@
 
 ### Core Systems
 
-| System | Documentation | Key Files |
-|--------|--------------|-----------|
-| **RBAC Permissions** | [ACCESS_CONTROL_SYSTEM.md](ACCESS_CONTROL_SYSTEM.md) | `team/permissions.rs`, `team/access.rs` |
-| **Cache Invalidation** | [CACHE_INVALIDATION.md](CACHE_INVALIDATION.md) | `cache/*.rs`, `team/handlers.rs` |
-| **Team Management** | [team-member-functionality.md](team-member-functionality.md) | `team/handlers.rs`, `team/types.rs` |
-| **Architecture** | [knowledge/architecture.md](knowledge/architecture.md) | All of `src/` |
+| System                 | Documentation                                                | Key Files                               |
+| ---------------------- | ------------------------------------------------------------ | --------------------------------------- |
+| **RBAC Permissions**   | [ACCESS_CONTROL_SYSTEM.md](ACCESS_CONTROL_SYSTEM.md)         | `team/permissions.rs`, `team/access.rs` |
+| **Cache Invalidation** | [CACHE_INVALIDATION.md](CACHE_INVALIDATION.md)               | `cache/*.rs`, `team/handlers.rs`        |
+| **Team Management**    | [team-member-functionality.md](team-member-functionality.md) | `team/handlers.rs`, `team/types.rs`     |
+| **Architecture**       | [knowledge/architecture.md](knowledge/architecture.md)       | All of `src/`                           |
 
 ### Quick Patterns
 
@@ -48,32 +48,32 @@ import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 function MyComponent() {
   const { hasPermission } = useTeamAccess("brand");
-  
+
   if (!hasPermission("create_campaigns")) {
     return <div>Access denied</div>;
   }
-  
+
   return <CampaignForm />;
 }
 ```
 
 ### Common Invalidation Functions
 
-| Function | When to Use | Cache Level |
-|----------|-------------|-------------|
-| `invalidate_org_access_cache()` | Role changes, membership updates | L2 |
-| `invalidate_brand_agency_connection_cache()` | Brand-agency connection changes | L3 |
-| `invalidate_session()` | Logout, security events | L2 |
-| `invalidate_all_levels()` | Complex multi-layer mutations | L1, L2, L3 |
+| Function                                     | When to Use                      | Cache Level |
+| -------------------------------------------- | -------------------------------- | ----------- |
+| `invalidate_org_access_cache()`              | Role changes, membership updates | L2          |
+| `invalidate_brand_agency_connection_cache()` | Brand-agency connection changes  | L3          |
+| `invalidate_session()`                       | Logout, security events          | L2          |
+| `invalidate_all_levels()`                    | Complex multi-layer mutations    | L1, L2, L3  |
 
 ### Cache TTL Reference
 
-| Data Type | TTL | Level |
-|-----------|-----|-------|
-| Organization Access | 5 min | L2 |
-| Brand-Agency Connection | 1 min | L3 |
-| Request Data | Request lifetime | L1 |
-| Session Default | 30 min | L2 |
+| Data Type               | TTL              | Level |
+| ----------------------- | ---------------- | ----- |
+| Organization Access     | 5 min            | L2    |
+| Brand-Agency Connection | 1 min            | L3    |
+| Request Data            | Request lifetime | L1    |
+| Session Default         | 30 min           | L2    |
 
 ### Testing Permissions
 
