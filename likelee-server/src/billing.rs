@@ -671,7 +671,6 @@ fn recurring_price_line_item(
     }
 }
 
-<<<<<<< ours
 fn normalize_brand_billing_cycle(value: Option<&str>) -> &'static str {
     match value.unwrap_or("monthly").trim().to_lowercase().as_str() {
         "annual" => "annual",
@@ -692,17 +691,18 @@ fn brand_plan_to_price_id_for_billing_cycle(
         ("basic", _) => Some(state.stripe_brand_basic_price_id.clone()),
         ("pro", "annual") => Some(state.stripe_brand_pro_annual_price_id.clone()),
         ("pro", _) => Some(state.stripe_brand_pro_price_id.clone()),
-=======
-fn creator_plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
-    match plan.trim().to_lowercase().as_str() {
-        "basic" => Some(state.stripe_creator_basic_price_id.clone()),
-        "pro" => Some(state.stripe_creator_pro_price_id.clone()),
->>>>>>> theirs
         _ => None,
     }
 }
 
-<<<<<<< ours
+fn creator_plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some(state.stripe_creator_basic_price_id.clone()),
+        "pro" => Some(state.stripe_creator_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
 fn brand_plan_to_price_env_var_for_billing_cycle(
     plan: &str,
     billing_cycle: &str,
@@ -715,17 +715,18 @@ fn brand_plan_to_price_env_var_for_billing_cycle(
         ("basic", _) => Some("STRIPE_BRAND_BASIC_PRICE_ID"),
         ("pro", "annual") => Some("STRIPE_BRAND_PRO_ANNUAL_PRICE_ID"),
         ("pro", _) => Some("STRIPE_BRAND_PRO_PRICE_ID"),
-=======
-fn creator_plan_to_price_env_var(plan: &str) -> Option<&'static str> {
-    match plan.trim().to_lowercase().as_str() {
-        "basic" => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
-        "pro" => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
->>>>>>> theirs
         _ => None,
     }
 }
 
-<<<<<<< ours
+fn creator_plan_to_price_env_var(plan: &str) -> Option<&'static str> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
+        "pro" => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
+
 fn sanitize_next_path(next_path: Option<&str>) -> Option<String> {
     let candidate = next_path?.trim();
     if candidate.is_empty() || !candidate.starts_with('/') || candidate.starts_with("//") {
@@ -856,7 +857,6 @@ async fn ensure_brand_customer(
     Ok(customer.id.to_string())
 }
 
-=======
 fn creator_plan_to_price_id_with_interval(
     state: &AppState,
     plan: &str,
@@ -884,7 +884,6 @@ fn creator_plan_to_price_env_var_with_interval(plan: &str, interval: &str) -> Op
         _ => None,
     }
 }
->>>>>>> theirs
 fn agency_base_price_id_matches(state: &AppState, price_id: &str) -> bool {
     let price_id = price_id.trim();
     !price_id.is_empty()
@@ -2624,7 +2623,6 @@ pub async fn sync_agency_checkout_session(
     Ok(Json(latest_state))
 }
 
-<<<<<<< ours
 #[derive(Debug, Deserialize)]
 pub struct BrandCheckoutRequest {
     pub plan: String,
@@ -2633,7 +2631,8 @@ pub struct BrandCheckoutRequest {
     #[serde(default)]
     pub start_trial: bool,
     pub next_path: Option<String>,
-=======
+}
+
 pub async fn create_creator_subscription_checkout(
     State(state): State<AppState>,
     user: AuthUser,
@@ -3289,7 +3288,6 @@ pub async fn get_creator_billing_status(
 #[derive(Debug, Serialize)]
 pub struct CampaignCheckoutResponse {
     pub url: String,
->>>>>>> theirs
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -3841,11 +3839,6 @@ pub async fn verify_brand_studio_addon_checkout(
 
     info!(brand_id = %user.id, stripe_session_id = %session_id_raw, "brand studio add-on verified and activated");
     Ok(Json(json!({ "studio_addon_active": true })))
-}
-
-#[derive(Debug, Serialize)]
-pub struct CampaignCheckoutResponse {
-    pub url: String,
 }
 
 pub async fn create_campaign_offer_checkout(
@@ -4447,7 +4440,6 @@ pub async fn create_agency_billing_portal(
     }
 }
 
-<<<<<<< ours
 pub async fn create_brand_billing_portal(
     State(state): State<AppState>,
     user: AuthUser,
@@ -4465,7 +4457,52 @@ pub async fn create_brand_billing_portal(
     }
 
     let row = get_brand_checkout_row(&state, &user.id).await?;
-=======
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            billing_error(
+                StatusCode::BAD_REQUEST,
+                "no_stripe_customer",
+                "No Stripe customer found for this brand.",
+            )
+        })?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id",
+                "Invalid Stripe customer ID.",
+            )
+        })?;
+
+    let return_url = format!("{}/brandpricing", state.frontend_url.trim_end_matches('/'));
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(AgencyCheckoutResponse {
+            checkout_url: session.url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        })),
+        Err(e) => {
+            warn!(error = %e, brand_id = %user.id, "failed to create stripe billing portal session for brand");
+            Err(billing_error_msg(
+                StatusCode::BAD_GATEWAY,
+                "stripe_error",
+                e.to_string(),
+            ))
+        }
+    }
+}
+
 pub async fn create_creator_billing_portal(
     State(state): State<AppState>,
     user: AuthUser,
@@ -4503,55 +4540,16 @@ pub async fn create_creator_billing_portal(
         .first()
         .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
 
->>>>>>> theirs
     let customer_id_str = row
         .get("stripe_customer_id")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
-<<<<<<< ours
-        .ok_or_else(|| {
-            billing_error(
-                StatusCode::BAD_REQUEST,
-                "no_stripe_customer",
-                "No Stripe customer found for this brand.",
-            )
-        })?;
-=======
         .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
->>>>>>> theirs
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = customer_id_str
         .parse::<stripe_sdk::CustomerId>()
         .map_err(|_| {
-<<<<<<< ours
-            billing_error(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "invalid_customer_id",
-                "Invalid Stripe customer ID.",
-            )
-        })?;
-
-    let return_url = format!("{}/brandpricing", state.frontend_url.trim_end_matches('/'));
-    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
-    params.return_url = Some(&return_url);
-
-    match stripe_sdk::BillingPortalSession::create(&client, params).await {
-        Ok(session) => Ok(Json(AgencyCheckoutResponse {
-            checkout_url: session.url,
-            seats_limit: None,
-            invoice_id: None,
-            invoice_status: None,
-            invoice_url: None,
-        })),
-        Err(e) => {
-            warn!(error = %e, brand_id = %user.id, "failed to create stripe billing portal session for brand");
-            Err(billing_error_msg(
-                StatusCode::BAD_GATEWAY,
-                "stripe_error",
-                e.to_string(),
-            ))
-=======
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "invalid_customer_id".to_string(),
@@ -4573,7 +4571,6 @@ pub async fn create_creator_billing_portal(
         Err(e) => {
             warn!(error = %e, creator_id = %creator_id, "failed to create stripe creator billing portal session");
             Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
->>>>>>> theirs
         }
     }
 }

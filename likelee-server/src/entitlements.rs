@@ -329,29 +329,15 @@ pub async fn get_agency_seat_limit_info(
         .from("agencies")
         .select("seats_limit")
         .eq("id", agency_id)
-
-pub async fn get_creator_plan_tier(
-    state: &AppState,
-    creator_id: &str,
-) -> Result<PlanTier, (StatusCode, String)> {
-    let resp = state
-        .pg
-        .from("creators")
-        .select("plan_tier")
-        .eq("id", creator_id)
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-=======
-    let status = resp.status();
->>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-<<<<<<< HEAD
 
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let db_seats_limit = rows
@@ -383,6 +369,44 @@ pub async fn get_creator_plan_tier(
         available,
         plan_tier: access.billed_tier,
     })
+}
+
+pub async fn get_creator_plan_tier(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("plan_tier")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
+    }
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let plan_tier_str = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("plan_tier"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("free");
+
+    Ok(PlanTier::from_db(plan_tier_str))
 }
 
 pub fn format_seat_limit_error(info: &SeatLimitInfo) -> String {
@@ -427,24 +451,6 @@ pub fn format_seat_limit_error_with_upgrade(
         }
         None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
     }
-}
-
-    if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
-    }
-
-    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
-    let tier = rows
-        .as_array()
-        .and_then(|a| a.first())
-        .and_then(|o| o.get("plan_tier"))
-        .and_then(|v| v.as_str())
-        .map(PlanTier::from_db)
-        .unwrap_or(PlanTier::Free);
-
-    Ok(tier)
 }
 
 pub async fn get_creator_plan_tier_for_user(

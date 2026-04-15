@@ -9,8 +9,6 @@ import React, {
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { createBookDemoUrl } from "@/utils/bookDemo";
-import { CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
@@ -29,22 +27,6 @@ import {
   markJobApplicationsViewed,
   getLicensingContractsCount,
 } from "@/api/functions";
-import { useAuth } from "@/auth/AuthProvider";
-import {
-  BRAND_STUDIO_ADDON_PRICE,
-  BrandPlanTier,
-  brandAllowsCampaignCollaboration,
-  brandCanPurchaseStudioAddon,
-  brandIncludesStudioAccess,
-  brandPlanCampaignLimit,
-  brandPlanPrice,
-  brandPlanSeatLimit,
-  formatBrandPlanLabel,
-  formatBrandStudioAddonStatus,
-  formatBrandSubscriptionStatus,
-  hasBrandStudioAccess,
-  normalizeBrandPlanTier,
-} from "@/lib/brandBilling";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { BrandSettingsPanel } from "@/components/brand-dashboard/settings/BrandSettingsPanel";
@@ -56,7 +38,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   Bell,
@@ -179,108 +160,6 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
-const formatBillingDate = (value: unknown) => {
-  const raw = String(value || "").trim();
-  if (!raw) return null;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const brandPlanSummaryTheme = (
-  tier: BrandPlanTier,
-): {
-  eyebrow: string;
-  containerClass: string;
-  bandClass: string;
-  badgeClass: string;
-  headingClass: string;
-  bodyClass: string;
-  statCardClass: string;
-  statLabelClass: string;
-  statValueClass: string;
-  statMetaClass: string;
-  buttonClass: string;
-  actionLabel: string;
-  actionPath: string;
-} => {
-  switch (tier) {
-    case "basic":
-      return {
-        eyebrow: "Starter",
-        containerClass: "border-[#D7E6ED] bg-white",
-        bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
-        badgeClass:
-          "border border-[#D7F0EB] bg-[#EEF9F7] text-[#18A7A5] hover:bg-[#EEF9F7]",
-        headingClass: "text-[#19305A]",
-        bodyClass: "text-[#70839B]",
-        statCardClass: "border border-[#D7F0EB] bg-[#F5FCFA]",
-        statLabelClass: "text-[#5F7C86]",
-        statValueClass: "text-[#19305A]",
-        statMetaClass: "text-[#6F8F99]",
-        buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
-        actionLabel: "Upgrade to Pro",
-        actionPath: "/brandpricing",
-      };
-    case "pro":
-      return {
-        eyebrow: "Most popular",
-        containerClass: "border-[#2B4B8A] bg-[#17315E]",
-        bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
-        badgeClass:
-          "border border-[#225F85] bg-[#1A4E74] text-[#7FECFF] hover:bg-[#1A4E74]",
-        headingClass: "text-white",
-        bodyClass: "text-[#B8C8E5]",
-        statCardClass: "border border-[#29456F] bg-[#1C3B6C]",
-        statLabelClass: "text-[#A9BBDA]",
-        statValueClass: "text-white",
-        statMetaClass: "text-[#9CB1D5]",
-        buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
-        actionLabel: "Talk to Sales",
-        actionPath: "/SalesInquiry",
-      };
-    case "enterprise":
-      return {
-        eyebrow: "Full suite",
-        containerClass: "border-[#D9E4FF] bg-white",
-        bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
-        badgeClass:
-          "border border-[#DCE5FF] bg-[#F3F6FF] text-[#4978FF] hover:bg-[#F3F6FF]",
-        headingClass: "text-[#19305A]",
-        bodyClass: "text-[#7C88A5]",
-        statCardClass: "border border-[#DCE5FF] bg-[#F7F9FF]",
-        statLabelClass: "text-[#7083A9]",
-        statValueClass: "text-[#19305A]",
-        statMetaClass: "text-[#7C88A5]",
-        buttonClass:
-          "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
-        actionLabel: "Contact Sales",
-        actionPath: "/SalesInquiry",
-      };
-    default:
-      return {
-        eyebrow: "Free",
-        containerClass: "border-slate-200 bg-white",
-        bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
-        badgeClass:
-          "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50",
-        headingClass: "text-slate-900",
-        bodyClass: "text-slate-600",
-        statCardClass: "border border-slate-200 bg-slate-50",
-        statLabelClass: "text-slate-600",
-        statValueClass: "text-slate-900",
-        statMetaClass: "text-slate-500",
-        buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
-        actionLabel: "View Plans",
-        actionPath: "/brandpricing",
-      };
-  }
-};
-
 const getBrandInitials = (name: string) => {
   const parts = String(name || "")
     .trim()
@@ -291,7 +170,6 @@ const getBrandInitials = (name: string) => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-=======
 // Mock data
 const mockBrand = {
   id: "",
@@ -315,7 +193,6 @@ const emptyBrand = {
   plan: "",
 };
 
->>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
 const mockCreators = [
   {
     id: 1,
@@ -813,7 +690,6 @@ const mockContracts = [
 ];
 
 export default function BrandDashboard() {
-  const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -855,26 +731,6 @@ export default function BrandDashboard() {
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-<<<<<<< HEAD
-  const [brand, setBrand] = useState<{
-    name: string;
-    logo: string;
-    industry: string;
-    website: string;
-    contact_email: string;
-    plan: string;
-    team_seats: number;
-  }>({
-    name: "",
-    logo: "",
-    industry: "",
-    website: "",
-    contact_email: "",
-    plan: "",
-    team_seats: 0,
-  });
-  const [loadingBrandProfile, setLoadingBrandProfile] = useState(true);
-
   const [brand, setBrand] = useState(emptyBrand);
   const [originalBrand, setOriginalBrand] = useState(emptyBrand);
   const [isBrandProfileLoaded, setIsBrandProfileLoaded] = useState(false);
@@ -1040,42 +896,6 @@ export default function BrandDashboard() {
       campaignHubTab: "active",
       replace: false,
     });
-  };
-
-  const handleAgencyCollaborationEntry = () => {
-    if (!brandCanUseCampaignCollaboration) {
-      toast({
-        title: "Upgrade to Pro",
-        description:
-          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
-      });
-      navigate("/brandpricing");
-      return;
-    }
-    goToCampaignsSection();
-  };
-
-  const handleCompanySeatEntry = () => {
-    if ((brandSeatLimit ?? 0) === 0) {
-      toast({
-        title: "Upgrade required",
-        description:
-          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
-      });
-      navigate("/brandpricing");
-      return;
-    }
-    if (brandSeatLimitReached) {
-      toast({
-        title: "Seat limit reached",
-        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
-        variant: "destructive" as any,
-      });
-      return;
-    }
-    // Navigate to Settings → Team tab to manage team members
-    setActiveSettingsTab("team");
-    navigateToSection("settings", { replace: false });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -1253,57 +1073,11 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
-  const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
-  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
-  const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
-  const brandHasStudioAddon = hasBrandStudioAccess(profile);
-  const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
-  const brandStudioStatus = formatBrandStudioAddonStatus(profile);
-  const brandBasePrice = brandPlanPrice(brandPlanTier);
-  const brandSeatLimit = brandPlanSeatLimit(brandPlanTier);
-  const brandCampaignLimit = brandPlanCampaignLimit(brandPlanTier);
-  const brandCanUseCampaignCollaboration =
-    brandAllowsCampaignCollaboration(profile);
-  const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
-  const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
-  const brandTrialEndsAt = formatBillingDate(profile?.subscription_trial_end);
-  const brandCurrentPeriodEnd = formatBillingDate(
-    profile?.subscription_current_period_end,
-  );
-  const brandStudioCurrentPeriodEnd = formatBillingDate(
-    profile?.studio_addon_current_period_end,
-  );
-  const brandNextInvoiceDate =
-    brandTrialEndsAt || brandCurrentPeriodEnd || brandStudioCurrentPeriodEnd;
-  const brandRecurringAmount =
-    brandPlanTier === "enterprise"
-      ? null
-      : (brandBasePrice || 0) +
-        (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
-  const brandSeatLimitLabel =
-    brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
-  const brandCampaignLimitLabel =
-    brandCampaignLimit == null ? "Unlimited" : String(brandCampaignLimit);
-  const brandCampaignSlotsUsed =
-    campaignMetrics.active_projects_count +
-    campaignMetrics.pending_approvals_count;
-  const brandCampaignLimitReached =
-    brandCampaignLimit != null && brandCampaignSlotsUsed >= brandCampaignLimit;
-  const brandTeamSeatsUsed = Number.isFinite(Number(profile?.team_seats))
-    ? Number(profile?.team_seats)
-    : 0;
-  const brandSeatLimitReached =
-    brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit;
   const { hasPermission } = useTeamAccess("brand");
   const canApproveDeliverables = hasPermission("approve_deliverables");
   const canViewDeliverables = hasPermission("view_deliverables");
-  const canManagePayOffers = hasPermission("manage_pay_offers");
-  const canViewPayOffers = hasPermission("view_pay_offers");
-  const canManageJobs = hasPermission("manage_jobs");
-  const canViewSubscriptions = hasPermission("view_subscriptions");
-  const canManageBilling = hasPermission("manage_billing");
-  const canViewInbox = canViewPayOffers;
 
+  const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
@@ -1415,22 +1189,6 @@ export default function BrandDashboard() {
       }
     }
   }, [location.search, location.state]);
-
-  // Handle URL parameters for opening settings and team tab
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const view = params.get("view");
-    const section = params.get("section");
-    const tab = params.get("tab");
-
-    // Support both 'view=settings' and 'section=settings' for backward compatibility
-    if (view === "settings" || section === "settings") {
-      setActiveSection("settings");
-      if (tab === "team") {
-        setActiveSettingsTab("team");
-      }
-    }
-  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -1553,16 +1311,7 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadBrandProfile = async () => {
       try {
-        setLoadingBrandProfile(true);
         const profile = await getBrandProfile();
-        if (!mounted || !profile) return;
-        setBrand((prev) => ({
-          ...prev,
-          name: profile?.company_name || profile?.name || "",
-          industry: profile?.industry || prev.industry,
-          website: profile?.website || prev.website,
-          contact_email: profile?.email || prev.contact_email,
-
         if (!mounted) return;
         if (!profile) return;
         const brandData = {
@@ -1591,8 +1340,6 @@ export default function BrandDashboard() {
       } catch {
         // Keep empty fallback on failure.
       } finally {
-        if (mounted) setLoadingBrandProfile(false);
-
         if (mounted) setIsBrandProfileLoaded(true);
       }
     };
@@ -1749,14 +1496,6 @@ export default function BrandDashboard() {
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
-      if (!canManageJobs) {
-        toast({
-          title: "View-only access",
-          description: "You do not have permission to update jobs.",
-          variant: "destructive",
-        });
-        return;
-      }
       const res = await base44.put<{ job?: any }>(`/api/jobs/${jobId}`, {
         status,
       });
@@ -2347,9 +2086,7 @@ export default function BrandDashboard() {
           ? expiringLicenses.length
           : undefined,
     },
-    ...(canViewSubscriptions
-      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
-      : []),
+    { id: "billing", label: "Billing", icon: CreditCard },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -2480,28 +2217,11 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
-  const getBrandTalentEntitlementMessage = (error: unknown) => {
-    const message = String((error as any)?.message || error || "").trim();
-    if (message.includes("brand_talent_browsing_requires_pro_plan")) {
-      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
-    }
-    return message || "Please try again.";
-  };
-
   const handleOpenLicenseRequest = (
     creator: MarketplaceProfile | null,
     details?: MarketplaceProfileDetails,
   ) => {
     if (!creator) return;
-    if (!brandCanUseCampaignCollaboration) {
-      toast({
-        title: "Upgrade to Pro",
-        description:
-          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
-      });
-      navigate("/brandpricing");
-      return;
-    }
     const detailProfile = details?.profile || null;
     const representedAgency = details?.represented_agency || null;
     const agencyId = String(
@@ -2633,7 +2353,7 @@ export default function BrandDashboard() {
     } catch (e: any) {
       toast({
         title: "Failed to create request",
-        description: getBrandTalentEntitlementMessage(e),
+        description: e?.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -2966,12 +2686,7 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back,{" "}
-            {loadingBrandProfile ? (
-              <Skeleton className="inline-block h-9 w-48 align-middle" />
-            ) : (
-              brand.name
-            )}
+            Welcome back, {brand.name}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
@@ -3069,7 +2784,7 @@ export default function BrandDashboard() {
               <span className="font-semibold">Start New Project</span>
             </Button>
             <Button
-              onClick={() => navigateToSection("marketplace")}
+              onClick={() => setActiveSection("marketplace")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Search className="w-6 h-6" />
@@ -3085,14 +2800,16 @@ export default function BrandDashboard() {
               <span>View Active Campaigns</span>
             </Button>
             <Button
-              onClick={handleAgencyCollaborationEntry}
+              onClick={() => {
+                goToCampaignsSection();
+              }}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
             <Button
-              onClick={() => navigateToSection("marketplace-agencies")}
+              onClick={() => setActiveSection("marketplace-agencies")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
@@ -4162,42 +3879,17 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderCreatorMarketplace = () => {
-    return (
-      <MarketplaceSection
-        title="Likelee Marketplace"
-        subtitle="Verified creators only"
-        verifiedBadgeLabel=""
-        queryScope="brand-creator-marketplace"
-        showRequestLicense
-        onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
-        actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
-        lockedCtaLabel="Upgrade to Pro"
-        onLockedAction={() => navigate("/brandpricing")}
-      />
-    );
-  };
-
-  const renderAgencyMarketplace = () => {
-    return (
-      <MarketplaceSection
-        entityType="agency"
-        title="Agency Marketplace"
-        subtitle="Verified agencies only"
-        verifiedBadgeLabel=""
-        searchPlaceholder="Search by agency name, type, service, or location..."
-        resultLimit={60}
-        queryScope="brand-agency-marketplace"
-        actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
-        lockedCtaLabel="Upgrade to Pro"
-        onLockedAction={() => navigate("/brandpricing")}
-      />
-    );
-  };
+  const renderAgencyMarketplace = () => (
+    <MarketplaceSection
+      entityType="agency"
+      title="Agency Marketplace"
+      subtitle="Verified agencies only"
+      verifiedBadgeLabel=""
+      searchPlaceholder="Search by agency name, type, service, or location..."
+      resultLimit={60}
+      queryScope="brand-agency-marketplace"
+    />
+  );
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
@@ -4393,132 +4085,37 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderInboxSubtab = () => {
-    if (!canViewInbox) {
-      return (
-        <div className="space-y-5">
-          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
-            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Access Restricted
-            </h2>
-            <p className="text-gray-600">
-              You do not have permission to view the inbox.
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Contact your team administrator to request access.
-            </p>
-          </Card>
-        </div>
-      );
-    }
+  const renderInboxSubtab = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+        <p className="text-gray-600">
+          View packages and licensing proposals from agencies
+        </p>
+      </div>
 
-    return (
-      <div className="space-y-5">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
-          <p className="text-gray-600">
-            View packages and licensing proposals from agencies
-          </p>
-        </div>
-
-        <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setInboxSubTab("talent_packages")}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-              inboxSubTab === "talent_packages"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500"
-            }`}
-          >
-            Talent Packages ({inboxPackages.length})
-          </button>
-          <button
-            onClick={() => setInboxSubTab("direct_requests")}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-              inboxSubTab === "direct_requests"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500"
-            }`}
-          >
-            Direct Requests
-          </button>
-        </div>
-
-        {inboxSubTab === "talent_packages" ? (
-          <div className="space-y-4">
-            {loadingInboxPackages && (
-              <Card className="p-6 bg-white border border-gray-300 rounded-none">
-                <p className="text-sm text-gray-500">Loading packages...</p>
-              </Card>
-            )}
-            {!loadingInboxPackages && inboxPackages.length === 0 && (
-              <Card className="p-6 bg-white border border-gray-300 rounded-none">
-                <p className="text-sm text-gray-500">
-                  No packages received yet.
-                </p>
-              </Card>
-            )}
-            {inboxPackages.map((pkg: any) => {
-              const expiresAt = pkg?.expires_at
-                ? new Date(pkg.expires_at)
-                : null;
-              const isExpired = expiresAt
-                ? expiresAt.getTime() < Date.now()
-                : false;
-              const isDone =
-                pkg?.status === "feedback_received" ||
-                pkg?.status === "completed";
-              const selectedTalentCount = Array.isArray(
-                pkg?.meta?.selected_talent_ids,
-              )
-                ? pkg.meta.selected_talent_ids.length
-                : 0;
-
-              return (
-                <Card
-                  key={pkg.id}
-                  className="p-6 bg-white border border-gray-300 rounded-none"
-                >
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-2xl font-bold text-gray-900">
-                          {pkg.title ||
-                            pkg.campaign_offers?.offer_title ||
-                            pkg.campaign_offers?.brand_campaigns?.name ||
-                            "Talent package"}
-                        </h3>
-                        {String(pkg?.status || "") === "sent" && (
-                          <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                            New
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-700 font-medium">
-                        From:{" "}
-                        {pkg?.agencies?.agency_name ||
-                          pkg?.agency_id ||
-                          "Agency"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Sent:{" "}
-                        {pkg?.sent_at
-                          ? new Date(String(pkg.sent_at)).toLocaleString()
-                          : "—"}
-                      </p>
-                      {pkg?.expires_at && (
-                        <p
-                          className={`text-sm ${
-                            isExpired
-                              ? "text-red-600 font-bold"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          Expires:{" "}
-                          {new Date(pkg.expires_at).toLocaleDateString()}
-                          {isExpired && " (Expired)"}
-                        </p>
+      <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+        <button
+          onClick={() => setInboxSubTab("talent_packages")}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "talent_packages"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
+        >
+          Talent Packages ({inboxPackages.length})
+        </button>
+        <button
+          onClick={() => setInboxSubTab("direct_requests")}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "direct_requests"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
+        >
+          Direct Requests
+        </button>
+      </div>
 
       {inboxSubTab === "talent_packages" ? (
         <div className="space-y-4">
@@ -4566,80 +4163,27 @@ export default function BrandDashboard() {
                         </Badge>
                       )}
                     </div>
-                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                      {selectedTalentCount} talent
-                    </Badge>
-                  </div>
-
-                  {pkg?.message && (
-                    <p className="text-gray-700 italic mb-4">
-                      "{String(pkg.message)}"
+                    <p className="text-sm text-gray-700 font-medium">
+                      From:{" "}
+                      {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
                     </p>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button
-                      className={`flex-1 rounded-none ${
-                        isExpired || !canManagePayOffers
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-black hover:bg-gray-800 text-white"
-                      }`}
-                      disabled={isExpired || isDone || !canManagePayOffers}
-                      onClick={() => setConfirmingDonePkg(pkg)}
-                      title={
-                        !canManagePayOffers
-                          ? "You do not have permission to mark packages as done"
-                          : ""
-                      }
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border border-gray-300 rounded-none"
-                      disabled={isDone || isExpired}
-                      onClick={() => {
-                        const token = pkg?.meta?.agency_package_token;
-                        const id = String(pkg?.id || "");
-                        if (token) {
-                          window.open(`/share/package/${token}`, "_blank");
-                        } else if (id) {
-                          window.open(`/share/package/${id}`, "_blank");
-                        }
-                      }}
-                    >
-                      Open Package
-                    </Button>
-                    {canManagePayOffers && (
-                      <Button
-                        variant="outline"
-                        className="border border-gray-300 rounded-none"
+                    <p className="text-sm text-gray-500">
+                      Sent:{" "}
+                      {pkg?.sent_at
+                        ? new Date(String(pkg.sent_at)).toLocaleString()
+                        : "—"}
+                    </p>
+                    {pkg?.expires_at && (
+                      <p
+                        className={`text-sm ${
+                          isExpired ? "text-red-600 font-bold" : "text-gray-500"
+                        }`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        Expires: {new Date(pkg.expires_at).toLocaleDateString()}
+                        {isExpired && " (Expired)"}
+                      </p>
                     )}
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
-            <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              No direct requests yet
-            </h3>
-            <p className="text-lg text-gray-600">
-              Agencies can send you direct licensing requests for specific
-              campaigns
-            </p>
-          </Card>
-        )}
-      </div>
-    );
-  };
-
                   <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
                     {selectedTalentCount} talent
                   </Badge>
@@ -5058,53 +4602,47 @@ export default function BrandDashboard() {
                     ⏳ Contract signed. Payment required before deliverables can
                     start.
                   </span>
-                  {canManagePayOffers ? (
-                    <Button
-                      size="sm"
-                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                      disabled={payingOfferId === offerId}
-                      onClick={async () => {
-                        setPayingOfferId(offerId);
-                        try {
-                          const data: any = await base44.post(
-                            `/api/brand/campaign-offers/${offerId}/checkout`,
-                            {},
-                          );
-                          if (data?.url) {
-                            window.location.href = data.url;
-                          } else {
-                            toast({
-                              title: "Payment Error",
-                              description:
-                                data?.message || "Could not start checkout.",
-                              variant: "destructive",
-                            });
-                          }
-                        } catch (e: any) {
-                          const msg = String(e?.message || "");
+                  <Button
+                    size="sm"
+                    className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                    disabled={payingOfferId === offerId}
+                    onClick={async () => {
+                      setPayingOfferId(offerId);
+                      try {
+                        const data: any = await base44.post(
+                          `/api/brand/campaign-offers/${offerId}/checkout`,
+                          {},
+                        );
+                        if (data?.url) {
+                          window.location.href = data.url;
+                        } else {
                           toast({
-                            title: msg.includes("no_talents_assigned")
-                              ? "Talent assignment required"
-                              : "Payment Error",
-                            description: msg.includes("no_talents_assigned")
-                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                              : msg || "Could not start checkout.",
-                            variant: "destructive" as any,
+                            title: "Payment Error",
+                            description:
+                              data?.message || "Could not start checkout.",
+                            variant: "destructive",
                           });
-                        } finally {
-                          setPayingOfferId(null);
                         }
-                      }}
-                    >
-                      {payingOfferId === offerId
-                        ? "Redirecting…"
-                        : "💳 Pay Offer"}
-                    </Button>
-                  ) : (
-                    <span className="ml-auto text-xs text-amber-600 italic">
-                      View only - payment requires admin or project manager role
-                    </span>
-                  )}
+                      } catch (e: any) {
+                        const msg = String(e?.message || "");
+                        toast({
+                          title: msg.includes("no_talents_assigned")
+                            ? "Talent assignment required"
+                            : "Payment Error",
+                          description: msg.includes("no_talents_assigned")
+                            ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                            : msg || "Could not start checkout.",
+                          variant: "destructive" as any,
+                        });
+                      } finally {
+                        setPayingOfferId(null);
+                      }
+                    }}
+                  >
+                    {payingOfferId === offerId
+                      ? "Redirecting…"
+                      : "💳 Pay Offer"}
+                  </Button>
                 </div>
               )}
               {isFullySigned && offer?.payment_status === "paid" && (
@@ -6981,18 +6519,8 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="w-full border-2 border-gray-300"
-                      disabled={!canManagePayOffers}
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (!canManagePayOffers) {
-                          toast({
-                            title: "View-only access",
-                            description:
-                              "You do not have permission to add collaborators.",
-                            variant: "destructive" as any,
-                          });
-                          return;
-                        }
                         const first = offers[0];
                         if (first) openAddCollaboratorFlow(first);
                       }}
@@ -7119,17 +6647,12 @@ export default function BrandDashboard() {
               Collaborate with Agency
             </h3>
             <Button
-              onClick={handleAgencyCollaborationEntry}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
-
               onClick={() => {
                 goToCampaignsSection();
               }}
               className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-lg"
             >
-              {brandCanUseCampaignCollaboration
-                ? "Invite Agency"
-                : "Upgrade Plan"}
+              Invite Agency
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-lg">
@@ -7143,46 +6666,21 @@ export default function BrandDashboard() {
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
-
           <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
-              onClick={handleCompanySeatEntry}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
-
               disabled
               className="w-full bg-amber-600 text-white rounded-lg cursor-not-allowed"
             >
-              {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade Plan"
-                : brandSeatLimitReached
-                  ? "Seat limit reached"
-                  : `Up to ${brandSeatLimitLabel} seats`}
+              Coming Soon
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-orange-600 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
-            <Button
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
-              onClick={() =>
-                navigate(
-                  brandHasStudioAddon
-                    ? createPageUrl("Studio")
-                    : "/brandpricing?focus=studio",
-                )
-              }
-            >
-              {brandHasStudioAddon
-                ? "Open Studio"
-                : brandCanSelfServeStudioAddon
-                  ? "Unlock Addon"
-                  : "Upgrade Plan"}
-
             <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg">
               Enable Add-On
             </Button>
@@ -7441,12 +6939,6 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
-                              disabled={!canManageJobs}
-                              title={
-                                !canManageJobs
-                                  ? "You do not have permission to manage jobs"
-                                  : ""
-                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -8192,9 +7684,8 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{brand.name || "Licensee"}</strong>{" "}
-                ("Licensee") and <strong>{contract.creator_name}</strong>{" "}
-                ("Licensor").
+                , by and between <strong>{mockBrand.name}</strong> ("Licensee")
+                and <strong>{contract.creator_name}</strong> ("Licensor").
               </p>
 
               <p className="mb-6">
@@ -8277,9 +7768,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until{" "}
-                {brand.name || "Licensee"} approval of deliverables. Release
-                upon approval or automatic after 48 hours.
+                <strong>Payment:</strong> Held in escrow until {mockBrand.name}{" "}
+                approval of deliverables. Release upon approval or automatic
+                after 48 hours.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -8336,7 +7827,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
                     <p className="font-semibold text-gray-900 mb-2">
-                      {brand.name || "Licensee"}
+                      {mockBrand.name}
                     </p>
                     <p className="text-sm text-gray-600 mb-2">Licensee</p>
                     {contract.signed_date && (
@@ -8473,7 +7964,7 @@ export default function BrandDashboard() {
                     Contract created and sent to {contract.creator_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Created by: {brand.name || "Licensee"}
+                    Created by: {mockBrand.name}
                   </p>
                 </div>
               </div>
@@ -9189,161 +8680,44 @@ export default function BrandDashboard() {
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
           <p className="text-4xl font-bold text-gray-900">$45.2K</p>
         </Card>
-        {canViewSubscriptions && (
-          <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {brandNextInvoiceDate || "Not set"}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {brandPlanTier === "enterprise"
-                ? "Custom enterprise contract"
-                : (brandRecurringAmount || 0) > 0
-                  ? `$${brandRecurringAmount}/mo recurring`
-                  : "No active subscription"}
-            </p>
-          </Card>
-        )}
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
+          <p className="text-2xl font-bold text-gray-900">Mar 1</p>
+          <p className="text-xs text-gray-500 mt-1">$299 subscription</p>
+        </Card>
       </div>
 
       {/* Current Plan */}
-      {canViewSubscriptions && (
-        <Card
-          className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
-        >
-          <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
-          <div className="p-6">
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <div>
-                <Badge className={brandSummaryTheme.badgeClass}>
-                  {brandSummaryTheme.eyebrow}
-                </Badge>
-                <h3
-                  className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
-                >
-                  Current Plan: {brandPlanLabel}
-                </h3>
-                <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
-                  {brandTrialEndsAt
-                    ? `Free trial ends on ${brandTrialEndsAt}`
-                    : brandCurrentPeriodEnd
-                      ? `Renews on ${brandCurrentPeriodEnd}`
-                      : brandSubscriptionStatus}
-                </p>
-              </div>
-              {canManageBilling && (
-                <Button
-                  className={`font-semibold ${brandSummaryTheme.buttonClass}`}
-                  onClick={() => navigate(brandSummaryTheme.actionPath)}
-                >
-                  {brandSummaryTheme.actionLabel}
-                </Button>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-4 gap-4">
-              <div
-                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-              >
-                <p
-                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
-                >
-                  Base Subscription
-                </p>
-                <p
-                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
-                >
-                  {brandBasePrice == null
-                    ? brandPlanTier === "enterprise"
-                      ? "Custom"
-                      : "$0"
-                    : `$${brandBasePrice}`}
-                </p>
-                <p
-                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
-                >
-                  {brandSubscriptionStatus}
-                </p>
-              </div>
-              <div
-                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-              >
-                <p
-                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
-                >
-                  AI Studio Add-On
-                </p>
-                <p
-                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
-                >
-                  {brandHasIncludedStudio
-                    ? "Included"
-                    : brandHasStudioAddon
-                      ? `$${BRAND_STUDIO_ADDON_PRICE}`
-                      : "Inactive"}
-                </p>
-                <p
-                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
-                >
-                  {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
-                    ? `Renews on ${brandStudioCurrentPeriodEnd}`
-                    : brandStudioStatus}
-                </p>
-              </div>
-              <div
-                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-              >
-                <p
-                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
-                >
-                  Campaign Slots
-                </p>
-                <p
-                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
-                >
-                  {brandCampaignLimit == null
-                    ? "Unlimited"
-                    : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
-                </p>
-                <p
-                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
-                >
-                  {campaignMetrics.active_projects_count} active,{" "}
-                  {campaignMetrics.pending_approvals_count} pending approval
-                </p>
-              </div>
-              <div
-                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
-              >
-                <p
-                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
-                >
-                  Team Seats
-                </p>
-                <p
-                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
-                >
-                  {brandTeamSeatsUsed} / {brandSeatLimitLabel}
-                </p>
-              </div>
-            </div>
-
-            {(brandCampaignLimitReached || brandSeatLimitReached) && (
-              <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
-                <AlertDescription>
-                  {brandCampaignLimitReached
-                    ? brandCampaignLimit === 0
-                      ? "Upgrade to a paid brand plan to launch campaigns."
-                      : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
-                    : brandSeatLimit === 0
-                      ? "Upgrade to Basic or above to unlock company seats."
-                      : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
-                </AlertDescription>
-              </Alert>
-            )}
+      <Card className="p-6 bg-white border border-gray-200">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              Current Plan: {brand.plan}
+            </h3>
+            <p className="text-gray-600">Renews on March 1, 2025</p>
           </div>
-        </Card>
-      )}
+          <Button className="bg-[#F7B750] hover:bg-[#E6A640] text-white">
+            Upgrade Plan
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Monthly Subscription</p>
+            <p className="text-2xl font-bold text-gray-900">$299</p>
+          </div>
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Campaign Slots</p>
+            <p className="text-2xl font-bold text-gray-900">3 / 20</p>
+          </div>
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Team Seats</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {brand.team_seats} / 5
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {/* Payment Status / Project Billing */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -9516,383 +8890,6 @@ export default function BrandDashboard() {
       </Card>
     </div>
   );
-
-  const renderSettings = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">
-          Manage your company profile and preferences
-        </p>
-      </div>
-
-      <Tabs
-        value={activeSettingsTab}
-        onValueChange={setActiveSettingsTab}
-        className="w-full"
-      >
-        <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
-          <TabsTrigger
-            value="profile"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Billing
-          </TabsTrigger>
-          <TabsTrigger
-            value="team"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Team
-          </TabsTrigger>
-          <TabsTrigger
-            value="integrations"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Integrations
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Security & Legal
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="space-y-6 mt-0">
-          {/* Company Logo */}
-          <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
-              Company Logo
-            </h3>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
-                  <AvatarImage src={brand.logo} alt={brand.name} />
-                  <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
-                    {getBrandInitials(brand.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
-                  <Edit className="w-4 h-4 text-gray-900" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                    disabled={uploadingLogo}
-                  />
-                </label>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
-                  Upload Official Logo
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  JPG or PNG, max 5MB, square format recommended
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Company Information */}
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Building2 className="w-6 h-6" /> Company Information
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Company Name
-                </Label>
-                <Input
-                  value={brand.name}
-                  onChange={(e) => setBrand({ ...brand, name: e.target.value })}
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Industry
-                </Label>
-                <Input
-                  value={brand.industry}
-                  onChange={(e) =>
-                    setBrand({ ...brand, industry: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Website
-                </Label>
-                <Input
-                  value={brand.website}
-                  onChange={(e) =>
-                    setBrand({ ...brand, website: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Contact Email
-                </Label>
-                <Input
-                  value={brand.contact_email}
-                  disabled
-                  className="rounded-none border-2 border-gray-200 bg-gray-50 text-gray-500 h-12 text-sm font-bold cursor-not-allowed opacity-70"
-                />
-              </div>
-            </div>
-
-            <div className="mt-12">
-              <Button
-                onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-              >
-                Save Profile Changes
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Bell className="w-6 h-6" /> Communication Preferences
-            </h3>
-            <div className="space-y-2">
-              {[
-                {
-                  title: "New Project Alerts",
-                  desc: "When talent accepts or delivers assets",
-                },
-                {
-                  title: "Deliverable Submissions",
-                  desc: "When creators submit work for approval",
-                },
-                {
-                  title: "Approval Reminders",
-                  desc: "48-hour countdown notifications",
-                },
-                {
-                  title: "License Expiration Alerts",
-                  desc: "30-day advance notice",
-                },
-                {
-                  title: "Monthly Analytics Summary",
-                  desc: "Monthly performance email report",
-                },
-              ].map((pref, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
-                >
-                  <div className="pr-12">
-                    <Label className="text-sm font-black text-gray-900 uppercase tracking-widest block mb-1">
-                      {pref.title}
-                    </Label>
-                    <p className="text-xs font-medium text-gray-500">
-                      {pref.desc}
-                    </p>
-                  </div>
-                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="billing" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <CreditCard className="w-6 h-6" /> Billing & Payment
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Billing Address
-                </Label>
-                <Textarea
-                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
-                />
-              </div>
-              <div className="space-y-8">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Billing Email
-                  </Label>
-                  <Input
-                    defaultValue="billing@urbanapparel.com"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Tax Identification
-                  </Label>
-                  <Input
-                    placeholder="XX-XXXXXXX"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Primary Payment Method
-                  </p>
-                  <p className="text-sm font-black text-gray-900">
-                    Visa ending in 4242
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
-              >
-                Manage
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="team" className="space-y-6 mt-0">
-          <TeamManagementCard
-            organizationType="brand"
-            title="Team Management"
-            description="Manage members, roles, and invitations for your brand organization."
-            seatLimit={brandSeatLimit}
-            seatLimitReached={brandSeatLimitReached}
-          />
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6 mt-0">
-          <Card className="p-12 bg-white border border-gray-200 rounded-none shadow-none flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
-              <Zap className="w-8 h-8 text-gray-300" />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
-              Extend Your Workflow
-            </h3>
-            <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
-              Connect Likelee with your favorite marketing tools to automate
-              deliverables, tracking, and payments.
-            </p>
-            <Button
-              disabled
-              className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
-            >
-              Coming Soon
-            </Button>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <Settings className="w-6 h-6" /> Security Settings
-              </h3>
-              <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Reset Admin Password <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Active Session Audit <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <FileText className="w-6 h-6" /> Legal & Governance
-              </h3>
-              <div className="space-y-3">
-                {[
-                  "Terms & Conditions",
-                  "Privacy Policy",
-                  "SAG-AFTRA Agreement",
-                  "Data Export (GDPR)",
-                ].map((legal, i) => (
-                  <Button
-                    key={i}
-                    variant="ghost"
-                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
-                    {legal}
-                  </Button>
-                ))}
-              </div>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Support Section - Global Footer */}
-      <Card className="p-8 bg-gray-950 text-white rounded-none shadow-none mt-12 border-none">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
-              Need Assistance?
-            </h3>
-            <p className="text-gray-400 font-medium text-sm">
-              Our partner success team is available 24/7 to help you optimize
-              your campaigns.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              onClick={() => {
-                // Open support email
-                window.location.href = CONTACT_EMAIL_MAILTO;
-              }}
-              className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
-            >
-              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
-            </Button>
-            <Button
-              onClick={() => {
-                // Navigate to book demo page
-                navigate(createBookDemoUrl("brand_dashboard_settings"));
-              }}
-              className="rounded-none bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12 border-2 border-purple-500"
-            >
-              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
-            </Button>
 
   const renderSettings = () => {
     if (!isBrandProfileLoaded) {
@@ -11997,20 +10994,6 @@ export default function BrandDashboard() {
                   {getBrandInitials(brand.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                {loadingBrandProfile ? (
-                  <Skeleton className="h-5 w-24" />
-                ) : (
-                  <p className="font-bold text-gray-900 truncate">
-                    {brand.name}
-                  </p>
-                )}
-                <p className="text-xs text-gray-600 truncate">
-                  {brandPlanLabel}
-                </p>
-              </div>
-
->>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
             </div>
           </div>
           {sidebarOpen && (
@@ -12172,31 +11155,16 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          if (canViewInbox) {
-                            navigateToSection("campaigns-inbox");
-                          }
+                          navigateToSection("campaigns-inbox");
                         }}
-                        disabled={!canViewInbox}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
-                            : canViewInbox
-                              ? "text-gray-600 hover:bg-gray-100"
-                              : "text-gray-400 cursor-not-allowed"
+                            : "text-gray-600 hover:bg-gray-100"
                         }`}
-                        title={
-                          !canViewInbox
-                            ? "You do not have permission to view the inbox"
-                            : ""
-                        }
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-<<<<<<< HEAD
-                        {canViewInbox && inboxPendingCount > 0 && (
-                          <Badge className="bg-gray-200 text-gray-700">
-                            {inboxPendingCount}
-=======
                         {inboxUnreadCount > 0 && (
                           <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
                             {inboxUnreadCount}
@@ -12397,8 +11365,18 @@ export default function BrandDashboard() {
       >
         <div className="p-8">
           {activeSection === "home" && renderHome()}
-          {activeSection === "marketplace" && renderCreatorMarketplace()}
-          {activeSection === "marketplace" && renderCreatorMarketplace()}
+          {activeSection === "marketplace" && (
+            <MarketplaceSection
+              title="Likelee Marketplace"
+              subtitle="Verified creators only"
+              verifiedBadgeLabel=""
+              queryScope="brand-creator-marketplace"
+              showRequestLicense
+              onRequestLicense={(profile, details) =>
+                handleOpenLicenseRequest(profile, details)
+              }
+            />
+          )}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
           {activeSection === "campaigns-hub" &&
@@ -12555,12 +11533,6 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
-                              disabled={!canManageJobs}
-                              title={
-                                !canManageJobs
-                                  ? "You do not have permission to manage jobs"
-                                  : ""
-                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
