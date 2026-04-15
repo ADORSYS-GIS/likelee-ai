@@ -5,6 +5,8 @@ use reqwest::header::{CONTENT_TYPE, HeaderMap as ReqwestHeaderMap};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+pub mod backfill;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum StorageOwnerType {
