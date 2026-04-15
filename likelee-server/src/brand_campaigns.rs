@@ -1,4 +1,5 @@
 use crate::{
+    activity::{log_activity_event, log_activity_event_with_subject},
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
@@ -2349,6 +2350,7 @@ pub async fn create_campaign_offers(
         .await;
         created.push(row);
     }
+
     Ok(Json(json!({"status":"ok","offers":created})))
 }
 
@@ -2860,6 +2862,75 @@ pub async fn respond_to_campaign_offer(
                 .await;
         }
     }
+
+    // Notify brand when offer is accepted (newProjectAlerts)
+    if action == "accept" {
+        let brand_id_str = row
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let campaign_id_str = row
+            .get("brand_campaign_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let offer_id_str = offer_id.clone();
+        let target_type = row
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("collaborator")
+            .to_string();
+        let target_name = if user.role == "agency" {
+            resolve_agency_name(&state, &user.id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string())
+        } else {
+            let creator_id = resolve_effective_creator_id(&state, &user).await;
+            resolve_creator_name(&state, &creator_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string())
+        };
+        let state_clone = state.clone();
+
+        // Log activity event
+        log_activity_event(
+            &state,
+            &brand_id_str,
+            campaign_id_str.as_deref(),
+            &target_type,
+            &target_name,
+            "offer.accepted",
+            format!("{} accepted your campaign offer", target_name),
+        )
+        .await;
+
+        tokio::spawn(async move {
+            let subject = format!("{} accepted your campaign offer", target_name);
+            let message = format!(
+                "{} has accepted your campaign offer. You can now proceed with the next steps on your dashboard.",
+                target_name
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject: &subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "target_type": target_type,
+                        "target_name": target_name,
+                        "type": "offer_accepted"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
     Ok(Json(json!({"status":"ok","offer": row})))
 }
 
@@ -4702,7 +4773,7 @@ pub async fn send_offer_package(
             })
             .to_string(),
         )
-        .select("*")
+        .select("*,campaign_offers!inner(brand_campaigns!inner(brand_id))")
         .single()
         .execute()
         .await
@@ -4716,6 +4787,36 @@ pub async fn send_offer_package(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+
+    // Log activity event for brand
+    if let Some(brand_id) = row
+        .get("campaign_offers")
+        .and_then(|co| co.get("brand_campaigns"))
+        .and_then(|bc| bc.get("brand_id"))
+        .and_then(|v| v.as_str())
+    {
+        let agency_name = resolve_agency_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string());
+        let package_title = row
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Package");
+
+        log_activity_event_with_subject(
+            &state,
+            brand_id,
+            None,
+            "agency",
+            &agency_name,
+            "package.sent",
+            format!("{} sent you a package: {}", agency_name, package_title),
+            "campaign_offer_packages",
+            Some(&payload.package_id),
+        )
+        .await;
+    }
+
     Ok(Json(json!({"status":"ok","package": row})))
 }
 
@@ -5802,6 +5903,44 @@ pub async fn submit_offer_deliverable(
         ),
     )
     .await;
+
+    // Notify brand if direct submission (no agency review needed)
+    if agency_id.is_none() {
+        let brand_id_str = offer_brand_id.clone();
+        let offer_id_str = offer_id.clone();
+        let deliverable_id_str = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let state_clone = state.clone();
+
+        tokio::spawn(async move {
+            let subject = "New deliverable submitted";
+            let message = format!(
+                "A creator has submitted a new deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "deliverableSubmissions",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "deliverable_submission"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -7156,6 +7295,39 @@ pub async fn review_offer_deliverable(
             .and_then(|v| v.as_str())
             .unwrap_or("")
     };
+
+    if status_value == "brand_review" {
+        let brand_id_str = brand_id_value.to_string();
+        let offer_id_str = offer_id.clone();
+        let deliverable_id_str = deliverable_id.clone();
+        let agency_id_str = user.id.clone();
+        let state_clone = state.clone();
+
+        tokio::spawn(async move {
+            let subject = "Deliverable ready for your review";
+            let message = format!(
+                "An agency has approved a deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: Some(&agency_id_str),
+                    pref_key: "approvalReminders",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "approval_reminder"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
     let brand_name = resolve_brand_name(&state, brand_id_value)
         .await
         .unwrap_or_else(|| "Brand".to_string());
@@ -8554,70 +8726,4 @@ pub async fn ensure_campaign_billing_stub(
         "Generated billing stub {} with {} per-talent payments.", lr_id, split_cents
     );
     Ok(lr_id.to_string())
-}
-
-#[allow(clippy::too_many_arguments)]
-pub(crate) async fn log_activity_event_with_subject(
-    state: &AppState,
-    brand_id: &str,
-    campaign_id: Option<&str>,
-    actor_type: &str,
-    actor_name: &str,
-    event_type: &str,
-    description: String,
-    subject_table: &str,
-    subject_id: Option<&str>,
-) {
-    if brand_id.trim().is_empty() {
-        return;
-    }
-    let mut payload = serde_json::Map::new();
-    payload.insert("brand_id".to_string(), json!(brand_id));
-    if let Some(campaign_id) = campaign_id {
-        if !campaign_id.trim().is_empty() {
-            payload.insert("campaign_id".to_string(), json!(campaign_id));
-        }
-    }
-    payload.insert("actor_type".to_string(), json!(actor_type));
-    payload.insert("actor_name".to_string(), json!(actor_name));
-    payload.insert("event_type".to_string(), json!(event_type));
-    payload.insert("description".to_string(), json!(description));
-    payload.insert("type".to_string(), json!(event_type));
-    payload.insert("subject_table".to_string(), json!(subject_table));
-    let subject_value = subject_id.or(campaign_id).unwrap_or("");
-    payload.insert("subject_id".to_string(), json!(subject_value));
-    payload.insert("title".to_string(), json!(description));
-    payload.insert("subtitle".to_string(), json!(actor_name));
-    if let Err(e) = state
-        .pg
-        .from("brand_activity_events")
-        .insert(serde_json::Value::Object(payload).to_string())
-        .execute()
-        .await
-    {
-        eprintln!("Failed to log activity event: {}", e);
-    }
-}
-
-async fn log_activity_event(
-    state: &AppState,
-    brand_id: &str,
-    campaign_id: Option<&str>,
-    actor_type: &str,
-    actor_name: &str,
-    event_type: &str,
-    description: String,
-) {
-    log_activity_event_with_subject(
-        state,
-        brand_id,
-        campaign_id,
-        actor_type,
-        actor_name,
-        event_type,
-        description,
-        "brand_campaigns",
-        campaign_id,
-    )
-    .await;
 }

@@ -811,6 +811,40 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/brand-register", post(crate::brands::register))
         .route("/api/brand-profile", post(crate::brands::update))
         .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        // --- Brand Notifications ---
+        .route(
+            "/api/brand/notifications",
+            get(crate::brands::list_notifications),
+        )
+        .route(
+            "/api/brand/notifications/count",
+            get(crate::brands::get_notification_count),
+        )
+        .route(
+            "/api/brand/notifications/:id/read",
+            post(crate::brands::mark_notification_read),
+        )
+        // --- Brand Badge Counts ---
+        .route(
+            "/api/brand/inbox/unread-count",
+            get(crate::brands::get_inbox_unread_count),
+        )
+        .route(
+            "/api/brand/inbox/mark-viewed",
+            post(crate::brands::mark_inbox_packages_viewed),
+        )
+        .route(
+            "/api/brand/jobs/unread-count",
+            get(crate::brands::get_jobs_unread_count),
+        )
+        .route(
+            "/api/brand/jobs/mark-viewed",
+            post(crate::brands::mark_job_applications_viewed),
+        )
+        .route(
+            "/api/brand/licensing/contracts-count",
+            get(crate::brands::get_licensing_contracts_count),
+        )
         .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
@@ -1210,6 +1244,22 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/billing/checkout",
             post(crate::billing::create_agency_subscription_checkout),
+        )
+        .route(
+            "/api/creator/billing/checkout",
+            post(crate::billing::create_creator_subscription_checkout),
+        )
+        .route(
+            "/api/creator/billing/upgrade",
+            post(crate::billing::upgrade_creator_subscription),
+        )
+        .route(
+            "/api/creator/billing/status",
+            get(crate::billing::get_creator_billing_status),
+        )
+        .route(
+            "/api/creator/billing/portal",
+            post(crate::billing::create_creator_billing_portal),
         )
         .route(
             "/api/agency/billing/change-plan",
