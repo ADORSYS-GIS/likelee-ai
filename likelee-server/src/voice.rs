@@ -1,7 +1,4 @@
-use crate::{
-    auth::AuthUser,
-    config::AppState,
-};
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     body::Bytes,
     extract::{Path, Query, State},
