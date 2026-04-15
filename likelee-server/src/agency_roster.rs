@@ -259,17 +259,16 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            if talent_id_raw.trim().is_empty() {
+                continue;
+            }
             let creator_id_raw = item
                 .get("creator_id")
                 .or_else(|| get_field("creator_id"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let id = if !talent_id_raw.trim().is_empty() {
-                talent_id_raw.clone()
-            } else {
-                creator_id_raw.clone()
-            };
+            let id = talent_id_raw.clone();
             if id.trim().is_empty() {
                 continue;
             }
@@ -277,6 +276,14 @@ pub async fn get_roster(
                 .get(&id)
                 .or_else(|| ref_by_key.get(&talent_id_raw))
                 .or_else(|| ref_by_key.get(&creator_id_raw));
+
+            if let Some(tr) = talent_ref {
+                if tr.relationship_type != "internal" || tr.is_connected_creator {
+                    continue;
+                }
+            } else if item.get("agency_users").is_none() {
+                continue;
+            }
             // Try full_legal_name, then stage_name, then full_name
             let name = get_field("full_legal_name")
                 .or(get_field("stage_name"))
