@@ -10,6 +10,12 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+
+use crate::entitlements::{
+    creator_has_voice_profiles, creator_voice_tone_limit, get_agency_plan_tier,
+    get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, voice_clone_limit,
+};
 
 async fn enforce_voice_clone_limit_for_agency(
     state: &AppState,
@@ -48,6 +54,99 @@ async fn enforce_voice_clone_limit_for_agency(
     Ok(())
 }
 
+async fn enforce_voice_access_for_creator(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, usize), (StatusCode, String)> {
+    let (creator_id, _billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(state, user).await?;
+    if !creator_has_voice_profiles(entitlement_tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "voice_profiles_require_pro".to_string(),
+        ));
+    }
+    Ok((creator_id, creator_voice_tone_limit(entitlement_tier)))
+}
+
+async fn count_creator_voice_recordings(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<usize, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("voice_recordings")
+        .select("id")
+        .eq("user_id", creator_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(rows.len())
+}
+
+async fn resolve_voice_owner_ids(
+    state: &AppState,
+    user: &AuthUser,
+    talent_id: Option<&str>,
+) -> Result<Vec<String>, (StatusCode, String)> {
+    let mut owner_ids = HashSet::new();
+
+    match user.role.as_str() {
+        "agency" => {
+            if let Some(tid) = talent_id {
+                let resp = state
+                    .pg
+                    .from("agency_users")
+                    .select("id,creator_id")
+                    .eq("agency_id", &user.id)
+                    .eq("id", tid)
+                    .limit(1)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let text = resp.text().await.unwrap_or_default();
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                let row = rows.first().ok_or((
+                    StatusCode::FORBIDDEN,
+                    "Not authorized to access this talent".to_string(),
+                ))?;
+                owner_ids.insert(tid.to_string());
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    if !creator_id.is_empty() {
+                        owner_ids.insert(creator_id.to_string());
+                    }
+                }
+            } else {
+                owner_ids.insert(user.id.clone());
+            }
+        }
+        "creator" | "talent" => {
+            let (creator_id, _) = get_creator_plan_tier_for_user(state, user).await?;
+            owner_ids.insert(creator_id);
+            owner_ids.insert(user.id.clone());
+        }
+        "admin" => {
+            if let Some(tid) = talent_id {
+                owner_ids.insert(tid.to_string());
+            } else {
+                owner_ids.insert(user.id.clone());
+            }
+        }
+        _ => {
+            owner_ids.insert(user.id.clone());
+        }
+    }
+
+    Ok(owner_ids.into_iter().collect())
+}
+
 #[derive(Deserialize)]
 pub struct UploadVoiceQuery {
     #[serde(default)]
@@ -72,6 +171,22 @@ pub async fn upload_voice_recording(
         return Err((StatusCode::BAD_REQUEST, "empty body".into()));
     }
 
+    let owner_id = if user.role == "agency" {
+        user.id.clone()
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let existing_count = count_creator_voice_recordings(&state, &creator_id).await?;
+        if existing_count >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        creator_id
+    } else {
+        user.id.clone()
+    };
+
     let ct = headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
@@ -80,7 +195,7 @@ pub async fn upload_voice_recording(
 
     // Private bucket
     let bucket = state.supabase_bucket_private.clone();
-    let owner = user.id.replace(
+    let owner = owner_id.replace(
         |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
         "_",
     );
@@ -129,7 +244,7 @@ pub async fn upload_voice_recording(
 
     // Persist row
     let payload = serde_json::json!({
-        "user_id": user.id,
+        "user_id": owner_id,
         "storage_bucket": bucket,
         "storage_path": path,
         "mime_type": ct,
@@ -182,8 +297,34 @@ pub async fn register_voice_model(
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let resp = state
+            .pg
+            .from("voice_models")
+            .select("id")
+            .eq("user_id", &creator_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        if !status.is_success() {
+            let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if rows.len() >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        input.user_id = creator_id;
     }
-    input.user_id = user.id;
+    if input.user_id.is_empty() {
+        input.user_id = user.id;
+    }
     let payload = serde_json::json!({
         "user_id": input.user_id,
         "provider": input.provider,
@@ -258,7 +399,9 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    let mut has_access = owner_id == user.id;
+    let allowed_owner_ids = resolve_voice_owner_ids(&state, &user, None).await?;
+    let allowed_owner_refs: Vec<&str> = allowed_owner_ids.iter().map(|s| s.as_str()).collect();
+    let mut has_access = allowed_owner_ids.iter().any(|allowed| allowed == owner_id);
 
     if !has_access && user.role == "admin" {
         has_access = true;
@@ -343,7 +486,7 @@ pub async fn signed_url_for_recording(
                 .from("voice_recordings")
                 .update("{\"accessible\": false}")
                 .eq("id", &q.recording_id)
-                .eq("user_id", &user.id)
+                .in_("user_id", allowed_owner_refs)
                 .execute()
                 .await;
 
@@ -388,8 +531,34 @@ pub async fn create_clone_from_recording(
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    } else if user.role == "creator" || user.role == "talent" {
+        let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
+        let resp = state
+            .pg
+            .from("voice_models")
+            .select("id")
+            .eq("user_id", &creator_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        if !status.is_success() {
+            let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if rows.len() >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "voice_profile_limit_reached".to_string(),
+            ));
+        }
+        input.user_id = creator_id;
     }
-    input.user_id = user.id;
+    if input.user_id.is_empty() {
+        input.user_id = user.id;
+    }
     if state.elevenlabs_api_key.is_empty() {
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
@@ -541,6 +710,14 @@ pub async fn list_voice_recordings(
     // We will query recordings where user_id is IN this list
     let mut target_user_ids = vec![user.id.clone()];
 
+    if user.role == "creator" || user.role == "talent" {
+        if let Ok((creator_id, _)) = get_creator_plan_tier_for_user(&state, &user).await {
+            if !creator_id.trim().is_empty() && !target_user_ids.iter().any(|v| v == &creator_id) {
+                target_user_ids.push(creator_id);
+            }
+        }
+    }
+
     // If a talent_id is provided and the user is an agency, check management access
     if let Some(tid) = params.get("talent_id") {
         if user.role == "agency" {
@@ -661,7 +838,9 @@ pub async fn delete_voice_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    if owner_id != user.id {
+    let allowed_owner_ids = resolve_voice_owner_ids(&state, &user, None).await?;
+    let allowed_owner_refs: Vec<&str> = allowed_owner_ids.iter().map(|s| s.as_str()).collect();
+    if !allowed_owner_ids.iter().any(|allowed| allowed == owner_id) {
         return Err((
             StatusCode::FORBIDDEN,
             "You do not have permission to delete this recording".to_string(),
@@ -710,7 +889,7 @@ pub async fn delete_voice_recording(
         .from("voice_models")
         .update("{\"source_recording_id\": null}")
         .eq("source_recording_id", &id)
-        .eq("user_id", &user.id)
+        .in_("user_id", allowed_owner_refs.clone())
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
@@ -755,7 +934,7 @@ pub async fn delete_voice_recording(
         .from("voice_recordings")
         .select("id")
         .eq("id", &id)
-        .eq("user_id", &user.id)
+        .in_("user_id", allowed_owner_refs)
         .limit(1)
         .execute()
         .await

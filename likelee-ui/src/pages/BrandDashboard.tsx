@@ -4,7 +4,9 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useCallback,
 } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -13,11 +15,21 @@ import {
   createAgencyBrandLicensingRequest,
   getBrandLicensingRequests,
   getBrandProfile,
+  updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
+  listBrandNotifications,
+  markBrandNotificationRead,
+  getBrandNotificationCount,
+  getInboxUnreadCount,
+  markInboxPackagesViewed,
+  getJobsUnreadCount,
+  markJobApplicationsViewed,
+  getLicensingContractsCount,
 } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
+import { BrandSettingsPanel } from "@/components/brand-dashboard/settings/BrandSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,8 +88,12 @@ import {
   RefreshCw,
   Maximize2,
   Trash2,
-  Sparkles,
-  Lock,
+  CircleSlash,
+  Headset,
+  BookOpen,
+  Info,
+  Shield,
+  ShieldCheck,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -100,6 +116,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -148,20 +165,32 @@ const getBrandInitials = (name: string) => {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (parts.length === 0) return "B";
+  if (parts.length === 0) return "…";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
 // Mock data
 const mockBrand = {
+  id: "",
   name: "Urban Apparel Co.",
   logo: "",
   industry: "Retail & E-commerce",
   website: "www.urbanapparel.com",
   contact_email: "team@urbanapparel.com",
-  plan: "Pro Studio",
+  plan: "",
   team_seats: 3,
+  secondary_color: "#F7B750",
+};
+
+const emptyBrand = {
+  ...mockBrand,
+  name: "",
+  industry: "",
+  website: "",
+  contact_email: "",
+  logo: "",
+  plan: "",
 };
 
 const mockCreators = [
@@ -665,25 +694,77 @@ export default function BrandDashboard() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState("home");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("brandSidebarOpen");
+    return stored === null ? true : stored === "true";
+  });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === "undefined") return 256;
+    const stored = window.localStorage.getItem("brandSidebarWidth");
+    const parsed = stored ? Number(stored) : NaN;
+    if (!Number.isFinite(parsed)) return 256;
+    return Math.max(80, Math.min(400, parsed));
+  });
+  const [collapsedPopout, setCollapsedPopout] = useState<{
+    itemId: string;
+    top: number;
+  } | null>(null);
+  const popoutHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearPopoutTimeout = useCallback(() => {
+    if (popoutHideTimeoutRef.current) {
+      clearTimeout(popoutHideTimeoutRef.current);
+      popoutHideTimeoutRef.current = null;
+    }
+  }, []);
+
+  const hidePopoutWithDelay = useCallback(() => {
+    clearPopoutTimeout();
+    popoutHideTimeoutRef.current = setTimeout(() => {
+      setCollapsedPopout(null);
+    }, 150);
+  }, [clearPopoutTimeout]);
+  const [showLogoPreview, setShowLogoPreview] = useState(false);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
   const [inboxSubTab, setInboxSubTab] = useState<
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(mockBrand);
+  const [brand, setBrand] = useState(emptyBrand);
+  const [originalBrand, setOriginalBrand] = useState(emptyBrand);
+  const [isBrandProfileLoaded, setIsBrandProfileLoaded] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
+    useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    newProjectAlerts: true,
+    deliverableSubmissions: true,
+    approvalReminders: true,
+    licenseExpirationAlerts: true,
+    monthlyAnalyticsSummary: true,
+  });
+  const [initialNotificationPrefs, setInitialNotificationPrefs] = useState({
+    newProjectAlerts: true,
+    deliverableSubmissions: true,
+    approvalReminders: true,
+    licenseExpirationAlerts: true,
+    monthlyAnalyticsSummary: true,
+  });
+
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
-  // Note: "completed" tab key maps to "Expired" UI label per #360.
-  // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
+  const notificationSaveTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const pendingSectionOverrideRef = useRef<string | null>(null);
   const [brandJobs, setBrandJobs] = useState<any[]>([]);
   const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
@@ -701,6 +782,20 @@ export default function BrandDashboard() {
     amount?: number;
     currency?: string;
   }>({ open: false });
+
+  // Brand Notifications State
+  const [brandNotifications, setBrandNotifications] = useState<any[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
+
+  // Badge Count State
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [jobsUnreadCount, setJobsUnreadCount] = useState(0);
+  const [licensingContractsCount, setLicensingContractsCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" && window.innerWidth < 768,
+  );
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -758,6 +853,42 @@ export default function BrandDashboard() {
       nextSection === "campaigns-hub" ? "campaigns" : nextSection,
     );
     setSearchParams(params, { replace: options?.replace ?? false });
+
+    // Clear badge counts when viewing sections
+    if (nextSection === "campaigns-inbox") {
+      setInboxUnreadCount(0);
+      // Mark inbox packages as viewed in the backend
+      markInboxPackagesViewed().catch((err) => {
+        console.error("Failed to mark inbox packages as viewed:", err);
+      });
+    } else if (
+      nextSection === "campaigns-hub" &&
+      options?.campaignHubTab === "jobs"
+    ) {
+      setJobsUnreadCount(0);
+      // Mark job applications as viewed in the backend
+      markJobApplicationsViewed().catch((err) => {
+        console.error("Failed to mark job applications as viewed:", err);
+      });
+    } else if (nextSection === "licensing-requests") {
+      setLicensingContractsCount(0);
+    } else if (nextSection === "campaigns-contract-hub") {
+      // Mark related notifications as read
+      const contractNotifications = brandNotifications.filter(
+        (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
+      );
+      contractNotifications.forEach((n) => {
+        handleMarkNotificationRead(n.id);
+      });
+    } else if (nextSection === "campaigns-deliverables") {
+      // Mark related notifications as read
+      const deliverableNotifications = brandNotifications.filter(
+        (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
+      );
+      deliverableNotifications.forEach((n) => {
+        handleMarkNotificationRead(n.id);
+      });
+    }
   };
 
   const goToCampaignsSection = () => {
@@ -1181,17 +1312,35 @@ export default function BrandDashboard() {
     const loadBrandProfile = async () => {
       try {
         const profile = await getBrandProfile();
-        if (!mounted || !profile) return;
-        setBrand((prev) => ({
-          ...prev,
-          name: profile?.company_name || profile?.name || prev.name || "Brand",
-          industry: profile?.industry || prev.industry,
-          website: profile?.website || prev.website,
-          contact_email: profile?.email || prev.contact_email,
+        if (!mounted) return;
+        if (!profile) return;
+        const brandData = {
+          ...emptyBrand,
+          id: profile?.id || "",
+          name:
+            profile?.company_name ||
+            profile?.name ||
+            emptyBrand.name ||
+            "Brand",
+          industry: profile?.industry || emptyBrand.industry,
+          website: profile?.website || emptyBrand.website,
+          contact_email: profile?.email || emptyBrand.contact_email,
           logo: profile?.logo_url || "",
-        }));
+          plan: profile?.plan_tier || profile?.plan || "",
+          secondary_color:
+            profile?.secondary_color || emptyBrand.secondary_color,
+        };
+        setBrand(brandData);
+        setOriginalBrand(brandData);
+
+        if (profile?.notification_prefs) {
+          setNotificationPrefs(profile.notification_prefs);
+          setInitialNotificationPrefs(profile.notification_prefs);
+        }
       } catch {
-        // Keep mock fallback on failure.
+        // Keep empty fallback on failure.
+      } finally {
+        if (mounted) setIsBrandProfileLoaded(true);
       }
     };
     loadBrandProfile();
@@ -1199,6 +1348,96 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, []);
+
+  // Load brand notifications
+  useEffect(() => {
+    let mounted = true;
+    const loadNotifications = async () => {
+      try {
+        setLoadingNotifications(true);
+        const response = await listBrandNotifications({ limit: 50 });
+        if (!mounted) return;
+        const notifications = Array.isArray(response) ? response : [];
+        setBrandNotifications(notifications);
+
+        // Get unread count
+        const countResponse = await getBrandNotificationCount();
+        if (mounted && countResponse?.count !== undefined) {
+          setUnreadNotificationCount(countResponse.count);
+        }
+      } catch (error) {
+        console.error("Failed to load notifications:", error);
+      } finally {
+        if (mounted) setLoadingNotifications(false);
+      }
+    };
+
+    loadNotifications();
+
+    // Refresh notifications every 60 seconds
+    const interval = setInterval(loadNotifications, 60000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Load badge counts
+  useEffect(() => {
+    let mounted = true;
+    const loadBadgeCounts = async () => {
+      try {
+        const [inboxResponse, jobsResponse, licensingResponse] =
+          await Promise.all([
+            getInboxUnreadCount(),
+            getJobsUnreadCount(),
+            getLicensingContractsCount(),
+          ]);
+
+        if (!mounted) return;
+
+        if (inboxResponse?.count !== undefined) {
+          setInboxUnreadCount(inboxResponse.count);
+        }
+        if (jobsResponse?.count !== undefined) {
+          setJobsUnreadCount(jobsResponse.count);
+        }
+        if (licensingResponse?.count !== undefined) {
+          setLicensingContractsCount(licensingResponse.count);
+        }
+      } catch (error) {
+        console.error("Failed to load badge counts:", error);
+      }
+    };
+
+    loadBadgeCounts();
+
+    // Refresh badge counts every 60 seconds
+    const interval = setInterval(loadBadgeCounts, 60000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Mark notification as read
+  const handleMarkNotificationRead = async (notificationId: string) => {
+    try {
+      await markBrandNotificationRead(notificationId);
+      setBrandNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? { ...n, read_at: new Date().toISOString() }
+            : n,
+        ),
+      );
+      setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
 
   useEffect(() => {
     if (activeSection !== "campaigns-inbox") return;
@@ -1306,7 +1545,7 @@ export default function BrandDashboard() {
       }
     };
     loadInboxCount();
-    const timer = setInterval(loadInboxCount, 30000);
+    const timer = setInterval(loadInboxCount, 60000);
     return () => {
       mounted = false;
       clearInterval(timer);
@@ -1791,16 +2030,20 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const contractHubPendingCount = useMemo(() => {
-    const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
-    return offers.filter((offer: any) => {
-      const st = String(offer?.status || "").toLowerCase();
-      return st === "contract_sent" || st === "contract_partially_signed";
-    }).length;
-  }, [brandOfferItems]);
+    if (!notificationPrefs.newProjectAlerts) return 0;
 
-  const pendingApprovalCount = mockCampaigns.filter(
-    (c) => c.status === "pending_approval",
-  ).length;
+    return brandNotifications.filter(
+      (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
+    ).length;
+  }, [brandNotifications, notificationPrefs.newProjectAlerts]);
+
+  const pendingApprovalCount = useMemo(() => {
+    if (!notificationPrefs.deliverableSubmissions) return 0;
+
+    return brandNotifications.filter(
+      (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
+    ).length;
+  }, [brandNotifications, notificationPrefs.deliverableSubmissions]);
   const activeLicenses = mockLicenses.filter(
     (l) => l.status === "active" || l.status === "expiring_soon",
   );
@@ -1817,38 +2060,147 @@ export default function BrandDashboard() {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
+      badge: (() => {
+        // Sum of all campaign sub-tab badges: Inbox + Contract Hub + Deliverables + Jobs
+        const total =
+          inboxUnreadCount +
+          contractHubPendingCount +
+          pendingApprovalCount +
+          jobsUnreadCount;
+        return total > 0 ? total : undefined;
+      })(),
     },
     {
       id: "licensing-requests",
       label: "Licensing Requests",
       icon: FileText,
+      badge: licensingContractsCount > 0 ? licensingContractsCount : undefined,
     },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
       id: "usage",
       label: "Usage Rights",
       icon: FileText,
-      badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
+      badge:
+        notificationPrefs.licenseExpirationAlerts && expiringLicenses.length > 0
+          ? expiringLicenses.length
+          : undefined,
     },
     { id: "billing", label: "Billing", icon: CreditCard },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !brand.id) return;
+
+    try {
       setUploadingLogo(true);
-      setTimeout(() => {
-        setBrand({ ...brand, logo: URL.createObjectURL(file) });
-        setUploadingLogo(false);
-        toast({ title: "Success", description: "Logo uploaded! (Demo mode)" });
-      }, 1000);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${brand.id}-${Date.now()}.${fileExt}`;
+      const filePath = `brand-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("likelee-public")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
+
+      // Update backend profile record
+      await updateBrandProfile({
+        company_name: brand.name,
+        logo_url: publicUrl,
+      });
+
+      const newBrand = { ...brand, logo: publicUrl };
+      setBrand(newBrand);
+      setOriginalBrand((prev) => ({ ...prev, logo: publicUrl }));
+      toast({ title: "Success", description: "Logo updated successfully!" });
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Upload failed",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+  const handleSaveProfile = async () => {
+    try {
+      setIsSavingProfile(true);
+      // Exclude contact_email from update as requested
+      const updateData = {
+        name: brand.name,
+        company_name: brand.name, // Usually both are updated
+        industry: brand.industry,
+        website: brand.website,
+      };
+
+      await updateBrandProfile(updateData);
+
+      setOriginalBrand(brand);
+      toast({
+        title: "Settings Saved",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Unable to save profile changes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
+
+  const handleSaveNotificationPrefs = useCallback(async (newPrefs) => {
+    try {
+      setIsSavingNotificationPrefs(true);
+      await updateBrandProfile({
+        notification_prefs: newPrefs,
+      });
+      setInitialNotificationPrefs(newPrefs);
+    } catch (error: any) {
+      console.error("Error saving notification prefs:", error);
+      toast({
+        title: "Error",
+        description:
+          error?.message || "Unable to save notification preferences.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotificationPrefs(false);
+    }
+  }, []);
+
+  const scheduleNotificationPrefsSave = useCallback(
+    (newPrefs) => {
+      if (notificationSaveTimeoutRef.current) {
+        clearTimeout(notificationSaveTimeoutRef.current);
+      }
+      notificationSaveTimeoutRef.current = setTimeout(() => {
+        handleSaveNotificationPrefs(newPrefs);
+      }, 500);
+    },
+    [handleSaveNotificationPrefs],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (notificationSaveTimeoutRef.current) {
+        clearTimeout(notificationSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleShareBrief = (campaignId) => {
     const campaign = mockCampaigns.find((c) => c.id === campaignId);
@@ -3416,7 +3768,7 @@ export default function BrandDashboard() {
             <p className="text-gray-600 font-medium">Searching for talent...</p>
           </div>
         ) : filteredCreators.length === 0 ? (
-          <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <div className="col-span-full text-center py-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               No creators found
@@ -3597,7 +3949,7 @@ export default function BrandDashboard() {
           return (
             <Card
               key={req?.id}
-              className="p-6 bg-white border border-gray-200 rounded-xl"
+              className="p-6 bg-white border border-gray-200 rounded-lg"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -3768,12 +4120,12 @@ export default function BrandDashboard() {
       {inboxSubTab === "talent_packages" ? (
         <div className="space-y-4">
           {loadingInboxPackages && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <Card className="p-6 bg-white border border-gray-300 rounded-lg">
               <p className="text-sm text-gray-500">Loading packages...</p>
             </Card>
           )}
           {!loadingInboxPackages && inboxPackages.length === 0 && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <Card className="p-6 bg-white border border-gray-300 rounded-lg">
               <p className="text-sm text-gray-500">No packages received yet.</p>
             </Card>
           )}
@@ -3794,7 +4146,7 @@ export default function BrandDashboard() {
             return (
               <Card
                 key={pkg.id}
-                className="p-6 bg-white border border-gray-300 rounded-none"
+                className="p-6 bg-white border border-gray-300 rounded-lg"
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
@@ -3845,7 +4197,7 @@ export default function BrandDashboard() {
 
                 <div className="flex gap-2">
                   <Button
-                    className={`flex-1 rounded-none ${
+                    className={`flex-1 rounded-lg ${
                       isExpired
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-black hover:bg-gray-800 text-white"
@@ -3858,7 +4210,7 @@ export default function BrandDashboard() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="border border-gray-300 rounded-none"
+                    className="border border-gray-300 rounded-lg"
                     disabled={isDone || isExpired}
                     onClick={() => {
                       const token = pkg?.meta?.agency_package_token;
@@ -3874,7 +4226,7 @@ export default function BrandDashboard() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="border border-gray-300 rounded-none"
+                    className="border border-gray-300 rounded-lg"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -3884,7 +4236,7 @@ export default function BrandDashboard() {
           })}
         </div>
       ) : (
-        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
+        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-lg p-16 text-center">
           <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
             No direct requests yet
@@ -4173,10 +4525,7 @@ export default function BrandDashboard() {
     }
   };
 
-  const getPublicUrl = (
-    del: any,
-    options: { thumbnail?: boolean; download?: boolean } = {},
-  ) => {
+  const getPublicUrl = (del: any) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const path = typeof del === "string" ? del : del?.asset_url;
     if (!path) return "";
@@ -4184,13 +4533,7 @@ export default function BrandDashboard() {
 
     if (typeof del === "object" && del?.id && del?.offer_id) {
       const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
-      const queryParams = new URLSearchParams();
-      if (authToken) queryParams.set("token", authToken);
-      if (options.thumbnail) queryParams.set("thumbnail", "true");
-      if (options.download) queryParams.set("download", "true");
-
-      const queryString = queryParams.toString();
-      return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
+      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
     }
 
     // Never expose private-bucket URLs directly; access must go through API proxies.
@@ -4205,14 +4548,14 @@ export default function BrandDashboard() {
       </div>
       <div className="space-y-3">
         {loadingBrandOfferItems ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+          <Card className="p-6 bg-white border border-gray-300 rounded-lg">
             <div className="flex items-center gap-3">
               <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
               <p className="text-sm text-gray-500">Loading offers...</p>
             </div>
           </Card>
         ) : brandOfferItems.length === 0 ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+          <Card className="p-6 bg-white border border-gray-300 rounded-lg">
             <p className="text-sm text-gray-500">
               No offer contracts available yet.
             </p>
@@ -4250,7 +4593,7 @@ export default function BrandDashboard() {
           return (
             <Card
               key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+              className="p-4 bg-white border border-gray-300 rounded-lg space-y-2"
             >
               {/* Payment Pending Banner */}
               {isFullySigned && offer?.payment_status !== "paid" && (
@@ -4320,7 +4663,7 @@ export default function BrandDashboard() {
                 </div>
                 <Button
                   variant="outline"
-                  className="border border-gray-300 rounded-none"
+                  className="border border-gray-300 rounded-lg"
                   onClick={async () => {
                     const next = expanded ? "" : offerId;
                     setSelectedOfferHubId(next);
@@ -4331,7 +4674,7 @@ export default function BrandDashboard() {
                 </Button>
               </div>
               {expanded && (
-                <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
+                <div className="border border-gray-200 rounded-lg bg-gray-50 flex flex-col gap-px">
                   {loadingOfferHubDetails ? (
                     <div className="p-8 text-center bg-white">
                       <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
@@ -4481,7 +4824,7 @@ export default function BrandDashboard() {
           );
         })}
       </div>
-      <Card className="p-4 bg-white border border-gray-300 rounded-none">
+      <Card className="p-4 bg-white border border-gray-300 rounded-lg">
         {loadingContractHubRows ? (
           <p className="text-sm text-gray-500">Loading submissions</p>
         ) : contractHubRows.length === 0 ? (
@@ -4658,12 +5001,12 @@ export default function BrandDashboard() {
       </div>
       <div className="space-y-4">
         {loadingBrandOfferItems ? (
-          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+          <Card className="p-12 bg-white border border-gray-300 rounded-lg text-center">
             <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
             <p className="text-sm text-gray-500">Loading campaigns...</p>
           </Card>
         ) : brandOfferItems.length === 0 ? (
-          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+          <Card className="p-12 bg-white border border-gray-300 rounded-lg text-center">
             <p className="text-sm text-gray-500">
               No active campaigns available.
             </p>
@@ -4765,7 +5108,7 @@ export default function BrandDashboard() {
                   }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
+                    <div className="p-3 rounded-lg bg-gray-100 text-gray-600">
                       <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
@@ -4869,7 +5212,7 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={`offer-${offerId}`}
-                            className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+                            className="rounded-lg border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
                               className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
@@ -5006,28 +5349,16 @@ export default function BrandDashboard() {
                                         const isBusy =
                                           String(reviewing || "") ===
                                           String(del?.id || "");
-                                        const isPaid =
-                                          String(offer?.payment_status || "")
-                                            .trim()
-                                            .toLowerCase() === "paid";
                                         return (
                                           <Card
                                             key={String(del.id)}
-                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${
-                                              isPaid
-                                                ? "cursor-zoom-in"
-                                                : "cursor-default"
-                                            }`}
+                                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
                                             onClick={() => {
                                               setPreviewItems(
                                                 selectedOfferHubDeliverables,
                                               );
                                               setPreviewIndex(idx);
-                                              setPreviewImage({
-                                                ...del,
-                                                payment_status:
-                                                  offer?.payment_status,
-                                              });
+                                              setPreviewImage(del);
                                             }}
                                           >
                                             <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -5035,30 +5366,12 @@ export default function BrandDashboard() {
                                                 del?.asset_type || "",
                                               ).startsWith("image") ? (
                                                 <img
-                                                  src={getPublicUrl(del, {
-                                                    thumbnail:
-                                                      offer?.payment_status !==
-                                                      "paid",
-                                                  })}
+                                                  src={getPublicUrl(del)}
                                                   alt={
                                                     del.caption || "Deliverable"
                                                   }
                                                   className="w-full h-full object-cover"
                                                 />
-                                              ) : offer?.payment_status !==
-                                                "paid" ? (
-                                                <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all group-hover:bg-gray-900">
-                                                  <div className="relative mb-3 flex items-center justify-center">
-                                                    <Lock className="w-8 h-8 text-indigo-400/80" />
-                                                    <Sparkles className="w-5 h-5 text-indigo-400 absolute -top-4 -right-4 animate-pulse" />
-                                                  </div>
-                                                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-center px-4 leading-tight">
-                                                    Premium Video
-                                                  </span>
-                                                  <span className="text-[7px] mt-2 font-bold text-indigo-400/60 uppercase tracking-widest border border-indigo-500/20 px-1.5 py-0.5 rounded-none">
-                                                    Locked
-                                                  </span>
-                                                </div>
                                               ) : (
                                                 <video
                                                   src={getPublicUrl(del)}
@@ -5088,7 +5401,7 @@ export default function BrandDashboard() {
                                               )}
                                               <div className="absolute top-2 left-2">
                                                 <Badge
-                                                  className={`rounded-none border-0 ${
+                                                  className={`rounded-lg border-0 ${
                                                     del.status === "approved" ||
                                                     del.status ===
                                                       "brand_approved"
@@ -5123,20 +5436,19 @@ export default function BrandDashboard() {
                                               <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                                                 <Button
                                                   size="sm"
-                                                  className="flex-1 h-8 rounded-none font-bold bg-gray-900"
+                                                  className="flex-1 h-8 rounded-lg font-bold bg-gray-900"
                                                   disabled={
                                                     isApproved ||
                                                     isBusy ||
                                                     !canApproveDeliverables
                                                   }
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
+                                                  onClick={() =>
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "approve",
-                                                    );
-                                                  }}
+                                                    )
+                                                  }
                                                 >
                                                   {isApproved
                                                     ? "Approved"
@@ -5145,20 +5457,19 @@ export default function BrandDashboard() {
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
-                                                  className="flex-1 h-8 rounded-none font-bold"
+                                                  className="flex-1 h-8 rounded-lg font-bold"
                                                   disabled={
                                                     isApproved ||
                                                     isBusy ||
                                                     !canApproveDeliverables
                                                   }
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
+                                                  onClick={() =>
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "changes_requested",
-                                                    );
-                                                  }}
+                                                    )
+                                                  }
                                                 >
                                                   Request changes
                                                 </Button>
@@ -6236,7 +6547,7 @@ export default function BrandDashboard() {
                       return (
                         <div
                           key={String(offer?.id || "")}
-                          className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between"
+                          className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="w-9 h-9">
@@ -6313,17 +6624,17 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-8">
         <div className="grid md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
             <p className="text-3xl font-bold text-gray-900">$12.4K</p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
             <Users className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
             <p className="text-3xl font-bold text-gray-900">8</p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
             <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">12</p>
@@ -6331,7 +6642,7 @@ export default function BrandDashboard() {
         </div>
 
         <div className="grid md:grid-cols-5 gap-6">
-          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
+          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
@@ -6339,45 +6650,45 @@ export default function BrandDashboard() {
               onClick={() => {
                 goToCampaignsSection();
               }}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-lg"
             >
               Invite Agency
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Add AI Creator
             </h3>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+              className="w-full bg-[#FAD54C] text-white rounded-lg cursor-not-allowed"
             >
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
               disabled
-              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
+              className="w-full bg-amber-600 text-white rounded-lg cursor-not-allowed"
             >
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
+          <Card className="p-6 bg-white border-2 border-orange-600 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
+            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg">
               Enable Add-On
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
+          <Card className="p-6 bg-white border-2 border-blue-600 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem("jobDraftId");
@@ -6398,28 +6709,28 @@ export default function BrandDashboard() {
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("active")}
-                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-lg ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
-                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-lg ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Pending Approval
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
-                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-lg ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
-                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-lg ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
               </Button>
@@ -6558,7 +6869,7 @@ export default function BrandDashboard() {
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                           <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                              <div className="h-12 w-12 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
                                 {String(job.job_title || job.title || "J")
                                   .trim()
                                   .slice(0, 1)
@@ -6722,7 +7033,7 @@ export default function BrandDashboard() {
               {campaignsForHub.map((campaign) => (
                 <Card
                   key={campaign.id}
-                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                  className="p-6 bg-white border-2 border-gray-200 rounded-lg"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -8580,444 +8891,88 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderSettings = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">
-          Manage your company profile and preferences
-        </p>
-      </div>
-
-      <Tabs
-        value={activeSettingsTab}
-        onValueChange={setActiveSettingsTab}
-        className="w-full"
-      >
-        <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
-          <TabsTrigger
-            value="profile"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Billing
-          </TabsTrigger>
-          <TabsTrigger
-            value="team"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Team
-          </TabsTrigger>
-          <TabsTrigger
-            value="integrations"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Integrations
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
-          >
-            Security & Legal
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="space-y-6 mt-0">
-          {/* Company Logo */}
-          <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
-              Company Logo
-            </h3>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
-                  <AvatarImage src={brand.logo} alt={brand.name} />
-                  <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
-                    {getBrandInitials(brand.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
-                  <Edit className="w-4 h-4 text-gray-900" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                    disabled={uploadingLogo}
-                  />
-                </label>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
-                  Upload Official Logo
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  JPG or PNG, max 5MB, square format recommended
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Company Information */}
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Building2 className="w-6 h-6" /> Company Information
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Company Name
-                </Label>
-                <Input
-                  value={brand.name}
-                  onChange={(e) => setBrand({ ...brand, name: e.target.value })}
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Industry
-                </Label>
-                <Input
-                  value={brand.industry}
-                  onChange={(e) =>
-                    setBrand({ ...brand, industry: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Website
-                </Label>
-                <Input
-                  value={brand.website}
-                  onChange={(e) =>
-                    setBrand({ ...brand, website: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Contact Email
-                </Label>
-                <Input
-                  value={brand.contact_email}
-                  onChange={(e) =>
-                    setBrand({ ...brand, contact_email: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
-                />
-              </div>
-            </div>
-
-            <div className="mt-12">
-              <Button
-                onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-              >
-                Save Profile Changes
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Bell className="w-6 h-6" /> Communication Preferences
-            </h3>
-            <div className="space-y-2">
-              {[
-                {
-                  title: "New Project Alerts",
-                  desc: "When talent accepts or delivers assets",
-                },
-                {
-                  title: "Deliverable Submissions",
-                  desc: "When creators submit work for approval",
-                },
-                {
-                  title: "Approval Reminders",
-                  desc: "48-hour countdown notifications",
-                },
-                {
-                  title: "License Expiration Alerts",
-                  desc: "30-day advance notice",
-                },
-                {
-                  title: "Monthly Analytics Summary",
-                  desc: "Monthly performance email report",
-                },
-              ].map((pref, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
-                >
-                  <div className="pr-12">
-                    <Label className="text-sm font-black text-gray-900 uppercase tracking-widest block mb-1">
-                      {pref.title}
-                    </Label>
-                    <p className="text-xs font-medium text-gray-500">
-                      {pref.desc}
-                    </p>
-                  </div>
-                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="billing" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <CreditCard className="w-6 h-6" /> Billing & Payment
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Billing Address
-                </Label>
-                <Textarea
-                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
-                />
-              </div>
-              <div className="space-y-8">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Billing Email
-                  </Label>
-                  <Input
-                    defaultValue="billing@urbanapparel.com"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Tax Identification
-                  </Label>
-                  <Input
-                    placeholder="XX-XXXXXXX"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Primary Payment Method
-                  </p>
-                  <p className="text-sm font-black text-gray-900">
-                    Visa ending in 4242
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
-              >
-                Manage
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="team" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
-                <Users className="w-6 h-6" /> Organization Members
-              </h3>
-              <Badge className="rounded-none bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3">
-                {brand.team_seats} / 5 Seats
-              </Badge>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              {[
-                {
-                  name: "John Smith",
-                  email: "john@urbanapparel.com",
-                  role: "Admin",
-                },
-                {
-                  name: "Sarah Jones",
-                  email: "sarah@urbanapparel.com",
-                  role: "PM",
-                },
-                {
-                  name: "Mike Chen",
-                  email: "mike@urbanapparel.com",
-                  role: "Reviewer",
-                },
-              ].map((member, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-5 bg-white border-2 border-gray-100 hover:border-gray-900 transition-colors rounded-none"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-10 h-10 rounded-none border border-gray-200">
-                      <AvatarFallback className="font-black text-xs bg-gray-100 uppercase">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-black text-gray-900 text-sm uppercase tracking-tight">
-                        {member.name}
-                      </p>
-                      <p className="text-xs font-bold text-gray-400">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-                      {member.role}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-none text-gray-400 hover:text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button className="w-full rounded-none bg-gray-950 hover:bg-gray-800 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[8px_8px_0px_rgba(31,41,55,0.2)]">
-              <Plus className="w-5 h-5 mr-3" />
-              Invite New Collaborator
-            </Button>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6 mt-0">
-          <Card className="p-12 bg-white border border-gray-200 rounded-none shadow-none flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
-              <Zap className="w-8 h-8 text-gray-300" />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
-              Extend Your Workflow
-            </h3>
-            <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
-              Connect Likelee with your favorite marketing tools to automate
-              deliverables, tracking, and payments.
-            </p>
-            <Button
-              disabled
-              className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
-            >
-              Coming Soon
-            </Button>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <Settings className="w-6 h-6" /> Security Settings
-              </h3>
-              <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Reset Admin Password <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Active Session Audit <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <FileText className="w-6 h-6" /> Legal & Governance
-              </h3>
-              <div className="space-y-3">
-                {[
-                  "Terms & Conditions",
-                  "Privacy Policy",
-                  "SAG-AFTRA Agreement",
-                  "Data Export (GDPR)",
-                ].map((legal, i) => (
-                  <Button
-                    key={i}
-                    variant="ghost"
-                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
-                    {legal}
-                  </Button>
-                ))}
-              </div>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Support Section - Global Footer */}
-      <Card className="p-8 bg-gray-950 text-white rounded-none shadow-none mt-12 border-none">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
-              Need Assistance?
-            </h3>
-            <p className="text-gray-400 font-medium text-sm">
-              Our partner success team is available 24/7 to help you optimize
-              your campaigns.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12">
-              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-none border-white/20 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
-            >
-              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
-            </Button>
+  const renderSettings = () => {
+    if (!isBrandProfileLoaded) {
+      return (
+        <div className="rounded-lg border border-gray-200 bg-white p-8">
+          <div className="h-6 w-48 rounded bg-gray-100 mb-4" />
+          <div className="h-4 w-64 rounded bg-gray-100 mb-6" />
+          <div className="h-40 rounded bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">
+            Loading brand profile…
           </div>
         </div>
-      </Card>
-    </div>
-  );
+      );
+    }
+
+    return (
+      <BrandSettingsPanel
+        activeSettingsTab={activeSettingsTab}
+        onChangeTab={setActiveSettingsTab}
+        brand={brand}
+        originalBrand={originalBrand}
+        uploadingLogo={uploadingLogo}
+        isSavingProfile={isSavingProfile}
+        onUpdateBrand={setBrand}
+        onLogoUpload={handleLogoUpload}
+        onSaveProfile={handleSaveProfile}
+        onShowLogoPreview={() => setShowLogoPreview(true)}
+        notificationPrefs={notificationPrefs}
+        onToggleNotificationPref={(prefId, val) => {
+          const newPrefs = { ...notificationPrefs, [prefId]: val };
+          setNotificationPrefs(newPrefs);
+          scheduleNotificationPrefsSave(newPrefs);
+        }}
+        isSavingNotificationPrefs={isSavingNotificationPrefs}
+        onNavigate={navigate}
+      />
+    );
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("brandSidebarOpen", String(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("brandSidebarWidth", String(sidebarWidth));
+  }, [sidebarWidth]);
+
+  const handleSidebarDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.pageX;
+    const startWidth = sidebarWidth;
+
+    const handleDrag = (dragEvent: MouseEvent) => {
+      const newWidth = Math.max(
+        80,
+        Math.min(400, startWidth + (dragEvent.pageX - startX)),
+      );
+      setSidebarWidth(newWidth);
+      if (newWidth <= 120) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+
+    const handleDragEnd = () => {
+      document.removeEventListener("mousemove", handleDrag);
+      document.removeEventListener("mouseup", handleDragEnd);
+    };
+
+    document.addEventListener("mousemove", handleDrag);
+    document.addEventListener("mouseup", handleDragEnd);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -9387,7 +9342,7 @@ export default function BrandDashboard() {
           }
         }}
       >
-        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-lg border-none p-0 flex flex-col outline-none">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Sign Contract</DialogTitle>
             <DialogDescription>
@@ -9475,7 +9430,7 @@ export default function BrandDashboard() {
                 </div>
               </div>
 
-              <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap gap-2">
                   {(selectedJobForApplications.work_types || []).map(
                     (type: string) => (
@@ -9536,7 +9491,7 @@ export default function BrandDashboard() {
                 </div>
               </section>
 
-              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
                   Talent Requirements
                 </h4>
@@ -9589,7 +9544,7 @@ export default function BrandDashboard() {
               </section>
 
               {selectedJobForApplications.needs_licensing && (
-                <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
+                <section className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-5">
                   <h4 className="text-sm font-semibold text-gray-900">
                     Licensing Details
                   </h4>
@@ -9638,7 +9593,7 @@ export default function BrandDashboard() {
                 </section>
               )}
 
-              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
                   Budget & Compensation
                 </h4>
@@ -9670,7 +9625,7 @@ export default function BrandDashboard() {
                     0 ||
                   (selectedJobForApplications.invited_creators || []).length >
                     0) && (
-                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <h4 className="text-sm font-semibold text-gray-900">
                       Collaboration Preferences
                     </h4>
@@ -9897,7 +9852,7 @@ export default function BrandDashboard() {
 
               {Array.isArray(selectedJobForApplications.brand_assets) &&
                 selectedJobForApplications.brand_assets.length > 0 && (
-                  <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-gray-900">
                         Brand Assets
@@ -10993,37 +10948,71 @@ export default function BrandDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
+        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed top-16 bottom-0 left-0 z-40 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
+        style={{
+          width: isMobile
+            ? sidebarOpen
+              ? "16rem"
+              : "0"
+            : `${!sidebarOpen ? 80 : sidebarWidth}px`,
+        }}
       >
-        {/* Brand Section */}
-        <div className="p-6 border-b border-gray-200">
-          {sidebarOpen ? (
-            <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
+        <div
+          className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+            !sidebarOpen
+              ? "p-4 flex items-center justify-center cursor-pointer"
+              : "p-6 flex items-center gap-3 cursor-pointer"
+          }`}
+          onClick={() => navigateToSection("settings")}
+          title={!sidebarOpen ? brand.name : undefined}
+        >
+          <div className="relative">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLogoPreview(true);
+              }}
+              className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+            >
+              <Avatar
+                className={`${!sidebarOpen ? "w-10 h-10" : "w-12 h-12"} border-2 border-gray-200 rounded-lg`}
+              >
                 <AvatarImage src={brand.logo} alt={brand.name} />
                 <AvatarFallback className="font-bold text-gray-700">
                   {getBrandInitials(brand.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-                <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
-              </div>
             </div>
-          ) : (
-            <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
-              <AvatarImage src={brand.logo} alt={brand.name} />
-              <AvatarFallback className="font-bold text-gray-700">
-                {getBrandInitials(brand.name)}
-              </AvatarFallback>
-            </Avatar>
+          </div>
+          {sidebarOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 truncate">{brand.name}</p>
+              {brand.plan && (
+                <p className="text-xs text-brand-orange font-bold truncate">
+                  {brand.plan}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav
+          className={`flex-1 p-4 min-h-0 ${sidebarOpen ? "overflow-y-auto" : "overflow-visible"}`}
+          onMouseLeave={hidePopoutWithDelay}
+        >
           <div className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -11038,7 +11027,20 @@ export default function BrandDashboard() {
                 : activeSection === item.id;
 
               return (
-                <div key={item.id}>
+                <div
+                  key={item.id}
+                  className="relative group"
+                  onMouseEnter={(e) => {
+                    if (!sidebarOpen && isCampaignGroup) {
+                      clearPopoutTimeout();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setCollapsedPopout({
+                        itemId: item.id,
+                        top: rect.top,
+                      });
+                    }
+                  }}
+                >
                   <div
                     className={`w-full flex items-center gap-2 rounded-lg transition-all ${
                       isActive
@@ -11062,9 +11064,23 @@ export default function BrandDashboard() {
                         setShowContractHub(false);
                         setSelectedContract(null);
                       }}
-                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left"
+                      className={`w-full flex items-center transition-colors ${
+                        !sidebarOpen
+                          ? "justify-center px-2 py-3"
+                          : "gap-3 px-3 py-3"
+                      }`}
+                      title={
+                        !sidebarOpen && !isCampaignGroup
+                          ? item.label
+                          : undefined
+                      }
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <div className="relative flex items-center">
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        {!sidebarOpen && isCampaignGroup && (
+                          <ChevronRight className="w-3 h-3 absolute -right-3 top-1 text-gray-400" />
+                        )}
+                      </div>
                       {sidebarOpen && (
                         <>
                           <span className="flex-1 text-left font-medium">
@@ -11120,7 +11136,7 @@ export default function BrandDashboard() {
                     )}
                   </div>
 
-                  {sidebarOpen && isCampaignGroup && showCampaignSubtabs && (
+                  {sidebarOpen && showCampaignSubtabs && isCampaignGroup && (
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
@@ -11149,9 +11165,9 @@ export default function BrandDashboard() {
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {inboxPendingCount > 0 && (
-                          <Badge className="bg-gray-200 text-gray-700">
-                            {inboxPendingCount}
+                        {inboxUnreadCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {inboxUnreadCount}
                           </Badge>
                         )}
                       </button>
@@ -11185,6 +11201,11 @@ export default function BrandDashboard() {
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
+                        {pendingApprovalCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {pendingApprovalCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => {
@@ -11201,6 +11222,11 @@ export default function BrandDashboard() {
                       >
                         <Briefcase className="w-4 h-4" />
                         <span className="flex-1 text-left">Jobs</span>
+                        {jobsUnreadCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            {jobsUnreadCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
@@ -11222,17 +11248,120 @@ export default function BrandDashboard() {
         </nav>
 
         {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
-        >
-          <Menu className="w-5 h-5 text-gray-600 mx-auto" />
-        </button>
+        <div className="flex-shrink-0 mt-auto bg-white border-t border-gray-200">
+          <button
+            onClick={() => {
+              setSidebarOpen(!sidebarOpen);
+              setSidebarWidth(!sidebarOpen ? 256 : 80);
+            }}
+            className="w-full p-4 hover:bg-gray-50 transition-colors flex items-center justify-center h-14"
+          >
+            <Menu className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {!isMobile && (
+          <div
+            onMouseDown={handleSidebarDragStart}
+            className="absolute inset-y-0 right-0 w-2 cursor-ew-resize opacity-0 hover:opacity-100 hover:bg-indigo-500/10 transition-all"
+            title="Resize sidebar"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Popout for collapsed navigation */}
+        <AnimatePresence>
+          {!sidebarOpen && collapsedPopout && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute left-full z-[100] w-64 pl-2 -ml-px"
+              style={{ top: collapsedPopout.top }}
+              onMouseEnter={clearPopoutTimeout}
+              onMouseLeave={hidePopoutWithDelay}
+            >
+              <div className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2">
+                <div className="absolute -left-1.5 top-4 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaign-offers", {
+                        category: "brand-campaign-offers",
+                      });
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <Target className="w-4 h-4" />
+                    <span>My Offers</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaigns-inbox");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>Inbox</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaigns-contract-hub");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Contract Hub</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaigns-deliverables");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Deliverables</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("campaigns-hub", {
+                        campaignHubTab: "jobs",
+                      });
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span>Jobs</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToSection("studio");
+                      setCollapsedPopout(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Asset Library</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </aside>
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
+        className="flex-1 transition-all duration-75 overflow-y-auto"
+        style={{
+          marginLeft: isMobile ? "0" : `${!sidebarOpen ? 80 : sidebarWidth}px`,
+        }}
       >
         <div className="p-8">
           {activeSection === "home" && renderHome()}
@@ -11331,7 +11460,7 @@ export default function BrandDashboard() {
                         <div className="flex flex-col lg:flex-row gap-6">
                           <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                              <div className="h-12 w-12 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
                                 {String(job.job_title || job.title || "J")
                                   .trim()
                                   .slice(0, 1)
@@ -11512,7 +11641,7 @@ export default function BrandDashboard() {
         open={!!confirmingDonePkg}
         onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
       >
-        <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
+        <AlertDialogContent className="bg-white rounded-lg border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold text-gray-900">
               Confirm Selection
@@ -11562,11 +11691,11 @@ export default function BrandDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none border-gray-300">
+            <AlertDialogCancel className="rounded-lg border-gray-300">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none bg-black hover:bg-gray-800 text-white"
+              className="rounded-lg bg-black hover:bg-gray-800 text-white"
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
@@ -11606,6 +11735,17 @@ export default function BrandDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Logo Preview Dialog */}
+      <Dialog open={showLogoPreview} onOpenChange={setShowLogoPreview}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none flex items-center justify-center">
+          <img
+            src={brand.logo}
+            alt={brand.name}
+            className="max-w-full max-h-[85vh] object-contain drop-shadow-2xl rounded-2xl"
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Image Preview Dialog */}
       <Dialog
@@ -11776,10 +11916,10 @@ export default function BrandDashboard() {
         open={reviewDialog.open}
         onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-lg p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">
             <DialogHeader className="space-y-1 relative z-10">
-              <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
+              <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mb-4 border border-white/20">
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <DialogTitle className="text-2xl font-bold font-syne text-white">
@@ -11798,7 +11938,7 @@ export default function BrandDashboard() {
               </label>
               <Textarea
                 placeholder="What exactly should be changed? (e.g., 'Need more lighting', 'Crop the left side')"
-                className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
+                className="min-h-[150px] resize-none rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                 value={reviewDialog.note}
                 onChange={(e) =>
                   setReviewDialog((prev) => ({
@@ -11812,7 +11952,7 @@ export default function BrandDashboard() {
             <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
               <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
+                className="flex-1 h-12 rounded-lg border-gray-200 hover:bg-gray-50 font-bold"
                 onClick={() =>
                   setReviewDialog((prev) => ({ ...prev, open: false }))
                 }
@@ -11820,7 +11960,7 @@ export default function BrandDashboard() {
                 Cancel
               </Button>
               <Button
-                className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                className="flex-1 h-12 rounded-lg bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
                   !reviewDialog.note.trim() ||
                   reviewing === reviewDialog.delId ||
@@ -11852,13 +11992,13 @@ export default function BrandDashboard() {
           setEscrowReleasedModal((prev) => ({ ...prev, open }))
         }
       >
-        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-none">
+        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-lg">
           <div className="relative p-8 text-center flex flex-col items-center">
             {/* Celebratory Background Elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
 
             <div className="mb-6 relative">
-              <div className="w-20 h-20 bg-emerald-100 rounded-none flex items-center justify-center relative z-10 animate-bounce-short">
+              <div className="w-20 h-20 bg-emerald-100 rounded-lg flex items-center justify-center relative z-10 animate-bounce-short">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600" />
               </div>
               <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-100 flex items-center justify-center animate-ping-slow">
@@ -11881,7 +12021,7 @@ export default function BrandDashboard() {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                   Escrow Release
                 </span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-none font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
                   Released via Stripe
                 </Badge>
               </div>
@@ -11902,7 +12042,7 @@ export default function BrandDashboard() {
             </div>
 
             <Button
-              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-none shadow-xl transition-all active:scale-[0.98]"
+              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-lg shadow-xl transition-all active:scale-[0.98]"
               onClick={() => setEscrowReleasedModal({ open: false })}
             >
               Done
