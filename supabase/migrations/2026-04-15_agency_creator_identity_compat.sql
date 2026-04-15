@@ -12,6 +12,9 @@ ALTER TABLE public.agency_talent_package_items
   ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS relationship_id uuid REFERENCES public.agency_talent_relationships(id) ON DELETE SET NULL;
 
+ALTER TABLE public.agency_talent_package_items
+  ALTER COLUMN talent_id DROP NOT NULL;
+
 ALTER TABLE public.agency_files
   ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS relationship_id uuid REFERENCES public.agency_talent_relationships(id) ON DELETE SET NULL;
