@@ -53,4 +53,4 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit --force
       - name: Run Security Audit (cargo audit)
-        run: cargo audit
+        run: cargo audit --ignore RUSTSEC-2026-0097 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0099

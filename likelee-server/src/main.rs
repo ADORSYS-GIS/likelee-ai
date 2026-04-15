@@ -125,6 +125,7 @@ async fn main() {
         supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
+        supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),

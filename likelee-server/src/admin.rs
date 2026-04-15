@@ -37,7 +37,7 @@ pub struct BackfillResponse {
 /// 4. Returns a detailed report of the operation
 ///
 /// Example:
-/// ```
+/// ```text
 /// POST /api/admin/storage/backfill?dry_run=true
 /// ```
 pub async fn backfill_storage(

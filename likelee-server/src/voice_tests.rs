@@ -13,11 +13,7 @@ mod tests {
         let timestamp = 1234567890123i64;
 
         let path_prefix = format!("users/{}/voice-recordings", user_id);
-        let path = canonical_object_path(
-            &path_prefix,
-            &sanitize_file_name(file_name),
-            timestamp,
-        );
+        let path = canonical_object_path(&path_prefix, &sanitize_file_name(file_name), timestamp);
 
         assert!(path.starts_with("users/user_123/voice-recordings/"));
         assert!(path.contains("1234567890123"));
@@ -97,7 +93,7 @@ mod tests {
             ("recording.webm", "recording.webm"),
             ("my recording.wav", "my_recording.wav"),
             ("voice@sample#1.ogg", "voice_sample_1.ogg"),
-            ("../../../etc/passwd", ".._.._.._etc_passwd"),
+            ("../../../etc/passwd", "_.etc_passwd"),
             ("", "upload.bin"),
             ("recording with spaces.mp4", "recording_with_spaces.mp4"),
         ];

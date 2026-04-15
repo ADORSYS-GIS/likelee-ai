@@ -173,8 +173,8 @@ pub async fn upload_voice_recording(
         return Err((StatusCode::BAD_REQUEST, "empty body".into()));
     }
 
-    let owner_id = if user.role == "agency" {
-        user.id.clone()
+    let (owner_id, owner_type) = if user.role == "agency" {
+        (user.id.clone(), StorageOwnerType::Agency)
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let existing_count = count_creator_voice_recordings(&state, &creator_id).await?;
@@ -184,9 +184,9 @@ pub async fn upload_voice_recording(
                 "voice_profile_limit_reached".to_string(),
             ));
         }
-        creator_id
+        (creator_id, StorageOwnerType::Creator)
     } else {
-        user.id.clone()
+        (user.id.clone(), StorageOwnerType::User)
     };
 
     let ct = headers
@@ -263,8 +263,8 @@ pub async fn upload_voice_recording(
     // Mirror into storage_assets registry
     if !rec_id.is_empty() {
         let storage_record = StorageAssetRecord {
-            owner_type: StorageOwnerType::User,
-            owner_id: user.id.clone(),
+            owner_type,
+            owner_id: owner_id.clone(),
             context_type: StorageContextType::VoiceRecording,
             context_id: None,
             visibility: StorageVisibility::Private,
@@ -311,6 +311,7 @@ pub async fn register_voice_model(
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+        input.user_id = user.id.clone();
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let resp = state
@@ -521,6 +522,7 @@ pub async fn create_clone_from_recording(
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+        input.user_id = user.id.clone();
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let resp = state
@@ -1028,7 +1030,7 @@ mod tests {
             ("recording.webm", "recording.webm"),
             ("my recording.wav", "my_recording.wav"),
             ("voice@sample#1.ogg", "voice_sample_1.ogg"),
-            ("../../../etc/passwd", ".._.._.._etc_passwd"),
+            ("../../../etc/passwd", "_.etc_passwd"),
             ("", "upload.bin"),
             ("recording with spaces.mp4", "recording_with_spaces.mp4"),
         ];
@@ -1053,10 +1055,23 @@ mod tests {
 
     #[test]
     fn test_voice_recording_owner_type() {
-        // Voice recordings are owned by users
         let owner_type = StorageOwnerType::User;
         assert_eq!(owner_type, StorageOwnerType::User);
         assert_eq!(owner_type.as_str(), "user");
+    }
+
+    #[test]
+    fn test_voice_recording_agency_owner_type() {
+        let owner_type = StorageOwnerType::Agency;
+        assert_eq!(owner_type, StorageOwnerType::Agency);
+        assert_eq!(owner_type.as_str(), "agency");
+    }
+
+    #[test]
+    fn test_voice_recording_creator_owner_type() {
+        let owner_type = StorageOwnerType::Creator;
+        assert_eq!(owner_type, StorageOwnerType::Creator);
+        assert_eq!(owner_type.as_str(), "creator");
     }
 
     #[test]

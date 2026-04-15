@@ -54,11 +54,19 @@ CREATE INDEX IF NOT EXISTS idx_storage_assets_quota
 
 ALTER TABLE public.storage_assets ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "storage_assets owner select" ON public.storage_assets;
-CREATE POLICY "storage_assets owner select" ON public.storage_assets
-  FOR SELECT USING (
-    auth.uid() = owner_id
-    OR created_by = auth.uid()
-  );
+-- Note: storage_assets is a service-only table.
+-- It should NOT be accessed directly by clients.
+-- All queries should go through backend API endpoints that use service_role.
+-- 
+-- Rationale:
+-- 1. owner_id for agency-owned assets is an agency ID, not a user ID
+-- 2. Proper access requires checking membership tables (agency_users, etc.)
+-- 3. Exposing metadata could leak information about assets a user shouldn't see
+--
+-- To enable client access, implement proper RLS policies that join with
+-- membership tables (e.g., agency_users for agency-owned assets).
+
+-- No policies for now - service_role access only
+-- DROP POLICY IF EXISTS "storage_assets owner select" ON public.storage_assets;
 
 COMMIT;

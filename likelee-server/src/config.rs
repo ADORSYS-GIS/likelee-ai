@@ -303,6 +303,7 @@ pub struct AppState {
     pub supabase_jwt_secret: String,
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
+    pub supabase_bucket_temp: String,
     pub elevenlabs_api_key: String,
 
     pub stripe_secret_key: String,

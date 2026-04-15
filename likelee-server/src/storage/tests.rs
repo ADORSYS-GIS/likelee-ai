@@ -23,15 +23,36 @@ mod tests {
         assert_eq!(StorageContextType::AgencyStorage.as_str(), "agency_storage");
         assert_eq!(StorageContextType::ClientFile.as_str(), "client_file");
         assert_eq!(StorageContextType::TalentAsset.as_str(), "talent_asset");
-        assert_eq!(StorageContextType::TalentPortfolio.as_str(), "talent_portfolio");
+        assert_eq!(
+            StorageContextType::TalentPortfolio.as_str(),
+            "talent_portfolio"
+        );
         assert_eq!(StorageContextType::BookingFile.as_str(), "booking_file");
-        assert_eq!(StorageContextType::BookingDeliverable.as_str(), "booking_deliverable");
-        assert_eq!(StorageContextType::CampaignOfferDeliverable.as_str(), "campaign_offer_deliverable");
-        assert_eq!(StorageContextType::ReferenceImage.as_str(), "reference_image");
-        assert_eq!(StorageContextType::VoiceRecording.as_str(), "voice_recording");
+        assert_eq!(
+            StorageContextType::BookingDeliverable.as_str(),
+            "booking_deliverable"
+        );
+        assert_eq!(
+            StorageContextType::CampaignOfferDeliverable.as_str(),
+            "campaign_offer_deliverable"
+        );
+        assert_eq!(
+            StorageContextType::ReferenceImage.as_str(),
+            "reference_image"
+        );
+        assert_eq!(
+            StorageContextType::VoiceRecording.as_str(),
+            "voice_recording"
+        );
         assert_eq!(StorageContextType::TaxDocument.as_str(), "tax_document");
-        assert_eq!(StorageContextType::BrandVoiceAsset.as_str(), "brand_voice_asset");
-        assert_eq!(StorageContextType::StudioDocument.as_str(), "studio_document");
+        assert_eq!(
+            StorageContextType::BrandVoiceAsset.as_str(),
+            "brand_voice_asset"
+        );
+        assert_eq!(
+            StorageContextType::StudioDocument.as_str(),
+            "studio_document"
+        );
     }
 
     #[test]
@@ -45,7 +66,14 @@ mod tests {
     fn test_sanitize_file_name_special_chars() {
         assert_eq!(sanitize_file_name("file name.txt"), "file_name.txt");
         assert_eq!(sanitize_file_name("file@#$%.txt"), "file____.txt");
-        assert_eq!(sanitize_file_name("../../etc/passwd"), ".._.._.._etc_passwd");
+        assert_eq!(sanitize_file_name("../../etc/passwd"), "_.etc_passwd");
+    }
+
+    #[test]
+    fn test_sanitize_file_name_leading_dots() {
+        assert_eq!(sanitize_file_name(".hidden"), "hidden");
+        assert_eq!(sanitize_file_name("..double"), "double");
+        assert_eq!(sanitize_file_name("...triple"), "_.triple");
     }
 
     #[test]
@@ -80,9 +108,24 @@ mod tests {
     #[test]
     fn test_canonical_object_path_various_contexts() {
         let test_cases = vec![
-            ("agencies/123/storage", "doc.pdf", 1000000000000i64, "agencies/123/storage/1000000000000_doc.pdf"),
-            ("users/456/voice-recordings", "audio.webm", 2000000000000i64, "users/456/voice-recordings/2000000000000_audio.webm"),
-            ("creators/789/reference-images/section1", "image.jpg", 3000000000000i64, "creators/789/reference-images/section1/3000000000000_image.jpg"),
+            (
+                "agencies/123/storage",
+                "doc.pdf",
+                1000000000000i64,
+                "agencies/123/storage/1000000000000_doc.pdf",
+            ),
+            (
+                "users/456/voice-recordings",
+                "audio.webm",
+                2000000000000i64,
+                "users/456/voice-recordings/2000000000000_audio.webm",
+            ),
+            (
+                "creators/789/reference-images/section1",
+                "image.jpg",
+                3000000000000i64,
+                "creators/789/reference-images/section1/3000000000000_image.jpg",
+            ),
         ];
 
         for (prefix, filename, timestamp, expected) in test_cases {
