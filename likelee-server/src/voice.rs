@@ -706,6 +706,14 @@ pub async fn list_voice_recordings(
     // We will query recordings where user_id is IN this list
     let mut target_user_ids = vec![user.id.clone()];
 
+    if user.role == "creator" || user.role == "talent" {
+        if let Ok((creator_id, _)) = get_creator_plan_tier_for_user(&state, &user).await {
+            if !creator_id.trim().is_empty() && !target_user_ids.iter().any(|v| v == &creator_id) {
+                target_user_ids.push(creator_id);
+            }
+        }
+    }
+
     // If a talent_id is provided and the user is an agency, check management access
     if let Some(tid) = params.get("talent_id") {
         if user.role == "agency" {

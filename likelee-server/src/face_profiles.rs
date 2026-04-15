@@ -1,6 +1,5 @@
-use crate::brand_campaigns::{
-    log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
-};
+use crate::activity::log_activity_event_with_subject;
+use crate::brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::config::AppState;
 use crate::entitlements::{creator_has_brand_connection_access, PlanTier};
 use crate::errors::sanitize_db_error;
@@ -237,7 +236,9 @@ pub async fn search_faces(
         .from("creators")
         .select("*")
         .eq("role", "creator")
-        .eq("public_profile_visible", "true");
+        .eq("public_profile_visible", "true")
+        .eq("kyc_status", "approved")
+        .in_("plan_tier", vec!["basic", "pro", "enterprise"]);
 
     if let Some(search) = q.query {
         if !search.is_empty() {

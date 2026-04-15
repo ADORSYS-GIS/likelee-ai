@@ -2786,7 +2786,7 @@ pub async fn upgrade_creator_subscription(
         ));
     }
 
-    let creator_id = user.id.clone();
+    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
     let resp = state
         .pg
         .from("creators")

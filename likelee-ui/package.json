@@ -92,7 +92,8 @@
     "zustand": "^5.0.3"
   },
   "overrides": {
-    "axios": "^1.15.0",
+    "axios": "1.15.0",
+    "follow-redirects": "^1.15.12",
     "lodash": "4.17.21",
     "minimatch": "^10.2.1",
     "@smithy/config-resolver": "^4.4.5",
@@ -111,7 +112,8 @@
     "@aws-sdk/nested-clients": "^3.980.0",
     "cross-spawn": "^7.0.6",
     "rollup": "^4.58.1",
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "axios": "1.15.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

@@ -1976,6 +1976,41 @@ pub async fn get_analytics(
         crate::entitlements::PlanTier::Enterprise => "enterprise",
     }
     .to_string();
+
+    if !advanced_analytics_enabled {
+        let month = params.get("month").cloned().unwrap_or_else(|| {
+            let now = chrono::Utc::now().date_naive();
+            format!("{:04}-{:02}", now.year(), now.month())
+        });
+
+        return Ok(Json(TalentAnalyticsResponse {
+            month,
+            kpis: TalentAnalyticsKpis {
+                total_views: 0,
+                views_change_pct: 0.0,
+                total_revenue_cents: 0,
+                active_campaigns: 0,
+            },
+            campaigns: Vec::new(),
+            roi: TalentAnalyticsRoi {
+                traditional: TalentAnalyticsRoiTraditional {
+                    per_post_cents: 50_000,
+                    time_investment: "4-6 hours".to_string(),
+                    posts_per_month: "5-8".to_string(),
+                    monthly_earnings_range: "$2,500-$4,000".to_string(),
+                },
+                ai: TalentAnalyticsRoiAi {
+                    per_campaign_cents: 0,
+                    time_investment: "0 hours/month".to_string(),
+                    active_campaigns: 0,
+                    monthly_earnings_cents: 0,
+                },
+                message: "Upgrade to Pro to unlock advanced earnings analytics.".to_string(),
+            },
+            plan_tier,
+            advanced_analytics_enabled,
+        }));
+    }
     let connections = list_active_talent_connections(&state, &user).await?;
     let requested_aid = params.get("agency_id").map(|s| s.as_str());
 
