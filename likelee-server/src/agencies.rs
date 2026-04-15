@@ -2204,7 +2204,7 @@ pub async fn upload_talent_asset(
             .get("public_url")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .or_else(|| Some(public_url)),
+            .or(Some(public_url)),
         storage_bucket: rec
             .get("storage_bucket")
             .and_then(|v| v.as_str())
@@ -2220,17 +2220,17 @@ pub async fn upload_talent_asset(
             .get("talent_id")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .or_else(|| agency_user_id),
+            .or(agency_user_id),
         creator_id: rec
             .get("creator_id")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .or_else(|| talent_ref.creator_id.clone()),
+            .or(talent_ref.creator_id.clone()),
         relationship_id: rec
             .get("relationship_id")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .or_else(|| talent_ref.relationship_id.clone()),
+            .or(talent_ref.relationship_id.clone()),
         created_at: rec
             .get("created_at")
             .and_then(|v| v.as_str())

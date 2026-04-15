@@ -92,6 +92,7 @@
   },
   "overrides": {
     "axios": "1.15.0",
+    "follow-redirects": "^1.15.15",
     "lodash": "4.17.21",
     "minimatch": "^10.2.1",
     "@smithy/config-resolver": "^4.4.5",
