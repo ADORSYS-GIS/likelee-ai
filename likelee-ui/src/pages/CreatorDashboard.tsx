@@ -3731,7 +3731,17 @@ export default function CreatorDashboard() {
       nextParams.delete("contentTab");
     }
 
-    if (nextParams.toString() !== searchParams.toString()) {
+    // Compare specific parameter values instead of full string to avoid ordering/encoding issues
+    const needsUpdate =
+      searchParams.get("section") !== activeSection ||
+      (activeSection === "settings" &&
+        searchParams.get("settingsTab") !== settingsTab) ||
+      (activeSection === "content" &&
+        searchParams.get("contentTab") !== contentTab) ||
+      (activeSection !== "settings" && searchParams.has("settingsTab")) ||
+      (activeSection !== "content" && searchParams.has("contentTab"));
+
+    if (needsUpdate) {
       setSearchParams(nextParams, { replace: true });
     }
   }, [activeSection, contentTab, searchParams, setSearchParams, settingsTab]);

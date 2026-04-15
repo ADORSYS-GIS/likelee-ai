@@ -185,11 +185,12 @@ pub async fn upsert_profile(
             return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
         }
 
+        // Refresh using the same target_id that was updated
         let refreshed = state
             .pg
             .from("creators")
             .select("*")
-            .eq("id", &user.id)
+            .eq("id", &target_id)
             .limit(1)
             .execute()
             .await
