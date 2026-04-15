@@ -1,6 +1,7 @@
 use crate::activity::log_activity_event_with_subject;
 use crate::brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::config::AppState;
+use crate::entitlements::{creator_has_brand_connection_access, PlanTier};
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::team::permissions::Permission;
@@ -235,7 +236,9 @@ pub async fn search_faces(
         .from("creators")
         .select("*")
         .eq("role", "creator")
-        .eq("public_profile_visible", "true");
+        .eq("public_profile_visible", "true")
+        .eq("kyc_status", "approved")
+        .in_("plan_tier", vec!["basic", "pro", "enterprise"]);
 
     if let Some(search) = q.query {
         if !search.is_empty() {
@@ -658,7 +661,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -763,6 +766,14 @@ pub async fn search_marketplace_profiles(
                 }
             };
             if !is_visible_to_marketplace {
+                continue;
+            }
+            let tier = PlanTier::from_db(
+                row.get("plan_tier")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("free"),
+            );
+            if !creator_has_brand_connection_access(tier) {
                 continue;
             }
 
@@ -1295,7 +1306,7 @@ pub async fn get_marketplace_profile_details(
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
             .eq("id", &profile_id)
             .limit(1)
             .execute()
@@ -1334,6 +1345,17 @@ pub async fn get_marketplace_profile_details(
             }
         };
         if !is_visible_to_marketplace {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "marketplace profile not found".to_string(),
+            ));
+        }
+        let creator_tier = PlanTier::from_db(
+            row.get("plan_tier")
+                .and_then(|v| v.as_str())
+                .unwrap_or("free"),
+        );
+        if !creator_has_brand_connection_access(creator_tier) {
             return Err((
                 StatusCode::NOT_FOUND,
                 "marketplace profile not found".to_string(),
@@ -1767,7 +1789,7 @@ pub async fn create_marketplace_connection_request(
             let creator_exists_resp = state
                 .pg
                 .from("creators")
-                .select("id")
+                .select("id,plan_tier")
                 .eq("id", &creator_id)
                 .eq("kyc_status", "approved")
                 .limit(1)
@@ -1787,7 +1809,15 @@ pub async fn create_marketplace_connection_request(
             }
             let creator_exists_rows: Vec<serde_json::Value> =
                 serde_json::from_str(&creator_exists_text).unwrap_or_default();
-            if creator_exists_rows.is_empty() {
+            if creator_exists_rows.is_empty()
+                || !creator_exists_rows.iter().any(|row| {
+                    creator_has_brand_connection_access(PlanTier::from_db(
+                        row.get("plan_tier")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("free"),
+                    ))
+                })
+            {
                 return Err((StatusCode::NOT_FOUND, "creator not found".to_string()));
             }
 

@@ -138,6 +138,17 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
 
+    #[envconfig(from = "STRIPE_CREATOR_BASIC_PRICE_ID", default = "")]
+    pub stripe_creator_basic_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_PRO_PRICE_ID", default = "")]
+    pub stripe_creator_pro_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_basic_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_pro_annual_price_id: String,
     #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID", default = "")]
     pub stripe_agency_pro_headcount_price_id: String,
 
@@ -170,6 +181,12 @@ pub struct ServerConfig {
 
     #[envconfig(from = "STRIPE_STUDIO_CANCEL_URL", default = "")]
     pub stripe_studio_cancel_url: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_SUCCESS_URL", default = "")]
+    pub stripe_creator_success_url: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_CANCEL_URL", default = "")]
+    pub stripe_creator_cancel_url: String,
 
     #[envconfig(from = "STRIPE_STUDIO_PRICE_IDS", default = "")]
     pub stripe_studio_price_ids: String,
@@ -305,6 +322,10 @@ pub struct AppState {
     pub stripe_agency_basic_headcount_price_id: String,
     pub stripe_agency_basic_headcount_annual_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
+    pub stripe_creator_basic_price_id: String,
+    pub stripe_creator_pro_price_id: String,
+    pub stripe_creator_basic_annual_price_id: String,
+    pub stripe_creator_pro_annual_price_id: String,
     pub stripe_agency_pro_base_annual_price_id: String,
     pub stripe_agency_pro_headcount_price_id: String,
     pub stripe_agency_pro_headcount_annual_price_id: String,
@@ -314,6 +335,8 @@ pub struct AppState {
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,
     pub stripe_licensing_cancel_url: String,
+    pub stripe_creator_success_url: String,
+    pub stripe_creator_cancel_url: String,
 
     pub stripe_studio_success_url: String,
     pub stripe_studio_cancel_url: String,

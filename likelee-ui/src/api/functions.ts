@@ -164,6 +164,21 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createCreatorSubscriptionCheckout = (data: {
+  plan: "basic" | "pro";
+  interval?: "month" | "year";
+  start_trial?: boolean;
+  agreement_accepted?: boolean;
+}) => base44Client.post(`/creator/billing/checkout`, data);
+
+export const getCreatorBillingStatus = () =>
+  base44Client.get(`/creator/billing/status`);
+
+export const createCreatorBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(
+    `/api/creator/billing/portal`,
+    {},
+  );
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
 
