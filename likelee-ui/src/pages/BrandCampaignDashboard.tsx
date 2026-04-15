@@ -86,10 +86,7 @@ import { supabase } from "@/lib/supabase";
 import { DocuSealBuilderModal } from "@/components/licensing/DocuSealBuilderModal";
 import { DocusealForm } from "@docuseal/react";
 
-const mockBrand = {
-  name: "Urban Apparel Co.",
-  logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200",
-};
+// Brand data is now loaded from API via getBrandProfile()
 
 type BrandCampaignDashboardProps = {
   embedded?: boolean;
@@ -2145,13 +2142,15 @@ export default function BrandCampaignDashboard({
                   Back to Dashboard
                 </Button>
                 <div className="flex items-center gap-3">
-                  <img
-                    src={mockBrand.logo}
-                    alt="Brand"
-                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                  />
+                  {profile?.logo_url && (
+                    <img
+                      src={profile.logo_url}
+                      alt="Brand"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  )}
                   <span className="text-xl font-bold text-gray-900">
-                    {mockBrand.name}
+                    {profile?.company_name || "Brand Dashboard"}
                   </span>
                 </div>
               </div>

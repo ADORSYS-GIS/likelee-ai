@@ -4573,7 +4573,7 @@ async fn sync_brand_subscription_from_subscription(
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
-    let _trial_end = sub
+    let trial_end = sub
         .trial_end
         .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
         .map(|dt| dt.to_rfc3339());

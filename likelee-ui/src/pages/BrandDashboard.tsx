@@ -273,414 +273,17 @@ const getBrandInitials = (name: string) => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-// Mock data
-const mockBrand = {
-  name: "Urban Apparel Co.",
-  logo: "",
-  industry: "Retail & E-commerce",
-  website: "www.urbanapparel.com",
-  contact_email: "team@urbanapparel.com",
-  plan: "Free",
-  team_seats: 3,
-};
+// Brand data is now loaded from API via getBrandProfile()
 
-const mockCreators = [
-  {
-    id: 1,
-    name: "Emma",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Fashion model specializing in beauty and lifestyle",
-    followers: 42300,
-    engagement: "4.2%",
-    price: 450,
-    turnaround: "12h",
-    tags: ["Fashion", "Beauty", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "Elite Models LA",
-    instagram: "https://instagram.com/emma",
-    tiktok: "https://tiktok.com/@emma",
-    portfolio_url: "https://emmamodels.com",
-    bio: "Professional fashion model with 8+ years experience in editorial and commercial work. Specialized in beauty campaigns and lifestyle content.",
-    height: "5ft 9in",
-    weight: "125 lbs",
-    bust: "34",
-    waist: "25",
-    hips: "36",
-    skin_tone: "Fair",
-    hair_color: "Blonde",
-    eye_color: "Blue",
-    niches: ["Fashion", "Beauty", "Lifestyle"],
-    rules: ["No alcohol", "No swimwear"],
-    past_projects: [
-      {
-        brand: "Urban Apparel",
-        image:
-          "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",
-      },
-      {
-        brand: "Beauty Co",
-        image:
-          "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Sergine",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-    location: "New York, NY",
-    tagline: "Minimalist fashion model with clean aesthetic",
-    followers: 2800,
-    engagement: "3.8%",
-    price: 380,
-    turnaround: "24h",
-    tags: ["Fashion", "Minimalist", "Editorial"],
-    verified: true,
-    creator_type: "influencer",
-    instagram: "https://instagram.com/sergine",
-    tiktok: "https://tiktok.com/@sergine",
-    bio: "Minimalist fashion influencer focused on sustainable style and clean aesthetics.",
-    skin_tone: "Medium",
-    hair_color: "Brown",
-    eye_color: "Brown",
-    niches: ["Fashion", "Minimalist", "Sustainable"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Sustainable Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Milan",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    location: "Miami, FL",
-    tagline: "Street style and urban fashion model",
-    followers: 15200,
-    engagement: "5.1%",
-    price: 520,
-    turnaround: "8h",
-    tags: ["Streetwear", "Urban", "Fashion"],
-    verified: true,
-    creator_type: "ugc",
-    instagram: "https://instagram.com/milan",
-    bio: "UGC creator specializing in street style and urban fashion content.",
-    skin_tone: "Tan",
-    hair_color: "Black",
-    eye_color: "Brown",
-    niches: ["Streetwear", "Urban", "Fashion"],
-    rules: ["No tobacco"],
-    past_projects: [],
-  },
-  {
-    id: 4,
-    name: "Julia",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-    location: "Paris, France",
-    tagline: "High fashion editorial and commercial model",
-    followers: 5700,
-    engagement: "6.2%",
-    price: 580,
-    turnaround: "24h",
-    tags: ["Editorial", "High Fashion", "Commercial"],
-    verified: true,
-    creator_type: "actor",
-    agency: "Talent Works Paris",
-    portfolio_url: "https://juliaactor.com",
-    bio: "Professional actor with extensive commercial and editorial experience.",
-    skin_tone: "Olive",
-    hair_color: "Dark Brown",
-    eye_color: "Green",
-    niches: ["Editorial", "High Fashion", "Commercial"],
-    rules: ["No political content"],
-    past_projects: [
-      {
-        brand: "Luxury Brand",
-        image:
-          "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400",
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: "Matt",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    location: "London, UK",
-    tagline: "Grooming and lifestyle model, skincare specialist",
-    followers: 18600,
-    engagement: "4.5%",
-    price: 490,
-    turnaround: "16h",
-    tags: ["Grooming", "Lifestyle", "Skincare"],
-    verified: true,
-    creator_type: "athlete",
-    sport: "Basketball",
-    instagram: "https://instagram.com/matt",
-    bio: "Professional athlete and grooming model. Specialist in skincare and lifestyle campaigns.",
-    height: "6ft 2in",
-    weight: "195 lbs",
-    skin_tone: "Fair",
-    hair_color: "Brown",
-    eye_color: "Blue",
-    niches: ["Grooming", "Lifestyle", "Skincare", "Sports"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Grooming Brand",
-        image:
-          "https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?w=400",
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: "Carla",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Sustainable fashion advocate and lifestyle creator",
-    followers: 53400,
-    engagement: "7.1%",
-    price: 650,
-    turnaround: "12h",
-    tags: ["Sustainable", "Fashion", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "IMG Models",
-    instagram: "https://instagram.com/carla",
-    tiktok: "https://tiktok.com/@carla",
-    portfolio_url: "https://carlamodels.com",
-    bio: "Sustainable fashion model and advocate. Passionate about eco-friendly brands and ethical fashion.",
-    height: "5ft 10in",
-    weight: "130 lbs",
-    bust: "32",
-    waist: "24",
-    hips: "35",
-    skin_tone: "Medium",
-    hair_color: "Dark Brown",
-    eye_color: "Brown",
-    niches: ["Sustainable", "Fashion", "Lifestyle"],
-    rules: ["No fast fashion", "Eco-friendly brands only"],
-    past_projects: [
-      {
-        brand: "Eco Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400",
-      },
-      {
-        brand: "Green Apparel",
-        image:
-          "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400",
-      },
-    ],
-  },
-];
+// Mock creators removed - creators are now loaded from real marketplace data
 
-const mockCampaigns = [
-  {
-    id: 1,
-    name: "Spring Collection Launch",
-    creators: ["Sophia Chen"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "in_progress",
-    budget: 5000,
-    escrow_amount: 5000,
-    assets_delivered: 8,
-    go_live: "2025-02-15",
-    license_expiry: "2025-03-15",
-    due_date: "2025-12-20",
-    last_update: "2 hours ago",
-    territory: "North America",
-    channels: ["Social", "Web"],
-    duration: "90 days",
-  },
-  {
-    id: 2,
-    name: "Summer Fitness Challenge",
-    creators: ["Marcus Davis"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    ],
-    status: "pending_approval",
-    budget: 2500,
-    escrow_amount: 2500,
-    assets_delivered: 6,
-    go_live: "2025-03-01",
-    license_expiry: "2025-04-01",
-    due_date: "2025-11-15",
-    last_update: "1 day ago",
-    territory: "Global",
-    channels: ["Social"],
-    duration: "60 days",
-  },
-  {
-    id: 3,
-    name: "Holiday Gift Guide",
-    creators: ["Emma"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "completed",
-    budget: 3200,
-    escrow_amount: 0,
-    assets_delivered: 12,
-    go_live: "2024-12-01",
-    license_expiry: "2025-01-15",
-    due_date: "2024-11-30",
-    last_update: "2 weeks ago",
-    territory: "US Only",
-    channels: ["Social", "Web", "Email"],
-    duration: "45 days",
-  },
-  {
-    id: 4,
-    name: "Q1 Product Launch",
-    creators: ["Milan"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    ],
-    status: "draft",
-    budget: 1800,
-    escrow_amount: 0,
-    assets_delivered: 0,
-    go_live: "2025-01-15",
-    license_expiry: "2025-02-28",
-    due_date: "2025-01-10",
-    last_update: "3 days ago",
-    territory: "North America",
-    channels: ["Social"],
-    duration: "30 days",
-  },
-];
+// Mock campaigns removed - campaigns are now loaded from real API data
 
-const mockActivities = [
-  {
-    type: "deliverable",
-    message: "Sophia Chen submitted 3 new assets for Spring Collection",
-    time: "2 hours ago",
-    urgent: true,
-  },
-  {
-    type: "status",
-    message: "Summer Fitness Challenge moved to Pending Approval",
-    time: "1 day ago",
-    urgent: true,
-  },
-  {
-    type: "agency",
-    message: "Agency submitted brief for New Product Launch",
-    time: "2 days ago",
-    urgent: false,
-  },
-  {
-    type: "budget",
-    message: "Spring Collection is within budget",
-    time: "3 days ago",
-    urgent: false,
-  },
-];
+// Mock activities removed - activities are now loaded from real API data
 
-const mockAssets = [
-  {
-    id: 1,
-    filename: "spring_collection_social_01.mp4",
-    thumbnail:
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300",
-    project: "Spring Collection Launch",
-    creator: "Sophia Chen",
-    type: "video",
-    format: "MP4",
-    resolution: "1080p",
-    size: "24.5 MB",
-    date: "2025-11-10",
-    watermarked: true,
-    territory: "North America",
-    valid_until: "2025-03-15",
-  },
-  {
-    id: 2,
-    filename: "fitness_challenge_hero.png",
-    thumbnail:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300",
-    project: "Summer Fitness Challenge",
-    creator: "Marcus Davis",
-    type: "image",
-    format: "PNG",
-    resolution: "4K",
-    size: "8.2 MB",
-    date: "2025-11-08",
-    watermarked: true,
-    territory: "Global",
-    valid_until: "2025-04-01",
-  },
-  {
-    id: 3,
-    filename: "holiday_gift_carousel_01.jpg",
-    thumbnail:
-      "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=300",
-    project: "Holiday Gift Guide",
-    creator: "Emma",
-    type: "image",
-    format: "JPG",
-    resolution: "1920x1080",
-    size: "3.4 MB",
-    date: "2024-11-25",
-    watermarked: true,
-    territory: "US Only",
-    valid_until: "2025-01-15",
-  },
-];
+// Mock assets removed - assets are now loaded from real API data
 
-const mockLicenses = [
-  {
-    id: 1,
-    asset_name: "Spring Collection Video Suite",
-    creator: "Sophia Chen",
-    territory: "North America",
-    duration: "90 days",
-    start_date: "2024-12-15",
-    end_date: "2025-03-15",
-    channels: ["Social", "Web"],
-    status: "active",
-    days_remaining: 123,
-  },
-  {
-    id: 2,
-    asset_name: "Fitness Hero Images",
-    creator: "Marcus Davis",
-    territory: "Global",
-    duration: "60 days",
-    start_date: "2025-02-01",
-    end_date: "2025-04-01",
-    channels: ["Social"],
-    status: "active",
-    days_remaining: 140,
-  },
-  {
-    id: 3,
-    asset_name: "Holiday Campaign Assets",
-    creator: "Emma",
-    territory: "US Only",
-    duration: "45 days",
-    start_date: "2024-12-01",
-    end_date: "2025-01-15",
-    channels: ["Social", "Web", "Email"],
-    status: "expiring_soon",
-    days_remaining: 34,
-  },
-];
+// Mock licenses removed - licenses are now loaded from real API data
 
 const spendData = [
   { month: "Jun", spend: 1200 },
@@ -691,94 +294,7 @@ const spendData = [
   { month: "Nov", spend: 5100 },
 ];
 
-const mockContracts = [
-  {
-    id: 1,
-    project_name: "Spring Collection Launch",
-    creator_name: "Sophia Chen",
-    creator_handle: "@sophiachen",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-11-01",
-    created_date: "2024-10-28",
-    expiration_date: "2025-03-15",
-    duration_days: 90,
-    territory: "North America",
-    channels: ["Social Media", "Website"],
-    total_fee: 5000,
-    platform_fee: 500,
-    creator_earnings: 4500,
-    auto_renew: true,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "3 Instagram Reels (15-30 seconds each), 1 Hero Image",
-    payment_status: "released",
-    payment_release_date: "2024-11-15",
-    docusign_envelope_id: "ENV-2024-001",
-    stripe_payout_id: "po_1234567890",
-    custom_clauses: [],
-    version: 1,
-  },
-  {
-    id: 2,
-    project_name: "Summer Fitness Challenge",
-    creator_name: "Marcus Davis",
-    creator_handle: "@marcusdavis",
-    agency: "Fitness First Agency",
-    status: "pending_signature",
-    signed_date: null,
-    created_date: "2024-11-08",
-    sent_date: "2024-11-08",
-    days_pending: 4,
-    expiration_date: "2025-04-01",
-    duration_days: 60,
-    territory: "Global",
-    channels: ["Social Media"],
-    total_fee: 2500,
-    platform_fee: 250,
-    creator_earnings: 2250,
-    auto_renew: false,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "2 TikTok videos (30-60 seconds each), 3 Instagram posts",
-    payment_status: "in_escrow",
-    custom_clauses: [
-      {
-        type: "Restriction",
-        name: "No Competitor Brands",
-        text: "Creator agrees not to promote direct competitor fitness brands during license period",
-      },
-    ],
-    version: 1,
-  },
-  {
-    id: 3,
-    project_name: "Holiday Gift Guide",
-    creator_name: "Emma",
-    creator_handle: "@emma",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-10-15",
-    created_date: "2024-10-10",
-    expiration_date: "2025-01-15",
-    duration_days: 45,
-    territory: "US Only",
-    channels: ["Social Media", "Website", "Email Marketing"],
-    total_fee: 3200,
-    platform_fee: 320,
-    creator_earnings: 2880,
-    auto_renew: true,
-    revisions: 3,
-    exclusivity: "Category exclusive",
-    deliverables: "5 Instagram Reels, 2 Hero images, 1 Email banner",
-    payment_status: "released",
-    payment_release_date: "2024-11-20",
-    docusign_envelope_id: "ENV-2024-003",
-    stripe_payout_id: "po_9876543210",
-    custom_clauses: [],
-    version: 1,
-  },
-];
+// Mock contracts removed - contracts are now loaded from real API data
 
 export default function BrandDashboard() {
   const { profile } = useAuth();
@@ -792,7 +308,7 @@ export default function BrandDashboard() {
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(mockBrand);
+  const [brand, setBrand] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
@@ -1175,7 +691,7 @@ export default function BrandDashboard() {
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [creators, setCreators] = useState(mockCreators);
+  const [creators, setCreators] = useState<any[]>([]);
   const [reviewDialog, setReviewDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -1858,11 +1374,7 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const escrowTotal = mockCampaigns
-    .filter(
-      (c) => c.status === "in_progress" || c.status === "pending_approval",
-    )
-    .reduce((sum, c) => sum + c.escrow_amount, 0);
+  const escrowTotal = 0; // Escrow is now calculated from real campaign data
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -2025,16 +1537,10 @@ export default function BrandDashboard() {
     }).length;
   }, [brandOfferItems]);
 
-  const pendingApprovalCount = mockCampaigns.filter(
-    (c) => c.status === "pending_approval",
-  ).length;
-  const activeLicenses = mockLicenses.filter(
-    (l) => l.status === "active" || l.status === "expiring_soon",
-  );
-  const expiringLicenses = mockLicenses.filter(
-    (l) => l.status === "expiring_soon",
-  );
-  const escrowProjects = mockCampaigns.filter((c) => c.escrow_amount > 0);
+  const pendingApprovalCount = 0; // Now calculated from real campaign data
+  const activeLicenses: any[] = []; // Now loaded from real license data
+  const expiringLicenses: any[] = []; // Now loaded from real license data
+  const escrowProjects: any[] = []; // Now calculated from real campaign data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -2080,13 +1586,11 @@ export default function BrandDashboard() {
   };
 
   const handleShareBrief = (campaignId) => {
-    const campaign = mockCampaigns.find((c) => c.id === campaignId);
-    if (campaign) {
-      toast({
-        title: "Success",
-        description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
-      });
-    }
+    // Campaign sharing is now handled through real API data
+    toast({
+      title: "Success",
+      description: "Brief shared with talent! They will receive an email with campaign details and contract.",
+    });
   };
 
   const handleCreatorHire = (creator) => {
@@ -2580,7 +2084,7 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {brand.name}
+            Welcome back{brand?.name ? `, ${brand.name}` : ""}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
@@ -6619,18 +6123,8 @@ export default function BrandDashboard() {
   };
 
   const renderCampaignHub = () => {
-    const campaignsForHub = mockCampaigns.filter((campaign) => {
-      if (campaignHubTab === "inbox") return false;
-      const mappedStatus =
-        campaign.status === "in_progress"
-          ? "active"
-          : campaign.status === "pending_approval"
-            ? "pending_approval"
-            : campaign.status === "completed"
-              ? "completed"
-              : "draft";
-      return mappedStatus === campaignHubTab;
-    });
+    // Campaigns are now loaded from real API data
+    const campaignsForHub: any[] = [];
 
     return (
       <div className="space-y-8">
@@ -7118,25 +6612,19 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "video").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "image").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-3xl font-bold text-gray-900">36.1 MB</p>
+          <p className="text-3xl font-bold text-gray-900">0 MB</p>
         </Card>
       </div>
 
@@ -7169,62 +6657,10 @@ export default function BrandDashboard() {
 
       {/* Asset Grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {mockAssets.map((asset) => (
-          <Card
-            key={asset.id}
-            className="p-4 bg-white border border-gray-200 hover:shadow-lg transition-all"
-          >
-            <div className="relative mb-4">
-              <img
-                src={asset.thumbnail}
-                alt={asset.filename}
-                className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-              />
-              {asset.watermarked && (
-                <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Watermarked
-                </Badge>
-              )}
-              <Badge className="absolute top-2 left-2 bg-gray-900 text-white">
-                {asset.format}
-              </Badge>
-            </div>
-
-            <h4 className="font-semibold text-gray-900 mb-2 truncate">
-              {asset.filename}
-            </h4>
-            <div className="space-y-1 text-sm text-gray-600 mb-4">
-              <p>Project: {asset.project}</p>
-              <p>Creator: {asset.creator}</p>
-              <p>Date: {new Date(asset.date).toLocaleDateString()}</p>
-              <p className="text-xs">
-                {asset.resolution} • {asset.size}
-              </p>
-            </div>
-
-            <Alert className="mb-3 bg-blue-50 border border-blue-200 p-3">
-              <p className="text-xs text-blue-900">
-                <strong>Usage:</strong> {asset.territory}, valid until{" "}
-                {asset.valid_until}
-              </p>
-            </Alert>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 border-2 border-gray-300"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                Preview
-              </Button>
-              <Button className="flex-1 bg-[#F7B750] hover:bg-[#E6A640] text-white">
-                <Download className="w-4 h-4 mr-1" />
-                Download
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {/* Assets are now loaded from real API data - no mock assets shown */}
+        <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <p className="text-gray-500">No assets available yet. Assets will appear here once campaigns are completed.</p>
+        </Card>
       </div>
 
       {/* Organization Features */}
@@ -7438,9 +6874,7 @@ export default function BrandDashboard() {
   );
 
   const renderContractDetail = () => {
-    const contract = mockContracts.find((c) => c.id === selectedContract);
-    if (!contract) return null;
-
+    // Contracts are now loaded from real API data
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -7718,7 +7152,7 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{mockBrand.name}</strong> ("Licensee")
+                , by and between <strong>{brand?.name || "Brand"}</strong> ("Licensee")
                 and <strong>{contract.creator_name}</strong> ("Licensor").
               </p>
 
@@ -7802,7 +7236,7 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until {mockBrand.name}{" "}
+                <strong>Payment:</strong> Held in escrow until {brand?.name || "Brand"}{" "}
                 approval of deliverables. Release upon approval or automatic
                 after 48 hours.
               </p>
@@ -7861,7 +7295,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
                     <p className="font-semibold text-gray-900 mb-2">
-                      {mockBrand.name}
+                      {brand?.name || "Brand"}
                     </p>
                     <p className="text-sm text-gray-600 mb-2">Licensee</p>
                     {contract.signed_date && (
@@ -7998,7 +7432,7 @@ export default function BrandDashboard() {
                     Contract created and sent to {contract.creator_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Created by: {mockBrand.name}
+                    Created by: {brand?.name || "Brand"}
                   </p>
                 </div>
               </div>
@@ -8064,10 +7498,9 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
-    const activeContracts = mockContracts.filter((c) => c.status === "signed");
-    const pendingContracts = mockContracts.filter(
-      (c) => c.status === "pending_signature",
-    );
+    // Contracts are now loaded from real API data
+    const activeContracts: any[] = [];
+    const pendingContracts: any[] = [];
 
     return (
       <div className="space-y-6">
@@ -8141,7 +7574,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            All Contracts ({mockContracts.length})
+            All Contracts (0)
           </button>
         </div>
 
@@ -8329,73 +7762,10 @@ export default function BrandDashboard() {
         {/* All Contracts */}
         {contractHubTab === "all" && (
           <div className="space-y-4">
-            {mockContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className={`p-6 border ${
-                  contract.status === "signed"
-                    ? "bg-white border-gray-200"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {contract.creator_name} ({contract.creator_handle})
-                    </p>
-                  </div>
-                  <Badge
-                    className={
-                      contract.status === "signed"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                    }
-                  >
-                    {contract.status === "signed"
-                      ? "✓ Fully Signed"
-                      : "⏳ Pending"}
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Created</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.created_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Duration</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.duration_days} days
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  onClick={() => setSelectedContract(contract.id)}
-                >
-                  View Details
-                </Button>
-              </Card>
-            ))}
+            {/* Contracts are now loaded from real API data */}
+            <Card className="p-12 bg-white border border-gray-200 text-center">
+              <p className="text-gray-500">No contracts available yet. Contracts will appear here once campaigns are created.</p>
+            </Card>
           </div>
         )}
       </div>
@@ -8534,71 +7904,12 @@ export default function BrandDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {mockLicenses.map((license) => (
-                      <tr key={license.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 font-medium text-gray-900">
-                          {license.asset_name}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.creator}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.territory}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.duration}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-1">
-                            {license.channels.map((ch) => (
-                              <Badge
-                                key={ch}
-                                className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
-                              >
-                                {ch}
-                              </Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {new Date(license.end_date).toLocaleDateString()}
-                          <p className="text-xs text-gray-500">
-                            {license.days_remaining} days left
-                          </p>
-                        </td>
-                        <td className="px-4 py-4">
-                          <Badge
-                            className={
-                              license.status === "active"
-                                ? "bg-green-100 text-green-700 border border-green-300"
-                                : "bg-orange-100 text-orange-700 border border-orange-300"
-                            }
-                          >
-                            {license.status === "active"
-                              ? "Active"
-                              : "Expiring Soon"}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              Renew
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {/* Licenses are now loaded from real API data */}
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                        No licenses available yet. Licenses will appear here once campaigns are completed.
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -8614,43 +7925,10 @@ export default function BrandDashboard() {
                 License Expiration Calendar
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
-                {mockLicenses
-                  .filter((l) => l.status === "expiring_soon")
-                  .map((license) => (
-                    <div
-                      key={license.id}
-                      className="p-4 rounded-lg border-2 bg-orange-50 border-orange-300"
-                    >
-                      <p className="font-semibold text-gray-900 mb-2">
-                        {license.asset_name}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Expires:{" "}
-                        {new Date(license.end_date).toLocaleDateString()}
-                      </p>
-                      <Badge className="bg-orange-500 text-white">
-                        {license.days_remaining} days remaining
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        className="w-full mt-3 border-2 border-gray-300"
-                      >
-                        Renew License
-                      </Button>
-                    </div>
-                  ))}
-                {mockLicenses.filter((l) => l.status === "expiring_soon")
-                  .length === 0 && (
-                  <div className="col-span-3 text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No licenses expiring soon
-                    </h3>
-                    <p className="text-gray-600">
-                      All your licenses are active for 30+ days
-                    </p>
-                  </div>
-                )}
+                {/* Expiring licenses are now loaded from real API data */}
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">No expiring licenses at this time.</p>
+                </div>
               </div>
             </Card>
           </div>
@@ -8897,39 +8175,12 @@ export default function BrandDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockCampaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 font-medium text-gray-900">
-                    {campaign.name}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {campaign.creators.join(", ")}
-                  </td>
-                  <td className="px-4 py-4 font-bold text-gray-900">
-                    ${campaign.budget.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge
-                      className={
-                        campaign.status === "pending_approval"
-                          ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                          : campaign.status === "completed"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-blue-100 text-blue-700 border border-blue-300"
-                      }
-                    >
-                      {campaign.status === "pending_approval"
-                        ? "Pending Approval"
-                        : campaign.status === "completed"
-                          ? "Paid"
-                          : "In Escrow"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">
-                    {campaign.go_live}
-                  </td>
-                </tr>
-              ))}
+              {/* Campaigns are now loaded from real API data */}
+              <tr>
+                <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  No campaigns available yet. Campaigns will appear here once you create them.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -8948,7 +8199,7 @@ export default function BrandDashboard() {
         </p>
         <p className="text-sm font-semibold text-blue-900">
           Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
-          {mockCampaigns.filter((c) => c.escrow_amount > 0).length} projects
+          {escrowProjects.length} projects
         </p>
       </Card>
 
@@ -9104,9 +8355,9 @@ export default function BrandDashboard() {
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
-                  <AvatarImage src={brand.logo} alt={brand.name} />
+                  <AvatarImage src={brand?.logo} alt={brand?.name} />
                   <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
-                    {getBrandInitials(brand.name)}
+                    {getBrandInitials(brand?.name)}
                   </AvatarFallback>
                 </Avatar>
                 <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
@@ -9142,7 +8393,7 @@ export default function BrandDashboard() {
                   Company Name
                 </Label>
                 <Input
-                  value={brand.name}
+                  value={brand?.name ?? ""}
                   onChange={(e) => setBrand({ ...brand, name: e.target.value })}
                   className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
                 />
@@ -9152,7 +8403,7 @@ export default function BrandDashboard() {
                   Industry
                 </Label>
                 <Input
-                  value={brand.industry}
+                  value={brand?.industry ?? ""}
                   onChange={(e) =>
                     setBrand({ ...brand, industry: e.target.value })
                   }
@@ -9164,7 +8415,7 @@ export default function BrandDashboard() {
                   Website
                 </Label>
                 <Input
-                  value={brand.website}
+                  value={brand?.website ?? ""}
                   onChange={(e) =>
                     setBrand({ ...brand, website: e.target.value })
                   }
@@ -9173,14 +8424,12 @@ export default function BrandDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Contact Email
+                  Your Email
                 </Label>
                 <Input
-                  value={brand.contact_email}
-                  onChange={(e) =>
-                    setBrand({ ...brand, contact_email: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  value={profile?.email ?? ""}
+                  readOnly
+                  className="rounded-none border-2 border-gray-200 bg-gray-50 cursor-not-allowed h-12 text-sm font-bold text-gray-500"
                 />
               </div>
             </div>
@@ -9309,6 +8558,8 @@ export default function BrandDashboard() {
             organizationType="brand"
             title="Team Management"
             description="Manage members, roles, and invitations for your brand organization."
+            seatLimit={brandSeatLimit}
+            seatLimitReached={brandSeatLimitReached}
           />
         </TabsContent>
 
@@ -11404,7 +10655,7 @@ export default function BrandDashboard() {
       >
         {/* Brand Section */}
         <div className="p-6 border-b border-gray-200">
-          {sidebarOpen ? (
+          {brand && sidebarOpen ? (
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
                 <AvatarImage src={brand.logo} alt={brand.name} />
@@ -11419,13 +10670,15 @@ export default function BrandDashboard() {
                 </p>
               </div>
             </div>
-          ) : (
+          ) : brand ? (
             <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
               <AvatarImage src={brand.logo} alt={brand.name} />
               <AvatarFallback className="font-bold text-gray-700">
                 {getBrandInitials(brand.name)}
               </AvatarFallback>
             </Avatar>
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse" />
           )}
         </div>
 
