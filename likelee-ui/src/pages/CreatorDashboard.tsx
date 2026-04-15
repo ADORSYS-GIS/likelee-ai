@@ -98,7 +98,6 @@ import {
   Building2,
   Target,
   PlayCircle,
-  CheckSquare,
   XCircle,
   Send,
   Mail,
@@ -315,91 +314,6 @@ const getImageSections = (t: any) => [
 // Example campaigns for blank users (shown when no real campaigns exist)
 // Example campaigns moved inside CreatorDashboard component to support translations
 
-// Example content items for blank users
-const exampleContentItems = [
-  {
-    id: "content-nike",
-    brand: "Nike Sportswear",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    titleKey: "instagramReel",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
-    platform: "Instagram",
-    views: "125,000",
-    engagement: "4.2%",
-    published_at: "2026-03-20",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-glossier",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    titleKey: "webBanner",
-    thumbnail_url:
-      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
-    platform: "Website",
-    views: "89,000",
-    engagement: "2.8%",
-    published_at: "2026-03-18",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-tesla",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    titleKey: "tvCommercial",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
-    platform: "YouTube",
-    views: "450,000",
-    engagement: "5.1%",
-    published_at: "2026-02-15",
-    is_live: true,
-    url: "#",
-  },
-];
-
-const exampleDetections = [
-  {
-    id: "det-1",
-    account: "@crypto_gains_2026",
-    platform: "TikTok",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-    status: "needs_review",
-    match_confidence: 94,
-    detected_at: "2026-03-24",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
-  },
-  {
-    id: "det-2",
-    account: "@beauty_deals_shop",
-    platform: "Instagram",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
-    status: "takedown_requested",
-    match_confidence: 87,
-    detected_at: "2026-03-22",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
-  },
-  {
-    id: "det-3",
-    account: "Quick Weight Loss Co.",
-    platform: "Facebook",
-    thumbnail_url:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
-    status: "resolved",
-    match_confidence: 91,
-    detected_at: "2026-03-19",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
-  },
-];
-
 // Example public profile data
 const exampleProfilePreviewData = {
   first_name: "[Insert user first name]",
@@ -521,7 +435,33 @@ function parseErrorMessage(err: any, t: any): string {
 export default function CreatorDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSection = (() => {
+    const requested = String(searchParams.get("section") || "").trim();
+    const validSections = new Set([
+      "dashboard",
+      "public-profile",
+      "content",
+      "likeness",
+      "voice",
+      "campaigns",
+      "jobs",
+      "approvals",
+      "archive",
+      "earnings",
+      "settings",
+      "agency-connection",
+      "brand-connection",
+      "talent-portal",
+    ]);
+    return validSections.has(requested) ? requested : "dashboard";
+  })();
+  const initialSettingsTab =
+    searchParams.get("settingsTab") === "rules" ? "rules" : "profile";
+  const initialContentTab =
+    searchParams.get("contentTab") === "brand_content"
+      ? "brand_content"
+      : "brand_content";
 
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
     useAuth();
@@ -545,8 +485,8 @@ export default function CreatorDashboard() {
     }
     return new URL(normalizedPath, normalizedBase).toString();
   };
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
+  const [activeSection, setActiveSection] = useState(initialSection);
+  const [settingsTab, setSettingsTab] = useState(initialSettingsTab); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -2733,9 +2673,14 @@ export default function CreatorDashboard() {
           profile.kyc_rejection_reason ?? prev.kyc_rejection_reason ?? null,
         location: [profile.city, profile.state].filter(Boolean).join(", "),
         bio: profile.bio ?? prev.bio,
+        instagram_handle: profile.platform_handle
+          ? `@${profile.platform_handle}`
+          : prev.instagram_handle,
         birthday: profile.birthdate ?? prev.birthday,
         gender: profile.gender ?? prev.gender,
-        ethnicity: profile.ethnicity ?? prev.ethnicity,
+        ethnicity: Array.isArray(profile.ethnicity)
+          ? profile.ethnicity.join(", ")
+          : (profile.ethnicity ?? prev.ethnicity),
         creator_type: profile.creator_type ?? prev.creator_type,
         race: profile.race ?? prev.race,
         hair_color: profile.hair_color ?? prev.hair_color,
@@ -2746,7 +2691,14 @@ export default function CreatorDashboard() {
             : prev.height_cm,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+        content_types: profile.content_types ?? prev.content_types,
+        industries: profile.industries ?? prev.industries,
         vibes: profile.vibes ?? prev.vibes,
+        accept_negotiations:
+          profile.accept_negotiations ?? prev.accept_negotiations,
+        content_restrictions:
+          profile.content_restrictions ?? prev.content_restrictions,
+        brand_exclusivity: profile.brand_exclusivity ?? prev.brand_exclusivity,
         is_public_brands: isPublicBrands,
       }));
     }
@@ -3412,7 +3364,9 @@ export default function CreatorDashboard() {
             : prev.instagram_handle,
           birthday: profile.birthdate ?? prev.birthday,
           gender: profile.gender ?? prev.gender,
-          ethnicity: profile.ethnicity ?? prev.ethnicity,
+          ethnicity: Array.isArray(profile.ethnicity)
+            ? profile.ethnicity.join(", ")
+            : (profile.ethnicity ?? prev.ethnicity),
           creator_type: profile.creator_type ?? prev.creator_type,
           race: profile.race ?? prev.race,
           hair_color: profile.hair_color ?? prev.hair_color,
@@ -3743,8 +3697,44 @@ export default function CreatorDashboard() {
     }
   }, [searchParams]);
 
-  const [contentTab, setContentTab] = useState("brand_content");
+  const [contentTab, setContentTab] = useState(initialContentTab);
   const creatorJobsBackTo = `${createPageUrl("CreatorDashboard")}?section=jobs`;
+
+  useEffect(() => {
+    const nextSettingsTab = searchParams.get("settingsTab");
+    if (
+      nextSettingsTab &&
+      (nextSettingsTab === "profile" || nextSettingsTab === "rules")
+    ) {
+      setSettingsTab(nextSettingsTab);
+    }
+
+    const nextContentTab = searchParams.get("contentTab");
+    if (nextContentTab === "brand_content") {
+      setContentTab(nextContentTab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("section", activeSection);
+
+    if (activeSection === "settings") {
+      nextParams.set("settingsTab", settingsTab);
+    } else {
+      nextParams.delete("settingsTab");
+    }
+
+    if (activeSection === "content") {
+      nextParams.set("contentTab", contentTab);
+    } else {
+      nextParams.delete("contentTab");
+    }
+
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeSection, contentTab, searchParams, setSearchParams, settingsTab]);
 
   const renderJobInvitesCards = () => (
     <>
@@ -3937,11 +3927,7 @@ export default function CreatorDashboard() {
   );
 
   const renderContent = () => {
-    const showingExamples = contentItems.length === 0;
-    const itemsToShow = showingExamples ? exampleContentItems : contentItems;
-    // For now, we don't have real detections state, so we assume empty if not showing examples
-    const detectionsToShow = showingExamples ? exampleDetections : [];
-    const detectionsCount = detectionsToShow.length;
+    const itemsToShow = contentItems;
 
     return (
       <div className="space-y-6">
@@ -3953,15 +3939,6 @@ export default function CreatorDashboard() {
             {t("creatorDashboard.content.subtitle")}
           </p>
         </div>
-
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-blue-900 text-sm">
-              {t("creatorDashboard.content.welcome.message")}
-            </p>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
@@ -3976,7 +3953,7 @@ export default function CreatorDashboard() {
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
-                {itemsToShow.length}
+                {contentItems.length}
               </Badge>
             </button>
           </div>
@@ -5290,37 +5267,40 @@ export default function CreatorDashboard() {
       base_weekly_price_cents: Math.round(
         ((creator.price_per_month || 0) / 4.345) * 100,
       ),
-      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
+      pricing_updated_at: rateChanged ? new Date().toISOString() : null,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
-          : undefined,
+          : null,
       gender:
         typeof creator.gender === "string" && creator.gender.trim().length
           ? creator.gender.trim()
-          : undefined,
+          : null,
       ethnicity:
         typeof creator.ethnicity === "string" && creator.ethnicity.trim().length
-          ? creator.ethnicity.trim()
-          : undefined,
+          ? creator.ethnicity
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : null,
       creator_type:
         typeof creator.creator_type === "string" &&
         creator.creator_type.trim().length
           ? creator.creator_type.trim()
-          : undefined,
+          : null,
       race:
         typeof creator.race === "string" && creator.race.trim().length
           ? creator.race.trim()
-          : undefined,
+          : null,
       hair_color:
         typeof creator.hair_color === "string" &&
         creator.hair_color.trim().length
           ? creator.hair_color.trim()
-          : undefined,
+          : null,
       eye_color:
         typeof creator.eye_color === "string" && creator.eye_color.trim().length
           ? creator.eye_color.trim()
-          : undefined,
+          : null,
       height_cm: parseOptionalInt(creator.height_cm),
       platform_handle: creator.instagram_handle?.replace("@", ""),
       tiktok_handle: normalizedTiktok,
@@ -5360,10 +5340,12 @@ export default function CreatorDashboard() {
       }
 
       const responseData = await res.json();
+      const savedProfile = Array.isArray(responseData)
+        ? responseData[0]
+        : responseData;
 
       // Update creator state with the saved data from the response
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        const savedProfile = responseData[0];
+      if (savedProfile && typeof savedProfile === "object") {
         const savedMonthlyRate =
           typeof savedProfile.base_monthly_price_cents === "number"
             ? Math.round(savedProfile.base_monthly_price_cents / 100)
@@ -5380,7 +5362,9 @@ export default function CreatorDashboard() {
               .join(", ") || prev.location,
           birthday: savedProfile.birthdate ?? prev.birthday,
           gender: savedProfile.gender ?? prev.gender,
-          ethnicity: savedProfile.ethnicity ?? prev.ethnicity,
+          ethnicity: Array.isArray(savedProfile.ethnicity)
+            ? savedProfile.ethnicity.join(", ")
+            : (savedProfile.ethnicity ?? prev.ethnicity),
           creator_type: savedProfile.creator_type ?? prev.creator_type,
           race: savedProfile.race ?? prev.race,
           hair_color: savedProfile.hair_color ?? prev.hair_color,
@@ -5407,6 +5391,8 @@ export default function CreatorDashboard() {
           baseRateRef.current = savedMonthlyRate;
         }
       }
+
+      await refreshProfile();
 
       setEditingRules(false);
       toast({
@@ -12170,44 +12156,6 @@ export default function CreatorDashboard() {
                         {section.bestFor}
                       </p>
                     </div>
-
-                    <Card className="p-4 bg-gray-50 border border-gray-200">
-                      <h4 className="font-bold text-gray-900 mb-3">
-                        {t("creatorDashboard.uploadModal.requirementsTitle")}
-                      </h4>
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t("creatorDashboard.uploadModal.goodLighting")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t(
-                              "creatorDashboard.uploadModal.professionalQuality",
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
 
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
                       <input
