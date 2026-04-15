@@ -7,6 +7,24 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+fn sanitize_db_error(error_text: &str) -> String {
+    // Log the full error for debugging
+    warn!("Database error: {}", error_text);
+
+    // Return a generic message to clients to avoid exposing internal details
+    if error_text.contains("unique constraint") || error_text.contains("duplicate key") {
+        "A profile with this information already exists".to_string()
+    } else if error_text.contains("foreign key") {
+        "Invalid reference in profile data".to_string()
+    } else if error_text.contains("not null") || error_text.contains("null value") {
+        "Required field is missing".to_string()
+    } else if error_text.contains("invalid input") || error_text.contains("malformed") {
+        "Invalid data format provided".to_string()
+    } else {
+        "Failed to save profile. Please try again".to_string()
+    }
+}
+
 fn visibility_maps_to_public_profile(visibility: &str) -> bool {
     matches!(
         visibility.trim().to_lowercase().as_str(),
@@ -182,7 +200,7 @@ pub async fn upsert_profile(
         if !resp.status().is_success() {
             let err = resp.text().await.unwrap_or_default();
             warn!(creator_id = %target_id, body = %err, "creator profile update failed");
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, sanitize_db_error(&err)));
         }
 
         // Refresh using the same target_id that was updated
@@ -220,7 +238,7 @@ pub async fn upsert_profile(
         if !resp.status().is_success() {
             let err = resp.text().await.unwrap_or_default();
             warn!(creator_id = %user.id, body = %err, "creator profile insert failed");
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, sanitize_db_error(&err)));
         }
 
         let refreshed = state
