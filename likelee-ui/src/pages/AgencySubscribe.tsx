@@ -1761,8 +1761,8 @@ export default function AgencySubscribe() {
                     Likelee Studio Access
                   </div>
                   <div className="text-gray-500 mt-1">
-                    One-time activation for your agency Studio workspace with
-                    an initial wallet allocation.
+                    One-time activation for your agency Studio workspace with an
+                    initial wallet allocation.
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -1773,8 +1773,9 @@ export default function AgencySubscribe() {
               </div>
               <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Grants access to <span className="font-semibold">/studio</span>{" "}
-                  for this agency.
+                  Grants access to{" "}
+                  <span className="font-semibold">/studio</span> for this
+                  agency.
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                   Includes {formatNumber(STUDIO_ADDON_INITIAL_CREDITS)} initial
@@ -1790,7 +1791,9 @@ export default function AgencySubscribe() {
               </div>
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm text-gray-500">
-                  <div className="font-bold">Includes Studio Pro wallet plan</div>
+                  <div className="font-bold">
+                    Includes Studio Pro wallet plan
+                  </div>
                 </div>
                 <Button
                   type="button"

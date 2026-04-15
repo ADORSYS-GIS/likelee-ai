@@ -614,7 +614,9 @@ export default function BrandSubscribe() {
       // immediately instead of waiting for the Stripe webhook.
       if (focusStudio && checkoutSessionId) {
         try {
-          await verifyBrandStudioAddonCheckout({ session_id: checkoutSessionId });
+          await verifyBrandStudioAddonCheckout({
+            session_id: checkoutSessionId,
+          });
         } catch {
           // Ignore — webhook will handle it if verify fails
         }
@@ -771,9 +773,7 @@ export default function BrandSubscribe() {
       const response = await createBrandStudioAddonCheckout({
         next_path: nextPath || undefined,
       });
-      const checkoutUrl = (response as any)?.checkout_url as
-        | string
-        | undefined;
+      const checkoutUrl = (response as any)?.checkout_url as string | undefined;
       if (!checkoutUrl) {
         throw new Error("No checkout URL returned.");
       }
@@ -1146,7 +1146,8 @@ export default function BrandSubscribe() {
                   <span className="font-semibold text-[#17315E]">/studio</span>{" "}
                   and{" "}
                   <span className="font-semibold text-[#17315E]">
-                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial credits
+                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial
+                    credits
                   </span>{" "}
                   credited to your Studio wallet. Enterprise includes Studio
                   access automatically.

@@ -6,7 +6,9 @@ use crate::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_ti
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::team::permissions::Permission;
-use crate::team::{require_agency_permission, resolve_effective_agency_id, resolve_effective_brand_id};
+use crate::team::{
+    require_agency_permission, resolve_effective_agency_id, resolve_effective_brand_id,
+};
 use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
     extract::{Path, Query, State},

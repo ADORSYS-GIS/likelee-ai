@@ -1268,7 +1268,7 @@ export default function BrandDashboard() {
     const view = params.get("view");
     const section = params.get("section");
     const tab = params.get("tab");
-    
+
     // Support both 'view=settings' and 'section=settings' for backward compatibility
     if (view === "settings" || section === "settings") {
       setActiveSection("settings");
@@ -2057,7 +2057,9 @@ export default function BrandDashboard() {
       icon: FileText,
       badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
     },
-    ...(canViewSubscriptions ? [{ id: "billing", label: "Billing", icon: CreditCard }] : []),
+    ...(canViewSubscriptions
+      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+      : []),
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -4019,7 +4021,7 @@ export default function BrandDashboard() {
         </div>
       );
     }
-    
+
     return (
       <div className="space-y-5">
         <div>
@@ -4061,131 +4063,144 @@ export default function BrandDashboard() {
             )}
             {!loadingInboxPackages && inboxPackages.length === 0 && (
               <Card className="p-6 bg-white border border-gray-300 rounded-none">
-                <p className="text-sm text-gray-500">No packages received yet.</p>
+                <p className="text-sm text-gray-500">
+                  No packages received yet.
+                </p>
               </Card>
             )}
             {inboxPackages.map((pkg: any) => {
-              const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
+              const expiresAt = pkg?.expires_at
+                ? new Date(pkg.expires_at)
+                : null;
               const isExpired = expiresAt
                 ? expiresAt.getTime() < Date.now()
-              : false;
-            const isDone =
-              pkg?.status === "feedback_received" ||
-              pkg?.status === "completed";
-            const selectedTalentCount = Array.isArray(
-              pkg?.meta?.selected_talent_ids,
-            )
-              ? pkg.meta.selected_talent_ids.length
-              : 0;
+                : false;
+              const isDone =
+                pkg?.status === "feedback_received" ||
+                pkg?.status === "completed";
+              const selectedTalentCount = Array.isArray(
+                pkg?.meta?.selected_talent_ids,
+              )
+                ? pkg.meta.selected_talent_ids.length
+                : 0;
 
-            return (
-              <Card
-                key={pkg.id}
-                className="p-6 bg-white border border-gray-300 rounded-none"
-              >
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-2xl font-bold text-gray-900">
-                        {pkg.title ||
-                          pkg.campaign_offers?.offer_title ||
-                          pkg.campaign_offers?.brand_campaigns?.name ||
-                          "Talent package"}
-                      </h3>
-                      {String(pkg?.status || "") === "sent" && (
-                        <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                          New
-                        </Badge>
+              return (
+                <Card
+                  key={pkg.id}
+                  className="p-6 bg-white border border-gray-300 rounded-none"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {pkg.title ||
+                            pkg.campaign_offers?.offer_title ||
+                            pkg.campaign_offers?.brand_campaigns?.name ||
+                            "Talent package"}
+                        </h3>
+                        {String(pkg?.status || "") === "sent" && (
+                          <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 font-medium">
+                        From:{" "}
+                        {pkg?.agencies?.agency_name ||
+                          pkg?.agency_id ||
+                          "Agency"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Sent:{" "}
+                        {pkg?.sent_at
+                          ? new Date(String(pkg.sent_at)).toLocaleString()
+                          : "—"}
+                      </p>
+                      {pkg?.expires_at && (
+                        <p
+                          className={`text-sm ${
+                            isExpired
+                              ? "text-red-600 font-bold"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          Expires:{" "}
+                          {new Date(pkg.expires_at).toLocaleDateString()}
+                          {isExpired && " (Expired)"}
+                        </p>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 font-medium">
-                      From:{" "}
-                      {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Sent:{" "}
-                      {pkg?.sent_at
-                        ? new Date(String(pkg.sent_at)).toLocaleString()
-                        : "—"}
-                    </p>
-                    {pkg?.expires_at && (
-                      <p
-                        className={`text-sm ${
-                          isExpired ? "text-red-600 font-bold" : "text-gray-500"
-                        }`}
-                      >
-                        Expires: {new Date(pkg.expires_at).toLocaleDateString()}
-                        {isExpired && " (Expired)"}
-                      </p>
-                    )}
+                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+                      {selectedTalentCount} talent
+                    </Badge>
                   </div>
-                  <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                    {selectedTalentCount} talent
-                  </Badge>
-                </div>
 
-                {pkg?.message && (
-                  <p className="text-gray-700 italic mb-4">
-                    "{String(pkg.message)}"
-                  </p>
-                )}
+                  {pkg?.message && (
+                    <p className="text-gray-700 italic mb-4">
+                      "{String(pkg.message)}"
+                    </p>
+                  )}
 
-                <div className="flex gap-2">
-                  <Button
-                    className={`flex-1 rounded-none ${
-                      isExpired || !canManagePayOffers
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-black hover:bg-gray-800 text-white"
-                    }`}
-                    disabled={isExpired || isDone || !canManagePayOffers}
-                    onClick={() => setConfirmingDonePkg(pkg)}
-                    title={!canManagePayOffers ? "You do not have permission to mark packages as done" : ""}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-none"
-                    disabled={isDone || isExpired}
-                    onClick={() => {
-                      const token = pkg?.meta?.agency_package_token;
-                      const id = String(pkg?.id || "");
-                      if (token) {
-                        window.open(`/share/package/${token}`, "_blank");
-                      } else if (id) {
-                        window.open(`/share/package/${id}`, "_blank");
+                  <div className="flex gap-2">
+                    <Button
+                      className={`flex-1 rounded-none ${
+                        isExpired || !canManagePayOffers
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-black hover:bg-gray-800 text-white"
+                      }`}
+                      disabled={isExpired || isDone || !canManagePayOffers}
+                      onClick={() => setConfirmingDonePkg(pkg)}
+                      title={
+                        !canManagePayOffers
+                          ? "You do not have permission to mark packages as done"
+                          : ""
                       }
-                    }}
-                  >
-                    Open Package
-                  </Button>
-                  {canManagePayOffers && (
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
+                    </Button>
                     <Button
                       variant="outline"
                       className="border border-gray-300 rounded-none"
+                      disabled={isDone || isExpired}
+                      onClick={() => {
+                        const token = pkg?.meta?.agency_package_token;
+                        const id = String(pkg?.id || "");
+                        if (token) {
+                          window.open(`/share/package/${token}`, "_blank");
+                        } else if (id) {
+                          window.open(`/share/package/${id}`, "_blank");
+                        }
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      Open Package
                     </Button>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
-          <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            No direct requests yet
-          </h3>
-          <p className="text-lg text-gray-600">
-            Agencies can send you direct licensing requests for specific
-            campaigns
-          </p>
-        </Card>
-      )}
-    </div>
+                    {canManagePayOffers && (
+                      <Button
+                        variant="outline"
+                        className="border border-gray-300 rounded-none"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
+            <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              No direct requests yet
+            </h3>
+            <p className="text-lg text-gray-600">
+              Agencies can send you direct licensing requests for specific
+              campaigns
+            </p>
+          </Card>
+        )}
+      </div>
     );
   };
 
@@ -6953,7 +6968,11 @@ export default function BrandDashboard() {
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
-                              title={!canManageJobs ? "You do not have permission to manage jobs" : ""}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -8751,7 +8770,9 @@ export default function BrandDashboard() {
               <div
                 className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
                   Base Subscription
                 </p>
                 <p
@@ -8763,14 +8784,18 @@ export default function BrandDashboard() {
                       : "$0"
                     : `$${brandBasePrice}`}
                 </p>
-                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
                   {brandSubscriptionStatus}
                 </p>
               </div>
               <div
                 className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
                   AI Studio Add-On
                 </p>
                 <p
@@ -8782,7 +8807,9 @@ export default function BrandDashboard() {
                       ? `$${BRAND_STUDIO_ADDON_PRICE}`
                       : "Inactive"}
                 </p>
-                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
                   {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
                     ? `Renews on ${brandStudioCurrentPeriodEnd}`
                     : brandStudioStatus}
@@ -8791,7 +8818,9 @@ export default function BrandDashboard() {
               <div
                 className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
                   Campaign Slots
                 </p>
                 <p
@@ -8801,7 +8830,9 @@ export default function BrandDashboard() {
                     ? "Unlimited"
                     : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
                 </p>
-                <p className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
                   {campaignMetrics.active_projects_count} active,{" "}
                   {campaignMetrics.pending_approvals_count} pending approval
                 </p>
@@ -8809,7 +8840,9 @@ export default function BrandDashboard() {
               <div
                 className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
               >
-                <p className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}>
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
                   Team Seats
                 </p>
                 <p
@@ -9367,7 +9400,7 @@ export default function BrandDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button 
+            <Button
               onClick={() => {
                 // Open support email
                 window.location.href = CONTACT_EMAIL_MAILTO;
@@ -11525,7 +11558,11 @@ export default function BrandDashboard() {
                               ? "text-gray-600 hover:bg-gray-100"
                               : "text-gray-400 cursor-not-allowed"
                         }`}
-                        title={!canViewInbox ? "You do not have permission to view the inbox" : ""}
+                        title={
+                          !canViewInbox
+                            ? "You do not have permission to view the inbox"
+                            : ""
+                        }
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
@@ -11775,7 +11812,11 @@ export default function BrandDashboard() {
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
-                              title={!canManageJobs ? "You do not have permission to manage jobs" : ""}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }

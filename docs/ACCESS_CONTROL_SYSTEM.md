@@ -47,8 +47,9 @@ Reviewer (Lowest - Read-Only)
 ### Role Definitions
 
 #### **Owner**
+
 - **Access Level**: Complete organization control
-- **Key Capabilities**: 
+- **Key Capabilities**:
   - All permissions (full access)
   - Transfer ownership to another member
   - Delete the organization
@@ -58,6 +59,7 @@ Reviewer (Lowest - Read-Only)
 - **Count**: Exactly 1 per organization
 
 #### **Admin**
+
 - **Access Level**: Full management access
 - **Key Capabilities**:
   - All operational permissions
@@ -72,6 +74,7 @@ Reviewer (Lowest - Read-Only)
 - **Count**: Multiple allowed
 
 #### **Project Manager**
+
 - **Access Level**: Operational management
 - **Key Capabilities**:
   - Create and manage campaigns
@@ -88,6 +91,7 @@ Reviewer (Lowest - Read-Only)
 - **Count**: Multiple allowed
 
 #### **Reviewer**
+
 - **Access Level**: Read-only access
 - **Key Capabilities**:
   - View all resources (deliverables, team, connections, clients, licenses, jobs, contracts, pay offers)
@@ -104,43 +108,43 @@ Reviewer (Lowest - Read-Only)
 
 ### All Permissions by Role
 
-| Permission | Owner | Admin | Project Manager | Reviewer |
-|------------|:-----:|:-----:|:---------------:|:--------:|
-| **Campaign Management** |||||
-| CreateCampaigns | ✅ | ✅ | ✅ | ❌ |
-| **Deliverable Management** |||||
-| ApproveDeliverables | ✅ | ✅ | ✅ | ❌ |
-| ViewDeliverables | ✅ | ✅ | ✅ | ✅ |
-| **Billing & Subscriptions** |||||
-| ManageBilling | ✅ | ✅ | ❌ | ❌ |
-| ManageSubscriptions | ✅ | ✅ | ❌ | ❌ |
-| ViewSubscriptions | ✅ | ✅ | ✅ | ❌ |
-| **Team Management** |||||
-| InviteTeamMembers | ✅ | ✅ | ❌ | ❌ |
-| UpdateMemberRoles | ✅ | ✅ | ❌ | ❌ |
-| ViewTeamMembers | ✅ | ✅ | ✅ | ✅ |
-| **Brand Connections** |||||
-| ViewBrandConnections | ✅ | ✅ | ✅ | ✅ |
-| ManageBrandConnections | ✅ | ✅ | ✅ | ❌ |
-| DisconnectBrandConnections | ✅ | ✅ | ✅ | ❌ |
-| **Client Management** |||||
-| ViewClients | ✅ | ✅ | ✅ | ✅ |
-| ManageClients | ✅ | ✅ | ✅ | ❌ |
-| **License Management** |||||
-| ViewLicenses | ✅ | ✅ | ✅ | ✅ |
-| ManageLicenses | ✅ | ✅ | ✅ | ❌ |
-| **Job Management** |||||
-| ManageJobs | ✅ | ✅ | ✅ | ❌ |
-| ViewJobs | ✅ | ✅ | ✅ | ✅ |
-| **Contract Management** |||||
-| ManageContracts | ✅ | ✅ | ✅ | ❌ |
-| ViewContracts | ✅ | ✅ | ✅ | ✅ |
-| **Payment Management** |||||
-| ManagePayOffers | ✅ | ✅ | ✅ | ❌ |
-| ViewPayOffers | ✅ | ✅ | ✅ | ✅ |
-| **Organization Control** |||||
-| TransferOwnership | ✅ | ❌ | ❌ | ❌ |
-| DeleteOrganisation | ✅ | ❌ | ❌ | ❌ |
+| Permission                  | Owner | Admin | Project Manager | Reviewer |
+| --------------------------- | :---: | :---: | :-------------: | :------: |
+| **Campaign Management**     |       |       |                 |          |
+| CreateCampaigns             |  ✅   |  ✅   |       ✅        |    ❌    |
+| **Deliverable Management**  |       |       |                 |          |
+| ApproveDeliverables         |  ✅   |  ✅   |       ✅        |    ❌    |
+| ViewDeliverables            |  ✅   |  ✅   |       ✅        |    ✅    |
+| **Billing & Subscriptions** |       |       |                 |          |
+| ManageBilling               |  ✅   |  ✅   |       ❌        |    ❌    |
+| ManageSubscriptions         |  ✅   |  ✅   |       ❌        |    ❌    |
+| ViewSubscriptions           |  ✅   |  ✅   |       ✅        |    ❌    |
+| **Team Management**         |       |       |                 |          |
+| InviteTeamMembers           |  ✅   |  ✅   |       ❌        |    ❌    |
+| UpdateMemberRoles           |  ✅   |  ✅   |       ❌        |    ❌    |
+| ViewTeamMembers             |  ✅   |  ✅   |       ✅        |    ✅    |
+| **Brand Connections**       |       |       |                 |          |
+| ViewBrandConnections        |  ✅   |  ✅   |       ✅        |    ✅    |
+| ManageBrandConnections      |  ✅   |  ✅   |       ✅        |    ❌    |
+| DisconnectBrandConnections  |  ✅   |  ✅   |       ✅        |    ❌    |
+| **Client Management**       |       |       |                 |          |
+| ViewClients                 |  ✅   |  ✅   |       ✅        |    ✅    |
+| ManageClients               |  ✅   |  ✅   |       ✅        |    ❌    |
+| **License Management**      |       |       |                 |          |
+| ViewLicenses                |  ✅   |  ✅   |       ✅        |    ✅    |
+| ManageLicenses              |  ✅   |  ✅   |       ✅        |    ❌    |
+| **Job Management**          |       |       |                 |          |
+| ManageJobs                  |  ✅   |  ✅   |       ✅        |    ❌    |
+| ViewJobs                    |  ✅   |  ✅   |       ✅        |    ✅    |
+| **Contract Management**     |       |       |                 |          |
+| ManageContracts             |  ✅   |  ✅   |       ✅        |    ❌    |
+| ViewContracts               |  ✅   |  ✅   |       ✅        |    ✅    |
+| **Payment Management**      |       |       |                 |          |
+| ManagePayOffers             |  ✅   |  ✅   |       ✅        |    ❌    |
+| ViewPayOffers               |  ✅   |  ✅   |       ✅        |    ✅    |
+| **Organization Control**    |       |       |                 |          |
+| TransferOwnership           |  ✅   |  ❌   |       ❌        |    ❌    |
+| DeleteOrganisation          |  ✅   |  ❌   |       ❌        |    ❌    |
 
 ---
 
@@ -148,25 +152,25 @@ Reviewer (Lowest - Read-Only)
 
 ### Brand Context
 
-| Permission | Brand Interpretation |
-|------------|---------------------|
-| ViewBrandConnections | View creator relationships and partnerships |
-| ManageBrandConnections | Manage creator relationships, send connection requests |
-| DisconnectBrandConnections | Disconnect from creators |
-| ManageClients | Manage brand's customers/end users |
-| ManageLicenses | Manage licensing requests from creators |
-| ManagePayOffers | Pay creator offers for campaigns |
+| Permission                 | Brand Interpretation                                   |
+| -------------------------- | ------------------------------------------------------ |
+| ViewBrandConnections       | View creator relationships and partnerships            |
+| ManageBrandConnections     | Manage creator relationships, send connection requests |
+| DisconnectBrandConnections | Disconnect from creators                               |
+| ManageClients              | Manage brand's customers/end users                     |
+| ManageLicenses             | Manage licensing requests from creators                |
+| ManagePayOffers            | Pay creator offers for campaigns                       |
 
 ### Agency Context
 
-| Permission | Agency Interpretation |
-|------------|----------------------|
-| ViewBrandConnections | View brand partnerships and collaborations |
-| ManageBrandConnections | Manage brand relationships, accept/decline partnerships |
-| DisconnectBrandConnections | Disconnect from brands |
-| ManageClients | Manage agency's clients (which are brands) |
-| ManageLicenses | Manage licensing for represented talents |
-| ManagePayOffers | Pay talent offers for campaigns |
+| Permission                 | Agency Interpretation                                   |
+| -------------------------- | ------------------------------------------------------- |
+| ViewBrandConnections       | View brand partnerships and collaborations              |
+| ManageBrandConnections     | Manage brand relationships, accept/decline partnerships |
+| DisconnectBrandConnections | Disconnect from brands                                  |
+| ManageClients              | Manage agency's clients (which are brands)              |
+| ManageLicenses             | Manage licensing for represented talents                |
+| ManagePayOffers            | Pay talent offers for campaigns                         |
 
 ---
 
@@ -175,6 +179,7 @@ Reviewer (Lowest - Read-Only)
 ### 1. **View Permissions** (Read-Only Access)
 
 Available to **Reviewer** role and above:
+
 - `ViewDeliverables` - View campaign deliverables
 - `ViewTeamMembers` - View team member list
 - `ViewBrandConnections` - View organization connections
@@ -188,6 +193,7 @@ Available to **Reviewer** role and above:
 ### 2. **Manage Permissions** (Operational Access)
 
 Available to **Project Manager** role and above:
+
 - `CreateCampaigns` - Create and edit campaigns
 - `ApproveDeliverables` - Approve/reject deliverables
 - `ManageBrandConnections` - Manage connections
@@ -201,6 +207,7 @@ Available to **Project Manager** role and above:
 ### 3. **Administrative Permissions**
 
 Available to **Admin** role and above:
+
 - `ManageBilling` - Manage billing and payment methods
 - `ManageSubscriptions` - Upgrade/downgrade plans
 - `InviteTeamMembers` - Invite new team members
@@ -209,6 +216,7 @@ Available to **Admin** role and above:
 ### 4. **Ownership Permissions**
 
 Available to **Owner** only:
+
 - `TransferOwnership` - Transfer ownership to another member
 - `DeleteOrganisation` - Permanently delete the organization
 
@@ -219,6 +227,7 @@ Available to **Owner** only:
 ### Backend (Rust)
 
 #### Permission Definition
+
 File: `likelee-server/src/team/permissions.rs`
 
 ```rust
@@ -260,6 +269,7 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
 ```
 
 #### Permission Checking
+
 File: `likelee-server/src/team/access.rs`
 
 ```rust
@@ -290,7 +300,7 @@ pub async fn approve_deliverable(
 ) -> Result<Json<Deliverable>, (StatusCode, String)> {
     // Check permission
     let _access = team::require_brand_permission(&state, &user, Permission::ApproveDeliverables).await?;
-    
+
     // Proceed with approval logic
     // ...
 }
@@ -299,18 +309,19 @@ pub async fn approve_deliverable(
 ### Frontend (TypeScript/React)
 
 #### Permission Hook
+
 File: `likelee-ui/src/features/team/useTeamAccess.ts`
 
 ```typescript
 export function useTeamAccess(organizationType?: "agency" | "brand") {
   const { profile } = useAuth();
   const [context, setContext] = useState<TeamAccessContext | null>(null);
-  
+
   const hasPermission = useCallback(
     (permission: string) => Boolean(context?.permissions?.includes(permission)),
-    [context?.permissions]
+    [context?.permissions],
   );
-  
+
   return { hasPermission, context, loading, error };
 }
 ```
@@ -323,11 +334,11 @@ import { useTeamAccess } from "@/features/team/useTeamAccess";
 function DeliverableApprovalButton({ deliverableId }: { deliverableId: string }) {
   const { hasPermission } = useTeamAccess("brand");
   const canApprove = hasPermission("approve_deliverables");
-  
+
   if (!canApprove) {
     return null;
   }
-  
+
   return (
     <Button onClick={() => approveDeliverable(deliverableId)}>
       Approve
@@ -363,22 +374,27 @@ const canManageBilling = hasPermission("manage_billing");
 ## Security Best Practices
 
 ### 1. **Least Privilege Principle**
+
 - Users should have the minimum permissions necessary for their role
 - Reviewers cannot approve, edit, or manage anything
 - Project Managers cannot manage billing or team members
 
 ### 2. **Defense in Depth**
+
 - Backend enforces permissions via `require_*_permission()` functions
 - Frontend gates UI elements based on permissions
 - Database RLS policies provide additional layer of security
 
 ### 3. **Audit Logging**
+
 All team management actions are logged:
+
 - Role changes
 - Team invitations
 - Permission-related actions
 
 ### 4. **Cache Consistency**
+
 - Permissions are cached for performance
 - Cache is invalidated on role changes
 - TTL ensures eventual consistency
@@ -390,7 +406,8 @@ All team management actions are logged:
 ### Checking Multiple Permissions
 
 ```typescript
-const canManage = hasPermission("manage_jobs") && hasPermission("manage_contracts");
+const canManage =
+  hasPermission("manage_jobs") && hasPermission("manage_contracts");
 const canView = hasPermission("view_jobs") || hasPermission("view_contracts");
 ```
 
@@ -419,7 +436,9 @@ switch (role) {
 const navigationItems = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
   { id: "campaigns", label: "Campaigns", icon: Target },
-  ...(canViewSubscriptions ? [{ id: "billing", label: "Billing", icon: CreditCard }] : []),
+  ...(canViewSubscriptions
+    ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+    : []),
 ];
 ```
 
@@ -439,16 +458,16 @@ cargo test --lib team::preservation_tests
 
 ```javascript
 // Check current user's permissions
-fetch('/api/team/context?organization_type=brand', {
-  headers: { 
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
+fetch("/api/team/context?organization_type=brand", {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
 })
-.then(r => r.json())
-.then(data => {
-  console.log('Role:', data.membership_role);
-  console.log('Permissions:', data.permissions);
-});
+  .then((r) => r.json())
+  .then((data) => {
+    console.log("Role:", data.membership_role);
+    console.log("Permissions:", data.permissions);
+  });
 ```
 
 ---
@@ -463,6 +482,7 @@ fetch('/api/team/context?organization_type=brand', {
 ## Change History
 
 ### 2026-04-14
+
 - **Added**: `ManageLicenses` permission to Project Manager role
 - **Added**: `DisconnectBrandConnections` permission to Project Manager role
 - **Removed**: `ViewSubscriptions` permission from Reviewer role

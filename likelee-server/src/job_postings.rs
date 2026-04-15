@@ -183,8 +183,12 @@ pub async fn update_job(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    require_brand_permission(&state, &user, crate::team::permissions::Permission::ManageJobs)
-        .await?;
+    require_brand_permission(
+        &state,
+        &user,
+        crate::team::permissions::Permission::ManageJobs,
+    )
+    .await?;
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
@@ -436,8 +440,12 @@ pub async fn create_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    require_brand_permission(&state, &user, crate::team::permissions::Permission::ManageJobs)
-        .await?;
+    require_brand_permission(
+        &state,
+        &user,
+        crate::team::permissions::Permission::ManageJobs,
+    )
+    .await?;
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let status = payload

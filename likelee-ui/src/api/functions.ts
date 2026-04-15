@@ -178,7 +178,10 @@ export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
   base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
 
 export const verifyBrandStudioAddonCheckout = (data: { session_id: string }) =>
-  base44Client.post<{ studio_addon_active: boolean }>(`/brand/billing/studio-addon/verify`, data);
+  base44Client.post<{ studio_addon_active: boolean }>(
+    `/brand/billing/studio-addon/verify`,
+    data,
+  );
 
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});

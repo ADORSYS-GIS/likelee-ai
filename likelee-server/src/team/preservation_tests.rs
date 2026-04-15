@@ -13,11 +13,11 @@
 #[cfg(test)]
 mod tests {
     use super::super::permissions::{has_permission, permissions_for_role, Permission, TeamRole};
-    use super::super::types::{MembershipRecord, OrganizationType};
     use super::super::support::{
-        ensure_permission, permissions_for_membership, parse_assignable_role,
-        map_membership_record, normalize_email, hash_token,
+        ensure_permission, hash_token, map_membership_record, normalize_email,
+        parse_assignable_role, permissions_for_membership,
     };
+    use super::super::types::{MembershipRecord, OrganizationType};
     use serde_json::json;
 
     // =========================================================================
@@ -54,9 +54,18 @@ mod tests {
         assert_eq!(membership.email, "test@example.com");
         assert_eq!(membership.role, "admin");
         assert_eq!(membership.status, "active");
-        assert_eq!(membership.created_at, Some("2024-01-01T00:00:00Z".to_string()));
-        assert_eq!(membership.updated_at, Some("2024-01-02T00:00:00Z".to_string()));
-        assert_eq!(membership.last_role_changed_at, Some("2024-01-01T12:00:00Z".to_string()));
+        assert_eq!(
+            membership.created_at,
+            Some("2024-01-01T00:00:00Z".to_string())
+        );
+        assert_eq!(
+            membership.updated_at,
+            Some("2024-01-02T00:00:00Z".to_string())
+        );
+        assert_eq!(
+            membership.last_role_changed_at,
+            Some("2024-01-01T12:00:00Z".to_string())
+        );
     }
 
     /// Test that membership records handle optional fields correctly.
@@ -131,8 +140,14 @@ mod tests {
     #[test]
     fn test_organization_type_parsing_is_correct() {
         // Property: Organization types must parse correctly for brand and agency
-        assert_eq!(OrganizationType::parse("brand"), Some(OrganizationType::Brand));
-        assert_eq!(OrganizationType::parse("agency"), Some(OrganizationType::Agency));
+        assert_eq!(
+            OrganizationType::parse("brand"),
+            Some(OrganizationType::Brand)
+        );
+        assert_eq!(
+            OrganizationType::parse("agency"),
+            Some(OrganizationType::Agency)
+        );
         assert_eq!(OrganizationType::parse("invalid"), None);
         assert_eq!(OrganizationType::parse(""), None);
     }
@@ -198,7 +213,10 @@ mod tests {
     fn test_team_role_parsing_is_correct() {
         assert_eq!(TeamRole::parse("owner"), Some(TeamRole::Owner));
         assert_eq!(TeamRole::parse("admin"), Some(TeamRole::Admin));
-        assert_eq!(TeamRole::parse("project_manager"), Some(TeamRole::ProjectManager));
+        assert_eq!(
+            TeamRole::parse("project_manager"),
+            Some(TeamRole::ProjectManager)
+        );
         assert_eq!(TeamRole::parse("reviewer"), Some(TeamRole::Reviewer));
         assert_eq!(TeamRole::parse("invalid"), None);
         assert_eq!(TeamRole::parse(""), None);
@@ -217,7 +235,7 @@ mod tests {
     #[test]
     fn test_owner_has_all_permissions() {
         let permissions = permissions_for_role(TeamRole::Owner);
-        
+
         assert!(permissions.contains(&Permission::CreateCampaigns));
         assert!(permissions.contains(&Permission::ApproveDeliverables));
         assert!(permissions.contains(&Permission::ViewDeliverables));
@@ -233,7 +251,7 @@ mod tests {
     #[test]
     fn test_admin_has_appropriate_permissions() {
         let permissions = permissions_for_role(TeamRole::Admin);
-        
+
         assert!(permissions.contains(&Permission::CreateCampaigns));
         assert!(permissions.contains(&Permission::InviteTeamMembers));
         assert!(permissions.contains(&Permission::UpdateMemberRoles));
@@ -246,7 +264,7 @@ mod tests {
     #[test]
     fn test_project_manager_has_appropriate_permissions() {
         let permissions = permissions_for_role(TeamRole::ProjectManager);
-        
+
         assert!(permissions.contains(&Permission::CreateCampaigns));
         assert!(permissions.contains(&Permission::ApproveDeliverables));
         assert!(permissions.contains(&Permission::ViewTeamMembers));
@@ -259,7 +277,7 @@ mod tests {
     #[test]
     fn test_reviewer_has_read_only_permissions() {
         let permissions = permissions_for_role(TeamRole::Reviewer);
-        
+
         assert!(permissions.contains(&Permission::ViewDeliverables));
         assert!(permissions.contains(&Permission::ViewTeamMembers));
         assert!(!permissions.contains(&Permission::CreateCampaigns));
@@ -271,20 +289,44 @@ mod tests {
     #[test]
     fn test_has_permission_enforces_correctly() {
         // Owner can do everything
-        assert!(has_permission(TeamRole::Owner, Permission::DeleteOrganisation));
-        assert!(has_permission(TeamRole::Owner, Permission::TransferOwnership));
-        
+        assert!(has_permission(
+            TeamRole::Owner,
+            Permission::DeleteOrganisation
+        ));
+        assert!(has_permission(
+            TeamRole::Owner,
+            Permission::TransferOwnership
+        ));
+
         // Admin cannot transfer ownership or delete org
-        assert!(!has_permission(TeamRole::Admin, Permission::TransferOwnership));
-        assert!(!has_permission(TeamRole::Admin, Permission::DeleteOrganisation));
-        
+        assert!(!has_permission(
+            TeamRole::Admin,
+            Permission::TransferOwnership
+        ));
+        assert!(!has_permission(
+            TeamRole::Admin,
+            Permission::DeleteOrganisation
+        ));
+
         // ProjectManager cannot manage team
-        assert!(!has_permission(TeamRole::ProjectManager, Permission::InviteTeamMembers));
-        assert!(!has_permission(TeamRole::ProjectManager, Permission::UpdateMemberRoles));
-        
+        assert!(!has_permission(
+            TeamRole::ProjectManager,
+            Permission::InviteTeamMembers
+        ));
+        assert!(!has_permission(
+            TeamRole::ProjectManager,
+            Permission::UpdateMemberRoles
+        ));
+
         // Reviewer has limited permissions
-        assert!(has_permission(TeamRole::Reviewer, Permission::ViewDeliverables));
-        assert!(!has_permission(TeamRole::Reviewer, Permission::ApproveDeliverables));
+        assert!(has_permission(
+            TeamRole::Reviewer,
+            Permission::ViewDeliverables
+        ));
+        assert!(!has_permission(
+            TeamRole::Reviewer,
+            Permission::ApproveDeliverables
+        ));
     }
 
     /// Test that ensure_permission correctly grants access for authorized roles.
@@ -329,7 +371,7 @@ mod tests {
         assert!(ensure_permission(&reviewer_membership, Permission::InviteTeamMembers).is_err());
         assert!(ensure_permission(&reviewer_membership, Permission::UpdateMemberRoles).is_err());
         assert!(ensure_permission(&reviewer_membership, Permission::ManageBilling).is_err());
-        
+
         // Reviewer should have read permissions
         assert!(ensure_permission(&reviewer_membership, Permission::ViewTeamMembers).is_ok());
         assert!(ensure_permission(&reviewer_membership, Permission::ViewDeliverables).is_ok());
@@ -351,8 +393,9 @@ mod tests {
             last_role_changed_at: None,
         };
 
-        let permissions = permissions_for_membership(&admin_membership).expect("Failed to get permissions");
-        
+        let permissions =
+            permissions_for_membership(&admin_membership).expect("Failed to get permissions");
+
         assert!(permissions.contains(&"create_campaigns".to_string()));
         assert!(permissions.contains(&"invite_team_members".to_string()));
         assert!(permissions.contains(&"update_member_roles".to_string()));
@@ -383,9 +426,15 @@ mod tests {
     #[test]
     fn test_normalize_email_handles_various_inputs() {
         // Valid emails
-        assert_eq!(normalize_email("TEST@EXAMPLE.COM").unwrap(), "test@example.com");
-        assert_eq!(normalize_email("  user@domain.com  ").unwrap(), "user@domain.com");
-        
+        assert_eq!(
+            normalize_email("TEST@EXAMPLE.COM").unwrap(),
+            "test@example.com"
+        );
+        assert_eq!(
+            normalize_email("  user@domain.com  ").unwrap(),
+            "user@domain.com"
+        );
+
         // Invalid emails
         assert!(normalize_email("").is_err());
         assert!(normalize_email("invalid").is_err());
@@ -398,7 +447,7 @@ mod tests {
         let token = "test-token-123";
         let hash1 = hash_token(token);
         let hash2 = hash_token(token);
-        
+
         assert_eq!(hash1, hash2);
         assert!(!hash1.is_empty());
         assert_ne!(hash1, token); // Hash should be different from input
@@ -409,7 +458,7 @@ mod tests {
     fn test_hash_token_is_unique() {
         let hash1 = hash_token("token-1");
         let hash2 = hash_token("token-2");
-        
+
         assert_ne!(hash1, hash2);
     }
 
@@ -421,14 +470,26 @@ mod tests {
     #[test]
     fn test_permission_as_str_is_correct() {
         assert_eq!(Permission::CreateCampaigns.as_str(), "create_campaigns");
-        assert_eq!(Permission::ApproveDeliverables.as_str(), "approve_deliverables");
+        assert_eq!(
+            Permission::ApproveDeliverables.as_str(),
+            "approve_deliverables"
+        );
         assert_eq!(Permission::ViewDeliverables.as_str(), "view_deliverables");
         assert_eq!(Permission::ManageBilling.as_str(), "manage_billing");
-        assert_eq!(Permission::InviteTeamMembers.as_str(), "invite_team_members");
-        assert_eq!(Permission::UpdateMemberRoles.as_str(), "update_member_roles");
+        assert_eq!(
+            Permission::InviteTeamMembers.as_str(),
+            "invite_team_members"
+        );
+        assert_eq!(
+            Permission::UpdateMemberRoles.as_str(),
+            "update_member_roles"
+        );
         assert_eq!(Permission::ViewTeamMembers.as_str(), "view_team_members");
         assert_eq!(Permission::TransferOwnership.as_str(), "transfer_ownership");
-        assert_eq!(Permission::DeleteOrganisation.as_str(), "delete_organisation");
+        assert_eq!(
+            Permission::DeleteOrganisation.as_str(),
+            "delete_organisation"
+        );
     }
 
     // =========================================================================
@@ -452,14 +513,22 @@ mod tests {
     /// Test that all roles have at least view permissions.
     #[test]
     fn test_all_roles_have_view_permissions() {
-        for role in [TeamRole::Owner, TeamRole::Admin, TeamRole::ProjectManager, TeamRole::Reviewer] {
+        for role in [
+            TeamRole::Owner,
+            TeamRole::Admin,
+            TeamRole::ProjectManager,
+            TeamRole::Reviewer,
+        ] {
             let permissions = permissions_for_role(role);
-            assert!(permissions.contains(&Permission::ViewDeliverables) || 
-                    permissions.contains(&Permission::ViewTeamMembers) ||
-                    permissions.contains(&Permission::ViewBrandConnections) ||
-                    permissions.contains(&Permission::ViewClients) ||
-                    permissions.contains(&Permission::ViewLicenses),
-                "Role {:?} should have at least one view permission", role);
+            assert!(
+                permissions.contains(&Permission::ViewDeliverables)
+                    || permissions.contains(&Permission::ViewTeamMembers)
+                    || permissions.contains(&Permission::ViewBrandConnections)
+                    || permissions.contains(&Permission::ViewClients)
+                    || permissions.contains(&Permission::ViewLicenses),
+                "Role {:?} should have at least one view permission",
+                role
+            );
         }
     }
 }
