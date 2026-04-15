@@ -136,7 +136,7 @@ pub fn sanitize_file_name(file_name: &str) -> String {
         .collect();
 
     while sanitized.contains("..") {
-        sanitized = sanitized.replace("..", "_.");
+        sanitized = sanitized.replace("..", ".");
     }
 
     sanitized = sanitized.trim_start_matches('.').to_string();
@@ -463,14 +463,14 @@ mod tests {
     fn test_sanitize_file_name_special_chars() {
         assert_eq!(sanitize_file_name("file name.txt"), "file_name.txt");
         assert_eq!(sanitize_file_name("file@#$%.txt"), "file____.txt");
-        assert_eq!(sanitize_file_name("../../etc/passwd"), "_.etc_passwd");
+        assert_eq!(sanitize_file_name("../../etc/passwd"), "_._etc_passwd");
     }
 
     #[test]
     fn test_sanitize_file_name_leading_dots() {
         assert_eq!(sanitize_file_name(".hidden"), "hidden");
         assert_eq!(sanitize_file_name("..double"), "double");
-        assert_eq!(sanitize_file_name("...triple"), "_.triple");
+        assert_eq!(sanitize_file_name("...triple"), "triple");
     }
 
     #[test]

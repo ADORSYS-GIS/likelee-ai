@@ -1030,7 +1030,7 @@ mod tests {
             ("recording.webm", "recording.webm"),
             ("my recording.wav", "my_recording.wav"),
             ("voice@sample#1.ogg", "voice_sample_1.ogg"),
-            ("../../../etc/passwd", "_.etc_passwd"),
+            ("../../../etc/passwd", "_._._etc_passwd"),
             ("", "upload.bin"),
             ("recording with spaces.mp4", "recording_with_spaces.mp4"),
         ];
