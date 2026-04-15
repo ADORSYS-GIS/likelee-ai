@@ -44,7 +44,6 @@ jobs:
         # This runs the "test" script from your package.json
         # Continue even if no test files are found
         run: npm run test
-        continue-on-error: true
-
+    
       - name: Run Security Audit
         run: node scripts/audit-allowlist.mjs
