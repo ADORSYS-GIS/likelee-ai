@@ -2,6 +2,11 @@ use crate::{
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
+    storage::{
+        canonical_object_path, delete_object, download_object, insert_asset_record,
+        sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
+        StorageContextType, StorageOwnerType, StorageVisibility,
+    },
     team::{self, permissions::Permission},
 };
 use axum::{
@@ -258,48 +263,15 @@ pub async fn upload_deliverable(
 
     // Upload to storage
     let fname = file_name.unwrap_or_else(|| "deliverable.bin".to_string());
-    let sanitized: String = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "campaigns/booking-deliverables/{}/{}_{sanitized}",
-        campaign_id,
+    let size_bytes = bytes.len() as i64;
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/booking-campaigns/{campaign_id}/deliverables"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
+    let uploaded =
+        upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let insert_payload = json!({
         "booking_campaign_id": campaign_id,
@@ -307,8 +279,8 @@ pub async fn upload_deliverable(
         "agency_id": agency_id,
         "creator_id": creator_id,
         "asset_url": path,
-        "storage_path": path,
-        "storage_bucket": bucket,
+        "storage_path": uploaded.path,
+        "storage_bucket": uploaded.bucket,
         "asset_type": asset_type,
         "caption": caption.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "status": "draft",
@@ -333,6 +305,38 @@ pub async fn upload_deliverable(
 
     let created: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(json!({}));
+    if let Some(deliverable_id) = created.get("id").and_then(|v| v.as_str()).filter(|s| !s.is_empty())
+    {
+        let owner_type = if creator_id.is_some() {
+            StorageOwnerType::Creator
+        } else {
+            StorageOwnerType::Agency
+        };
+        let owner_id = creator_id.clone().unwrap_or_else(|| agency_id.clone());
+        let record = StorageAssetRecord {
+            owner_type,
+            owner_id,
+            context_type: StorageContextType::BookingDeliverable,
+            context_id: Some(campaign_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert_payload
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("booking_deliverables".to_string()),
+            source_id: Some(deliverable_id.to_string()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: creator_id.is_none(),
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            error!(deliverable_id = %deliverable_id, error = %err.1, "failed to mirror booking deliverable into storage_assets");
+        }
+    }
 
     info!(
         campaign_id = %campaign_id,
@@ -507,32 +511,64 @@ pub async fn delete_deliverable(
         deliverable_id,
     }): Path<DeliverablePath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut req = state
+    let mut select_req = state
         .pg
         .from("booking_deliverables")
-        .delete()
+        .select("id,storage_bucket,storage_path")
         .eq("id", &deliverable_id)
         .eq("booking_campaign_id", &campaign_id);
 
     if user.role == "agency" {
         let _ = verify_agency_campaign(&state, &user, &campaign_id).await?;
     } else if is_creator_like(&user.role) {
-        req = req.eq("creator_id", &user.id).eq("status", "draft");
+        select_req = select_req.eq("creator_id", &user.id).eq("status", "draft");
     } else {
         return Err((StatusCode::FORBIDDEN, "Forbidden".into()));
     }
 
-    let resp = req
+    let lookup_resp = select_req
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !lookup_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            lookup_resp.status().as_u16(),
+            lookup_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let rows: Vec<serde_json::Value> =
+        serde_json::from_str(&lookup_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let row = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "Not found".into()))?;
+    if let (Some(bucket), Some(path)) = (
+        row.get("storage_bucket").and_then(|v| v.as_str()),
+        row.get("storage_path").and_then(|v| v.as_str()),
+    ) {
+        delete_object(&state, bucket, path).await?;
+    }
 
+    let mut delete_req = state
+        .pg
+        .from("booking_deliverables")
+        .delete()
+        .eq("id", &deliverable_id)
+        .eq("booking_campaign_id", &campaign_id);
+    if is_creator_like(&user.role) {
+        delete_req = delete_req.eq("creator_id", &user.id).eq("status", "draft");
+    }
+    let resp = delete_req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !resp.status().is_success() {
         return Err(sanitize_db_error(
             resp.status().as_u16(),
             resp.text().await.unwrap_or_default(),
         ));
     }
+    let _ = soft_delete_asset_record(&state, "booking_deliverables", &deliverable_id).await;
 
     Ok(Json(json!({ "deleted": true })))
 }
@@ -619,40 +655,24 @@ pub async fn serve_deliverable_file(
         .unwrap_or(&state.supabase_bucket_private)
         .to_string();
 
-    let file_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, storage_path
-    );
-
-    let http = reqwest::Client::new();
-    match http
-        .get(&file_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-    {
-        Ok(upstream) if upstream.status().is_success() => {
-            let content_type = upstream
-                .headers()
+    match download_object(&state, &bucket, &storage_path).await {
+        Ok(downloaded) => {
+            let content_type = downloaded
+                .headers
                 .get("content-type")
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("application/octet-stream")
                 .to_string();
-            let body = upstream.bytes().await.unwrap_or_default();
             (
                 StatusCode::OK,
                 [(
                     "content-type",
                     Box::leak(content_type.into_boxed_str()) as &'static str,
                 )],
-                body,
+                downloaded.bytes,
             )
         }
-        _ => (
+        Err(_) => (
             StatusCode::BAD_GATEWAY,
             [("content-type", "application/json")],
             axum::body::Bytes::from(r#"{"error":"File fetch failed"}"#),
