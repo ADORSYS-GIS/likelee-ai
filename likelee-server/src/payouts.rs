@@ -1576,11 +1576,16 @@ pub async fn stripe_webhook(
 
             if billing_domain == "brand" {
                 let brand_id = obj
+
+            if billing_domain == "creator" {
+                let creator_id = obj
                     .get("client_reference_id")
                     .and_then(|v| v.as_str())
                     .or_else(|| {
                         obj.get("metadata")
                             .and_then(|m| m.get("brand_id"))
+
+                            .and_then(|m| m.get("creator_id"))
                             .and_then(|v| v.as_str())
                     })
                     .unwrap_or("")
@@ -1600,6 +1605,19 @@ pub async fn stripe_webhook(
                     let _ = sync_brand_subscription_from_stripe(
                         &state,
                         &brand_id,
+
+                let previous_subscription_id = obj
+                    .get("metadata")
+                    .and_then(|m| m.get("previous_subscription_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+
+                if !creator_id.is_empty() && !subscription_id.is_empty() {
+                    let _ = sync_creator_subscription_from_stripe(
+                        &state,
+                        &creator_id,
                         &subscription_id,
                         if customer_id.is_empty() {
                             None
@@ -1608,11 +1626,57 @@ pub async fn stripe_webhook(
                         },
                     )
                     .await;
+=======
+
+                    if !previous_subscription_id.is_empty()
+                        && previous_subscription_id != subscription_id
+                    {
+                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                        match previous_subscription_id.parse::<stripe_sdk::SubscriptionId>() {
+                            Ok(prev_id) => {
+                                match stripe_sdk::Subscription::cancel(
+                                    &client,
+                                    &prev_id,
+                                    stripe_sdk::CancelSubscription::default(),
+                                )
+                                .await
+                                {
+                                    Ok(_) => {
+                                        tracing::info!(
+                                            creator_id = %creator_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            new_subscription_id = %subscription_id,
+                                            "cancelled previous creator subscription after successful checkout"
+                                        );
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!(
+                                            creator_id = %creator_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            error = %e,
+                                            "failed to cancel previous creator subscription after checkout (best-effort)"
+                                        );
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                tracing::warn!(
+                                    creator_id = %creator_id,
+                                    previous_subscription_id = %previous_subscription_id,
+                                    "could not parse previous subscription id for cancellation"
+                                );
+                            }
+                        }
+                    }
+>>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
                 }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
+<<<<<<< HEAD
             // Fallback routing for sessions missing billing_domain metadata.
+
+            // Check if this is a payment link checkout
             let md = obj.get("metadata").cloned().unwrap_or(json!({}));
             let agency_id_from_meta = md
                 .get("agency_id")
@@ -1759,6 +1823,8 @@ pub async fn stripe_webhook(
             }
 
             if billing_domain == "brand" {
+
+            if billing_domain == "creator" {
                 let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
                 let customer_id = obj
                     .get("customer")
@@ -1768,6 +1834,10 @@ pub async fn stripe_webhook(
                 let brand_id = obj
                     .get("metadata")
                     .and_then(|m| m.get("brand_id"))
+
+                let creator_id = obj
+                    .get("metadata")
+                    .and_then(|m| m.get("creator_id"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
@@ -1776,6 +1846,11 @@ pub async fn stripe_webhook(
                     let _ = sync_brand_subscription_from_stripe(
                         &state,
                         &brand_id,
+
+                if !creator_id.is_empty() && !subscription_id.trim().is_empty() {
+                    let _ = sync_creator_subscription_from_stripe(
+                        &state,
+                        &creator_id,
                         subscription_id,
                         if customer_id.is_empty() {
                             None
@@ -1862,6 +1937,8 @@ pub async fn stripe_webhook(
                 )
                 .await;
                 let _ = handle_brand_invoice_paid(
+
+                let _ = sync_creator_subscription_by_subscription_id(
                     &state,
                     &subscription_id,
                     if customer_id.is_empty() {
@@ -1874,6 +1951,8 @@ pub async fn stripe_webhook(
                     } else {
                         Some(invoice_id.as_str())
                     },
+
+>>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
                 )
                 .await;
             }
@@ -3699,6 +3778,21 @@ fn stripe_subscription_to_plan_tier_from_price_id(
     state: &AppState,
     price_id: &str,
 ) -> Option<&'static str> {
+    if (!state.stripe_creator_pro_price_id.trim().is_empty()
+        && price_id == state.stripe_creator_pro_price_id)
+        || (!state.stripe_creator_pro_annual_price_id.trim().is_empty()
+            && price_id == state.stripe_creator_pro_annual_price_id)
+    {
+        return Some("pro");
+    }
+    if (!state.stripe_creator_basic_price_id.trim().is_empty()
+        && price_id == state.stripe_creator_basic_price_id)
+        || (!state.stripe_creator_basic_annual_price_id.trim().is_empty()
+            && price_id == state.stripe_creator_basic_annual_price_id)
+    {
+        return Some("basic");
+    }
+
     // Legacy: base-plan pricing
     if !state.stripe_agency_pro_base_price_id.trim().is_empty()
         && price_id == state.stripe_agency_pro_base_price_id
@@ -3719,6 +3813,17 @@ fn stripe_subscription_to_plan_tier_from_price_id(
         return Some("basic");
     }
     None
+}
+
+fn stripe_subscription_to_interval_from_price_id(state: &AppState, price_id: &str) -> &'static str {
+    if (!state.stripe_creator_pro_annual_price_id.trim().is_empty()
+        && price_id == state.stripe_creator_pro_annual_price_id)
+        || (!state.stripe_creator_basic_annual_price_id.trim().is_empty()
+            && price_id == state.stripe_creator_basic_annual_price_id)
+    {
+        return "year";
+    }
+    "month"
 }
 
 fn stripe_subscription_to_plan_tier_from_metadata(
@@ -4296,6 +4401,7 @@ pub(crate) async fn sync_agency_subscription_from_stripe(
     Ok(())
 }
 
+<<<<<<< HEAD
 fn brand_subscription_to_plan_tier_from_price_id(
     state: &AppState,
     price_id: &str,
@@ -4399,6 +4505,29 @@ async fn sync_brand_subscription_from_subscription(
     };
 
     let price_id = sub
+=======
+async fn sync_creator_subscription_by_subscription_id(
+    state: &AppState,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+    let creator_id = sub.metadata.get("creator_id").cloned().unwrap_or_default();
+    if creator_id.trim().is_empty() {
+        return Ok(());
+    }
+    sync_creator_subscription_from_stripe(state, creator_id.trim(), subscription_id, customer_id)
+        .await
+}
+
+async fn sync_creator_subscription_from_stripe(
+    state: &AppState,
+    creator_id: &str,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+    let _price_id = sub
         .items
         .data
         .first()
@@ -4406,16 +4535,75 @@ async fn sync_brand_subscription_from_subscription(
         .map(|p| p.id.to_string())
         .unwrap_or_default();
     let status = sub.status.to_string();
+=======
+    let (plan_tier, plan_interval) = match (
+        stripe_subscription_to_plan_tier(state, &sub),
+        status.as_str(),
+    ) {
+        (Some(t), "active") | (Some(t), "trialing") => {
+            let interval = sub
+                .items
+                .data
+                .first()
+                .and_then(|i| i.price.as_ref())
+                .map(|p| stripe_subscription_to_interval_from_price_id(state, p.id.as_str()))
+                .unwrap_or("month");
+            (t, interval)
+        }
+        _ => ("free", "month"),
+    };
+
+>>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
     let cancel_at_period_end = sub.cancel_at_period_end;
     let current_period_end =
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
+<<<<<<< HEAD
     let trial_end = sub
         .trial_end
         .and_then(|ts| chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0))
         .map(|dt| dt.to_rfc3339());
 
     let mut update = serde_json::Map::new();
+
+
+    let mut update = serde_json::Map::new();
+
+    if status == "trialing" {
+        let ts = chrono::DateTime::<chrono::Utc>::from_timestamp(sub.start_date, 0)
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+        update.insert("trial_started_at".into(), json!(ts));
+
+        match plan_tier {
+            "basic" => {
+                update.insert("trial_basic_started_at".into(), json!(ts));
+            }
+            "pro" => {
+                update.insert("trial_pro_started_at".into(), json!(ts));
+            }
+            _ => {}
+        }
+    } else {
+        update.insert("trial_started_at".into(), json!(null));
+        update.insert("trial_basic_started_at".into(), json!(null));
+        update.insert("trial_pro_started_at".into(), json!(null));
+    }
+
+    update.insert("plan_tier".into(), json!(plan_tier));
+    update.insert("plan_interval".into(), json!(plan_interval));
+    update.insert(
+        "stripe_cancel_at_period_end".into(),
+        json!(cancel_at_period_end),
+    );
+    if let Some(cpe) = current_period_end {
+        update.insert("stripe_current_period_end".into(), json!(cpe));
+    }
+    update.insert("stripe_subscription_id".into(), json!(subscription_id));
+    update.insert(
+        "plan_updated_at".into(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
     if let Some(cust) = customer_id {
         if !cust.trim().is_empty() {
             update.insert("stripe_customer_id".into(), json!(cust));
@@ -4496,6 +4684,11 @@ async fn sync_brand_subscription_from_subscription(
         .pg
         .from("brands")
         .eq("id", brand_id)
+
+    let _ = state
+        .pg
+        .from("creators")
+        .eq("id", creator_id)
         .update(serde_json::Value::Object(update).to_string())
         .execute()
         .await;
@@ -4603,6 +4796,30 @@ async fn handle_brand_invoice_paid(
         &sub,
     )
     .await
+}
+
+
+    let mut event_row = serde_json::Map::new();
+    event_row.insert("creator_id".into(), json!(creator_id));
+    event_row.insert("provider".into(), json!("stripe"));
+    event_row.insert("stripe_subscription_id".into(), json!(subscription_id));
+    event_row.insert(
+        "stripe_customer_id".into(),
+        json!(customer_id.unwrap_or("")),
+    );
+    event_row.insert("event_type".into(), json!("subscription_sync"));
+    event_row.insert("plan_tier".into(), json!(plan_tier));
+    event_row.insert("subscription_status".into(), json!(status));
+    event_row.insert("payload_json".into(), json!(sub));
+    let _ = state
+        .pg
+        .from("creator_subscription_events")
+        .insert(serde_json::Value::Object(event_row).to_string())
+        .execute()
+        .await;
+
+    info!(creator_id = %creator_id, plan_tier = %plan_tier, subscription_id = %subscription_id, "synced creator plan tier from stripe subscription");
+    Ok(())
 }
 
 #[derive(Deserialize)]

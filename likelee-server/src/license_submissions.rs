@@ -1025,6 +1025,38 @@ pub async fn finalize(
         "Failed to update submission (empty response)".to_string(),
     ))?;
 
+    // Send notification to brand that contract is ready
+    if let Some(brand_id) = submission.client_id.as_ref() {
+        let state_clone = state.clone();
+        let brand_id_clone = brand_id.clone();
+        let submission_id_clone = submission.id.clone();
+        let campaign_title = license_template.template_name.clone();
+
+        tokio::spawn(async move {
+            let subject = "Contract ready for signature";
+            let message = format!(
+                "An agency has sent you a contract for '{}'. Please review and sign.",
+                campaign_title
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_clone,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "submission_id": submission_id_clone,
+                        "type": "contract_ready"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
     // 6. Create a linked licensing_request — single request for all talents.
     // Resolve the list of talent IDs to use:
     //   1. talent_ids from the finalize request (array, preferred)

@@ -183,6 +183,22 @@ export const verifyBrandStudioAddonCheckout = (data: { session_id: string }) =>
     data,
   );
 
+
+export const createCreatorSubscriptionCheckout = (data: {
+  plan: "basic" | "pro";
+  interval?: "month" | "year";
+  start_trial?: boolean;
+  agreement_accepted?: boolean;
+}) => base44Client.post(`/creator/billing/checkout`, data);
+
+export const getCreatorBillingStatus = () =>
+  base44Client.get(`/creator/billing/status`);
+
+export const createCreatorBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(
+    `/api/creator/billing/portal`,
+    {},
+  );
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
 
@@ -254,6 +270,31 @@ export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
 
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
+
+// Brand Notifications
+export const listBrandNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/brand/notifications`, { params });
+
+export const markBrandNotificationRead = (id: string) =>
+  base44Client.post(`/brand/notifications/${id}/read`);
+
+export const getBrandNotificationCount = () =>
+  base44Client.get(`/brand/notifications/count`);
+
+export const getInboxUnreadCount = () =>
+  base44Client.get(`/brand/inbox/unread-count`);
+
+export const markInboxPackagesViewed = () =>
+  base44Client.post(`/brand/inbox/mark-viewed`, {});
+
+export const getJobsUnreadCount = () =>
+  base44Client.get(`/brand/jobs/unread-count`);
+
+export const markJobApplicationsViewed = () =>
+  base44Client.post(`/brand/jobs/mark-viewed`, {});
+
+export const getLicensingContractsCount = () =>
+  base44Client.get(`/brand/licensing/contracts-count`);
 
 export const createBrandCampaignLicenseRequest = (
   campaignId: string,

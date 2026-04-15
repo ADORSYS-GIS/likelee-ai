@@ -174,12 +174,6 @@ struct InviteRow {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CreatorRow {
-    full_name: Option<String>,
-    email: Option<String>,
-}
-
-#[derive(Serialize, Deserialize)]
 struct AgencyUserRow {
     id: String,
 }
@@ -187,7 +181,7 @@ struct AgencyUserRow {
 async fn upsert_agency_talent_connection(
     state: &AppState,
     agency_id: &str,
-    talent_id: &str,
+    talent_id: Option<&str>,
     creator_id: &str,
     status: &str,
 ) -> Result<(), (StatusCode, String)> {
@@ -235,8 +229,7 @@ async fn upsert_agency_talent_connection(
         state
             .pg
             .from("agency_talent_relationships")
-            .upsert(payload.to_string())
-            .on_conflict("agency_id,talent_id")
+            .insert(payload.to_string())
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
@@ -351,9 +344,6 @@ pub async fn accept_invite(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Ensure an agency-scoped agency_users talent identity row exists for this creator.
-    // This MUST be per agency to avoid cross-agency asset visibility and to make agency
-    // asset endpoints authorize correctly.
     let au_resp = state
         .pg
         .from("agency_users")
@@ -373,100 +363,9 @@ pub async fn accept_invite(
 
     let existing: Vec<AgencyUserRow> = serde_json::from_str(&au_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talent_id = existing.first().map(|r| r.id.as_str());
 
-    if existing.is_empty() {
-        // Fetch creator details for full_legal_name mapping.
-        let creator_resp = state
-            .pg
-            .from("creators")
-            .select("full_name,email")
-            .eq("id", &creator_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let creator_text = creator_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let mut creator_rows: Vec<CreatorRow> = serde_json::from_str(&creator_text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let creator = creator_rows.pop().unwrap_or(CreatorRow {
-            full_name: None,
-            email: None,
-        });
-
-        let full_legal_name = creator
-            .full_name
-            .filter(|s| !s.trim().is_empty())
-            .or_else(|| user.email.clone())
-            .or(creator.email)
-            .unwrap_or_else(|| "Unknown".to_string());
-
-        let insert_payload = json!({
-            "agency_id": invite.agency_id,
-            "creator_id": creator_id,
-            "full_legal_name": full_legal_name,
-            "email": user.email,
-            "status": "active",
-            "role": "talent",
-            "updated_at": chrono::Utc::now().to_rfc3339(),
-        });
-
-        state
-            .pg
-            .from("agency_users")
-            .insert(insert_payload.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    } else {
-        state
-            .pg
-            .from("agency_users")
-            .eq("agency_id", &invite.agency_id)
-            .eq("creator_id", &creator_id)
-            .eq("role", "talent")
-            .update(
-                json!({
-                    "status": "active",
-                    "email": user.email,
-                    "updated_at": chrono::Utc::now().to_rfc3339(),
-                })
-                .to_string(),
-            )
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    }
-
-    let talent_id_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", &invite.agency_id)
-        .eq("creator_id", &creator_id)
-        .eq("role", "talent")
-        .order("updated_at.desc")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talent_id_text = talent_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talent_rows: Vec<AgencyUserRow> = serde_json::from_str(&talent_id_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talent_id = talent_rows.first().map(|r| r.id.clone()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "failed to resolve talent row".to_string(),
-    ))?;
-
-    upsert_agency_talent_connection(&state, &invite.agency_id, &talent_id, &creator_id, "active")
+    upsert_agency_talent_connection(&state, &invite.agency_id, talent_id, &creator_id, "active")
         .await?;
 
     Ok(Json(ActionResponse {

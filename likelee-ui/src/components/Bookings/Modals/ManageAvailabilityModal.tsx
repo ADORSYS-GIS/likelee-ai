@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddBookOutModal } from "./AddBookOutModal";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyRoster } from "@/api/functions";
 
 export const ManageAvailabilityModal = ({
   open,
@@ -41,12 +41,18 @@ export const ManageAvailabilityModal = ({
     let cancelled = false;
     const load = async () => {
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
         if (cancelled) return;
-        const arr = Array.isArray(rows) ? rows : [];
+        const arr = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         setTalents(
           arr.map((r: any) => ({
-            id: r.id || r.user_id || r.creator_id,
+            id: r.id,
             name: r.full_name || r.name || r.stage_name || "Unnamed",
           })),
         );

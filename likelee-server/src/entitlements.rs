@@ -1,7 +1,10 @@
 use axum::http::StatusCode;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde_json::json;
 
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState, face_profiles::resolve_effective_creator_id};
+
+const CREATOR_FULL_ACCESS_TRIAL_DAYS: i64 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanTier {
@@ -326,15 +329,29 @@ pub async fn get_agency_seat_limit_info(
         .from("agencies")
         .select("seats_limit")
         .eq("id", agency_id)
+
+pub async fn get_creator_plan_tier(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("plan_tier")
+        .eq("id", creator_id)
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+=======
+    let status = resp.status();
+>>>>>>> dabfa8bad995257c31688149e5c676db8ea19884
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+<<<<<<< HEAD
 
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let db_seats_limit = rows
@@ -410,4 +427,212 @@ pub fn format_seat_limit_error_with_upgrade(
         }
         None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
     }
+}
+
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let tier = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("plan_tier"))
+        .and_then(|v| v.as_str())
+        .map(PlanTier::from_db)
+        .unwrap_or(PlanTier::Free);
+
+    Ok(tier)
+}
+
+pub async fn get_creator_plan_tier_for_user(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, PlanTier), (StatusCode, String)> {
+    let creator_id = resolve_effective_creator_id(state, user).await?;
+    let tier = get_creator_plan_tier(state, &creator_id).await?;
+    Ok((creator_id, tier))
+}
+
+async fn get_creator_trial_started_at(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<Option<DateTime<Utc>>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("trial_started_at")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    let dt = row
+        .get("trial_started_at")
+        .and_then(|v| v.as_str())
+        .and_then(|s| {
+            DateTime::parse_from_rfc3339(s)
+                .map(|dt| dt.with_timezone(&Utc))
+                .ok()
+                .or_else(|| {
+                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                        .ok()
+                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                })
+                .or_else(|| {
+                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                        .ok()
+                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                })
+        });
+
+    Ok(dt)
+}
+
+pub async fn get_creator_entitlement_tier(
+    state: &AppState,
+    creator_id: &str,
+    billed_tier: PlanTier,
+) -> Result<PlanTier, (StatusCode, String)> {
+    if billed_tier != PlanTier::Free {
+        return Ok(billed_tier);
+    }
+
+    let trial_started_at = get_creator_trial_started_at(state, creator_id).await?;
+    let Some(trial_started_at) = trial_started_at else {
+        return Ok(PlanTier::Free);
+    };
+
+    if Utc::now() - trial_started_at < Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS) {
+        Ok(PlanTier::Pro)
+    } else {
+        Ok(PlanTier::Free)
+    }
+}
+
+pub async fn get_creator_entitlement_tier_for_user(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, PlanTier, PlanTier), (StatusCode, String)> {
+    let (creator_id, billed_tier) = get_creator_plan_tier_for_user(state, user).await?;
+    let entitlement_tier = get_creator_entitlement_tier(state, &creator_id, billed_tier).await?;
+    Ok((creator_id, billed_tier, entitlement_tier))
+}
+
+pub fn creator_category_limit(tier: PlanTier) -> Option<usize> {
+    match tier {
+        PlanTier::Basic => Some(15),
+        PlanTier::Free => None,
+        PlanTier::Pro | PlanTier::Enterprise => None,
+    }
+}
+
+pub fn creator_voice_tone_limit(tier: PlanTier) -> usize {
+    match tier {
+        PlanTier::Pro | PlanTier::Enterprise => 6,
+        _ => 0,
+    }
+}
+
+pub fn creator_has_cameo_uploads(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_unauthorized_use_monitoring(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_advanced_analytics(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_voice_profiles(tier: PlanTier) -> bool {
+    creator_voice_tone_limit(tier) > 0
+}
+
+pub fn creator_has_basic_access(tier: PlanTier) -> bool {
+    !matches!(tier, PlanTier::Free)
+}
+
+pub fn creator_has_likeness_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_kyc_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_agency_connection_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_brand_connection_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_payouts_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_jobs_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_rules_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_talent_portal_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_campaign_archive_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_active_campaigns_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn enforce_creator_entitlement(
+    tier: PlanTier,
+    allowed: impl FnOnce(PlanTier) -> bool,
+    feature_key: &'static str,
+    upgrade_to: &'static str,
+) -> Result<(), (StatusCode, String)> {
+    if allowed(tier) {
+        return Ok(());
+    }
+    Err((
+        StatusCode::FORBIDDEN,
+        json!({
+            "error": "feature_not_available_for_plan",
+            "feature": feature_key,
+            "current_plan": match tier {
+                PlanTier::Free => "free",
+                PlanTier::Basic => "basic",
+                PlanTier::Pro => "pro",
+                PlanTier::Enterprise => "enterprise",
+            },
+            "upgrade_to": upgrade_to,
+        })
+        .to_string(),
+    ))
 }
