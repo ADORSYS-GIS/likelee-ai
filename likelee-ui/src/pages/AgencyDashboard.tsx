@@ -17341,6 +17341,19 @@ export default function AgencyDashboard() {
     searchParams.get("billing_sync") === "1" || checkoutSuccess;
 
   useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflowX = html.style.overflowX;
+    const prevBodyOverflowX = body.style.overflowX;
+    html.style.overflowX = "hidden";
+    body.style.overflowX = "hidden";
+    return () => {
+      html.style.overflowX = prevHtmlOverflowX;
+      body.style.overflowX = prevBodyOverflowX;
+    };
+  }, []);
+
+  useEffect(() => {
     const nextTab = String(searchParams.get("tab") || "").trim();
     if (nextTab && nextTab !== activeTab) {
       setActiveTabState(nextTab);
@@ -19333,7 +19346,7 @@ export default function AgencyDashboard() {
   }, [activeTab, activeSubTab, sidebarItems]);
 
   return (
-    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800">
+    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800 overflow-x-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -19344,7 +19357,7 @@ export default function AgencyDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 overflow-x-hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
         style={{ width: isMobile ? "16rem" : `${sidebarWidth}px` }}
       >
         <div
@@ -19794,8 +19807,11 @@ export default function AgencyDashboard() {
 
       {/* Main Content Area */}
       <div
-        className="flex-1 flex flex-col ml-0 overflow-hidden"
-        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
+        className="flex-1 flex flex-col ml-0 overflow-hidden box-border"
+        style={{
+          marginLeft: isMobile ? 0 : sidebarWidth,
+          width: isMobile ? "100%" : `calc(100% - ${sidebarWidth}px)`,
+        }}
       >
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
