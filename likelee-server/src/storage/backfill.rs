@@ -1,13 +1,11 @@
 // Storage Assets Backfill Module
-// 
+//
 // This module provides functionality to backfill existing storage data into the
 // storage_assets registry table. It supports dry-run mode for validation and
 // includes comprehensive error handling and reporting.
 
 use crate::config::AppState;
-use crate::storage::{
-    StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
-};
+use crate::storage::{StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility};
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -106,7 +104,7 @@ pub async fn backfill_storage_assets(
 
     for config in configs {
         let mut stats = BackfillStats::new(config.source_table.to_string());
-        
+
         match backfill_table(state, &config, dry_run, &mut stats).await {
             Ok(_) => {
                 report.tables.insert(config.source_table.to_string(), stats);
@@ -170,10 +168,7 @@ async fn backfill_table(
             let owner_id = match (config.owner_id_extractor)(&row) {
                 Some(id) => id,
                 None => {
-                    stats.add_error(format!(
-                        "Missing owner_id for row id: {}",
-                        source_id
-                    ));
+                    stats.add_error(format!("Missing owner_id for row id: {}", source_id));
                     continue;
                 }
             };
@@ -246,10 +241,7 @@ async fn backfill_table(
                         stats.inserted += 1;
                     }
                     Err((_, msg)) => {
-                        stats.add_error(format!(
-                            "Failed to insert row id {}: {}",
-                            source_id, msg
-                        ));
+                        stats.add_error(format!("Failed to insert row id {}: {}", source_id, msg));
                     }
                 }
             } else {
@@ -630,7 +622,7 @@ mod tests {
         let mut stats = BackfillStats::new("test_table".to_string());
         stats.add_error("Error 1".to_string());
         stats.add_error("Error 2".to_string());
-        
+
         assert_eq!(stats.errors, 2);
         assert_eq!(stats.error_messages.len(), 2);
         assert_eq!(stats.error_messages[0], "Error 1");
@@ -640,12 +632,12 @@ mod tests {
     #[test]
     fn test_backfill_stats_error_limit() {
         let mut stats = BackfillStats::new("test_table".to_string());
-        
+
         // Add more than 10 errors
         for i in 0..15 {
             stats.add_error(format!("Error {}", i));
         }
-        
+
         assert_eq!(stats.errors, 15);
         assert_eq!(stats.error_messages.len(), 10); // Should cap at 10
     }
@@ -664,22 +656,22 @@ mod tests {
     #[test]
     fn test_backfill_report_finalize() {
         let mut report = BackfillReport::new(false);
-        
+
         let mut stats1 = BackfillStats::new("table1".to_string());
         stats1.inserted = 10;
         stats1.skipped = 2;
         stats1.errors = 1;
-        
+
         let mut stats2 = BackfillStats::new("table2".to_string());
         stats2.inserted = 20;
         stats2.skipped = 3;
         stats2.errors = 0;
-        
+
         report.tables.insert("table1".to_string(), stats1);
         report.tables.insert("table2".to_string(), stats2);
-        
+
         report.finalize();
-        
+
         assert_eq!(report.total_inserted, 30);
         assert_eq!(report.total_skipped, 5);
         assert_eq!(report.total_errors, 1);
@@ -695,22 +687,34 @@ mod tests {
     #[test]
     fn test_backfill_configs_quota_rules() {
         let configs = get_backfill_configs();
-        
+
         // Creator-owned assets should NOT count toward quota
-        let reference_images = configs.iter().find(|c| c.source_table == "reference_images").unwrap();
+        let reference_images = configs
+            .iter()
+            .find(|c| c.source_table == "reference_images")
+            .unwrap();
         assert_eq!(reference_images.owner_type, StorageOwnerType::Creator);
         assert!(!reference_images.counts_toward_quota);
-        
-        let voice_recordings = configs.iter().find(|c| c.source_table == "voice_recordings").unwrap();
+
+        let voice_recordings = configs
+            .iter()
+            .find(|c| c.source_table == "voice_recordings")
+            .unwrap();
         assert_eq!(voice_recordings.owner_type, StorageOwnerType::User);
         assert!(!voice_recordings.counts_toward_quota);
-        
+
         // Agency-owned assets SHOULD count toward quota
-        let talent_portfolio = configs.iter().find(|c| c.source_table == "talent_portfolio_items").unwrap();
+        let talent_portfolio = configs
+            .iter()
+            .find(|c| c.source_table == "talent_portfolio_items")
+            .unwrap();
         assert_eq!(talent_portfolio.owner_type, StorageOwnerType::Agency);
         assert!(talent_portfolio.counts_toward_quota);
-        
-        let booking_files = configs.iter().find(|c| c.source_table == "booking_files").unwrap();
+
+        let booking_files = configs
+            .iter()
+            .find(|c| c.source_table == "booking_files")
+            .unwrap();
         assert_eq!(booking_files.owner_type, StorageOwnerType::Agency);
         assert!(booking_files.counts_toward_quota);
     }
@@ -718,19 +722,31 @@ mod tests {
     #[test]
     fn test_backfill_configs_visibility() {
         let configs = get_backfill_configs();
-        
+
         // Public assets
-        let reference_images = configs.iter().find(|c| c.source_table == "reference_images").unwrap();
+        let reference_images = configs
+            .iter()
+            .find(|c| c.source_table == "reference_images")
+            .unwrap();
         assert_eq!(reference_images.visibility, StorageVisibility::Public);
-        
-        let talent_portfolio = configs.iter().find(|c| c.source_table == "talent_portfolio_items").unwrap();
+
+        let talent_portfolio = configs
+            .iter()
+            .find(|c| c.source_table == "talent_portfolio_items")
+            .unwrap();
         assert_eq!(talent_portfolio.visibility, StorageVisibility::Public);
-        
+
         // Private assets
-        let voice_recordings = configs.iter().find(|c| c.source_table == "voice_recordings").unwrap();
+        let voice_recordings = configs
+            .iter()
+            .find(|c| c.source_table == "voice_recordings")
+            .unwrap();
         assert_eq!(voice_recordings.visibility, StorageVisibility::Private);
-        
-        let booking_files = configs.iter().find(|c| c.source_table == "booking_files").unwrap();
+
+        let booking_files = configs
+            .iter()
+            .find(|c| c.source_table == "booking_files")
+            .unwrap();
         assert_eq!(booking_files.visibility, StorageVisibility::Private);
     }
 
@@ -745,7 +761,7 @@ mod tests {
             matches: true,
             discrepancy: 0,
         };
-        
+
         assert!(parity.matches);
         assert_eq!(parity.discrepancy, 0);
     }
@@ -761,7 +777,7 @@ mod tests {
             matches: false,
             discrepancy: 5,
         };
-        
+
         assert!(!parity.matches);
         assert_eq!(parity.discrepancy, 5);
     }

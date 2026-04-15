@@ -270,8 +270,7 @@ pub async fn upload_deliverable(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded =
-        upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let insert_payload = json!({
         "booking_campaign_id": campaign_id,
@@ -305,7 +304,10 @@ pub async fn upload_deliverable(
 
     let created: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(json!({}));
-    if let Some(deliverable_id) = created.get("id").and_then(|v| v.as_str()).filter(|s| !s.is_empty())
+    if let Some(deliverable_id) = created
+        .get("id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
     {
         let owner_type = if creator_id.is_some() {
             StorageOwnerType::Creator
@@ -660,7 +662,10 @@ pub async fn serve_deliverable_file(
     let storage_path = match row.get("storage_path").and_then(|v| v.as_str()) {
         Some(path) if !path.is_empty() => path.to_string(),
         _ => {
-            error!("Booking deliverable {} missing storage_path", deliverable_id);
+            error!(
+                "Booking deliverable {} missing storage_path",
+                deliverable_id
+            );
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 [("content-type", "application/json")],
@@ -864,12 +869,12 @@ mod tests {
         // Test that asset_url is normalized to secure endpoint format
         let campaign_id = "campaign-123";
         let deliverable_id = "deliverable-456";
-        
+
         let expected_url = format!(
             "/api/bookings-campaigns/{}/deliverables/{}/file",
             campaign_id, deliverable_id
         );
-        
+
         assert_eq!(
             expected_url,
             "/api/bookings-campaigns/campaign-123/deliverables/deliverable-456/file"
@@ -881,12 +886,12 @@ mod tests {
         // Test that offer deliverable asset_url is normalized to secure endpoint format
         let offer_id = "offer-789";
         let deliverable_id = "deliverable-abc";
-        
+
         let expected_url = format!(
             "/api/campaign-offers/{}/deliverables/{}/file",
             offer_id, deliverable_id
         );
-        
+
         assert_eq!(
             expected_url,
             "/api/campaign-offers/offer-789/deliverables/deliverable-abc/file"
@@ -898,7 +903,7 @@ mod tests {
         // Test that empty storage paths are rejected
         let storage_path = "";
         assert!(storage_path.is_empty());
-        
+
         // Test that valid storage paths are accepted
         let storage_path = "agencies/123/deliverables/1234567890_file.pdf";
         assert!(!storage_path.is_empty());
@@ -919,7 +924,7 @@ mod tests {
             "brand_approved",
             "accepted",
         ];
-        
+
         for status in valid_statuses {
             assert!(!status.is_empty());
             assert!(status.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
@@ -931,12 +936,12 @@ mod tests {
         // Test that secure endpoint paths follow the correct format
         let campaign_id = "550e8400-e29b-41d4-a716-446655440000";
         let deliverable_id = "660e8400-e29b-41d4-a716-446655440001";
-        
+
         let secure_url = format!(
             "/api/bookings-campaigns/{}/deliverables/{}/file",
             campaign_id, deliverable_id
         );
-        
+
         assert!(secure_url.starts_with("/api/bookings-campaigns/"));
         assert!(secure_url.contains("/deliverables/"));
         assert!(secure_url.ends_with("/file"));
@@ -947,12 +952,12 @@ mod tests {
         // Test that offer secure endpoint paths follow the correct format
         let offer_id = "770e8400-e29b-41d4-a716-446655440002";
         let deliverable_id = "880e8400-e29b-41d4-a716-446655440003";
-        
+
         let secure_url = format!(
             "/api/campaign-offers/{}/deliverables/{}/file",
             offer_id, deliverable_id
         );
-        
+
         assert!(secure_url.starts_with("/api/campaign-offers/"));
         assert!(secure_url.contains("/deliverables/"));
         assert!(secure_url.ends_with("/file"));
@@ -963,7 +968,7 @@ mod tests {
         // Test that private bucket is the default for deliverables
         let default_bucket = "likelee-private";
         assert_eq!(default_bucket, "likelee-private");
-        
+
         // Deliverables should always use private bucket
         let bucket = "likelee-private";
         assert!(bucket.contains("private"));
@@ -973,14 +978,14 @@ mod tests {
     fn test_asset_url_no_longer_fallback() {
         // Test that we no longer use asset_url as a fallback for storage_path
         // This test documents the change: asset_url should NOT be used as storage_path
-        
+
         let storage_path = Some("agencies/123/deliverables/file.pdf");
         let asset_url = Some("/api/bookings-campaigns/123/deliverables/456/file");
-        
+
         // New behavior: use storage_path directly, don't fall back to asset_url
         let path = storage_path.unwrap();
         assert_eq!(path, "agencies/123/deliverables/file.pdf");
-        
+
         // asset_url should be the secure endpoint, not a storage path
         let url = asset_url.unwrap();
         assert!(url.starts_with("/api/"));

@@ -6400,7 +6400,8 @@ pub async fn list_offer_deliverables(
         if let Some(obj) = row.as_object_mut() {
             if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
                 // Replace asset_url with the secure file endpoint URL
-                let secure_url = format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
+                let secure_url =
+                    format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
                 obj.insert("asset_url".to_string(), json!(secure_url));
             }
 
@@ -6522,8 +6523,7 @@ pub async fn upload_offer_deliverable_form(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded =
-        upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let agency_id = if user.role == "agency" {
         let access = team::require_agency_access(&state, &user).await?;
@@ -6764,7 +6764,9 @@ pub async fn upload_offer_deliverable_form(
         let owner_id = if user.role == "agency" {
             agency_id.clone().unwrap_or_default()
         } else {
-            resolved_creator_id.clone().unwrap_or_else(|| user.id.clone())
+            resolved_creator_id
+                .clone()
+                .unwrap_or_else(|| user.id.clone())
         };
         let record = StorageAssetRecord {
             owner_type,
@@ -7091,8 +7093,7 @@ pub async fn serve_offer_deliverable(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         (content_type, bytes)
     } else {
-        let downloaded =
-            download_object(&state, &state.supabase_bucket_private, path).await?;
+        let downloaded = download_object(&state, &state.supabase_bucket_private, path).await?;
         let content_type = downloaded
             .headers
             .get("content-type")

@@ -548,10 +548,7 @@ pub struct UpdateAgencyFolderIn {
     pub name: Option<String>,
 }
 
-fn normalize_agency_folder_row(
-    row: &serde_json::Value,
-    file_count: i64,
-) -> serde_json::Value {
+fn normalize_agency_folder_row(row: &serde_json::Value, file_count: i64) -> serde_json::Value {
     let obj = row.as_object().cloned().unwrap_or_default();
     serde_json::json!({
         "id": obj.get("id").cloned().unwrap_or(serde_json::Value::Null),
@@ -1174,7 +1171,11 @@ pub async fn upload_agency_storage_file(
         size_bytes: Some(new_size),
         checksum_sha256: None,
         source_table: Some("agency_files".to_string()),
-        source_id: if id.is_empty() { None } else { Some(id.clone()) },
+        source_id: if id.is_empty() {
+            None
+        } else {
+            Some(id.clone())
+        },
         created_by: Some(user.id.clone()),
         counts_toward_quota: true,
     };
@@ -1712,8 +1713,7 @@ pub async fn upload_client_file(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded =
-        upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
     let public_url = uploaded.public_url.clone();
 
     // Insert row into agency_files

@@ -1,9 +1,9 @@
-use crate::{auth::AuthUser, config::AppState};
 use crate::storage::{
     canonical_object_path, delete_object, download_object, generate_signed_url,
     insert_asset_record, sanitize_file_name, soft_delete_asset_record, upload_object,
     StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
 };
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     body::Bytes,
     extract::{Path, Query, State},
@@ -222,9 +222,8 @@ pub async fn upload_voice_recording(
         Some(&ct),
     )
     .await
-    .map_err(|err| {
+    .inspect_err(|err| {
         tracing::error!(error=%err.1, "voice recording storage upload error");
-        err
     })?;
 
     // Persist row to voice_recordings
@@ -244,14 +243,14 @@ pub async fn upload_voice_recording(
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    
+
     let status = ins.status();
     let txt = ins.text().await.unwrap_or_else(|_| "[]".into());
-    
+
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(status.as_u16(), txt));
     }
-    
+
     let arr: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
     let rec_id = arr
         .as_array()
@@ -589,14 +588,12 @@ pub async fn create_clone_from_recording(
         .unwrap_or("audio/webm");
 
     // 2) Download audio bytes from private storage using shared module
-    let downloaded = download_object(&state, bucket, path)
-        .await
-        .map_err(|err| {
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("failed to download recording: {}", err.1),
-            )
-        })?;
+    let downloaded = download_object(&state, bucket, path).await.map_err(|err| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("failed to download recording: {}", err.1),
+        )
+    })?;
 
     let bytes = downloaded.bytes;
 
@@ -951,11 +948,7 @@ mod tests {
         let timestamp = 1234567890123i64;
 
         let path_prefix = format!("users/{}/voice-recordings", user_id);
-        let path = canonical_object_path(
-            &path_prefix,
-            &sanitize_file_name(file_name),
-            timestamp,
-        );
+        let path = canonical_object_path(&path_prefix, &sanitize_file_name(file_name), timestamp);
 
         assert!(path.starts_with("users/user_123/voice-recordings/"));
         assert!(path.contains("1234567890123"));

@@ -1,7 +1,7 @@
 use crate::config::AppState;
-use axum::http::StatusCode;
 use axum::body::Bytes;
-use reqwest::header::{CONTENT_TYPE, HeaderMap as ReqwestHeaderMap};
+use axum::http::StatusCode;
+use reqwest::header::{HeaderMap as ReqwestHeaderMap, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -38,7 +38,7 @@ pub enum StorageVisibility {
 }
 
 impl StorageVisibility {
-    pub fn bucket<'a>(self, state: &'a AppState) -> &'a str {
+    pub fn bucket(self, state: &AppState) -> &str {
         match self {
             Self::Public => &state.supabase_bucket_public,
             Self::Private => &state.supabase_bucket_private,
@@ -141,11 +141,7 @@ pub fn sanitize_file_name(file_name: &str) -> String {
     }
 }
 
-pub fn canonical_object_path(
-    prefix: &str,
-    file_name: &str,
-    timestamp_ms: i64,
-) -> String {
+pub fn canonical_object_path(prefix: &str, file_name: &str, timestamp_ms: i64) -> String {
     format!(
         "{}/{}_{}",
         prefix.trim_matches('/'),
@@ -262,7 +258,10 @@ pub async fn generate_signed_url(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !response.status().is_success() {
         let message = response.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {message}")));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("sign url failed: {message}"),
+        ));
     }
     let signed_json: serde_json::Value = response
         .json()
@@ -296,7 +295,10 @@ pub async fn download_object(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !response.status().is_success() {
         let message = response.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("file fetch failed: {message}")));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("file fetch failed: {message}"),
+        ));
     }
 
     let headers = response.headers().clone();

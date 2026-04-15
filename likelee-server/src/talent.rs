@@ -658,7 +658,7 @@ pub async fn upload_portfolio_item(
 
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
     let sanitized = sanitize_file_name(&fname);
-    
+
     // Use agency-owned path format: agencies/{agency_id}/talents/{talent_id}/portfolio/
     let path = canonical_object_path(
         &format!(
@@ -668,7 +668,7 @@ pub async fn upload_portfolio_item(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    
+
     let uploaded = upload_object(
         &state,
         StorageVisibility::Public,
@@ -700,16 +700,16 @@ pub async fn upload_portfolio_item(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     let status = resp.status();
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
-    
+
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    
+
     let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
-    
+
     // Mirror to storage_assets registry (agency-owned, counts toward quota)
     if let Some(source_id) = v
         .as_array()
@@ -718,10 +718,10 @@ pub async fn upload_portfolio_item(
         .and_then(|v| v.as_str())
     {
         let storage_record = StorageAssetRecord {
-            owner_type: StorageOwnerType::Agency,  // Agency-owned, not Creator
-            owner_id: resolved.agency_id.clone(),  // Agency ID, not talent ID
+            owner_type: StorageOwnerType::Agency, // Agency-owned, not Creator
+            owner_id: resolved.agency_id.clone(), // Agency ID, not talent ID
             context_type: StorageContextType::TalentPortfolio,
-            context_id: Some(resolved.talent_id.clone()),  // Talent ID as context
+            context_id: Some(resolved.talent_id.clone()), // Talent ID as context
             visibility: StorageVisibility::Public,
             object_path: uploaded.path.clone(),
             original_file_name: Some(fname.clone()),
@@ -731,7 +731,7 @@ pub async fn upload_portfolio_item(
             source_table: Some("talent_portfolio_items".to_string()),
             source_id: Some(source_id.to_string()),
             created_by: Some(user.id.clone()),
-            counts_toward_quota: true,  // Agency-owned assets count toward quota
+            counts_toward_quota: true, // Agency-owned assets count toward quota
         };
         if let Err(err) = insert_asset_record(&state, &storage_record).await {
             warn!(talent_id = %resolved.talent_id, agency_id = %resolved.agency_id, error = %err.1, "failed to mirror talent portfolio item into storage_assets");
@@ -2689,7 +2689,7 @@ pub async fn delete_portfolio_item(
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
-    
+
     // 1) Lookup portfolio item and verify ownership
     let lookup = state
         .pg
@@ -2701,24 +2701,27 @@ pub async fn delete_portfolio_item(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     let lookup_status = lookup.status();
     let lookup_text = lookup
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     if !lookup_status.is_success() {
         return Err(sanitize_db_error(lookup_status.as_u16(), lookup_text));
     }
-    
+
     let row = serde_json::from_str::<serde_json::Value>(&lookup_text)
         .unwrap_or(json!([]))
         .as_array()
         .and_then(|rows| rows.first())
         .cloned()
-        .ok_or((StatusCode::NOT_FOUND, "portfolio item not found".to_string()))?;
-    
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "portfolio item not found".to_string(),
+        ))?;
+
     // 2) Delete from storage (STRICT - must succeed)
     if let (Some(bucket), Some(path)) = (
         row.get("storage_bucket").and_then(|v| v.as_str()),
@@ -2732,7 +2735,7 @@ pub async fn delete_portfolio_item(
             ));
         }
     }
-    
+
     // 3) Soft-delete storage_assets registry row
     if let Err(err) = soft_delete_asset_record(&state, "talent_portfolio_items", &id).await {
         warn!(talent_id = %resolved.talent_id, portfolio_item_id = %id, error = %err.1, "failed to soft-delete storage_assets row for portfolio item");
@@ -2754,7 +2757,7 @@ pub async fn delete_portfolio_item(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     if !del_status.is_success() {
         return Err(sanitize_db_error(del_status.as_u16(), del_text));
     }
@@ -3112,7 +3115,6 @@ pub async fn delete_book_out(
     Ok(Json(v))
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::storage::{
@@ -3128,11 +3130,7 @@ mod tests {
         let timestamp = 1234567890123i64;
 
         let path_prefix = format!("agencies/{}/talents/{}/portfolio", agency_id, talent_id);
-        let path = canonical_object_path(
-            &path_prefix,
-            &sanitize_file_name(file_name),
-            timestamp,
-        );
+        let path = canonical_object_path(&path_prefix, &sanitize_file_name(file_name), timestamp);
 
         assert!(path.starts_with("agencies/agency_123/talents/talent_456/portfolio/"));
         assert!(path.contains("1234567890123"));
@@ -3194,7 +3192,8 @@ mod tests {
         let agency_id = "agency_789";
         let talent_id = "talent_123";
         let portfolio_item_id = "item_456";
-        let object_path = "agencies/agency_789/talents/talent_123/portfolio/1234567890123_headshot.jpg";
+        let object_path =
+            "agencies/agency_789/talents/talent_123/portfolio/1234567890123_headshot.jpg";
         let file_name = "headshot.jpg";
         let mime_type = "image/jpeg";
         let size_bytes = 2048576i64;
@@ -3222,7 +3221,10 @@ mod tests {
         assert_eq!(record.context_id, Some(talent_id.to_string()));
         assert_eq!(record.visibility, StorageVisibility::Public);
         assert_eq!(record.object_path, object_path);
-        assert_eq!(record.source_table, Some("talent_portfolio_items".to_string()));
+        assert_eq!(
+            record.source_table,
+            Some("talent_portfolio_items".to_string())
+        );
         assert_eq!(record.source_id, Some(portfolio_item_id.to_string()));
         assert!(record.counts_toward_quota);
     }

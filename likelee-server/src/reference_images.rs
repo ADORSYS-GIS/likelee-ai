@@ -226,9 +226,8 @@ pub async fn upload_reference_image(
         Some(&ct),
     )
     .await
-    .map_err(|err| {
+    .inspect_err(|err| {
         error!(error=%err.1, "storage upload error");
-        err
     })?;
     let public_url = uploaded
         .public_url
@@ -274,7 +273,11 @@ pub async fn upload_reference_image(
             let source_id = serde_json::from_str::<serde_json::Value>(&text)
                 .ok()
                 .and_then(|value| value.as_array().and_then(|rows| rows.first()).cloned())
-                .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()));
+                .and_then(|row| {
+                    row.get("id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                });
             if let Some(source_id) = source_id {
                 let storage_record = StorageAssetRecord {
                     owner_type: StorageOwnerType::Creator,

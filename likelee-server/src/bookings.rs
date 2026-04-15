@@ -1,10 +1,11 @@
 use crate::{
-    agencies::resolve_effective_agency_talent_id, auth::AuthUser, config::AppState,
+    agencies::resolve_effective_agency_talent_id,
+    auth::AuthUser,
+    config::AppState,
     errors::sanitize_db_error,
     storage::{
         canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
-        upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
-        StorageVisibility,
+        upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
     },
     team::resolve_effective_agency_id,
 };
@@ -244,7 +245,10 @@ pub async fn create_with_files(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
         if let Some(v) = arr.first() {
-            if let Some(file_id) = v.get("id").and_then(|id| id.as_str()).filter(|id| !id.is_empty())
+            if let Some(file_id) = v
+                .get("id")
+                .and_then(|id| id.as_str())
+                .filter(|id| !id.is_empty())
             {
                 let record = StorageAssetRecord {
                     owner_type: StorageOwnerType::Agency,
