@@ -37,7 +37,7 @@ lettre = { version = "0.11", default-features = false, features = [
 urlencoding = "2"
 jsonwebtoken = "9"
 stripe-sdk = { package = "async-stripe", version = "0.41", features = [
-    "runtime-tokio-hyper-rustls",
+    "runtime-tokio-hyper",
 ] }
 base64 = "0.22.1"
 bcrypt = "0.18.0"
