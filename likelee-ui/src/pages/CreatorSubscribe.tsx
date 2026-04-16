@@ -9,17 +9,21 @@ import {
   createCreatorSubscriptionCheckout,
   createCreatorBillingPortal,
   getCreatorBillingStatus,
+  syncCreatorCheckoutSession,
 } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/auth/AuthProvider";
 
 export default function CreatorSubscribe() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { initialized, authenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
   const billingParam = String(searchParams.get("billing") || "").trim();
+  const nextParam = String(searchParams.get("next") || "").trim();
   const [currentPlanTier, setCurrentPlanTier] = React.useState<string>("free");
   const [effectivePlanTier, setEffectivePlanTier] =
     React.useState<string>("free");
@@ -46,8 +50,18 @@ export default function CreatorSubscribe() {
   const [loading, setLoading] = React.useState(true);
   const [startingTrial, setStartingTrial] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!initialized) return;
+    if (authenticated) return;
+    navigate("/Register", { replace: true, state: { from: window.location } });
+  }, [initialized, authenticated, navigate]);
+
   // Start a free trial by going through Stripe Checkout (collects card upfront, defers charge 30 days)
   const onStartTrial = async (plan: "basic" | "pro") => {
+    if (!authenticated) {
+      navigate("/Register", { replace: true, state: { from: window.location } });
+      return;
+    }
     try {
       setStartingTrial(true);
       const resp = await createCreatorSubscriptionCheckout({
@@ -73,6 +87,10 @@ export default function CreatorSubscribe() {
   };
 
   const onManageSubscription = async () => {
+    if (!authenticated) {
+      navigate("/Register", { replace: true, state: { from: window.location } });
+      return;
+    }
     setCheckingOut(true);
     try {
       const resp = await createCreatorBillingPortal();
@@ -286,13 +304,28 @@ export default function CreatorSubscribe() {
     }
   }, [billingParam]);
 
+  const sessionId = searchParams.get("session_id");
+
   React.useEffect(() => {
-    if (success) {
-      navigate("/CreatorDashboard?section=settings&settings=billing", {
-        replace: true,
-      });
+    async function handleSyncAndRedirect() {
+      if (!success) return;
+      if (sessionId) {
+        setCheckingOut(true);
+        try {
+          await syncCreatorCheckoutSession({ session_id: sessionId });
+        } catch (e) {
+          console.error("Failed to sync checkout session:", e);
+        } finally {
+          setCheckingOut(false);
+        }
+      }
+      const dest = nextParam
+        ? nextParam
+        : "/CreatorDashboard?section=settings&settings=billing";
+      navigate(dest, { replace: true });
     }
-  }, [navigate, success]);
+    void handleSyncAndRedirect();
+  }, [navigate, success, nextParam, sessionId]);
 
   const onUpgrade = async (plan: "basic" | "pro") => {
     if (trialInfo.active) {
@@ -326,6 +359,10 @@ export default function CreatorSubscribe() {
   };
 
   const onCheckout = async (plan: "basic" | "pro", forceCheckout = false) => {
+    if (!authenticated) {
+      navigate("/Register", { replace: true, state: { from: window.location } });
+      return;
+    }
     if (
       billingInfo?.stripe_subscription_id &&
       !forceCheckout &&
