@@ -4223,7 +4223,7 @@ async fn sync_creator_subscription_by_subscription_id(
         .await
 }
 
-pub async fn sync_creator_subscription_from_stripe(
+async fn sync_creator_subscription_from_stripe(
     state: &AppState,
     creator_id: &str,
     subscription_id: &str,
