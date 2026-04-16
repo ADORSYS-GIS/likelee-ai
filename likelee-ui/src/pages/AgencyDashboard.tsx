@@ -10002,26 +10002,30 @@ const ScoutingHubView = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(null);
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
 
   const refreshData = () => {
     queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
   };
 
-  const handleDeleteEvent = async (event: ScoutingEvent) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete the event "${event.name}"?`,
-      )
-    )
-      return;
+  const handleDeleteEvent = (event: ScoutingEvent) => {
+    setEventToDelete(event);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    setIsDeletingEvent(true);
 
     try {
-      await scoutingService.deleteEvent(event.id);
+      await scoutingService.deleteEvent(eventToDelete.id);
       refreshData();
       toast({
         title: "Event deleted",
-        description: `"${event.name}" has been successfully removed.`,
+        description: `"${eventToDelete.name}" has been successfully removed.`,
       });
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -10030,6 +10034,10 @@ const ScoutingHubView = ({
         description: "An error occurred while deleting the event.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeletingEvent(false);
+      setEventToDelete(null);
+      setIsDeleteConfirmOpen(false);
     }
   };
 
@@ -10367,6 +10375,54 @@ const ScoutingHubView = ({
                 </>
               ) : (
                 "Save"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={(open) => {
+          setIsDeleteConfirmOpen(open);
+          if (!open) setEventToDelete(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium pt-2">
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-gray-900">
+                "{eventToDelete?.name}"
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="flex-1 font-bold border-gray-200"
+              disabled={isDeletingEvent}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteEvent}
+              className="flex-1 font-bold bg-red-600 hover:bg-red-700 shadow-sm"
+              disabled={isDeletingEvent}
+            >
+              {isDeletingEvent ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Event"
               )}
             </Button>
           </DialogFooter>
