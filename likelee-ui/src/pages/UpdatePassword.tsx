@@ -5,6 +5,9 @@ import { toast } from "@/components/ui/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
+import { getDashboardPath } from "@/auth/onboarding";
+import { getBrandProfile } from "@/api/functions";
+import { getAgencyProfile } from "@/api/functions";
 //import Layout from "./Layout";
 
 export default function UpdatePassword() {
@@ -58,9 +61,33 @@ export default function UpdatePassword() {
 
             const params = new URLSearchParams(location.search);
             const next = params.get("next") || "";
-            const nextPath = next.startsWith("/")
-              ? withInviteAcceptIntent(next)
-              : "/login";
+
+            // If there's a next parameter, use it; otherwise redirect to appropriate dashboard
+            let nextPath: string;
+            if (next.startsWith("/")) {
+              nextPath = withInviteAcceptIntent(next);
+            } else {
+              // Determine user role by checking which profile exists
+              let role = "creator"; // default fallback
+
+              try {
+                // Try to fetch brand profile first
+                await getBrandProfile();
+                role = "brand";
+              } catch (brandError: any) {
+                // If brand profile doesn't exist, try agency
+                try {
+                  await getAgencyProfile();
+                  role = "agency";
+                } catch (agencyError: any) {
+                  // Default to creator if neither exists
+                  role = "creator";
+                }
+              }
+
+              nextPath = getDashboardPath({ role } as any);
+            }
+
             setTimeout(() => navigate(nextPath), 700);
           } catch (err: any) {
             const msg = err?.message ?? "Failed to update password";
