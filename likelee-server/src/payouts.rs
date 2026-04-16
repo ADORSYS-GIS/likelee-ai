@@ -3637,12 +3637,13 @@ fn stripe_subscription_to_interval_from_price_id(state: &AppState, price_id: &st
 fn stripe_subscription_to_plan_tier_from_metadata(
     sub: &stripe_sdk::Subscription,
 ) -> Option<&'static str> {
-    match sub
+    let plan = sub
         .metadata
         .get("plan")
-        .map(|plan| plan.trim().to_lowercase())
-        .as_deref()
-    {
+        .or_else(|| sub.metadata.get("plan_tier"))
+        .map(|plan| plan.trim().to_lowercase());
+
+    match plan.as_deref() {
         Some("basic") => Some("basic"),
         Some("pro") => Some("pro"),
         Some("enterprise") => Some("enterprise"),
@@ -4277,10 +4278,6 @@ pub async fn sync_creator_subscription_from_stripe(
             }
             _ => {}
         }
-    } else {
-        update.insert("trial_started_at".into(), json!(null));
-        update.insert("trial_basic_started_at".into(), json!(null));
-        update.insert("trial_pro_started_at".into(), json!(null));
     }
 
     update.insert("plan_tier".into(), json!(plan_tier));

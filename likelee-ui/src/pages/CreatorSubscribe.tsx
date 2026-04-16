@@ -312,7 +312,17 @@ export default function CreatorSubscribe() {
       if (sessionId) {
         setCheckingOut(true);
         try {
-          await syncCreatorCheckoutSession({ session_id: sessionId });
+          const syncResp = await syncCreatorCheckoutSession({ session_id: sessionId });
+          try {
+            const entitlement = String((syncResp as any)?.entitlement_tier || "")
+              .trim()
+              .toLowerCase();
+            if (entitlement) {
+              window.localStorage.setItem("creator_entitlement_tier", entitlement);
+            }
+          } catch {
+            // ignore
+          }
         } catch (e) {
           console.error("Failed to sync checkout session:", e);
         } finally {
@@ -326,6 +336,38 @@ export default function CreatorSubscribe() {
     }
     void handleSyncAndRedirect();
   }, [navigate, success, nextParam, sessionId]);
+
+  React.useEffect(() => {
+    if (!trialInfo.active || !trialInfo.endsAt) return;
+
+    const end = new Date(trialInfo.endsAt as string).getTime();
+    if (!Number.isFinite(end)) return;
+    if (Date.now() < end) return;
+
+    (async () => {
+      try {
+        const resp = await getCreatorBillingStatus();
+        const tier = String((resp as any)?.plan_tier || "free");
+        const entitlementTier = String((resp as any)?.entitlement_tier || tier || "free");
+        const trialActive = !!(resp as any)?.trial_active;
+        const trialEndsAt = (resp as any)?.trial_ends_at
+          ? String((resp as any)?.trial_ends_at)
+          : undefined;
+
+        setCurrentPlanTier(tier);
+        setEffectivePlanTier(entitlementTier);
+        setTrialInfo({
+          active: trialActive,
+          endsAt: trialEndsAt,
+          startAt: (resp as any)?.trial_start_at,
+          basicStartAt: (resp as any)?.trial_basic_started_at,
+          proStartAt: (resp as any)?.trial_pro_started_at,
+        });
+      } catch {
+        // ignore
+      }
+    })();
+  }, [trialInfo.active, trialInfo.endsAt]);
 
   const onUpgrade = async (plan: "basic" | "pro") => {
     if (trialInfo.active) {
