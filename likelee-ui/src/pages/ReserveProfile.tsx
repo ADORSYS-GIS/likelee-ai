@@ -73,6 +73,31 @@ const Slider: any = UISlider;
 const Alert: any = UIAlert;
 const AlertDescription: any = UIAlertDescription;
 
+const TOTAL_STEPS = 3;
+
+const LEGACY_ONBOARDING_STEP_MAP: Record<string, number> = {
+  email_verification: 1,
+  verification: 1,
+  profile_details: 2,
+  agreements: 3,
+  complete: TOTAL_STEPS + 1,
+};
+
+function mapLegacyOnboardingStep(raw?: string | null): number | null {
+  if (!raw) return null;
+  const key = String(raw).trim().toLowerCase();
+  if (LEGACY_ONBOARDING_STEP_MAP[key] !== undefined) {
+    return LEGACY_ONBOARDING_STEP_MAP[key];
+  }
+  return null;
+}
+
+function clampStep(step: number): number {
+  if (!Number.isFinite(step) || step < 1) return 1;
+  if (step > TOTAL_STEPS) return TOTAL_STEPS;
+  return step;
+}
+
 const contentTypes = [
   "Social media ads",
   "Web & banner campaigns",
@@ -280,17 +305,16 @@ export default function ReserveProfile() {
       user?.app_metadata?.provider === "github");
 
   const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem("reserve_step");
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get("step");
-    if (stepParam) return parseInt(stepParam, 10);
-    // OAuth users skip step 1 (email verification)
+    if (stepParam) return clampStep(parseInt(stepParam, 10));
     if (isOAuthSignup) return 2;
-    return saved ? parseInt(saved) : 1;
+    const saved = localStorage.getItem("reserve_step");
+    return saved ? clampStep(parseInt(saved, 10)) : 1;
   });
 
   useEffect(() => {
-    localStorage.setItem("reserve_step", step.toString());
+    localStorage.setItem("reserve_step", clampStep(step).toString());
   }, [step]);
 
   const [showWarning, setShowWarning] = useState(false);
@@ -313,7 +337,7 @@ export default function ReserveProfile() {
   }, [profileId]);
 
   const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("reserve_formData");
+    const saved = sessionStorage.getItem("reserve_formData");
     return saved
       ? JSON.parse(saved)
       : {
@@ -361,9 +385,8 @@ export default function ReserveProfile() {
   });
 
   useEffect(() => {
-    // Security: Do not persist passwords to localStorage
     const { password, confirmPassword, ...safeData } = formData;
-    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
+    sessionStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
 
   // Pre-fill email and set profileId for OAuth users
@@ -502,14 +525,22 @@ export default function ReserveProfile() {
 
     setAuthMode("signup");
 
-    const normalizedStep = String(profile.onboarding_step || "")
-      .trim()
-      .toLowerCase();
-    if (normalizedStep === "agreements") {
-      setStep(3);
+    const serverStep = mapLegacyOnboardingStep(profile.onboarding_step);
+    if (serverStep !== null) {
+      if (serverStep > TOTAL_STEPS) {
+        const dashboardPath = getDashboardPath(profile);
+        if (window.location.pathname !== dashboardPath.split("?")[0]) {
+          navigate(dashboardPath, { replace: true });
+        }
+        return;
+      }
+      setStep(clampStep(serverStep));
       return;
     }
-    setStep(2);
+    const sanitizedLocal = clampStep(step);
+    if (sanitizedLocal !== step) {
+      setStep(sanitizedLocal);
+    }
   }, [
     authenticated,
     creatorType,
@@ -574,7 +605,7 @@ export default function ReserveProfile() {
     });
   };
 
-  const totalSteps = 3;
+  const totalSteps = TOTAL_STEPS;
   const progress = (step / totalSteps) * 100;
 
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -626,7 +657,7 @@ export default function ReserveProfile() {
   }) => {
     if (markComplete) return "complete";
     if (onboardingStep) return onboardingStep;
-    if (step >= 3) return "agreements";
+    if (step >= TOTAL_STEPS) return "agreements";
     return "profile_details";
   };
 
@@ -973,9 +1004,9 @@ export default function ReserveProfile() {
       await saveCreatorProfile(formData, { markComplete: true });
       await refreshProfile();
       // Clear persisted state on success
-      localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      sessionStorage.removeItem("reserve_formData");
       sessionStorage.removeItem("reserve_agreedToTerms");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
