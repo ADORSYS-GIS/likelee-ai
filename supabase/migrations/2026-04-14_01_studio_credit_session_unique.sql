@@ -2,12 +2,13 @@
 -- Stripe session ID. The existing index is non-unique; replace it with a partial
 -- unique index (NULL values are excluded so unpurchased/deduction rows are unaffected).
 --
--- NOTE: CREATE INDEX CONCURRENTLY cannot run inside a transaction, so we perform
--- the drop + recreate outside an explicit BEGIN/COMMIT block. The function
--- definition below is DDL and auto-commits per statement in PostgREST / psql.
+-- NOTE: CONCURRENTLY is removed because the Supabase migration runner wraps
+-- every migration in a transaction, and CREATE INDEX CONCURRENTLY cannot run
+-- inside a transaction block. A regular CREATE INDEX takes a brief write lock
+-- but is safe for a one-time migration on a single-column index.
 DROP INDEX IF EXISTS idx_studio_credit_transactions_stripe_session_id;
 
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_studio_credit_transactions_stripe_session_id
+CREATE UNIQUE INDEX IF NOT EXISTS idx_studio_credit_transactions_stripe_session_id
   ON public.studio_credit_transactions(stripe_session_id)
   WHERE stripe_session_id IS NOT NULL;
 
