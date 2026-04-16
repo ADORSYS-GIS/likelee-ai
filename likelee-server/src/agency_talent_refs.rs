@@ -358,7 +358,7 @@ pub async fn list_agency_talent_refs(
             item.full_name.to_lowercase().contains(&q)
         })
         .collect();
-    out.sort_by(|a, b| a.full_name.to_lowercase().cmp(&b.full_name.to_lowercase()));
+    out.sort_by_key(|a| a.full_name.to_lowercase());
     Ok(out)
 }
 

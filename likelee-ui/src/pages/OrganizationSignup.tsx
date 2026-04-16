@@ -2750,7 +2750,7 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() => {
-                    const termsFile = "/terms-and-conditions-agency.html";
+                    const termsFile = "/agency_brand_terms_and-conditions.pdf";
                     window.open(termsFile, "_blank");
                   }}
                 >
