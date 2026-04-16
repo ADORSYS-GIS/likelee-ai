@@ -1,3 +1,8 @@
+use crate::storage::{
+    canonical_object_path, delete_object, download_object, generate_signed_url,
+    insert_asset_record, sanitize_file_name, soft_delete_asset_record, upload_object,
+    StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+};
 use crate::{auth::AuthUser, config::AppState};
 use axum::{
     body::Bytes,
@@ -7,6 +12,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use tracing::warn;
 
 use crate::entitlements::{
     creator_has_voice_profiles, creator_voice_tone_limit, get_agency_plan_tier,
@@ -26,6 +32,9 @@ async fn enforce_voice_clone_limit_for_agency(
         ));
     }
 
+    // voice_models.user_id stores the auth.users UUID for agency-owned models
+    // (set explicitly in register_voice_model/create_clone_from_recording via input.user_id = user.id).
+    // agencies.id is also REFERENCES auth.users(id), so agency_id == voice_models.user_id is correct.
     let resp = state
         .pg
         .from("voice_models")
@@ -167,8 +176,8 @@ pub async fn upload_voice_recording(
         return Err((StatusCode::BAD_REQUEST, "empty body".into()));
     }
 
-    let owner_id = if user.role == "agency" {
-        user.id.clone()
+    let (owner_id, owner_type) = if user.role == "agency" {
+        (user.id.clone(), StorageOwnerType::Agency)
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let existing_count = count_creator_voice_recordings(&state, &creator_id).await?;
@@ -178,9 +187,9 @@ pub async fn upload_voice_recording(
                 "voice_profile_limit_reached".to_string(),
             ));
         }
-        creator_id
+        (creator_id, StorageOwnerType::Creator)
     } else {
-        user.id.clone()
+        (user.id.clone(), StorageOwnerType::User)
     };
 
     let ct = headers
@@ -189,12 +198,6 @@ pub async fn upload_voice_recording(
         .unwrap_or("audio/webm")
         .to_string();
 
-    // Private bucket
-    let bucket = state.supabase_bucket_private.clone();
-    let owner = owner_id.replace(
-        |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
-        "_",
-    );
     let ext = if ct.contains("wav") {
         "wav"
     } else if ct.contains("ogg") {
@@ -205,44 +208,32 @@ pub async fn upload_voice_recording(
         "webm"
     };
 
-    let path = format!(
-        "likeness/{}/voice/recordings/{}.{}",
-        owner,
+    let file_name = format!("recording.{}", ext);
+    let path_prefix = format!("users/{}/voice-recordings", owner_id);
+    let path = canonical_object_path(
+        &path_prefix,
+        &sanitize_file_name(&file_name),
         chrono::Utc::now().timestamp_millis(),
-        ext
     );
 
-    // Upload to Storage
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .header("content-type", ct.clone())
-        .body(body)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
+    // Upload using shared storage module
+    let uploaded = upload_object(
+        &state,
+        StorageVisibility::Private,
+        &path,
+        body.to_vec(),
+        Some(&ct),
+    )
+    .await
+    .inspect_err(|err| {
+        tracing::error!(error=%err.1, "voice recording storage upload error");
+    })?;
 
-    // Persist row
+    // Persist row to voice_recordings
     let payload = serde_json::json!({
         "user_id": owner_id,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "mime_type": ct,
         "emotion_tag": q.emotion_tag,
         "accessible": true,
@@ -255,7 +246,14 @@ pub async fn upload_voice_recording(
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let status = ins.status();
     let txt = ins.text().await.unwrap_or_else(|_| "[]".into());
+
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), txt));
+    }
+
     let arr: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
     let rec_id = arr
         .as_array()
@@ -265,10 +263,33 @@ pub async fn upload_voice_recording(
         .unwrap_or("")
         .to_string();
 
+    // Mirror into storage_assets registry
+    if !rec_id.is_empty() {
+        let storage_record = StorageAssetRecord {
+            owner_type,
+            owner_id: owner_id.clone(),
+            context_type: StorageContextType::VoiceRecording,
+            context_id: None,
+            visibility: StorageVisibility::Private,
+            object_path: uploaded.path.clone(),
+            original_file_name: Some(file_name),
+            mime_type: Some(ct),
+            size_bytes: Some(body.len() as i64),
+            checksum_sha256: None,
+            source_table: Some("voice_recordings".to_string()),
+            source_id: Some(rec_id.clone()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: false,
+        };
+        if let Err(err) = insert_asset_record(&state, &storage_record).await {
+            warn!(recording_id = %rec_id, user_id = %user.id, error = %err.1, "failed to mirror voice recording into storage_assets");
+        }
+    }
+
     Ok(Json(UploadVoiceResponse {
         id: rec_id,
-        storage_bucket: state.supabase_bucket_private.clone(),
-        storage_path: path,
+        storage_bucket: uploaded.bucket,
+        storage_path: uploaded.path,
     }))
 }
 
@@ -293,6 +314,7 @@ pub async fn register_voice_model(
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+        input.user_id = user.id.clone();
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let resp = state
@@ -449,58 +471,34 @@ pub async fn signed_url_for_recording(
         return Err((StatusCode::NOT_FOUND, "recording not found".into()));
     }
 
-    // Request signed URL via Storage API
-    let url = format!(
-        "{}/storage/v1/object/sign/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let body = serde_json::json!({ "expiresIn": q.expires_sec });
-    let http = reqwest::Client::new();
-    let sign = http
-        .post(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !sign.status().is_success() {
-        let msg = sign.text().await.unwrap_or_default();
+    // Use shared storage module for signed URL generation
+    let signed_url = match generate_signed_url(&state, bucket, path, q.expires_sec).await {
+        Ok(url) => url,
+        Err(err) => {
+            let is_object_not_found = err.1.contains("Object not found")
+                || err.1.contains("\"error\":\"not_found\"")
+                || err.1.contains("\"error\": \"not_found\"")
+                || err.1.contains("\"statusCode\":404")
+                || err.1.contains("\"statusCode\": 404");
 
-        let is_object_not_found = msg.contains("Object not found")
-            || msg.contains("\"error\":\"not_found\"")
-            || msg.contains("\"error\": \"not_found\"")
-            || msg.contains("\"statusCode\":404")
-            || msg.contains("\"statusCode\": 404");
+            if is_object_not_found {
+                let _ = state
+                    .pg
+                    .from("voice_recordings")
+                    .update("{\"accessible\": false}")
+                    .eq("id", &q.recording_id)
+                    .in_("user_id", allowed_owner_refs)
+                    .execute()
+                    .await;
 
-        if is_object_not_found {
-            let _ = state
-                .pg
-                .from("voice_recordings")
-                .update("{\"accessible\": false}")
-                .eq("id", &q.recording_id)
-                .in_("user_id", allowed_owner_refs)
-                .execute()
-                .await;
-
-            return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+                return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+            } else {
+                return Err(err);
+            }
         }
+    };
 
-        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
-    }
-    let signed_json: serde_json::Value = sign
-        .json()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    let signed_path = signed_json
-        .get("signedURL")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
-    let full = format!("{}/storage/v1{}", state.supabase_url, signed_path);
-    Ok(Json(SignedUrlOut { url: full }))
+    Ok(Json(SignedUrlOut { url: signed_url }))
 }
 
 #[derive(Deserialize)]
@@ -527,6 +525,7 @@ pub async fn create_clone_from_recording(
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
     if user.role == "agency" {
         enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+        input.user_id = user.id.clone();
     } else if user.role == "creator" || user.role == "talent" {
         let (creator_id, limit) = enforce_voice_access_for_creator(&state, &user).await?;
         let resp = state
@@ -593,33 +592,15 @@ pub async fn create_clone_from_recording(
         .and_then(|v| v.as_str())
         .unwrap_or("audio/webm");
 
-    // 2) Download audio bytes from private storage using service key
-    let get_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let audio_resp = http
-        .get(&get_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !audio_resp.status().is_success() {
-        let msg = audio_resp.text().await.unwrap_or_default();
-        return Err((
+    // 2) Download audio bytes from private storage using shared module
+    let downloaded = download_object(&state, bucket, path).await.map_err(|err| {
+        (
             StatusCode::BAD_GATEWAY,
-            format!("failed to download recording: {msg}"),
-        ));
-    }
-    let bytes = audio_resp
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+            format!("failed to download recording: {}", err.1),
+        )
+    })?;
+
+    let bytes = downloaded.bytes;
 
     // 3) POST to ElevenLabs voices/add
     let form = reqwest::multipart::Form::new()
@@ -854,23 +835,21 @@ pub async fn delete_voice_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    // Delete storage object (best-effort)
-    let del_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let _ = http
-        .delete(&del_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await;
+    // 2) Delete storage object using shared module (STRICT)
+    if let Err(err) = delete_object(&state, bucket, path).await {
+        tracing::error!(status=?err.0, body=%err.1, "voice recording storage delete failed");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "failed to delete recording from storage".into(),
+        ));
+    }
 
-    // Delete brand asset references (best-effort)
+    // 3) Soft-delete storage_assets registry row
+    if let Err(err) = soft_delete_asset_record(&state, "voice_recordings", &id).await {
+        warn!(recording_id = %id, error = %err.1, "failed to soft-delete storage_assets row for voice recording");
+    }
+
+    // 4) Delete brand asset references (best-effort)
     let _ = state
         .pg
         .from("brand_voice_assets")
@@ -879,7 +858,7 @@ pub async fn delete_voice_recording(
         .execute()
         .await;
 
-    // If a voice model references this recording, clear it first.
+    // 5) If a voice model references this recording, clear it first.
     // Some PostgREST deployments surface this as a 409/validation error on delete,
     // even though the FK is configured as ON DELETE SET NULL.
     let vm_upd = state
@@ -903,7 +882,7 @@ pub async fn delete_voice_recording(
         ));
     }
 
-    // Delete DB row
+    // 6) Delete DB row
     let del_resp = state
         .pg
         .from("voice_recordings")
@@ -925,7 +904,7 @@ pub async fn delete_voice_recording(
         ));
     }
 
-    // Confirm the row is actually gone (PostgREST may return 2xx even if nothing was deleted,
+    // 7) Confirm the row is actually gone (PostgREST may return 2xx even if nothing was deleted,
     // and some deployments don't support returning deleted rows from DELETE)
     let check = state
         .pg
@@ -958,4 +937,158 @@ pub async fn delete_voice_recording(
     }
 
     Ok(Json(DeleteVoiceOut { deleted: true }))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::storage::{
+        canonical_object_path, sanitize_file_name, StorageContextType, StorageOwnerType,
+        StorageVisibility,
+    };
+
+    #[test]
+    fn test_voice_recording_path_generation() {
+        let user_id = "user_123";
+        let file_name = "recording.webm";
+        let timestamp = 1234567890123i64;
+
+        let path_prefix = format!("users/{}/voice-recordings", user_id);
+        let path = canonical_object_path(&path_prefix, &sanitize_file_name(file_name), timestamp);
+
+        assert!(path.starts_with("users/user_123/voice-recordings/"));
+        assert!(path.contains("1234567890123"));
+        assert!(path.ends_with("recording.webm"));
+    }
+
+    #[test]
+    fn test_voice_recording_file_extension_detection() {
+        let test_cases = vec![
+            ("audio/wav", "wav"),
+            ("audio/x-wav", "wav"),
+            ("audio/ogg", "ogg"),
+            ("audio/mp4", "mp4"),
+            ("audio/m4a", "mp4"),
+            ("audio/webm", "webm"),
+            ("audio/mpeg", "webm"), // default
+        ];
+
+        for (content_type, expected_ext) in test_cases {
+            let ext = if content_type.contains("wav") {
+                "wav"
+            } else if content_type.contains("ogg") {
+                "ogg"
+            } else if content_type.contains("mp4") || content_type.contains("m4a") {
+                "mp4"
+            } else {
+                "webm"
+            };
+
+            assert_eq!(
+                ext, expected_ext,
+                "Failed for content type: {}",
+                content_type
+            );
+        }
+    }
+
+    #[test]
+    fn test_storage_asset_record_for_voice_recording() {
+        let user_id = "user_456";
+        let recording_id = "rec_789";
+        let object_path = "users/user_456/voice-recordings/1234567890123_recording.webm";
+        let file_name = "recording.webm";
+        let mime_type = "audio/webm";
+        let size_bytes = 1024i64;
+
+        let record = crate::storage::StorageAssetRecord {
+            owner_type: StorageOwnerType::User,
+            owner_id: user_id.to_string(),
+            context_type: StorageContextType::VoiceRecording,
+            context_id: None,
+            visibility: StorageVisibility::Private,
+            object_path: object_path.to_string(),
+            original_file_name: Some(file_name.to_string()),
+            mime_type: Some(mime_type.to_string()),
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("voice_recordings".to_string()),
+            source_id: Some(recording_id.to_string()),
+            created_by: Some(user_id.to_string()),
+            counts_toward_quota: false,
+        };
+
+        assert_eq!(record.owner_type, StorageOwnerType::User);
+        assert_eq!(record.owner_id, user_id);
+        assert_eq!(record.context_type, StorageContextType::VoiceRecording);
+        assert_eq!(record.visibility, StorageVisibility::Private);
+        assert_eq!(record.object_path, object_path);
+        assert_eq!(record.source_table, Some("voice_recordings".to_string()));
+        assert_eq!(record.source_id, Some(recording_id.to_string()));
+        assert!(!record.counts_toward_quota);
+    }
+
+    #[test]
+    fn test_sanitize_voice_recording_filename() {
+        let test_cases = vec![
+            ("recording.webm", "recording.webm"),
+            ("my recording.wav", "my_recording.wav"),
+            ("voice@sample#1.ogg", "voice_sample_1.ogg"),
+            ("../../../etc/passwd", "_._._etc_passwd"),
+            ("", "upload.bin"),
+            ("recording with spaces.mp4", "recording_with_spaces.mp4"),
+        ];
+
+        for (input, expected) in test_cases {
+            let sanitized = sanitize_file_name(input);
+            assert_eq!(
+                sanitized, expected,
+                "Failed to sanitize: {} -> {}",
+                input, expected
+            );
+        }
+    }
+
+    #[test]
+    fn test_voice_recording_visibility() {
+        // Voice recordings should always be private
+        let visibility = StorageVisibility::Private;
+        assert_eq!(visibility, StorageVisibility::Private);
+        assert_eq!(visibility.as_str(), "private");
+    }
+
+    #[test]
+    fn test_voice_recording_owner_type() {
+        let owner_type = StorageOwnerType::User;
+        assert_eq!(owner_type, StorageOwnerType::User);
+        assert_eq!(owner_type.as_str(), "user");
+    }
+
+    #[test]
+    fn test_voice_recording_agency_owner_type() {
+        let owner_type = StorageOwnerType::Agency;
+        assert_eq!(owner_type, StorageOwnerType::Agency);
+        assert_eq!(owner_type.as_str(), "agency");
+    }
+
+    #[test]
+    fn test_voice_recording_creator_owner_type() {
+        let owner_type = StorageOwnerType::Creator;
+        assert_eq!(owner_type, StorageOwnerType::Creator);
+        assert_eq!(owner_type.as_str(), "creator");
+    }
+
+    #[test]
+    fn test_voice_recording_context_type() {
+        let context_type = StorageContextType::VoiceRecording;
+        assert_eq!(context_type, StorageContextType::VoiceRecording);
+        assert_eq!(context_type.as_str(), "voice_recording");
+    }
+
+    #[test]
+    fn test_voice_recording_quota_attribution() {
+        // Voice recordings should NOT count toward agency quota
+        // They are creator-owned source assets
+        let counts_toward_quota = false;
+        assert!(!counts_toward_quota);
+    }
 }

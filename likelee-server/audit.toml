@@ -7,4 +7,15 @@ ignore = [
   # Transitive via postgrest -> reqwest 0.11.27 -> rustls 0.21.12 -> rustls-webpki 0.101.7
   # CRL validation issue - low impact for typical web applications
   "RUSTSEC-2026-0049",
+  # Transitive via async-stripe -> http-types -> rand 0.7.3
+  # Unsound with custom logger using rand::rng(); not a exploitable vulnerability,
+  # and rand 0.7 is locked by http-types which is unmaintained. No patch available.
+  "RUSTSEC-2026-0097",
+  # Transitive via async-stripe/reqwest -> hyper-rustls -> rustls 0.21.12 -> rustls-webpki 0.101.7
+  # Name constraints for URI names incorrectly accepted. Low impact: requires MITM with
+  # compromised CA cert. Fix requires rustls 0.23+ upgrade blocked by hyper-rustls 0.24.
+  "RUSTSEC-2026-0098",
+  # Same dependency tree as 0098. Name constraints accepted for wildcard names.
+  # Same remediation path: upgrade rustls-webpki blocked by hyper-rustls 0.24.
+  "RUSTSEC-2026-0099",
 ]

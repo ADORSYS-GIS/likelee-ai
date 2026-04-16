@@ -1193,27 +1193,7 @@ async fn generate_signed_url(
     bucket: &str,
     path: &str,
 ) -> Option<String> {
-    let url = format!(
-        "{}/storage/v1/object/sign/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let body = serde_json::json!({ "expiresIn": 86400 }); // 24h
-    let http = reqwest::Client::new();
-    let resp = http
-        .post(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .json(&body)
-        .send()
+    crate::storage::generate_signed_url(state, bucket, path, 86_400)
         .await
-        .ok()?;
-    if !resp.status().is_success() {
-        return None;
-    }
-    let j: serde_json::Value = resp.json().await.ok()?;
-    let signed_path = j.get("signedURL").and_then(|v| v.as_str())?;
-    Some(format!("{}/storage/v1{}", state.supabase_url, signed_path))
+        .ok()
 }
