@@ -40,7 +40,7 @@ function dashboardForOrganization(type: "agency" | "brand") {
 export default function TeamInviteLanding() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { authenticated, profile, supabase } = useAuth();
+  const { authenticated, profile, supabase, refreshProfile } = useAuth();
 
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
@@ -101,6 +101,7 @@ export default function TeamInviteLanding() {
     setActionError(null);
     try {
       await acceptTeamInviteByToken(effectiveToken);
+      await refreshProfile();
       setOtpDialogOpen(false);
       setPassword("");
       setConfirmPassword("");
@@ -122,7 +123,7 @@ export default function TeamInviteLanding() {
     } finally {
       setActionLoading(false);
     }
-  }, [effectiveToken, invite, navigate, organizationName]);
+  }, [effectiveToken, invite, navigate, organizationName, refreshProfile]);
 
   const handleOtpVerify = async (code: string) => {
     const client = requireSupabase();

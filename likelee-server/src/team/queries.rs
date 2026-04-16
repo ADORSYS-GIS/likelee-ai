@@ -378,3 +378,45 @@ pub(crate) async fn write_audit_log(
     }
     Ok(())
 }
+
+pub(crate) async fn count_active_members(
+    state: &AppState,
+    organization_type: OrganizationType,
+    organization_id: &str,
+) -> Result<usize, (StatusCode, String)> {
+    let rows = execute_rows(
+        state
+            .pg
+            .from("organization_memberships")
+            .select("user_id")
+            .eq("organization_type", organization_type.as_str())
+            .eq("organization_id", organization_id)
+            .eq("status", "active")
+            .execute()
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    Ok(rows.len())
+}
+
+pub(crate) async fn count_pending_invites(
+    state: &AppState,
+    organization_type: OrganizationType,
+    organization_id: &str,
+) -> Result<usize, (StatusCode, String)> {
+    let rows = execute_rows(
+        state
+            .pg
+            .from("organization_invites")
+            .select("id")
+            .eq("organization_type", organization_type.as_str())
+            .eq("organization_id", organization_id)
+            .eq("status", "pending")
+            .execute()
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    Ok(rows.len())
+}

@@ -167,7 +167,41 @@ pub async fn update(
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
+    // Resolve the effective brand ID - for team members this returns the organization's ID,
+    // not the team member's user ID. For new users without a membership, fall back to user.id.
+    let brand_id = match resolve_effective_brand_id(&state, &user).await {
+        Ok(id) => {
+            tracing::debug!(
+                user_id = %user.id,
+                brand_id = %id,
+                "Using resolved brand ID for profile update"
+            );
+            id
+        }
+        Err(_) => {
+            tracing::debug!(
+                user_id = %user.id,
+                "No membership found, using user ID for profile update (new user)"
+            );
+            user.id.clone()
+        }
+    };
+
     if let serde_json::Value::Object(ref mut map) = v {
+        // Include the effective brand ID for upsert matching
+        map.insert("id".into(), json!(brand_id));
+        map.insert("onboarding_step".into(), json!("complete"));
+
+        // For new profiles (OAuth signup), set default values
+        if payload.email.is_none() {
+            // Try to get email from auth user metadata if not provided
+            if let Some(email) = &user.email {
+                map.insert("email".into(), json!(email));
+            }
+        }
+
+        // Remove nulls to avoid overwriting existing data with nulls
+
         // Remove nulls first to avoid overwriting existing data with nulls
         let null_keys: Vec<String> = map
             .iter()
@@ -202,10 +236,32 @@ pub async fn update(
                 return Err(sanitize_db_error(status.as_u16(), text));
             }
 
-            let v: serde_json::Value = serde_json::from_str(&text)
+            // UPDATE returns empty array by default, so fetch the updated record
+            let fetch_resp = state
+                .pg
+                .from("brands")
+                .auth(state.supabase_service_key.clone())
+                .select("*")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-            return Ok(Json(v));
+            let fetch_text = fetch_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&fetch_text)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let profile = rows.into_iter().next().ok_or((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to fetch updated profile".to_string(),
+            ))?;
+
+            return Ok(Json(profile));
         }
 
         // Include the user's id for upsert matching
@@ -229,6 +285,7 @@ pub async fn update(
     // This supports both:
     // - OAuth users creating their profile for the first time
     // - Existing users updating their profile
+    // - Team members updating their organization's profile
     let resp = state
         .pg
         .from("brands")
@@ -248,7 +305,7 @@ pub async fn update(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &user.id).await;
+    let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &brand_id).await;
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -304,7 +361,7 @@ pub async fn get_by_user(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     match rows.into_iter().next() {
-        Some(v) => Ok(Json(v)),
+        Some(profile) => Ok(Json(profile)),
         None => Err((
             StatusCode::NOT_FOUND,
             json!({

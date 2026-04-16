@@ -20,6 +20,7 @@ import {
   changeAgencySubscriptionPlan,
   createAgencyBillingPortal,
   createAgencyIrlBookingAddonCheckout,
+  createAgencyStudioAddonCheckout,
   createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
   getAgencySeatBreakdown,
@@ -38,6 +39,7 @@ const PRO_BASE_PLAN_COST = 489;
 const BASIC_ROSTER_RATE = 5;
 const PRO_ROSTER_RATE = 10;
 const IRL_BOOKING_COST = 489;
+const STUDIO_ADDON_INITIAL_CREDITS = 2000;
 
 function parseBooleanFlag(value: unknown) {
   if (typeof value === "boolean") return value;
@@ -114,6 +116,7 @@ export default function AgencySubscribe() {
     String(DEFAULT_ROSTER_MODELS),
   );
   const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
+  const [hasStudioAddon, setHasStudioAddon] = React.useState(false);
   const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
     React.useState(false);
   const includeSeatsInPlan = true;
@@ -126,6 +129,8 @@ export default function AgencySubscribe() {
   } | null>(null);
   const [checkingOut, setCheckingOut] = React.useState(false);
   const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
+  const [checkingOutStudioAddon, setCheckingOutStudioAddon] =
+    React.useState(false);
   const [checkingOutSeats, setCheckingOutSeats] = React.useState(false);
   const [seatBreakdownOpen, setSeatBreakdownOpen] = React.useState(false);
   const [seatBreakdownLoading, setSeatBreakdownLoading] = React.useState(false);
@@ -264,6 +269,7 @@ export default function AgencySubscribe() {
         setHasIrlBookingAddon(
           parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
+        setHasStudioAddon(parseBooleanFlag(resp?.studio_addon_active));
         setIncludeIrlBookingInPlan(false);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
@@ -285,6 +291,7 @@ export default function AgencySubscribe() {
     setRosterModels(DEFAULT_ROSTER_MODELS);
     setRosterInput(String(DEFAULT_ROSTER_MODELS));
     setHasIrlBookingAddon(false);
+    setHasStudioAddon(false);
     setIncludeIrlBookingInPlan(false);
   }, [authenticated, initialized, isAgencyUser]);
 
@@ -549,6 +556,57 @@ export default function AgencySubscribe() {
       });
     } finally {
       setCheckingOutIrlAddon(false);
+    }
+  };
+
+  const onCheckoutStudioAddon = async () => {
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description:
+          "Sign in with your agency account to activate the Studio add-on.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description: "Use an agency account to activate the Studio add-on.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCheckingOutStudioAddon(true);
+    try {
+      const resp = await createAgencyStudioAddonCheckout();
+      const url = (resp as any)?.checkout_url as string | undefined;
+      if (!url) {
+        toast({
+          title: "Checkout failed",
+          description: "No checkout URL returned.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Checkout failed",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingOutStudioAddon(false);
     }
   };
 
@@ -849,6 +907,45 @@ export default function AgencySubscribe() {
 
   const getCheckoutButtonLabel = () => {
     if (!initialized || profileLoading) return "Loading";
+  const checkoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading;
+  const irlAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading;
+  const studioAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading;
+  const studioAddonCtaLabel = checkingOutStudioAddon
+    ? "Processing..."
+    : hasStudioAddon
+      ? "Open Studio"
+      : "Activate Studio Add-on";
+  const alreadySubscribedToPlan =
+    !requiresContactSales &&
+    ((plan === "basic" &&
+      currentPlanTier === "basic" &&
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)) ||
+      (plan === "pro" &&
+        currentPlanTier === "pro" &&
+        currentPlanInterval === billingInterval &&
+        !(includeSeatsInPlan && seatCountChanged)));
+  const footerCtaLabel = (() => {
+    if (!initialized || profileLoading) return "Loading...";
+    if (requiresContactSales) return "Contact Sales";
     if (!authenticated) return "Sign in";
     if (!isAgencyUser) return "Agency account required";
     if (isDowngradeSelection || alreadySubscribedToPlan) return "Current Plan";
@@ -1185,6 +1282,104 @@ export default function AgencySubscribe() {
           id="agency-plan-cards"
           className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
         >
+          {/* Card 1: Free */}
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
+            <div className="absolute top-6 left-8">
+              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Free
+              </span>
+            </div>
+
+            <div className="mt-8 pt-4">
+              <div className="text-3xl font-black font-display text-gray-900">
+                Free
+              </div>
+              <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
+                Start with core agency setup
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2 text-gray-900">
+              <span className="text-5xl font-black font-display tracking-tight text-gray-900">
+                $0
+              </span>
+              <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
+                per month
+              </span>
+            </div>
+
+            <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
+              <div className="flex justify-between">
+                <span>Base plan</span>
+                <span className="text-gray-900 font-semibold">$0</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Roster seats</span>
+                <span className="text-gray-900 font-semibold">
+                  Not included
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>IRL Booking</span>
+                <span className="text-gray-900 font-semibold">
+                  Not included
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <Button
+                type="button"
+                className="w-full h-12 rounded-lg font-bold bg-[#00BFA5] hover:bg-[#00A18B] text-white transition-colors"
+                disabled={
+                  authenticated &&
+                  isAgencyUser &&
+                  !!currentPlanTier &&
+                  currentPlanTier !== "free"
+                }
+                onClick={() => {
+                  if (authenticated && isAgencyUser) {
+                    navigate("/AgencyDashboard");
+                    return;
+                  }
+                  navigate("/Login?role=agency");
+                }}
+              >
+                {authenticated &&
+                isAgencyUser &&
+                !!currentPlanTier &&
+                currentPlanTier !== "free"
+                  ? "Active"
+                  : currentPlanTier === "free"
+                    ? "Current"
+                    : "Continue Free"}
+              </Button>
+            </div>
+
+            <hr className="my-8 border-gray-100" />
+
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
+              Included
+            </div>
+            <div className="space-y-4 flex-grow">
+              {[
+                "Agency dashboard access",
+                "Agency profile and organization setup",
+                "Read-only platform exploration",
+                "1 team seat (owner only)",
+              ].map((label) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
+                  </div>
+                  <div className="leading-snug text-sm text-gray-600">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
           {/* Card 2: Basic */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
@@ -1312,6 +1507,7 @@ export default function AgencySubscribe() {
                 "Invoice Generation & Management",
                 "Payment Tracking",
                 "Talent Statements",
+                "5 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -1448,6 +1644,7 @@ export default function AgencySubscribe() {
                 "Royalties & Payouts Dashboard",
                 "Financial Reports & Expense Tracking",
                 "Calendly integration",
+                "10 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
@@ -1639,6 +1836,60 @@ export default function AgencySubscribe() {
                   }}
                 >
                   {irlAddonCtaLabel}
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-2xl font-black font-display">
+                    Likelee Studio Access
+                  </div>
+                  <div className="text-gray-500 mt-1">
+                    One-time activation for your agency Studio workspace with an
+                    initial wallet allocation.
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="bg-white/70">
+                    {hasStudioAddon ? "Active" : "One-time"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Grants access to{" "}
+                  <span className="font-semibold">/studio</span> for this
+                  agency.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Includes {formatNumber(STUDIO_ADDON_INITIAL_CREDITS)} initial
+                  Studio credits.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Charged once. It is not a recurring monthly add-on.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  If already active, clicking subscribe redirects directly to
+                  Studio.
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-sm text-gray-500">
+                  <div className="font-bold">
+                    Includes Studio Pro wallet plan
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  className="rounded-2xl font-black"
+                  disabled={studioAddonCheckoutDisabled}
+                  onClick={() => {
+                    void onCheckoutStudioAddon();
+                  }}
+                >
+                  {studioAddonCtaLabel}
                 </Button>
               </div>
             </Card>

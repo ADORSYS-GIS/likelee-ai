@@ -293,7 +293,11 @@ export const NewBookingModal = ({
           ? rows.map((r: any) => ({
               id: r.id,
               name: r.full_name || r.name || "Unnamed",
-              img: r.profile_photo_url || null,
+              img: r.img || r.profile_photo_url || null,
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
@@ -492,7 +496,11 @@ export const NewBookingModal = ({
           ? filteredRows.map((r: any) => ({
               id: r.id,
               name: r.full_name || r.name || "Unnamed",
-              img: r.profile_photo_url || null,
+              img: r.img || r.profile_photo_url || null,
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
@@ -721,6 +729,8 @@ export const NewBookingModal = ({
           status: "pending",
           client_id: selectedClient?.id,
           talent_id: talent.id,
+          creator_id: talent.creator_id || undefined,
+          relationship_id: talent.relationship_id || undefined,
           talent_name: talent.name,
           client_name: selectedClient.company,
           date: date,
@@ -954,11 +964,16 @@ export const NewBookingModal = ({
                         <p className="text-sm font-bold text-gray-900">
                           {t.name}
                         </p>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <div className="w-2 h-2 rounded-full bg-green-500" />
                           <p className="text-xs text-green-600 font-medium lowercase">
                             available
                           </p>
+                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
+                            {t.relationship_type === "marketplace_connected"
+                              ? "Connected"
+                              : "Internal Talent"}
+                          </span>
                         </div>
                       </div>
                       {selectedTalents.find((st) => st.id === t.id) && (
@@ -1001,6 +1016,11 @@ export const NewBookingModal = ({
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
+                        {t.relationship_type === "marketplace_connected"
+                          ? "Connected"
+                          : "Internal Talent"}
+                      </span>
                       <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
                         Available
                       </span>

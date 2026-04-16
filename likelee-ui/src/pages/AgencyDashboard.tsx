@@ -18759,6 +18759,8 @@ export default function AgencyDashboard() {
     try {
       const payload = {
         talent_id: bookOut.talentId || bookOut.talent_id,
+        creator_id: bookOut.creator_id,
+        relationship_id: bookOut.relationship_id,
         start_date: bookOut.startDate || bookOut.start_date,
         end_date: bookOut.endDate || bookOut.end_date,
         reason: bookOut.reason,

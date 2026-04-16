@@ -15,11 +15,13 @@ The enhanced seed data function creates realistic demo data for client presentat
 ## What's Improved
 
 ### 1. **Realistic Profile Photos**
+
 - Each talent has a professional headshot from Unsplash
 - Photo galleries with 3-4 additional images per talent
 - All images are properly sized (800x1000) and optimized
 
 ### 2. **Better Analytics Data**
+
 - **Follower counts**: Range from 38K (rising talent) to 385K (top influencer)
 - **Engagement rates**: Realistic rates (3.2% - 6.2%) inversely proportional to follower count
 - **Monthly rates**: $3,800 - $12,000 based on reach and engagement
@@ -27,7 +29,9 @@ The enhanced seed data function creates realistic demo data for client presentat
 - **Revenue patterns**: Realistic 30-day and 60-day earnings with growth trends
 
 ### 3. **Diverse Talent Names**
+
 More realistic and diverse names:
+
 - Sofia Martinez (Los Angeles, 385K followers)
 - Emma Chen (New York, 275K followers)
 - Isabella Laurent (Miami, 198K followers)
@@ -36,6 +40,7 @@ More realistic and diverse names:
 - And 5 more...
 
 ### 4. **Realistic Clients**
+
 - Luxe Beauty Co
 - Fashion Forward Inc
 - Urban Chic Brands
@@ -55,6 +60,7 @@ supabase db push
 ```
 
 Or manually run:
+
 ```bash
 psql $DATABASE_URL -f supabase/migrations/2026-04-06_enhanced_seed_agency_analytics_data.sql
 ```
@@ -72,6 +78,7 @@ SELECT public.seed_agency_analytics_data_enhanced(
 ```
 
 **Example:**
+
 ```sql
 SELECT public.seed_agency_analytics_data_enhanced(
   '123e4567-e89b-12d3-a456-426614174000'::uuid,
@@ -102,20 +109,21 @@ The function returns a JSON object with counts:
 
 ## What Gets Created
 
-| Data Type | Count | Details |
-|-----------|-------|---------|
-| **Talents** | 10 | With photos, galleries, social metrics |
-| **Clients** | 8 | Beauty, Fashion, and Lifestyle brands |
-| **Booking Campaigns** | 12 | Mix of ongoing and completed |
-| **Individual Bookings** | 22 | Across 70 days with varied statuses |
-| **Licensing Requests** | 13 | Pending (3), Approved (9), Rejected (1) |
-| **Talent Packages** | 3 | With client interactions and views |
-| **Payment Records** | 22 | With realistic splits (75% talent, 25% agency) |
-| **Licensing Payouts** | 10 | For approved licensing deals |
+| Data Type               | Count | Details                                        |
+| ----------------------- | ----- | ---------------------------------------------- |
+| **Talents**             | 10    | With photos, galleries, social metrics         |
+| **Clients**             | 8     | Beauty, Fashion, and Lifestyle brands          |
+| **Booking Campaigns**   | 12    | Mix of ongoing and completed                   |
+| **Individual Bookings** | 22    | Across 70 days with varied statuses            |
+| **Licensing Requests**  | 13    | Pending (3), Approved (9), Rejected (1)        |
+| **Talent Packages**     | 3     | With client interactions and views             |
+| **Payment Records**     | 22    | With realistic splits (75% talent, 25% agency) |
+| **Licensing Payouts**   | 10    | For approved licensing deals                   |
 
 ## Resetting/Updating Seed Data
 
 ### To Reset Everything
+
 ```sql
 -- This clears all previous seed data and creates fresh data
 SELECT public.seed_agency_analytics_data_enhanced(
@@ -125,6 +133,7 @@ SELECT public.seed_agency_analytics_data_enhanced(
 ```
 
 ### To Add More Data (Without Reset)
+
 ```sql
 -- This adds to existing seed data without clearing
 SELECT public.seed_agency_analytics_data_enhanced(
@@ -138,17 +147,20 @@ SELECT public.seed_agency_analytics_data_enhanced(
 ## Photo Sources
 
 All photos are from **Unsplash**, a free stock photo platform:
+
 - License: Free for commercial use
 - No attribution required (but appreciated)
 - High-quality professional portraits
 - URLs use Unsplash's image optimization API
 
 Example URL format:
+
 ```
 https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop
 ```
 
 Parameters:
+
 - `w=800` - width in pixels
 - `h=1000` - height in pixels
 - `fit=crop` - smart cropping to maintain aspect ratio
@@ -207,10 +219,10 @@ To remove all seed data for an agency:
 -- First, run the function with reset=true but don't insert new data
 -- Or manually delete using the seed tag
 
-DELETE FROM public.payments 
+DELETE FROM public.payments
 WHERE agency_id = 'your-agency-id'::uuid
   AND (booking_id IN (
-    SELECT id::text FROM public.bookings 
+    SELECT id::text FROM public.bookings
     WHERE notes = 'analytics_seed:your-agency-id'
   ));
 
@@ -224,7 +236,8 @@ WHERE agency_id = 'your-agency-id'::uuid
 
 **Cause:** Unsplash URLs might be blocked by firewall or ad blocker.
 
-**Solution:** 
+**Solution:**
+
 1. Check browser console for errors
 2. Try different image hosts (Cloudinary, ImgIX, or your own CDN)
 3. Upload photos to Supabase Storage and use those URLs
@@ -234,6 +247,7 @@ WHERE agency_id = 'your-agency-id'::uuid
 **Cause:** UI components displaying `id` instead of `name` or `stage_name`.
 
 **Solution:** Check the UI mapping - talent names are stored in:
+
 - `agency_users.full_legal_name`
 - `agency_users.stage_name`
 - `creators.full_name`
@@ -243,9 +257,10 @@ WHERE agency_id = 'your-agency-id'::uuid
 **Cause:** Payment records might not be marked as "succeeded".
 
 **Solution:** Check payment status:
+
 ```sql
-SELECT status, COUNT(*) 
-FROM payments 
+SELECT status, COUNT(*)
+FROM payments
 WHERE agency_id = 'your-agency-id'::uuid
 GROUP BY status;
 ```
@@ -279,6 +294,7 @@ All should show `succeeded` except 2 `pending` payments.
 ## Support
 
 For issues or questions:
+
 1. Check the migration file: `supabase/migrations/2026-04-06_enhanced_seed_agency_analytics_data.sql`
 2. Review Supabase logs for errors
 3. Verify all dependencies are installed

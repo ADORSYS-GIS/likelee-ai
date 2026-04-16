@@ -125,6 +125,7 @@ async fn main() {
         supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
+        supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),
@@ -158,6 +159,11 @@ async fn main() {
         stripe_agency_irl_booking_annual_price_id: cfg
             .stripe_agency_irl_booking_annual_price_id
             .clone(),
+        stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
+        stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
+        stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
+        stripe_brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
+        stripe_brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",

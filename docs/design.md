@@ -743,7 +743,6 @@ Creator subscriptions are backed by Stripe and persisted directly on the creator
 - The `plan_tier` is updated from `free` to `basic` or `pro` immediately, but access remains free until the trial ends.
 - This prevents multiple trials per user since `trial_started_at` is checked before allowing a trial checkout session.
 
-
 ### Plan Visibility & Management
 
 - **Dashboard Banner**: The standalone large navy banner has been removed.

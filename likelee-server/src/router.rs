@@ -27,6 +27,15 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Admin Endpoints ---
+        .route(
+            "/api/admin/storage/backfill",
+            post(crate::admin::backfill_storage),
+        )
+        .route(
+            "/api/admin/storage/verify-parity",
+            get(crate::admin::verify_storage_parity),
+        )
         // --- Messaging Hub ---
         .route(
             "/api/conversations",
@@ -837,6 +846,22 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brands::get_licensing_contracts_count),
         )
         .route(
+            "/api/brand/billing/checkout",
+            post(crate::billing::create_brand_subscription_checkout),
+        )
+        .route(
+            "/api/brand/billing/portal",
+            post(crate::billing::create_brand_billing_portal),
+        )
+        .route(
+            "/api/brand/billing/studio-addon/checkout",
+            post(crate::billing::create_brand_studio_addon_checkout),
+        )
+        .route(
+            "/api/brand/billing/studio-addon/verify",
+            post(crate::billing::verify_brand_studio_addon_checkout),
+        )
+        .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
                 .get(crate::brand_campaigns::list_campaigns),
@@ -1263,6 +1288,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/billing/addons/irl-booking/checkout",
             post(crate::billing::create_agency_irl_booking_addon_checkout),
+        )
+        .route(
+            "/api/agency/billing/addons/studio/checkout",
+            post(crate::billing::create_agency_studio_addon_checkout),
         )
         .route(
             "/api/agency/billing/addons/seats",

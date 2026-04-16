@@ -164,6 +164,25 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createBrandSubscriptionCheckout = (data: {
+  plan: "basic" | "pro" | "enterprise";
+  billing_cycle?: "monthly" | "annual";
+  start_trial?: boolean;
+  next_path?: string;
+}) => base44Client.post(`/brand/billing/checkout`, data);
+
+export const createBrandBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(`/brand/billing/portal`, {});
+
+export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
+  base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
+
+export const verifyBrandStudioAddonCheckout = (data: { session_id: string }) =>
+  base44Client.post<{ studio_addon_active: boolean }>(
+    `/brand/billing/studio-addon/verify`,
+    data,
+  );
+
 export const createCreatorSubscriptionCheckout = (data: {
   plan: "basic" | "pro";
   interval?: "month" | "year";
@@ -181,6 +200,9 @@ export const createCreatorBillingPortal = () =>
   );
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
+
+export const createAgencyStudioAddonCheckout = () =>
+  base44Client.post(`/agency/billing/addons/studio/checkout`, {});
 
 export const startAgencyProTrial = () =>
   base44Client.post<{

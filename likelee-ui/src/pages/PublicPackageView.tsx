@@ -44,7 +44,9 @@ import { Label } from "@/components/ui/label";
 export function PublicPackageView() {
   const { token } = useParams<{ token: string }>();
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const selectedTalent = selectedItem ? selectedItem.talent : null;
+  const selectedTalent = selectedItem
+    ? selectedItem.talent || selectedItem.creator || selectedItem
+    : null;
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [initialFavorites, setInitialFavorites] = useState<Set<string>>(
@@ -186,6 +188,31 @@ export function PublicPackageView() {
 
   const rawPackageData = packageData as any;
 
+  const getTalentId = (item: any) => {
+    const talent =
+      item?.talent || item?.agency_users || item?.creator || item || {};
+    const id =
+      talent?.id ||
+      item?.talent_id ||
+      item?.creator_id ||
+      item?.relationship_id ||
+      item?.id;
+    return String(id || "").trim();
+  };
+
+  const getTalentName = (item: any) => {
+    const talent =
+      item?.talent || item?.agency_users || item?.creator || item || {};
+    return String(
+      talent?.stage_name ||
+        talent?.full_legal_name ||
+        talent?.full_name ||
+        item?.talent_name ||
+        item?.full_name ||
+        "Talent",
+    ).trim();
+  };
+
   const pkg = useMemo(() => {
     const d = rawPackageData;
     if (!d || typeof d !== "object") return d;
@@ -254,7 +281,8 @@ export function PublicPackageView() {
 
   useEffect(() => {
     if (selectedItem && packageData) {
-      const talentId = selectedItem.talent.id;
+      const talentId = getTalentId(selectedItem);
+      if (!talentId) return;
       const existingComment = (packageData.interactions || []).find(
         (i: any) => i.talent_id === talentId && i.type === "comment",
       );
@@ -813,17 +841,8 @@ export function PublicPackageView() {
         {(pkg.items || pkg.package_items || pkg.talents || [])?.map(
           (item: any, idx: number) => {
             const talent = item?.talent || item?.agency_users || item || {};
-            const talentId = String(
-              talent?.id || item?.talent_id || item?.id || "",
-            ).trim();
-            const talentName = String(
-              talent?.stage_name ||
-                talent?.full_legal_name ||
-                talent?.full_name ||
-                item?.talent_name ||
-                item?.full_name ||
-                "Talent",
-            ).trim();
+            const talentId = getTalentId(item);
+            const talentName = getTalentName(item);
             const photoUrl = String(
               talent?.profile_photo_url ||
                 item?.profile_photo_url ||
@@ -832,7 +851,7 @@ export function PublicPackageView() {
             ).trim();
             return (
               <motion.div
-                key={item.id}
+                key={String(item?.id || talentId || idx)}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
@@ -973,12 +992,16 @@ export function PublicPackageView() {
                       size="icon"
                       className="rounded-full border-2"
                       style={{ borderColor: primaryColor, color: primaryColor }}
-                      onClick={() => toggleFavorite(selectedTalent.id)}
+                      onClick={() => {
+                        const id = getTalentId(selectedItem);
+                        if (!id) return;
+                        toggleFavorite(id);
+                      }}
                     >
                       <Heart
-                        className={`${selectedFavorites.has(selectedTalent.id) ? "text-red-500" : ""}`}
+                        className={`${selectedFavorites.has(getTalentId(selectedItem)) ? "text-red-500" : ""}`}
                         fill={
-                          selectedFavorites.has(selectedTalent.id)
+                          selectedFavorites.has(getTalentId(selectedItem))
                             ? "currentColor"
                             : "none"
                         }
@@ -986,14 +1009,14 @@ export function PublicPackageView() {
                     </Button>
                     <Button
                       variant={
-                        selectedSelections.has(selectedTalent.id)
+                        selectedSelections.has(getTalentId(selectedItem))
                           ? "default"
                           : "outline"
                       }
                       size="icon"
                       className="rounded-full border-2"
                       style={
-                        selectedSelections.has(selectedTalent.id)
+                        selectedSelections.has(getTalentId(selectedItem))
                           ? {
                               backgroundColor: "#10B981",
                               borderColor: "#10B981",
@@ -1001,23 +1024,31 @@ export function PublicPackageView() {
                             }
                           : { borderColor: "#10B981", color: "#10B981" }
                       }
-                      onClick={() => toggleSelected(selectedTalent.id)}
+                      onClick={() => {
+                        const id = getTalentId(selectedItem);
+                        if (!id) return;
+                        toggleSelected(id);
+                      }}
                     >
                       <Check className="w-4 h-4" />
                     </Button>
                     <Button
                       variant={
-                        selectedCallbacks.has(selectedTalent.id)
+                        selectedCallbacks.has(getTalentId(selectedItem))
                           ? "default"
                           : "outline"
                       }
                       className="rounded-full h-9 px-4 font-black uppercase text-[9px] tracking-widest"
                       style={
-                        selectedCallbacks.has(selectedTalent.id)
+                        selectedCallbacks.has(getTalentId(selectedItem))
                           ? { backgroundColor: primaryColor }
                           : { borderColor: primaryColor, color: primaryColor }
                       }
-                      onClick={() => toggleCallback(selectedTalent.id)}
+                      onClick={() => {
+                        const id = getTalentId(selectedItem);
+                        if (!id) return;
+                        toggleCallback(id);
+                      }}
                     >
                       Request Callback
                     </Button>
@@ -1078,21 +1109,27 @@ export function PublicPackageView() {
                       placeholder="Your Name"
                       value={clientName}
                       readOnly={
-                        !!selectedItem && lockedComments[selectedItem.talent.id]
+                        !!selectedItem &&
+                        !!getTalentId(selectedItem) &&
+                        lockedComments[getTalentId(selectedItem)]
                       }
                       onClick={() => {
                         if (!selectedItem) return;
+                        const id = getTalentId(selectedItem);
+                        if (!id) return;
                         setLockedComments((prev) => ({
                           ...prev,
-                          [selectedItem.talent.id]: false,
+                          [id]: false,
                         }));
                       }}
                       onChange={(e) => {
                         setClientName(e.target.value);
                         if (!selectedItem) return;
+                        const id = getTalentId(selectedItem);
+                        if (!id) return;
                         setPendingNotes((prev) => ({
                           ...prev,
-                          [selectedItem.talent.id]: {
+                          [id]: {
                             comment,
                             clientName: e.target.value,
                           },
@@ -1107,28 +1144,35 @@ export function PublicPackageView() {
                         value={comment}
                         readOnly={
                           !!selectedItem &&
-                          lockedComments[selectedItem.talent.id]
+                          !!getTalentId(selectedItem) &&
+                          lockedComments[getTalentId(selectedItem)]
                         }
                         onClick={() => {
                           if (!selectedItem) return;
+                          const id = getTalentId(selectedItem);
+                          if (!id) return;
                           setLockedComments((prev) => ({
                             ...prev,
-                            [selectedItem.talent.id]: false,
+                            [id]: false,
                           }));
                         }}
                         onFocus={() => {
                           if (!selectedItem) return;
+                          const id = getTalentId(selectedItem);
+                          if (!id) return;
                           setLockedComments((prev) => ({
                             ...prev,
-                            [selectedItem.talent.id]: false,
+                            [id]: false,
                           }));
                         }}
                         onChange={(e) => {
                           setComment(e.target.value);
                           if (!selectedItem) return;
+                          const id = getTalentId(selectedItem);
+                          if (!id) return;
                           setPendingNotes((prev) => ({
                             ...prev,
-                            [selectedItem.talent.id]: {
+                            [id]: {
                               comment: e.target.value,
                               clientName,
                             },
@@ -1141,29 +1185,33 @@ export function PublicPackageView() {
                         className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${
                           !comment ||
                           (selectedItem &&
-                            lockedComments[selectedItem.talent.id])
+                            !!getTalentId(selectedItem) &&
+                            lockedComments[getTalentId(selectedItem)])
                             ? "opacity-40 grayscale cursor-not-allowed"
                             : "hover:-translate-y-0.5"
                         }`}
                         style={{ backgroundColor: primaryColor }}
                         onClick={() => {
                           if (!selectedItem) return;
+                          const id = getTalentId(selectedItem);
+                          if (!id) return;
                           setPendingNotes((prev) => ({
                             ...prev,
-                            [selectedItem.talent.id]: {
+                            [id]: {
                               comment,
                               clientName,
                             },
                           }));
                           setLockedComments((prev) => ({
                             ...prev,
-                            [selectedItem.talent.id]: true,
+                            [id]: true,
                           }));
                         }}
                         disabled={
                           !comment ||
                           (selectedItem &&
-                            lockedComments[selectedItem.talent.id])
+                            !!getTalentId(selectedItem) &&
+                            lockedComments[getTalentId(selectedItem)])
                         }
                       >
                         <Send className="w-4 h-4" />
@@ -1180,7 +1228,12 @@ export function PublicPackageView() {
                       interactionMutation.isPending ||
                       deleteInteractionMutation.isPending
                     }
-                    onClick={() => submitInteractions(selectedTalent.id)}
+                    onClick={() => {
+                      if (!selectedItem) return;
+                      const id = getTalentId(selectedItem);
+                      if (!id) return;
+                      submitInteractions(id);
+                    }}
                   >
                     {interactionMutation.isPending ||
                     deleteInteractionMutation.isPending
