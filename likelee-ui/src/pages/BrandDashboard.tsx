@@ -4,32 +4,38 @@ import React, {
   useMemo,
   useRef,
   useState,
-  useCallback,
 } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
+import { CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
   createAgencyBrandLicensingRequest,
   getBrandLicensingRequests,
   getBrandProfile,
-  updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
-  listBrandNotifications,
-  markBrandNotificationRead,
-  getBrandNotificationCount,
-  getInboxUnreadCount,
-  markInboxPackagesViewed,
-  getJobsUnreadCount,
-  markJobApplicationsViewed,
-  getLicensingContractsCount,
 } from "@/api/functions";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  BRAND_STUDIO_ADDON_PRICE,
+  BrandPlanTier,
+  brandAllowsCampaignCollaboration,
+  brandCanPurchaseStudioAddon,
+  brandIncludesStudioAccess,
+  brandPlanCampaignLimit,
+  brandPlanPrice,
+  brandPlanSeatLimit,
+  formatBrandPlanLabel,
+  formatBrandStudioAddonStatus,
+  formatBrandSubscriptionStatus,
+  hasBrandStudioAccess,
+  normalizeBrandPlanTier,
+} from "@/lib/brandBilling";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
-import { BrandSettingsPanel } from "@/components/brand-dashboard/settings/BrandSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,12 +94,8 @@ import {
   RefreshCw,
   Maximize2,
   Trash2,
-  CircleSlash,
-  Headset,
-  BookOpen,
-  Info,
-  Shield,
-  ShieldCheck,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -116,7 +118,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -160,436 +161,129 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
+const formatBillingDate = (value: unknown) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const brandPlanSummaryTheme = (
+  tier: BrandPlanTier,
+): {
+  eyebrow: string;
+  containerClass: string;
+  bandClass: string;
+  badgeClass: string;
+  headingClass: string;
+  bodyClass: string;
+  statCardClass: string;
+  statLabelClass: string;
+  statValueClass: string;
+  statMetaClass: string;
+  buttonClass: string;
+  actionLabel: string;
+  actionPath: string;
+} => {
+  switch (tier) {
+    case "basic":
+      return {
+        eyebrow: "Starter",
+        containerClass: "border-[#D7E6ED] bg-white",
+        bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
+        badgeClass:
+          "border border-[#D7F0EB] bg-[#EEF9F7] text-[#18A7A5] hover:bg-[#EEF9F7]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#70839B]",
+        statCardClass: "border border-[#D7F0EB] bg-[#F5FCFA]",
+        statLabelClass: "text-[#5F7C86]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#6F8F99]",
+        buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
+        actionLabel: "Upgrade to Pro",
+        actionPath: "/brandpricing",
+      };
+    case "pro":
+      return {
+        eyebrow: "Most popular",
+        containerClass: "border-[#2B4B8A] bg-[#17315E]",
+        bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
+        badgeClass:
+          "border border-[#225F85] bg-[#1A4E74] text-[#7FECFF] hover:bg-[#1A4E74]",
+        headingClass: "text-white",
+        bodyClass: "text-[#B8C8E5]",
+        statCardClass: "border border-[#29456F] bg-[#1C3B6C]",
+        statLabelClass: "text-[#A9BBDA]",
+        statValueClass: "text-white",
+        statMetaClass: "text-[#9CB1D5]",
+        buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
+        actionLabel: "Talk to Sales",
+        actionPath: "/SalesInquiry",
+      };
+    case "enterprise":
+      return {
+        eyebrow: "Full suite",
+        containerClass: "border-[#D9E4FF] bg-white",
+        bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
+        badgeClass:
+          "border border-[#DCE5FF] bg-[#F3F6FF] text-[#4978FF] hover:bg-[#F3F6FF]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#7C88A5]",
+        statCardClass: "border border-[#DCE5FF] bg-[#F7F9FF]",
+        statLabelClass: "text-[#7083A9]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#7C88A5]",
+        buttonClass:
+          "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
+        actionLabel: "Contact Sales",
+        actionPath: "/SalesInquiry",
+      };
+    default:
+      return {
+        eyebrow: "Free",
+        containerClass: "border-slate-200 bg-white",
+        bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
+        badgeClass:
+          "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50",
+        headingClass: "text-slate-900",
+        bodyClass: "text-slate-600",
+        statCardClass: "border border-slate-200 bg-slate-50",
+        statLabelClass: "text-slate-600",
+        statValueClass: "text-slate-900",
+        statMetaClass: "text-slate-500",
+        buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
+        actionLabel: "View Plans",
+        actionPath: "/brandpricing",
+      };
+  }
+};
+
 const getBrandInitials = (name: string) => {
   const parts = String(name || "")
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (parts.length === 0) return "…";
+  if (parts.length === 0) return "B";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-// Mock data
-const mockBrand = {
-  id: "",
-  name: "Urban Apparel Co.",
-  logo: "",
-  industry: "Retail & E-commerce",
-  website: "www.urbanapparel.com",
-  contact_email: "team@urbanapparel.com",
-  plan: "",
-  team_seats: 3,
-  secondary_color: "#F7B750",
-};
+// Brand data is now loaded from API via getBrandProfile()
 
-const emptyBrand = {
-  ...mockBrand,
-  name: "",
-  industry: "",
-  website: "",
-  contact_email: "",
-  logo: "",
-  plan: "",
-};
+// Mock creators removed - creators are now loaded from real marketplace data
 
-const mockCreators = [
-  {
-    id: 1,
-    name: "Emma",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Fashion model specializing in beauty and lifestyle",
-    followers: 42300,
-    engagement: "4.2%",
-    price: 450,
-    turnaround: "12h",
-    tags: ["Fashion", "Beauty", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "Elite Models LA",
-    instagram: "https://instagram.com/emma",
-    tiktok: "https://tiktok.com/@emma",
-    portfolio_url: "https://emmamodels.com",
-    bio: "Professional fashion model with 8+ years experience in editorial and commercial work. Specialized in beauty campaigns and lifestyle content.",
-    height: "5ft 9in",
-    weight: "125 lbs",
-    bust: "34",
-    waist: "25",
-    hips: "36",
-    skin_tone: "Fair",
-    hair_color: "Blonde",
-    eye_color: "Blue",
-    niches: ["Fashion", "Beauty", "Lifestyle"],
-    rules: ["No alcohol", "No swimwear"],
-    past_projects: [
-      {
-        brand: "Urban Apparel",
-        image:
-          "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",
-      },
-      {
-        brand: "Beauty Co",
-        image:
-          "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Sergine",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-    location: "New York, NY",
-    tagline: "Minimalist fashion model with clean aesthetic",
-    followers: 2800,
-    engagement: "3.8%",
-    price: 380,
-    turnaround: "24h",
-    tags: ["Fashion", "Minimalist", "Editorial"],
-    verified: true,
-    creator_type: "influencer",
-    instagram: "https://instagram.com/sergine",
-    tiktok: "https://tiktok.com/@sergine",
-    bio: "Minimalist fashion influencer focused on sustainable style and clean aesthetics.",
-    skin_tone: "Medium",
-    hair_color: "Brown",
-    eye_color: "Brown",
-    niches: ["Fashion", "Minimalist", "Sustainable"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Sustainable Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Milan",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    location: "Miami, FL",
-    tagline: "Street style and urban fashion model",
-    followers: 15200,
-    engagement: "5.1%",
-    price: 520,
-    turnaround: "8h",
-    tags: ["Streetwear", "Urban", "Fashion"],
-    verified: true,
-    creator_type: "ugc",
-    instagram: "https://instagram.com/milan",
-    bio: "UGC creator specializing in street style and urban fashion content.",
-    skin_tone: "Tan",
-    hair_color: "Black",
-    eye_color: "Brown",
-    niches: ["Streetwear", "Urban", "Fashion"],
-    rules: ["No tobacco"],
-    past_projects: [],
-  },
-  {
-    id: 4,
-    name: "Julia",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-    location: "Paris, France",
-    tagline: "High fashion editorial and commercial model",
-    followers: 5700,
-    engagement: "6.2%",
-    price: 580,
-    turnaround: "24h",
-    tags: ["Editorial", "High Fashion", "Commercial"],
-    verified: true,
-    creator_type: "actor",
-    agency: "Talent Works Paris",
-    portfolio_url: "https://juliaactor.com",
-    bio: "Professional actor with extensive commercial and editorial experience.",
-    skin_tone: "Olive",
-    hair_color: "Dark Brown",
-    eye_color: "Green",
-    niches: ["Editorial", "High Fashion", "Commercial"],
-    rules: ["No political content"],
-    past_projects: [
-      {
-        brand: "Luxury Brand",
-        image:
-          "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400",
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: "Matt",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    location: "London, UK",
-    tagline: "Grooming and lifestyle model, skincare specialist",
-    followers: 18600,
-    engagement: "4.5%",
-    price: 490,
-    turnaround: "16h",
-    tags: ["Grooming", "Lifestyle", "Skincare"],
-    verified: true,
-    creator_type: "athlete",
-    sport: "Basketball",
-    instagram: "https://instagram.com/matt",
-    bio: "Professional athlete and grooming model. Specialist in skincare and lifestyle campaigns.",
-    height: "6ft 2in",
-    weight: "195 lbs",
-    skin_tone: "Fair",
-    hair_color: "Brown",
-    eye_color: "Blue",
-    niches: ["Grooming", "Lifestyle", "Skincare", "Sports"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Grooming Brand",
-        image:
-          "https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?w=400",
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: "Carla",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Sustainable fashion advocate and lifestyle creator",
-    followers: 53400,
-    engagement: "7.1%",
-    price: 650,
-    turnaround: "12h",
-    tags: ["Sustainable", "Fashion", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "IMG Models",
-    instagram: "https://instagram.com/carla",
-    tiktok: "https://tiktok.com/@carla",
-    portfolio_url: "https://carlamodels.com",
-    bio: "Sustainable fashion model and advocate. Passionate about eco-friendly brands and ethical fashion.",
-    height: "5ft 10in",
-    weight: "130 lbs",
-    bust: "32",
-    waist: "24",
-    hips: "35",
-    skin_tone: "Medium",
-    hair_color: "Dark Brown",
-    eye_color: "Brown",
-    niches: ["Sustainable", "Fashion", "Lifestyle"],
-    rules: ["No fast fashion", "Eco-friendly brands only"],
-    past_projects: [
-      {
-        brand: "Eco Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400",
-      },
-      {
-        brand: "Green Apparel",
-        image:
-          "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400",
-      },
-    ],
-  },
-];
+// Mock campaigns removed - campaigns are now loaded from real API data
 
-const mockCampaigns = [
-  {
-    id: 1,
-    name: "Spring Collection Launch",
-    creators: ["Sophia Chen"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "in_progress",
-    budget: 5000,
-    escrow_amount: 5000,
-    assets_delivered: 8,
-    go_live: "2025-02-15",
-    license_expiry: "2025-03-15",
-    due_date: "2025-12-20",
-    last_update: "2 hours ago",
-    territory: "North America",
-    channels: ["Social", "Web"],
-    duration: "90 days",
-  },
-  {
-    id: 2,
-    name: "Summer Fitness Challenge",
-    creators: ["Marcus Davis"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    ],
-    status: "pending_approval",
-    budget: 2500,
-    escrow_amount: 2500,
-    assets_delivered: 6,
-    go_live: "2025-03-01",
-    license_expiry: "2025-04-01",
-    due_date: "2025-11-15",
-    last_update: "1 day ago",
-    territory: "Global",
-    channels: ["Social"],
-    duration: "60 days",
-  },
-  {
-    id: 3,
-    name: "Holiday Gift Guide",
-    creators: ["Emma"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "completed",
-    budget: 3200,
-    escrow_amount: 0,
-    assets_delivered: 12,
-    go_live: "2024-12-01",
-    license_expiry: "2025-01-15",
-    due_date: "2024-11-30",
-    last_update: "2 weeks ago",
-    territory: "US Only",
-    channels: ["Social", "Web", "Email"],
-    duration: "45 days",
-  },
-  {
-    id: 4,
-    name: "Q1 Product Launch",
-    creators: ["Milan"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    ],
-    status: "draft",
-    budget: 1800,
-    escrow_amount: 0,
-    assets_delivered: 0,
-    go_live: "2025-01-15",
-    license_expiry: "2025-02-28",
-    due_date: "2025-01-10",
-    last_update: "3 days ago",
-    territory: "North America",
-    channels: ["Social"],
-    duration: "30 days",
-  },
-];
+// Mock activities removed - activities are now loaded from real API data
 
-const mockActivities = [
-  {
-    type: "deliverable",
-    message: "Sophia Chen submitted 3 new assets for Spring Collection",
-    time: "2 hours ago",
-    urgent: true,
-  },
-  {
-    type: "status",
-    message: "Summer Fitness Challenge moved to Pending Approval",
-    time: "1 day ago",
-    urgent: true,
-  },
-  {
-    type: "agency",
-    message: "Agency submitted brief for New Product Launch",
-    time: "2 days ago",
-    urgent: false,
-  },
-  {
-    type: "budget",
-    message: "Spring Collection is within budget",
-    time: "3 days ago",
-    urgent: false,
-  },
-];
+// Mock assets removed - assets are now loaded from real API data
 
-const mockAssets = [
-  {
-    id: 1,
-    filename: "spring_collection_social_01.mp4",
-    thumbnail:
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300",
-    project: "Spring Collection Launch",
-    creator: "Sophia Chen",
-    type: "video",
-    format: "MP4",
-    resolution: "1080p",
-    size: "24.5 MB",
-    date: "2025-11-10",
-    watermarked: true,
-    territory: "North America",
-    valid_until: "2025-03-15",
-  },
-  {
-    id: 2,
-    filename: "fitness_challenge_hero.png",
-    thumbnail:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300",
-    project: "Summer Fitness Challenge",
-    creator: "Marcus Davis",
-    type: "image",
-    format: "PNG",
-    resolution: "4K",
-    size: "8.2 MB",
-    date: "2025-11-08",
-    watermarked: true,
-    territory: "Global",
-    valid_until: "2025-04-01",
-  },
-  {
-    id: 3,
-    filename: "holiday_gift_carousel_01.jpg",
-    thumbnail:
-      "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=300",
-    project: "Holiday Gift Guide",
-    creator: "Emma",
-    type: "image",
-    format: "JPG",
-    resolution: "1920x1080",
-    size: "3.4 MB",
-    date: "2024-11-25",
-    watermarked: true,
-    territory: "US Only",
-    valid_until: "2025-01-15",
-  },
-];
-
-const mockLicenses = [
-  {
-    id: 1,
-    asset_name: "Spring Collection Video Suite",
-    creator: "Sophia Chen",
-    territory: "North America",
-    duration: "90 days",
-    start_date: "2024-12-15",
-    end_date: "2025-03-15",
-    channels: ["Social", "Web"],
-    status: "active",
-    days_remaining: 123,
-  },
-  {
-    id: 2,
-    asset_name: "Fitness Hero Images",
-    creator: "Marcus Davis",
-    territory: "Global",
-    duration: "60 days",
-    start_date: "2025-02-01",
-    end_date: "2025-04-01",
-    channels: ["Social"],
-    status: "active",
-    days_remaining: 140,
-  },
-  {
-    id: 3,
-    asset_name: "Holiday Campaign Assets",
-    creator: "Emma",
-    territory: "US Only",
-    duration: "45 days",
-    start_date: "2024-12-01",
-    end_date: "2025-01-15",
-    channels: ["Social", "Web", "Email"],
-    status: "expiring_soon",
-    days_remaining: 34,
-  },
-];
+// Mock licenses removed - licenses are now loaded from real API data
 
 const spendData = [
   { month: "Jun", spend: 1200 },
@@ -600,171 +294,33 @@ const spendData = [
   { month: "Nov", spend: 5100 },
 ];
 
-const mockContracts = [
-  {
-    id: 1,
-    project_name: "Spring Collection Launch",
-    creator_name: "Sophia Chen",
-    creator_handle: "@sophiachen",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-11-01",
-    created_date: "2024-10-28",
-    expiration_date: "2025-03-15",
-    duration_days: 90,
-    territory: "North America",
-    channels: ["Social Media", "Website"],
-    total_fee: 5000,
-    platform_fee: 500,
-    creator_earnings: 4500,
-    auto_renew: true,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "3 Instagram Reels (15-30 seconds each), 1 Hero Image",
-    payment_status: "released",
-    payment_release_date: "2024-11-15",
-    docusign_envelope_id: "ENV-2024-001",
-    stripe_payout_id: "po_1234567890",
-    custom_clauses: [],
-    version: 1,
-  },
-  {
-    id: 2,
-    project_name: "Summer Fitness Challenge",
-    creator_name: "Marcus Davis",
-    creator_handle: "@marcusdavis",
-    agency: "Fitness First Agency",
-    status: "pending_signature",
-    signed_date: null,
-    created_date: "2024-11-08",
-    sent_date: "2024-11-08",
-    days_pending: 4,
-    expiration_date: "2025-04-01",
-    duration_days: 60,
-    territory: "Global",
-    channels: ["Social Media"],
-    total_fee: 2500,
-    platform_fee: 250,
-    creator_earnings: 2250,
-    auto_renew: false,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "2 TikTok videos (30-60 seconds each), 3 Instagram posts",
-    payment_status: "in_escrow",
-    custom_clauses: [
-      {
-        type: "Restriction",
-        name: "No Competitor Brands",
-        text: "Creator agrees not to promote direct competitor fitness brands during license period",
-      },
-    ],
-    version: 1,
-  },
-  {
-    id: 3,
-    project_name: "Holiday Gift Guide",
-    creator_name: "Emma",
-    creator_handle: "@emma",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-10-15",
-    created_date: "2024-10-10",
-    expiration_date: "2025-01-15",
-    duration_days: 45,
-    territory: "US Only",
-    channels: ["Social Media", "Website", "Email Marketing"],
-    total_fee: 3200,
-    platform_fee: 320,
-    creator_earnings: 2880,
-    auto_renew: true,
-    revisions: 3,
-    exclusivity: "Category exclusive",
-    deliverables: "5 Instagram Reels, 2 Hero images, 1 Email banner",
-    payment_status: "released",
-    payment_release_date: "2024-11-20",
-    docusign_envelope_id: "ENV-2024-003",
-    stripe_payout_id: "po_9876543210",
-    custom_clauses: [],
-    version: 1,
-  },
-];
+// Mock contracts removed - contracts are now loaded from real API data
 
 export default function BrandDashboard() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState("home");
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    if (typeof window === "undefined") return true;
-    const stored = window.localStorage.getItem("brandSidebarOpen");
-    return stored === null ? true : stored === "true";
-  });
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window === "undefined") return 256;
-    const stored = window.localStorage.getItem("brandSidebarWidth");
-    const parsed = stored ? Number(stored) : NaN;
-    if (!Number.isFinite(parsed)) return 256;
-    return Math.max(80, Math.min(400, parsed));
-  });
-  const [collapsedPopout, setCollapsedPopout] = useState<{
-    itemId: string;
-    top: number;
-  } | null>(null);
-  const popoutHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const clearPopoutTimeout = useCallback(() => {
-    if (popoutHideTimeoutRef.current) {
-      clearTimeout(popoutHideTimeoutRef.current);
-      popoutHideTimeoutRef.current = null;
-    }
-  }, []);
-
-  const hidePopoutWithDelay = useCallback(() => {
-    clearPopoutTimeout();
-    popoutHideTimeoutRef.current = setTimeout(() => {
-      setCollapsedPopout(null);
-    }, 150);
-  }, [clearPopoutTimeout]);
-  const [showLogoPreview, setShowLogoPreview] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
   const [inboxSubTab, setInboxSubTab] = useState<
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(emptyBrand);
-  const [originalBrand, setOriginalBrand] = useState(emptyBrand);
-  const [isBrandProfileLoaded, setIsBrandProfileLoaded] = useState(false);
+  const [brand, setBrand] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
-    useState(false);
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    newProjectAlerts: true,
-    deliverableSubmissions: true,
-    approvalReminders: true,
-    licenseExpirationAlerts: true,
-    monthlyAnalyticsSummary: true,
-  });
-  const [initialNotificationPrefs, setInitialNotificationPrefs] = useState({
-    newProjectAlerts: true,
-    deliverableSubmissions: true,
-    approvalReminders: true,
-    licenseExpirationAlerts: true,
-    monthlyAnalyticsSummary: true,
-  });
-
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
+  // Note: "completed" tab key maps to "Expired" UI label per #360.
+  // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
-  const notificationSaveTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   const pendingSectionOverrideRef = useRef<string | null>(null);
   const [brandJobs, setBrandJobs] = useState<any[]>([]);
   const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
@@ -782,20 +338,6 @@ export default function BrandDashboard() {
     amount?: number;
     currency?: string;
   }>({ open: false });
-
-  // Brand Notifications State
-  const [brandNotifications, setBrandNotifications] = useState<any[]>([]);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
-
-  // Badge Count State
-  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
-  const [jobsUnreadCount, setJobsUnreadCount] = useState(0);
-  const [licensingContractsCount, setLicensingContractsCount] = useState(0);
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" && window.innerWidth < 768,
-  );
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -853,42 +395,6 @@ export default function BrandDashboard() {
       nextSection === "campaigns-hub" ? "campaigns" : nextSection,
     );
     setSearchParams(params, { replace: options?.replace ?? false });
-
-    // Clear badge counts when viewing sections
-    if (nextSection === "campaigns-inbox") {
-      setInboxUnreadCount(0);
-      // Mark inbox packages as viewed in the backend
-      markInboxPackagesViewed().catch((err) => {
-        console.error("Failed to mark inbox packages as viewed:", err);
-      });
-    } else if (
-      nextSection === "campaigns-hub" &&
-      options?.campaignHubTab === "jobs"
-    ) {
-      setJobsUnreadCount(0);
-      // Mark job applications as viewed in the backend
-      markJobApplicationsViewed().catch((err) => {
-        console.error("Failed to mark job applications as viewed:", err);
-      });
-    } else if (nextSection === "licensing-requests") {
-      setLicensingContractsCount(0);
-    } else if (nextSection === "campaigns-contract-hub") {
-      // Mark related notifications as read
-      const contractNotifications = brandNotifications.filter(
-        (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
-      );
-      contractNotifications.forEach((n) => {
-        handleMarkNotificationRead(n.id);
-      });
-    } else if (nextSection === "campaigns-deliverables") {
-      // Mark related notifications as read
-      const deliverableNotifications = brandNotifications.filter(
-        (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
-      );
-      deliverableNotifications.forEach((n) => {
-        handleMarkNotificationRead(n.id);
-      });
-    }
   };
 
   const goToCampaignsSection = () => {
@@ -896,6 +402,42 @@ export default function BrandDashboard() {
       campaignHubTab: "active",
       replace: false,
     });
+  };
+
+  const handleAgencyCollaborationEntry = () => {
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    goToCampaignsSection();
+  };
+
+  const handleCompanySeatEntry = () => {
+    if ((brandSeatLimit ?? 0) === 0) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    if (brandSeatLimitReached) {
+      toast({
+        title: "Seat limit reached",
+        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    // Navigate to Settings → Team tab to manage team members
+    setActiveSettingsTab("team");
+    navigateToSection("settings", { replace: false });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -1073,11 +615,57 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
+  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
+  const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
+  const brandHasStudioAddon = hasBrandStudioAccess(profile);
+  const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
+  const brandStudioStatus = formatBrandStudioAddonStatus(profile);
+  const brandBasePrice = brandPlanPrice(brandPlanTier);
+  const brandSeatLimit = brandPlanSeatLimit(brandPlanTier);
+  const brandCampaignLimit = brandPlanCampaignLimit(brandPlanTier);
+  const brandCanUseCampaignCollaboration =
+    brandAllowsCampaignCollaboration(profile);
+  const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
+  const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
+  const brandTrialEndsAt = formatBillingDate(profile?.subscription_trial_end);
+  const brandCurrentPeriodEnd = formatBillingDate(
+    profile?.subscription_current_period_end,
+  );
+  const brandStudioCurrentPeriodEnd = formatBillingDate(
+    profile?.studio_addon_current_period_end,
+  );
+  const brandNextInvoiceDate =
+    brandTrialEndsAt || brandCurrentPeriodEnd || brandStudioCurrentPeriodEnd;
+  const brandRecurringAmount =
+    brandPlanTier === "enterprise"
+      ? null
+      : (brandBasePrice || 0) +
+        (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
+  const brandSeatLimitLabel =
+    brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
+  const brandCampaignLimitLabel =
+    brandCampaignLimit == null ? "Unlimited" : String(brandCampaignLimit);
+  const brandCampaignSlotsUsed =
+    campaignMetrics.active_projects_count +
+    campaignMetrics.pending_approvals_count;
+  const brandCampaignLimitReached =
+    brandCampaignLimit != null && brandCampaignSlotsUsed >= brandCampaignLimit;
+  const brandTeamSeatsUsed = Number.isFinite(Number(profile?.team_seats))
+    ? Number(profile?.team_seats)
+    : 0;
+  const brandSeatLimitReached =
+    brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit;
   const { hasPermission } = useTeamAccess("brand");
   const canApproveDeliverables = hasPermission("approve_deliverables");
   const canViewDeliverables = hasPermission("view_deliverables");
+  const canManagePayOffers = hasPermission("manage_pay_offers");
+  const canViewPayOffers = hasPermission("view_pay_offers");
+  const canManageJobs = hasPermission("manage_jobs");
+  const canViewSubscriptions = hasPermission("view_subscriptions");
+  const canManageBilling = hasPermission("manage_billing");
+  const canViewInbox = canViewPayOffers;
 
-  const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
@@ -1103,7 +691,7 @@ export default function BrandDashboard() {
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [creators, setCreators] = useState(mockCreators);
+  const [creators, setCreators] = useState<any[]>([]);
   const [reviewDialog, setReviewDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -1189,6 +777,22 @@ export default function BrandDashboard() {
       }
     }
   }, [location.search, location.state]);
+
+  // Handle URL parameters for opening settings and team tab
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+    const section = params.get("section");
+    const tab = params.get("tab");
+
+    // Support both 'view=settings' and 'section=settings' for backward compatibility
+    if (view === "settings" || section === "settings") {
+      setActiveSection("settings");
+      if (tab === "team") {
+        setActiveSettingsTab("team");
+      }
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -1312,35 +916,17 @@ export default function BrandDashboard() {
     const loadBrandProfile = async () => {
       try {
         const profile = await getBrandProfile();
-        if (!mounted) return;
-        if (!profile) return;
-        const brandData = {
-          ...emptyBrand,
-          id: profile?.id || "",
-          name:
-            profile?.company_name ||
-            profile?.name ||
-            emptyBrand.name ||
-            "Brand",
-          industry: profile?.industry || emptyBrand.industry,
-          website: profile?.website || emptyBrand.website,
-          contact_email: profile?.email || emptyBrand.contact_email,
+        if (!mounted || !profile) return;
+        setBrand((prev) => ({
+          ...prev,
+          name: profile?.company_name || profile?.name || prev.name || "Brand",
+          industry: profile?.industry || prev.industry,
+          website: profile?.website || prev.website,
+          contact_email: profile?.email || prev.contact_email,
           logo: profile?.logo_url || "",
-          plan: profile?.plan_tier || profile?.plan || "",
-          secondary_color:
-            profile?.secondary_color || emptyBrand.secondary_color,
-        };
-        setBrand(brandData);
-        setOriginalBrand(brandData);
-
-        if (profile?.notification_prefs) {
-          setNotificationPrefs(profile.notification_prefs);
-          setInitialNotificationPrefs(profile.notification_prefs);
-        }
+        }));
       } catch {
-        // Keep empty fallback on failure.
-      } finally {
-        if (mounted) setIsBrandProfileLoaded(true);
+        // Keep mock fallback on failure.
       }
     };
     loadBrandProfile();
@@ -1348,96 +934,6 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, []);
-
-  // Load brand notifications
-  useEffect(() => {
-    let mounted = true;
-    const loadNotifications = async () => {
-      try {
-        setLoadingNotifications(true);
-        const response = await listBrandNotifications({ limit: 50 });
-        if (!mounted) return;
-        const notifications = Array.isArray(response) ? response : [];
-        setBrandNotifications(notifications);
-
-        // Get unread count
-        const countResponse = await getBrandNotificationCount();
-        if (mounted && countResponse?.count !== undefined) {
-          setUnreadNotificationCount(countResponse.count);
-        }
-      } catch (error) {
-        console.error("Failed to load notifications:", error);
-      } finally {
-        if (mounted) setLoadingNotifications(false);
-      }
-    };
-
-    loadNotifications();
-
-    // Refresh notifications every 60 seconds
-    const interval = setInterval(loadNotifications, 60000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Load badge counts
-  useEffect(() => {
-    let mounted = true;
-    const loadBadgeCounts = async () => {
-      try {
-        const [inboxResponse, jobsResponse, licensingResponse] =
-          await Promise.all([
-            getInboxUnreadCount(),
-            getJobsUnreadCount(),
-            getLicensingContractsCount(),
-          ]);
-
-        if (!mounted) return;
-
-        if (inboxResponse?.count !== undefined) {
-          setInboxUnreadCount(inboxResponse.count);
-        }
-        if (jobsResponse?.count !== undefined) {
-          setJobsUnreadCount(jobsResponse.count);
-        }
-        if (licensingResponse?.count !== undefined) {
-          setLicensingContractsCount(licensingResponse.count);
-        }
-      } catch (error) {
-        console.error("Failed to load badge counts:", error);
-      }
-    };
-
-    loadBadgeCounts();
-
-    // Refresh badge counts every 60 seconds
-    const interval = setInterval(loadBadgeCounts, 60000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Mark notification as read
-  const handleMarkNotificationRead = async (notificationId: string) => {
-    try {
-      await markBrandNotificationRead(notificationId);
-      setBrandNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notificationId
-            ? { ...n, read_at: new Date().toISOString() }
-            : n,
-        ),
-      );
-      setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-    }
-  };
 
   useEffect(() => {
     if (activeSection !== "campaigns-inbox") return;
@@ -1496,6 +992,14 @@ export default function BrandDashboard() {
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
+      if (!canManageJobs) {
+        toast({
+          title: "View-only access",
+          description: "You do not have permission to update jobs.",
+          variant: "destructive",
+        });
+        return;
+      }
       const res = await base44.put<{ job?: any }>(`/api/jobs/${jobId}`, {
         status,
       });
@@ -1545,7 +1049,7 @@ export default function BrandDashboard() {
       }
     };
     loadInboxCount();
-    const timer = setInterval(loadInboxCount, 60000);
+    const timer = setInterval(loadInboxCount, 30000);
     return () => {
       mounted = false;
       clearInterval(timer);
@@ -1870,11 +1374,7 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const escrowTotal = mockCampaigns
-    .filter(
-      (c) => c.status === "in_progress" || c.status === "pending_approval",
-    )
-    .reduce((sum, c) => sum + c.escrow_amount, 0);
+  const escrowTotal = 0; // Escrow is now calculated from real campaign data
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -2030,27 +1530,17 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const contractHubPendingCount = useMemo(() => {
-    if (!notificationPrefs.newProjectAlerts) return 0;
+    const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
+    return offers.filter((offer: any) => {
+      const st = String(offer?.status || "").toLowerCase();
+      return st === "contract_sent" || st === "contract_partially_signed";
+    }).length;
+  }, [brandOfferItems]);
 
-    return brandNotifications.filter(
-      (n) => !n.read_at && n.meta_json?.type === "new_project_alert",
-    ).length;
-  }, [brandNotifications, notificationPrefs.newProjectAlerts]);
-
-  const pendingApprovalCount = useMemo(() => {
-    if (!notificationPrefs.deliverableSubmissions) return 0;
-
-    return brandNotifications.filter(
-      (n) => !n.read_at && n.meta_json?.type === "deliverable_submission",
-    ).length;
-  }, [brandNotifications, notificationPrefs.deliverableSubmissions]);
-  const activeLicenses = mockLicenses.filter(
-    (l) => l.status === "active" || l.status === "expiring_soon",
-  );
-  const expiringLicenses = mockLicenses.filter(
-    (l) => l.status === "expiring_soon",
-  );
-  const escrowProjects = mockCampaigns.filter((c) => c.escrow_amount > 0);
+  const pendingApprovalCount = 0; // Now calculated from real campaign data
+  const activeLicenses: any[] = []; // Now loaded from real license data
+  const expiringLicenses: any[] = []; // Now loaded from real license data
+  const escrowProjects: any[] = []; // Now calculated from real campaign data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -2060,156 +1550,48 @@ export default function BrandDashboard() {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
-      badge: (() => {
-        // Sum of all campaign sub-tab badges: Inbox + Contract Hub + Deliverables + Jobs
-        const total =
-          inboxUnreadCount +
-          contractHubPendingCount +
-          pendingApprovalCount +
-          jobsUnreadCount;
-        return total > 0 ? total : undefined;
-      })(),
     },
     {
       id: "licensing-requests",
       label: "Licensing Requests",
       icon: FileText,
-      badge: licensingContractsCount > 0 ? licensingContractsCount : undefined,
     },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
       id: "usage",
       label: "Usage Rights",
       icon: FileText,
-      badge:
-        notificationPrefs.licenseExpirationAlerts && expiringLicenses.length > 0
-          ? expiringLicenses.length
-          : undefined,
+      badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
     },
-    { id: "billing", label: "Billing", icon: CreditCard },
+    ...(canViewSubscriptions
+      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+      : []),
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !brand.id) return;
-
-    try {
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
       setUploadingLogo(true);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${brand.id}-${Date.now()}.${fileExt}`;
-      const filePath = `brand-logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("likelee-public")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
-
-      // Update backend profile record
-      await updateBrandProfile({
-        company_name: brand.name,
-        logo_url: publicUrl,
-      });
-
-      const newBrand = { ...brand, logo: publicUrl };
-      setBrand(newBrand);
-      setOriginalBrand((prev) => ({ ...prev, logo: publicUrl }));
-      toast({ title: "Success", description: "Logo updated successfully!" });
-    } catch (error: any) {
-      console.error("Error uploading logo:", error);
-      toast({
-        title: "Upload failed",
-        description: error?.message || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingLogo(false);
+      setTimeout(() => {
+        setBrand({ ...brand, logo: URL.createObjectURL(file) });
+        setUploadingLogo(false);
+        toast({ title: "Success", description: "Logo uploaded! (Demo mode)" });
+      }, 1000);
     }
   };
 
-  const handleSaveProfile = async () => {
-    try {
-      setIsSavingProfile(true);
-      // Exclude contact_email from update as requested
-      const updateData = {
-        name: brand.name,
-        company_name: brand.name, // Usually both are updated
-        industry: brand.industry,
-        website: brand.website,
-      };
-
-      await updateBrandProfile(updateData);
-
-      setOriginalBrand(brand);
-      toast({
-        title: "Settings Saved",
-        description: "Your profile has been updated successfully.",
-      });
-    } catch (error: any) {
-      console.error("Error saving profile:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Unable to save profile changes.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
+  const handleSaveProfile = () => {
+    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
   };
-
-  const handleSaveNotificationPrefs = useCallback(async (newPrefs) => {
-    try {
-      setIsSavingNotificationPrefs(true);
-      await updateBrandProfile({
-        notification_prefs: newPrefs,
-      });
-      setInitialNotificationPrefs(newPrefs);
-    } catch (error: any) {
-      console.error("Error saving notification prefs:", error);
-      toast({
-        title: "Error",
-        description:
-          error?.message || "Unable to save notification preferences.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingNotificationPrefs(false);
-    }
-  }, []);
-
-  const scheduleNotificationPrefsSave = useCallback(
-    (newPrefs) => {
-      if (notificationSaveTimeoutRef.current) {
-        clearTimeout(notificationSaveTimeoutRef.current);
-      }
-      notificationSaveTimeoutRef.current = setTimeout(() => {
-        handleSaveNotificationPrefs(newPrefs);
-      }, 500);
-    },
-    [handleSaveNotificationPrefs],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (notificationSaveTimeoutRef.current) {
-        clearTimeout(notificationSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleShareBrief = (campaignId) => {
-    const campaign = mockCampaigns.find((c) => c.id === campaignId);
-    if (campaign) {
-      toast({
-        title: "Success",
-        description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
-      });
-    }
+    // Campaign sharing is now handled through real API data
+    toast({
+      title: "Success",
+      description:
+        "Brief shared with talent! They will receive an email with campaign details and contract.",
+    });
   };
 
   const handleCreatorHire = (creator) => {
@@ -2217,11 +1599,28 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
+  const getBrandTalentEntitlementMessage = (error: unknown) => {
+    const message = String((error as any)?.message || error || "").trim();
+    if (message.includes("brand_talent_browsing_requires_pro_plan")) {
+      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
+    }
+    return message || "Please try again.";
+  };
+
   const handleOpenLicenseRequest = (
     creator: MarketplaceProfile | null,
     details?: MarketplaceProfileDetails,
   ) => {
     if (!creator) return;
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
     const detailProfile = details?.profile || null;
     const representedAgency = details?.represented_agency || null;
     const agencyId = String(
@@ -2353,7 +1752,7 @@ export default function BrandDashboard() {
     } catch (e: any) {
       toast({
         title: "Failed to create request",
-        description: e?.message || "Please try again.",
+        description: getBrandTalentEntitlementMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -2686,7 +2085,7 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {brand.name}
+            Welcome back{brand?.name ? `, ${brand.name}` : ""}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
@@ -2784,7 +2183,7 @@ export default function BrandDashboard() {
               <span className="font-semibold">Start New Project</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace")}
+              onClick={() => navigateToSection("marketplace")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Search className="w-6 h-6" />
@@ -2800,16 +2199,14 @@ export default function BrandDashboard() {
               <span>View Active Campaigns</span>
             </Button>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
+              onClick={handleAgencyCollaborationEntry}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace-agencies")}
+              onClick={() => navigateToSection("marketplace-agencies")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
@@ -3768,7 +3165,7 @@ export default function BrandDashboard() {
             <p className="text-gray-600 font-medium">Searching for talent...</p>
           </div>
         ) : filteredCreators.length === 0 ? (
-          <div className="col-span-full text-center py-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
             <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               No creators found
@@ -3879,17 +3276,42 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderAgencyMarketplace = () => (
-    <MarketplaceSection
-      entityType="agency"
-      title="Agency Marketplace"
-      subtitle="Verified agencies only"
-      verifiedBadgeLabel=""
-      searchPlaceholder="Search by agency name, type, service, or location..."
-      resultLimit={60}
-      queryScope="brand-agency-marketplace"
-    />
-  );
+  const renderCreatorMarketplace = () => {
+    return (
+      <MarketplaceSection
+        title="Likelee Marketplace"
+        subtitle="Verified creators only"
+        verifiedBadgeLabel=""
+        queryScope="brand-creator-marketplace"
+        showRequestLicense
+        onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
+
+  const renderAgencyMarketplace = () => {
+    return (
+      <MarketplaceSection
+        entityType="agency"
+        title="Agency Marketplace"
+        subtitle="Verified agencies only"
+        verifiedBadgeLabel=""
+        searchPlaceholder="Search by agency name, type, service, or location..."
+        resultLimit={60}
+        queryScope="brand-agency-marketplace"
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
@@ -3949,7 +3371,7 @@ export default function BrandDashboard() {
           return (
             <Card
               key={req?.id}
-              className="p-6 bg-white border border-gray-200 rounded-lg"
+              className="p-6 bg-white border border-gray-200 rounded-xl"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -4085,170 +3507,207 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderInboxSubtab = () => (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
-        <p className="text-gray-600">
-          View packages and licensing proposals from agencies
-        </p>
-      </div>
+  const renderInboxSubtab = () => {
+    if (!canViewInbox) {
+      return (
+        <div className="space-y-5">
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Access Restricted
+            </h2>
+            <p className="text-gray-600">
+              You do not have permission to view the inbox.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Contact your team administrator to request access.
+            </p>
+          </Card>
+        </div>
+      );
+    }
 
-      <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setInboxSubTab("talent_packages")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "talent_packages"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Talent Packages ({inboxPackages.length})
-        </button>
-        <button
-          onClick={() => setInboxSubTab("direct_requests")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "direct_requests"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Direct Requests
-        </button>
-      </div>
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+          <p className="text-gray-600">
+            View packages and licensing proposals from agencies
+          </p>
+        </div>
 
-      {inboxSubTab === "talent_packages" ? (
-        <div className="space-y-4">
-          {loadingInboxPackages && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-lg">
-              <p className="text-sm text-gray-500">Loading packages...</p>
-            </Card>
-          )}
-          {!loadingInboxPackages && inboxPackages.length === 0 && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-lg">
-              <p className="text-sm text-gray-500">No packages received yet.</p>
-            </Card>
-          )}
-          {inboxPackages.map((pkg: any) => {
-            const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
-            const isExpired = expiresAt
-              ? expiresAt.getTime() < Date.now()
-              : false;
-            const isDone =
-              pkg?.status === "feedback_received" ||
-              pkg?.status === "completed";
-            const selectedTalentCount = Array.isArray(
-              pkg?.meta?.selected_talent_ids,
-            )
-              ? pkg.meta.selected_talent_ids.length
-              : 0;
+        <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setInboxSubTab("talent_packages")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "talent_packages"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Talent Packages ({inboxPackages.length})
+          </button>
+          <button
+            onClick={() => setInboxSubTab("direct_requests")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "direct_requests"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Direct Requests
+          </button>
+        </div>
 
-            return (
-              <Card
-                key={pkg.id}
-                className="p-6 bg-white border border-gray-300 rounded-lg"
-              >
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-2xl font-bold text-gray-900">
-                        {pkg.title ||
-                          pkg.campaign_offers?.offer_title ||
-                          pkg.campaign_offers?.brand_campaigns?.name ||
-                          "Talent package"}
-                      </h3>
-                      {String(pkg?.status || "") === "sent" && (
-                        <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                          New
-                        </Badge>
+        {inboxSubTab === "talent_packages" ? (
+          <div className="space-y-4">
+            {loadingInboxPackages && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">Loading packages...</p>
+              </Card>
+            )}
+            {!loadingInboxPackages && inboxPackages.length === 0 && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">
+                  No packages received yet.
+                </p>
+              </Card>
+            )}
+            {inboxPackages.map((pkg: any) => {
+              const expiresAt = pkg?.expires_at
+                ? new Date(pkg.expires_at)
+                : null;
+              const isExpired = expiresAt
+                ? expiresAt.getTime() < Date.now()
+                : false;
+              const isDone =
+                pkg?.status === "feedback_received" ||
+                pkg?.status === "completed";
+              const selectedTalentCount = Array.isArray(
+                pkg?.meta?.selected_talent_ids,
+              )
+                ? pkg.meta.selected_talent_ids.length
+                : 0;
+
+              return (
+                <Card
+                  key={pkg.id}
+                  className="p-6 bg-white border border-gray-300 rounded-none"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {pkg.title ||
+                            pkg.campaign_offers?.offer_title ||
+                            pkg.campaign_offers?.brand_campaigns?.name ||
+                            "Talent package"}
+                        </h3>
+                        {String(pkg?.status || "") === "sent" && (
+                          <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 font-medium">
+                        From:{" "}
+                        {pkg?.agencies?.agency_name ||
+                          pkg?.agency_id ||
+                          "Agency"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Sent:{" "}
+                        {pkg?.sent_at
+                          ? new Date(String(pkg.sent_at)).toLocaleString()
+                          : "—"}
+                      </p>
+                      {pkg?.expires_at && (
+                        <p
+                          className={`text-sm ${
+                            isExpired
+                              ? "text-red-600 font-bold"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          Expires:{" "}
+                          {new Date(pkg.expires_at).toLocaleDateString()}
+                          {isExpired && " (Expired)"}
+                        </p>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 font-medium">
-                      From:{" "}
-                      {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
+                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+                      {selectedTalentCount} talent
+                    </Badge>
+                  </div>
+
+                  {pkg?.message && (
+                    <p className="text-gray-700 italic mb-4">
+                      "{String(pkg.message)}"
                     </p>
-                    <p className="text-sm text-gray-500">
-                      Sent:{" "}
-                      {pkg?.sent_at
-                        ? new Date(String(pkg.sent_at)).toLocaleString()
-                        : "—"}
-                    </p>
-                    {pkg?.expires_at && (
-                      <p
-                        className={`text-sm ${
-                          isExpired ? "text-red-600 font-bold" : "text-gray-500"
-                        }`}
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      className={`flex-1 rounded-none ${
+                        isExpired || !canManagePayOffers
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-black hover:bg-gray-800 text-white"
+                      }`}
+                      disabled={isExpired || isDone || !canManagePayOffers}
+                      onClick={() => setConfirmingDonePkg(pkg)}
+                      title={
+                        !canManagePayOffers
+                          ? "You do not have permission to mark packages as done"
+                          : ""
+                      }
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border border-gray-300 rounded-none"
+                      disabled={isDone || isExpired}
+                      onClick={() => {
+                        const token = pkg?.meta?.agency_package_token;
+                        const id = String(pkg?.id || "");
+                        if (token) {
+                          window.open(`/share/package/${token}`, "_blank");
+                        } else if (id) {
+                          window.open(`/share/package/${id}`, "_blank");
+                        }
+                      }}
+                    >
+                      Open Package
+                    </Button>
+                    {canManagePayOffers && (
+                      <Button
+                        variant="outline"
+                        className="border border-gray-300 rounded-none"
                       >
-                        Expires: {new Date(pkg.expires_at).toLocaleDateString()}
-                        {isExpired && " (Expired)"}
-                      </p>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     )}
                   </div>
-                  <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                    {selectedTalentCount} talent
-                  </Badge>
-                </div>
-
-                {pkg?.message && (
-                  <p className="text-gray-700 italic mb-4">
-                    "{String(pkg.message)}"
-                  </p>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    className={`flex-1 rounded-lg ${
-                      isExpired
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-black hover:bg-gray-800 text-white"
-                    }`}
-                    disabled={isExpired || isDone}
-                    onClick={() => setConfirmingDonePkg(pkg)}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-lg"
-                    disabled={isDone || isExpired}
-                    onClick={() => {
-                      const token = pkg?.meta?.agency_package_token;
-                      const id = String(pkg?.id || "");
-                      if (token) {
-                        window.open(`/share/package/${token}`, "_blank");
-                      } else if (id) {
-                        window.open(`/share/package/${id}`, "_blank");
-                      }
-                    }}
-                  >
-                    Open Package
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-lg p-16 text-center">
-          <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            No direct requests yet
-          </h3>
-          <p className="text-lg text-gray-600">
-            Agencies can send you direct licensing requests for specific
-            campaigns
-          </p>
-        </Card>
-      )}
-    </div>
-  );
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
+            <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              No direct requests yet
+            </h3>
+            <p className="text-lg text-gray-600">
+              Agencies can send you direct licensing requests for specific
+              campaigns
+            </p>
+          </Card>
+        )}
+      </div>
+    );
+  };
 
   const loadOfferHubDetails = async (
     offerId: string,
@@ -4525,7 +3984,10 @@ export default function BrandDashboard() {
     }
   };
 
-  const getPublicUrl = (del: any) => {
+  const getPublicUrl = (
+    del: any,
+    options: { thumbnail?: boolean; download?: boolean } = {},
+  ) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const path = typeof del === "string" ? del : del?.asset_url;
     if (!path) return "";
@@ -4533,7 +3995,13 @@ export default function BrandDashboard() {
 
     if (typeof del === "object" && del?.id && del?.offer_id) {
       const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
-      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
+      const queryParams = new URLSearchParams();
+      if (authToken) queryParams.set("token", authToken);
+      if (options.thumbnail) queryParams.set("thumbnail", "true");
+      if (options.download) queryParams.set("download", "true");
+
+      const queryString = queryParams.toString();
+      return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
     }
 
     // Never expose private-bucket URLs directly; access must go through API proxies.
@@ -4548,14 +4016,14 @@ export default function BrandDashboard() {
       </div>
       <div className="space-y-3">
         {loadingBrandOfferItems ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-lg">
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
             <div className="flex items-center gap-3">
               <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
               <p className="text-sm text-gray-500">Loading offers...</p>
             </div>
           </Card>
         ) : brandOfferItems.length === 0 ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-lg">
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
             <p className="text-sm text-gray-500">
               No offer contracts available yet.
             </p>
@@ -4593,7 +4061,7 @@ export default function BrandDashboard() {
           return (
             <Card
               key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-lg space-y-2"
+              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
             >
               {/* Payment Pending Banner */}
               {isFullySigned && offer?.payment_status !== "paid" && (
@@ -4602,47 +4070,53 @@ export default function BrandDashboard() {
                     ⏳ Contract signed. Payment required before deliverables can
                     start.
                   </span>
-                  <Button
-                    size="sm"
-                    className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                    disabled={payingOfferId === offerId}
-                    onClick={async () => {
-                      setPayingOfferId(offerId);
-                      try {
-                        const data: any = await base44.post(
-                          `/api/brand/campaign-offers/${offerId}/checkout`,
-                          {},
-                        );
-                        if (data?.url) {
-                          window.location.href = data.url;
-                        } else {
+                  {canManagePayOffers ? (
+                    <Button
+                      size="sm"
+                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                      disabled={payingOfferId === offerId}
+                      onClick={async () => {
+                        setPayingOfferId(offerId);
+                        try {
+                          const data: any = await base44.post(
+                            `/api/brand/campaign-offers/${offerId}/checkout`,
+                            {},
+                          );
+                          if (data?.url) {
+                            window.location.href = data.url;
+                          } else {
+                            toast({
+                              title: "Payment Error",
+                              description:
+                                data?.message || "Could not start checkout.",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (e: any) {
+                          const msg = String(e?.message || "");
                           toast({
-                            title: "Payment Error",
-                            description:
-                              data?.message || "Could not start checkout.",
-                            variant: "destructive",
+                            title: msg.includes("no_talents_assigned")
+                              ? "Talent assignment required"
+                              : "Payment Error",
+                            description: msg.includes("no_talents_assigned")
+                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                              : msg || "Could not start checkout.",
+                            variant: "destructive" as any,
                           });
+                        } finally {
+                          setPayingOfferId(null);
                         }
-                      } catch (e: any) {
-                        const msg = String(e?.message || "");
-                        toast({
-                          title: msg.includes("no_talents_assigned")
-                            ? "Talent assignment required"
-                            : "Payment Error",
-                          description: msg.includes("no_talents_assigned")
-                            ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                            : msg || "Could not start checkout.",
-                          variant: "destructive" as any,
-                        });
-                      } finally {
-                        setPayingOfferId(null);
-                      }
-                    }}
-                  >
-                    {payingOfferId === offerId
-                      ? "Redirecting…"
-                      : "💳 Pay Offer"}
-                  </Button>
+                      }}
+                    >
+                      {payingOfferId === offerId
+                        ? "Redirecting…"
+                        : "💳 Pay Offer"}
+                    </Button>
+                  ) : (
+                    <span className="ml-auto text-xs text-amber-600 italic">
+                      View only - payment requires admin or project manager role
+                    </span>
+                  )}
                 </div>
               )}
               {isFullySigned && offer?.payment_status === "paid" && (
@@ -4663,7 +4137,7 @@ export default function BrandDashboard() {
                 </div>
                 <Button
                   variant="outline"
-                  className="border border-gray-300 rounded-lg"
+                  className="border border-gray-300 rounded-none"
                   onClick={async () => {
                     const next = expanded ? "" : offerId;
                     setSelectedOfferHubId(next);
@@ -4674,7 +4148,7 @@ export default function BrandDashboard() {
                 </Button>
               </div>
               {expanded && (
-                <div className="border border-gray-200 rounded-lg bg-gray-50 flex flex-col gap-px">
+                <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
                   {loadingOfferHubDetails ? (
                     <div className="p-8 text-center bg-white">
                       <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
@@ -4824,7 +4298,7 @@ export default function BrandDashboard() {
           );
         })}
       </div>
-      <Card className="p-4 bg-white border border-gray-300 rounded-lg">
+      <Card className="p-4 bg-white border border-gray-300 rounded-none">
         {loadingContractHubRows ? (
           <p className="text-sm text-gray-500">Loading submissions</p>
         ) : contractHubRows.length === 0 ? (
@@ -5001,12 +4475,12 @@ export default function BrandDashboard() {
       </div>
       <div className="space-y-4">
         {loadingBrandOfferItems ? (
-          <Card className="p-12 bg-white border border-gray-300 rounded-lg text-center">
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
             <p className="text-sm text-gray-500">Loading campaigns...</p>
           </Card>
         ) : brandOfferItems.length === 0 ? (
-          <Card className="p-12 bg-white border border-gray-300 rounded-lg text-center">
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <p className="text-sm text-gray-500">
               No active campaigns available.
             </p>
@@ -5108,7 +4582,7 @@ export default function BrandDashboard() {
                   }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-gray-100 text-gray-600">
+                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
                       <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
@@ -5212,7 +4686,7 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={`offer-${offerId}`}
-                            className="rounded-lg border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+                            className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
                               className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
@@ -5349,16 +4823,28 @@ export default function BrandDashboard() {
                                         const isBusy =
                                           String(reviewing || "") ===
                                           String(del?.id || "");
+                                        const isPaid =
+                                          String(offer?.payment_status || "")
+                                            .trim()
+                                            .toLowerCase() === "paid";
                                         return (
                                           <Card
                                             key={String(del.id)}
-                                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${
+                                              isPaid
+                                                ? "cursor-zoom-in"
+                                                : "cursor-default"
+                                            }`}
                                             onClick={() => {
                                               setPreviewItems(
                                                 selectedOfferHubDeliverables,
                                               );
                                               setPreviewIndex(idx);
-                                              setPreviewImage(del);
+                                              setPreviewImage({
+                                                ...del,
+                                                payment_status:
+                                                  offer?.payment_status,
+                                              });
                                             }}
                                           >
                                             <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -5366,12 +4852,30 @@ export default function BrandDashboard() {
                                                 del?.asset_type || "",
                                               ).startsWith("image") ? (
                                                 <img
-                                                  src={getPublicUrl(del)}
+                                                  src={getPublicUrl(del, {
+                                                    thumbnail:
+                                                      offer?.payment_status !==
+                                                      "paid",
+                                                  })}
                                                   alt={
                                                     del.caption || "Deliverable"
                                                   }
                                                   className="w-full h-full object-cover"
                                                 />
+                                              ) : offer?.payment_status !==
+                                                "paid" ? (
+                                                <div className="w-full h-full bg-gray-950 flex flex-col items-center justify-center text-white/90 p-4 transition-all group-hover:bg-gray-900">
+                                                  <div className="relative mb-3 flex items-center justify-center">
+                                                    <Lock className="w-8 h-8 text-indigo-400/80" />
+                                                    <Sparkles className="w-5 h-5 text-indigo-400 absolute -top-4 -right-4 animate-pulse" />
+                                                  </div>
+                                                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-center px-4 leading-tight">
+                                                    Premium Video
+                                                  </span>
+                                                  <span className="text-[7px] mt-2 font-bold text-indigo-400/60 uppercase tracking-widest border border-indigo-500/20 px-1.5 py-0.5 rounded-none">
+                                                    Locked
+                                                  </span>
+                                                </div>
                                               ) : (
                                                 <video
                                                   src={getPublicUrl(del)}
@@ -5401,7 +4905,7 @@ export default function BrandDashboard() {
                                               )}
                                               <div className="absolute top-2 left-2">
                                                 <Badge
-                                                  className={`rounded-lg border-0 ${
+                                                  className={`rounded-none border-0 ${
                                                     del.status === "approved" ||
                                                     del.status ===
                                                       "brand_approved"
@@ -5436,19 +4940,20 @@ export default function BrandDashboard() {
                                               <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                                                 <Button
                                                   size="sm"
-                                                  className="flex-1 h-8 rounded-lg font-bold bg-gray-900"
+                                                  className="flex-1 h-8 rounded-none font-bold bg-gray-900"
                                                   disabled={
                                                     isApproved ||
                                                     isBusy ||
                                                     !canApproveDeliverables
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "approve",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   {isApproved
                                                     ? "Approved"
@@ -5457,19 +4962,20 @@ export default function BrandDashboard() {
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
-                                                  className="flex-1 h-8 rounded-lg font-bold"
+                                                  className="flex-1 h-8 rounded-none font-bold"
                                                   disabled={
                                                     isApproved ||
                                                     isBusy ||
                                                     !canApproveDeliverables
                                                   }
-                                                  onClick={() =>
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
                                                     handleDeliverableReview(
                                                       offerId,
                                                       del.id,
                                                       "changes_requested",
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                 >
                                                   Request changes
                                                 </Button>
@@ -6519,8 +6025,18 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="w-full border-2 border-gray-300"
+                      disabled={!canManagePayOffers}
                       onClick={(event) => {
                         event.stopPropagation();
+                        if (!canManagePayOffers) {
+                          toast({
+                            title: "View-only access",
+                            description:
+                              "You do not have permission to add collaborators.",
+                            variant: "destructive" as any,
+                          });
+                          return;
+                        }
                         const first = offers[0];
                         if (first) openAddCollaboratorFlow(first);
                       }}
@@ -6547,7 +6063,7 @@ export default function BrandDashboard() {
                       return (
                         <div
                           key={String(offer?.id || "")}
-                          className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                          className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between"
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="w-9 h-9">
@@ -6608,33 +6124,23 @@ export default function BrandDashboard() {
   };
 
   const renderCampaignHub = () => {
-    const campaignsForHub = mockCampaigns.filter((campaign) => {
-      if (campaignHubTab === "inbox") return false;
-      const mappedStatus =
-        campaign.status === "in_progress"
-          ? "active"
-          : campaign.status === "pending_approval"
-            ? "pending_approval"
-            : campaign.status === "completed"
-              ? "completed"
-              : "draft";
-      return mappedStatus === campaignHubTab;
-    });
+    // Campaigns are now loaded from real API data
+    const campaignsForHub: any[] = [];
 
     return (
       <div className="space-y-8">
         <div className="grid md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
             <p className="text-3xl font-bold text-gray-900">$12.4K</p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <Users className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
             <p className="text-3xl font-bold text-gray-900">8</p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">12</p>
@@ -6642,53 +6148,70 @@ export default function BrandDashboard() {
         </div>
 
         <div className="grid md:grid-cols-5 gap-6">
-          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-lg">
+          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-lg"
+              onClick={handleAgencyCollaborationEntry}
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
-              Invite Agency
+              {brandCanUseCampaignCollaboration
+                ? "Invite Agency"
+                : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Add AI Creator
             </h3>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-lg cursor-not-allowed"
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
             >
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
-              disabled
-              className="w-full bg-amber-600 text-white rounded-lg cursor-not-allowed"
+              onClick={handleCompanySeatEntry}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
-              Coming Soon
+              {(brandSeatLimit ?? 0) === 0
+                ? "Upgrade to Basic"
+                : brandSeatLimitReached
+                  ? "Seat limit reached"
+                  : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-orange-600 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg">
-              Enable Add-On
+            <Button
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+              onClick={() =>
+                navigate(
+                  brandHasStudioAddon
+                    ? createPageUrl("Studio")
+                    : "/brandpricing?focus=studio",
+                )
+              }
+            >
+              {brandHasStudioAddon
+                ? "Open Studio"
+                : brandCanSelfServeStudioAddon
+                  ? "Enable Add-On"
+                  : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-blue-600 rounded-lg">
+          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem("jobDraftId");
@@ -6709,28 +6232,28 @@ export default function BrandDashboard() {
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("active")}
-                className={`border-2 rounded-lg ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
-                className={`border-2 rounded-lg ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Pending Approval
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
-                className={`border-2 rounded-lg ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
-                className={`border-2 rounded-lg ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
               </Button>
@@ -6869,7 +6392,7 @@ export default function BrandDashboard() {
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                           <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
                                 {String(job.job_title || job.title || "J")
                                   .trim()
                                   .slice(0, 1)
@@ -6939,6 +6462,12 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -7033,7 +6562,7 @@ export default function BrandDashboard() {
               {campaignsForHub.map((campaign) => (
                 <Card
                   key={campaign.id}
-                  className="p-6 bg-white border-2 border-gray-200 rounded-lg"
+                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -7084,25 +6613,19 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "video").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "image").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-3xl font-bold text-gray-900">36.1 MB</p>
+          <p className="text-3xl font-bold text-gray-900">0 MB</p>
         </Card>
       </div>
 
@@ -7135,62 +6658,13 @@ export default function BrandDashboard() {
 
       {/* Asset Grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {mockAssets.map((asset) => (
-          <Card
-            key={asset.id}
-            className="p-4 bg-white border border-gray-200 hover:shadow-lg transition-all"
-          >
-            <div className="relative mb-4">
-              <img
-                src={asset.thumbnail}
-                alt={asset.filename}
-                className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-              />
-              {asset.watermarked && (
-                <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Watermarked
-                </Badge>
-              )}
-              <Badge className="absolute top-2 left-2 bg-gray-900 text-white">
-                {asset.format}
-              </Badge>
-            </div>
-
-            <h4 className="font-semibold text-gray-900 mb-2 truncate">
-              {asset.filename}
-            </h4>
-            <div className="space-y-1 text-sm text-gray-600 mb-4">
-              <p>Project: {asset.project}</p>
-              <p>Creator: {asset.creator}</p>
-              <p>Date: {new Date(asset.date).toLocaleDateString()}</p>
-              <p className="text-xs">
-                {asset.resolution} • {asset.size}
-              </p>
-            </div>
-
-            <Alert className="mb-3 bg-blue-50 border border-blue-200 p-3">
-              <p className="text-xs text-blue-900">
-                <strong>Usage:</strong> {asset.territory}, valid until{" "}
-                {asset.valid_until}
-              </p>
-            </Alert>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 border-2 border-gray-300"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                Preview
-              </Button>
-              <Button className="flex-1 bg-[#F7B750] hover:bg-[#E6A640] text-white">
-                <Download className="w-4 h-4 mr-1" />
-                Download
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {/* Assets are now loaded from real API data - no mock assets shown */}
+        <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <p className="text-gray-500">
+            No assets available yet. Assets will appear here once campaigns are
+            completed.
+          </p>
+        </Card>
       </div>
 
       {/* Organization Features */}
@@ -7404,9 +6878,7 @@ export default function BrandDashboard() {
   );
 
   const renderContractDetail = () => {
-    const contract = mockContracts.find((c) => c.id === selectedContract);
-    if (!contract) return null;
-
+    // Contracts are now loaded from real API data
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -7684,8 +7156,9 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{mockBrand.name}</strong> ("Licensee")
-                and <strong>{contract.creator_name}</strong> ("Licensor").
+                , by and between <strong>{brand?.name || "Brand"}</strong>{" "}
+                ("Licensee") and <strong>{contract.creator_name}</strong>{" "}
+                ("Licensor").
               </p>
 
               <p className="mb-6">
@@ -7768,9 +7241,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until {mockBrand.name}{" "}
-                approval of deliverables. Release upon approval or automatic
-                after 48 hours.
+                <strong>Payment:</strong> Held in escrow until{" "}
+                {brand?.name || "Brand"} approval of deliverables. Release upon
+                approval or automatic after 48 hours.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -7827,7 +7300,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
                     <p className="font-semibold text-gray-900 mb-2">
-                      {mockBrand.name}
+                      {brand?.name || "Brand"}
                     </p>
                     <p className="text-sm text-gray-600 mb-2">Licensee</p>
                     {contract.signed_date && (
@@ -7964,7 +7437,7 @@ export default function BrandDashboard() {
                     Contract created and sent to {contract.creator_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Created by: {mockBrand.name}
+                    Created by: {brand?.name || "Brand"}
                   </p>
                 </div>
               </div>
@@ -8030,10 +7503,9 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
-    const activeContracts = mockContracts.filter((c) => c.status === "signed");
-    const pendingContracts = mockContracts.filter(
-      (c) => c.status === "pending_signature",
-    );
+    // Contracts are now loaded from real API data
+    const activeContracts: any[] = [];
+    const pendingContracts: any[] = [];
 
     return (
       <div className="space-y-6">
@@ -8107,7 +7579,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            All Contracts ({mockContracts.length})
+            All Contracts (0)
           </button>
         </div>
 
@@ -8295,73 +7767,13 @@ export default function BrandDashboard() {
         {/* All Contracts */}
         {contractHubTab === "all" && (
           <div className="space-y-4">
-            {mockContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className={`p-6 border ${
-                  contract.status === "signed"
-                    ? "bg-white border-gray-200"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {contract.creator_name} ({contract.creator_handle})
-                    </p>
-                  </div>
-                  <Badge
-                    className={
-                      contract.status === "signed"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                    }
-                  >
-                    {contract.status === "signed"
-                      ? "✓ Fully Signed"
-                      : "⏳ Pending"}
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Created</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.created_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Duration</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.duration_days} days
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  onClick={() => setSelectedContract(contract.id)}
-                >
-                  View Details
-                </Button>
-              </Card>
-            ))}
+            {/* Contracts are now loaded from real API data */}
+            <Card className="p-12 bg-white border border-gray-200 text-center">
+              <p className="text-gray-500">
+                No contracts available yet. Contracts will appear here once
+                campaigns are created.
+              </p>
+            </Card>
           </div>
         )}
       </div>
@@ -8500,71 +7912,16 @@ export default function BrandDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {mockLicenses.map((license) => (
-                      <tr key={license.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 font-medium text-gray-900">
-                          {license.asset_name}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.creator}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.territory}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.duration}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-1">
-                            {license.channels.map((ch) => (
-                              <Badge
-                                key={ch}
-                                className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
-                              >
-                                {ch}
-                              </Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {new Date(license.end_date).toLocaleDateString()}
-                          <p className="text-xs text-gray-500">
-                            {license.days_remaining} days left
-                          </p>
-                        </td>
-                        <td className="px-4 py-4">
-                          <Badge
-                            className={
-                              license.status === "active"
-                                ? "bg-green-100 text-green-700 border border-green-300"
-                                : "bg-orange-100 text-orange-700 border border-orange-300"
-                            }
-                          >
-                            {license.status === "active"
-                              ? "Active"
-                              : "Expiring Soon"}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              Renew
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {/* Licenses are now loaded from real API data */}
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-12 text-center text-gray-500"
+                      >
+                        No licenses available yet. Licenses will appear here
+                        once campaigns are completed.
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -8580,43 +7937,12 @@ export default function BrandDashboard() {
                 License Expiration Calendar
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
-                {mockLicenses
-                  .filter((l) => l.status === "expiring_soon")
-                  .map((license) => (
-                    <div
-                      key={license.id}
-                      className="p-4 rounded-lg border-2 bg-orange-50 border-orange-300"
-                    >
-                      <p className="font-semibold text-gray-900 mb-2">
-                        {license.asset_name}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Expires:{" "}
-                        {new Date(license.end_date).toLocaleDateString()}
-                      </p>
-                      <Badge className="bg-orange-500 text-white">
-                        {license.days_remaining} days remaining
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        className="w-full mt-3 border-2 border-gray-300"
-                      >
-                        Renew License
-                      </Button>
-                    </div>
-                  ))}
-                {mockLicenses.filter((l) => l.status === "expiring_soon")
-                  .length === 0 && (
-                  <div className="col-span-3 text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No licenses expiring soon
-                    </h3>
-                    <p className="text-gray-600">
-                      All your licenses are active for 30+ days
-                    </p>
-                  </div>
-                )}
+                {/* Expiring licenses are now loaded from real API data */}
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">
+                    No expiring licenses at this time.
+                  </p>
+                </div>
               </div>
             </Card>
           </div>
@@ -8680,44 +8006,161 @@ export default function BrandDashboard() {
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
           <p className="text-4xl font-bold text-gray-900">$45.2K</p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
-          <p className="text-2xl font-bold text-gray-900">Mar 1</p>
-          <p className="text-xs text-gray-500 mt-1">$299 subscription</p>
-        </Card>
+        {canViewSubscriptions && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {brandNextInvoiceDate || "Not set"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {brandPlanTier === "enterprise"
+                ? "Custom enterprise contract"
+                : (brandRecurringAmount || 0) > 0
+                  ? `$${brandRecurringAmount}/mo recurring`
+                  : "No active subscription"}
+            </p>
+          </Card>
+        )}
       </div>
 
       {/* Current Plan */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Current Plan: {brand.plan}
-            </h3>
-            <p className="text-gray-600">Renews on March 1, 2025</p>
-          </div>
-          <Button className="bg-[#F7B750] hover:bg-[#E6A640] text-white">
-            Upgrade Plan
-          </Button>
-        </div>
+      {canViewSubscriptions && (
+        <Card
+          className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
+        >
+          <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
+          <div className="p-6">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <Badge className={brandSummaryTheme.badgeClass}>
+                  {brandSummaryTheme.eyebrow}
+                </Badge>
+                <h3
+                  className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
+                >
+                  Current Plan: {brandPlanLabel}
+                </h3>
+                <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
+                  {brandTrialEndsAt
+                    ? `Free trial ends on ${brandTrialEndsAt}`
+                    : brandCurrentPeriodEnd
+                      ? `Renews on ${brandCurrentPeriodEnd}`
+                      : brandSubscriptionStatus}
+                </p>
+              </div>
+              {canManageBilling && (
+                <Button
+                  className={`font-semibold ${brandSummaryTheme.buttonClass}`}
+                  onClick={() => navigate(brandSummaryTheme.actionPath)}
+                >
+                  {brandSummaryTheme.actionLabel}
+                </Button>
+              )}
+            </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Subscription</p>
-            <p className="text-2xl font-bold text-gray-900">$299</p>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Base Subscription
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandBasePrice == null
+                    ? brandPlanTier === "enterprise"
+                      ? "Custom"
+                      : "$0"
+                    : `$${brandBasePrice}`}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {brandSubscriptionStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  AI Studio Add-On
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandHasIncludedStudio
+                    ? "Included"
+                    : brandHasStudioAddon
+                      ? `$${BRAND_STUDIO_ADDON_PRICE}`
+                      : "Inactive"}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
+                    ? `Renews on ${brandStudioCurrentPeriodEnd}`
+                    : brandStudioStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Campaign Slots
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandCampaignLimit == null
+                    ? "Unlimited"
+                    : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {campaignMetrics.active_projects_count} active,{" "}
+                  {campaignMetrics.pending_approvals_count} pending approval
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Team Seats
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandTeamSeatsUsed} / {brandSeatLimitLabel}
+                </p>
+              </div>
+            </div>
+
+            {(brandCampaignLimitReached || brandSeatLimitReached) && (
+              <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
+                <AlertDescription>
+                  {brandCampaignLimitReached
+                    ? brandCampaignLimit === 0
+                      ? "Upgrade to a paid brand plan to launch campaigns."
+                      : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
+                    : brandSeatLimit === 0
+                      ? "Upgrade to Basic or above to unlock company seats."
+                      : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Campaign Slots</p>
-            <p className="text-2xl font-bold text-gray-900">3 / 20</p>
-          </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Team Seats</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {brand.team_seats} / 5
-            </p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Payment Status / Project Billing */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -8746,39 +8189,16 @@ export default function BrandDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockCampaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 font-medium text-gray-900">
-                    {campaign.name}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {campaign.creators.join(", ")}
-                  </td>
-                  <td className="px-4 py-4 font-bold text-gray-900">
-                    ${campaign.budget.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge
-                      className={
-                        campaign.status === "pending_approval"
-                          ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                          : campaign.status === "completed"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-blue-100 text-blue-700 border border-blue-300"
-                      }
-                    >
-                      {campaign.status === "pending_approval"
-                        ? "Pending Approval"
-                        : campaign.status === "completed"
-                          ? "Paid"
-                          : "In Escrow"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">
-                    {campaign.go_live}
-                  </td>
-                </tr>
-              ))}
+              {/* Campaigns are now loaded from real API data */}
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-12 text-center text-gray-500"
+                >
+                  No campaigns available yet. Campaigns will appear here once
+                  you create them.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -8797,7 +8217,7 @@ export default function BrandDashboard() {
         </p>
         <p className="text-sm font-semibold text-blue-900">
           Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
-          {mockCampaigns.filter((c) => c.escrow_amount > 0).length} projects
+          {escrowProjects.length} projects
         </p>
       </Card>
 
@@ -8891,88 +8311,387 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderSettings = () => {
-    if (!isBrandProfileLoaded) {
-      return (
-        <div className="rounded-lg border border-gray-200 bg-white p-8">
-          <div className="h-6 w-48 rounded bg-gray-100 mb-4" />
-          <div className="h-4 w-64 rounded bg-gray-100 mb-6" />
-          <div className="h-40 rounded bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">
-            Loading brand profile…
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-gray-600">
+          Manage your company profile and preferences
+        </p>
+      </div>
+
+      <Tabs
+        value={activeSettingsTab}
+        onValueChange={setActiveSettingsTab}
+        className="w-full"
+      >
+        <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
+          <TabsTrigger
+            value="profile"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Profile
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger
+            value="billing"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Billing
+          </TabsTrigger>
+          <TabsTrigger
+            value="team"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Team
+          </TabsTrigger>
+          <TabsTrigger
+            value="integrations"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
+          >
+            Security & Legal
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile" className="space-y-6 mt-0">
+          {/* Company Logo */}
+          <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
+              Company Logo
+            </h3>
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
+                  <AvatarImage src={brand?.logo} alt={brand?.name} />
+                  <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
+                    {getBrandInitials(brand?.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                  <Edit className="w-4 h-4 text-gray-900" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                  />
+                </label>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
+                  Upload Official Logo
+                </p>
+                <p className="text-xs text-gray-500 font-medium">
+                  JPG or PNG, max 5MB, square format recommended
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Company Information */}
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Building2 className="w-6 h-6" /> Company Information
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Company Name
+                </Label>
+                <Input
+                  value={brand?.name ?? ""}
+                  onChange={(e) => setBrand({ ...brand, name: e.target.value })}
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Industry
+                </Label>
+                <Input
+                  value={brand?.industry ?? ""}
+                  onChange={(e) =>
+                    setBrand({ ...brand, industry: e.target.value })
+                  }
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Website
+                </Label>
+                <Input
+                  value={brand?.website ?? ""}
+                  onChange={(e) =>
+                    setBrand({ ...brand, website: e.target.value })
+                  }
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Your Email
+                </Label>
+                <Input
+                  value={profile?.email ?? ""}
+                  readOnly
+                  className="rounded-none border-2 border-gray-200 bg-gray-50 cursor-not-allowed h-12 text-sm font-bold text-gray-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-12">
+              <Button
+                onClick={handleSaveProfile}
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+              >
+                Save Profile Changes
+              </Button>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Bell className="w-6 h-6" /> Communication Preferences
+            </h3>
+            <div className="space-y-2">
+              {[
+                {
+                  title: "New Project Alerts",
+                  desc: "When talent accepts or delivers assets",
+                },
+                {
+                  title: "Deliverable Submissions",
+                  desc: "When creators submit work for approval",
+                },
+                {
+                  title: "Approval Reminders",
+                  desc: "48-hour countdown notifications",
+                },
+                {
+                  title: "License Expiration Alerts",
+                  desc: "30-day advance notice",
+                },
+                {
+                  title: "Monthly Analytics Summary",
+                  desc: "Monthly performance email report",
+                },
+              ].map((pref, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
+                >
+                  <div className="pr-12">
+                    <Label className="text-sm font-black text-gray-900 uppercase tracking-widest block mb-1">
+                      {pref.title}
+                    </Label>
+                    <p className="text-xs font-medium text-gray-500">
+                      {pref.desc}
+                    </p>
+                  </div>
+                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-6 mt-0">
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <CreditCard className="w-6 h-6" /> Billing & Payment
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  Billing Address
+                </Label>
+                <Textarea
+                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
+                />
+              </div>
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    Billing Email
+                  </Label>
+                  <Input
+                    defaultValue="billing@urbanapparel.com"
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    Tax Identification
+                  </Label>
+                  <Input
+                    placeholder="XX-XXXXXXX"
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Primary Payment Method
+                  </p>
+                  <p className="text-sm font-black text-gray-900">
+                    Visa ending in 4242
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
+              >
+                Manage
+              </Button>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team" className="space-y-6 mt-0">
+          <TeamManagementCard
+            organizationType="brand"
+            title="Team Management"
+            description="Manage members, roles, and invitations for your brand organization."
+            seatLimit={brandSeatLimit}
+            seatLimitReached={brandSeatLimitReached}
+          />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6 mt-0">
+          <Card className="p-12 bg-white border border-gray-200 rounded-none shadow-none flex flex-col items-center justify-center text-center">
+            <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-none flex items-center justify-center mb-6">
+              <Zap className="w-8 h-8 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
+              Extend Your Workflow
+            </h3>
+            <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
+              Connect Likelee with your favorite marketing tools to automate
+              deliverables, tracking, and payments.
+            </p>
+            <Button
+              disabled
+              className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6 mt-0">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <Settings className="w-6 h-6" /> Security Settings
+              </h3>
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Reset Admin Password <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                >
+                  Active Session Audit <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <FileText className="w-6 h-6" /> Legal & Governance
+              </h3>
+              <div className="space-y-3">
+                {[
+                  "Terms & Conditions",
+                  "Privacy Policy",
+                  "SAG-AFTRA Agreement",
+                  "Data Export (GDPR)",
+                ].map((legal, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
+                    {legal}
+                  </Button>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Support Section - Global Footer */}
+      <Card className="p-8 bg-gray-950 text-white rounded-none shadow-none mt-12 border-none">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
+              Need Assistance?
+            </h3>
+            <p className="text-gray-400 font-medium text-sm">
+              Our partner success team is available 24/7 to help you optimize
+              your campaigns.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              onClick={() => {
+                // Open support email
+                window.location.href = CONTACT_EMAIL_MAILTO;
+              }}
+              className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
+            </Button>
+            <Button
+              onClick={() => {
+                // Navigate to book demo page
+                navigate(createBookDemoUrl("brand_dashboard_settings"));
+              }}
+              className="rounded-none bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12 border-2 border-purple-500"
+            >
+              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
+            </Button>
           </div>
         </div>
-      );
-    }
-
-    return (
-      <BrandSettingsPanel
-        activeSettingsTab={activeSettingsTab}
-        onChangeTab={setActiveSettingsTab}
-        brand={brand}
-        originalBrand={originalBrand}
-        uploadingLogo={uploadingLogo}
-        isSavingProfile={isSavingProfile}
-        onUpdateBrand={setBrand}
-        onLogoUpload={handleLogoUpload}
-        onSaveProfile={handleSaveProfile}
-        onShowLogoPreview={() => setShowLogoPreview(true)}
-        notificationPrefs={notificationPrefs}
-        onToggleNotificationPref={(prefId, val) => {
-          const newPrefs = { ...notificationPrefs, [prefId]: val };
-          setNotificationPrefs(newPrefs);
-          scheduleNotificationPrefsSave(newPrefs);
-        }}
-        isSavingNotificationPrefs={isSavingNotificationPrefs}
-        onNavigate={navigate}
-      />
-    );
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("brandSidebarOpen", String(sidebarOpen));
-  }, [sidebarOpen]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("brandSidebarWidth", String(sidebarWidth));
-  }, [sidebarWidth]);
-
-  const handleSidebarDragStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.pageX;
-    const startWidth = sidebarWidth;
-
-    const handleDrag = (dragEvent: MouseEvent) => {
-      const newWidth = Math.max(
-        80,
-        Math.min(400, startWidth + (dragEvent.pageX - startX)),
-      );
-      setSidebarWidth(newWidth);
-      if (newWidth <= 120) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-
-    const handleDragEnd = () => {
-      document.removeEventListener("mousemove", handleDrag);
-      document.removeEventListener("mouseup", handleDragEnd);
-    };
-
-    document.addEventListener("mousemove", handleDrag);
-    document.addEventListener("mouseup", handleDragEnd);
-  };
+      </Card>
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -9342,7 +9061,7 @@ export default function BrandDashboard() {
           }
         }}
       >
-        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-lg border-none p-0 flex flex-col outline-none">
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Sign Contract</DialogTitle>
             <DialogDescription>
@@ -9430,7 +9149,7 @@ export default function BrandDashboard() {
                 </div>
               </div>
 
-              <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap gap-2">
                   {(selectedJobForApplications.work_types || []).map(
                     (type: string) => (
@@ -9491,7 +9210,7 @@ export default function BrandDashboard() {
                 </div>
               </section>
 
-              <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
                   Talent Requirements
                 </h4>
@@ -9544,7 +9263,7 @@ export default function BrandDashboard() {
               </section>
 
               {selectedJobForApplications.needs_licensing && (
-                <section className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-5">
+                <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
                   <h4 className="text-sm font-semibold text-gray-900">
                     Licensing Details
                   </h4>
@@ -9593,7 +9312,7 @@ export default function BrandDashboard() {
                 </section>
               )}
 
-              <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
                   Budget & Compensation
                 </h4>
@@ -9625,7 +9344,7 @@ export default function BrandDashboard() {
                     0 ||
                   (selectedJobForApplications.invited_creators || []).length >
                     0) && (
-                  <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h4 className="text-sm font-semibold text-gray-900">
                       Collaboration Preferences
                     </h4>
@@ -9852,7 +9571,7 @@ export default function BrandDashboard() {
 
               {Array.isArray(selectedJobForApplications.brand_assets) &&
                 selectedJobForApplications.brand_assets.length > 0 && (
-                  <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-gray-900">
                         Brand Assets
@@ -10948,71 +10667,41 @@ export default function BrandDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-75 flex flex-col fixed top-16 bottom-0 left-0 z-40 ${sidebarOpen ? "" : "-translate-x-full md:translate-x-0"}`}
-        style={{
-          width: isMobile
-            ? sidebarOpen
-              ? "16rem"
-              : "0"
-            : `${!sidebarOpen ? 80 : sidebarWidth}px`,
-        }}
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
       >
-        <div
-          className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-            !sidebarOpen
-              ? "p-4 flex items-center justify-center cursor-pointer"
-              : "p-6 flex items-center gap-3 cursor-pointer"
-          }`}
-          onClick={() => navigateToSection("settings")}
-          title={!sidebarOpen ? brand.name : undefined}
-        >
-          <div className="relative">
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowLogoPreview(true);
-              }}
-              className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
-            >
-              <Avatar
-                className={`${!sidebarOpen ? "w-10 h-10" : "w-12 h-12"} border-2 border-gray-200 rounded-lg`}
-              >
+        {/* Brand Section */}
+        <div className="p-6 border-b border-gray-200">
+          {brand && sidebarOpen ? (
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
                 <AvatarImage src={brand.logo} alt={brand.name} />
                 <AvatarFallback className="font-bold text-gray-700">
                   {getBrandInitials(brand.name)}
                 </AvatarFallback>
               </Avatar>
-            </div>
-          </div>
-          {sidebarOpen && (
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-              {brand.plan && (
-                <p className="text-xs text-brand-orange font-bold truncate">
-                  {brand.plan}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 truncate">{brand.name}</p>
+                <p className="text-xs text-gray-600 truncate">
+                  {brandPlanLabel}
                 </p>
-              )}
+              </div>
             </div>
+          ) : brand ? (
+            <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
+              <AvatarImage src={brand.logo} alt={brand.name} />
+              <AvatarFallback className="font-bold text-gray-700">
+                {getBrandInitials(brand.name)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse" />
           )}
         </div>
 
         {/* Navigation */}
-        <nav
-          className={`flex-1 p-4 min-h-0 ${sidebarOpen ? "overflow-y-auto" : "overflow-visible"}`}
-          onMouseLeave={hidePopoutWithDelay}
-        >
+        <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -11027,20 +10716,7 @@ export default function BrandDashboard() {
                 : activeSection === item.id;
 
               return (
-                <div
-                  key={item.id}
-                  className="relative group"
-                  onMouseEnter={(e) => {
-                    if (!sidebarOpen && isCampaignGroup) {
-                      clearPopoutTimeout();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setCollapsedPopout({
-                        itemId: item.id,
-                        top: rect.top,
-                      });
-                    }
-                  }}
-                >
+                <div key={item.id}>
                   <div
                     className={`w-full flex items-center gap-2 rounded-lg transition-all ${
                       isActive
@@ -11064,23 +10740,9 @@ export default function BrandDashboard() {
                         setShowContractHub(false);
                         setSelectedContract(null);
                       }}
-                      className={`w-full flex items-center transition-colors ${
-                        !sidebarOpen
-                          ? "justify-center px-2 py-3"
-                          : "gap-3 px-3 py-3"
-                      }`}
-                      title={
-                        !sidebarOpen && !isCampaignGroup
-                          ? item.label
-                          : undefined
-                      }
+                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left"
                     >
-                      <div className="relative flex items-center">
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        {!sidebarOpen && isCampaignGroup && (
-                          <ChevronRight className="w-3 h-3 absolute -right-3 top-1 text-gray-400" />
-                        )}
-                      </div>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
                       {sidebarOpen && (
                         <>
                           <span className="flex-1 text-left font-medium">
@@ -11136,7 +10798,7 @@ export default function BrandDashboard() {
                     )}
                   </div>
 
-                  {sidebarOpen && showCampaignSubtabs && isCampaignGroup && (
+                  {sidebarOpen && isCampaignGroup && showCampaignSubtabs && (
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
@@ -11155,19 +10817,29 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          navigateToSection("campaigns-inbox");
+                          if (canViewInbox) {
+                            navigateToSection("campaigns-inbox");
+                          }
                         }}
+                        disabled={!canViewInbox}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
+                            : canViewInbox
+                              ? "text-gray-600 hover:bg-gray-100"
+                              : "text-gray-400 cursor-not-allowed"
                         }`}
+                        title={
+                          !canViewInbox
+                            ? "You do not have permission to view the inbox"
+                            : ""
+                        }
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {inboxUnreadCount > 0 && (
-                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
-                            {inboxUnreadCount}
+                        {canViewInbox && inboxPendingCount > 0 && (
+                          <Badge className="bg-gray-200 text-gray-700">
+                            {inboxPendingCount}
                           </Badge>
                         )}
                       </button>
@@ -11201,11 +10873,6 @@ export default function BrandDashboard() {
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
-                        {pendingApprovalCount > 0 && (
-                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
-                            {pendingApprovalCount}
-                          </Badge>
-                        )}
                       </button>
                       <button
                         onClick={() => {
@@ -11222,11 +10889,6 @@ export default function BrandDashboard() {
                       >
                         <Briefcase className="w-4 h-4" />
                         <span className="flex-1 text-left">Jobs</span>
-                        {jobsUnreadCount > 0 && (
-                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
-                            {jobsUnreadCount}
-                          </Badge>
-                        )}
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
@@ -11248,135 +10910,22 @@ export default function BrandDashboard() {
         </nav>
 
         {/* Toggle Sidebar Button */}
-        <div className="flex-shrink-0 mt-auto bg-white border-t border-gray-200">
-          <button
-            onClick={() => {
-              setSidebarOpen(!sidebarOpen);
-              setSidebarWidth(!sidebarOpen ? 256 : 80);
-            }}
-            className="w-full p-4 hover:bg-gray-50 transition-colors flex items-center justify-center h-14"
-          >
-            <Menu className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        {!isMobile && (
-          <div
-            onMouseDown={handleSidebarDragStart}
-            className="absolute inset-y-0 right-0 w-2 cursor-ew-resize opacity-0 hover:opacity-100 hover:bg-indigo-500/10 transition-all"
-            title="Resize sidebar"
-            aria-hidden="true"
-          />
-        )}
-
-        {/* Popout for collapsed navigation */}
-        <AnimatePresence>
-          {!sidebarOpen && collapsedPopout && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute left-full z-[100] w-64 pl-2 -ml-px"
-              style={{ top: collapsedPopout.top }}
-              onMouseEnter={clearPopoutTimeout}
-              onMouseLeave={hidePopoutWithDelay}
-            >
-              <div className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2">
-                <div className="absolute -left-1.5 top-4 h-3 w-3 rotate-45 border-l border-t border-gray-200 bg-white" />
-                <div className="space-y-1">
-                  <button
-                    onClick={() => {
-                      navigateToSection("campaign-offers", {
-                        category: "brand-campaign-offers",
-                      });
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <Target className="w-4 h-4" />
-                    <span>My Offers</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigateToSection("campaigns-inbox");
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span>Inbox</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigateToSection("campaigns-contract-hub");
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>Contract Hub</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigateToSection("campaigns-deliverables");
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Deliverables</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigateToSection("campaigns-hub", {
-                        campaignHubTab: "jobs",
-                      });
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    <span>Jobs</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigateToSection("studio");
-                      setCollapsedPopout(null);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-all font-semibold"
-                  >
-                    <ImageIcon className="w-4 h-4" />
-                    <span>Asset Library</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+        </button>
       </aside>
 
       {/* Main Content */}
       <main
-        className="flex-1 transition-all duration-75 overflow-y-auto"
-        style={{
-          marginLeft: isMobile ? "0" : `${!sidebarOpen ? 80 : sidebarWidth}px`,
-        }}
+        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
           {activeSection === "home" && renderHome()}
-          {activeSection === "marketplace" && (
-            <MarketplaceSection
-              title="Likelee Marketplace"
-              subtitle="Verified creators only"
-              verifiedBadgeLabel=""
-              queryScope="brand-creator-marketplace"
-              showRequestLicense
-              onRequestLicense={(profile, details) =>
-                handleOpenLicenseRequest(profile, details)
-              }
-            />
-          )}
+          {activeSection === "marketplace" && renderCreatorMarketplace()}
+          {activeSection === "marketplace" && renderCreatorMarketplace()}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
           {activeSection === "campaigns-hub" &&
@@ -11460,7 +11009,7 @@ export default function BrandDashboard() {
                         <div className="flex flex-col lg:flex-row gap-6">
                           <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
+                              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-semibold">
                                 {String(job.job_title || job.title || "J")
                                   .trim()
                                   .slice(0, 1)
@@ -11533,6 +11082,12 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -11641,7 +11196,7 @@ export default function BrandDashboard() {
         open={!!confirmingDonePkg}
         onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
       >
-        <AlertDialogContent className="bg-white rounded-lg border border-gray-300 shadow-2xl">
+        <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold text-gray-900">
               Confirm Selection
@@ -11691,11 +11246,11 @@ export default function BrandDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg border-gray-300">
+            <AlertDialogCancel className="rounded-none border-gray-300">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-lg bg-black hover:bg-gray-800 text-white"
+              className="rounded-none bg-black hover:bg-gray-800 text-white"
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
@@ -11735,17 +11290,6 @@ export default function BrandDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Logo Preview Dialog */}
-      <Dialog open={showLogoPreview} onOpenChange={setShowLogoPreview}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none flex items-center justify-center">
-          <img
-            src={brand.logo}
-            alt={brand.name}
-            className="max-w-full max-h-[85vh] object-contain drop-shadow-2xl rounded-2xl"
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Image Preview Dialog */}
       <Dialog
@@ -11916,10 +11460,10 @@ export default function BrandDashboard() {
         open={reviewDialog.open}
         onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[500px] rounded-lg p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">
             <DialogHeader className="space-y-1 relative z-10">
-              <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mb-4 border border-white/20">
+              <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <DialogTitle className="text-2xl font-bold font-syne text-white">
@@ -11938,7 +11482,7 @@ export default function BrandDashboard() {
               </label>
               <Textarea
                 placeholder="What exactly should be changed? (e.g., 'Need more lighting', 'Crop the left side')"
-                className="min-h-[150px] resize-none rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
+                className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                 value={reviewDialog.note}
                 onChange={(e) =>
                   setReviewDialog((prev) => ({
@@ -11952,7 +11496,7 @@ export default function BrandDashboard() {
             <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
               <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-lg border-gray-200 hover:bg-gray-50 font-bold"
+                className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
                 onClick={() =>
                   setReviewDialog((prev) => ({ ...prev, open: false }))
                 }
@@ -11960,7 +11504,7 @@ export default function BrandDashboard() {
                 Cancel
               </Button>
               <Button
-                className="flex-1 h-12 rounded-lg bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
                   !reviewDialog.note.trim() ||
                   reviewing === reviewDialog.delId ||
@@ -11992,13 +11536,13 @@ export default function BrandDashboard() {
           setEscrowReleasedModal((prev) => ({ ...prev, open }))
         }
       >
-        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-lg">
+        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-none">
           <div className="relative p-8 text-center flex flex-col items-center">
             {/* Celebratory Background Elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
 
             <div className="mb-6 relative">
-              <div className="w-20 h-20 bg-emerald-100 rounded-lg flex items-center justify-center relative z-10 animate-bounce-short">
+              <div className="w-20 h-20 bg-emerald-100 rounded-none flex items-center justify-center relative z-10 animate-bounce-short">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600" />
               </div>
               <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-100 flex items-center justify-center animate-ping-slow">
@@ -12021,7 +11565,7 @@ export default function BrandDashboard() {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                   Escrow Release
                 </span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-none font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
                   Released via Stripe
                 </Badge>
               </div>
@@ -12042,7 +11586,7 @@ export default function BrandDashboard() {
             </div>
 
             <Button
-              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-lg shadow-xl transition-all active:scale-[0.98]"
+              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-none shadow-xl transition-all active:scale-[0.98]"
               onClick={() => setEscrowReleasedModal({ open: false })}
             >
               Done

@@ -1,6 +1,7 @@
 use crate::{
     auth::AuthUser,
     config::AppState,
+    entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
     errors::sanitize_db_error,
     pricing_defaults::should_default_visibility_on,
     team::{permissions::Permission, require_agency_access, require_agency_permission},
@@ -1549,6 +1550,14 @@ pub async fn list_brand_campaign_license_options(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let tier = get_brand_plan_tier(&state, &user.id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
+        ));
     }
 
     let campaign_resp = state

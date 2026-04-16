@@ -9,6 +9,14 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+  brandAllowsCampaignCollaboration,
+  brandMaxCampaignWizardStep,
+  brandPlanCampaignLimit,
+  brandPlanSeatLimit,
+  hasBrandStudioAccess,
+  normalizeBrandPlanTier,
+} from "@/lib/brandBilling";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -78,10 +86,7 @@ import { supabase } from "@/lib/supabase";
 import { DocuSealBuilderModal } from "@/components/licensing/DocuSealBuilderModal";
 import { DocusealForm } from "@docuseal/react";
 
-const mockBrand = {
-  name: "Urban Apparel Co.",
-  logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200",
-};
+// Brand data is now loaded from API via getBrandProfile()
 
 type BrandCampaignDashboardProps = {
   embedded?: boolean;
@@ -132,7 +137,7 @@ export default function BrandCampaignDashboard({
   };
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, supabase } = useAuth();
+  const { user, supabase, profile } = useAuth();
 
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
@@ -165,7 +170,6 @@ export default function BrandCampaignDashboard({
     Record<string, string>
   >({});
   const [newCampaignStep, setNewCampaignStep] = useState(1);
-  const [hasStudioAddon, setHasStudioAddon] = useState(false);
   const [agencySearch, setAgencySearch] = useState("");
   const [connectedAgencies, setConnectedAgencies] = useState<any[]>([]);
   const [loadingConnectedAgencies, setLoadingConnectedAgencies] =
@@ -210,6 +214,19 @@ export default function BrandCampaignDashboard({
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
   const previousCollaboratorTypeRef = useRef<string>("");
   const isFetchingCampaignCardsRef = useRef(false);
+  const hasStudioAddon = hasBrandStudioAccess(profile);
+  const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
+  const brandCampaignLimit = brandPlanCampaignLimit(brandPlanTier);
+  const brandCampaignLimitLabel =
+    brandCampaignLimit == null ? "Unlimited" : String(brandCampaignLimit);
+  const brandSeatLimit = brandPlanSeatLimit(brandPlanTier);
+  const brandSeatLimitLabel =
+    brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
+  const brandTeamSeatsUsed = Number.isFinite(Number(profile?.team_seats))
+    ? Number(profile?.team_seats)
+    : 0;
+  const canUseCampaignCollaboration = brandAllowsCampaignCollaboration(profile);
+  const maxCampaignWizardStep = brandMaxCampaignWizardStep(profile);
   const [previewImage, setPreviewImage] = useState<any>(null);
   const [previewItems, setPreviewItems] = useState<any[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -276,7 +293,8 @@ export default function BrandCampaignDashboard({
 
     if (hasPrefillCampaignId) {
       const nextStep = Number(context?.startStep || 3);
-      const safeStep = Number.isFinite(nextStep) ? Math.max(1, nextStep) : 3;
+      const boundedStep = Number.isFinite(nextStep) ? Math.max(1, nextStep) : 3;
+      const safeStep = Math.min(maxCampaignWizardStep, boundedStep);
       const brandCampaignId = String(context?.brandCampaignId || "").trim();
 
       setBrandCampaignId(brandCampaignId);
@@ -326,7 +344,18 @@ export default function BrandCampaignDashboard({
     }
 
     setShowNewCampaignModal(true);
-  }, [embedded, openNewCampaignSignal, prefillCampaignContext]);
+  }, [
+    embedded,
+    maxCampaignWizardStep,
+    openNewCampaignSignal,
+    prefillCampaignContext,
+  ]);
+
+  useEffect(() => {
+    if (!showNewCampaignModal) return;
+    if (newCampaignStep <= maxCampaignWizardStep) return;
+    setNewCampaignStep(maxCampaignWizardStep);
+  }, [maxCampaignWizardStep, newCampaignStep, showNewCampaignModal]);
 
   useEffect(() => {
     if (!showNewCampaignModal) return;
@@ -449,6 +478,94 @@ export default function BrandCampaignDashboard({
       activeCount: activeCampaigns.length,
     };
   }, [campaignCards]);
+
+  const campaignSlotsUsed = useMemo(
+    () =>
+      campaignCards.filter((campaign: any) => {
+        const offersCount = Number(campaign?.offers_count || 0);
+        const status = String(campaign?.status || "")
+          .trim()
+          .toLowerCase();
+        return offersCount > 0 && status !== "completed";
+      }).length,
+    [campaignCards],
+  );
+
+  const campaignLimitReached =
+    brandCampaignLimit != null && campaignSlotsUsed >= brandCampaignLimit;
+
+  const currentCampaignOccupiesSlot = useMemo(() => {
+    const currentCampaignId = String(brandCampaignId || "").trim();
+    if (!currentCampaignId) return false;
+    return campaignCards.some((campaign: any) => {
+      const id = String(
+        campaign?.id || campaign?.brand_campaign_id || "",
+      ).trim();
+      const offersCount = Number(campaign?.offers_count || 0);
+      const status = String(campaign?.status || "")
+        .trim()
+        .toLowerCase();
+      return (
+        id === currentCampaignId && offersCount > 0 && status !== "completed"
+      );
+    });
+  }, [brandCampaignId, campaignCards]);
+
+  const canLaunchCurrentCampaign =
+    !campaignLimitReached || currentCampaignOccupiesSlot;
+
+  const getCampaignEntitlementMessage = (error: unknown): string => {
+    const message = String((error as any)?.message || error || "").trim();
+    if (message.includes("brand_campaign_collaboration_requires_pro_plan")) {
+      return "Collaborator selection, talent browsing, and offer sending start on the Pro plan.";
+    }
+    if (message.includes("brand_talent_browsing_requires_pro_plan")) {
+      return "Talent browsing, creator licensing, and agency discovery start on the Pro plan.";
+    }
+    if (message.includes("brand_campaign_limit_reached")) {
+      return `You've reached your ${brandCampaignLimitLabel} active campaign limit. Mark a campaign done or upgrade your plan to launch another one.`;
+    }
+    return message || "Please try again.";
+  };
+
+  const promptCampaignUpgrade = () => {
+    toast({
+      title: "Upgrade to Pro",
+      description:
+        "Basic plans stop after the campaign brief. Upgrade to Pro to choose agencies or creators and send offers.",
+    });
+  };
+
+  const handleInviteAgencyEntry = () => {
+    if (!canUseCampaignCollaboration) {
+      promptCampaignUpgrade();
+      navigate("/brandpricing");
+      return;
+    }
+    setShowInviteAgencyModal(true);
+  };
+
+  const handleCompanySeatEntry = () => {
+    if ((brandSeatLimit ?? 0) === 0) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    if (brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit) {
+      toast({
+        title: "Seat limit reached",
+        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    // Navigate to Brand Dashboard Settings → Team tab to manage team members
+    navigate("/BrandDashboard?section=settings&tab=team");
+  };
 
   const setBudgetPart = (part: "min" | "max", nextValue: string) => {
     const normalized = String(nextValue || "").replace(/[^\d]/g, "");
@@ -1150,7 +1267,8 @@ export default function BrandCampaignDashboard({
   useEffect(() => {
     if (
       !showNewCampaignModal ||
-      (newCampaignStep !== 3 && newCampaignStep !== 4)
+      (newCampaignStep !== 3 && newCampaignStep !== 4) ||
+      !canUseCampaignCollaboration
     ) {
       return;
     }
@@ -1216,6 +1334,7 @@ export default function BrandCampaignDashboard({
     showNewCampaignModal,
     newCampaignStep,
     campaignForm.collaborator_type,
+    canUseCampaignCollaboration,
   ]);
 
   const step3Creators = useMemo(() => {
@@ -1471,6 +1590,14 @@ export default function BrandCampaignDashboard({
       await base44.post(`/api/brand/campaigns/${id}`, {
         brief_snapshot: campaignBrief,
       });
+      if (!canUseCampaignCollaboration) {
+        toast({
+          title: "Campaign brief saved",
+          description:
+            "Steps 1-2 are available on your current plan. Upgrade to Pro to unlock collaborator selection and send offers.",
+        });
+        return;
+      }
       setNewCampaignStep(3);
     } catch (e: any) {
       toast({
@@ -1683,10 +1810,22 @@ export default function BrandCampaignDashboard({
 
   const handleSendOffer = async () => {
     if (savingCampaign) return;
+    if (!canUseCampaignCollaboration) {
+      promptCampaignUpgrade();
+      return;
+    }
     if (!brandCampaignId) {
       toast({
         title: "Campaign not ready",
         description: "Please save campaign details first.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!canLaunchCurrentCampaign) {
+      toast({
+        title: "Campaign limit reached",
+        description: `You've already used ${campaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots.`,
         variant: "destructive" as any,
       });
       return;
@@ -1820,7 +1959,7 @@ export default function BrandCampaignDashboard({
         } catch (e: any) {
           toast({
             title: "Failed to send offers",
-            description: e?.message || "Please try again.",
+            description: getCampaignEntitlementMessage(e),
             variant: "destructive" as any,
           });
           return;
@@ -1880,7 +2019,7 @@ export default function BrandCampaignDashboard({
           description:
             msg === "This record already exists."
               ? "An offer to this agency already exists for this campaign."
-              : msg || "Please try again.",
+              : getCampaignEntitlementMessage(e),
           variant:
             msg === "This record already exists."
               ? ("default" as any)
@@ -2003,13 +2142,15 @@ export default function BrandCampaignDashboard({
                   Back to Dashboard
                 </Button>
                 <div className="flex items-center gap-3">
-                  <img
-                    src={mockBrand.logo}
-                    alt="Brand"
-                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                  />
+                  {profile?.logo_url && (
+                    <img
+                      src={profile.logo_url}
+                      alt="Brand"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  )}
                   <span className="text-xl font-bold text-gray-900">
-                    {mockBrand.name}
+                    {profile?.company_name || "Brand Dashboard"}
                   </span>
                 </div>
               </div>
@@ -2065,11 +2206,22 @@ export default function BrandCampaignDashboard({
           </Card>
         </div>
 
+        {(campaignLimitReached || !canUseCampaignCollaboration) && (
+          <Alert className="mb-8 border-2 border-amber-200 bg-amber-50 rounded-none">
+            <AlertCircle className="h-5 w-5 text-amber-700" />
+            <AlertDescription className="text-amber-900">
+              {!canUseCampaignCollaboration
+                ? "Basic plans can save campaign details and briefs, but collaborator selection and offer sending start on Pro."
+                : `You've used ${campaignSlotsUsed} of ${brandCampaignLimitLabel} active campaign slots on your current plan.`}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Collaboration CTAs + Post Job */}
         <div className="grid md:grid-cols-5 gap-6 mb-8">
           <Card
             className="p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none"
-            onClick={() => setShowInviteAgencyModal(true)}
+            onClick={handleInviteAgencyEntry}
           >
             <div className="w-12 h-12 bg-[#F7B750] rounded-none flex items-center justify-center mb-4">
               <Building2 className="w-6 h-6 text-white" />
@@ -2081,8 +2233,14 @@ export default function BrandCampaignDashboard({
               Invite a marketing agency to manage your campaigns
             </p>
             <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
-              <Mail className="w-4 h-4 mr-2" />
-              Invite Agency
+              {canUseCampaignCollaboration ? (
+                <>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Invite Agency
+                </>
+              ) : (
+                "Upgrade Plan"
+              )}
             </Button>
           </Card>
 
@@ -2104,7 +2262,10 @@ export default function BrandCampaignDashboard({
             </Button>
           </Card>
 
-          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+          <Card
+            className="p-6 bg-white border-2 border-amber-600/60 rounded-none cursor-pointer"
+            onClick={handleCompanySeatEntry}
+          >
             <div className="w-12 h-12 bg-amber-600 rounded-none flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-white" />
             </div>
@@ -2114,17 +2275,24 @@ export default function BrandCampaignDashboard({
             <p className="text-sm text-gray-600 mb-4">
               Add in-house AI creator to your team
             </p>
-            <Button
-              disabled
-              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
-            >
-              Coming Soon
+            <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none">
+              {(brandSeatLimit ?? 0) === 0
+                ? "Upgrade Plan"
+                : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
+                  ? "Seat limit reached"
+                  : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
 
           <Card
             className="p-6 bg-white border-2 border-orange-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
-            onClick={() => setShowStudioUpgradeModal(true)}
+            onClick={() => {
+              if (hasStudioAddon) {
+                navigate(createPageUrl("Studio"));
+                return;
+              }
+              setShowStudioUpgradeModal(true);
+            }}
           >
             <div className="w-12 h-12 bg-orange-600 rounded-none flex items-center justify-center mb-4 relative">
               {!hasStudioAddon && (
@@ -2142,12 +2310,12 @@ export default function BrandCampaignDashboard({
               {hasStudioAddon ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Enabled
+                  Open Studio
                 </>
               ) : (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
-                  Enable Add-On
+                  {brandPlanTier === "pro" ? "Unlock Addon" : "Upgrade Plan"}
                 </>
               )}
             </Button>
@@ -2409,6 +2577,29 @@ export default function BrandCampaignDashboard({
                   )}
                 </div>
               </div>
+
+              {!canUseCampaignCollaboration && (
+                <Alert className="mb-6 border-2 border-amber-200 bg-amber-50 rounded-none">
+                  <AlertCircle className="h-5 w-5 text-amber-700" />
+                  <AlertDescription className="text-amber-900">
+                    Your current plan includes only Steps 1-2 of this wizard.
+                    Upgrade to Pro to unlock collaborator selection, talent
+                    browsing, and offer sending.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {campaignLimitReached && !currentCampaignOccupiesSlot && (
+                <Alert className="mb-6 border-2 border-amber-200 bg-amber-50 rounded-none">
+                  <AlertCircle className="h-5 w-5 text-amber-700" />
+                  <AlertDescription className="text-amber-900">
+                    You&apos;ve already used {campaignSlotsUsed} of{" "}
+                    {brandCampaignLimitLabel} active campaign slots. Mark a
+                    campaign done or upgrade your plan before launching another
+                    one.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {newCampaignStep === 1 && (
                 <div className="space-y-6">
@@ -3213,7 +3404,7 @@ export default function BrandCampaignDashboard({
                       <Button
                         type="button"
                         onClick={handleSendOffer}
-                        disabled={savingCampaign}
+                        disabled={savingCampaign || !canLaunchCurrentCampaign}
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
                         {savingCampaign ? (
@@ -3280,7 +3471,9 @@ export default function BrandCampaignDashboard({
                         type="button"
                         onClick={handleSendOffer}
                         disabled={
-                          !contractDraft.docuseal_template_id || savingCampaign
+                          !contractDraft.docuseal_template_id ||
+                          savingCampaign ||
+                          !canLaunchCurrentCampaign
                         }
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
@@ -3700,25 +3893,30 @@ export default function BrandCampaignDashboard({
                       $299/month
                     </h4>
                     <p className="text-gray-700 mb-4">
-                      Includes 500 AI generation credits/month
+                      Added as a separate billing line item from your base plan
                     </p>
                     <ul className="space-y-2 text-sm text-gray-700">
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Full Studio access for up to 5 team members
+                        Unlock brand access to Likelee Studio tools
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Priority rendering & faster generation
+                        Purchased separately from the base plan free trial
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Advanced analytics & performance tracking
+                        Included automatically with Enterprise
                       </li>
                     </ul>
                   </div>
-                  <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-none">
-                    Enable Add-On
+                  <Button
+                    className="bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+                    onClick={() => navigate("/brandpricing?focus=studio")}
+                  >
+                    {brandPlanTier === "pro"
+                      ? "Enable Add-On"
+                      : "Upgrade to Pro"}
                   </Button>
                 </div>
               </Card>

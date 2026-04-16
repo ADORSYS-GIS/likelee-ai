@@ -1554,7 +1554,8 @@ pub async fn create_talent(
         .unwrap_or(0);
     if seats_limit <= 0 {
         seats_limit = match plan_tier.as_str() {
-            "basic" | "pro" | "enterprise" => 186,
+            "basic" => 5,
+            "pro" | "enterprise" => 10,
             _ => 1,
         };
     }

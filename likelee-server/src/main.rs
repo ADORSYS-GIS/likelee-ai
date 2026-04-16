@@ -159,6 +159,11 @@ async fn main() {
         stripe_agency_irl_booking_annual_price_id: cfg
             .stripe_agency_irl_booking_annual_price_id
             .clone(),
+        stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
+        stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
+        stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
+        stripe_brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
+        stripe_brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",

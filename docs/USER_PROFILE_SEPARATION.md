@@ -1,9 +1,11 @@
 # User Profile vs Organization Profile Separation
 
 ## Current Issue
+
 All team members share the organization's profile instead of having their own individual profiles.
 
 ## Problem Details
+
 - Team members see organization name/picture instead of their own
 - No individual identity for team members
 - Confusing UX - users think they're logged in as the organization
@@ -13,9 +15,11 @@ All team members share the organization's profile instead of having their own in
 ### 1. Separate User Profile from Organization Profile
 
 #### User Profile (Individual)
+
 Stored in: `auth.users` and `public.creator_profiles` (or new table)
 
 **Fields:**
+
 - `id` (user_id)
 - `email`
 - `full_name` (personal name)
@@ -29,9 +33,11 @@ Stored in: `auth.users` and `public.creator_profiles` (or new table)
 - `updated_at`
 
 #### Organization Profile (Shared)
+
 Stored in: `public.agencies` or `public.brands`
 
 **Fields:**
+
 - `id` (organization_id)
 - `organization_name` / `agency_name` / `company_name`
 - `organization_logo_url`
@@ -66,7 +72,7 @@ CREATE TABLE public.user_profiles (
 
 -- Migrate existing user data from organizations to user_profiles
 INSERT INTO public.user_profiles (id, full_name, profile_photo_url)
-SELECT 
+SELECT
     u.id,
     u.raw_user_meta_data->>'full_name',
     u.raw_user_meta_data->>'profile_photo_url'
@@ -108,8 +114,8 @@ interface OrganizationProfile {
 interface AuthContextValue {
   // ... existing fields
   user?: User | null;
-  userProfile?: UserProfile | null;        // NEW: Individual profile
-  organizationProfile?: OrganizationProfile | null;  // NEW: Organization profile
+  userProfile?: UserProfile | null; // NEW: Individual profile
+  organizationProfile?: OrganizationProfile | null; // NEW: Organization profile
   // ...
 }
 ```
@@ -121,25 +127,27 @@ interface AuthContextValue {
 
 const fetchProfile = async () => {
   // Get user metadata (individual)
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Get individual user profile
   const { data: userProfile } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', user.id)
+    .from("user_profiles")
+    .select("*")
+    .eq("id", user.id)
     .single();
-  
+
   // Get organization profile based on role
   const organizationType = user.user_metadata?.role;
   const organizationId = user.user_metadata?.organization_id || user.id;
-  
+
   const { data: organizationProfile } = await supabase
-    .from(organizationType === 'agency' ? 'agencies' : 'brands')
-    .select('*')
-    .eq('id', organizationId)
+    .from(organizationType === "agency" ? "agencies" : "brands")
+    .select("*")
+    .eq("id", organizationId)
     .single();
-  
+
   return {
     ...user,
     userProfile,
@@ -151,6 +159,7 @@ const fetchProfile = async () => {
 ### 5. Update UI Components
 
 #### Navigation/Header
+
 ```tsx
 // Show individual user's profile
 <Avatar>
@@ -163,13 +172,14 @@ const fetchProfile = async () => {
 ```
 
 #### Settings Page
+
 ```tsx
 <Tabs>
   <TabsList>
     <TabsTrigger value="personal">Personal Profile</TabsTrigger>
     <TabsTrigger value="organization">Organization Settings</TabsTrigger>
   </TabsList>
-  
+
   <TabsContent value="personal">
     {/* Individual user settings */}
     <Input label="Full Name" value={userProfile?.full_name} />
@@ -177,10 +187,10 @@ const fetchProfile = async () => {
     <Input label="Email" value={userProfile?.email} />
     <Input label="Timezone" value={userProfile?.timezone} />
   </TabsContent>
-  
+
   <TabsContent value="organization">
     {/* Only show if has manage_billing permission */}
-    {hasPermission('manage_billing') ? (
+    {hasPermission("manage_billing") ? (
       <>
         <Input label="Organization Name" value={organizationProfile?.name} />
         <Input label="Logo" value={organizationProfile?.logo_url} />
@@ -255,16 +265,19 @@ pub async fn update_organization_profile(
 ## Implementation Priority
 
 **High Priority:**
+
 - [ ] Create user_profiles table
 - [ ] Update AuthProvider
 - [ ] Update navigation header
 
 **Medium Priority:**
+
 - [ ] Add profile editing UI
 - [ ] Add backend endpoints
 - [ ] Update settings page
 
 **Low Priority:**
+
 - [ ] Add notification preferences
 - [ ] Add timezone support
 - [ ] Add language preferences
