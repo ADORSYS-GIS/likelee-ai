@@ -27,6 +27,15 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Admin Endpoints ---
+        .route(
+            "/api/admin/storage/backfill",
+            post(crate::admin::backfill_storage),
+        )
+        .route(
+            "/api/admin/storage/verify-parity",
+            get(crate::admin::verify_storage_parity),
+        )
         // --- Messaging Hub ---
         .route(
             "/api/conversations",
