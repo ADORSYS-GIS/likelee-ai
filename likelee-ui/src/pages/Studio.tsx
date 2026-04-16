@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createPageUrl, getUserFriendlyError } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { createCheckoutSession } from "@/api/functions";
+import { useAuth } from "@/auth/AuthProvider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,30 @@ export default function Studio() {
   const [checkingOut, setCheckingOut] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { authenticated, profile } = useAuth();
+
+  /**
+   * Get the appropriate dashboard route based on user role
+   * For authenticated users: redirect to role-specific dashboard
+   * For unauthenticated users: redirect to landing page
+   */
+  const getDashboardRoute = () => {
+    // If user is not authenticated or has no profile, redirect to landing page
+    if (!authenticated || !profile || !profile.role) {
+      return "/";
+    }
+
+    // Map roles to their respective dashboards
+    const roleToDashboard: Record<string, string> = {
+      brand: "/BrandDashboard",
+      agency: "/AgencyDashboard",
+      creator: "/CreatorDashboard",
+      talent: "/CreatorDashboard", // talent users also use creator dashboard
+    };
+
+    // Return role-specific dashboard or fallback to landing page
+    return roleToDashboard[profile.role] || "/";
+  };
 
   const checkoutMutation = useMutation({
     mutationFn: async (input: {
@@ -712,7 +737,7 @@ export default function Studio() {
             {/* Right Side */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate(getDashboardRoute())}
                 className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/10 hover:border-white/20"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -1111,7 +1136,7 @@ export default function Studio() {
 
                 <button
                   onClick={() => {
-                    navigate("/");
+                    navigate(getDashboardRoute());
                     setMobileMenuOpen(false);
                   }}
                   className="flex items-center gap-2 w-full text-left px-4 py-2 text-gray-400 hover:bg-white/5 rounded transition-colors"

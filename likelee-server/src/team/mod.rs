@@ -2,6 +2,7 @@ pub mod access;
 pub mod connections;
 pub mod handlers;
 pub mod permissions;
+mod preservation_tests;
 mod queries;
 mod support;
 mod types;

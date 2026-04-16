@@ -22,11 +22,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  AlertCircle,
   Download,
-  XCircle,
-  Loader2,
-  RefreshCw,
   Eye,
   EyeOff,
   Info,
@@ -41,12 +37,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
-import {
-  clearStoredKycSessionUrl,
-  loadStoredKycSessionUrl,
-  storeKycSessionUrl,
-} from "@/utils/kycSession";
-import { formatKycReason } from "@/utils/kycDisplay";
 import {
   clearAuthIntent,
   getDashboardPath,
@@ -82,6 +72,31 @@ const SelectValue: any = UISelectValue;
 const Slider: any = UISlider;
 const Alert: any = UIAlert;
 const AlertDescription: any = UIAlertDescription;
+
+const TOTAL_STEPS = 3;
+
+const LEGACY_ONBOARDING_STEP_MAP: Record<string, number> = {
+  email_verification: 1,
+  verification: 1,
+  profile_details: 2,
+  agreements: 3,
+  complete: TOTAL_STEPS + 1,
+};
+
+function mapLegacyOnboardingStep(raw?: string | null): number | null {
+  if (!raw) return null;
+  const key = String(raw).trim().toLowerCase();
+  if (LEGACY_ONBOARDING_STEP_MAP[key] !== undefined) {
+    return LEGACY_ONBOARDING_STEP_MAP[key];
+  }
+  return null;
+}
+
+function clampStep(step: number): number {
+  if (!Number.isFinite(step) || step < 1) return 1;
+  if (step > TOTAL_STEPS) return TOTAL_STEPS;
+  return step;
+}
 
 const contentTypes = [
   "Social media ads",
@@ -290,21 +305,19 @@ export default function ReserveProfile() {
       user?.app_metadata?.provider === "github");
 
   const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem("reserve_step");
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get("step");
-    if (stepParam) return parseInt(stepParam, 10);
-    // OAuth users skip step 1 (email verification)
+    if (stepParam) return clampStep(parseInt(stepParam, 10));
     if (isOAuthSignup) return 2;
-    return saved ? parseInt(saved) : 1;
+    const saved = localStorage.getItem("reserve_step");
+    return saved ? clampStep(parseInt(saved, 10)) : 1;
   });
 
   useEffect(() => {
-    localStorage.setItem("reserve_step", step.toString());
+    localStorage.setItem("reserve_step", clampStep(step).toString());
   }, [step]);
 
   const [showWarning, setShowWarning] = useState(false);
-  const [showSkipModal, setShowSkipModal] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(() => {
     return sessionStorage.getItem("reserve_agreedToTerms") === "true";
   });
@@ -324,7 +337,7 @@ export default function ReserveProfile() {
   }, [profileId]);
 
   const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("reserve_formData");
+    const saved = sessionStorage.getItem("reserve_formData");
     return saved
       ? JSON.parse(saved)
       : {
@@ -372,9 +385,8 @@ export default function ReserveProfile() {
   });
 
   useEffect(() => {
-    // Security: Do not persist passwords to localStorage
     const { password, confirmPassword, ...safeData } = formData;
-    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
+    sessionStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
 
   // Pre-fill email and set profileId for OAuth users
@@ -513,23 +525,22 @@ export default function ReserveProfile() {
 
     setAuthMode("signup");
 
-    const normalizedStep = String(profile.onboarding_step || "")
-      .trim()
-      .toLowerCase();
-    if (normalizedStep === "agreements") {
-      setStep(4);
+    const serverStep = mapLegacyOnboardingStep(profile.onboarding_step);
+    if (serverStep !== null) {
+      if (serverStep > TOTAL_STEPS) {
+        const dashboardPath = getDashboardPath(profile);
+        if (window.location.pathname !== dashboardPath.split("?")[0]) {
+          navigate(dashboardPath, { replace: true });
+        }
+        return;
+      }
+      setStep(clampStep(serverStep));
       return;
     }
-    if (
-      normalizedStep === "verification" ||
-      String(profile.kyc_status || "")
-        .trim()
-        .toLowerCase() === "approved"
-    ) {
-      setStep(3);
-      return;
+    const sanitizedLocal = clampStep(step);
+    if (sanitizedLocal !== step) {
+      setStep(sanitizedLocal);
     }
-    setStep(2);
   }, [
     authenticated,
     creatorType,
@@ -594,224 +605,9 @@ export default function ReserveProfile() {
     });
   };
 
-  const startVerification = async ({
-    forceNewSession = false,
-  }: {
-    forceNewSession?: boolean;
-  } = {}) => {
-    const session = (await supabase.auth.getSession())?.data?.session;
-    if (!session?.access_token) {
-      toast({
-        title: t("reserveProfile.toasts.kycErrorTitle"),
-        description:
-          "Please complete the previous steps before starting verification.",
-        className: "bg-cyan-50 border-2 border-cyan-400",
-      });
-      return;
-    }
-    const normalizedStatus = String(kycStatus || "")
-      .trim()
-      .toLowerCase();
-    if (
-      !forceNewSession &&
-      normalizedStatus === "pending" &&
-      savedKycSessionUrl
-    ) {
-      setKycSessionUrl(savedKycSessionUrl);
-      window.open(savedKycSessionUrl, "_blank");
-      return;
-    }
-    try {
-      setKycLoading(true);
-      setKycRejectionReason(null);
-      await saveCreatorProfile(formData, { onboardingStep: "verification" });
-      const u = new URL(window.location.href);
-      u.searchParams.set("step", "3");
-      u.searchParams.set("verified", "1");
-      const returnUrl = u.toString();
-      const res = await fetch(api(`/api/kyc/session`), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ return_url: returnUrl }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setKycProvider(data.provider || "veriff");
-      if (!data.session_url) {
-        throw new Error("No verification session returned");
-      }
-      const sessionUrl = String(data.session_url);
-      const kycStorageUserId = profileId || session.user.id;
-      if (kycStorageUserId) {
-        storeKycSessionUrl("reserve-profile", kycStorageUserId, sessionUrl);
-      }
-      setSavedKycSessionUrl(sessionUrl);
-      setKycSessionUrl(sessionUrl);
-      setKycStatus("pending");
-      window.open(sessionUrl, "_blank");
-    } catch (e: any) {
-      toast({
-        title: t("reserveProfile.toasts.verificationFailed"),
-        description: getUserFriendlyError(e, t),
-        variant: "destructive",
-      });
-    } finally {
-      setKycLoading(false);
-    }
-  };
-
-  const refreshVerificationStatus = async ({
-    manageLoading = true,
-  }: {
-    manageLoading?: boolean;
-  } = {}) => {
-    const session = (await supabase.auth.getSession())?.data?.session;
-    if (!session?.access_token) return;
-    try {
-      if (manageLoading) setKycLoading(true);
-      const res = await fetch(api(`/api/kyc/status`), {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
-      const row = Array.isArray(rows) && rows.length ? rows[0] : null;
-      if (row) {
-        if (row.kyc_status) setKycStatus(row.kyc_status);
-        if (row.kyc_provider) setKycProvider(row.kyc_provider);
-        setKycRejectionReason(row.kyc_rejection_reason ?? null);
-        const normalizedStatus = String(row.kyc_status || "")
-          .trim()
-          .toLowerCase();
-        if (
-          normalizedStatus === "approved" ||
-          normalizedStatus === "rejected" ||
-          normalizedStatus === "declined"
-        ) {
-          clearStoredKycSessionUrl("reserve-profile", profileId);
-          setSavedKycSessionUrl(null);
-        }
-        if (row.kyc_status === "approved") {
-          toast({
-            title: t("reserveProfile.toasts.identityVerified"),
-            description: t("reserveProfile.toasts.identityVerifiedDesc"),
-          });
-        }
-      }
-      return row;
-    } catch (e: any) {
-      toast({
-        title: t("reserveProfile.toasts.statusCheckFailed"),
-        description: getUserFriendlyError(e, t),
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      if (manageLoading) setKycLoading(false);
-    }
-  };
-
-  const handleManualVerificationRefresh = async () => {
-    try {
-      setKycRefreshLoading(true);
-      await refreshVerificationStatus({ manageLoading: false });
-    } finally {
-      setKycRefreshLoading(false);
-    }
-  };
-
-  const startNewVerificationSession = async () => {
-    clearStoredKycSessionUrl("reserve-profile", profileId);
-    setSavedKycSessionUrl(null);
-    setKycSessionUrl(null);
-    setKycRejectionReason(null);
-    await startVerification({ forceNewSession: true });
-  };
-
-  const verifyAndContinue = async () => {
-    try {
-      setKycLoading(true);
-      const row = await refreshVerificationStatus({ manageLoading: false });
-      const kyc = row?.kyc_status || kycStatus;
-      const normalizedKyc = String(kyc || "not_started")
-        .trim()
-        .toLowerCase();
-      const reason = formatKycReason(
-        row?.kyc_rejection_reason ?? kycRejectionReason,
-      );
-      if (normalizedKyc === "approved") {
-        await saveCreatorProfile(formData, { onboardingStep: "agreements" });
-        setStep(4);
-        return;
-      }
-      if (normalizedKyc === "rejected" || normalizedKyc === "declined") {
-        toast({
-          title: "Verification was not approved",
-          description:
-            reason ||
-            "Please review the verification note and start a new verification session.",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (normalizedKyc === "pending" && reason) {
-        toast({
-          title: "Additional verification required",
-          description: reason,
-          className: "bg-amber-50 border-2 border-amber-400",
-        });
-        return;
-      }
-      // If user hasn't started verification, kick it off automatically
-      if (normalizedKyc === "not_started") {
-        await startVerification();
-        return;
-      }
-      toast({
-        title: "Verification Pending",
-        description: t(
-          "reserveProfile.verification.verificationPendingDescription",
-          {
-            kyc:
-              kyc?.replace("_", " ") || t("reserveProfile.status.notStarted"),
-          },
-        ),
-        className: "bg-cyan-50 border-2 border-cyan-400",
-      });
-    } finally {
-      setKycLoading(false);
-    }
-  };
-
-  const totalSteps = 4;
+  const totalSteps = TOTAL_STEPS;
   const progress = (step / totalSteps) * 100;
 
-  // Verification state
-  const [kycStatus, setKycStatus] = useState<
-    "not_started" | "pending" | "approved" | "rejected"
-  >("not_started");
-  const [kycProvider, setKycProvider] = useState<string | null>(null);
-  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
-  const [savedKycSessionUrl, setSavedKycSessionUrl] = useState<string | null>(
-    null,
-  );
-  const [kycRejectionReason, setKycRejectionReason] = useState<string | null>(
-    null,
-  );
-  const [kycLoading, setKycLoading] = useState(false);
-  const [kycRefreshLoading, setKycRefreshLoading] = useState(false);
-  const normalizedKycStatus = String(kycStatus || "")
-    .trim()
-    .toLowerCase();
-  const currentKycReason = formatKycReason(kycRejectionReason);
-  const hasKycFollowUp =
-    normalizedKycStatus === "pending" && currentKycReason.length > 0;
-  const isKycRejected =
-    normalizedKycStatus === "rejected" || normalizedKycStatus === "declined";
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
@@ -826,33 +622,6 @@ export default function ReserveProfile() {
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
   const [profileSaveLoading, setProfileSaveLoading] = useState(false);
 
-  useEffect(() => {
-    if (!profileId) {
-      setSavedKycSessionUrl(null);
-      return;
-    }
-
-    setSavedKycSessionUrl(
-      loadStoredKycSessionUrl("reserve-profile", profileId),
-    );
-  }, [profileId]);
-
-  useEffect(() => {
-    const normalizedStatus = String(kycStatus || "")
-      .trim()
-      .toLowerCase();
-
-    if (
-      profileId &&
-      (normalizedStatus === "approved" ||
-        normalizedStatus === "rejected" ||
-        normalizedStatus === "declined")
-    ) {
-      clearStoredKycSessionUrl("reserve-profile", profileId);
-      setSavedKycSessionUrl(null);
-    }
-  }, [kycStatus, profileId]);
-
   const getStepTitle = () => {
     if (step === 1) return t("reserveProfile.stepTitles.step1");
     if (step === 2) {
@@ -863,20 +632,9 @@ export default function ReserveProfile() {
       if (creatorType === "athlete")
         return t("reserveProfile.stepTitles.step2.athlete");
     }
-    if (step === 4) return "Terms & Agreements";
+    if (step === 3) return "Terms & Agreements";
     return "";
   };
-
-  useEffect(() => {
-    if (step !== 3) return;
-    // Initial fetch
-    refreshVerificationStatus();
-    // If redirected back with ?verified=1, attempt to proceed
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("verified") === "1") {
-      verifyAndContinue();
-    }
-  }, [step]);
 
   const visibilityEnablesPublicProfile = (visibility?: string) => {
     const normalized = String(visibility || "")
@@ -899,8 +657,7 @@ export default function ReserveProfile() {
   }) => {
     if (markComplete) return "complete";
     if (onboardingStep) return onboardingStep;
-    if (step >= 4 || normalizedKycStatus === "approved") return "agreements";
-    if (step >= 2) return "verification";
+    if (step >= TOTAL_STEPS) return "agreements";
     return "profile_details";
   };
 
@@ -1215,7 +972,7 @@ export default function ReserveProfile() {
   const handleSubmit = async () => {
     try {
       setProfileSaveLoading(true);
-      await saveCreatorProfile(formData, { onboardingStep: "verification" });
+      await saveCreatorProfile(formData, { onboardingStep: "agreements" });
       await refreshProfile();
       setStep(3);
     } catch (e: any) {
@@ -1247,9 +1004,9 @@ export default function ReserveProfile() {
       await saveCreatorProfile(formData, { markComplete: true });
       await refreshProfile();
       // Clear persisted state on success
-      localStorage.removeItem("reserve_formData");
       localStorage.removeItem("reserve_step");
       localStorage.removeItem("reserve_profileId");
+      sessionStorage.removeItem("reserve_formData");
       sessionStorage.removeItem("reserve_agreedToTerms");
       // Clear auth intent after successful profile completion
       clearAuthIntent();
@@ -1977,298 +1734,8 @@ export default function ReserveProfile() {
             </div>
           )}
 
-          {/* Step 3: Verify Identity - redesigned */}
+          {/* Step 3: Terms & Agreements */}
           {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                  {t("reserveProfile.verification.title")}
-                </h3>
-                <p className="text-gray-700">
-                  {t("reserveProfile.verification.subtitle")}
-                </p>
-              </div>
-
-              {/* Why verify box */}
-              <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
-                <h4 className="font-bold text-gray-900 mb-3">
-                  {t("reserveProfile.verification.whyVerify.title")}
-                </h4>
-                <ul className="space-y-2 text-gray-800">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason1")}
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason2")}
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    {t("reserveProfile.verification.whyVerify.reason3")}
-                  </li>
-                </ul>
-              </div>
-
-              <p className="text-gray-700">
-                {t("reserveProfile.verification.description")}
-              </p>
-
-              {/* Requirements box */}
-              <div className="p-5 border-2 border-gray-300 bg-gray-50">
-                <h4 className="font-bold text-gray-900 mb-2">
-                  {t("reserveProfile.verification.requirements.title")}
-                </h4>
-                <ul className="list-disc list-inside text-gray-800 space-y-1">
-                  <li>{t("reserveProfile.verification.requirements.item1")}</li>
-                  <li>{t("reserveProfile.verification.requirements.item2")}</li>
-                  <li>{t("reserveProfile.verification.requirements.item3")}</li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={startVerification}
-                  disabled={kycLoading || kycRefreshLoading}
-                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                >
-                  {kycLoading
-                    ? t(
-                        "reserveProfile.actions.startingVerification",
-                        "Starting…",
-                      )
-                    : normalizedKycStatus === "pending"
-                      ? savedKycSessionUrl
-                        ? t(
-                            hasKycFollowUp
-                              ? "reserveProfile.actions.continueVerification"
-                              : "reserveProfile.actions.resumeVerification",
-                            hasKycFollowUp
-                              ? "Continue Verification"
-                              : "Resume Verification",
-                          )
-                        : t(
-                            "reserveProfile.actions.restartVerification",
-                            "Start New Verification",
-                          )
-                      : isKycRejected
-                        ? t(
-                            "reserveProfile.actions.retryVerification",
-                            "Retry Verification",
-                          )
-                        : t(
-                            "reserveProfile.actions.verifyIdentity",
-                            "Verify Identity Now",
-                          )}
-                </Button>
-                {normalizedKycStatus === "pending" && savedKycSessionUrl && (
-                  <Button
-                    onClick={startNewVerificationSession}
-                    variant="outline"
-                    disabled={kycLoading || kycRefreshLoading}
-                    className="w-full h-12 border-2 border-black rounded-none"
-                  >
-                    {t(
-                      "reserveProfile.actions.startNewVerification",
-                      "Start New Verification",
-                    )}
-                  </Button>
-                )}
-                <div className="text-sm text-gray-700 flex items-center justify-between gap-3">
-                  <span>
-                    KYC:{" "}
-                    <strong
-                      className={
-                        hasKycFollowUp
-                          ? "capitalize text-amber-700"
-                          : isKycRejected
-                            ? "capitalize text-red-700"
-                            : "capitalize"
-                      }
-                    >
-                      {kycStatus === "not_started"
-                        ? t("reserveProfile.verification.status.notStarted")
-                        : kycStatus === "approved"
-                          ? t("reserveProfile.verification.status.approved")
-                          : hasKycFollowUp
-                            ? t(
-                                "reserveProfile.verification.status.actionNeeded",
-                                "Action needed",
-                              )
-                            : kycStatus === "rejected"
-                              ? t("reserveProfile.verification.status.rejected")
-                              : t(
-                                  "reserveProfile.verification.status.verifying",
-                                )}
-                    </strong>
-                  </span>
-                  <Button
-                    onClick={handleManualVerificationRefresh}
-                    variant="outline"
-                    disabled={kycLoading || kycRefreshLoading}
-                    className="h-9 px-3 border-2 border-black rounded-none shrink-0"
-                  >
-                    {kycRefreshLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    {t(
-                      "reserveProfile.actions.refreshVerificationStatus",
-                      "Refresh Status",
-                    )}
-                  </Button>
-                </div>
-                {(hasKycFollowUp || isKycRejected) && currentKycReason && (
-                  <Alert
-                    className={
-                      hasKycFollowUp
-                        ? "border-2 border-amber-300 bg-amber-50"
-                        : "border-2 border-red-300 bg-red-50"
-                    }
-                  >
-                    <div className="flex items-start gap-3">
-                      {hasKycFollowUp ? (
-                        <AlertCircle className="mt-0.5 h-4 w-4 text-amber-700" />
-                      ) : (
-                        <XCircle className="mt-0.5 h-4 w-4 text-red-700" />
-                      )}
-                      <AlertDescription
-                        className={
-                          hasKycFollowUp ? "text-amber-900" : "text-red-900"
-                        }
-                      >
-                        <span className="font-semibold">
-                          {hasKycFollowUp
-                            ? t(
-                                "reserveProfile.verification.followUpLabel",
-                                "Additional action required:",
-                              )
-                            : t(
-                                "reserveProfile.verification.rejectionLabel",
-                                "Verification note:",
-                              )}
-                        </span>{" "}
-                        {currentKycReason}
-                      </AlertDescription>
-                    </div>
-                  </Alert>
-                )}
-                <p className="text-xs text-gray-500">
-                  {hasKycFollowUp
-                    ? savedKycSessionUrl
-                      ? t(
-                          "reserveProfile.verification.followUpResumeHint",
-                          "Veriff requested another step. Use Continue Verification to finish approval, or start a new verification session if the earlier link no longer works.",
-                        )
-                      : t(
-                          "reserveProfile.verification.followUpRestartHint",
-                          "Veriff requested another step. Start a new verification session if the earlier link is no longer available, or use Refresh Status if you already finished it.",
-                        )
-                    : isKycRejected
-                      ? t(
-                          "reserveProfile.verification.rejectedHint",
-                          "Your last verification was not approved. Review the note above and retry with a new verification session.",
-                        )
-                      : normalizedKycStatus === "pending"
-                        ? savedKycSessionUrl
-                          ? t(
-                              "reserveProfile.verification.resumeHint",
-                              "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
-                            )
-                          : t(
-                              "reserveProfile.verification.restartHint",
-                              "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
-                            )
-                        : t(
-                            "reserveProfile.verification.refreshHint",
-                            "If the status does not update automatically a few seconds after verification, use Refresh Status.",
-                          )}
-                </p>
-                <div className="w-full">
-                  <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">
-                    <Button
-                      onClick={handleBack}
-                      variant="outline"
-                      className="w-full h-12 border-2 border-black rounded-none"
-                    >
-                      <ArrowLeft className="w-5 h-5 mr-2" />
-                      {t("common.back")}
-                    </Button>
-                    <Button
-                      onClick={() => setShowSkipModal(true)}
-                      variant="outline"
-                      className="w-full h-12 border-2 border-gray-300 rounded-none"
-                    >
-                      {t("reserveProfile.actions.skip")}
-                    </Button>
-                    <Button
-                      onClick={verifyAndContinue}
-                      disabled={kycLoading || kycRefreshLoading}
-                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                    >
-                      {kycLoading
-                        ? t("common.checking", "Checking…")
-                        : t(
-                            "reserveProfile.actions.verifyAndContinue",
-                            "Verify & Continue",
-                          )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Skip Confirmation Modal */}
-              {showSkipModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                  <div
-                    className="absolute inset-0 bg-black/50"
-                    onClick={() => setShowSkipModal(false)}
-                  />
-                  <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
-                    <h4 className="text-lg font-bold mb-2">
-                      {t("reserveProfile.skipModal.title")}
-                    </h4>
-                    <p className="text-sm text-gray-700 mb-4">
-                      {t("reserveProfile.skipModal.description")}
-                    </p>
-                    <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
-                      {t("reserveProfile.skipModal.note")}
-                    </div>
-                    {t("reserveProfile.alreadyHaveAccount")}{" "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto font-semibold text-black hover:underline"
-                      onClick={() => setAuthMode("login")}
-                    >
-                      {t("reserveProfile.actions.login")}
-                    </Button>
-                    <div className="flex gap-3 justify-end">
-                      <Button
-                        variant="outline"
-                        className="rounded-none border-2 border-black"
-                        onClick={() => setShowSkipModal(false)}
-                      >
-                        {t("reserveProfile.skipModal.actions.back")}
-                      </Button>
-                      <Button
-                        className="rounded-none border-2 border-black bg-black text-white"
-                        onClick={() => {
-                          setShowSkipModal(false);
-                          setStep(4);
-                        }}
-                      >
-                        {t("reserveProfile.skipModal.confirmSkip")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 4: Terms & Agreements */}
-          {step === 4 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">
@@ -2297,7 +1764,7 @@ export default function ReserveProfile() {
                   className="border-2 border-black rounded-none"
                   onClick={() =>
                     window.open(
-                      "/creator-talent-terms-and-conditions.html",
+                      "/LIKELEE%20AI%20%E2%80%94%20Creator%20%26%20Talent%20Terms%20and%20Conditions.pdf",
                       "_blank",
                     )
                   }
@@ -2345,7 +1812,7 @@ export default function ReserveProfile() {
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(2)}
                   variant="outline"
                   className="w-1/3 h-12 border-2 border-black rounded-none"
                 >

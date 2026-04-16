@@ -9,12 +9,27 @@ const queryClient = createPersistedQueryClient();
 
 export default // Trigger CI
 function App() {
+  const isPublicShareRoute = (() => {
+    try {
+      const path = window.location?.pathname || "";
+      return (
+        path.startsWith("/share/package/") || path.startsWith("/share/catalog/")
+      );
+    } catch {
+      return false;
+    }
+  })();
+
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+        {isPublicShareRoute ? (
           <Pages />
-        </AuthProvider>
+        ) : (
+          <AuthProvider>
+            <Pages />
+          </AuthProvider>
+        )}
       </QueryClientProvider>
       <Toaster />
     </>

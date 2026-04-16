@@ -1,7 +1,13 @@
 use crate::{
+    agency_talent_refs::{list_agency_talent_refs, resolve_agency_talent_ref, AgencyTalentRef},
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
+    storage::{
+        canonical_object_path, delete_object, insert_asset_record, sanitize_file_name,
+        soft_delete_asset_record, upload_object, StorageAssetRecord, StorageContextType,
+        StorageOwnerType, StorageVisibility,
+    },
     team::{
         ensure_owner_membership, permissions::Permission, require_agency_access,
         require_agency_permission, OrganizationType,
@@ -15,163 +21,9 @@ use axum::{
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::info;
+use tracing::{info, warn};
 
 pub use crate::team::resolve_effective_agency_id;
-
-pub(crate) async fn resolve_effective_agency_talent_id(
-    state: &AppState,
-    agency_id: &str,
-    input_id: &str,
-) -> Result<String, (StatusCode, String)> {
-    let resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("id", input_id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = resp.status();
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
-    }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    if let Some(id) = rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .filter(|s| !s.trim().is_empty())
-    {
-        return Ok(id);
-    }
-
-    let rel_resp = state
-        .pg
-        .from("agency_talent_relationships")
-        .select("talent_id,creator_id")
-        .eq("agency_id", agency_id)
-        .eq("status", "active")
-        .or(format!(
-            "talent_id.eq.{},creator_id.eq.{}",
-            input_id, input_id
-        ))
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_status = rel_resp.status();
-    let rel_text = rel_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !rel_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
-    }
-    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
-    let rel = match rel_rows.first() {
-        Some(r) => r,
-        None => {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "Access denied to this talent".to_string(),
-            ))
-        }
-    };
-
-    let rel_talent_id = rel
-        .get("talent_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if !rel_talent_id.is_empty() {
-        // Ensure relationship.talent_id is actually an agency_users row belonging to this agency.
-        // This prevents cross-agency leakage if legacy data points to a talent_id from another agency.
-        let verify_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("agency_id", agency_id)
-            .eq("id", &rel_talent_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let verify_status = verify_resp.status();
-        let verify_text = verify_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !verify_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, verify_text));
-        }
-        let verify_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&verify_text).unwrap_or_default();
-        if !verify_rows.is_empty() {
-            return Ok(rel_talent_id);
-        }
-        // Otherwise fall through and resolve by creator_id.
-    }
-
-    let creator_id = rel
-        .get("creator_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if creator_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Access denied to this talent".to_string(),
-        ));
-    }
-
-    let au_by_creator_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("creator_id", &creator_id)
-        .eq("role", "talent")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let au_by_creator_status = au_by_creator_resp.status();
-    let au_by_creator_text = au_by_creator_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !au_by_creator_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, au_by_creator_text));
-    }
-    let au_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&au_by_creator_text).unwrap_or_default();
-    let talent_id = au_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if !talent_id.is_empty() {
-        return Ok(talent_id);
-    }
-
-    Err((
-        StatusCode::FORBIDDEN,
-        "This creator is connected to the agency but does not have an agency-owned talent profile."
-            .to_string(),
-    ))
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AgencyProfilePayload {
@@ -350,9 +202,29 @@ pub async fn update(
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
+    // Resolve the effective agency ID - for team members this returns the organization's ID,
+    // not the team member's user ID. For new users without a membership, fall back to user.id.
+    let agency_id = match resolve_effective_agency_id(&state, &user).await {
+        Ok(id) => {
+            tracing::debug!(
+                user_id = %user.id,
+                agency_id = %id,
+                "Using resolved agency ID for profile update"
+            );
+            id
+        }
+        Err(_) => {
+            tracing::debug!(
+                user_id = %user.id,
+                "No membership found, using user ID for profile update (new user)"
+            );
+            user.id.clone()
+        }
+    };
+
     if let serde_json::Value::Object(ref mut map) = v {
-        // Include the user's id for upsert matching
-        map.insert("id".into(), json!(user.id));
+        // Include the effective agency ID for upsert matching
+        map.insert("id".into(), json!(agency_id));
         map.insert("onboarding_step".into(), json!("complete"));
 
         // For new profiles (OAuth signup), set default values
@@ -377,6 +249,7 @@ pub async fn update(
     // This supports both:
     // - OAuth users creating their profile for the first time
     // - Existing users updating their profile
+    // - Team members updating their organization's profile
     let resp = state
         .pg
         .from("agencies")
@@ -396,7 +269,7 @@ pub async fn update(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    let _ = ensure_owner_membership(&state, &user, OrganizationType::Agency, &user.id).await;
+    let _ = ensure_owner_membership(&state, &user, OrganizationType::Agency, &agency_id).await;
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -510,6 +383,9 @@ pub struct AgencyFileUploadResponse {
     pub storage_path: String,
     pub client_id: Option<String>,
     pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
+    pub created_at: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -541,6 +417,18 @@ pub struct ListAgencyFoldersQuery {
 #[derive(Deserialize)]
 pub struct UpdateAgencyFolderIn {
     pub name: Option<String>,
+}
+
+fn normalize_agency_folder_row(row: &serde_json::Value, file_count: i64) -> serde_json::Value {
+    let obj = row.as_object().cloned().unwrap_or_default();
+    serde_json::json!({
+        "id": obj.get("id").cloned().unwrap_or(serde_json::Value::Null),
+        "agency_id": obj.get("agency_id").cloned().unwrap_or(serde_json::Value::Null),
+        "parent_id": obj.get("parent_id").cloned().unwrap_or(serde_json::Value::Null),
+        "name": obj.get("name").cloned().unwrap_or(serde_json::Value::Null),
+        "created_at": obj.get("created_at").cloned().unwrap_or(serde_json::Value::Null),
+        "file_count": file_count,
+    })
 }
 
 async fn ensure_storage_settings_row(
@@ -726,7 +614,7 @@ pub async fn list_agency_folders(
 
     let mut enriched = Vec::with_capacity(rows.len());
     for row in rows {
-        let mut obj = row.as_object().cloned().unwrap_or_default();
+        let obj = row.as_object().cloned().unwrap_or_default();
         let folder_id = obj
             .get("id")
             .and_then(|v| v.as_str())
@@ -739,7 +627,7 @@ pub async fn list_agency_folders(
                 .pg
                 .from("agency_files")
                 .select("id")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("folder_id", &folder_id)
                 .execute()
                 .await
@@ -757,11 +645,7 @@ pub async fn list_agency_folders(
             file_count = files_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
         }
 
-        obj.insert(
-            "file_count".to_string(),
-            serde_json::Value::from(file_count),
-        );
-        enriched.push(serde_json::Value::Object(obj));
+        enriched.push(normalize_agency_folder_row(row, file_count));
     }
 
     Ok(Json(serde_json::Value::Array(enriched)))
@@ -803,106 +687,11 @@ pub async fn create_agency_folder(
     let Some(rows) = v.as_array() else {
         return Ok(Json(v));
     };
-
-    let http = reqwest::Client::new();
-    let mut patched: Vec<serde_json::Value> = Vec::with_capacity(rows.len());
-
-    for row in rows {
-        let mut obj = row.as_object().cloned().unwrap_or_default();
-        let size_bytes = obj.get("size_bytes").and_then(|v| v.as_i64()).unwrap_or(0);
-
-        if size_bytes <= 0 {
-            let file_id = obj
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let bucket = obj
-                .get("storage_bucket")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let path = obj
-                .get("storage_path")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            if !file_id.is_empty() && !bucket.is_empty() && !path.is_empty() {
-                let storage_url = format!(
-                    "{}/storage/v1/object/{}/{}",
-                    state.supabase_url, bucket, path
-                );
-                let head = http
-                    .head(&storage_url)
-                    .header(
-                        "Authorization",
-                        format!("Bearer {}", state.supabase_service_key),
-                    )
-                    .header("apikey", state.supabase_service_key.clone())
-                    .send()
-                    .await;
-
-                if let Ok(resp) = head {
-                    if resp.status().is_success() {
-                        let mut discovered_len = resp
-                            .headers()
-                            .get(reqwest::header::CONTENT_LENGTH)
-                            .and_then(|v| v.to_str().ok())
-                            .and_then(|s| s.parse::<i64>().ok());
-
-                        if discovered_len.is_none() {
-                            // Some storage gateways omit Content-Length on HEAD.
-                            // Fallback to a ranged GET and parse Content-Range: "bytes 0-0/12345".
-                            let ranged = http
-                                .get(&storage_url)
-                                .header(
-                                    "Authorization",
-                                    format!("Bearer {}", state.supabase_service_key),
-                                )
-                                .header("apikey", state.supabase_service_key.clone())
-                                .header(reqwest::header::RANGE, "bytes=0-0")
-                                .send()
-                                .await;
-
-                            if let Ok(r) = ranged {
-                                if r.status().is_success() || r.status().as_u16() == 206 {
-                                    if let Some(cr) = r
-                                        .headers()
-                                        .get(reqwest::header::CONTENT_RANGE)
-                                        .and_then(|v| v.to_str().ok())
-                                    {
-                                        if let Some(total) = cr.split('/').nth(1) {
-                                            discovered_len = total.trim().parse::<i64>().ok();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if let Some(len) = discovered_len {
-                            obj.insert("size_bytes".to_string(), serde_json::Value::from(len));
-
-                            // Best-effort persist the discovered size to DB.
-                            let update = serde_json::json!({ "size_bytes": len });
-                            let _ = state
-                                .pg
-                                .from("agency_files")
-                                .update(update.to_string())
-                                .eq("id", &file_id)
-                                .eq("agency_id", &user.id)
-                                .execute()
-                                .await;
-                        }
-                    }
-                }
-            }
-        }
-
-        patched.push(serde_json::Value::Object(obj));
-    }
-
-    Ok(Json(serde_json::Value::Array(patched)))
+    let normalized = rows
+        .iter()
+        .map(|row| normalize_agency_folder_row(row, 0))
+        .collect::<Vec<_>>();
+    Ok(Json(serde_json::Value::Array(normalized)))
 }
 
 pub async fn delete_agency_folder(
@@ -938,7 +727,6 @@ pub async fn delete_agency_folder(
     let files = files_json.as_array().cloned().unwrap_or_default();
 
     // Delete each file from storage and DB
-    let http = reqwest::Client::new();
     for f in files {
         let file_id = f.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let bucket = f
@@ -950,27 +738,7 @@ pub async fn delete_agency_folder(
             continue;
         }
 
-        let storage_url = format!(
-            "{}/storage/v1/object/{}/{}",
-            state.supabase_url, bucket, path
-        );
-        let del = http
-            .delete(&storage_url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", state.supabase_service_key),
-            )
-            .header("apikey", state.supabase_service_key.clone())
-            .send()
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-        if !del.status().is_success() {
-            let msg = del.text().await.unwrap_or_default();
-            return Err((
-                StatusCode::BAD_GATEWAY,
-                format!("storage delete failed: {msg}"),
-            ));
-        }
+        delete_object(&state, bucket, path).await?;
 
         let resp = state
             .pg
@@ -989,6 +757,9 @@ pub async fn delete_agency_folder(
             let code =
                 StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
             return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+        }
+        if let Err(err) = soft_delete_asset_record(&state, "agency_files", file_id).await {
+            warn!(agency_id = %agency_id, file_id = %file_id, error = %err.1, "failed to soft-delete storage_assets row for folder file");
         }
     }
 
@@ -1020,6 +791,8 @@ pub async fn update_agency_folder(
     Path(folder_id): Path<String>,
     Json(body): Json<UpdateAgencyFolderIn>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = access.organization_id;
     let name = body.name.unwrap_or_default().trim().to_string();
     if name.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "name is required".into()));
@@ -1031,7 +804,7 @@ pub async fn update_agency_folder(
         .from("agency_folders")
         .update(update.to_string())
         .eq("id", &folder_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .select("id,agency_id,parent_id,name,created_at")
         .limit(1)
         .execute()
@@ -1051,7 +824,12 @@ pub async fn update_agency_folder(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+    let out = v
+        .as_array()
+        .and_then(|rows| rows.first())
+        .map(|row| normalize_agency_folder_row(row, 0))
+        .unwrap_or(v);
+    Ok(Json(out))
 }
 
 pub async fn list_agency_files(
@@ -1102,6 +880,8 @@ pub async fn get_agency_storage_file_signed_url(
     user: AuthUser,
     Path(file_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_org_id = access.organization_id;
     let resp = state
         .pg
         .from("agency_files")
@@ -1125,7 +905,7 @@ pub async fn get_agency_storage_file_signed_url(
         StatusCode::INTERNAL_SERVER_ERROR,
         "missing agency_id".into(),
     ))?;
-    if agency_id != user.id {
+    if agency_id != agency_org_id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
     let bucket = row.get("storage_bucket").and_then(|v| v.as_str()).ok_or((
@@ -1137,38 +917,7 @@ pub async fn get_agency_storage_file_signed_url(
         "missing storage_path".into(),
     ))?;
 
-    let url = format!(
-        "{}/storage/v1/object/sign/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let body = serde_json::json!({ "expiresIn": 3600 });
-    let http = reqwest::Client::new();
-    let sign_resp = http
-        .post(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !sign_resp.status().is_success() {
-        let msg = sign_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
-    }
-
-    let signed_json: serde_json::Value = sign_resp
-        .json()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    let signed_path = signed_json
-        .get("signedURL")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
-    let full_url = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+    let full_url = crate::storage::generate_signed_url(&state, bucket, path, 3600).await?;
     Ok(Json(serde_json::json!({ "url": full_url })))
 }
 
@@ -1177,6 +926,8 @@ pub async fn upload_agency_storage_file(
     user: AuthUser,
     mut multipart: Multipart,
 ) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = access.organization_id;
     let mut file_name = None;
     let mut mime_type = None;
     let mut folder_id: Option<String> = None;
@@ -1216,8 +967,8 @@ pub async fn upload_agency_storage_file(
     }
 
     // Quota enforcement
-    let limit = ensure_storage_settings_row(&state, &user.id).await?;
-    let used = get_agency_used_storage_bytes(&state, &user.id).await?;
+    let limit = ensure_storage_settings_row(&state, &agency_id).await?;
+    let used = get_agency_used_storage_bytes(&state, &agency_id).await?;
     let new_size = bytes.len() as i64;
     if used + new_size > limit {
         return Err((
@@ -1227,61 +978,27 @@ pub async fn upload_agency_storage_file(
     }
 
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    let bucket = state.supabase_bucket_private.clone();
+    let sanitized = sanitize_file_name(&fname);
     let folder_segment = folder_id.clone().unwrap_or_else(|| "root".to_string());
-    let path = format!(
-        "agencies/{}/storage/{}/{}_{}",
-        user.id,
-        folder_segment,
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/storage/{folder_segment}"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let mut req = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone());
-    if let Some(ct) = mime_type.as_ref().filter(|s| !s.is_empty()) {
-        req = req.header("content-type", ct.clone());
-    }
-    let up = req
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    let public_url = None;
+    let uploaded = upload_object(
+        &state,
+        StorageVisibility::Private,
+        &path,
+        bytes,
+        mime_type.as_deref(),
+    )
+    .await?;
+    let public_url = uploaded.public_url.clone();
     let insert = serde_json::json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "file_name": fname,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
         "folder_id": folder_id,
         "size_bytes": new_size,
@@ -1309,11 +1026,43 @@ pub async fn upload_agency_storage_file(
         .unwrap_or("")
         .to_string();
 
+    let storage_record = StorageAssetRecord {
+        owner_type: StorageOwnerType::Agency,
+        owner_id: agency_id.clone(),
+        context_type: StorageContextType::AgencyStorage,
+        context_id: folder_id.clone(),
+        visibility: StorageVisibility::Private,
+        object_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        original_file_name: Some(fname.clone()),
+        mime_type: mime_type.clone(),
+        size_bytes: Some(new_size),
+        checksum_sha256: None,
+        source_table: Some("agency_files".to_string()),
+        source_id: if id.is_empty() {
+            None
+        } else {
+            Some(id.clone())
+        },
+        created_by: Some(user.id.clone()),
+        counts_toward_quota: true,
+    };
+    if let Err(err) = insert_asset_record(&state, &storage_record).await {
+        warn!(agency_id = %agency_id, file_id = %id, error = %err.1, "failed to mirror agency storage file into storage_assets");
+    }
+
     Ok(Json(AgencyFileUploadResponse {
         id,
         file_name: fname,
         public_url,
-        storage_bucket: state.supabase_bucket_private.clone(),
+        storage_bucket: insert
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
         storage_path: insert
             .get("storage_path")
             .and_then(|v| v.as_str())
@@ -1321,6 +1070,9 @@ pub async fn upload_agency_storage_file(
             .to_string(),
         client_id: None,
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
@@ -1329,6 +1081,8 @@ pub async fn delete_agency_storage_file(
     user: AuthUser,
     Path(file_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_org_id = access.organization_id;
     // 1) Fetch file and verify ownership
     let resp = state
         .pg
@@ -1353,7 +1107,7 @@ pub async fn delete_agency_storage_file(
         StatusCode::INTERNAL_SERVER_ERROR,
         "missing agency_id".into(),
     ))?;
-    if agency_id != user.id {
+    if agency_id != agency_org_id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
     let bucket = row
@@ -1374,34 +1128,13 @@ pub async fn delete_agency_storage_file(
         .to_string();
 
     // 2) Delete object from Supabase Storage
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let del = http
-        .delete(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !del.status().is_success() {
-        let msg = del.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage delete failed: {msg}"),
-        ));
-    }
+    delete_object(&state, &bucket, &path).await?;
 
     // 3) Delete metadata row
     let resp = state
         .pg
         .from("agency_files")
-        .eq("id", file_id)
+        .eq("id", &file_id)
         .delete()
         .execute()
         .await
@@ -1415,6 +1148,9 @@ pub async fn delete_agency_storage_file(
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+    if let Err(err) = soft_delete_asset_record(&state, "agency_files", &file_id).await {
+        warn!(agency_id = %agency_org_id, file_id = %file_id, error = %err.1, "failed to soft-delete storage_assets row for agency file");
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
@@ -1535,6 +1271,9 @@ pub async fn upload_agency_file(
         storage_path: path,
         client_id: None,
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
@@ -1767,6 +1506,8 @@ pub async fn get_client_file_signed_url(
     user: AuthUser,
     Path((_client_id, file_id)): Path<(String, String)>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_org_id = access.organization_id;
     // 1. Fetch file and verify ownership
     let resp = state
         .pg
@@ -1793,7 +1534,7 @@ pub async fn get_client_file_signed_url(
         "missing agency_id".into(),
     ))?;
 
-    if agency_id != user.id {
+    if agency_id != agency_org_id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
 
@@ -1806,41 +1547,7 @@ pub async fn get_client_file_signed_url(
         "missing storage_path".into(),
     ))?;
 
-    // 2. Request signed URL from Supabase Storage
-    let url = format!(
-        "{}/storage/v1/object/sign/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let body = serde_json::json!({ "expiresIn": 3600 }); // 1 hour
-    let http = reqwest::Client::new();
-    let sign_resp = http
-        .post(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !sign_resp.status().is_success() {
-        let msg = sign_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
-    }
-
-    let signed_json: serde_json::Value = sign_resp
-        .json()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    let signed_path = signed_json
-        .get("signedURL")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
-
-    let full_url = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+    let full_url = crate::storage::generate_signed_url(&state, bucket, path, 3600).await?;
 
     Ok(Json(serde_json::json!({ "url": full_url })))
 }
@@ -1851,6 +1558,8 @@ pub async fn upload_client_file(
     Path(client_id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = access.organization_id;
     // Expect a single part named "file"
     let mut file_name = None;
     let mut bytes: Vec<u8> = vec![];
@@ -1873,63 +1582,26 @@ pub async fn upload_client_file(
     if bytes.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing file".into()));
     }
+    let size_bytes = bytes.len() as i64;
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    // Storage target
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "agencies/{}/clients/{}/files/{}_{}",
-        user.id,
-        client_id,
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/clients/{client_id}/files"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    // Upload to Supabase Storage using service key
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    let public_url = None;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let public_url = uploaded.public_url.clone();
 
     // Insert row into agency_files
     let insert = serde_json::json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "client_id": client_id,
         "file_name": fname,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
+        "size_bytes": size_bytes,
     });
     let resp = state
         .pg
@@ -1953,28 +1625,60 @@ pub async fn upload_client_file(
         .unwrap_or("")
         .to_string();
 
+    let storage_record = StorageAssetRecord {
+        owner_type: StorageOwnerType::Agency,
+        owner_id: agency_id,
+        context_type: StorageContextType::ClientFile,
+        context_id: Some(client_id.clone()),
+        visibility: StorageVisibility::Private,
+        object_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        original_file_name: Some(fname.clone()),
+        mime_type: None,
+        size_bytes: Some(size_bytes),
+        checksum_sha256: None,
+        source_table: Some("agency_files".to_string()),
+        source_id: if file_id_res.is_empty() {
+            None
+        } else {
+            Some(file_id_res.clone())
+        },
+        created_by: Some(user.id.clone()),
+        counts_toward_quota: true,
+    };
+    if let Err(err) = insert_asset_record(&state, &storage_record).await {
+        warn!(client_id = %client_id, file_id = %file_id_res, error = %err.1, "failed to mirror client file into storage_assets");
+    }
+
     Ok(Json(AgencyFileUploadResponse {
         id: file_id_res,
         file_name: fname,
         public_url,
-        storage_bucket: bucket,
-        storage_path: path,
+        storage_bucket: insert
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        storage_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
         client_id: Some(client_id),
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
 // ... (rest of the code remains the same)
 
 // List talents associated to the agency's organization via agency_users
-#[derive(Serialize)]
-pub struct TalentItem {
-    pub id: String,
-    pub creator_id: Option<String>,
-    pub full_name: Option<String>,
-    pub profile_photo_url: Option<String>,
-    pub is_connected_creator: bool,
-}
+pub type TalentItem = AgencyTalentRef;
 
 #[derive(Deserialize)]
 pub struct TalentQuery {
@@ -1988,287 +1692,9 @@ pub async fn list_talents(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
     info!(agency_id = %agency_id, "list_talents request");
-
-    // Query agency_users within this agency; select columns per schema
-    let mut req = state
-        .pg
-        .from("agency_users")
-        .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role")
-        .eq("agency_id", &agency_id)
-        .eq("role", "talent")
-        .in_("status", vec!["active", "inactive"]);
-    if let Some(q) = params.q.as_ref().filter(|s| !s.is_empty()) {
-        let enc = format!("%25{}%25", q);
-        // Filter by stage_name OR full_legal_name
-        let or_expr = format!("stage_name.ilike.{},full_legal_name.ilike.{}", enc, enc);
-        req = req.or(or_expr.as_str());
-    }
-    let resp = req
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let count = rows.as_array().map(|a| a.len()).unwrap_or(0);
-    info!(agency_id = %agency_id, count, "list_talents result");
-
-    // Map to array with fallback to names per schema
-    let talents: Vec<TalentItem> = rows
-        .as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|r| {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let creator_id = r
-                .get("creator_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            let full_name = r
-                .get("stage_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-                .or_else(|| {
-                    r.get("full_legal_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                });
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            TalentItem {
-                id,
-                creator_id: if creator_id.is_empty() {
-                    None
-                } else {
-                    Some(creator_id.clone())
-                },
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: !creator_id.is_empty(),
-            }
-        })
-        .collect();
-
-    // Also include connected creators (active relationships) for this agency.
-    // Some agencies may have connections in agency_talent_relationships even if agency_users
-    // does not return any rows (e.g. legacy data).
-    let rel_resp = state
-        .pg
-        .from("agency_talent_relationships")
-        .select("talent_id,creator_id,status")
-        .eq("agency_id", &agency_id)
-        .eq("status", "active")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_text = rel_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
-
-    let mut connected_talent_ids: Vec<String> = vec![];
-    let mut connected_creator_ids: Vec<String> = vec![];
-    for r in rel_rows.iter() {
-        let tid = r
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if !tid.is_empty() {
-            connected_talent_ids.push(tid);
-        }
-        let cid = r
-            .get("creator_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if !cid.is_empty() {
-            connected_creator_ids.push(cid);
-        }
-    }
-
-    let mut connected_items: Vec<TalentItem> = vec![];
-    if !connected_talent_ids.is_empty() {
-        // Fetch connected talent rows from agency_users so we have names/photos.
-        // We intentionally do not filter by status here because relationship.status is authoritative.
-        let au_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name,profile_photo_url")
-            .eq("agency_id", &agency_id)
-            .in_("id", connected_talent_ids.clone())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let au_text = au_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
-        for r in au_rows.iter() {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let full_name = r
-                .get("stage_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-                .or_else(|| {
-                    r.get("full_legal_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                });
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            connected_items.push(TalentItem {
-                id,
-                creator_id: r
-                    .get("creator_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty()),
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: true,
-            });
-        }
-    }
-
-    // If we couldn't resolve some connected creators through agency_users, best-effort
-    // include them using creators table (still marked connected).
-    let known_ids: std::collections::HashSet<String> =
-        connected_items.iter().map(|t| t.id.clone()).collect();
-    let missing_creator_ids: Vec<String> = connected_creator_ids
-        .into_iter()
-        .filter(|cid| !cid.is_empty())
-        .filter(|cid| !known_ids.contains(cid))
-        .collect();
-    if !missing_creator_ids.is_empty() {
-        let creators_resp = state
-            .pg
-            .from("creators")
-            .select("id,full_name,profile_photo_url")
-            .in_("id", missing_creator_ids)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let creators_text = creators_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let creator_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creators_text).unwrap_or_default();
-        for r in creator_rows.iter() {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            if id.is_empty() {
-                continue;
-            }
-            let full_name = r
-                .get("full_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            connected_items.push(TalentItem {
-                id,
-                creator_id: r
-                    .get("id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty()),
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: true,
-            });
-        }
-    }
-
-    let mut combined: Vec<TalentItem> = vec![];
-    let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-    for t in talents.into_iter().chain(connected_items.into_iter()) {
-        if t.id.trim().is_empty() {
-            continue;
-        }
-
-        let dedupe_key = t
-            .creator_id
-            .as_ref()
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| t.id.clone());
-
-        if let Some(existing_index) = seen.get(&dedupe_key).copied() {
-            let existing = &mut combined[existing_index];
-
-            if existing.creator_id.is_none() && t.creator_id.is_some() {
-                existing.creator_id = t.creator_id.clone();
-            }
-            if existing.full_name.is_none() && t.full_name.is_some() {
-                existing.full_name = t.full_name.clone();
-            }
-            if existing.profile_photo_url.is_none() && t.profile_photo_url.is_some() {
-                existing.profile_photo_url = t.profile_photo_url.clone();
-            }
-            if !existing.is_connected_creator && t.is_connected_creator {
-                existing.is_connected_creator = true;
-            }
-
-            let existing_uses_creator_id = existing
-                .creator_id
-                .as_ref()
-                .map(|cid| cid == &existing.id)
-                .unwrap_or(false);
-            let incoming_uses_agency_user_id = t
-                .creator_id
-                .as_ref()
-                .map(|cid| cid != &t.id)
-                .unwrap_or(false);
-            if existing_uses_creator_id && incoming_uses_agency_user_id {
-                existing.id = t.id.clone();
-            }
-
-            continue;
-        }
-
-        seen.insert(dedupe_key, combined.len());
-        combined.push(t);
-    }
-
-    if let Some(q) = params.q.as_ref().filter(|s| !s.trim().is_empty()) {
-        let ql = q.trim().to_lowercase();
-        combined.retain(|t| {
-            t.full_name
-                .as_ref()
-                .map(|n| n.to_lowercase().contains(&ql))
-                .unwrap_or(false)
-        });
-    }
-
-    Ok(Json(json!(combined)))
+    let talents = list_agency_talent_refs(&state, &agency_id, params.q.as_deref()).await?;
+    info!(agency_id = %agency_id, count = talents.len(), "list_talents result");
+    Ok(Json(json!(talents)))
 }
 
 pub async fn list_talent_assets(
@@ -2277,15 +1703,27 @@ pub async fn list_talent_assets(
     Path(talent_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let effective_talent_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let effective_creator_id = talent_ref.creator_id.clone();
 
     // 2. Fetch images from reference_images
     let images_resp = state
         .pg
         .from("reference_images")
         .select("id,public_url,section_id,created_at")
-        .eq("user_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "user_id.eq.{},user_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("user_id.eq.{}", effective_talent_id)))
         .eq("moderation_status", "approved")
         .order("created_at.desc")
         .execute()
@@ -2305,7 +1743,15 @@ pub async fn list_talent_assets(
         .from("agency_files")
         .select("id,file_name,public_url,created_at,storage_path")
         .eq("agency_id", &agency_id)
-        .eq("talent_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .order("created_at.desc")
         .execute()
         .await
@@ -2367,18 +1813,30 @@ pub async fn delete_talent_asset(
     Path((talent_id, asset_id)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let effective_talent_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let effective_creator_id = talent_ref.creator_id.clone();
 
     // 2. Find the file record in `agency_files` to get its storage path.
     // We check against both the asset_id and the talent_id for security.
     let file_resp = state
         .pg
         .from("agency_files")
-        .select("storage_path")
+        .select("storage_bucket,storage_path")
         .eq("id", &asset_id)
         .eq("agency_id", &agency_id)
-        .eq("talent_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .single()
         .execute()
         .await
@@ -2396,6 +1854,12 @@ pub async fn delete_talent_asset(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let file_json: serde_json::Value = serde_json::from_str(&file_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let storage_bucket = file_json["storage_bucket"].as_str().ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Storage bucket not found for asset".to_string(),
+        )
+    })?;
     let storage_path = file_json["storage_path"].as_str().ok_or_else(|| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -2403,40 +1867,33 @@ pub async fn delete_talent_asset(
         )
     })?;
 
-    // 3. Delete the file from Supabase Storage.
-    let storage_url = format!("{}/storage/v1/object/{}", state.supabase_url, storage_path);
-    let http = reqwest::Client::new();
-    let delete_resp = http
-        .delete(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !delete_resp.status().is_success() {
-        // Log the error but proceed to delete the DB record anyway.
-        // It's better to have a dangling DB record than an orphaned file.
-        let error_body = delete_resp.text().await.unwrap_or_default();
-        tracing::error!(
-            "Failed to delete file from storage: {}. Path: {}",
-            error_body,
-            storage_path
-        );
-    }
+    delete_object(&state, storage_bucket, storage_path).await?;
 
     // 4. Delete the record from the `agency_files` table.
-    state
+    let delete_row = state
         .pg
         .from("agency_files")
         .delete()
         .eq("id", &asset_id)
+        .eq("agency_id", &agency_id)
+        .eq("talent_id", &effective_talent_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let delete_status = delete_row.status();
+    let delete_text = delete_row
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !delete_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            delete_status.as_u16(),
+            delete_text,
+        ));
+    }
+    if let Err(err) = soft_delete_asset_record(&state, "agency_files", &asset_id).await {
+        warn!(agency_id = %agency_id, file_id = %asset_id, error = %err.1, "failed to soft-delete storage_assets row for talent asset");
+    }
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -2448,8 +1905,12 @@ pub async fn upload_talent_asset(
     mut multipart: Multipart,
 ) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let storage_subject_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let agency_user_id = talent_ref.agency_user_id.clone();
 
     // 2. Extract file
     let mut file_name = None;
@@ -2495,7 +1956,7 @@ pub async fn upload_talent_asset(
     let path = format!(
         "agencies/{}/talents/{}/assets/{}_{}",
         agency_id,
-        effective_talent_id,
+        storage_subject_id,
         chrono::Utc::now().timestamp_millis(),
         sanitized
     );
@@ -2538,7 +1999,9 @@ pub async fn upload_talent_asset(
     // 5. Insert row into agency_files
     let insert = serde_json::json!({
         "agency_id": agency_id,
-        "talent_id": effective_talent_id,
+        "talent_id": agency_user_id,
+        "creator_id": talent_ref.creator_id,
+        "relationship_id": talent_ref.relationship_id,
         "file_name": fname,
         "storage_bucket": bucket,
         "storage_path": path,
@@ -2549,33 +2012,80 @@ pub async fn upload_talent_asset(
         .pg
         .from("agency_files")
         .insert(insert.to_string())
+        .select("id,file_name,public_url,storage_bucket,storage_path,talent_id,creator_id,relationship_id,created_at")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
 
     let txt = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
+    }
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr
-        .first()
-        .cloned()
-        .unwrap_or(serde_json::json!({"id": ""}));
+    let rec = arr.first().cloned().ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Uploaded asset row was not returned by the database".to_string(),
+        )
+    })?;
     let id = rec
         .get("id")
         .and_then(|v| v.as_str())
-        .unwrap_or("")
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Uploaded asset row is missing its id".to_string(),
+            )
+        })?
         .to_string();
 
     Ok(Json(AgencyFileUploadResponse {
         id,
-        file_name: fname,
-        public_url: Some(public_url),
-        storage_bucket: bucket,
-        storage_path: path,
+        file_name: rec
+            .get("file_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&fname)
+            .to_string(),
+        public_url: rec
+            .get("public_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(Some(public_url)),
+        storage_bucket: rec
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&bucket)
+            .to_string(),
+        storage_path: rec
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&path)
+            .to_string(),
         client_id: None,
-        talent_id: Some(effective_talent_id),
+        talent_id: rec
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(agency_user_id),
+        creator_id: rec
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(talent_ref.creator_id.clone()),
+        relationship_id: rec
+            .get("relationship_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(talent_ref.relationship_id.clone()),
+        created_at: rec
+            .get("created_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     }))
 }
 

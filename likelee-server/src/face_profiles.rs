@@ -1,7 +1,8 @@
 use crate::activity::log_activity_event_with_subject;
 use crate::brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::config::AppState;
-use crate::entitlements::{creator_has_brand_connection_access, PlanTier};
+use crate::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier};
+
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::team::permissions::Permission;
@@ -237,8 +238,7 @@ pub async fn search_faces(
         .select("*")
         .eq("role", "creator")
         .eq("public_profile_visible", "true")
-        .eq("kyc_status", "approved")
-        .in_("plan_tier", vec!["basic", "pro", "enterprise"]);
+        .eq("kyc_status", "approved");
 
     if let Some(search) = q.query {
         if !search.is_empty() {
@@ -766,14 +766,6 @@ pub async fn search_marketplace_profiles(
                 }
             };
             if !is_visible_to_marketplace {
-                continue;
-            }
-            let tier = PlanTier::from_db(
-                row.get("plan_tier")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("free"),
-            );
-            if !creator_has_brand_connection_access(tier) {
                 continue;
             }
 
@@ -1350,17 +1342,6 @@ pub async fn get_marketplace_profile_details(
                 "marketplace profile not found".to_string(),
             ));
         }
-        let creator_tier = PlanTier::from_db(
-            row.get("plan_tier")
-                .and_then(|v| v.as_str())
-                .unwrap_or("free"),
-        );
-        if !creator_has_brand_connection_access(creator_tier) {
-            return Err((
-                StatusCode::NOT_FOUND,
-                "marketplace profile not found".to_string(),
-            ));
-        }
         let mut row = row;
         if is_default_pricing(&row) {
             row["base_monthly_price_cents"] = serde_json::Value::Null;
@@ -1774,6 +1755,16 @@ pub async fn create_marketplace_connection_request(
     Json(payload): Json<MarketplaceConnectPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency", "brand"]).check(&user.role)?;
+    if user.role == "brand" {
+        let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
+        let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+        if !brand_allows_campaign_collaboration(tier) {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "brand_talent_browsing_requires_pro_plan".to_string(),
+            ));
+        }
+    }
     let profile_type = payload.profile_type.trim().to_lowercase();
     let target_id = payload.target_id.trim();
     if target_id.is_empty() {
@@ -1809,15 +1800,7 @@ pub async fn create_marketplace_connection_request(
             }
             let creator_exists_rows: Vec<serde_json::Value> =
                 serde_json::from_str(&creator_exists_text).unwrap_or_default();
-            if creator_exists_rows.is_empty()
-                || !creator_exists_rows.iter().any(|row| {
-                    creator_has_brand_connection_access(PlanTier::from_db(
-                        row.get("plan_tier")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("free"),
-                    ))
-                })
-            {
+            if creator_exists_rows.is_empty() {
                 return Err((StatusCode::NOT_FOUND, "creator not found".to_string()));
             }
 
@@ -3223,6 +3206,14 @@ pub async fn create_brand_licensing_request(
     Json(payload): Json<BrandLicensingRequestPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["brand"]).check(&user.role)?;
+    let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
+    let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
+        ));
+    }
 
     let agency_id = payload
         .agency_id

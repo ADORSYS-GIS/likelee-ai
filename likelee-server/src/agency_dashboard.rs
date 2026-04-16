@@ -247,7 +247,7 @@ pub async fn get_payment_history_top_earners(
         })
         .collect();
 
-    rows.sort_by(|a, b| b.total_gross_cents.cmp(&a.total_gross_cents));
+    rows.sort_by_key(|b| std::cmp::Reverse(b.total_gross_cents));
     rows.truncate(10);
 
     Ok(Json(rows))
@@ -983,7 +983,7 @@ async fn get_top_revenue_generators(
         })
         .collect();
 
-    sorted_talents.sort_by(|a, b| b.earnings_cents.cmp(&a.earnings_cents));
+    sorted_talents.sort_by_key(|b| std::cmp::Reverse(b.earnings_cents));
     Ok(sorted_talents.into_iter().take(3).collect())
 }
 

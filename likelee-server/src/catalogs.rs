@@ -1,4 +1,5 @@
 use crate::{
+    agency_talent_refs::list_agency_talent_refs,
     auth::AuthUser,
     config::AppState,
     team::{permissions::Permission, require_agency_permission},
@@ -184,15 +185,17 @@ pub async fn list_eligible_requests(
     let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
     let agency_id = &access.organization_id;
 
-    // 1. Fetch signed licensing requests for this agency.
+    // 1. Fetch licensing requests (with license_submissions embedded) and filter to signed ones.
+    // We allow both paid and unpaid requests; payment status is displayed separately.
     let lr_resp = state
         .pg
-        .from("agency_payment_links")
-        .select("id,licensing_request_id,client_name,client_email,total_amount_cents,paid_at,licensing_requests(talent_id,talent_ids,campaign_title)")
+        .from("licensing_requests")
+        .select(
+            "id,client_name,campaign_title,talent_id,talent_ids,created_at,license_submissions!licensing_requests_submission_id_fkey(status,client_name,client_email,license_fee,created_at)",
+        )
         .eq("agency_id", agency_id)
-        .eq("status", "paid")
-        .order("paid_at.desc")
-        .limit(200)
+        .order("created_at.desc")
+        .limit(250)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -225,7 +228,7 @@ pub async fn list_eligible_requests(
             .pg
             .from("agency_payment_links")
             .select("id,licensing_request_id,status,client_name,client_email,total_amount_cents,paid_at,created_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("licensing_request_id", lr_refs)
             .order("created_at.desc")
             .execute()
@@ -256,8 +259,15 @@ pub async fn list_eligible_requests(
     for row in lr_rows {
         let lrid = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
-        let submission = row.get("license_submissions");
+        let submission = row.get("license_submissions").and_then(|v| {
+            if v.is_array() {
+                v.as_array().and_then(|arr| arr.first()).cloned()
+            } else {
+                Some(v.clone())
+            }
+        });
         let submission_status = submission
+            .as_ref()
             .and_then(|ls| ls.get("status"))
             .and_then(|v| v.as_str())
             .unwrap_or("")
@@ -286,6 +296,7 @@ pub async fn list_eligible_requests(
                 .filter(|s| !s.trim().is_empty())
                 .or_else(|| {
                     submission
+                        .as_ref()
                         .and_then(|ls| ls.get("client_name"))
                         .and_then(|v| v.as_str())
                         .filter(|s| !s.trim().is_empty())
@@ -298,6 +309,7 @@ pub async fn list_eligible_requests(
                 .filter(|s| !s.trim().is_empty())
                 .or_else(|| {
                     submission
+                        .as_ref()
                         .and_then(|ls| ls.get("client_email"))
                         .and_then(|v| v.as_str())
                         .filter(|s| !s.trim().is_empty())
@@ -308,7 +320,7 @@ pub async fn list_eligible_requests(
             "total_amount_cents": payment_link
                 .and_then(|pl| pl.get("total_amount_cents"))
                 .cloned()
-                .or_else(|| submission.and_then(|ls| ls.get("license_fee")).cloned())
+                .or_else(|| submission.as_ref().and_then(|ls| ls.get("license_fee")).cloned())
                 .unwrap_or(serde_json::Value::Null),
             "paid_at": payment_link
                 .and_then(|pl| pl.get("paid_at"))
@@ -350,14 +362,62 @@ pub async fn list_eligible_requests(
     // 4. Fetch talent names
     let mut talent_name_map: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
+    let mut talent_creator_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     if !all_talent_ids.is_empty() {
         let t_refs: Vec<&str> = all_talent_ids.iter().map(|s| s.as_str()).collect();
+
+        if let Ok(refs) = list_agency_talent_refs(&state, agency_id, None).await {
+            let mut by_any_id: std::collections::HashMap<String, (String, Option<String>)> =
+                std::collections::HashMap::new();
+            for r in refs {
+                let name = r.full_name.trim().to_string();
+                let cid = r.creator_id.clone();
+                if !r.id.trim().is_empty() {
+                    by_any_id.insert(r.id.clone(), (name.clone(), cid.clone()));
+                }
+                if let Some(v) = r.agency_user_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        by_any_id.insert(v.to_string(), (name.clone(), cid.clone()));
+                    }
+                }
+                if let Some(v) = r.relationship_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        by_any_id.insert(v.to_string(), (name.clone(), cid.clone()));
+                    }
+                }
+                if let Some(v) = r.creator_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        by_any_id.insert(v.to_string(), (name.clone(), cid.clone()));
+                    }
+                }
+            }
+
+            for tid in &all_talent_ids {
+                if let Some((name, cid)) = by_any_id.get(tid) {
+                    if !name.trim().is_empty() {
+                        talent_name_map.insert(tid.clone(), name.clone());
+                    }
+                    if let Some(cid) = cid {
+                        if !cid.trim().is_empty() {
+                            talent_creator_map.insert(tid.clone(), cid.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4a. Resolve names by agency_user_id (internal talents)
+        let mut resolved_as_agency_user: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
+        let mut creator_ids_from_au: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
         let au_resp = state
             .pg
             .from("agency_users")
             .auth(state.supabase_service_key.clone())
-            .select("id,full_legal_name,stage_name")
-            .in_("id", t_refs)
+            .select("id,creator_id,full_legal_name,stage_name")
+            .in_("id", t_refs.clone())
             .execute()
             .await
             .ok();
@@ -372,13 +432,357 @@ pub async fn list_eligible_requests(
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .to_string();
+                    if id.trim().is_empty() {
+                        continue;
+                    }
                     let name = r
                         .get("full_legal_name")
                         .or_else(|| r.get("stage_name"))
                         .and_then(|v| v.as_str())
                         .unwrap_or("Talent")
                         .to_string();
-                    talent_name_map.insert(id, name);
+                    talent_name_map.insert(id.clone(), name);
+                    resolved_as_agency_user.insert(id.clone());
+                    if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
+                        if !cid.trim().is_empty() {
+                            talent_creator_map.insert(id, cid.to_string());
+                            creator_ids_from_au.insert(cid.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        // If the agency_users name is a generic placeholder but we have a creator_id,
+        // prefer the creators full_name for display.
+        if !creator_ids_from_au.is_empty() {
+            let cr_refs: Vec<&str> = creator_ids_from_au.iter().map(|s| s.as_str()).collect();
+            let cr_resp = state
+                .pg
+                .from("creators")
+                .auth(state.supabase_service_key.clone())
+                .select("id,full_name,stage_name")
+                .in_("id", cr_refs)
+                .execute()
+                .await
+                .ok();
+            if let Some(cr_resp) = cr_resp {
+                if let Ok(cr_text) = cr_resp.text().await {
+                    let cr_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_text).unwrap_or_default();
+                    let mut creator_full_name_map: std::collections::HashMap<String, String> =
+                        std::collections::HashMap::new();
+                    for r in &cr_rows {
+                        let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        if cid.trim().is_empty() {
+                            continue;
+                        }
+                        let full_name = r
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        let stage_name = r
+                            .get("stage_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+
+                        let mut chosen = String::new();
+                        for cand in [&full_name, &stage_name] {
+                            if cand.is_empty() {
+                                continue;
+                            }
+                            let lc = cand.to_lowercase();
+                            if lc == "talent" || lc == "user" || lc == "unknown" {
+                                continue;
+                            }
+                            chosen = cand.clone();
+                            break;
+                        }
+
+                        if !chosen.is_empty() {
+                            creator_full_name_map.insert(cid.to_string(), chosen);
+                        }
+                    }
+
+                    for (talent_key, cid) in talent_creator_map.clone() {
+                        if let Some(creator_name) = creator_full_name_map.get(&cid).cloned() {
+                            let current = talent_name_map
+                                .get(&talent_key)
+                                .cloned()
+                                .unwrap_or_default();
+                            let is_placeholder = current.trim().is_empty()
+                                || current.trim().eq_ignore_ascii_case("talent")
+                                || current.trim().eq_ignore_ascii_case("user");
+                            if is_placeholder {
+                                talent_name_map.insert(talent_key, creator_name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4b. For IDs that are relationship/talent refs (connected creators), try mapping via relationships
+        let missing_creator_links: Vec<String> = all_talent_ids
+            .iter()
+            .filter(|tid| !talent_creator_map.contains_key(*tid))
+            .cloned()
+            .collect();
+        if !missing_creator_links.is_empty() {
+            let rel_refs: Vec<&str> = missing_creator_links.iter().map(|s| s.as_str()).collect();
+
+            // Some flows store agency_users.id in talent_ids, others store relationship.id.
+            // Try both: match on talent_id and on relationship row id.
+            for (col, selector) in [
+                ("talent_id", "talent_id,creator_id"),
+                ("id", "id,talent_id,creator_id"),
+            ] {
+                let rel_resp = state
+                    .pg
+                    .from("agency_talent_relationships")
+                    .auth(state.supabase_service_key.clone())
+                    .select(selector)
+                    .in_(col, rel_refs.clone())
+                    .execute()
+                    .await
+                    .ok();
+                if let Some(rel_resp) = rel_resp {
+                    if let Ok(rel_text) = rel_resp.text().await {
+                        let rel_rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&rel_text).unwrap_or_default();
+                        for r in &rel_rows {
+                            let rel_id = r
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            let tid = r
+                                .get("talent_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            let cid = r
+                                .get("creator_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            if cid.trim().is_empty() {
+                                continue;
+                            }
+                            // Map relationship id -> creator id (for connected creators where talent_id is null)
+                            if !rel_id.trim().is_empty() {
+                                talent_creator_map.entry(rel_id).or_insert(cid.clone());
+                            }
+                            // Map talent_id -> creator id (for internal talents)
+                            if !tid.trim().is_empty() {
+                                talent_creator_map.entry(tid).or_insert(cid);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4c. If the remaining IDs are actually creator IDs, try agency_users by creator_id (same agency)
+        let still_missing_creator_links: Vec<String> = all_talent_ids
+            .iter()
+            .filter(|tid| !talent_creator_map.contains_key(*tid))
+            .cloned()
+            .collect();
+        if !still_missing_creator_links.is_empty() {
+            let au_refs: Vec<&str> = still_missing_creator_links
+                .iter()
+                .map(|s| s.as_str())
+                .collect();
+            let au_by_creator_resp = state
+                .pg
+                .from("agency_users")
+                .auth(state.supabase_service_key.clone())
+                .select("creator_id,full_legal_name,stage_name")
+                .eq("agency_id", agency_id)
+                .in_("creator_id", au_refs)
+                .execute()
+                .await
+                .ok();
+            if let Some(au_by_creator_resp) = au_by_creator_resp {
+                if let Ok(au_text) = au_by_creator_resp.text().await {
+                    let au_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&au_text).unwrap_or_default();
+                    for r in &au_rows {
+                        let cid = r
+                            .get("creator_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        if cid.trim().is_empty() {
+                            continue;
+                        }
+                        let name = r
+                            .get("stage_name")
+                            .or_else(|| r.get("full_legal_name"))
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Talent")
+                            .to_string();
+                        talent_creator_map.entry(cid.clone()).or_insert(cid.clone());
+                        talent_name_map.entry(cid).or_insert(name);
+                    }
+                }
+            }
+        }
+
+        // 4d. Finally, resolve remaining IDs from creators table.
+        // If we can map id -> creator_id via talent_creator_map, use that.
+        let missing_name_keys: Vec<String> = all_talent_ids
+            .iter()
+            .filter(|tid| !talent_name_map.contains_key(*tid))
+            .cloned()
+            .collect();
+        if !missing_name_keys.is_empty() {
+            let mut creator_ids: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+            for key in &missing_name_keys {
+                let cid = talent_creator_map
+                    .get(key)
+                    .cloned()
+                    .unwrap_or_else(|| key.clone());
+                if !cid.trim().is_empty() {
+                    creator_ids.insert(cid);
+                }
+            }
+            let cr_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+            let mut creator_name_map: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+
+            if !cr_refs.is_empty() {
+                let cr_resp = state
+                    .pg
+                    .from("creators")
+                    .auth(state.supabase_service_key.clone())
+                    .select("id,full_name,stage_name")
+                    .in_("id", cr_refs)
+                    .execute()
+                    .await
+                    .ok();
+                if let Some(cr_resp) = cr_resp {
+                    if let Ok(cr_text) = cr_resp.text().await {
+                        let cr_rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&cr_text).unwrap_or_default();
+                        for r in &cr_rows {
+                            let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                            if cid.trim().is_empty() {
+                                continue;
+                            }
+                            let name = r
+                                .get("full_name")
+                                .or_else(|| r.get("stage_name"))
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Talent")
+                                .to_string();
+                            creator_name_map.insert(cid.to_string(), name);
+                        }
+                    }
+                }
+            }
+
+            for key in &missing_name_keys {
+                let cid = talent_creator_map
+                    .get(key)
+                    .cloned()
+                    .unwrap_or_else(|| key.clone());
+                if let Some(name) = creator_name_map.get(&cid).cloned() {
+                    // If this key is not an agency_users.id (connected creator / relationship id / creator id),
+                    // prefer the creators-table name.
+                    if !resolved_as_agency_user.contains(key) {
+                        talent_name_map.insert(key.clone(), name);
+                    } else {
+                        talent_name_map.entry(key.clone()).or_insert(name);
+                    }
+                }
+            }
+        }
+
+        // 4e. Final override: if we still have placeholder names but do have a creator_id mapping,
+        // force the creators.full_name (covers relationship-id keys for connected creators).
+        let mut creator_ids_all: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
+        for cid in talent_creator_map.values() {
+            if !cid.trim().is_empty() {
+                creator_ids_all.insert(cid.clone());
+            }
+        }
+        if !creator_ids_all.is_empty() {
+            let cr_refs: Vec<&str> = creator_ids_all.iter().map(|s| s.as_str()).collect();
+            let cr_resp = state
+                .pg
+                .from("creators")
+                .auth(state.supabase_service_key.clone())
+                .select("id,full_name,stage_name")
+                .in_("id", cr_refs)
+                .execute()
+                .await
+                .ok();
+            if let Some(cr_resp) = cr_resp {
+                if let Ok(cr_text) = cr_resp.text().await {
+                    let cr_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_text).unwrap_or_default();
+                    let mut creator_full_name_map: std::collections::HashMap<String, String> =
+                        std::collections::HashMap::new();
+                    for r in &cr_rows {
+                        let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        if cid.trim().is_empty() {
+                            continue;
+                        }
+                        let full_name = r
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        let stage_name = r
+                            .get("stage_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+
+                        let mut chosen = String::new();
+                        for cand in [&full_name, &stage_name] {
+                            if cand.is_empty() {
+                                continue;
+                            }
+                            let lc = cand.to_lowercase();
+                            if lc == "talent" || lc == "user" || lc == "unknown" {
+                                continue;
+                            }
+                            chosen = cand.clone();
+                            break;
+                        }
+
+                        if !chosen.is_empty() {
+                            creator_full_name_map.insert(cid.to_string(), chosen);
+                        }
+                    }
+
+                    for key in &all_talent_ids {
+                        let current = talent_name_map.get(key).cloned().unwrap_or_default();
+                        let is_placeholder = current.trim().is_empty()
+                            || current.trim().eq_ignore_ascii_case("talent")
+                            || current.trim().eq_ignore_ascii_case("user")
+                            || current.trim().eq_ignore_ascii_case("unknown");
+                        if !is_placeholder {
+                            continue;
+                        }
+                        let Some(cid) = talent_creator_map.get(key).cloned() else {
+                            continue;
+                        };
+                        if let Some(real_name) = creator_full_name_map.get(&cid).cloned() {
+                            talent_name_map.insert(key.clone(), real_name);
+                        }
+                    }
                 }
             }
         }
@@ -398,9 +802,18 @@ pub async fn list_eligible_requests(
                         .get(tid)
                         .cloned()
                         .unwrap_or_else(|| "Talent".to_string());
+                    let creator_id = talent_creator_map
+                        .get(tid)
+                        .cloned()
+                        .unwrap_or_else(|| "".to_string());
                     linked_talents.push(serde_json::json!({
                         "id": tid,
-                        "name": name
+                        "name": name,
+                        "creator_id": if creator_id.trim().is_empty() {
+                            serde_json::Value::Null
+                        } else {
+                            serde_json::Value::String(creator_id)
+                        }
                     }));
                 }
             }
@@ -850,6 +1263,59 @@ pub async fn get_public_catalog(
     let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".into());
     let items: Vec<serde_json::Value> = serde_json::from_str(&items_text).unwrap_or_default();
 
+    let mut talent_name_by_any_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut talent_photo_by_any_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !agency_id.is_empty() {
+        if let Ok(refs) =
+            crate::agency_talent_refs::list_agency_talent_refs(&state, agency_id, None).await
+        {
+            for r in refs {
+                let name = r.full_name.trim().to_string();
+                if name.is_empty() {
+                    continue;
+                }
+                let photo = r
+                    .profile_photo_url
+                    .as_deref()
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if !r.id.trim().is_empty() {
+                    talent_name_by_any_id.insert(r.id.clone(), name.clone());
+                    if !photo.is_empty() {
+                        talent_photo_by_any_id.insert(r.id.clone(), photo.clone());
+                    }
+                }
+                if let Some(v) = r.agency_user_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+                if let Some(v) = r.relationship_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+                if let Some(v) = r.creator_id.as_deref() {
+                    if !v.trim().is_empty() {
+                        talent_name_by_any_id.insert(v.to_string(), name.clone());
+                        if !photo.is_empty() {
+                            talent_photo_by_any_id.insert(v.to_string(), photo.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // 3. For each item, fetch assets and recordings
     let mut enriched_items: Vec<serde_json::Value> = Vec::new();
 
@@ -1065,52 +1531,21 @@ pub async fn get_public_catalog(
             }
         }
 
-        // Fetch talent display name + photo
-        let (talent_name, talent_stage_name, talent_photo_url) = {
-            let tn_resp = state
-                .pg
-                .from("agency_users")
-                .auth(state.supabase_service_key.clone())
-                .select("full_legal_name,stage_name,profile_photo_url")
-                .eq("id", talent_id)
-                .limit(1)
-                .execute()
-                .await;
-
-            let tn_rows: Vec<serde_json::Value> = if let Ok(resp) = tn_resp {
-                if let Ok(text) = resp.text().await {
-                    serde_json::from_str(&text).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
+        let talent_name = talent_name_by_any_id
+            .get(talent_id)
+            .cloned()
+            .unwrap_or_else(|| "Talent".to_string());
+        let talent_stage_name: Option<String> =
+            if talent_name.trim().is_empty() || talent_name.trim().eq_ignore_ascii_case("talent") {
+                None
             } else {
-                Vec::new()
+                Some(talent_name.clone())
             };
-
-            let row = tn_rows.into_iter().next();
-            let name = row
-                .as_ref()
-                .and_then(|r| {
-                    r.get("stage_name")
-                        .or_else(|| r.get("full_legal_name"))
-                        .and_then(|v| v.as_str())
-                })
-                .unwrap_or("Talent")
-                .to_string();
-            let stage = row
-                .as_ref()
-                .and_then(|r| r.get("stage_name").and_then(|v| v.as_str()))
-                .map(|s| s.to_string());
-            let photo = row
-                .as_ref()
-                .and_then(|r| r.get("profile_photo_url").and_then(|v| v.as_str()))
-                .map(|s| s.to_string());
-            (name, stage, photo)
-        };
+        let talent_photo_url = talent_photo_by_any_id.get(talent_id).cloned();
 
         enriched_items.push(json!({
             "talent_id": talent_id,
-            "talent_name": talent_name,
+            "talent_name": if talent_name.is_empty() { serde_json::Value::Null } else { json!(talent_name) },
             "talent_stage_name": talent_stage_name,
             "talent_photo_url": talent_photo_url,
             "sort_order": item.get("sort_order"),
@@ -1119,7 +1554,6 @@ pub async fn get_public_catalog(
         }));
     }
 
-    // 4. Retrieve licensing receipt details (if linked)
     let receipt = if let Some(ref lr_id) = licensing_request_id {
         let lr_resp = state
             .pg
@@ -1193,27 +1627,7 @@ async fn generate_signed_url(
     bucket: &str,
     path: &str,
 ) -> Option<String> {
-    let url = format!(
-        "{}/storage/v1/object/sign/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let body = serde_json::json!({ "expiresIn": 86400 }); // 24h
-    let http = reqwest::Client::new();
-    let resp = http
-        .post(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .json(&body)
-        .send()
+    crate::storage::generate_signed_url(state, bucket, path, 86_400)
         .await
-        .ok()?;
-    if !resp.status().is_success() {
-        return None;
-    }
-    let j: serde_json::Value = resp.json().await.ok()?;
-    let signed_path = j.get("signedURL").and_then(|v| v.as_str())?;
-    Some(format!("{}/storage/v1{}", state.supabase_url, signed_path))
+        .ok()
 }

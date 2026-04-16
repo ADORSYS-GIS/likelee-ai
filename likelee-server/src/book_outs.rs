@@ -1,4 +1,7 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    agency_talent_refs::resolve_agency_talent_ref, auth::AuthUser, config::AppState,
+    team::resolve_effective_agency_id,
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -16,6 +19,8 @@ pub struct ListParams {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateBookOutPayload {
     pub talent_id: String,
+    pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
     pub start_date: String, // YYYY-MM-DD
     pub end_date: String,   // YYYY-MM-DD
     pub reason: Option<String>,
@@ -57,9 +62,13 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateBookOutPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &payload.talent_id).await?;
     let body = json!({
         "agency_user_id": user.id,
-        "talent_id": payload.talent_id,
+        "talent_id": talent_ref.agency_user_id,
+        "creator_id": talent_ref.creator_id.or(payload.creator_id),
+        "relationship_id": talent_ref.relationship_id.or(payload.relationship_id),
         "start_date": payload.start_date,
         "end_date": payload.end_date,
         "reason": payload.reason.unwrap_or_else(|| "personal".to_string()),
