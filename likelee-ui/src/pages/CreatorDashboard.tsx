@@ -11534,9 +11534,13 @@ export default function CreatorDashboard() {
                       {item.requiredPlan && item.id !== "dashboard" && (
                         <span className="shrink-0">
                           {item.requiredPlan === "pro" ? (
-                            <Crown className="w-4 h-4 text-amber-400" />
+                            !isProEntitlement && (
+                              <Crown className="w-4 h-4 text-amber-400" />
+                            )
                           ) : (
-                            <Star className="w-4 h-4 text-sky-400" />
+                            isFreeEntitlement && (
+                              <Star className="w-4 h-4 text-sky-400" />
+                            )
                           )}
                         </span>
                       )}
