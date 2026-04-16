@@ -1,14 +1,21 @@
 import React, { useState } from "react";
 
 import { useAuth } from "@/auth/AuthProvider";
+import type { Profile } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { getDashboardPath } from "@/auth/onboarding";
-import { getBrandProfile } from "@/api/functions";
-import { getAgencyProfile } from "@/api/functions";
+import { getBrandProfile, getAgencyProfile } from "@/api/functions";
 //import Layout from "./Layout";
+
+type UserRole = "brand" | "agency" | "creator";
+
+// Helper to check if error is a 404 (profile not found)
+function isNotFoundError(error: any): boolean {
+  return error?.status === 404 || error?.data?.code === "profile_not_found";
+}
 
 export default function UpdatePassword() {
   const { t } = useTranslation();
@@ -68,24 +75,48 @@ export default function UpdatePassword() {
               nextPath = withInviteAcceptIntent(next);
             } else {
               // Determine user role by checking which profile exists
-              let role = "creator"; // default fallback
+              // Only treat 404 as "profile doesn't exist", other errors redirect to login
+              let role: UserRole = "creator"; // default fallback
 
               try {
                 // Try to fetch brand profile first
                 await getBrandProfile();
                 role = "brand";
               } catch (brandError: any) {
-                // If brand profile doesn't exist, try agency
-                try {
-                  await getAgencyProfile();
-                  role = "agency";
-                } catch (agencyError: any) {
-                  // Default to creator if neither exists
-                  role = "creator";
+                // Only proceed to check agency if brand profile truly doesn't exist (404)
+                if (isNotFoundError(brandError)) {
+                  try {
+                    await getAgencyProfile();
+                    role = "agency";
+                  } catch (agencyError: any) {
+                    // If agency also returns 404, default to creator
+                    // If it's another error (network, 500, etc), redirect to login for safety
+                    if (!isNotFoundError(agencyError)) {
+                      console.error("Failed to fetch profiles:", {
+                        brandError,
+                        agencyError,
+                      });
+                      nextPath = "/login";
+                      setTimeout(() => navigate(nextPath), 700);
+                      return;
+                    }
+                    role = "creator";
+                  }
+                } else {
+                  // Brand profile fetch failed with non-404 error (network, 500, etc)
+                  // Redirect to login for safety
+                  console.error("Failed to fetch brand profile:", brandError);
+                  nextPath = "/login";
+                  setTimeout(() => navigate(nextPath), 700);
+                  return;
                 }
               }
 
-              nextPath = getDashboardPath({ role } as any);
+              nextPath = getDashboardPath({
+                role,
+                id: "",
+                email: "",
+              } as Profile);
             }
 
             setTimeout(() => navigate(nextPath), 700);

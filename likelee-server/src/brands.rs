@@ -326,45 +326,7 @@ pub async fn get_by_user(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     match rows.into_iter().next() {
-        Some(mut profile) => {
-            // Sync email from auth.users to brand profile if they don't match
-            // auth.users is the source of truth since users can't change email in UI
-            if let Some(auth_email) = &user.email {
-                let profile_email = profile.get("email").and_then(|e| e.as_str());
-
-                // If emails don't match, update the brand profile with the auth email
-                if profile_email != Some(auth_email.as_str()) {
-                    tracing::info!(
-                        "Syncing email for brand {}: {} -> {}",
-                        brand_id,
-                        profile_email.unwrap_or("null"),
-                        auth_email
-                    );
-
-                    let update_payload = json!({
-                        "email": auth_email
-                    });
-
-                    let update_resp = state
-                        .pg
-                        .from("brands")
-                        .auth(state.supabase_service_key.clone())
-                        .eq("id", &brand_id)
-                        .update(update_payload.to_string())
-                        .execute()
-                        .await;
-
-                    // Update the profile object to reflect the synced email
-                    if update_resp.is_ok() {
-                        profile["email"] = json!(auth_email);
-                    } else {
-                        tracing::warn!("Failed to sync email for brand {}", brand_id);
-                    }
-                }
-            }
-
-            Ok(Json(profile))
-        }
+        Some(profile) => Ok(Json(profile)),
         None => Err((
             StatusCode::NOT_FOUND,
             json!({
