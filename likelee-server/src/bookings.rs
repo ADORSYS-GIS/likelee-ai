@@ -1,6 +1,14 @@
 use crate::{
     agency_talent_refs::resolve_agency_talent_ref, auth::AuthUser, config::AppState,
     errors::sanitize_db_error, team::resolve_effective_agency_id,
+    agencies::resolve_effective_agency_talent_id,
+    auth::AuthUser,
+    config::AppState,
+    storage::{
+        canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
+        upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    },
+    team::resolve_effective_agency_id,
 };
 use axum::extract::Multipart;
 use axum::{
@@ -12,6 +20,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::warn;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateBookingPayload {
@@ -245,55 +254,22 @@ pub async fn create_with_files(
         .to_string();
 
     // Upload files and insert booking_files rows
-    let http = reqwest::Client::new();
-    let bucket = state.supabase_bucket_private.clone();
     let mut uploaded: Vec<serde_json::Value> = Vec::new();
     for (fname, data) in files.into_iter() {
-        let sanitized = fname
-            .chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                    c
-                } else {
-                    '_'
-                }
-            })
-            .collect::<String>();
-        let path = format!(
-            "agencies/{}/bookings/{}/files/{}_{}",
-            user.id,
-            booking_id,
+        let sanitized = sanitize_file_name(&fname);
+        let path = canonical_object_path(
+            &format!("agencies/{agency_id}/bookings/{booking_id}/files"),
+            &sanitized,
             chrono::Utc::now().timestamp_millis(),
-            sanitized
         );
-        let storage_url = format!(
-            "{}/storage/v1/object/{}/{}",
-            state.supabase_url, bucket, path
-        );
-        let up = http
-            .post(&storage_url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", state.supabase_service_key),
-            )
-            .header("apikey", state.supabase_service_key.clone())
-            .body(data)
-            .send()
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-        if !up.status().is_success() {
-            let msg = up.text().await.unwrap_or_default();
-            return Err((
-                StatusCode::BAD_GATEWAY,
-                format!("storage upload failed: {}", msg),
-            ));
-        }
+        let uploaded_object =
+            upload_object(&state, StorageVisibility::Private, &path, data, None).await?;
 
         let rec_body = json!({
             "booking_id": booking_id,
             "file_name": fname,
-            "storage_bucket": bucket,
-            "storage_path": path,
+            "storage_bucket": uploaded_object.bucket,
+            "storage_path": uploaded_object.path,
             "public_url": null,
         });
         let ins = state
@@ -309,6 +285,35 @@ pub async fn create_with_files(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
         if let Some(v) = arr.first() {
+            if let Some(file_id) = v
+                .get("id")
+                .and_then(|id| id.as_str())
+                .filter(|id| !id.is_empty())
+            {
+                let record = StorageAssetRecord {
+                    owner_type: StorageOwnerType::Agency,
+                    owner_id: agency_id.clone(),
+                    context_type: StorageContextType::BookingFile,
+                    context_id: Some(booking_id.clone()),
+                    visibility: StorageVisibility::Private,
+                    object_path: rec_body
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    original_file_name: Some(fname.clone()),
+                    mime_type: None,
+                    size_bytes: None,
+                    checksum_sha256: None,
+                    source_table: Some("booking_files".to_string()),
+                    source_id: Some(file_id.to_string()),
+                    created_by: Some(user.id.clone()),
+                    counts_toward_quota: true,
+                };
+                if let Err(err) = insert_asset_record(&state, &record).await {
+                    warn!(booking_id = %booking_id, file_id = %file_id, error = %err.1, "failed to mirror booking file into storage_assets");
+                }
+            }
             uploaded.push(v.clone());
         }
     }
@@ -488,6 +493,26 @@ pub async fn upload_booking_file(
     Path(booking_id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<Json<BookingFileUploadResponse>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let booking_resp = state
+        .pg
+        .from("bookings")
+        .select("id")
+        .eq("id", &booking_id)
+        .eq("agency_user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !booking_resp.status().is_success() {
+        return Err((StatusCode::FORBIDDEN, "booking_not_found".into()));
+    }
+    let booking_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&booking_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    if booking_rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "booking_not_found".into()));
+    }
+
     // Expect a single part named "file"
     let mut file_name = None;
     let mut bytes: Vec<u8> = vec![];
@@ -510,62 +535,23 @@ pub async fn upload_booking_file(
     if bytes.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing file".into()));
     }
+    let size_bytes = bytes.len() as i64;
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    // Storage target (private bucket)
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "agencies/{}/bookings/{}/files/{}_{}",
-        user.id,
-        booking_id,
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/bookings/{booking_id}/files"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    // Upload to Supabase Storage using service key
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    // No public URL for private bucket
-    let public_url = None;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let public_url = uploaded.public_url.clone();
 
     // Insert row into booking_files
     let insert = serde_json::json!({
         "booking_id": booking_id,
         "file_name": fname,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
     });
     let resp = state
@@ -590,12 +576,46 @@ pub async fn upload_booking_file(
         .unwrap_or("")
         .to_string();
 
+    if !id.is_empty() {
+        let record = StorageAssetRecord {
+            owner_type: StorageOwnerType::Agency,
+            owner_id: agency_id,
+            context_type: StorageContextType::BookingFile,
+            context_id: Some(booking_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("booking_files".to_string()),
+            source_id: Some(id.clone()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: true,
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            warn!(booking_id = %booking_id, file_id = %id, error = %err.1, "failed to mirror uploaded booking file into storage_assets");
+        }
+    }
+
     Ok(Json(BookingFileUploadResponse {
         id,
         file_name: fname,
         public_url,
-        storage_bucket: bucket,
-        storage_path: path,
+        storage_bucket: insert
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        storage_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
     }))
 }
 
@@ -898,39 +918,15 @@ pub async fn serve_booking_file(
         }
     }
 
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, storage_bucket, storage_path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .get(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let downloaded = download_object(&state, &storage_bucket, &storage_path).await?;
 
-    if !up.status().is_success() {
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            "failed_to_fetch_from_storage".to_string(),
-        ));
-    }
-
-    let content_type = up
-        .headers()
+    let content_type = downloaded
+        .headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("application/octet-stream")
         .to_string();
-    let bytes = up
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bytes = downloaded.bytes;
 
     let mut resp = Response::new(Body::from(bytes));
     resp.headers_mut().insert(

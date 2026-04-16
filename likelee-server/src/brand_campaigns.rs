@@ -5,6 +5,11 @@ use crate::{
     errors::sanitize_db_error,
     pricing_defaults::should_default_visibility_on,
     services::docuseal::{DocuSealClient, Submitter},
+    storage::{
+        canonical_object_path, delete_object, download_object, insert_asset_record,
+        sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
+        StorageContextType, StorageOwnerType, StorageVisibility,
+    },
     team::{self, permissions::Permission},
 };
 use axum::{
@@ -22,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
 use stripe_sdk;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
@@ -6392,11 +6397,20 @@ pub async fn list_offer_deliverables(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
-    // for approval/download. Preview is allowed to support review workflows.
-    if user.role == "brand" && payment_status != "paid" {
-        for row in rows.iter_mut() {
-            if let Some(obj) = row.as_object_mut() {
+    // Normalize asset_url to consistently return the secure file endpoint
+    // for private deliverables instead of the storage path
+    for row in rows.iter_mut() {
+        if let Some(obj) = row.as_object_mut() {
+            if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
+                // Replace asset_url with the secure file endpoint URL
+                let secure_url =
+                    format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
+                obj.insert("asset_url".to_string(), json!(secure_url));
+            }
+
+            // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
+            // for approval/download. Preview is allowed to support review workflows.
+            if user.role == "brand" && payment_status != "paid" {
                 let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
                 meta_obj.insert("payment_required".to_string(), json!(true));
@@ -6505,49 +6519,14 @@ pub async fn upload_offer_deliverable_form(
     }
 
     let fname = file_name.unwrap_or_else(|| "deliverable.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "campaigns/deliverables/{}/{}_{}",
-        offer_id,
+    let size_bytes = bytes.len() as i64;
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("campaign-offers/{offer_id}/deliverables"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let agency_id = if user.role == "agency" {
         let access = team::require_agency_access(&state, &user).await?;
@@ -6730,13 +6709,13 @@ pub async fn upload_offer_deliverable_form(
             .as_deref()
             .map(|v| json!(v))
             .unwrap_or(serde_json::Value::Null),
-        "asset_url": path, // Storing path relative to bucket
+        "asset_url": uploaded.path.clone(), // Storing path relative to bucket
         "asset_type": asset_type,
         "caption": caption.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "status": status_value,
         "meta": json!({
             "original_filename": fname,
-            "bucket": bucket,
+            "bucket": uploaded.bucket,
         }),
     });
 
@@ -6775,6 +6754,47 @@ pub async fn upload_offer_deliverable_form(
 
     let row: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
+    if let Some(deliverable_id) = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
+        let owner_type = if user.role == "agency" {
+            StorageOwnerType::Agency
+        } else {
+            StorageOwnerType::Creator
+        };
+        let owner_id = if user.role == "agency" {
+            agency_id.clone().unwrap_or_default()
+        } else {
+            resolved_creator_id
+                .clone()
+                .unwrap_or_else(|| user.id.clone())
+        };
+        let record = StorageAssetRecord {
+            owner_type,
+            owner_id,
+            context_type: StorageContextType::CampaignOfferDeliverable,
+            context_id: Some(offer_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert_payload
+                .get("asset_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("campaign_offer_deliverables".to_string()),
+            source_id: Some(deliverable_id.to_string()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: user.role == "agency",
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            warn!(offer_id = %offer_id, deliverable_id = %deliverable_id, error = %err.1, "failed to mirror campaign offer deliverable into storage_assets");
+        }
+    }
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -6875,6 +6895,19 @@ pub async fn delete_offer_deliverable(
     let del: serde_json::Value =
         serde_json::from_str(&del_resp.text().await.unwrap_or_default()).unwrap_or_default();
     let status = del.get("status").and_then(|s| s.as_str()).unwrap_or("");
+    let storage_path = del
+        .get("asset_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let storage_bucket = del
+        .get("meta")
+        .and_then(|m| m.get("bucket"))
+        .and_then(|v| v.as_str())
+        .unwrap_or(&state.supabase_bucket_private)
+        .trim()
+        .to_string();
 
     if status != "draft" && status != "rejected" && status != "changes_requested" {
         return Err((
@@ -6898,6 +6931,11 @@ pub async fn delete_offer_deliverable(
         let msg = resp.text().await.unwrap_or_default();
         return Err(sanitize_db_error(status, msg));
     }
+
+    if !storage_path.is_empty() {
+        let _ = delete_object(&state, &storage_bucket, &storage_path).await;
+    }
+    let _ = soft_delete_asset_record(&state, "campaign_offer_deliverables", &deliverable_id).await;
 
     Ok(Json(json!({"status": "ok"})))
 }
@@ -7025,40 +7063,52 @@ pub async fn serve_offer_deliverable(
         )
     };
 
-    let http = reqwest::Client::new();
-    let up = http
-        .get(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let (content_type, bytes) = if is_thumbnail && asset_type == "image" {
+        let http = reqwest::Client::new();
+        let up = http
+            .get(&storage_url)
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
+            .header("apikey", state.supabase_service_key.clone())
+            .send()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
 
-    if !up.status().is_success() {
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            "failed to fetch from storage".to_string(),
-        ));
-    }
+        if !up.status().is_success() {
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                "failed to fetch from storage".to_string(),
+            ));
+        }
 
-    let content_type = up
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or(if asset_type == "video" {
-            "video/mp4"
-        } else {
-            "image/jpeg"
-        })
-        .to_string();
+        let content_type = up
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("image/jpeg")
+            .to_string();
 
-    let bytes = up
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let bytes = up
+            .bytes()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        (content_type, bytes)
+    } else {
+        let downloaded = download_object(&state, &state.supabase_bucket_private, path).await?;
+        let content_type = downloaded
+            .headers
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or(if asset_type == "video" {
+                "video/mp4"
+            } else {
+                "image/jpeg"
+            })
+            .to_string();
+        (content_type, downloaded.bytes)
+    };
 
     let mut resp = Response::new(Body::from(bytes));
     resp.headers_mut().insert(
