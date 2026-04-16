@@ -824,17 +824,21 @@ export function CreatePackageWizard({
                               setCoverUploading(true);
                               try {
                                 const fd = new FormData();
+                                 fd.append("visibility", "public");
                                 fd.append("file", file);
                                 const resp = await base44.post<{
                                   file_url?: string;
+                                  public_url?: string;
                                 }>("/api/agency/storage/files/upload", fd);
-                                const url = resp?.file_url;
+                                const url = resp?.public_url || resp?.file_url;
                                 if (url) {
                                   setFormData((prev) => ({
                                     ...prev,
                                     cover_image_url: url,
                                   }));
                                   toast({ title: "Image uploaded" });
+                                } else {
+                                  throw new Error("Upload returned no URL");
                                 }
                               } catch (err: any) {
                                 toast({

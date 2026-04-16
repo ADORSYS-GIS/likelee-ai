@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-
-import { listBookingNotifications } from "@/api/functions";
+import { listBookingNotifications, getAgencyRoster } from "@/api/functions";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/auth/AuthProvider";
 
 import { format, parseISO } from "date-fns";
 
@@ -57,7 +58,26 @@ export const NotificationsTab = ({
   bookings?: BookingLike[];
   isSportsAgency?: boolean;
 }) => {
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  const { data: rosterRaw, isLoading: isLoadingRoster } = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const roster = useMemo(() => {
+    const d: any = rosterRaw;
+    if (!d) return [];
+    if (Array.isArray(d?.talents)) return d.talents;
+    if (Array.isArray(d)) return d;
+    return [];
+  }, [rosterRaw]);
+
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeSubNav, setActiveSubNav] = useState("logs");
@@ -96,18 +116,10 @@ export const NotificationsTab = ({
     );
   }, [createdChannels]);
 
-  const testTalents = [
-    "Emma",
-    "Sergine",
-    "Milan",
-    "Julia",
-    "Matt",
-    "Carla",
-    "Luisa",
-    "Clemence",
-    "Lina",
-    "Aaron",
-  ];
+  const talentNames = useMemo(() => {
+    if (!roster || !Array.isArray(roster)) return [];
+    return roster.map((t: any) => t.name || t.talent_name || t.stage_name || "Unnamed");
+  }, [roster]);
 
   useEffect(() => {
     if (activeSubNav !== "logs") return;
@@ -816,148 +828,116 @@ export const NotificationsTab = ({
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                name: "Emma",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-              },
-              {
-                name: "Sergine",
-                email: "tyler@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-              },
-              {
-                name: "Milan",
-                email: "milan@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-              },
-              {
-                name: "Julia",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-              },
-              {
-                name: "Matt",
-                email: "tyler@example.com",
-                image: "https://i.pravatar.cc/150?u=Matt",
-              },
-              {
-                name: "Carla",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-              },
-              {
-                name: "Luisa",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/dfe7c47ac_Screenshot2025-10-29at63612PM.png",
-              },
-              {
-                name: "Clemence",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
-              },
-              {
-                name: "Lina",
-                email: "lina@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
-              },
-              {
-                name: "Aaron",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
-              },
-            ]
-              .filter((t) =>
-                t.name.toLowerCase().includes(testTargetTalent.toLowerCase()),
-              )
-              .map((talent, idx) => (
-                <Card
-                  key={idx}
-                  className="p-4 border border-gray-200 bg-white rounded-xl"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
-                      {talent.image ? (
-                        <img
-                          src={talent.image}
-                          alt={talent.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-600 font-bold text-xs">
-                          {talent.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
+            {isLoadingRoster ? (
+              <div className="p-12 text-center text-sm text-gray-500">
+                Loading roster...
+              </div>
+            ) : !roster || roster.length === 0 ? (
+              <div className="p-12 text-center text-sm text-gray-500">
+                No athletes found in roster.
+              </div>
+            ) : (
+              roster
+                .filter((t: any) => {
+                  const name = (t.name || t.talent_name || "").toLowerCase();
+                  return name.includes(testTargetTalent.toLowerCase());
+                })
+                .map((talent: any, idx) => (
+                  <Card
+                    key={idx}
+                    className="p-4 border border-gray-200 bg-white rounded-xl"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                        {talent.image ||
+                        talent.avatar ||
+                        talent.profile_image_url ||
+                        talent.talent_avatar ? (
+                          <img
+                            src={
+                              talent.image ||
+                              talent.avatar ||
+                              talent.profile_image_url ||
+                              talent.talent_avatar
+                            }
+                            alt={talent.name || talent.talent_name || "Talent"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-600 font-bold text-xs">
+                            {(
+                              talent.name ||
+                              talent.talent_name ||
+                              talent.stage_name ||
+                              "??"
+                            )
+                              .substring(0, 2)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900">
+                          {talent.name || talent.talent_name}
+                        </h4>
+                        <p className="text-sm text-gray-500">{talent.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{talent.name}</h4>
-                      <p className="text-sm text-gray-500">{talent.email}</p>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <span className="text-sm font-bold text-gray-900">
-                        Email
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                        <span className="text-sm font-bold text-gray-900">
+                          Email
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            defaultChecked
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                        <span className="text-sm font-bold text-gray-900">
+                          SMS
+                        </span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            disabled
+                            checked={false}
+                            readOnly
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                        <span className="text-sm font-bold text-gray-900">
+                          Push
+                        </span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            disabled
+                            checked={false}
+                            readOnly
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        SMS
-                      </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        Push
-                      </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))
+            )}
           </div>
         </Card>
       )}
@@ -1009,7 +989,7 @@ export const NotificationsTab = ({
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {testTalents.map((name) => (
+                  {talentNames.map((name: string) => (
                     <SelectItem key={name} value={name.toLowerCase()}>
                       {name}
                     </SelectItem>
@@ -1038,8 +1018,8 @@ export const NotificationsTab = ({
                 if (!testNotificationType || !testTargetTalent) return;
 
                 const talentName =
-                  testTalents.find(
-                    (t) => t.toLowerCase() === testTargetTalent,
+                  talentNames.find(
+                    (t: string) => t.toLowerCase() === testTargetTalent,
                   ) || testTargetTalent;
 
                 toast({

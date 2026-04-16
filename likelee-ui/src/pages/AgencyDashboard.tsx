@@ -9981,6 +9981,8 @@ const ScoutingHubView = ({
   setIsProspectModalOpen,
   prospectToEdit,
   setProspectToEdit,
+  isSavingEvent,
+  setIsSavingEvent,
 }: {
   isSportsAgency?: boolean;
   activeTab: string;
@@ -9995,10 +9997,41 @@ const ScoutingHubView = ({
   setIsProspectModalOpen: (open: boolean) => void;
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
+  isSavingEvent: boolean;
+  setIsSavingEvent: (saving: boolean) => void;
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
+  };
+
+  const handleDeleteEvent = async (event: ScoutingEvent) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the event "${event.name}"?`,
+      )
+    )
+      return;
+
+    try {
+      await scoutingService.deleteEvent(event.id);
+      refreshData();
+      toast({
+        title: "Event deleted",
+        description: `"${event.name}" has been successfully removed.`,
+      });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Delete failed",
+        description: "An error occurred while deleting the event.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const [eventForm, setEventForm] = useState<{
     name: string;
@@ -10116,6 +10149,7 @@ const ScoutingHubView = ({
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
+            onDeleteEvent={handleDeleteEvent}
             isVisible={activeTab === "Scouting Map"}
           />
         </div>
@@ -10133,6 +10167,7 @@ const ScoutingHubView = ({
               setEventToEdit(event);
               setIsEventModalOpen(true);
             }}
+            onDeleteEvent={handleDeleteEvent}
           />
         )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
@@ -10263,7 +10298,9 @@ const ScoutingHubView = ({
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              disabled={isSavingEvent}
               onClick={async () => {
+                setIsSavingEvent(true);
                 try {
                   const agencyId = await scoutingService.getUserAgencyId();
                   if (!agencyId) {
@@ -10272,6 +10309,7 @@ const ScoutingHubView = ({
                       description: "Could not determine agency.",
                       variant: "destructive",
                     });
+                    setIsSavingEvent(false);
                     return;
                   }
                   if (
@@ -10284,6 +10322,7 @@ const ScoutingHubView = ({
                       description: "Name, date, and location are required.",
                       variant: "destructive",
                     });
+                    setIsSavingEvent(false);
                     return;
                   }
 
@@ -10316,10 +10355,19 @@ const ScoutingHubView = ({
                     description: e?.message || "Failed to save event.",
                     variant: "destructive",
                   });
+                } finally {
+                  setIsSavingEvent(false);
                 }
               }}
             >
-              Save
+              {isSavingEvent ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -11178,27 +11226,37 @@ const MarketplaceTab = ({
   connectLocked?: boolean;
   onConnectLocked?: () => void;
 }) => (
-  <MarketplaceSection
-    title="Likelee Marketplace"
-    subtitle="Verified creators only"
-    verifiedBadgeLabel="Verified Profiles"
-    queryScope="scouting-marketplace"
-    enableAgencyContractConnect
-    connectLocked={connectLocked}
-    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
-    onConnectLocked={onConnectLocked}
-  />
+  <Suspense
+    fallback={
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl h-[600px] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </Card>
+    }
+  >
+    <MarketplaceSection
+      title="Likelee Marketplace"
+      subtitle="Verified creators only"
+      verifiedBadgeLabel="Verified Profiles"
+      queryScope="scouting-marketplace"
+      enableAgencyContractConnect
+      connectLocked={connectLocked}
+      connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
+      onConnectLocked={onConnectLocked}
+    />
+  </Suspense>
 );
 
 const ScoutingMapTab = ({
   onEditEvent,
   onViewProspect,
   onAddEvent,
+  onDeleteEvent,
   isVisible = true,
 }: {
   onEditEvent: (event: ScoutingEvent) => void;
   onViewProspect: (prospect: ScoutingProspect) => void;
   onAddEvent: () => void;
+  onDeleteEvent: (event: ScoutingEvent) => void;
   isVisible?: boolean;
 }) => (
   <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
@@ -11206,6 +11264,7 @@ const ScoutingMapTab = ({
       onEditEvent={onEditEvent}
       onViewProspect={onViewProspect}
       onAddEvent={onAddEvent}
+      onDeleteEvent={onDeleteEvent}
       isVisible={isVisible}
     />
   </Card>
@@ -11253,9 +11312,11 @@ const SubmissionsTab = () => (
 const OpenCallsTab = ({
   onCreateEvent,
   onEditEvent,
+  onDeleteEvent,
 }: {
   onCreateEvent: () => void;
   onEditEvent: (event: ScoutingEvent) => void;
+  onDeleteEvent: (event: ScoutingEvent) => void;
 }) => {
   const { user } = useAuth();
   const { data: events, isLoading } = useQuery({
@@ -11355,13 +11416,27 @@ const OpenCallsTab = ({
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
                   {(event as any).event_type || "EVENT"}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
-                >
-                  Edit Details
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-red-500 font-bold hover:bg-red-50 hover:text-red-600 transition-all text-[11px] px-3 rounded-md border border-transparent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteEvent(event);
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Delete
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
+                  >
+                    Edit Details
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -18212,6 +18287,7 @@ export default function AgencyDashboard() {
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<any>(null);
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
@@ -18814,6 +18890,14 @@ export default function AgencyDashboard() {
 
   const setActiveScoutingTab = (tab: string) => {
     setActiveScoutingTabState(tab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("scoutingTab", tab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   // Helper for API URLs
@@ -20599,6 +20683,8 @@ export default function AgencyDashboard() {
                 setIsProspectModalOpen={setIsProspectModalOpen}
                 prospectToEdit={prospectToEdit}
                 setProspectToEdit={setProspectToEdit}
+                isSavingEvent={isSavingEvent}
+                setIsSavingEvent={setIsSavingEvent}
               />
             )}
             {activeTab === "talent-packages" && (
