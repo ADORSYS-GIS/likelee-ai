@@ -59,7 +59,10 @@ export default function CreatorSubscribe() {
   // Start a free trial by going through Stripe Checkout (collects card upfront, defers charge 30 days)
   const onStartTrial = async (plan: "basic" | "pro") => {
     if (!authenticated) {
-      navigate("/Register", { replace: true, state: { from: window.location } });
+      navigate("/Register", {
+        replace: true,
+        state: { from: window.location },
+      });
       return;
     }
     try {
@@ -88,7 +91,10 @@ export default function CreatorSubscribe() {
 
   const onManageSubscription = async () => {
     if (!authenticated) {
-      navigate("/Register", { replace: true, state: { from: window.location } });
+      navigate("/Register", {
+        replace: true,
+        state: { from: window.location },
+      });
       return;
     }
     setCheckingOut(true);
@@ -312,13 +318,20 @@ export default function CreatorSubscribe() {
       if (sessionId) {
         setCheckingOut(true);
         try {
-          const syncResp = await syncCreatorCheckoutSession({ session_id: sessionId });
+          const syncResp = await syncCreatorCheckoutSession({
+            session_id: sessionId,
+          });
           try {
-            const entitlement = String((syncResp as any)?.entitlement_tier || "")
+            const entitlement = String(
+              (syncResp as any)?.entitlement_tier || "",
+            )
               .trim()
               .toLowerCase();
             if (entitlement) {
-              window.localStorage.setItem("creator_entitlement_tier", entitlement);
+              window.localStorage.setItem(
+                "creator_entitlement_tier",
+                entitlement,
+              );
             }
           } catch {
             // ignore
@@ -348,7 +361,9 @@ export default function CreatorSubscribe() {
       try {
         const resp = await getCreatorBillingStatus();
         const tier = String((resp as any)?.plan_tier || "free");
-        const entitlementTier = String((resp as any)?.entitlement_tier || tier || "free");
+        const entitlementTier = String(
+          (resp as any)?.entitlement_tier || tier || "free",
+        );
         const trialActive = !!(resp as any)?.trial_active;
         const trialEndsAt = (resp as any)?.trial_ends_at
           ? String((resp as any)?.trial_ends_at)
@@ -402,7 +417,10 @@ export default function CreatorSubscribe() {
 
   const onCheckout = async (plan: "basic" | "pro", forceCheckout = false) => {
     if (!authenticated) {
-      navigate("/Register", { replace: true, state: { from: window.location } });
+      navigate("/Register", {
+        replace: true,
+        state: { from: window.location },
+      });
       return;
     }
     if (

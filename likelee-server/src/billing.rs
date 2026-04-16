@@ -2389,7 +2389,8 @@ async fn fetch_creator_checkout_sync_state(
         _ => crate::entitlements::PlanTier::Free,
     };
 
-    let entitlement_tier = crate::entitlements::get_creator_entitlement_tier(state, creator_id, billed_tier).await?;
+    let entitlement_tier =
+        crate::entitlements::get_creator_entitlement_tier(state, creator_id, billed_tier).await?;
 
     let fn_parse_dt = |s: &str| {
         chrono::DateTime::parse_from_rfc3339(s)
@@ -2398,16 +2399,27 @@ async fn fetch_creator_checkout_sync_state(
             .or_else(|| {
                 chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
                     .ok()
-                    .map(|ndt| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(ndt, chrono::Utc))
+                    .map(|ndt| {
+                        chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(ndt, chrono::Utc)
+                    })
             })
     };
 
-    let t1 = row.get("trial_started_at").and_then(|v| v.as_str()).and_then(fn_parse_dt);
-    let t2 = row.get("trial_basic_started_at").and_then(|v| v.as_str()).and_then(fn_parse_dt);
-    let t3 = row.get("trial_pro_started_at").and_then(|v| v.as_str()).and_then(fn_parse_dt);
+    let t1 = row
+        .get("trial_started_at")
+        .and_then(|v| v.as_str())
+        .and_then(fn_parse_dt);
+    let t2 = row
+        .get("trial_basic_started_at")
+        .and_then(|v| v.as_str())
+        .and_then(fn_parse_dt);
+    let t3 = row
+        .get("trial_pro_started_at")
+        .and_then(|v| v.as_str())
+        .and_then(fn_parse_dt);
 
     let latest_trial = [t1, t2, t3].into_iter().flatten().max();
-    
+
     let trial_active = latest_trial.is_some_and(|start_dt| {
         chrono::Utc::now()
             .signed_duration_since(start_dt)

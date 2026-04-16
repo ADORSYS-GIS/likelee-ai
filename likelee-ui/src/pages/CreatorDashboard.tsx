@@ -441,7 +441,8 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
   const { t, i18n } = useTranslation();
-  const { initialized, authenticated, user, profile, refreshProfile, logout } = useAuth();
+  const { initialized, authenticated, user, profile, refreshProfile, logout } =
+    useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSection = (() => {
     const requested = String(searchParams.get("section") || "").trim();
@@ -494,7 +495,8 @@ export default function CreatorDashboard() {
   const [creatorBilling, setCreatorBilling] = useState<any>(null);
   const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
   const [trialCountdown, setTrialCountdown] = useState("");
-  const [cachedEntitlementTier, setCachedEntitlementTier] = useState<string>("unknown");
+  const [cachedEntitlementTier, setCachedEntitlementTier] =
+    useState<string>("unknown");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -3329,7 +3331,10 @@ export default function CreatorDashboard() {
             .trim()
             .toLowerCase();
           if (entitlement) {
-            window.localStorage.setItem("creator_entitlement_tier", entitlement);
+            window.localStorage.setItem(
+              "creator_entitlement_tier",
+              entitlement,
+            );
             setCachedEntitlementTier(entitlement);
           }
         } catch {
@@ -3344,7 +3349,14 @@ export default function CreatorDashboard() {
         setCreatorBillingLoaded(true);
       }
     })();
-  }, [initialized, authenticated, user?.id, routeLocation.pathname, routeLocation.search, navigate]);
+  }, [
+    initialized,
+    authenticated,
+    user?.id,
+    routeLocation.pathname,
+    routeLocation.search,
+    navigate,
+  ]);
 
   useEffect(() => {
     try {
@@ -3368,7 +3380,11 @@ export default function CreatorDashboard() {
     const entitlement = fromApi || cachedEntitlementTier;
 
     if (entitlement === "free") return true;
-    if (entitlement === "basic" || entitlement === "pro" || entitlement === "enterprise") {
+    if (
+      entitlement === "basic" ||
+      entitlement === "pro" ||
+      entitlement === "enterprise"
+    ) {
       return false;
     }
 
@@ -5788,9 +5804,13 @@ export default function CreatorDashboard() {
   const renderPlanStatusBar = () => {
     if (!creatorBillingLoaded) return null;
 
-    const planTier = String((creatorBilling as any)?.plan_tier || "free").toLowerCase();
+    const planTier = String(
+      (creatorBilling as any)?.plan_tier || "free",
+    ).toLowerCase();
     const trialActive = !!creatorBilling?.trial_active;
-    const entitlementTier = String((creatorBilling as any)?.entitlement_tier || "free").toLowerCase();
+    const entitlementTier = String(
+      (creatorBilling as any)?.entitlement_tier || "free",
+    ).toLowerCase();
 
     // Mapping for labels
     const planLabel =
@@ -5826,7 +5846,8 @@ export default function CreatorDashboard() {
               title="Current plan"
             >
               <span className="inline-flex items-center gap-2">
-                {entitlementTier === "pro" || entitlementTier === "enterprise" ? (
+                {entitlementTier === "pro" ||
+                entitlementTier === "enterprise" ? (
                   <Crown className="w-4 h-4 text-white" />
                 ) : entitlementTier === "basic" ? (
                   <Star className="w-4 h-4 text-white" />
@@ -5840,7 +5861,8 @@ export default function CreatorDashboard() {
               </span>
             </div>
 
-            {(planTier === "free" || entitlementTier === "free") && !trialActive ? (
+            {(planTier === "free" || entitlementTier === "free") &&
+            !trialActive ? (
               <Button
                 type="button"
                 className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
@@ -5857,7 +5879,9 @@ export default function CreatorDashboard() {
                 onClick={async () => {
                   try {
                     const resp = await createCreatorBillingPortal();
-                    const url = String((resp as any)?.checkout_url || "").trim();
+                    const url = String(
+                      (resp as any)?.checkout_url || "",
+                    ).trim();
                     if (!url) {
                       throw new Error("missing_billing_portal_url");
                     }
@@ -11502,10 +11526,10 @@ export default function CreatorDashboard() {
                         const nextSp = new URLSearchParams();
                         nextSp.set("next", next);
                         navigate(`/CreatorSubscribe?${nextSp.toString()}`);
-                        
+
                         toast({
                           title: "Upgrade Required",
-                          description: `The ${item.label} feature is available on the ${item.requiredPlan === 'pro' ? 'Pro' : 'Basic'} plan.`,
+                          description: `The ${item.label} feature is available on the ${item.requiredPlan === "pro" ? "Pro" : "Basic"} plan.`,
                         });
                       }
                       return;
@@ -11533,15 +11557,13 @@ export default function CreatorDashboard() {
                       </span>
                       {item.requiredPlan && item.id !== "dashboard" && (
                         <span className="shrink-0">
-                          {item.requiredPlan === "pro" ? (
-                            !isProEntitlement && (
-                              <Crown className="w-4 h-4 text-amber-400" />
-                            )
-                          ) : (
-                            isFreeEntitlement && (
-                              <Star className="w-4 h-4 text-sky-400" />
-                            )
-                          )}
+                          {item.requiredPlan === "pro"
+                            ? !isProEntitlement && (
+                                <Crown className="w-4 h-4 text-amber-400" />
+                              )
+                            : isFreeEntitlement && (
+                                <Star className="w-4 h-4 text-sky-400" />
+                              )}
                         </span>
                       )}
                       {item.badge !== undefined && item.badge > 0 && (
