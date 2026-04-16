@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import { DobInput } from "@/components/ui/DobInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,8 +15,6 @@ import {
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
 import {
-  getKycStatus,
-  getCreatorBillingStatus,
   listTalentAgencyInvites,
   listTalentAssetRequests,
   listTalentBookings,
@@ -101,7 +98,6 @@ import {
   Building2,
   Target,
   PlayCircle,
-  CheckSquare,
   XCircle,
   Send,
   Mail,
@@ -128,7 +124,6 @@ import {
   BadgeCheck,
   Sparkles,
   ChevronDown,
-  Crown,
 } from "lucide-react";
 import {
   LineChart,
@@ -319,91 +314,6 @@ const getImageSections = (t: any) => [
 // Example campaigns for blank users (shown when no real campaigns exist)
 // Example campaigns moved inside CreatorDashboard component to support translations
 
-// Example content items for blank users
-const exampleContentItems = [
-  {
-    id: "content-nike",
-    brand: "Nike Sportswear",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    titleKey: "instagramReel",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
-    platform: "Instagram",
-    views: "125,000",
-    engagement: "4.2%",
-    published_at: "2026-03-20",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-glossier",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    titleKey: "webBanner",
-    thumbnail_url:
-      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
-    platform: "Website",
-    views: "89,000",
-    engagement: "2.8%",
-    published_at: "2026-03-18",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-tesla",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    titleKey: "tvCommercial",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
-    platform: "YouTube",
-    views: "450,000",
-    engagement: "5.1%",
-    published_at: "2026-02-15",
-    is_live: true,
-    url: "#",
-  },
-];
-
-const exampleDetections = [
-  {
-    id: "det-1",
-    account: "@crypto_gains_2026",
-    platform: "TikTok",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-    status: "needs_review",
-    match_confidence: 94,
-    detected_at: "2026-03-24",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
-  },
-  {
-    id: "det-2",
-    account: "@beauty_deals_shop",
-    platform: "Instagram",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
-    status: "takedown_requested",
-    match_confidence: 87,
-    detected_at: "2026-03-22",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
-  },
-  {
-    id: "det-3",
-    account: "Quick Weight Loss Co.",
-    platform: "Facebook",
-    thumbnail_url:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
-    status: "resolved",
-    match_confidence: 91,
-    detected_at: "2026-03-19",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
-  },
-];
-
 // Example public profile data
 const exampleProfilePreviewData = {
   first_name: "[Insert user first name]",
@@ -525,7 +435,33 @@ function parseErrorMessage(err: any, t: any): string {
 export default function CreatorDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSection = (() => {
+    const requested = String(searchParams.get("section") || "").trim();
+    const validSections = new Set([
+      "dashboard",
+      "public-profile",
+      "content",
+      "likeness",
+      "voice",
+      "campaigns",
+      "jobs",
+      "approvals",
+      "archive",
+      "earnings",
+      "settings",
+      "agency-connection",
+      "brand-connection",
+      "talent-portal",
+    ]);
+    return validSections.has(requested) ? requested : "dashboard";
+  })();
+  const initialSettingsTab =
+    searchParams.get("settingsTab") === "rules" ? "rules" : "profile";
+  const initialContentTab =
+    searchParams.get("contentTab") === "brand_content"
+      ? "brand_content"
+      : "brand_content";
 
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
     useAuth();
@@ -549,8 +485,8 @@ export default function CreatorDashboard() {
     }
     return new URL(normalizedPath, normalizedBase).toString();
   };
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
+  const [activeSection, setActiveSection] = useState(initialSection);
+  const [settingsTab, setSettingsTab] = useState(initialSettingsTab); // 'profile' or 'rules'
   const [creatorBilling, setCreatorBilling] = useState<any>(null);
   const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -606,31 +542,6 @@ export default function CreatorDashboard() {
   const [creatorSignUrl, setCreatorSignUrl] = useState("");
   const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-
-  const handleManageSubscription = async () => {
-    try {
-      setPortalLoading(true);
-      const { createCreatorBillingPortal } = await import("@/api/functions");
-      const res = await createCreatorBillingPortal();
-      // base44Client returns the payload directly
-      const url =
-        (res as any)?.checkout_url || (res as any)?.data?.checkout_url;
-      if (url) {
-        window.location.href = url;
-      } else {
-        throw new Error("No portal URL returned");
-      }
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: e.message || "Failed to open billing portal",
-      });
-    } finally {
-      setPortalLoading(false);
-    }
-  };
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
   const [loadingJobInvites, setLoadingJobInvites] = useState(false);
   const [jobInvites, setJobInvites] = useState<any[]>([]);
@@ -747,12 +658,6 @@ export default function CreatorDashboard() {
     () => brandConnectionRequests.filter((i) => i.status === "pending"),
     [brandConnectionRequests],
   );
-  const pendingCount = pending.length;
-  const creatorPlanTierForLoad = String(creatorBilling?.plan_tier || "free");
-  const creatorCanUseKycForLoad =
-    typeof creatorBilling?.can_use_kyc === "boolean"
-      ? creatorBilling.can_use_kyc
-      : creatorPlanTierForLoad !== "free";
   const directOfferIds = new Set(
     directBrandOffers.map((offer: any) => String(offer?.id || "")),
   );
@@ -2253,12 +2158,6 @@ export default function CreatorDashboard() {
     }
   };
 
-  const isTalentProfileMissingError = (error: unknown) => {
-    const message =
-      error instanceof Error ? error.message : String(error || "");
-    return message.toLowerCase().includes("talent profile not found");
-  };
-
   const loadBookings = async () => {
     try {
       const resp = await listTalentBookings();
@@ -2272,20 +2171,10 @@ export default function CreatorDashboard() {
           campaignMap.set(campaignId, { id: campaignId, name: campaignName });
         }
       });
-      return {
-        bookings: items,
-        campaigns: Array.from(campaignMap.values()),
-        hasTalentProfile: true,
-      };
+      return { bookings: items, campaigns: Array.from(campaignMap.values()) };
     } catch (e) {
-      if (!isTalentProfileMissingError(e)) {
-        console.error("Failed to load bookings", e);
-      }
-      return {
-        bookings: [],
-        campaigns: [],
-        hasTalentProfile: !isTalentProfileMissingError(e),
-      };
+      console.error("Failed to load bookings", e);
+      return { bookings: [], campaigns: [] };
     }
   };
 
@@ -2381,13 +2270,12 @@ export default function CreatorDashboard() {
   };
 
   useEffect(() => {
-    if (!initialized || !authenticated || !creatorBillingLoaded) return;
+    if (!initialized || !authenticated) return;
     let active = true;
     (async () => {
       try {
         setIsLoadingCampaigns(true);
         setAgencyConnectionLoading(true);
-        const canLoadTalentCommerceData = creatorPlanTierForLoad !== "free";
         const [
           { connections, invites },
           { requests, connections: brandConnected },
@@ -2395,37 +2283,18 @@ export default function CreatorDashboard() {
           jobInvitesRes,
           assetRequestsResp,
           bookingsData,
+          licensesResp,
+          licensingRequestsResp,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
           loadJobInvites().catch(() => []),
           loadAssetRequests().catch(() => []),
-          canLoadTalentCommerceData
-            ? loadBookings().catch(() => ({
-                bookings: [],
-                campaigns: [],
-                hasTalentProfile: false,
-              }))
-            : Promise.resolve({
-                bookings: [],
-                campaigns: [],
-                hasTalentProfile: false,
-              }),
+          loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
+          listTalentLicenses().catch(() => []),
+          listTalentLicensingRequests().catch(() => []),
         ]);
-        const [licensesResp, licensingRequestsResp] =
-          bookingsData.hasTalentProfile
-            ? await Promise.all([
-                listTalentLicenses().catch((e) => {
-                  if (!isTalentProfileMissingError(e)) throw e;
-                  return [];
-                }),
-                listTalentLicensingRequests().catch((e) => {
-                  if (!isTalentProfileMissingError(e)) throw e;
-                  return [];
-                }),
-              ])
-            : [[], []];
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -2513,12 +2382,7 @@ export default function CreatorDashboard() {
     return () => {
       active = false;
     };
-  }, [
-    initialized,
-    authenticated,
-    creatorPlanTierForLoad,
-    creatorBillingLoaded,
-  ]);
+  }, [initialized, authenticated]);
   useEffect(() => {
     if (assetRequestsInitialized) return;
     if (assetRequests.length === 0) return;
@@ -2811,9 +2675,14 @@ export default function CreatorDashboard() {
           profile.kyc_rejection_reason ?? prev.kyc_rejection_reason ?? null,
         location: [profile.city, profile.state].filter(Boolean).join(", "),
         bio: profile.bio ?? prev.bio,
+        instagram_handle: profile.platform_handle
+          ? `@${profile.platform_handle}`
+          : prev.instagram_handle,
         birthday: profile.birthdate ?? prev.birthday,
         gender: profile.gender ?? prev.gender,
-        ethnicity: profile.ethnicity ?? prev.ethnicity,
+        ethnicity: Array.isArray(profile.ethnicity)
+          ? profile.ethnicity.join(", ")
+          : (profile.ethnicity ?? prev.ethnicity),
         creator_type: profile.creator_type ?? prev.creator_type,
         race: profile.race ?? prev.race,
         hair_color: profile.hair_color ?? prev.hair_color,
@@ -2824,7 +2693,14 @@ export default function CreatorDashboard() {
             : prev.height_cm,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+        content_types: profile.content_types ?? prev.content_types,
+        industries: profile.industries ?? prev.industries,
         vibes: profile.vibes ?? prev.vibes,
+        accept_negotiations:
+          profile.accept_negotiations ?? prev.accept_negotiations,
+        content_restrictions:
+          profile.content_restrictions ?? prev.content_restrictions,
+        brand_exclusivity: profile.brand_exclusivity ?? prev.brand_exclusivity,
         is_public_brands: isPublicBrands,
       }));
     }
@@ -3053,12 +2929,12 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     if (!showKycModal) return;
-    if (!authenticated || !user?.id || !creatorCanUseKycForLoad) return;
+    if (!authenticated || !user?.id) return;
 
     let active = true;
     const interval = window.setInterval(async () => {
       try {
-        const rows: any = await getKycStatus();
+        const rows: any = await base44.get("/kyc/status");
         const row = Array.isArray(rows) && rows.length ? rows[0] : null;
         const status = row?.kyc_status;
         if (!active || !status) return;
@@ -3103,13 +2979,7 @@ export default function CreatorDashboard() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [
-    authenticated,
-    creatorCanUseKycForLoad,
-    creatorUserId,
-    showKycModal,
-    user?.id,
-  ]);
+  }, [authenticated, creatorUserId, showKycModal, user?.id]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [editingRules, setEditingRules] = useState(false);
@@ -3496,7 +3366,9 @@ export default function CreatorDashboard() {
             : prev.instagram_handle,
           birthday: profile.birthdate ?? prev.birthday,
           gender: profile.gender ?? prev.gender,
-          ethnicity: profile.ethnicity ?? prev.ethnicity,
+          ethnicity: Array.isArray(profile.ethnicity)
+            ? profile.ethnicity.join(", ")
+            : (profile.ethnicity ?? prev.ethnicity),
           creator_type: profile.creator_type ?? prev.creator_type,
           race: profile.race ?? prev.race,
           hair_color: profile.hair_color ?? prev.hair_color,
@@ -3585,10 +3457,6 @@ export default function CreatorDashboard() {
 
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
-    if (!creatorCanUseKyc) {
-      navigate("/CreatorSubscribe");
-      return;
-    }
     if (!authenticated || !user?.id) {
       toast({
         variant: "destructive",
@@ -3653,10 +3521,10 @@ export default function CreatorDashboard() {
   }: {
     manageLoading?: boolean;
   } = {}) => {
-    if (!authenticated || !user?.id || !creatorCanUseKycForLoad) return;
+    if (!authenticated || !user?.id) return;
     try {
       if (manageLoading) setKycStatusRefreshing(true);
-      const rows = await getKycStatus();
+      const rows = await base44.get("/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         const normalizedStatus = String(row.kyc_status || "")
@@ -3736,198 +3604,6 @@ export default function CreatorDashboard() {
     }
   }, [activeSection, brandConnectionRequests, directBrandOffers]);
 
-  // Initialize active section from query string if provided
-  useEffect(() => {
-    const s = searchParams.get("section");
-    if (!s) return;
-    const validIds = navigationItems.map((n) => n.id);
-    if (validIds.includes(s)) {
-      setActiveSection(s);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const nextSettings = searchParams.get("settings");
-    if (!nextSettings) return;
-    if (
-      nextSettings === "profile" ||
-      nextSettings === "rules" ||
-      nextSettings === "billing"
-    ) {
-      setSettingsTab(nextSettings);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadBilling() {
-      try {
-        const resp = await getCreatorBillingStatus();
-        if (!cancelled) {
-          setCreatorBilling(resp);
-        }
-      } catch (error) {
-        console.error("Failed to load creator billing status", error);
-      } finally {
-        if (!cancelled) {
-          setCreatorBillingLoaded(true);
-        }
-      }
-    }
-    void loadBilling();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
-  const trialActive = !!creatorBilling?.trial_active;
-  const effectivePlanTier = String(
-    (creatorBilling as any)?.entitlement_tier || creatorPlanTier,
-  );
-  const hasUsedProTrial =
-    !!creatorBilling?.trial_pro_start_at ||
-    (!!creatorBilling?.trial_start_at && creatorPlanTier === "pro");
-
-  const [trialCountdown, setTrialCountdown] = useState<string>("");
-  const [daysLeft, setDaysLeft] = useState<number | null>(null);
-  const trialStartAt = creatorBilling?.trial_start_at;
-  const trialEndsAt = creatorBilling?.trial_ends_at
-    ? String(creatorBilling.trial_ends_at)
-    : "";
-
-  useEffect(() => {
-    if (!trialActive || !trialEndsAt) {
-      setTrialCountdown("");
-      setDaysLeft(null);
-      return;
-    }
-
-    const compute = () => {
-      const end = new Date(trialEndsAt).getTime();
-      const now = Date.now();
-      const ms = Math.max(0, end - now);
-
-      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
-      setDaysLeft(days);
-      if (ms <= 0) {
-        setTrialCountdown("Trial ended");
-        return;
-      }
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
-    };
-
-    compute();
-    const id = window.setInterval(compute, 60 * 1000);
-    return () => window.clearInterval(id);
-  }, [creatorPlanTier, trialActive, trialEndsAt]);
-
-  const creatorCategoryLimit =
-    typeof creatorBilling?.category_limit === "number"
-      ? creatorBilling.category_limit
-      : 15;
-  const creatorVoiceLimit =
-    typeof creatorBilling?.voice_tone_limit === "number"
-      ? creatorBilling.voice_tone_limit
-      : 0;
-  const creatorCanUseKyc =
-    typeof creatorBilling?.can_use_kyc === "boolean"
-      ? creatorBilling.can_use_kyc
-      : creatorPlanTier !== "free";
-  const creatorCanUseLikeness =
-    typeof creatorBilling?.can_use_likeness === "boolean"
-      ? creatorBilling.can_use_likeness
-      : creatorPlanTier !== "free";
-  const creatorCanUseAgencyConnection =
-    typeof creatorBilling?.can_use_agency_connection === "boolean"
-      ? creatorBilling.can_use_agency_connection
-      : creatorPlanTier !== "free";
-  const creatorCanUseBrandConnection =
-    typeof creatorBilling?.can_use_brand_connection === "boolean"
-      ? creatorBilling.can_use_brand_connection
-      : creatorPlanTier !== "free";
-  const creatorCanUsePayouts =
-    typeof creatorBilling?.can_use_payouts === "boolean"
-      ? creatorBilling.can_use_payouts
-      : creatorPlanTier !== "free";
-  const creatorCanUseVoice = !!creatorBilling?.can_use_voice_profiles;
-  const creatorCanUseMonitoring =
-    !!creatorBilling?.can_use_unauthorized_monitoring;
-  const creatorCanUseAdvancedAnalytics =
-    !!creatorBilling?.can_use_advanced_analytics;
-  const creatorCanUseJobs =
-    typeof creatorBilling?.can_use_jobs === "boolean"
-      ? creatorBilling.can_use_jobs
-      : creatorPlanTier === "pro";
-  const creatorCanUseRules =
-    typeof creatorBilling?.can_use_rules === "boolean"
-      ? creatorBilling.can_use_rules
-      : creatorPlanTier === "pro";
-  const creatorCanUseTalentPortal =
-    typeof creatorBilling?.can_use_talent_portal === "boolean"
-      ? creatorBilling.can_use_talent_portal
-      : creatorPlanTier === "pro";
-  const creatorCanUseCampaignArchive =
-    typeof creatorBilling?.can_use_campaign_archive === "boolean"
-      ? creatorBilling.can_use_campaign_archive
-      : creatorPlanTier === "pro";
-  const creatorCanUseActiveCampaigns =
-    typeof creatorBilling?.can_use_active_campaigns === "boolean"
-      ? creatorBilling.can_use_active_campaigns
-      : creatorPlanTier === "pro";
-  const creatorPlanLabel =
-    effectivePlanTier === "pro"
-      ? trialActive
-        ? "Pro Trial"
-        : "Pro Plan"
-      : effectivePlanTier === "basic"
-        ? trialActive
-          ? "Basic Trial"
-          : "Basic Plan"
-        : "Free Plan";
-  const creatorPlanBadgeClass =
-    effectivePlanTier === "pro"
-      ? "bg-gradient-to-br from-[#2B59FF] to-[#3B2BFF] text-white border-0 shadow-[0_2px_10px_rgba(43,89,255,0.3)]"
-      : effectivePlanTier === "basic"
-        ? "bg-gradient-to-br from-[#0D9488] to-[#14B8A6] text-white border-0 shadow-[0_2px_10px_rgba(13,148,136,0.3)]"
-        : "bg-gradient-to-br from-[#64748B] to-[#94A3B8] text-white border-0 shadow-sm";
-
-  useEffect(() => {
-    const lockedFallback = creatorPlanTier === "free" ? "content" : "dashboard";
-    const inaccessible =
-      (activeSection === "likeness" && !creatorCanUseLikeness) ||
-      (activeSection === "voice" && !creatorCanUseVoice) ||
-      (activeSection === "campaigns" && !creatorCanUseActiveCampaigns) ||
-      (activeSection === "archive" && !creatorCanUseCampaignArchive) ||
-      (activeSection === "earnings" && !creatorCanUsePayouts) ||
-      (activeSection === "agency-connection" &&
-        !creatorCanUseAgencyConnection) ||
-      (activeSection === "brand-connection" && !creatorCanUseBrandConnection) ||
-      (activeSection === "talent-portal" &&
-        (!creatorCanUseTalentPortal || !talentPortalEnabled));
-    if (inaccessible) {
-      setActiveSection(lockedFallback);
-    }
-  }, [
-    activeSection,
-    creatorCanUseActiveCampaigns,
-    creatorCanUseAgencyConnection,
-    creatorCanUseBrandConnection,
-    creatorCanUseCampaignArchive,
-    creatorCanUseLikeness,
-    creatorCanUsePayouts,
-    creatorCanUseTalentPortal,
-    creatorCanUseVoice,
-    creatorPlanTier,
-    talentPortalEnabled,
-  ]);
-
-  useEffect(() => {
-    if (settingsTab === "rules" && !creatorCanUseRules) {
-      setSettingsTab("billing");
-    }
-  }, [creatorCanUseRules, settingsTab]);
-
   const navigationItems: Array<{
     id: string;
     label: string;
@@ -3935,9 +3611,6 @@ export default function CreatorDashboard() {
     badge?: number;
     urgent?: boolean;
     disabled?: boolean;
-    locked?: boolean;
-    requiredPlan?: "basic" | "pro";
-    premiumFeature?: string;
     onClick?: () => void;
   }> = [
     {
@@ -3954,89 +3627,35 @@ export default function CreatorDashboard() {
       id: "likeness",
       label: t("creatorDashboard.nav.likeness"),
       icon: ImageIcon,
-      locked: !creatorCanUseLikeness,
-      requiredPlan: "basic",
-      premiumFeature: "My Likeness",
     },
-    {
-      id: "voice",
-      label: t("creatorDashboard.nav.voice"),
-      icon: Mic,
-      locked: !creatorCanUseVoice,
-      requiredPlan: "pro",
-      premiumFeature: "ElevenLabs voice profiles",
-    },
+    { id: "voice", label: t("creatorDashboard.nav.voice"), icon: Mic },
     {
       id: "campaigns",
       label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
-      locked: !creatorCanUseActiveCampaigns,
-      requiredPlan: "pro",
-      premiumFeature: "Active Campaigns",
-      badge: activeCampaigns.length,
     },
     {
       id: "jobs",
       label: "Jobs",
       icon: Briefcase,
-      locked: !creatorCanUseJobs,
-      requiredPlan: "pro",
-      premiumFeature: "Jobs",
-      onClick: () => {
-        navigate(createPageUrl("Jobs"));
-      },
-    },
-    {
-      id: "approvals",
-      label: t("creatorDashboard.nav.approvals"),
-      icon: CheckSquare,
-      locked: !creatorCanUseBrandConnection,
-      requiredPlan: "basic",
-      premiumFeature: "Brand workflow approvals",
-      badge: pendingCount,
-      urgent: pendingCount > 0,
     },
     {
       id: "archive",
       label: t("creatorDashboard.nav.archive"),
       icon: Archive,
-      locked: !creatorCanUseCampaignArchive,
-      requiredPlan: "pro",
-      premiumFeature: "Campaign Archives",
       badge: undefined,
-    },
-    {
-      id: "contracts",
-      label: t("creatorDashboard.nav.contracts"),
-      icon: FileText,
-      locked: !creatorCanUseBrandConnection,
-      requiredPlan: "basic",
-      premiumFeature: "Licenses & Contracts",
-      badge:
-        contracts.filter((c) => c.status === "expiring_soon").length > 0
-          ? contracts.filter((c) => c.status === "expiring_soon").length
-          : undefined,
     },
     {
       id: "earnings",
       label: t("creatorDashboard.nav.payouts"),
       icon: WalletIcon,
-      locked: !creatorCanUsePayouts,
-      requiredPlan: "basic",
-      premiumFeature: "Payouts",
     },
     {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
-      locked: !creatorCanUseTalentPortal,
-      requiredPlan: "pro",
-      disabled: creatorCanUseTalentPortal && !talentPortalEnabled,
+      disabled: !talentPortalEnabled,
       onClick: () => {
-        if (!creatorCanUseTalentPortal) {
-          navigate("/CreatorSubscribe");
-          return;
-        }
         if (!talentPortalEnabled) {
           toast({
             title: "Talent Portal",
@@ -4051,9 +3670,6 @@ export default function CreatorDashboard() {
       id: "agency-connection",
       label: "Agency Connection",
       icon: LinkIcon,
-      locked: !creatorCanUseAgencyConnection,
-      requiredPlan: "basic",
-      premiumFeature: "Agency Connection",
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
@@ -4063,9 +3679,6 @@ export default function CreatorDashboard() {
       id: "brand-connection",
       label: "Brand Connection",
       icon: LinkIcon,
-      locked: !creatorCanUseBrandConnection,
-      requiredPlan: "basic",
-      premiumFeature: "Brand Connection",
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
@@ -4076,8 +3689,64 @@ export default function CreatorDashboard() {
     },
   ];
 
-  const [contentTab, setContentTab] = useState("brand_content");
+  // Initialize active section from query string if provided
+  useEffect(() => {
+    const s = searchParams.get("section");
+    if (!s) return;
+    const validIds = navigationItems.map((n) => n.id);
+    if (validIds.includes(s)) {
+      setActiveSection(s);
+    }
+  }, [searchParams]);
+
+  const [contentTab, setContentTab] = useState(initialContentTab);
   const creatorJobsBackTo = `${createPageUrl("CreatorDashboard")}?section=jobs`;
+
+  useEffect(() => {
+    const nextSettingsTab = searchParams.get("settingsTab");
+    if (
+      nextSettingsTab &&
+      (nextSettingsTab === "profile" || nextSettingsTab === "rules")
+    ) {
+      setSettingsTab(nextSettingsTab);
+    }
+
+    const nextContentTab = searchParams.get("contentTab");
+    if (nextContentTab === "brand_content") {
+      setContentTab(nextContentTab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("section", activeSection);
+
+    if (activeSection === "settings") {
+      nextParams.set("settingsTab", settingsTab);
+    } else {
+      nextParams.delete("settingsTab");
+    }
+
+    if (activeSection === "content") {
+      nextParams.set("contentTab", contentTab);
+    } else {
+      nextParams.delete("contentTab");
+    }
+
+    // Compare specific parameter values instead of full string to avoid ordering/encoding issues
+    const needsUpdate =
+      searchParams.get("section") !== activeSection ||
+      (activeSection === "settings" &&
+        searchParams.get("settingsTab") !== settingsTab) ||
+      (activeSection === "content" &&
+        searchParams.get("contentTab") !== contentTab) ||
+      (activeSection !== "settings" && searchParams.has("settingsTab")) ||
+      (activeSection !== "content" && searchParams.has("contentTab"));
+
+    if (needsUpdate) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeSection, contentTab, searchParams, setSearchParams, settingsTab]);
 
   const renderJobInvitesCards = () => (
     <>
@@ -4270,11 +3939,7 @@ export default function CreatorDashboard() {
   );
 
   const renderContent = () => {
-    const showingExamples = contentItems.length === 0;
-    const itemsToShow = showingExamples ? exampleContentItems : contentItems;
-    // For now, we don't have real detections state, so we assume empty if not showing examples
-    const detectionsToShow = showingExamples ? exampleDetections : [];
-    const detectionsCount = detectionsToShow.length;
+    const itemsToShow = contentItems;
 
     return (
       <div className="space-y-6">
@@ -4286,15 +3951,6 @@ export default function CreatorDashboard() {
             {t("creatorDashboard.content.subtitle")}
           </p>
         </div>
-
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-blue-900 text-sm">
-              {t("creatorDashboard.content.welcome.message")}
-            </p>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
@@ -4309,7 +3965,7 @@ export default function CreatorDashboard() {
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
-                {itemsToShow.length}
+                {contentItems.length}
               </Badge>
             </button>
           </div>
@@ -5537,22 +5193,6 @@ export default function CreatorDashboard() {
         content_types: cleaned_current.filter((t) => t !== type),
       });
     } else {
-      const combinedCount = new Set([
-        ...(cleaned_current || []),
-        ...(creator.industries || []),
-      ]).size;
-      if (
-        creatorPlanTier !== "pro" &&
-        creatorPlanTier !== "enterprise" &&
-        combinedCount >= creatorCategoryLimit
-      ) {
-        toast({
-          variant: "destructive",
-          title: "Category limit reached",
-          description: `Basic creators can select up to ${creatorCategoryLimit} combined categories.`,
-        });
-        return;
-      }
       setCreator({ ...creator, content_types: [...cleaned_current, type] });
     }
   };
@@ -5565,22 +5205,6 @@ export default function CreatorDashboard() {
         industries: current.filter((i) => i !== industry),
       });
     } else {
-      const combinedCount = new Set([
-        ...(creator.content_types || []),
-        ...(current || []),
-      ]).size;
-      if (
-        creatorPlanTier !== "pro" &&
-        creatorPlanTier !== "enterprise" &&
-        combinedCount >= creatorCategoryLimit
-      ) {
-        toast({
-          variant: "destructive",
-          title: "Category limit reached",
-          description: `Basic creators can select up to ${creatorCategoryLimit} combined categories.`,
-        });
-        return;
-      }
       setCreator({ ...creator, industries: [...current, industry] });
     }
   };
@@ -5655,37 +5279,40 @@ export default function CreatorDashboard() {
       base_weekly_price_cents: Math.round(
         ((creator.price_per_month || 0) / 4.345) * 100,
       ),
-      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
+      pricing_updated_at: rateChanged ? new Date().toISOString() : null,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
-          : undefined,
+          : null,
       gender:
         typeof creator.gender === "string" && creator.gender.trim().length
           ? creator.gender.trim()
-          : undefined,
+          : null,
       ethnicity:
         typeof creator.ethnicity === "string" && creator.ethnicity.trim().length
-          ? creator.ethnicity.trim()
-          : undefined,
+          ? creator.ethnicity
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : null,
       creator_type:
         typeof creator.creator_type === "string" &&
         creator.creator_type.trim().length
           ? creator.creator_type.trim()
-          : undefined,
+          : null,
       race:
         typeof creator.race === "string" && creator.race.trim().length
           ? creator.race.trim()
-          : undefined,
+          : null,
       hair_color:
         typeof creator.hair_color === "string" &&
         creator.hair_color.trim().length
           ? creator.hair_color.trim()
-          : undefined,
+          : null,
       eye_color:
         typeof creator.eye_color === "string" && creator.eye_color.trim().length
           ? creator.eye_color.trim()
-          : undefined,
+          : null,
       height_cm: parseOptionalInt(creator.height_cm),
       platform_handle: creator.instagram_handle?.replace("@", ""),
       tiktok_handle: normalizedTiktok,
@@ -5725,10 +5352,12 @@ export default function CreatorDashboard() {
       }
 
       const responseData = await res.json();
+      const savedProfile = Array.isArray(responseData)
+        ? responseData[0]
+        : responseData;
 
       // Update creator state with the saved data from the response
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        const savedProfile = responseData[0];
+      if (savedProfile && typeof savedProfile === "object") {
         const savedMonthlyRate =
           typeof savedProfile.base_monthly_price_cents === "number"
             ? Math.round(savedProfile.base_monthly_price_cents / 100)
@@ -5745,7 +5374,9 @@ export default function CreatorDashboard() {
               .join(", ") || prev.location,
           birthday: savedProfile.birthdate ?? prev.birthday,
           gender: savedProfile.gender ?? prev.gender,
-          ethnicity: savedProfile.ethnicity ?? prev.ethnicity,
+          ethnicity: Array.isArray(savedProfile.ethnicity)
+            ? savedProfile.ethnicity.join(", ")
+            : (savedProfile.ethnicity ?? prev.ethnicity),
           creator_type: savedProfile.creator_type ?? prev.creator_type,
           race: savedProfile.race ?? prev.race,
           hair_color: savedProfile.hair_color ?? prev.hair_color,
@@ -5772,6 +5403,8 @@ export default function CreatorDashboard() {
           baseRateRef.current = savedMonthlyRate;
         }
       }
+
+      await refreshProfile();
 
       setEditingRules(false);
       toast({
@@ -5808,52 +5441,6 @@ export default function CreatorDashboard() {
   };
 
   const renderMarketplaceVerificationBar = () => {
-    if (!creatorCanUseKyc) {
-      return (
-        <div className="rounded-2xl bg-gradient-to-r from-[#F7FBFF] via-[#EFF7FF] to-[#FFF8EF] px-4 py-3 shadow-sm ring-1 ring-[#D9E7F5] sm:px-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5">
-                <ShieldAlert className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-900">
-                    Upgrade to Basic to start KYC
-                  </p>
-                  <Badge className="rounded-full border-0 bg-white/90 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm">
-                    Basic required
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm leading-6 text-gray-600">
-                  Without Basic and approved KYC, your creator profile cannot be
-                  visible in the marketplace or managed by brands and agencies.
-                </p>
-              </div>
-            </div>
-            <Button
-              disabled={portalLoading}
-              onClick={() => {
-                if (trialActive || creatorPlanTier !== "free") {
-                  handleManageSubscription();
-                } else {
-                  navigate("/CreatorSubscribe");
-                }
-              }}
-              className="h-10 rounded-full bg-[#0F172A] px-4 text-white hover:bg-black disabled:opacity-70"
-            >
-              {portalLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Crown className="mr-2 h-4 w-4" />
-              )}
-              {portalLoading ? "Processing..." : "Upgrade plan"}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
     const currentKycStatus = creator?.kyc_status ?? profile?.kyc_status;
     const currentKycReason = formatKycReason(
       creator?.kyc_rejection_reason ?? profile?.kyc_rejection_reason,
@@ -5868,7 +5455,11 @@ export default function CreatorDashboard() {
       normalizedStatus === "rejected" || normalizedStatus === "declined";
     const hasPendingFollowUp = isPending && currentKycReason.length > 0;
     const BannerIcon =
-      hasPendingFollowUp || isRejected ? ShieldAlert : isPending ? Clock : Lock;
+      hasPendingFollowUp || isRejected
+        ? ShieldAlert
+        : isPending
+          ? Clock
+          : Sparkles;
     const bannerClassName =
       hasPendingFollowUp || isRejected
         ? "mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-amber-50 px-4 py-3 shadow-sm ring-1 ring-rose-100 sm:px-5"
@@ -6029,209 +5620,13 @@ export default function CreatorDashboard() {
     );
   };
 
-  const renderPlanStatusBar = () => {
-    if (
-      activeSection === "settings" ||
-      activeSection === "talent-portal" ||
-      !creatorBillingLoaded ||
-      effectivePlanTier === "free"
-    )
-      return null;
-
-    const isExpiringSoon = trialActive && daysLeft !== null && daysLeft <= 5;
-
-    return (
-      <div
-        className={`mb-6 rounded-[20px] p-5 transition-all duration-500 overflow-hidden relative ${
-          isExpiringSoon
-            ? "bg-gradient-to-r from-[#FFF1F2] via-white to-[#FFF1F2] border border-red-200/60 shadow-[0_12px_40px_-12px_rgba(220,38,38,0.12)]"
-            : "bg-white border border-[#E2E8F0] shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
-        }`}
-      >
-        {isExpiringSoon && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.05, 0.15, 0.05] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute inset-0 bg-red-500 pointer-events-none"
-          />
-        )}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
-          <div className="flex items-center gap-5">
-            <div
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-colors duration-500 ${
-                isExpiringSoon
-                  ? "bg-red-50 text-red-500"
-                  : "bg-[#F0FDFA] text-[#32C8D1]"
-              }`}
-            >
-              <Crown className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center min-w-[50px] cursor-pointer hover:opacity-90 transition-opacity ${creatorPlanBadgeClass}`}
-                  onClick={() => navigate("/CreatorSubscribe")}
-                >
-                  {effectivePlanTier}
-                </div>
-              </div>
-              {trialActive && trialEndsAt && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
-                    <span className="text-[#94A3B8]">Ends in:</span>
-                    <span
-                      className={`font-black ${
-                        isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
-                      }`}
-                    >
-                      {trialCountdown}
-                    </span>
-                  </div>
-                  {trialStartAt && (
-                    <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
-                      Started {new Date(trialStartAt).toLocaleDateString()}
-                    </span>
-                  )}
-                  {isExpiringSoon && (
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      Expiring Soon
-                    </motion.div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <Button
-            variant={isExpiringSoon ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setActiveSection("settings");
-              setSettingsTab("billing");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            disabled={portalLoading}
-            className={`h-11 rounded-xl px-6 font-black text-sm transition-all duration-300 group ${
-              isExpiringSoon
-                ? "bg-[#1E293B] text-white hover:bg-[#0F172A] hover:scale-[1.02] shadow-[0_8px_20px_-6px_rgba(30,41,59,0.4)] border-0"
-                : "border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-            }`}
-          >
-            {isExpiringSoon && (
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 3 }}
-                className="mr-2"
-              >
-                <Gift className="h-4 w-4 text-[#38BDF8]" />
-              </motion.div>
-            )}
-            {trialActive ? "Manage Subscription" : "Account Settings"}
-            <ChevronRight
-              className={`ml-2 h-4 w-4 transition-transform ${
-                isExpiringSoon
-                  ? "group-hover:translate-x-1"
-                  : "group-hover:translate-x-0.5"
-              }`}
-            />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   const renderDashboard = () => {
-    const showTrialGift =
-      creatorPlanTier === "free" && !trialStartAt && creatorBillingLoaded;
-
     const imagesFilled = Object.values(referenceImages).filter(
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
     return (
-      <div className="space-y-8">
-        {showTrialGift && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="overflow-hidden rounded-[32px] border border-emerald-200/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#042f2e] text-white shadow-[0_32px_64px_-16px_rgba(4,47,46,0.5)]"
-          >
-            <div className="flex flex-col gap-8 p-8 md:p-12 lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
-              {/* Decorative background elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32" />
-
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
-                <motion.div
-                  animate={{
-                    y: [0, -12, 0],
-                    rotate: [0, -8, 8, 0],
-                    scale: [1, 1.05, 1],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl shadow-2xl"
-                >
-                  <Gift className="h-10 w-10 text-[#5eead4]" />
-                </motion.div>
-
-                <div className="max-w-xl">
-                  <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-6">
-                    Exclusive Creator Offer
-                  </div>
-                  <h2 className="text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Experience Likelee{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
-                      Pro
-                    </span>{" "}
-                    for 30 Days
-                  </h2>
-                  <p className="mt-4 text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles,
-                    advanced analytics, content monitoring, and premium campaign
-                    opportunities.
-                  </p>
-                </div>
-              </div>
-
-              <div className="w-full lg:w-auto min-w-[320px] relative z-10">
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-                  <div className="space-y-4 mb-8">
-                    {[
-                      "30 Days of Premium Access",
-                      "Cancel anytime during trial",
-                      "Automatic billing after 30 days",
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 text-slate-200"
-                      >
-                        <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                        <span className="text-sm font-semibold">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={() => navigate("/CreatorSubscribe")}
-                    className="w-full h-14 rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-lg shadow-xl hover:shadow-emerald-500/20 group"
-                  >
-                    Explore Plans & Unlock Trial
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
+      <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
@@ -6302,20 +5697,14 @@ export default function CreatorDashboard() {
           </Card>
           <Card
             className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-            onClick={() =>
-              creatorCanUseVoice
-                ? setActiveSection("voice")
-                : navigate("/CreatorSubscribe")
-            }
+            onClick={() => setActiveSection("voice")}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Mic className="w-6 h-6 text-purple-600" />
               </div>
               <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                {creatorCanUseVoice
-                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
-                  : "Pro"}
+                {voiceLibrary.length}/6
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -6415,20 +5804,10 @@ export default function CreatorDashboard() {
                 <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
-                {creatorCanUseVoice
-                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
-                  : "Pro only"}
+                {voiceLibrary.length}/6
               </div>
               <Progress
-                value={
-                  creatorCanUseVoice
-                    ? Math.min(
-                        voiceLibrary.length *
-                          (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))),
-                        100,
-                      )
-                    : 0
-                }
+                value={Math.min(voiceLibrary.length * (100 / 6), 100)}
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -7058,249 +6437,188 @@ export default function CreatorDashboard() {
 
   const renderVoice = () => (
     <div className="space-y-6">
-      {!creatorCanUseVoice ? (
-        <Card className="p-8 bg-white border border-[#C7B8FF]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">
-                Voice Profiles
-              </h2>
-              <p className="text-gray-600 mt-2">
-                Upgrade to Pro to unlock ElevenLabs voice profile creation for
-                up to {Math.max(creatorVoiceLimit, 6)} tones.
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("creatorDashboard.voice.title")}
+          </h2>
+          <p className="text-gray-600 mt-1">
+            {t("creatorDashboard.voice.subtitle")}
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
+        >
+          {voiceLibrary.length}{" "}
+          {t(
+            voiceLibrary.length !== 1
+              ? "creatorDashboard.voice.voiceBadgePlural"
+              : "creatorDashboard.voice.voiceBadge",
+          )}
+        </Badge>
+      </div>
+
+      {/* Voice Overview Card */}
+      {voiceLibrary.length > 0 && (
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            {t("creatorDashboard.voice.overview.title")}
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">
+                {t("creatorDashboard.voice.overview.totalRecordings")}
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {voiceLibrary.length}
               </p>
             </div>
-            <Button
-              className="bg-[#4B4AE6] hover:bg-[#3F3EE0]"
-              onClick={() => navigate("/CreatorSubscribe")}
-            >
-              Upgrade to Pro
-            </Button>
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">
+                {t("creatorDashboard.voice.overview.elevenLabsProfiles")}
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">
+                {t("creatorDashboard.voice.overview.totalUsage")}
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {voiceLibrary.reduce((sum, v) => sum + (v.usageCount || 0), 0)}
+              </p>
+            </div>
           </div>
         </Card>
-      ) : (
-        <>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">
-                {t("creatorDashboard.voice.title")}
-              </h2>
-              <p className="text-gray-600 mt-1">
-                {t("creatorDashboard.voice.subtitle")}
-              </p>
-            </div>
-            <Badge
-              variant="outline"
-              className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
-            >
-              {voiceLibrary.length}{" "}
-              {t(
-                voiceLibrary.length !== 1
-                  ? "creatorDashboard.voice.voiceBadgePlural"
-                  : "creatorDashboard.voice.voiceBadge",
-              )}
-            </Badge>
-          </div>
+      )}
 
-          {/* Voice Overview Card */}
-          {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("creatorDashboard.voice.overview.title")}
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.voice.overview.totalRecordings")}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {voiceLibrary.length}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.voice.overview.elevenLabsProfiles")}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.voice.overview.totalUsage")}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {voiceLibrary.reduce(
-                      (sum, v) => sum + (v.usageCount || 0),
-                      0,
-                    )}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
+      {/* Record New Voice Sample */}
+      <Card className="p-6 bg-white border border-gray-200">
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          {t("creatorDashboard.voice.record.title")}
+        </h3>
+        <p className="text-gray-600 mb-6">
+          {t("creatorDashboard.voice.record.subtitle")}
+        </p>
 
-          {/* Record New Voice Sample */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.voice.record.title")}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {t("creatorDashboard.voice.record.subtitle")}
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              {Object.keys(VOICE_SCRIPTS).map((emotion) => {
-                const hasRecording = voiceLibrary.find(
-                  (r) => r.emotion === emotion,
-                );
-                return (
-                  <Card
-                    key={emotion}
-                    className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                      hasRecording
-                        ? "border-green-300 bg-green-50"
-                        : "border-gray-200 hover:border-[#32C8D1]"
+        <div className="grid md:grid-cols-3 gap-4">
+          {Object.keys(VOICE_SCRIPTS).map((emotion) => {
+            const hasRecording = voiceLibrary.find(
+              (r) => r.emotion === emotion,
+            );
+            return (
+              <Card
+                key={emotion}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
+                onClick={() => handleEmotionSelect(emotion)}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
                     }`}
-                    onClick={() => handleEmotionSelect(emotion)}
                   >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                        }`}
-                      >
-                        <Mic className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 capitalize text-lg">
-                          {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {t("creatorDashboard.voice.record.duration")}
-                        </p>
-                      </div>
+                    <Mic className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 capitalize text-lg">
+                      {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {t("creatorDashboard.voice.record.duration")}
+                    </p>
+                  </div>
+                </div>
+                {hasRecording && (
+                  <Badge className="bg-green-500 text-white">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {t("creatorDashboard.voice.record.recorded")}
+                  </Badge>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Voice Library */}
+      {voiceLibrary.length > 0 && (
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            {t("creatorDashboard.voice.library.title")}
+          </h3>
+          <div className="space-y-4">
+            {voiceLibrary.map((recording) => (
+              <div
+                key={recording.id}
+                className="p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    >
+                      <Mic className="w-7 h-7 text-white" />
                     </div>
-                    {hasRecording && (
-                      <Badge className="bg-green-500 text-white">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        {t("creatorDashboard.voice.record.recorded")}
+                    <div>
+                      <h4 className="font-bold text-gray-900 capitalize text-xl">
+                        {t(
+                          `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
+                          recording.emotion,
+                        )}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {new Date(recording.date).toLocaleDateString()} •{" "}
+                        {recording.duration}s •{" "}
+                        {t("creatorDashboard.voice.library.used", {
+                          count: recording.usageCount || 0,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {recording.voiceProfileCreated && (
+                      <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
+                        {t("creatorDashboard.voice.library.elevenLabsReady")}
                       </Badge>
                     )}
-                  </Card>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Voice Library */}
-          {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                {t("creatorDashboard.voice.library.title")}
-              </h3>
-              <div className="space-y-4">
-                {voiceLibrary.map((recording) => (
-                  <div
-                    key={recording.id}
-                    className="p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                            recording.accessible
-                              ? "bg-green-500"
-                              : "bg-gray-400"
-                          }`}
-                        >
-                          <Mic className="w-7 h-7 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 capitalize text-xl">
-                            {t(
-                              `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
-                              recording.emotion,
-                            )}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {new Date(recording.date).toLocaleDateString()} •{" "}
-                            {recording.duration}s •{" "}
-                            {t("creatorDashboard.voice.library.used", {
-                              count: recording.usageCount || 0,
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {recording.voiceProfileCreated && (
-                          <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                            {t(
-                              "creatorDashboard.voice.library.elevenLabsReady",
-                            )}
-                          </Badge>
-                        )}
-                        <Button
-                          onClick={() => toggleRecordingAccess(recording.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {recording.accessible ? (
-                            <Unlock className="w-4 h-4" />
-                          ) : (
-                            <Lock className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          onClick={() => handleEmotionSelect(recording.emotion)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {t("creatorDashboard.voice.library.reRecord")}
-                        </Button>
-                        <Button
-                          onClick={() => deleteRecording(recording.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <audio
-                      controls
-                      src={recording.url}
-                      className="w-full mb-4"
-                    />
-
-                    {!recording.voiceProfileCreated && recording.accessible && (
-                      <Button
-                        onClick={() => createVoiceProfile(recording)}
-                        disabled={
-                          generatingVoiceId !== null &&
-                          generatingVoiceId !==
-                            (recording?.server_recording_id ?? recording?.id)
-                        }
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                      >
-                        {generatingVoiceId ===
-                        (recording?.server_recording_id ?? recording?.id) ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            {t(
-                              "creatorDashboard.voice.library.creatingProfile",
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <PlayCircle className="w-4 h-4 mr-2" />
-                            {t("creatorDashboard.voice.library.createProfile")}
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => toggleRecordingAccess(recording.id)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {recording.accessible ? (
+                        <Unlock className="w-4 h-4" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleEmotionSelect(recording.emotion)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {t("creatorDashboard.voice.library.reRecord")}
+                    </Button>
+                    <Button
+                      onClick={() => deleteRecording(recording.id)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                ))}
+                </div>
+                <audio controls src={recording.url} className="w-full mb-4" />
+
                 {!recording.voiceProfileCreated && recording.accessible && (
                   <Button
                     disabled={true}
@@ -7311,18 +6629,18 @@ export default function CreatorDashboard() {
                   </Button>
                 )}
               </div>
-            </Card>
-          )}
-          {/* Voice Training Tips */}
-          <div className="bg-purple-50 border border-purple-200">
-            <Volume2 className="h-5 w-5 text-purple-600" />
-            <p className="text-purple-900">
-              <strong>{t("creatorDashboard.voice.tips.title")}</strong>{" "}
-              {t("creatorDashboard.voice.tips.message")}
-            </p>
+            ))}
           </div>
-        </>
+        </Card>
       )}
+      {/* Voice Training Tips */}
+      <div className="bg-purple-50 border border-purple-200">
+        <Volume2 className="h-5 w-5 text-purple-600" />
+        <p className="text-purple-900">
+          <strong>{t("creatorDashboard.voice.tips.title")}</strong>{" "}
+          {t("creatorDashboard.voice.tips.message")}
+        </p>
+      </div>
     </div>
   );
 
@@ -9788,173 +9106,6 @@ export default function CreatorDashboard() {
     );
   };
 
-  const renderApprovals = () => {
-    const actionableOffers = directBrandOffers.filter((offer: any) =>
-      [
-        "contract_sent",
-        "contract_partially_signed",
-        "changes_requested",
-      ].includes(String(offer?.status || "").toLowerCase()),
-    );
-
-    const pendingDeliverables = deliverableEligibleOffers.filter(
-      (offer: any) =>
-        String(offer?.status || "").toLowerCase() === "changes_requested",
-    );
-
-    const openBrandConnectionSubTab = (
-      subTab: "requests" | "offers" | "deliverables",
-    ) => {
-      setBrandConnectionSubTab(subTab);
-      setActiveSection("brand-connection");
-    };
-
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
-          <p className="text-gray-600 mt-1">
-            Review brand requests, contract actions, and deliverable feedback.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Pending requests</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
-              {pending.length}
-            </div>
-            <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              onClick={() => openBrandConnectionSubTab("requests")}
-            >
-              Open requests
-            </Button>
-          </Card>
-
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Offer actions</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
-              {actionableOffers.length}
-            </div>
-            <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              onClick={() => openBrandConnectionSubTab("offers")}
-            >
-              Review offers
-            </Button>
-          </Card>
-
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Deliverable feedback</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
-              {pendingDeliverables.length}
-            </div>
-            <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              onClick={() => openBrandConnectionSubTab("deliverables")}
-            >
-              View feedback
-            </Button>
-          </Card>
-        </div>
-
-        <Card className="p-6 border border-[#DDE5EF] shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-gray-900">
-                Needs your attention
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                The latest items that still need a response from you.
-              </div>
-            </div>
-            <Badge className="bg-[#1A2140] text-white">
-              {pending.length +
-                actionableOffers.length +
-                pendingDeliverables.length}
-            </Badge>
-          </div>
-
-          {pending.length === 0 &&
-          actionableOffers.length === 0 &&
-          pendingDeliverables.length === 0 ? (
-            <div className="mt-6 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-sm text-gray-600">
-              No approvals are waiting right now.
-            </div>
-          ) : (
-            <div className="mt-6 space-y-3">
-              {pending.slice(0, 5).map((req: any) => (
-                <div
-                  key={`request-${String(req?.id || "")}`}
-                  className="rounded-xl border border-gray-200 bg-white p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {req?.brands?.company_name ||
-                          "Brand connection request"}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Connection request awaiting your response
-                      </div>
-                    </div>
-                    <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
-                      Request
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-
-              {actionableOffers.slice(0, 5).map((offer: any) => (
-                <div
-                  key={`offer-${String(offer?.id || "")}`}
-                  className="rounded-xl border border-gray-200 bg-white p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {offer?.brands?.company_name || "Brand"} •{" "}
-                        {String(offer?.status || "sent").replace(/_/g, " ")}
-                      </div>
-                    </div>
-                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                      {String(offer?.status || "sent").replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-
-              {pendingDeliverables.slice(0, 5).map((offer: any) => (
-                <div
-                  key={`deliverable-${String(offer?.id || "")}`}
-                  className="rounded-xl border border-gray-200 bg-white p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Deliverable review"}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Feedback received on submitted deliverables
-                      </div>
-                    </div>
-                    <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
-                      Feedback
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-    );
-  };
-
   const renderCampaignArchive = () => {
     const archiveQuery = archiveSearch.trim().toLowerCase();
     const campaignsToShow = archiveQuery
@@ -11029,19 +10180,29 @@ export default function CreatorDashboard() {
         },
       );
 
+      // Persist category selections to profiles table as well
+      const profileStatus = await supabase
+        .from("creators")
+        .update({
+          content_types:
+            showRatesModal === "content"
+              ? tempContentTypes
+              : creator.content_types,
+          industries:
+            showRatesModal === "industry" ? tempIndustries : creator.industries,
+        })
+        .eq("id", user.id);
+
+      if (profileStatus.error) {
+        throw new Error(
+          `Profile update failed: ${profileStatus.error.message}`,
+        );
+      }
+
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Failed to save rates: ${errorText}`);
       }
-
-      await handleSaveRules(undefined, {
-        content_types:
-          showRatesModal === "content"
-            ? tempContentTypes
-            : creator.content_types,
-        industries:
-          showRatesModal === "industry" ? tempIndustries : creator.industries,
-      });
 
       // Update local state immediately to ensure UI is snappy
       setCustomRates(finalRates);
@@ -11115,33 +10276,14 @@ export default function CreatorDashboard() {
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
         <button
-          onClick={() =>
-            creatorCanUseRules
-              ? setSettingsTab("rules")
-              : navigate("/CreatorSubscribe")
-          }
+          onClick={() => setSettingsTab("rules")}
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
             settingsTab === "rules"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
         >
-          <span className="inline-flex items-center gap-2">
-            {t("creatorDashboard.settingsView.tabs.rules")}
-            {!creatorCanUseRules && (
-              <Crown className="h-4 w-4 text-amber-500" />
-            )}
-          </span>
-        </button>
-        <button
-          onClick={() => setSettingsTab("billing")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "billing"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Billing
+          {t("creatorDashboard.settingsView.tabs.rules")}
         </button>
       </div>
 
@@ -11555,11 +10697,6 @@ export default function CreatorDashboard() {
             </div>
 
             <div className="p-6 pt-2 space-y-8">
-              <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                {effectivePlanTier === "pro"
-                  ? "Pro creators have unlimited category selection."
-                  : `You are on the ${effectivePlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
-              </div>
               {/* Content I'm Open To */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -11810,219 +10947,6 @@ export default function CreatorDashboard() {
                     }}
                     className="data-[state=checked]:bg-[#32C8D1]"
                   />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {settingsTab === "billing" && (
-        <div className="space-y-6">
-          <Card className="overflow-hidden border border-[#DDE5EF] bg-white shadow-sm">
-            <div className="border-b border-[#E7EDF5] bg-gradient-to-r from-[#F9FBFE] to-[#F5F8FC] px-6 py-5">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-[#142033]">
-                      Creator subscription
-                    </h3>
-                    <Badge
-                      className={
-                        effectivePlanTier === "pro"
-                          ? "border-0 bg-[#1A2140] text-white"
-                          : effectivePlanTier === "basic"
-                            ? "border border-[#BFEAF0] bg-[#ECFAFC] text-[#136B86]"
-                            : "border border-[#E2E8F0] bg-white text-[#5B667A]"
-                      }
-                    >
-                      {effectivePlanTier === "pro"
-                        ? trialActive
-                          ? "Pro Trial"
-                          : "Pro"
-                        : effectivePlanTier === "basic"
-                          ? trialActive
-                            ? "Basic Trial"
-                            : "Basic"
-                          : "Free"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-6 p-6 lg:grid-cols-[1.25fr_0.95fr]">
-              <div className="rounded-3xl border border-[#E3EAF3] bg-[#FCFDFE] p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      Current access
-                    </div>
-                    <div className="mt-1 text-2xl font-bold text-[#142033]">
-                      {effectivePlanTier === "pro"
-                        ? trialActive
-                          ? "Pro Trial access"
-                          : "Pro creator access"
-                        : effectivePlanTier === "basic"
-                          ? trialActive
-                            ? "Basic Trial access"
-                            : "Basic creator access"
-                          : "Free creator access"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  {[
-                    {
-                      label: "Content",
-                      value: "Included for all creators",
-                      included: true,
-                    },
-                    {
-                      label: "KYC access",
-                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
-                      included: creatorCanUseKyc,
-                    },
-                    {
-                      label: "My Likeness",
-                      value: creatorCanUseLikeness
-                        ? "Included"
-                        : "Upgrade to Basic",
-                      included: creatorCanUseLikeness,
-                    },
-                    {
-                      label: "Payouts",
-                      value: creatorCanUsePayouts
-                        ? "Included"
-                        : "Upgrade to Basic",
-                      included: creatorCanUsePayouts,
-                    },
-                    {
-                      label: "My Rules",
-                      value: creatorCanUseRules ? "Included" : "Pro only",
-                      included: creatorCanUseRules,
-                    },
-                    {
-                      label: "Voice",
-                      value: creatorCanUseVoice
-                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
-                        : "Pro only",
-                      included: creatorCanUseVoice,
-                    },
-                    {
-                      label: "Jobs",
-                      value: creatorCanUseJobs ? "Included" : "Pro only",
-                      included: creatorCanUseJobs,
-                    },
-                    {
-                      label: "Active Campaigns",
-                      value: creatorCanUseActiveCampaigns
-                        ? "Included"
-                        : "Pro only",
-                      included: creatorCanUseActiveCampaigns,
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="rounded-2xl border border-[#E6EDF5] bg-white px-4 py-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span
-                          className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
-                            item.included
-                              ? "bg-[#E8F7FB] text-[#1683A3]"
-                              : item.value === "Pro only"
-                                ? "bg-[#FFF4DA] text-[#B7791F]"
-                                : "bg-[#F1F5F9] text-[#718096]"
-                          }`}
-                        >
-                          {item.included ? (
-                            <Check className="h-4 w-4" />
-                          ) : item.value === "Pro only" ? (
-                            <Crown className="h-4 w-4" />
-                          ) : (
-                            <Shield className="h-4 w-4" />
-                          )}
-                        </span>
-                        <div>
-                          <div className="text-sm font-semibold text-[#142033]">
-                            {item.label}
-                          </div>
-                          <div className="text-sm text-[#5A6880]">
-                            {item.value}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
-                  <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    Recommended next step
-                  </div>
-                  <div className="mt-2 text-2xl font-bold text-[#142033]">
-                    {effectivePlanTier === "free"
-                      ? "Move to Basic"
-                      : effectivePlanTier === "basic"
-                        ? "Move to Pro"
-                        : "You’re fully unlocked"}
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-[#5A6880]">
-                    {effectivePlanTier === "free"
-                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
-                      : effectivePlanTier === "basic"
-                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
-                        : "Your current plan includes the full creator workflow toolset."}
-                  </p>
-                  {effectivePlanTier !== "pro" && (
-                    <Button
-                      className="mt-5 rounded-full bg-[#16324F] px-5 text-white hover:bg-[#10263D]"
-                      disabled={portalLoading}
-                      onClick={() => navigate("/CreatorSubscribe")}
-                    >
-                      {portalLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Processing...
-                        </>
-                      ) : (
-                        "View Details"
-                      )}
-                    </Button>
-                  )}
-                </div>
-
-                <div className="rounded-3xl border border-[#D1FAE5] bg-gradient-to-br from-[#10192D] to-[#1A2E44] p-8 text-white shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl transition-all group-hover:bg-emerald-500/20"></div>
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                    <div className="max-w-md text-center md:text-left">
-                      <h4 className="text-2xl font-black tracking-tight">
-                        Ready to lock in Pro?
-                      </h4>
-                      <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        Your trial is active, but you can secure your
-                        professional workflow tools today. Get full marketplace
-                        priority and exclusive campaign access.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => navigate("/CreatorSubscribe")}
-                      className="w-full md:w-auto rounded-full bg-[#32C8D1] px-10 py-7 text-xl font-black text-white transition-all hover:scale-105 hover:bg-[#2bb2bb] shadow-[0_12px_24px_-8px_rgba(50,200,209,0.5)] border-0 disabled:opacity-70"
-                    >
-                      {portalLoading ? (
-                        <>
-                          <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          Opening Portal...
-                        </>
-                      ) : (
-                        "Select Plan"
-                      )}
-                    </Button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -12313,10 +11237,6 @@ export default function CreatorDashboard() {
                   key={item.id}
                   onClick={() => {
                     if (item.disabled) return;
-                    if (item.locked) {
-                      navigate("/CreatorSubscribe");
-                      return;
-                    }
                     if (item.onClick) {
                       item.onClick();
                       return;
@@ -12338,16 +11258,6 @@ export default function CreatorDashboard() {
                       <span className="flex-1 text-left font-medium">
                         {item.label}
                       </span>
-                      {item.locked &&
-                        (item.requiredPlan === "pro" ? (
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF4DA] text-[#B7791F]">
-                            <Crown className="h-3.5 w-3.5" />
-                          </span>
-                        ) : (
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E8F7FB] text-[#1683A3]">
-                            <Shield className="h-3.5 w-3.5" />
-                          </span>
-                        ))}
                       {item.badge !== undefined && item.badge > 0 && (
                         <Badge
                           className={`${item.urgent ? "bg-red-500" : "bg-gray-500"} text-white`}
@@ -12474,12 +11384,8 @@ export default function CreatorDashboard() {
       >
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection !== "settings" &&
-            activeSection !== "talent-portal" && (
-              <>
-                {renderPlanStatusBar()}
-                {renderMarketplaceVerificationBar()}
-              </>
-            )}
+            activeSection !== "talent-portal" &&
+            renderMarketplaceVerificationBar()}
           {activeSection === "dashboard" && renderDashboard()}
           {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
@@ -13262,44 +12168,6 @@ export default function CreatorDashboard() {
                         {section.bestFor}
                       </p>
                     </div>
-
-                    <Card className="p-4 bg-gray-50 border border-gray-200">
-                      <h4 className="font-bold text-gray-900 mb-3">
-                        {t("creatorDashboard.uploadModal.requirementsTitle")}
-                      </h4>
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t("creatorDashboard.uploadModal.goodLighting")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t(
-                              "creatorDashboard.uploadModal.professionalQuality",
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
 
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
                       <input

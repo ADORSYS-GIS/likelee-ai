@@ -40,5 +40,16 @@ pub fn should_default_visibility_on(row: &serde_json::Value) -> bool {
     if !(visibility.is_empty() || visibility == "private") {
         return false;
     }
-    is_default_pricing(row)
+    if !is_default_pricing(row) {
+        return false;
+    }
+
+    let created_at = parse_rfc3339(row.get("created_at").and_then(|v| v.as_str()));
+    let updated_at = parse_rfc3339(row.get("updated_at").and_then(|v| v.as_str()));
+
+    // Privacy-safe: if timestamps are missing or unparseable, default to false (keep private)
+    match (created_at, updated_at) {
+        (Some(created), Some(updated)) => updated == created,
+        _ => false, // Conservative default: don't enable visibility when timestamps are missing
+    }
 }

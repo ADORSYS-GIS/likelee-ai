@@ -129,6 +129,7 @@ export default function AddTalent() {
     .toLowerCase()
     .replace(/\s+/g, "_");
   const isSportsAgency = normalizedAgencyType === "sports_agency";
+  const showOrganizationField = isSportsAgency;
   const entityTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityTitlePlural = isSportsAgency ? "Athletes" : "Talent";
   const entityLower = isSportsAgency ? "athlete" : "talent";
@@ -516,7 +517,7 @@ export default function AddTalent() {
         city: formData.city,
         state_province: formData.state,
         country: formData.country,
-        organization: formData.organization,
+        organization: showOrganizationField ? formData.organization : undefined,
         sports: formData.sports,
         licensing_rate_monthly_cents: Math.round(
           Number(formData.licensing_rate_monthly_usd || 0) * 100,
@@ -808,23 +809,28 @@ export default function AddTalent() {
                     placeholder="USA"
                   />
                 </div>
-                <div>
-                  <Label
-                    htmlFor="organization"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    Organization
-                  </Label>
-                  <Input
-                    id="organization"
-                    value={formData.organization}
-                    onChange={(e) =>
-                      setFormData({ ...formData, organization: e.target.value })
-                    }
-                    className="border-2 border-gray-300"
-                    placeholder="e.g. UCLA"
-                  />
-                </div>
+                {showOrganizationField && (
+                  <div>
+                    <Label
+                      htmlFor="organization"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Organization
+                    </Label>
+                    <Input
+                      id="organization"
+                      value={formData.organization}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          organization: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="e.g. UCLA"
+                    />
+                  </div>
+                )}
                 {isSportsAgency && (
                   <div className="md:col-span-2">
                     <Label
