@@ -66,6 +66,10 @@ export const AddBookOutModal = ({
           ? rows.map((r: any) => ({
               id: r.id,
               name: r.full_name || r.name || r.stage_name || "Unnamed",
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
@@ -88,6 +92,9 @@ export const AddBookOutModal = ({
     const newBookOut = {
       id: `bo-${Date.now()}`,
       talentId,
+      creator_id: talents.find((talent) => talent.id === talentId)?.creator_id,
+      relationship_id: talents.find((talent) => talent.id === talentId)
+        ?.relationship_id,
       reason,
       startDate,
       endDate,

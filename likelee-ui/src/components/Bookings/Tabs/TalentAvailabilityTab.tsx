@@ -3,6 +3,16 @@ import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AddBookOutModal } from "../Modals/AddBookOutModal";
 import { getAgencyRoster } from "@/api/functions";
 
@@ -22,6 +32,9 @@ export const TalentAvailabilityTab = ({
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
+  const [confirmingBookOutId, setConfirmingBookOutId] = useState<string | null>(
+    null,
+  );
   const { toast } = useToast();
 
   // Load real talents and map id -> name
@@ -47,6 +60,8 @@ export const TalentAvailabilityTab = ({
           arr.map((r: any) => ({
             id: r.id,
             name: r.full_name || r.name || r.stage_name || "Unnamed",
+            relationship_type: r.relationship_type || "internal",
+            contract_controlled: Boolean(r.contract_controlled),
           })),
         );
       } catch (_) {
@@ -142,21 +157,7 @@ export const TalentAvailabilityTab = ({
                     variant="outline"
                     size="sm"
                     className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
-                    onClick={() => {
-                      const ok = window.confirm(
-                        "Delete Book-Out? This action cannot be undone.",
-                      );
-                      if (!ok) return;
-                      try {
-                        onRemoveBookOut(bo.id);
-                      } catch (_e) {
-                        toast({
-                          title: "Remove failed",
-                          description: "Failed to remove book-out.",
-                          variant: "destructive" as any,
-                        });
-                      }
-                    }}
+                    onClick={() => setConfirmingBookOutId(String(bo.id))}
                   >
                     Remove
                   </Button>
@@ -174,6 +175,42 @@ export const TalentAvailabilityTab = ({
         fixedTalent={fixedTalent}
         isSportsAgency={isSportsAgency}
       />
+      <AlertDialog
+        open={Boolean(confirmingBookOutId)}
+        onOpenChange={(open) => {
+          if (!open) setConfirmingBookOutId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete book-out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the unavailability period from the schedule.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirmingBookOutId) return;
+                try {
+                  onRemoveBookOut(confirmingBookOutId);
+                } catch (_e) {
+                  toast({
+                    title: "Remove failed",
+                    description: "Failed to remove book-out.",
+                    variant: "destructive" as any,
+                  });
+                } finally {
+                  setConfirmingBookOutId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

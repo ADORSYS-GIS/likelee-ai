@@ -1,4 +1,5 @@
 use crate::{
+    agency_talent_refs::{list_agency_talent_refs, resolve_agency_talent_ref, AgencyTalentRef},
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
@@ -23,160 +24,6 @@ use serde_json::json;
 use tracing::{info, warn};
 
 pub use crate::team::resolve_effective_agency_id;
-
-pub(crate) async fn resolve_effective_agency_talent_id(
-    state: &AppState,
-    agency_id: &str,
-    input_id: &str,
-) -> Result<String, (StatusCode, String)> {
-    let resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("id", input_id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = resp.status();
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
-    }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    if let Some(id) = rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .filter(|s| !s.trim().is_empty())
-    {
-        return Ok(id);
-    }
-
-    let rel_resp = state
-        .pg
-        .from("agency_talent_relationships")
-        .select("talent_id,creator_id")
-        .eq("agency_id", agency_id)
-        .eq("status", "active")
-        .or(format!(
-            "talent_id.eq.{},creator_id.eq.{}",
-            input_id, input_id
-        ))
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_status = rel_resp.status();
-    let rel_text = rel_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !rel_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
-    }
-    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
-    let rel = match rel_rows.first() {
-        Some(r) => r,
-        None => {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "Access denied to this talent".to_string(),
-            ))
-        }
-    };
-
-    let rel_talent_id = rel
-        .get("talent_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if !rel_talent_id.is_empty() {
-        // Ensure relationship.talent_id is actually an agency_users row belonging to this agency.
-        // This prevents cross-agency leakage if legacy data points to a talent_id from another agency.
-        let verify_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("agency_id", agency_id)
-            .eq("id", &rel_talent_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let verify_status = verify_resp.status();
-        let verify_text = verify_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !verify_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, verify_text));
-        }
-        let verify_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&verify_text).unwrap_or_default();
-        if !verify_rows.is_empty() {
-            return Ok(rel_talent_id);
-        }
-        // Otherwise fall through and resolve by creator_id.
-    }
-
-    let creator_id = rel
-        .get("creator_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if creator_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Access denied to this talent".to_string(),
-        ));
-    }
-
-    let au_by_creator_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("creator_id", &creator_id)
-        .eq("role", "talent")
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let au_by_creator_status = au_by_creator_resp.status();
-    let au_by_creator_text = au_by_creator_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !au_by_creator_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, au_by_creator_text));
-    }
-    let au_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&au_by_creator_text).unwrap_or_default();
-    let talent_id = au_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    if !talent_id.is_empty() {
-        return Ok(talent_id);
-    }
-
-    Err((
-        StatusCode::FORBIDDEN,
-        "This creator is connected to the agency but does not have an agency-owned talent profile."
-            .to_string(),
-    ))
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AgencyProfilePayload {
@@ -515,6 +362,9 @@ pub struct AgencyFileUploadResponse {
     pub storage_path: String,
     pub client_id: Option<String>,
     pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
+    pub created_at: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -1199,6 +1049,9 @@ pub async fn upload_agency_storage_file(
             .to_string(),
         client_id: None,
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
@@ -1397,6 +1250,9 @@ pub async fn upload_agency_file(
         storage_path: path,
         client_id: None,
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
@@ -1792,20 +1648,16 @@ pub async fn upload_client_file(
             .to_string(),
         client_id: Some(client_id),
         talent_id: None,
+        creator_id: None,
+        relationship_id: None,
+        created_at: None,
     }))
 }
 
 // ... (rest of the code remains the same)
 
 // List talents associated to the agency's organization via agency_users
-#[derive(Serialize)]
-pub struct TalentItem {
-    pub id: String,
-    pub creator_id: Option<String>,
-    pub full_name: Option<String>,
-    pub profile_photo_url: Option<String>,
-    pub is_connected_creator: bool,
-}
+pub type TalentItem = AgencyTalentRef;
 
 #[derive(Deserialize)]
 pub struct TalentQuery {
@@ -1819,287 +1671,9 @@ pub async fn list_talents(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
     info!(agency_id = %agency_id, "list_talents request");
-
-    // Query agency_users within this agency; select columns per schema
-    let mut req = state
-        .pg
-        .from("agency_users")
-        .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role")
-        .eq("agency_id", &agency_id)
-        .eq("role", "talent")
-        .in_("status", vec!["active", "inactive"]);
-    if let Some(q) = params.q.as_ref().filter(|s| !s.is_empty()) {
-        let enc = format!("%25{}%25", q);
-        // Filter by stage_name OR full_legal_name
-        let or_expr = format!("stage_name.ilike.{},full_legal_name.ilike.{}", enc, enc);
-        req = req.or(or_expr.as_str());
-    }
-    let resp = req
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let count = rows.as_array().map(|a| a.len()).unwrap_or(0);
-    info!(agency_id = %agency_id, count, "list_talents result");
-
-    // Map to array with fallback to names per schema
-    let talents: Vec<TalentItem> = rows
-        .as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|r| {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let creator_id = r
-                .get("creator_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            let full_name = r
-                .get("stage_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-                .or_else(|| {
-                    r.get("full_legal_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                });
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            TalentItem {
-                id,
-                creator_id: if creator_id.is_empty() {
-                    None
-                } else {
-                    Some(creator_id.clone())
-                },
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: !creator_id.is_empty(),
-            }
-        })
-        .collect();
-
-    // Also include connected creators (active relationships) for this agency.
-    // Some agencies may have connections in agency_talent_relationships even if agency_users
-    // does not return any rows (e.g. legacy data).
-    let rel_resp = state
-        .pg
-        .from("agency_talent_relationships")
-        .select("talent_id,creator_id,status")
-        .eq("agency_id", &agency_id)
-        .eq("status", "active")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_text = rel_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
-
-    let mut connected_talent_ids: Vec<String> = vec![];
-    let mut connected_creator_ids: Vec<String> = vec![];
-    for r in rel_rows.iter() {
-        let tid = r
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if !tid.is_empty() {
-            connected_talent_ids.push(tid);
-        }
-        let cid = r
-            .get("creator_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if !cid.is_empty() {
-            connected_creator_ids.push(cid);
-        }
-    }
-
-    let mut connected_items: Vec<TalentItem> = vec![];
-    if !connected_talent_ids.is_empty() {
-        // Fetch connected talent rows from agency_users so we have names/photos.
-        // We intentionally do not filter by status here because relationship.status is authoritative.
-        let au_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name,profile_photo_url")
-            .eq("agency_id", &agency_id)
-            .in_("id", connected_talent_ids.clone())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let au_text = au_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
-        for r in au_rows.iter() {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let full_name = r
-                .get("stage_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-                .or_else(|| {
-                    r.get("full_legal_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                });
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            connected_items.push(TalentItem {
-                id,
-                creator_id: r
-                    .get("creator_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty()),
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: true,
-            });
-        }
-    }
-
-    // If we couldn't resolve some connected creators through agency_users, best-effort
-    // include them using creators table (still marked connected).
-    let known_ids: std::collections::HashSet<String> =
-        connected_items.iter().map(|t| t.id.clone()).collect();
-    let missing_creator_ids: Vec<String> = connected_creator_ids
-        .into_iter()
-        .filter(|cid| !cid.is_empty())
-        .filter(|cid| !known_ids.contains(cid))
-        .collect();
-    if !missing_creator_ids.is_empty() {
-        let creators_resp = state
-            .pg
-            .from("creators")
-            .select("id,full_name,profile_photo_url")
-            .in_("id", missing_creator_ids)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let creators_text = creators_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let creator_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creators_text).unwrap_or_default();
-        for r in creator_rows.iter() {
-            let id = r
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            if id.is_empty() {
-                continue;
-            }
-            let full_name = r
-                .get("full_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            let photo = r
-                .get("profile_photo_url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            connected_items.push(TalentItem {
-                id,
-                creator_id: r
-                    .get("id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty()),
-                full_name,
-                profile_photo_url: photo,
-                is_connected_creator: true,
-            });
-        }
-    }
-
-    let mut combined: Vec<TalentItem> = vec![];
-    let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-    for t in talents.into_iter().chain(connected_items.into_iter()) {
-        if t.id.trim().is_empty() {
-            continue;
-        }
-
-        let dedupe_key = t
-            .creator_id
-            .as_ref()
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| t.id.clone());
-
-        if let Some(existing_index) = seen.get(&dedupe_key).copied() {
-            let existing = &mut combined[existing_index];
-
-            if existing.creator_id.is_none() && t.creator_id.is_some() {
-                existing.creator_id = t.creator_id.clone();
-            }
-            if existing.full_name.is_none() && t.full_name.is_some() {
-                existing.full_name = t.full_name.clone();
-            }
-            if existing.profile_photo_url.is_none() && t.profile_photo_url.is_some() {
-                existing.profile_photo_url = t.profile_photo_url.clone();
-            }
-            if !existing.is_connected_creator && t.is_connected_creator {
-                existing.is_connected_creator = true;
-            }
-
-            let existing_uses_creator_id = existing
-                .creator_id
-                .as_ref()
-                .map(|cid| cid == &existing.id)
-                .unwrap_or(false);
-            let incoming_uses_agency_user_id = t
-                .creator_id
-                .as_ref()
-                .map(|cid| cid != &t.id)
-                .unwrap_or(false);
-            if existing_uses_creator_id && incoming_uses_agency_user_id {
-                existing.id = t.id.clone();
-            }
-
-            continue;
-        }
-
-        seen.insert(dedupe_key, combined.len());
-        combined.push(t);
-    }
-
-    if let Some(q) = params.q.as_ref().filter(|s| !s.trim().is_empty()) {
-        let ql = q.trim().to_lowercase();
-        combined.retain(|t| {
-            t.full_name
-                .as_ref()
-                .map(|n| n.to_lowercase().contains(&ql))
-                .unwrap_or(false)
-        });
-    }
-
-    Ok(Json(json!(combined)))
+    let talents = list_agency_talent_refs(&state, &agency_id, params.q.as_deref()).await?;
+    info!(agency_id = %agency_id, count = talents.len(), "list_talents result");
+    Ok(Json(json!(talents)))
 }
 
 pub async fn list_talent_assets(
@@ -2108,15 +1682,27 @@ pub async fn list_talent_assets(
     Path(talent_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let effective_talent_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let effective_creator_id = talent_ref.creator_id.clone();
 
     // 2. Fetch images from reference_images
     let images_resp = state
         .pg
         .from("reference_images")
         .select("id,public_url,section_id,created_at")
-        .eq("user_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "user_id.eq.{},user_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("user_id.eq.{}", effective_talent_id)))
         .eq("moderation_status", "approved")
         .order("created_at.desc")
         .execute()
@@ -2136,7 +1722,15 @@ pub async fn list_talent_assets(
         .from("agency_files")
         .select("id,file_name,public_url,created_at,storage_path")
         .eq("agency_id", &agency_id)
-        .eq("talent_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .order("created_at.desc")
         .execute()
         .await
@@ -2198,8 +1792,12 @@ pub async fn delete_talent_asset(
     Path((talent_id, asset_id)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let effective_talent_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let effective_creator_id = talent_ref.creator_id.clone();
 
     // 2. Find the file record in `agency_files` to get its storage path.
     // We check against both the asset_id and the talent_id for security.
@@ -2209,7 +1807,15 @@ pub async fn delete_talent_asset(
         .select("storage_bucket,storage_path")
         .eq("id", &asset_id)
         .eq("agency_id", &agency_id)
-        .eq("talent_id", &effective_talent_id)
+        .or(effective_creator_id
+            .as_ref()
+            .map(|creator_id| {
+                format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    effective_talent_id, creator_id
+                )
+            })
+            .unwrap_or_else(|| format!("talent_id.eq.{}", effective_talent_id)))
         .single()
         .execute()
         .await
@@ -2278,8 +1884,12 @@ pub async fn upload_talent_asset(
     mut multipart: Multipart,
 ) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let effective_talent_id =
-        resolve_effective_agency_talent_id(&state, &agency_id, &talent_id).await?;
+    let talent_ref = resolve_agency_talent_ref(&state, &agency_id, &talent_id).await?;
+    let storage_subject_id = talent_ref
+        .agency_user_id
+        .clone()
+        .unwrap_or_else(|| talent_ref.id.clone());
+    let agency_user_id = talent_ref.agency_user_id.clone();
 
     // 2. Extract file
     let mut file_name = None;
@@ -2325,7 +1935,7 @@ pub async fn upload_talent_asset(
     let path = format!(
         "agencies/{}/talents/{}/assets/{}_{}",
         agency_id,
-        effective_talent_id,
+        storage_subject_id,
         chrono::Utc::now().timestamp_millis(),
         sanitized
     );
@@ -2368,7 +1978,9 @@ pub async fn upload_talent_asset(
     // 5. Insert row into agency_files
     let insert = serde_json::json!({
         "agency_id": agency_id,
-        "talent_id": effective_talent_id,
+        "talent_id": agency_user_id,
+        "creator_id": talent_ref.creator_id,
+        "relationship_id": talent_ref.relationship_id,
         "file_name": fname,
         "storage_bucket": bucket,
         "storage_path": path,
@@ -2379,33 +1991,80 @@ pub async fn upload_talent_asset(
         .pg
         .from("agency_files")
         .insert(insert.to_string())
+        .select("id,file_name,public_url,storage_bucket,storage_path,talent_id,creator_id,relationship_id,created_at")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
 
     let txt = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
+    }
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr
-        .first()
-        .cloned()
-        .unwrap_or(serde_json::json!({"id": ""}));
+    let rec = arr.first().cloned().ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Uploaded asset row was not returned by the database".to_string(),
+        )
+    })?;
     let id = rec
         .get("id")
         .and_then(|v| v.as_str())
-        .unwrap_or("")
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Uploaded asset row is missing its id".to_string(),
+            )
+        })?
         .to_string();
 
     Ok(Json(AgencyFileUploadResponse {
         id,
-        file_name: fname,
-        public_url: Some(public_url),
-        storage_bucket: bucket,
-        storage_path: path,
+        file_name: rec
+            .get("file_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&fname)
+            .to_string(),
+        public_url: rec
+            .get("public_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(Some(public_url)),
+        storage_bucket: rec
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&bucket)
+            .to_string(),
+        storage_path: rec
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&path)
+            .to_string(),
         client_id: None,
-        talent_id: Some(effective_talent_id),
+        talent_id: rec
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(agency_user_id),
+        creator_id: rec
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(talent_ref.creator_id.clone()),
+        relationship_id: rec
+            .get("relationship_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(talent_ref.relationship_id.clone()),
+        created_at: rec
+            .get("created_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     }))
 }
 

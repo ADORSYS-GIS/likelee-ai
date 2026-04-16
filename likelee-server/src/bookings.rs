@@ -1,5 +1,5 @@
 use crate::{
-    agencies::resolve_effective_agency_talent_id,
+    agency_talent_refs::resolve_agency_talent_ref,
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
@@ -27,6 +27,8 @@ pub struct CreateBookingPayload {
     pub status: Option<String>,
     pub client_id: Option<String>,
     pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
     pub talent_name: Option<String>,
     pub client_name: Option<String>,
     pub date: String,
@@ -96,15 +98,36 @@ pub async fn create_with_files(
 
     let payload = payload.ok_or((StatusCode::BAD_REQUEST, "missing data part".to_string()))?;
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let resolved_talent_id = match payload
+    let resolved_talent_ref = match payload
         .talent_id
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        Some(value) => Some(resolve_effective_agency_talent_id(&state, &agency_id, value).await?),
+        Some(value) => Some(resolve_agency_talent_ref(&state, &agency_id, value).await?),
         None => None,
     };
+    let resolved_talent_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.agency_user_id.clone());
+    let resolved_creator_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.creator_id.clone())
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
+    let resolved_relationship_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.relationship_id.clone())
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
 
     // Reuse create logic: normalize times
     let is_all_day = payload.all_day.unwrap_or(false);
@@ -115,16 +138,30 @@ pub async fn create_with_files(
     };
 
     // Validate: if talent is booked out on this date, block the booking
-    if let (Some(tid), date) = (resolved_talent_id.as_ref(), &payload.date) {
+    if let Some(talent_ref) = resolved_talent_ref.as_ref() {
         // Overlap when date is within [start_date, end_date]
-        let resp = state
+        let mut req = state
             .pg
             .from("book_outs")
             .select("id")
             .eq("agency_user_id", &user.id)
-            .eq("talent_id", tid)
-            .lte("start_date", date)
-            .gte("end_date", date)
+            .lte("start_date", &payload.date)
+            .gte("end_date", &payload.date);
+        req = if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+                req.or(format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    agency_user_id, creator_id
+                ))
+            } else {
+                req.eq("talent_id", agency_user_id)
+            }
+        } else if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            req.eq("creator_id", creator_id)
+        } else {
+            req.eq("talent_id", &talent_ref.id)
+        };
+        let resp = req
             .limit(1)
             .execute()
             .await
@@ -155,6 +192,8 @@ pub async fn create_with_files(
         "agency_id": agency_id,
         "client_id": payload.client_id,
         "talent_id": resolved_talent_id,
+        "creator_id": resolved_creator_id,
+        "relationship_id": resolved_relationship_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
         "date": payload.date,
@@ -299,6 +338,36 @@ pub async fn create(
     Json(payload): Json<CreateBookingPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let resolved_talent_ref = match payload
+        .talent_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => Some(resolve_agency_talent_ref(&state, &agency_id, value).await?),
+        None => None,
+    };
+    let resolved_talent_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.agency_user_id.clone());
+    let resolved_creator_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.creator_id.clone())
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
+    let resolved_relationship_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.relationship_id.clone())
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
     // Enforce full-day booking times if all_day=true
     let is_all_day = payload.all_day.unwrap_or(false);
     let (call_time, wrap_time) = if is_all_day {
@@ -308,15 +377,29 @@ pub async fn create(
     };
 
     // Validate: if talent is booked out on this date, block the booking
-    if let (Some(tid), date) = (payload.talent_id.as_ref(), &payload.date) {
-        let resp = state
+    if let Some(talent_ref) = resolved_talent_ref.as_ref() {
+        let mut req = state
             .pg
             .from("book_outs")
             .select("id")
             .eq("agency_user_id", &user.id)
-            .eq("talent_id", tid)
-            .lte("start_date", date)
-            .gte("end_date", date)
+            .lte("start_date", &payload.date)
+            .gte("end_date", &payload.date);
+        req = if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+                req.or(format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    agency_user_id, creator_id
+                ))
+            } else {
+                req.eq("talent_id", agency_user_id)
+            }
+        } else if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            req.eq("creator_id", creator_id)
+        } else {
+            req.eq("talent_id", &talent_ref.id)
+        };
+        let resp = req
             .limit(1)
             .execute()
             .await
@@ -347,7 +430,9 @@ pub async fn create(
         "agency_user_id": user.id,
         "agency_id": agency_id,
         "client_id": payload.client_id,
-        "talent_id": payload.talent_id,
+        "talent_id": resolved_talent_id,
+        "creator_id": resolved_creator_id,
+        "relationship_id": resolved_relationship_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
         "date": payload.date,
@@ -780,7 +865,7 @@ pub async fn serve_booking_file(
         let b_resp = state
             .pg
             .from("bookings")
-            .select("id,talent_id")
+            .select("id,talent_id,creator_id")
             .eq("id", &booking_id)
             .single()
             .execute()
@@ -797,26 +882,37 @@ pub async fn serve_booking_file(
             .unwrap_or("")
             .trim()
             .to_string();
-        if talent_id.is_empty() {
-            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
-        }
+        let creator_id = b_row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
 
-        let au_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("id", &talent_id)
-            .eq("creator_id", &user.id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !au_resp.status().is_success() {
-            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
-        }
-        let txt = au_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-        if rows.is_empty() {
+        if !creator_id.is_empty() {
+            if creator_id != user.id {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+        } else if !talent_id.is_empty() {
+            let au_resp = state
+                .pg
+                .from("agency_users")
+                .select("id")
+                .eq("id", &talent_id)
+                .eq("creator_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !au_resp.status().is_success() {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+            let txt = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            if rows.is_empty() {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+        } else {
             return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
         }
     }

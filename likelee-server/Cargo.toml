@@ -10,7 +10,7 @@ serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 dotenvy = "0.15"
-chrono = { version = "0.4", features = ["clock"] }
+chrono = { version = "0.4", features = ["clock", "serde"] }
 tower-http = { version = "0.5", features = ["cors"] }
 postgrest = "1.6"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
@@ -36,8 +36,13 @@ lettre = { version = "0.11", default-features = false, features = [
 ] }
 urlencoding = "2"
 jsonwebtoken = "9"
-stripe-sdk = { package = "async-stripe", version = "0.41", features = [
-    "runtime-tokio-hyper-rustls",
+ stripe-sdk = { package = "async-stripe", version = "0.41.0", features = [
+    "runtime-tokio-hyper",
+    "hyper-tls",
+    "billing",
+    "checkout",
+    "connect",
+    "webhook-events",
 ] }
 base64 = "0.22.1"
 bcrypt = "0.18.0"

@@ -1,4 +1,5 @@
 use crate::{
+    agency_talent_refs::list_agency_talent_refs,
     auth::AuthUser,
     config::AppState,
     team::{permissions::Permission, require_agency_access, require_agency_permission},
@@ -138,6 +139,9 @@ pub struct TalentRow {
     pub id: String,
     pub talent_id: Option<String>,
     pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
+    pub relationship_type: String,
+    pub contract_controlled: bool,
     pub name: String,
     pub stage_name: String,
     pub role: String,
@@ -204,11 +208,23 @@ pub async fn get_roster(
     let access = require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
     crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    let talent_refs = list_agency_talent_refs(&state, agency_id, None).await?;
+    let mut ref_by_key: HashMap<String, crate::agency_talent_refs::AgencyTalentRef> =
+        HashMap::new();
+    for talent_ref in talent_refs {
+        ref_by_key.insert(talent_ref.id.clone(), talent_ref.clone());
+        if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            ref_by_key.insert(agency_user_id.clone(), talent_ref.clone());
+        }
+        if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            ref_by_key.insert(creator_id.clone(), talent_ref.clone());
+        }
+    }
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,performance_tier_name,agency_users(*),creators(full_name,email,profile_photo_url)")
         .eq("agency_id", agency_id)
         .execute()
         .await
@@ -230,36 +246,53 @@ pub async fn get_roster(
 
     if let Some(array) = rows.as_array() {
         for item in array {
-            let Some(talent) = item.get("agency_users").cloned() else {
-                // The dashboard roster is backed by agency-owned talent identities only.
-                // External creator connections may exist in agency_talent_relationships
-                // without a corresponding agency_users row and should be handled through
-                // connection-aware surfaces instead of the internal roster.
-                continue;
-            };
+            let talent = item
+                .get("agency_users")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
+            let creator = item
+                .get("creators")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
             let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let talent_id_raw = item
                 .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            if talent_id_raw.trim().is_empty() {
+                continue;
+            }
             let creator_id_raw = item
                 .get("creator_id")
                 .or_else(|| get_field("creator_id"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let id = if !talent_id_raw.trim().is_empty() {
-                talent_id_raw.clone()
-            } else {
-                creator_id_raw.clone()
-            };
+            let id = talent_id_raw.clone();
+            if id.trim().is_empty() {
+                continue;
+            }
+            let talent_ref = ref_by_key
+                .get(&id)
+                .or_else(|| ref_by_key.get(&talent_id_raw))
+                .or_else(|| ref_by_key.get(&creator_id_raw));
+
+            if let Some(tr) = talent_ref {
+                if tr.relationship_type != "internal" || tr.is_connected_creator {
+                    continue;
+                }
+            } else if item.get("agency_users").is_none() {
+                continue;
+            }
             // Try full_legal_name, then stage_name, then full_name
             let name = get_field("full_legal_name")
                 .or(get_field("stage_name"))
+                .or(creator.get("full_name"))
                 .or(get_field("full_name"))
                 .and_then(|v| v.as_str())
-                .unwrap_or("Unknown")
+                .or_else(|| creator.get("email").and_then(|v| v.as_str()))
+                .unwrap_or("Unnamed")
                 .to_string();
 
             let stage_name = get_field("stage_name")
@@ -268,6 +301,7 @@ pub async fn get_roster(
                 .to_string();
 
             let email = get_field("email")
+                .or(creator.get("email"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -358,6 +392,7 @@ pub async fn get_roster(
                 .map(parse_string_array_value)
                 .unwrap_or_default();
             let profile_photo = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim();
@@ -411,6 +446,7 @@ pub async fn get_roster(
 
             let is_verified = false;
             let img = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -581,6 +617,22 @@ pub async fn get_roster(
                 } else {
                     Some(creator_id_str.clone())
                 },
+                relationship_id: item
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                relationship_type: talent_ref
+                    .map(|value| value.relationship_type.clone())
+                    .unwrap_or_else(|| {
+                        if creator_id_str.trim().is_empty() {
+                            "internal".to_string()
+                        } else {
+                            "marketplace_connected".to_string()
+                        }
+                    }),
+                contract_controlled: talent_ref
+                    .map(|value| value.contract_controlled)
+                    .unwrap_or(false),
                 name,
                 stage_name,
                 role,

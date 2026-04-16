@@ -77,7 +77,7 @@ Agency-to-creator connections started from the agency dashboard marketplace are 
   - `voided`
 - `creator_agency_invites` stores invite/request state for the creator dashboard experience.
 - `agency_talent_relationships` is the real connection table that determines whether a creator is connected to an agency.
-- `agency_users` is kept in sync so the creator appears correctly in the agency roster and related agency views.
+- `agency_users` remains the internal agency-managed talent profile table. Marketplace-connected creators may appear in agency views through `agency_talent_relationships` without requiring a mirrored `agency_users` row.
 
 ### Activation Flow
 
@@ -88,7 +88,6 @@ Agency-to-creator connections started from the agency dashboard marketplace are 
 - After both parties sign, the marketplace DocuSeal webhook updates the contract row to `active`.
 - Activation then updates:
   - `creator_agency_invites.status -> accepted`
-  - `agency_users.status -> active` for the agency/creator pair
   - `agency_talent_relationships.status -> active`
 - Marketplace cards, Creator Dashboard, Talent Portal, and the Agency Roster should all treat the creator as connected once `agency_talent_relationships` is active.
 

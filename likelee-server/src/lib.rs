@@ -9,6 +9,7 @@ pub mod agency_dashboard;
 pub mod agency_marketplace_contracts;
 pub mod agency_roster;
 pub mod agency_talent_invites;
+pub mod agency_talent_refs;
 pub mod analytics;
 pub mod auth;
 pub mod billing;

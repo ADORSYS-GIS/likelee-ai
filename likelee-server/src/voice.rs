@@ -700,30 +700,28 @@ pub async fn list_voice_recordings(
         if user.role == "agency" {
             let access = crate::team::require_agency_access(&state, &user).await?;
             let agency_id = &access.organization_id;
-            let resp = state
-                .pg
-                .from("agency_users")
-                .select("id, creator_id")
-                .eq("agency_id", agency_id)
-                .eq("id", tid)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-            let text = resp.text().await.unwrap_or_default();
-            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            let talent_ref =
+                crate::agency_talent_refs::resolve_agency_talent_ref(&state, agency_id, tid)
+                    .await?;
 
-            if let Some(row) = rows.first() {
-                target_user_ids.clear();
-                // 1. push the agency_users.id itself (where agency uploads might go)
-                target_user_ids.push(tid.clone());
-                // 2. push the creator_id (where talent's own recordings go)
-                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
-                    if !creator_id.is_empty() {
-                        target_user_ids.push(creator_id.to_string());
-                    }
+            let effective_agency_user_id = talent_ref
+                .agency_user_id
+                .clone()
+                .unwrap_or_else(|| talent_ref.id.clone());
+            let effective_creator_id = talent_ref.creator_id.clone();
+
+            target_user_ids.clear();
+            if !effective_agency_user_id.trim().is_empty() {
+                target_user_ids.push(effective_agency_user_id);
+            }
+            if let Some(cid) = effective_creator_id {
+                if !cid.trim().is_empty() && !target_user_ids.iter().any(|x| x == &cid) {
+                    target_user_ids.push(cid);
                 }
-            } else {
+            }
+
+            if target_user_ids.is_empty() {
                 return Err((
                     StatusCode::FORBIDDEN,
                     "Not authorized to access this talent".into(),
