@@ -1,11 +1,21 @@
 import React, { useState } from "react";
 
 import { useAuth } from "@/auth/AuthProvider";
+import type { Profile } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
+import { getDashboardPath } from "@/auth/onboarding";
+import { getBrandProfile, getAgencyProfile } from "@/api/functions";
 //import Layout from "./Layout";
+
+type UserRole = "brand" | "agency" | "creator";
+
+// Helper to check if error is a 404 (profile not found)
+function isNotFoundError(error: any): boolean {
+  return error?.status === 404 || error?.data?.code === "profile_not_found";
+}
 
 export default function UpdatePassword() {
   const { t } = useTranslation();
@@ -58,9 +68,57 @@ export default function UpdatePassword() {
 
             const params = new URLSearchParams(location.search);
             const next = params.get("next") || "";
-            const nextPath = next.startsWith("/")
-              ? withInviteAcceptIntent(next)
-              : "/login";
+
+            // If there's a next parameter, use it; otherwise redirect to appropriate dashboard
+            let nextPath: string;
+            if (next.startsWith("/")) {
+              nextPath = withInviteAcceptIntent(next);
+            } else {
+              // Determine user role by checking which profile exists
+              // Only treat 404 as "profile doesn't exist", other errors redirect to login
+              let role: UserRole = "creator"; // default fallback
+
+              try {
+                // Try to fetch brand profile first
+                await getBrandProfile();
+                role = "brand";
+              } catch (brandError: any) {
+                // Only proceed to check agency if brand profile truly doesn't exist (404)
+                if (isNotFoundError(brandError)) {
+                  try {
+                    await getAgencyProfile();
+                    role = "agency";
+                  } catch (agencyError: any) {
+                    // If agency also returns 404, default to creator
+                    // If it's another error (network, 500, etc), redirect to login for safety
+                    if (!isNotFoundError(agencyError)) {
+                      console.error("Failed to fetch profiles:", {
+                        brandError,
+                        agencyError,
+                      });
+                      nextPath = "/login";
+                      setTimeout(() => navigate(nextPath), 700);
+                      return;
+                    }
+                    role = "creator";
+                  }
+                } else {
+                  // Brand profile fetch failed with non-404 error (network, 500, etc)
+                  // Redirect to login for safety
+                  console.error("Failed to fetch brand profile:", brandError);
+                  nextPath = "/login";
+                  setTimeout(() => navigate(nextPath), 700);
+                  return;
+                }
+              }
+
+              nextPath = getDashboardPath({
+                role,
+                id: "",
+                email: "",
+              } as Profile);
+            }
+
             setTimeout(() => navigate(nextPath), 700);
           } catch (err: any) {
             const msg = err?.message ?? "Failed to update password";

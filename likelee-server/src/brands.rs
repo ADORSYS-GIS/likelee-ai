@@ -202,10 +202,32 @@ pub async fn update(
                 return Err(sanitize_db_error(status.as_u16(), text));
             }
 
-            let v: serde_json::Value = serde_json::from_str(&text)
+            // UPDATE returns empty array by default, so fetch the updated record
+            let fetch_resp = state
+                .pg
+                .from("brands")
+                .auth(state.supabase_service_key.clone())
+                .select("*")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-            return Ok(Json(v));
+            let fetch_text = fetch_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&fetch_text)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let profile = rows.into_iter().next().ok_or((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to fetch updated profile".to_string(),
+            ))?;
+
+            return Ok(Json(profile));
         }
 
         // Include the user's id for upsert matching
@@ -304,7 +326,7 @@ pub async fn get_by_user(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     match rows.into_iter().next() {
-        Some(v) => Ok(Json(v)),
+        Some(profile) => Ok(Json(profile)),
         None => Err((
             StatusCode::NOT_FOUND,
             json!({
