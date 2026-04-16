@@ -4223,7 +4223,7 @@ async fn sync_creator_subscription_by_subscription_id(
         .await
 }
 
-pub async fn sync_creator_subscription_from_stripe(
+async fn sync_creator_subscription_from_stripe(
     state: &AppState,
     creator_id: &str,
     subscription_id: &str,
@@ -4268,7 +4268,7 @@ pub async fn sync_creator_subscription_from_stripe(
             .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
         update.insert("trial_started_at".into(), json!(ts));
 
-        match plan_tier.as_ref() {
+        match plan_tier {
             "basic" => {
                 update.insert("trial_basic_started_at".into(), json!(ts));
             }
@@ -4277,7 +4277,7 @@ pub async fn sync_creator_subscription_from_stripe(
             }
             _ => {}
         }
-    } else if status == "active" {
+    } else {
         update.insert("trial_started_at".into(), json!(null));
         update.insert("trial_basic_started_at".into(), json!(null));
         update.insert("trial_pro_started_at".into(), json!(null));
