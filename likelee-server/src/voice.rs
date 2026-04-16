@@ -32,6 +32,9 @@ async fn enforce_voice_clone_limit_for_agency(
         ));
     }
 
+    // voice_models.user_id stores the auth.users UUID for agency-owned models
+    // (set explicitly in register_voice_model/create_clone_from_recording via input.user_id = user.id).
+    // agencies.id is also REFERENCES auth.users(id), so agency_id == voice_models.user_id is correct.
     let resp = state
         .pg
         .from("voice_models")
