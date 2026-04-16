@@ -29,4 +29,4 @@ WHERE
 -- Clear any existing creator subscription events
 DELETE FROM public.creator_subscription_events;
 
-COMMIT;
+COMMIT; 
