@@ -15,6 +15,7 @@ import {
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
 import {
+  createCreatorBillingPortal,
   listTalentAgencyInvites,
   listTalentAssetRequests,
   listTalentBookings,
@@ -5853,9 +5854,17 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 className="h-11 rounded-2xl font-black border-2 border-gray-200 bg-white text-gray-900 px-6 shadow-sm hover:bg-gray-50 flex items-center gap-2"
-                onClick={() => {
-                  setActiveSection("settings");
-                  setSettingsTab("billing");
+                onClick={async () => {
+                  try {
+                    const resp = await createCreatorBillingPortal();
+                    const url = String((resp as any)?.checkout_url || "").trim();
+                    if (!url) {
+                      throw new Error("missing_billing_portal_url");
+                    }
+                    window.location.href = url;
+                  } catch {
+                    navigate("/CreatorSubscribe");
+                  }
                 }}
               >
                 Manage Subscription
