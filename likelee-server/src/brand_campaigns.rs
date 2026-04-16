@@ -3,6 +3,7 @@ use crate::{
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
+    pricing_defaults::should_default_visibility_on,
     services::docuseal::{DocuSealClient, Submitter},
     storage::{
         canonical_object_path, delete_object, download_object, insert_asset_record,
@@ -2037,22 +2038,24 @@ pub async fn list_offer_options(
     let items: Vec<serde_json::Value> = rows
         .into_iter()
         .filter(|r| {
-            let public_profile_visible = r
-                .get("public_profile_visible")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
+            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
             let visibility = r
                 .get("visibility")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            public_profile_visible
-                || visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
+            match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(r),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            }
         })
         .map(|r| {
             let monthly = r
