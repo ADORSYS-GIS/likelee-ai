@@ -1830,7 +1830,7 @@ pub async fn get_earnings_by_campaign(
             monthly_cents,
         })
         .collect();
-    out.sort_by(|a, b| b.monthly_cents.cmp(&a.monthly_cents));
+    out.sort_by_key(|b| std::cmp::Reverse(b.monthly_cents));
     Ok(Json(out))
 }
 
@@ -1963,7 +1963,7 @@ pub async fn get_earnings_by_agency(
             monthly_cents,
         })
         .collect();
-    out.sort_by(|a, b| b.monthly_cents.cmp(&a.monthly_cents));
+    out.sort_by_key(|b| std::cmp::Reverse(b.monthly_cents));
     Ok(Json(out))
 }
 
@@ -2359,7 +2359,7 @@ pub async fn get_analytics(
             revenue_cents: *revenue_by_brand.get(bid).unwrap_or(&0),
         })
         .collect();
-    campaigns.sort_by(|a, b| b.revenue_cents.cmp(&a.revenue_cents));
+    campaigns.sort_by_key(|b| std::cmp::Reverse(b.revenue_cents));
 
     // ROI (constants match screenshot style)
     let traditional_min_monthly = 250_000; // $2,500
