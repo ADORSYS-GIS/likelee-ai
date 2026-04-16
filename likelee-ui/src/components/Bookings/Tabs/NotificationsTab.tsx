@@ -850,14 +850,18 @@ export const NotificationsTab = ({
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
                         {talent.image ||
+                        talent.img ||
                         talent.avatar ||
                         talent.profile_image_url ||
+                        talent.profile_photo_url ||
                         talent.talent_avatar ? (
                           <img
                             src={
                               talent.image ||
+                              talent.img ||
                               talent.avatar ||
                               talent.profile_image_url ||
+                              talent.profile_photo_url ||
                               talent.talent_avatar
                             }
                             alt={talent.name || talent.talent_name || "Talent"}
