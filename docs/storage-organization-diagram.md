@@ -15,9 +15,9 @@ graph TB
     ROOT --> TEMP[likelee-temp<br/>Temporary Bucket]
     
     subgraph "Public Assets - Direct URL Access"
-        PUBLIC --> PUB1[creators/{id}/reference-images]
-        PUBLIC --> PUB2[agencies/{id}/talents/{tid}/portfolio]
-        PUBLIC --> PUB3[agencies/{id}/talents/{tid}/assets]
+        PUBLIC --> PUB1["creators/{id}/reference-images"]
+        PUBLIC --> PUB2["agencies/{id}/talents/{tid}/portfolio"]
+        PUBLIC --> PUB3["agencies/{id}/talents/{tid}/assets"]
         
         PUB1 --> PUB1A[Creator-owned<br/>No quota]
         PUB2 --> PUB2A[Agency-owned<br/>Counts quota]
@@ -25,13 +25,13 @@ graph TB
     end
     
     subgraph "Private Assets - Signed URL Access"
-        PRIVATE --> PRIV1[agencies/{id}/storage]
-        PRIVATE --> PRIV2[agencies/{id}/clients/{cid}/files]
-        PRIVATE --> PRIV3[users/{id}/voice-recordings]
-        PRIVATE --> PRIV4[agencies/{id}/bookings/{bid}/files]
-        PRIVATE --> PRIV5[agencies/{id}/booking-campaigns/{cid}/deliverables]
-        PRIVATE --> PRIV6[agencies/{id}/talents/{tid}/tax-documents]
-        PRIVATE --> PRIV7[brands/{id}/voice-assets]
+        PRIVATE --> PRIV1["agencies/{id}/storage"]
+        PRIVATE --> PRIV2["agencies/{id}/clients/{cid}/files"]
+        PRIVATE --> PRIV3["users/{id}/voice-recordings"]
+        PRIVATE --> PRIV4["agencies/{id}/bookings/{bid}/files"]
+        PRIVATE --> PRIV5["agencies/{id}/booking-campaigns/{cid}/deliverables"]
+        PRIVATE --> PRIV6["agencies/{id}/talents/{tid}/tax-documents"]
+        PRIVATE --> PRIV7["brands/{id}/voice-assets"]
         
         PRIV1 --> PRIV1A[Agency-owned<br/>Counts quota]
         PRIV2 --> PRIV2A[Agency-owned<br/>Counts quota]
