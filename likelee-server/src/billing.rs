@@ -846,13 +846,24 @@ async fn ensure_brand_customer(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
 
     let customer_id = customer.id.to_string();
-    let _ = state
+    let cust_update_resp = state
         .pg
         .from("brands")
         .eq("id", brand_id)
         .update(json!({ "stripe_customer_id": customer_id }).to_string())
         .execute()
         .await;
+
+    match cust_update_resp {
+        Ok(resp) if !resp.status().is_success() => {
+            let body = resp.text().await.unwrap_or_default();
+            warn!(brand_id = %brand_id, status = %body, "failed to persist stripe_customer_id to brands table");
+        }
+        Err(e) => {
+            warn!(brand_id = %brand_id, error = %e, "transport error persisting stripe_customer_id to brands table");
+        }
+        _ => {}
+    }
 
     Ok(customer.id.to_string())
 }
@@ -1221,13 +1232,24 @@ async fn get_or_create_agency_billing_context(
 
         let cust_id = cust.id.to_string();
 
-        let _ = state
+        let cust_update_resp = state
             .pg
             .from("agencies")
             .eq("id", agency_id)
             .update(json!({"stripe_customer_id": cust_id}).to_string())
             .execute()
             .await;
+
+        match cust_update_resp {
+            Ok(resp) if !resp.status().is_success() => {
+                let body = resp.text().await.unwrap_or_default();
+                warn!(agency_id = %agency_id, status = %body, "failed to persist stripe_customer_id to agencies table");
+            }
+            Err(e) => {
+                warn!(agency_id = %agency_id, error = %e, "transport error persisting stripe_customer_id to agencies table");
+            }
+            _ => {}
+        }
 
         cust.id.to_string()
     };
@@ -2777,13 +2799,25 @@ pub async fn create_creator_subscription_checkout(
             .await
             .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
         let cust_id = customer.id.to_string();
-        let _ = state
+        let cust_update_resp = state
             .pg
             .from("creators")
             .eq("id", &creator_id)
             .update(json!({ "stripe_customer_id": cust_id }).to_string())
             .execute()
             .await;
+
+        match cust_update_resp {
+            Ok(resp) if !resp.status().is_success() => {
+                let body = resp.text().await.unwrap_or_default();
+                warn!(creator_id = %creator_id, status = %body, "failed to persist stripe_customer_id to creators table");
+            }
+            Err(e) => {
+                warn!(creator_id = %creator_id, error = %e, "transport error persisting stripe_customer_id to creators table");
+            }
+            _ => {}
+        }
+
         cust_id
     };
 
@@ -3812,18 +3846,25 @@ pub async fn verify_brand_studio_addon_checkout(
             .filter(|v| v == "lite" || v == "pro")
             .unwrap_or_else(|| BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
 
-        let _ = crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str))
-            .await;
-        let _ = crate::studio::wallet::set_current_plan(
+        crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str))
+            .await
+            .map_err(|e| {
+                warn!(brand_id = %user.id, error = %e, "failed to add studio credits after verified checkout");
+                billing_error(StatusCode::INTERNAL_SERVER_ERROR, "credit_add_failed", "Failed to add studio credits.")
+            })?;
+        crate::studio::wallet::set_current_plan(
             &state.pg,
             &user.id,
             Some(studio_plan.as_str()),
         )
-        .await;
+        .await
+        .map_err(|e| {
+            warn!(brand_id = %user.id, error = %e, "failed to set studio plan after verified checkout");
+            billing_error(StatusCode::INTERNAL_SERVER_ERROR, "plan_set_failed", "Failed to set studio plan.")
+        })?;
     }
 
-    // Mark the brand as active.
-    let _ = state
+    let addon_resp = state
         .pg
         .from("brands")
         .eq("id", user.id.as_str())
@@ -3835,7 +3876,17 @@ pub async fn verify_brand_studio_addon_checkout(
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+        .map_err(|e| {
+            warn!(brand_id = %user.id, error = %e, "transport error marking studio_addon_active");
+            billing_error(StatusCode::INTERNAL_SERVER_ERROR, "addon_activate_failed", "Failed to activate studio add-on.")
+        })?;
+
+    if !addon_resp.status().is_success() {
+        let body = addon_resp.text().await.unwrap_or_default();
+        warn!(brand_id = %user.id, status = %body, "DB rejected studio_addon_active update");
+        return Err(billing_error(StatusCode::INTERNAL_SERVER_ERROR, "addon_activate_failed", "Failed to activate studio add-on."));
+    }
 
     info!(brand_id = %user.id, stripe_session_id = %session_id_raw, "brand studio add-on verified and activated");
     Ok(Json(json!({ "studio_addon_active": true })))
@@ -4217,14 +4268,24 @@ pub async fn create_campaign_offer_checkout(
         ));
     }
 
-    // Mark as processing
-    let _ = state
+    let processing_resp = state
         .pg
         .from("campaign_offers")
         .eq("id", &offer_id)
         .update(json!({"payment_status": "processing", "stripe_checkout_session_id": session.id.to_string()}).to_string())
         .execute()
         .await;
+
+    match processing_resp {
+        Ok(resp) if !resp.status().is_success() => {
+            let body = resp.text().await.unwrap_or_default();
+            warn!(offer_id = %offer_id, status = %body, "failed to mark campaign offer as processing");
+        }
+        Err(e) => {
+            warn!(offer_id = %offer_id, error = %e, "transport error marking campaign offer as processing");
+        }
+        _ => {}
+    }
 
     info!(offer_id, "created campaign offer checkout session");
     Ok(Json(CampaignCheckoutResponse { url }))

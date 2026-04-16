@@ -124,8 +124,6 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-const __pagesQueryClient = new QueryClient();
 import BrandStudioAddonRoute from "@/auth/BrandStudioAddonRoute";
 
 import ProtectedRoute from "@/auth/ProtectedRoute";
@@ -389,7 +387,6 @@ function AppRoutes() {
         }
       />
 
-      <Route path="/StudioSubscribe" element={<StudioSubscribe />} />
       <Route path="/CreatorSubscribe" element={<CreatorSubscribe />} />
 
       <Route
