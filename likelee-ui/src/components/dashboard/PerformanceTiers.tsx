@@ -205,9 +205,11 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
       return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
+      // Close modal immediately for better UX
       setIsConfigModalOpen(false);
       toast.success("Tier thresholds updated successfully");
+      // Refetch in background to get updated tier assignments
+      queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to update configuration");
