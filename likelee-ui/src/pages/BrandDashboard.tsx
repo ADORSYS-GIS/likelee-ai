@@ -10925,7 +10925,6 @@ export default function BrandDashboard() {
         <div className="p-8">
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && renderCreatorMarketplace()}
-          {activeSection === "marketplace" && renderCreatorMarketplace()}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
           {activeSection === "campaigns-hub" &&

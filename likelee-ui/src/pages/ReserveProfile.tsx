@@ -1764,7 +1764,7 @@ export default function ReserveProfile() {
                   className="border-2 border-black rounded-none"
                   onClick={() =>
                     window.open(
-                      "/creator-talent-terms-and-conditions.html",
+                      "/LIKELEE%20AI%20%E2%80%94%20Creator%20%26%20Talent%20Terms%20and%20Conditions.pdf",
                       "_blank",
                     )
                   }
