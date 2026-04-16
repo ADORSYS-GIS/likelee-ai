@@ -3879,13 +3879,21 @@ pub async fn verify_brand_studio_addon_checkout(
         .await
         .map_err(|e| {
             warn!(brand_id = %user.id, error = %e, "transport error marking studio_addon_active");
-            billing_error(StatusCode::INTERNAL_SERVER_ERROR, "addon_activate_failed", "Failed to activate studio add-on.")
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "addon_activate_failed",
+                "Failed to activate studio add-on.",
+            )
         })?;
 
     if !addon_resp.status().is_success() {
         let body = addon_resp.text().await.unwrap_or_default();
         warn!(brand_id = %user.id, status = %body, "DB rejected studio_addon_active update");
-        return Err(billing_error(StatusCode::INTERNAL_SERVER_ERROR, "addon_activate_failed", "Failed to activate studio add-on."));
+        return Err(billing_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "addon_activate_failed",
+            "Failed to activate studio add-on.",
+        ));
     }
 
     info!(brand_id = %user.id, stripe_session_id = %session_id_raw, "brand studio add-on verified and activated");
