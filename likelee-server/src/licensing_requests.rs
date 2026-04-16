@@ -3,6 +3,7 @@ use crate::{
     config::AppState,
     entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
     errors::sanitize_db_error,
+    pricing_defaults::should_default_visibility_on,
     team::{permissions::Permission, require_agency_access, require_agency_permission},
 };
 use axum::{
@@ -1748,22 +1749,24 @@ pub async fn list_brand_campaign_license_options(
     let mut out: Vec<serde_json::Value> = rows
         .into_iter()
         .filter(|r| {
-            let public_profile_visible = r
-                .get("public_profile_visible")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
+            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
             let visibility = r
                 .get("visibility")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            public_profile_visible
-                || visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
+            match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(r),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            }
         })
         .map(|r| {
             let base_weekly = resolve_weekly_cents(
