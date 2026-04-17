@@ -295,6 +295,9 @@ async fn main() {
         cache_l3,
         cache_idempotency,
         cache_metrics,
+
+        // Cron authentication
+        cron_secret: cfg.cron_secret.clone(),
     };
 
     // Start background jobs

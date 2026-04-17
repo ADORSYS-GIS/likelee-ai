@@ -306,6 +306,10 @@ pub struct ServerConfig {
     /// TTL for idempotency records in seconds (default: 24 hours)
     #[envconfig(from = "CACHE_IDEMPOTENCY_TTL_SECS", default = "86400")]
     pub cache_idempotency_ttl_secs: u64,
+
+    /// Secret token for authenticating cron job endpoints
+    #[envconfig(from = "CRON_SECRET", default = "")]
+    pub cron_secret: String,
 }
 
 #[derive(Clone)]
@@ -417,4 +421,7 @@ pub struct AppState {
     pub cache_l3: std::sync::Arc<crate::cache::ApplicationCache>,
     pub cache_idempotency: std::sync::Arc<crate::cache::IdempotencyStore>,
     pub cache_metrics: std::sync::Arc<crate::cache::CacheMetrics>,
+
+    // Cron authentication
+    pub cron_secret: String,
 }

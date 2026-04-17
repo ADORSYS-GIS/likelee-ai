@@ -1,5 +1,10 @@
-use axum::{extract::State, http::StatusCode, Json};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use axum::{
+    extract::Query,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    Json,
+};
+use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -3338,6 +3343,9 @@ pub async fn create_brand_subscription_checkout(
         return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
     }
 
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
@@ -3366,7 +3374,7 @@ pub async fn create_brand_subscription_checkout(
         ));
     }
 
-    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
     let email = row
         .get("email")
         .and_then(|v| v.as_str())
@@ -3533,7 +3541,7 @@ pub async fn create_brand_subscription_checkout(
     }
 
     info!(
-        brand_id = %user.id,
+        brand_id = %brand_id,
         plan = %target_plan,
         billing_cycle = %billing_cycle,
         start_trial = should_start_trial,
@@ -3557,6 +3565,9 @@ pub async fn create_brand_studio_addon_checkout(
         return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
     }
 
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
     if state.stripe_secret_key.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
@@ -3571,7 +3582,7 @@ pub async fn create_brand_studio_addon_checkout(
         ));
     }
 
-    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
     let email = row
         .get("email")
         .and_then(|v| v.as_str())
@@ -4517,6 +4528,9 @@ pub async fn create_brand_billing_portal(
         return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
     }
 
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
     if state.stripe_secret_key.trim().is_empty() {
         return Err(billing_error(
             StatusCode::PRECONDITION_FAILED,
@@ -4525,7 +4539,7 @@ pub async fn create_brand_billing_portal(
         ));
     }
 
-    let row = get_brand_checkout_row(&state, &user.id).await?;
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
     let customer_id_str = row
         .get("stripe_customer_id")
         .and_then(|v| v.as_str())
@@ -4642,4 +4656,553 @@ pub async fn create_creator_billing_portal(
             Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandBillingStatusResponse {
+    pub brand_id: String,
+    pub plan_tier: String,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub current_period_end: Option<String>,
+    pub cancel_at_period_end: bool,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+}
+
+pub async fn get_brand_billing_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandBillingStatusResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let resp = state
+        .pg
+        .from("brands")
+        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,stripe_current_period_end,stripe_cancel_at_period_end,trial_ends_at")
+        .eq("id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    let plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .to_string();
+
+    let subscription_status = row
+        .get("subscription_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("inactive")
+        .to_string();
+
+    let trial_ends_at_str = row
+        .get("trial_ends_at")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+
+    let trial_active = if let Some(trial_ends_str) = &trial_ends_at_str {
+        chrono::DateTime::parse_from_rfc3339(trial_ends_str)
+            .map(|dt| chrono::Utc::now() < dt.with_timezone(&chrono::Utc))
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
+    Ok(Json(BrandBillingStatusResponse {
+        brand_id,
+        plan_tier,
+        subscription_status,
+        stripe_customer_id: row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_subscription_id: row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        current_period_end: row
+            .get("stripe_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        cancel_at_period_end: row
+            .get("stripe_cancel_at_period_end")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        trial_active,
+        trial_ends_at: trial_ends_at_str.map(|s| s.to_string()),
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandInvoice {
+    pub id: String,
+    pub number: Option<String>,
+    pub amount: i64,
+    pub currency: String,
+    pub status: String,
+    pub created_at: Option<String>,
+    pub invoice_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandInvoicesResponse {
+    pub invoices: Vec<BrandInvoice>,
+}
+
+pub async fn list_brand_invoices(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandInvoicesResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Ok(Json(BrandInvoicesResponse { invoices: vec![] }));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+
+    let customer_id_str = match customer_id_str {
+        Some(id) => id.to_string(),
+        None => return Ok(Json(BrandInvoicesResponse { invoices: vec![] })),
+    };
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id",
+                "Invalid Stripe customer ID.",
+            )
+        })?;
+
+    let params = stripe_sdk::ListInvoices {
+        customer: Some(customer_id),
+        limit: Some(24),
+        ..Default::default()
+    };
+
+    let invoices = match stripe_sdk::Invoice::list(&client, &params).await {
+        Ok(list) => list.data,
+        Err(e) => {
+            warn!(error = %e, brand_id = %user.id, "failed to list stripe invoices for brand");
+            return Ok(Json(BrandInvoicesResponse { invoices: vec![] }));
+        }
+    };
+
+    let brand_invoices: Vec<BrandInvoice> = invoices
+        .into_iter()
+        .map(|inv| BrandInvoice {
+            id: inv.id.to_string(),
+            number: inv.number,
+            amount: inv.amount_due.unwrap_or(0),
+            currency: inv
+                .currency
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "usd".to_string()),
+            status: inv
+                .status
+                .map(|s| format!("{:?}", s).to_lowercase())
+                .unwrap_or_else(|| "unknown".to_string()),
+            created_at: inv.created.map(ts_to_rfc3339).unwrap_or(None),
+            invoice_url: inv.hosted_invoice_url,
+        })
+        .collect();
+
+    Ok(Json(BrandInvoicesResponse {
+        invoices: brand_invoices,
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandBudgetSettings {
+    pub monthly_budget_limit: Option<f64>,
+    pub budget_alert_enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateBrandBudgetSettingsRequest {
+    pub monthly_budget_limit: Option<f64>,
+    pub budget_alert_enabled: Option<bool>,
+}
+
+pub async fn get_brand_budget_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandBudgetSettings>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let resp = state
+        .pg
+        .from("brands")
+        .select("monthly_budget_limit,budget_alert_enabled")
+        .eq("id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    Ok(Json(BrandBudgetSettings {
+        monthly_budget_limit: row.get("monthly_budget_limit").and_then(|v| v.as_f64()),
+        budget_alert_enabled: row
+            .get("budget_alert_enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+    }))
+}
+
+pub async fn update_brand_budget_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdateBrandBudgetSettingsRequest>,
+) -> Result<Json<BrandBudgetSettings>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    // Validate monthly_budget_limit
+    if let Some(limit) = payload.monthly_budget_limit {
+        if limit < 0.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot be negative".to_string(),
+            ));
+        }
+        if limit > 10_000_000.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot exceed $10,000,000".to_string(),
+            ));
+        }
+    }
+
+    let update_body = json!({
+        "monthly_budget_limit": payload.monthly_budget_limit,
+        "budget_alert_enabled": payload.budget_alert_enabled.unwrap_or(false),
+    });
+
+    let resp = state
+        .pg
+        .from("brands")
+        .update(update_body.to_string())
+        .eq("id", &brand_id)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(BrandBudgetSettings {
+        monthly_budget_limit: payload.monthly_budget_limit,
+        budget_alert_enabled: payload.budget_alert_enabled.unwrap_or(false),
+    }))
+}
+
+fn verify_cron_auth(headers: &HeaderMap, cron_secret: &str) -> Result<(), (StatusCode, String)> {
+    if cron_secret.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "CRON_SECRET not configured".to_string(),
+        ));
+    }
+
+    let auth_header = headers
+        .get("Authorization")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !auth_header.starts_with("Bearer ") {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Missing or invalid Authorization header. Use: Authorization: Bearer <secret>"
+                .to_string(),
+        ));
+    }
+
+    let token = auth_header.strip_prefix("Bearer ").unwrap_or("");
+    if token != cron_secret.trim() {
+        return Err((StatusCode::UNAUTHORIZED, "Invalid cron secret".to_string()));
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CronQueryParams {
+    /// Optional: for idempotency tracking
+    pub idempotency_key: Option<String>,
+}
+
+pub async fn check_budget_alerts_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    let now = chrono::Utc::now();
+    let current_month_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+        .unwrap();
+
+    // Get all brands with budget alerts enabled
+    let resp = state
+        .pg
+        .from("brands")
+        .select("id,email,company_name,monthly_budget_limit,budget_alert_enabled,budget_alert_80_sent_at,budget_alert_100_sent_at")
+        .eq("budget_alert_enabled", "true")
+        .not("monthly_budget_limit", "is", "null")
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let brands: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let brands_count = brands.len();
+    let mut alerts_sent = 0;
+
+    for brand in brands {
+        let brand_id = brand.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let budget_limit = brand
+            .get("monthly_budget_limit")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+
+        if budget_limit <= 0.0 {
+            continue;
+        }
+
+        // Get current month spend from campaign_offers
+        let offers_resp = state
+            .pg
+            .from("campaign_offers")
+            .select("id,budget_snapshot,payment_status,created_at")
+            .eq("brand_id", brand_id)
+            .limit(1000)
+            .execute()
+            .await
+            .map_err(map_postgrest_transport_error)?;
+
+        let offers_text = offers_resp.text().await.unwrap_or_default();
+        let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+        let mut current_month_spend: i64 = 0;
+        for offer in offers {
+            let payment_status = offer
+                .get("payment_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            if payment_status != "released" && payment_status != "paid" {
+                continue;
+            }
+
+            let budget_cents = offer
+                .get("budget_snapshot")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            if budget_cents <= 0 {
+                continue;
+            }
+
+            let created_at_str = offer
+                .get("created_at")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let created_at = chrono::DateTime::parse_from_rfc3339(created_at_str)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or(now);
+
+            if created_at >= current_month_start {
+                current_month_spend += budget_cents;
+            }
+        }
+
+        let current_spend_dollars = (current_month_spend as f64) / 100.0;
+        let spend_percent = (current_spend_dollars / budget_limit) * 100.0;
+
+        // Check 100% threshold
+        let alert_100_sent = brand
+            .get("budget_alert_100_sent_at")
+            .and_then(|v| v.as_str())
+            .is_some();
+        if spend_percent >= 100.0 && !alert_100_sent {
+            if let Err((code, err)) = crate::notifications::send_brand_notification(
+                &state,
+                brand_id,
+                None,
+                "Budget Alert: Monthly Limit Reached",
+                &format!(
+                    "You have reached your monthly budget limit of ${:.2}. Current spend: ${:.2}",
+                    budget_limit, current_spend_dollars
+                ),
+                json!({"type": "budget_alert", "threshold": "100"}),
+                true,
+            )
+            .await
+            {
+                tracing::warn!(
+                    brand_id,
+                    error = %err,
+                    status = %code,
+                    "Failed to send 100% budget alert notification"
+                );
+            }
+
+            if let Err(e) = state
+                .pg
+                .from("brands")
+                .update(json!({"budget_alert_100_sent_at": now.to_rfc3339()}).to_string())
+                .eq("id", brand_id)
+                .execute()
+                .await
+            {
+                tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_100_sent_at");
+            }
+
+            alerts_sent += 1;
+        }
+        // Check 80% threshold
+        else if spend_percent >= 80.0 {
+            let alert_80_sent = brand
+                .get("budget_alert_80_sent_at")
+                .and_then(|v| v.as_str())
+                .is_some();
+            if !alert_80_sent {
+                if let Err((code, err)) = crate::notifications::send_brand_notification(
+                    &state,
+                    brand_id,
+                    None,
+                    "Budget Alert: 80% of Monthly Limit Reached",
+                    &format!(
+                        "You have reached 80% of your monthly budget limit (${:.2} of ${:.2}). Current spend: ${:.2}",
+                        budget_limit * 0.8, budget_limit, current_spend_dollars
+                    ),
+                    json!({"type": "budget_alert", "threshold": "80"}),
+                    true,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        brand_id,
+                        error = %err,
+                        status = %code,
+                        "Failed to send 80% budget alert notification"
+                    );
+                }
+
+                if let Err(e) = state
+                    .pg
+                    .from("brands")
+                    .update(json!({"budget_alert_80_sent_at": now.to_rfc3339()}).to_string())
+                    .eq("id", brand_id)
+                    .execute()
+                    .await
+                {
+                    tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_80_sent_at");
+                }
+
+                alerts_sent += 1;
+            }
+        }
+    }
+
+    Ok(Json(json!({
+        "success": true,
+        "alerts_sent": alerts_sent,
+        "brands_checked": brands_count
+    })))
+}
+
+pub async fn reset_monthly_budget_alerts(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    // Reset alert timestamps for all brands at the start of each month
+    let resp = state
+        .pg
+        .from("brands")
+        .update(
+            json!({
+                "budget_alert_80_sent_at": null,
+                "budget_alert_100_sent_at": null
+            })
+            .to_string(),
+        )
+        .not("monthly_budget_limit", "is", "null")
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(json!({
+        "success": true,
+        "message": "Monthly budget alert flags reset"
+    })))
 }
