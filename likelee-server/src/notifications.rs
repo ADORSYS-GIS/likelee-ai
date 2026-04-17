@@ -106,6 +106,76 @@ pub async fn list_booking_notifications(
     Ok(Json(v))
 }
 
+async fn is_notification_enabled(
+    state: &AppState,
+    agency_id: &str,
+    event_key: &str,
+    channel: &str,
+    talent_id: Option<&str>,
+) -> bool {
+    let resp_res = state
+        .pg
+        .from("agency_notification_settings")
+        .select("prefs")
+        .eq("agency_id", agency_id)
+        .single()
+        .execute()
+        .await;
+
+    let Ok(resp) = resp_res else {
+        return true;
+    };
+    if !resp.status().is_success() {
+        return true;
+    }
+
+    let Ok(text) = resp.text().await else {
+        return true;
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return true;
+    };
+
+    let Some(prefs) = json.get("prefs").and_then(|p| p.as_array()) else {
+        return true;
+    };
+
+    let mut enabled = true;
+
+    // 1. Check global event setting
+    if let Some(global) = prefs
+        .iter()
+        .find(|p| p.get("key").and_then(|k| k.as_str()) == Some(event_key))
+    {
+        if let Some(chan_val) = global
+            .get("channels")
+            .and_then(|c| c.get(channel))
+            .and_then(|v| v.as_bool())
+        {
+            enabled = chan_val;
+        }
+    }
+
+    // 2. Check talent override
+    if let Some(tid) = talent_id {
+        let override_key = format!("athlete:{}", tid);
+        if let Some(over) = prefs
+            .iter()
+            .find(|p| p.get("key").and_then(|k| k.as_str()) == Some(&override_key))
+        {
+            if let Some(chan_val) = over
+                .get("channels")
+                .and_then(|c| c.get(channel))
+                .and_then(|v| v.as_bool())
+            {
+                enabled = chan_val;
+            }
+        }
+    }
+
+    enabled
+}
+
 pub async fn booking_created_email(
     State(state): State<AppState>,
     user: AuthUser,
@@ -155,12 +225,31 @@ pub async fn booking_created_email(
         .get("notify_calendar")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let notify_email = b
-        .get("notify_email")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
     let booking_type = b.get("type").and_then(|v| v.as_str()).unwrap_or("");
     let client_id_opt = b.get("client_id").and_then(|v| v.as_str());
+
+    // Check notification preferences
+    let effective_agency_id = user.effective_org_id();
+    let preference_enabled = is_notification_enabled(
+        &state,
+        effective_agency_id,
+        "booking_confirmation",
+        "email",
+        talent_id_opt,
+    )
+    .await;
+
+    if !preference_enabled {
+        info!(
+            booking_id = %payload.booking_id,
+            agency_id = %effective_agency_id,
+            "Email notification skipped due to agency/athlete preferences"
+        );
+        return Ok(Json(json!({
+            "status": "skipped",
+            "message": "Email notification disabled by preference"
+        })));
+    }
 
     // Defaults (fallback if no active template)
     let fallback_subject = format!("New Booking: {} on {}", client_name, date_str);
@@ -575,7 +664,7 @@ pub async fn booking_created_email(
             .await;
     }
 
-    if notify_email {
+    if true {
         let send_res =
             email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
 

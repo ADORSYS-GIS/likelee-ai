@@ -25,6 +25,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { listBookingNotifications, getAgencyRoster } from "@/api/functions";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
 
 import { format, parseISO } from "date-fns";
 
@@ -58,8 +59,10 @@ export const NotificationsTab = ({
   bookings?: BookingLike[];
   isSportsAgency?: boolean;
 }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  const effectiveAgencyId = (profile as any)?.organization_id || profile?.id;
 
   const { data: rosterRaw, isLoading: isLoadingRoster } = useQuery({
     queryKey: ["agency-roster", user?.id],
@@ -89,32 +92,156 @@ export const NotificationsTab = ({
   >([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // Controlled settings for Booking Created/Confirmed channels
-  const [createdChannels, setCreatedChannels] = useState<{
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-  }>(() => {
-    const raw = localStorage.getItem("likelee.notifications.createdChannels");
-    const parsed = raw ? JSON.parse(raw) : {};
-    const v: { email: boolean; sms: boolean; push: boolean } = {
-      email: true,
-      sms: false,
-      push: false,
-      ...(parsed || {}),
-    };
-    v.email = true;
-    v.sms = false;
-    v.push = false;
-    return v;
-  });
+  // Controlled settings from database
+  const [agencySettings, setAgencySettings] = useState<any>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(
-      "likelee.notifications.createdChannels",
-      JSON.stringify(createdChannels),
+    if (!effectiveAgencyId) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("agency_notification_settings")
+          .select("*")
+          .eq("agency_id", effectiveAgencyId)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data) setAgencySettings(data);
+      } catch (e: any) {
+        console.error("Error loading notification settings:", e);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    })();
+  }, [effectiveAgencyId]);
+
+  const createdChannels = useMemo(() => {
+    // Extract global settings from agencySettings.prefs
+    // Schema: [{ key: 'booking_confirmation', channels: { email: true, ... } }, ...]
+    const prefs = Array.isArray(agencySettings?.prefs) ? agencySettings.prefs : [];
+    const bookingConf = prefs.find((p: any) => p.key === "booking_confirmation");
+    return {
+      email: bookingConf?.channels?.email ?? true,
+      sms: bookingConf?.channels?.sms ?? false,
+      push: bookingConf?.channels?.push ?? false,
+    };
+  }, [agencySettings]);
+
+  const updateGlobalChannel = async (channel: string, enabled: boolean) => {
+    if (!effectiveAgencyId) return;
+
+    const currentPrefs = Array.isArray(agencySettings?.prefs)
+      ? [...agencySettings.prefs]
+      : [];
+    let bookingConfIndex = currentPrefs.findIndex(
+      (p: any) => p.key === "booking_confirmation",
     );
-  }, [createdChannels]);
+
+    if (bookingConfIndex === -1) {
+      currentPrefs.push({
+        key: "booking_confirmation",
+        channels: { email: true, sms: false, push: false },
+      });
+      bookingConfIndex = currentPrefs.length - 1;
+    }
+
+    const newChannels = {
+      ...currentPrefs[bookingConfIndex].channels,
+      [channel]: enabled,
+    };
+    currentPrefs[bookingConfIndex] = {
+      ...currentPrefs[bookingConfIndex],
+      channels: newChannels,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("agency_notification_settings")
+        .upsert(
+          {
+            agency_id: effectiveAgencyId,
+            prefs: currentPrefs,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "agency_id" },
+        );
+
+      if (error) throw error;
+      setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+    } catch (e: any) {
+      toast({
+        title: "Failed to update setting",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getAthleteChannels = (athleteId: string) => {
+    // Extract per-athlete overrides from agencySettings.prefs
+    // Using key: 'athlete:ID' pattern in the prefs array to stay compatible with existing array schema
+    const prefs = Array.isArray(agencySettings?.prefs) ? agencySettings.prefs : [];
+    const override = prefs.find((p: any) => p.key === `athlete:${athleteId}`);
+    return {
+      email: override?.channels?.email ?? true,
+      sms: override?.channels?.sms ?? false,
+      push: override?.channels?.push ?? false,
+    };
+  };
+
+  const updateAthleteChannel = async (
+    athleteId: string,
+    channel: string,
+    enabled: boolean,
+  ) => {
+    if (!effectiveAgencyId) return;
+
+    const currentPrefs = Array.isArray(agencySettings?.prefs)
+      ? [...agencySettings.prefs]
+      : [];
+    const key = `athlete:${athleteId}`;
+    let overrideIndex = currentPrefs.findIndex((p: any) => p.key === key);
+
+    if (overrideIndex === -1) {
+      currentPrefs.push({
+        key,
+        channels: { email: true, sms: false, push: false },
+      });
+      overrideIndex = currentPrefs.length - 1;
+    }
+
+    const newChannels = {
+      ...currentPrefs[overrideIndex].channels,
+      [channel]: enabled,
+    };
+    currentPrefs[overrideIndex] = {
+      ...currentPrefs[overrideIndex],
+      channels: newChannels,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("agency_notification_settings")
+        .upsert(
+          {
+            agency_id: effectiveAgencyId,
+            prefs: currentPrefs,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "agency_id" },
+        );
+
+      if (error) throw error;
+      setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+    } catch (e: any) {
+      toast({
+        title: "Failed to update preference",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const talentNames = useMemo(() => {
     if (!roster || !Array.isArray(roster)) return [];
@@ -416,12 +543,7 @@ export const NotificationsTab = ({
                     <input
                       type="checkbox"
                       checked={createdChannels.email}
-                      onChange={(e) =>
-                        setCreatedChannels((prev) => ({
-                          ...prev,
-                          email: e.target.checked,
-                        }))
-                      }
+                      onChange={(e) => updateGlobalChannel("email", e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -896,7 +1018,14 @@ export const NotificationsTab = ({
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            defaultChecked
+                            checked={getAthleteChannels(talent.id).email}
+                            onChange={(e) =>
+                              updateAthleteChannel(
+                                talent.id,
+                                "email",
+                                e.target.checked,
+                              )
+                            }
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
