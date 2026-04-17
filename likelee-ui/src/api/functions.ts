@@ -962,10 +962,12 @@ export const listAgencyStorageFilesPaged = (params?: {
 export const uploadAgencyStorageFile = async (data: {
   file: File;
   folder_id?: string;
+  visibility?: "public" | "private";
 }) => {
   const fd = new FormData();
   fd.append("file", data.file);
   if (data.folder_id) fd.append("folder_id", data.folder_id);
+  if (data.visibility) fd.append("visibility", data.visibility);
   return base44Client.post(`/agency/storage/files/upload`, fd);
 };
 

@@ -931,6 +931,7 @@ pub async fn upload_agency_storage_file(
     let mut file_name = None;
     let mut mime_type = None;
     let mut folder_id: Option<String> = None;
+    let mut visibility = StorageVisibility::Private;
     let mut bytes: Vec<u8> = vec![];
 
     while let Some(field) = multipart
@@ -947,6 +948,15 @@ pub async fn upload_agency_storage_file(
                     .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
                 if !txt.trim().is_empty() {
                     folder_id = Some(txt);
+                }
+            }
+            "visibility" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if txt.trim().to_lowercase() == "public" {
+                    visibility = StorageVisibility::Public;
                 }
             }
             "file" => {
@@ -985,14 +995,7 @@ pub async fn upload_agency_storage_file(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded = upload_object(
-        &state,
-        StorageVisibility::Private,
-        &path,
-        bytes,
-        mime_type.as_deref(),
-    )
-    .await?;
+    let uploaded = upload_object(&state, visibility, &path, bytes, mime_type.as_deref()).await?;
     let public_url = uploaded.public_url.clone();
     let insert = serde_json::json!({
         "agency_id": agency_id,
@@ -1031,7 +1034,7 @@ pub async fn upload_agency_storage_file(
         owner_id: agency_id.clone(),
         context_type: StorageContextType::AgencyStorage,
         context_id: folder_id.clone(),
-        visibility: StorageVisibility::Private,
+        visibility,
         object_path: insert
             .get("storage_path")
             .and_then(|v| v.as_str())

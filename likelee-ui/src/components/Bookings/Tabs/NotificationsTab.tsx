@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-
-import { listBookingNotifications } from "@/api/functions";
+import { listBookingNotifications, getAgencyRoster } from "@/api/functions";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
 
 import { format, parseISO } from "date-fns";
 
@@ -57,7 +59,28 @@ export const NotificationsTab = ({
   bookings?: BookingLike[];
   isSportsAgency?: boolean;
 }) => {
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  const effectiveAgencyId = (profile as any)?.organization_id || profile?.id;
+
+  const { data: rosterRaw, isLoading: isLoadingRoster } = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const roster = useMemo(() => {
+    const d: any = rosterRaw;
+    if (!d) return [];
+    if (Array.isArray(d?.talents)) return d.talents;
+    if (Array.isArray(d)) return d;
+    return [];
+  }, [rosterRaw]);
+
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeSubNav, setActiveSubNav] = useState("logs");
@@ -69,45 +92,181 @@ export const NotificationsTab = ({
   >([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // Controlled settings for Booking Created/Confirmed channels
-  const [createdChannels, setCreatedChannels] = useState<{
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-  }>(() => {
-    const raw = localStorage.getItem("likelee.notifications.createdChannels");
-    const parsed = raw ? JSON.parse(raw) : {};
-    const v: { email: boolean; sms: boolean; push: boolean } = {
-      email: true,
-      sms: false,
-      push: false,
-      ...(parsed || {}),
-    };
-    v.email = true;
-    v.sms = false;
-    v.push = false;
-    return v;
-  });
+  // Controlled settings from database
+  const [agencySettings, setAgencySettings] = useState<any>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(
-      "likelee.notifications.createdChannels",
-      JSON.stringify(createdChannels),
-    );
-  }, [createdChannels]);
+    if (!effectiveAgencyId) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("agency_notification_settings")
+          .select("*")
+          .eq("agency_id", effectiveAgencyId)
+          .maybeSingle();
 
-  const testTalents = [
-    "Emma",
-    "Sergine",
-    "Milan",
-    "Julia",
-    "Matt",
-    "Carla",
-    "Luisa",
-    "Clemence",
-    "Lina",
-    "Aaron",
-  ];
+        if (error) throw error;
+        if (data) setAgencySettings(data);
+      } catch (e: any) {
+        console.error("Error loading notification settings:", e);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    })();
+  }, [effectiveAgencyId]);
+
+  const createdChannels = useMemo(() => {
+    // Extract global settings from agencySettings.prefs
+    // Schema: [{ key: 'booking_confirmation', channels: { email: true, ... } }, ...]
+    const prefs = Array.isArray(agencySettings?.prefs)
+      ? agencySettings.prefs
+      : [];
+    const bookingConf = prefs.find(
+      (p: any) => p.key === "booking_confirmation",
+    );
+    return {
+      email: bookingConf?.channels?.email ?? true,
+      sms: bookingConf?.channels?.sms ?? false,
+      push: bookingConf?.channels?.push ?? false,
+    };
+  }, [agencySettings]);
+
+  const updateGlobalChannel = async (channel: string, enabled: boolean) => {
+    if (!effectiveAgencyId) return;
+
+    const previousSettings = { ...agencySettings };
+    const currentPrefs = Array.isArray(agencySettings?.prefs)
+      ? [...agencySettings.prefs]
+      : [];
+    let bookingConfIndex = currentPrefs.findIndex(
+      (p: any) => p.key === "booking_confirmation",
+    );
+
+    if (bookingConfIndex === -1) {
+      currentPrefs.push({
+        key: "booking_confirmation",
+        channels: { email: true, sms: false, push: false },
+      });
+      bookingConfIndex = currentPrefs.length - 1;
+    }
+
+    const newChannels = {
+      ...currentPrefs[bookingConfIndex].channels,
+      [channel]: enabled,
+    };
+    currentPrefs[bookingConfIndex] = {
+      ...currentPrefs[bookingConfIndex],
+      channels: newChannels,
+    };
+
+    // Optimistic update
+    setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+
+    try {
+      const { error } = await supabase
+        .from("agency_notification_settings")
+        .upsert(
+          {
+            agency_id: effectiveAgencyId,
+            prefs: currentPrefs,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "agency_id" },
+        );
+
+      if (error) throw error;
+    } catch (e: any) {
+      console.error("Failed to update setting:", e);
+      // Revert on error
+      setAgencySettings(previousSettings);
+      toast({
+        title: "Failed to update setting",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getAthleteChannels = (athleteId: string) => {
+    // Extract per-athlete overrides from agencySettings.prefs
+    // Using key: 'athlete:ID' pattern in the prefs array to stay compatible with existing array schema
+    const prefs = Array.isArray(agencySettings?.prefs)
+      ? agencySettings.prefs
+      : [];
+    const override = prefs.find((p: any) => p.key === `athlete:${athleteId}`);
+    return {
+      email: override?.channels?.email ?? true,
+      sms: override?.channels?.sms ?? false,
+      push: override?.channels?.push ?? false,
+    };
+  };
+
+  const updateAthleteChannel = async (
+    athleteId: string,
+    channel: string,
+    enabled: boolean,
+  ) => {
+    if (!effectiveAgencyId) return;
+
+    const previousSettings = { ...agencySettings };
+    const currentPrefs = Array.isArray(agencySettings?.prefs)
+      ? [...agencySettings.prefs]
+      : [];
+    const key = `athlete:${athleteId}`;
+    let overrideIndex = currentPrefs.findIndex((p: any) => p.key === key);
+
+    if (overrideIndex === -1) {
+      currentPrefs.push({
+        key,
+        channels: { email: true, sms: false, push: false },
+      });
+      overrideIndex = currentPrefs.length - 1;
+    }
+
+    const newChannels = {
+      ...currentPrefs[overrideIndex].channels,
+      [channel]: enabled,
+    };
+    currentPrefs[overrideIndex] = {
+      ...currentPrefs[overrideIndex],
+      channels: newChannels,
+    };
+
+    // Optimistic update
+    setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+
+    try {
+      const { error } = await supabase
+        .from("agency_notification_settings")
+        .upsert(
+          {
+            agency_id: effectiveAgencyId,
+            prefs: currentPrefs,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "agency_id" },
+        );
+
+      if (error) throw error;
+    } catch (e: any) {
+      console.error("Failed to update preference:", e);
+      // Revert on error
+      setAgencySettings(previousSettings);
+      toast({
+        title: "Failed to update preference",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const talentNames = useMemo(() => {
+    if (!roster || !Array.isArray(roster)) return [];
+    return roster.map(
+      (t: any) => t.name || t.talent_name || t.stage_name || "Unnamed",
+    );
+  }, [roster]);
 
   useEffect(() => {
     if (activeSubNav !== "logs") return;
@@ -405,10 +564,7 @@ export const NotificationsTab = ({
                       type="checkbox"
                       checked={createdChannels.email}
                       onChange={(e) =>
-                        setCreatedChannels((prev) => ({
-                          ...prev,
-                          email: e.target.checked,
-                        }))
+                        updateGlobalChannel("email", e.target.checked)
                       }
                       className="sr-only peer"
                     />
@@ -816,148 +972,127 @@ export const NotificationsTab = ({
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                name: "Emma",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-              },
-              {
-                name: "Sergine",
-                email: "tyler@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-              },
-              {
-                name: "Milan",
-                email: "milan@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-              },
-              {
-                name: "Julia",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-              },
-              {
-                name: "Matt",
-                email: "tyler@example.com",
-                image: "https://i.pravatar.cc/150?u=Matt",
-              },
-              {
-                name: "Carla",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-              },
-              {
-                name: "Luisa",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/dfe7c47ac_Screenshot2025-10-29at63612PM.png",
-              },
-              {
-                name: "Clemence",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
-              },
-              {
-                name: "Lina",
-                email: "lina@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
-              },
-              {
-                name: "Aaron",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
-              },
-            ]
-              .filter((t) =>
-                t.name.toLowerCase().includes(testTargetTalent.toLowerCase()),
-              )
-              .map((talent, idx) => (
-                <Card
-                  key={idx}
-                  className="p-4 border border-gray-200 bg-white rounded-xl"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
-                      {talent.image ? (
-                        <img
-                          src={talent.image}
-                          alt={talent.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-600 font-bold text-xs">
-                          {talent.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
+            {isLoadingRoster ? (
+              <div className="p-12 text-center text-sm text-gray-500">
+                Loading roster...
+              </div>
+            ) : !roster || roster.length === 0 ? (
+              <div className="p-12 text-center text-sm text-gray-500">
+                No athletes found in roster.
+              </div>
+            ) : (
+              roster
+                .filter((t: any) => {
+                  const name = (t.name || t.talent_name || "").toLowerCase();
+                  return name.includes(testTargetTalent.toLowerCase());
+                })
+                .map((talent: any, idx) => (
+                  <Card
+                    key={idx}
+                    className="p-4 border border-gray-200 bg-white rounded-xl"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                        {talent.image ||
+                        talent.img ||
+                        talent.avatar ||
+                        talent.profile_image_url ||
+                        talent.profile_photo_url ||
+                        talent.talent_avatar ? (
+                          <img
+                            src={
+                              talent.image ||
+                              talent.img ||
+                              talent.avatar ||
+                              talent.profile_image_url ||
+                              talent.profile_photo_url ||
+                              talent.talent_avatar
+                            }
+                            alt={talent.name || talent.talent_name || "Talent"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-600 font-bold text-xs">
+                            {(
+                              talent.name ||
+                              talent.talent_name ||
+                              talent.stage_name ||
+                              "??"
+                            )
+                              .substring(0, 2)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900">
+                          {talent.name || talent.talent_name}
+                        </h4>
+                        <p className="text-sm text-gray-500">{talent.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{talent.name}</h4>
-                      <p className="text-sm text-gray-500">{talent.email}</p>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <span className="text-sm font-bold text-gray-900">
-                        Email
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                        <span className="text-sm font-bold text-gray-900">
+                          Email
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={getAthleteChannels(talent.id).email}
+                            onChange={(e) =>
+                              updateAthleteChannel(
+                                talent.id,
+                                "email",
+                                e.target.checked,
+                              )
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                        <span className="text-sm font-bold text-gray-900">
+                          SMS
+                        </span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            disabled
+                            checked={false}
+                            readOnly
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                        <span className="text-sm font-bold text-gray-900">
+                          Push
+                        </span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            disabled
+                            checked={false}
+                            readOnly
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        SMS
-                      </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        Push
-                      </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))
+            )}
           </div>
         </Card>
       )}
@@ -1009,7 +1144,7 @@ export const NotificationsTab = ({
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {testTalents.map((name) => (
+                  {talentNames.map((name: string) => (
                     <SelectItem key={name} value={name.toLowerCase()}>
                       {name}
                     </SelectItem>
@@ -1038,8 +1173,8 @@ export const NotificationsTab = ({
                 if (!testNotificationType || !testTargetTalent) return;
 
                 const talentName =
-                  testTalents.find(
-                    (t) => t.toLowerCase() === testTargetTalent,
+                  talentNames.find(
+                    (t: string) => t.toLowerCase() === testTargetTalent,
                   ) || testTargetTalent;
 
                 toast({
