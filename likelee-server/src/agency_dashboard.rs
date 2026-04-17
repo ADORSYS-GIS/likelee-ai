@@ -636,7 +636,7 @@ pub async fn get_recent_activity(
     }
 
     // Sort and Limit
-    all_activities.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    all_activities.sort_by_key(|a| std::cmp::Reverse(a.timestamp.clone()));
     all_activities.truncate(5);
 
     Ok(Json(ActivityFeed {
@@ -983,7 +983,7 @@ async fn get_top_revenue_generators(
         })
         .collect();
 
-    sorted_talents.sort_by_key(|b| std::cmp::Reverse(b.earnings_cents));
+    sorted_talents.sort_by_key(|a| std::cmp::Reverse(a.earnings_cents));
     Ok(sorted_talents.into_iter().take(3).collect())
 }
 

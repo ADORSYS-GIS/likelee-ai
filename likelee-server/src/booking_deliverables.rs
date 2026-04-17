@@ -862,8 +862,6 @@ pub async fn submit_to_brand(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_deliverable_asset_url_normalization() {
         // Test that asset_url is normalized to secure endpoint format
@@ -979,15 +977,15 @@ mod tests {
         // Test that we no longer use asset_url as a fallback for storage_path
         // This test documents the change: asset_url should NOT be used as storage_path
 
-        let storage_path = Some("agencies/123/deliverables/file.pdf");
-        let asset_url = Some("/api/bookings-campaigns/123/deliverables/456/file");
+        let storage_path = "agencies/123/deliverables/file.pdf";
+        let asset_url = "/api/bookings-campaigns/123/deliverables/456/file";
 
         // New behavior: use storage_path directly, don't fall back to asset_url
-        let path = storage_path.unwrap();
+        let path = storage_path;
         assert_eq!(path, "agencies/123/deliverables/file.pdf");
 
         // asset_url should be the secure endpoint, not a storage path
-        let url = asset_url.unwrap();
+        let url = asset_url;
         assert!(url.starts_with("/api/"));
         assert!(!url.contains("agencies/"));
     }

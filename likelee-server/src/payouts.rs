@@ -1702,7 +1702,92 @@ pub async fn stripe_webhook(
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
-            // Fallback routing for sessions missing billing_domain metadata.
+            if billing_domain == "agency" {
+                let agency_id = obj
+                    .get("client_reference_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| {
+                        obj.get("metadata")
+                            .and_then(|m| m.get("agency_id"))
+                            .and_then(|v| v.as_str())
+                    })
+                    .unwrap_or("")
+                    .to_string();
+                let subscription_id = obj
+                    .get("subscription")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let customer_id = obj
+                    .get("customer")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+
+                let previous_subscription_id = obj
+                    .get("metadata")
+                    .and_then(|m| m.get("previous_subscription_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+
+                if !agency_id.is_empty() && !subscription_id.is_empty() {
+                    let _ = sync_agency_subscription_from_stripe(
+                        &state,
+                        &agency_id,
+                        &subscription_id,
+                        if customer_id.is_empty() {
+                            None
+                        } else {
+                            Some(customer_id.as_str())
+                        },
+                    )
+                    .await;
+
+                    if !previous_subscription_id.is_empty()
+                        && previous_subscription_id != subscription_id
+                    {
+                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                        match previous_subscription_id.parse::<stripe_sdk::SubscriptionId>() {
+                            Ok(prev_id) => {
+                                match stripe_sdk::Subscription::cancel(
+                                    &client,
+                                    &prev_id,
+                                    stripe_sdk::CancelSubscription::default(),
+                                )
+                                .await
+                                {
+                                    Ok(_) => {
+                                        tracing::info!(
+                                            agency_id = %agency_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            new_subscription_id = %subscription_id,
+                                            "cancelled previous agency subscription after successful checkout"
+                                        );
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!(
+                                            agency_id = %agency_id,
+                                            previous_subscription_id = %previous_subscription_id,
+                                            error = %e,
+                                            "failed to cancel previous agency subscription after checkout (best-effort)"
+                                        );
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                tracing::warn!(
+                                    agency_id = %agency_id,
+                                    previous_subscription_id = %previous_subscription_id,
+                                    "could not parse previous subscription id for cancellation"
+                                );
+                            }
+                        }
+                    }
+                }
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
 
             // Check if this is a payment link checkout
             let md = obj.get("metadata").cloned().unwrap_or(json!({}));
@@ -4193,7 +4278,7 @@ fn aggregate_agency_subscription_state(
                 .map(|sub| sub.id.to_string())
                 .unwrap_or_else(|| fallback_subscription.id.to_string());
             (
-                "free",
+                "none",
                 "month",
                 if aggregated_seat_quantity > 0 {
                     aggregated_seat_quantity
@@ -4833,7 +4918,7 @@ async fn sync_creator_subscription_from_stripe(
                 .unwrap_or("month");
             (t, interval)
         }
-        _ => ("free", "month"),
+        _ => ("none", "month"),
     };
 
     let cancel_at_period_end = sub.cancel_at_period_end;

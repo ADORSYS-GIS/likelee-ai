@@ -17,6 +17,7 @@ pub enum PlanTier {
 impl PlanTier {
     pub fn from_db(value: &str) -> Self {
         match value.trim().to_lowercase().as_str() {
+            "none" => PlanTier::Free,
             // New tiers
             "basic" => PlanTier::Basic,
             "pro" => PlanTier::Pro,
@@ -54,7 +55,7 @@ impl AgencyAccessState {
             PlanTier::Pro => "Pro".to_string(),
             PlanTier::Basic => "Basic".to_string(),
             PlanTier::Free if self.trial_active => "Trial".to_string(),
-            PlanTier::Free => "Free".to_string(),
+            PlanTier::Free => "Unsubscribed".to_string(),
         };
 
         if self.trial_active {
@@ -136,11 +137,7 @@ pub async fn get_agency_access_state(
     let trial_active = trial_ends_at
         .map(|dt| dt > chrono::Utc::now())
         .unwrap_or(false);
-    let effective_tier = if trial_active && billed_tier == PlanTier::Free {
-        PlanTier::Pro
-    } else {
-        billed_tier
-    };
+    let effective_tier = billed_tier;
 
     Ok(AgencyAccessState {
         billed_tier,

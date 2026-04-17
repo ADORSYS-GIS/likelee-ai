@@ -1545,7 +1545,7 @@ pub async fn create_talent(
     let plan_tier = agency_data
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .trim()
         .to_lowercase();
     let mut seats_limit = agency_data

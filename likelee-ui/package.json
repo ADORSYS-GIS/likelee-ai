@@ -16,7 +16,7 @@
   "dependencies": {
     "@aws-amplify/ui-react": "^6.13.2",
     "@aws-amplify/ui-react-liveness": "^3.5.0",
-    "@base44/sdk": "^0.1.2",
+    "@base44/sdk": "^0.8.25",
     "@docuseal/react": "^1.0.70",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",
@@ -60,6 +60,7 @@
     "dexie": "^4.4.1",
     "dexie-react-hooks": "^4.2.0",
     "embla-carousel-react": "^8.6.0",
+    "follow-redirects": "^1.16.0",
     "framer-motion": "^12.4.7",
     "html-to-image": "^1.11.11",
     "i18next": "^25.7.3",
@@ -93,7 +94,7 @@
     "zustand": "^5.0.3"
   },
   "overrides": {
-    "follow-redirects": "^1.15.15",
+    "follow-redirects": "^1.16.0",
     "lodash": "4.17.21",
     "minimatch": "^10.2.1",
     "@smithy/config-resolver": "^4.4.5",
