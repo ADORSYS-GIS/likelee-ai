@@ -1,6 +1,11 @@
--- Reset all existing creators to free plan
--- This ensures all existing creators must go through the subscription flow
--- Run this before deploying creator subscription features to production
+-- ⚠️  DESTRUCTIVE MIGRATION - RESETS ALL CREATORS TO FREE PLAN
+-- This will clear all existing creator subscription data (plans, trials, Stripe IDs).
+-- All existing creators will be forced onto the free tier.
+--
+-- COORDINATION REQUIRED:
+-- - Run this ONLY during a coordinated deployment
+-- - Communicate to users that subscriptions will be reset
+-- - Ensure the new subscription flow is live before running this
 
 BEGIN;
 
