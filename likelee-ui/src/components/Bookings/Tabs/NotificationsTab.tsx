@@ -119,8 +119,12 @@ export const NotificationsTab = ({
   const createdChannels = useMemo(() => {
     // Extract global settings from agencySettings.prefs
     // Schema: [{ key: 'booking_confirmation', channels: { email: true, ... } }, ...]
-    const prefs = Array.isArray(agencySettings?.prefs) ? agencySettings.prefs : [];
-    const bookingConf = prefs.find((p: any) => p.key === "booking_confirmation");
+    const prefs = Array.isArray(agencySettings?.prefs)
+      ? agencySettings.prefs
+      : [];
+    const bookingConf = prefs.find(
+      (p: any) => p.key === "booking_confirmation",
+    );
     return {
       email: bookingConf?.channels?.email ?? true,
       sms: bookingConf?.channels?.sms ?? false,
@@ -181,7 +185,9 @@ export const NotificationsTab = ({
   const getAthleteChannels = (athleteId: string) => {
     // Extract per-athlete overrides from agencySettings.prefs
     // Using key: 'athlete:ID' pattern in the prefs array to stay compatible with existing array schema
-    const prefs = Array.isArray(agencySettings?.prefs) ? agencySettings.prefs : [];
+    const prefs = Array.isArray(agencySettings?.prefs)
+      ? agencySettings.prefs
+      : [];
     const override = prefs.find((p: any) => p.key === `athlete:${athleteId}`);
     return {
       email: override?.channels?.email ?? true,
@@ -245,7 +251,9 @@ export const NotificationsTab = ({
 
   const talentNames = useMemo(() => {
     if (!roster || !Array.isArray(roster)) return [];
-    return roster.map((t: any) => t.name || t.talent_name || t.stage_name || "Unnamed");
+    return roster.map(
+      (t: any) => t.name || t.talent_name || t.stage_name || "Unnamed",
+    );
   }, [roster]);
 
   useEffect(() => {
@@ -543,7 +551,9 @@ export const NotificationsTab = ({
                     <input
                       type="checkbox"
                       checked={createdChannels.email}
-                      onChange={(e) => updateGlobalChannel("email", e.target.checked)}
+                      onChange={(e) =>
+                        updateGlobalChannel("email", e.target.checked)
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>

@@ -10004,7 +10004,9 @@ const ScoutingHubView = ({
   const { toast } = useToast();
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(
+    null,
+  );
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
 
   const refreshData = () => {

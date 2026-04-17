@@ -578,7 +578,8 @@ export function CreatePackageWizard({
     if (formData.password_protected && !formData.password.trim()) {
       return toast({
         title: "Password Required",
-        description: "Please set a password for this protected package in the 'Customize' step.",
+        description:
+          "Please set a password for this protected package in the 'Customize' step.",
         variant: "destructive",
       });
     }
@@ -832,7 +833,7 @@ export function CreatePackageWizard({
                               setCoverUploading(true);
                               try {
                                 const fd = new FormData();
-                                 fd.append("visibility", "public");
+                                fd.append("visibility", "public");
                                 fd.append("file", file);
                                 const resp = await base44.post<{
                                   file_url?: string;
@@ -1269,20 +1270,23 @@ export function CreatePackageWizard({
                         </p>
                       </div>
 
-                      {formData.password_protected && !formData.password.trim() && (
-                        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
-                          <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs font-black text-red-900 uppercase tracking-widest">
-                              Password Missing
-                            </p>
-                            <p className="text-sm text-red-700 font-medium mt-1">
-                              This package has access control enabled but no password is set. 
-                              Please go back to the <span className="font-bold">Customize</span> step to set one.
-                            </p>
+                      {formData.password_protected &&
+                        !formData.password.trim() && (
+                          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
+                            <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-black text-red-900 uppercase tracking-widest">
+                                Password Missing
+                              </p>
+                              <p className="text-sm text-red-700 font-medium mt-1">
+                                This package has access control enabled but no
+                                password is set. Please go back to the{" "}
+                                <span className="font-bold">Customize</span>{" "}
+                                step to set one.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                       {isOfferMode && (
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
