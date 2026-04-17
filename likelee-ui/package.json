@@ -94,7 +94,7 @@
     "zustand": "^5.0.3"
   },
   "overrides": {
-    "follow-redirects": "^1.15.15",
+    "follow-redirects": "^1.16.0",
     "lodash": "4.17.21",
     "minimatch": "^10.2.1",
     "@smithy/config-resolver": "^4.4.5",
