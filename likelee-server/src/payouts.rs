@@ -3888,14 +3888,25 @@ fn stripe_subscription_to_interval_from_price_id(state: &AppState, price_id: &st
 fn stripe_subscription_to_plan_tier_from_metadata(
     sub: &stripe_sdk::Subscription,
 ) -> Option<&'static str> {
-    let plan = sub.metadata.get("plan")?.to_string();
-    let plan = plan.trim().to_lowercase();
-    match plan.as_str() {
-        "basic" => Some("basic"),
-        "pro" => Some("pro"),
-        "enterprise" => Some("enterprise"),
-        _ => None,
+    if let Some(plan) = sub.metadata.get("plan") {
+        let plan = plan.to_string().trim().to_lowercase();
+        match plan.as_str() {
+            "basic" => return Some("basic"),
+            "pro" => return Some("pro"),
+            "enterprise" => return Some("enterprise"),
+            _ => {}
+        }
     }
+    if let Some(plan_tier) = sub.metadata.get("plan_tier") {
+        let plan_tier = plan_tier.to_string().trim().to_lowercase();
+        match plan_tier.as_str() {
+            "basic" => return Some("basic"),
+            "pro" => return Some("pro"),
+            "enterprise" => return Some("enterprise"),
+            _ => {}
+        }
+    }
+    None
 }
 
 fn stripe_subscription_roster_models(sub: &stripe_sdk::Subscription) -> Option<i64> {
