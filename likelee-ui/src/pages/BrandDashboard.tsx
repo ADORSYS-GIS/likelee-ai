@@ -355,6 +355,9 @@ export default function BrandDashboard() {
       // Refresh profile to get updated subscription status
       await refreshProfile();
 
+      // Clear the billing success session storage flag
+      sessionStorage.removeItem("billing_success_pending");
+
       // Remove billing_success param from URL
       searchParams.delete("billing_success");
       searchParams.delete("plan");

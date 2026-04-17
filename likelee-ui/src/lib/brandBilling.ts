@@ -1,6 +1,7 @@
 export type BrandPlanTier = "free" | "basic" | "pro" | "enterprise";
 
-export const BRAND_TRIAL_DAYS = 14;
+// Re-export BRAND_TRIAL_DAYS from config for centralized configuration
+export { BRAND_TRIAL_DAYS } from "@/config/public";
 export const BRAND_STUDIO_ADDON_PRICE = 299;
 export const BRAND_STUDIO_ADDON_CREDITS = 2000;
 

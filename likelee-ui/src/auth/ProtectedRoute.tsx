@@ -68,9 +68,32 @@ export default function ProtectedRoute({
   );
 
   // Check if this is a billing success redirect - allow access even without active subscription
+  // Uses session storage to persist state across redirects while profile refreshes
   const isBillingSuccess = React.useMemo(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("billing_success") === "1";
+    const urlSuccess = params.get("billing_success") === "1";
+    if (urlSuccess) {
+      sessionStorage.setItem("billing_success_pending", "true");
+      // Set expiry (5 minutes) in case user doesn't complete flow
+      sessionStorage.setItem(
+        "billing_success_expiry",
+        String(Date.now() + 5 * 60 * 1000),
+      );
+      return true;
+    }
+    const storedPending = sessionStorage.getItem("billing_success_pending");
+    const expiryStr = sessionStorage.getItem("billing_success_expiry");
+    if (storedPending === "true" && expiryStr) {
+      const expiry = parseInt(expiryStr, 10);
+      if (Date.now() > expiry) {
+        // Expired, clear the flags
+        sessionStorage.removeItem("billing_success_pending");
+        sessionStorage.removeItem("billing_success_expiry");
+        return false;
+      }
+      return true;
+    }
+    return false;
   }, []);
 
   const missingRequiredPermission = React.useMemo(() => {
@@ -122,6 +145,14 @@ export default function ProtectedRoute({
 
       // Redirect brands without subscription to pricing page
       // Skip if this is a billing success redirect (webhook may still be processing)
+      // Also clear billing success flag if subscription is now active
+      const hasActiveSubscription =
+        profile.subscription_status === "active" ||
+        profile.subscription_status === "trialing";
+      if (hasActiveSubscription && isBillingSuccess) {
+        sessionStorage.removeItem("billing_success_pending");
+        sessionStorage.removeItem("billing_success_expiry");
+      }
       if (
         pricingPath &&
         !isBillingSuccess &&

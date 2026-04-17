@@ -2655,8 +2655,6 @@ pub struct BrandCheckoutRequest {
     pub plan: String,
     #[serde(default)]
     pub billing_cycle: Option<String>,
-    #[serde(default)]
-    pub start_trial: bool,
     pub next_path: Option<String>,
 }
 
@@ -3448,12 +3446,10 @@ pub async fn create_brand_subscription_checkout(
                     );
                 }
                 Err(e) => {
-                    warn!(
-                        error = %e,
-                        brand_id = %user.id,
-                        subscription_id = %current_subscription_id,
-                        "failed to cancel existing subscription, proceeding with checkout anyway"
-                    );
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("failed_to_cancel_subscription: {}", e),
+                    ));
                 }
             }
         }

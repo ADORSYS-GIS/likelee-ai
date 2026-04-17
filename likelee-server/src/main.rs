@@ -44,6 +44,18 @@ async fn main() {
         }
     }
 
+    // Validate BRAND_TRIAL_DAYS is within reasonable bounds
+    if cfg.brand_trial_days == 0 || cfg.brand_trial_days > 365 {
+        panic!(
+            "BRAND_TRIAL_DAYS must be between 1 and 365 days, got {}",
+            cfg.brand_trial_days
+        );
+    }
+    info!(
+        brand_trial_days = cfg.brand_trial_days,
+        "brand_trial_config_loaded"
+    );
+
     let pg_url =
         if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
             cfg.supabase_url.clone()

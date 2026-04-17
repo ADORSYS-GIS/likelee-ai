@@ -167,7 +167,6 @@ export const createAgencySubscriptionCheckout = (data: {
 export const createBrandSubscriptionCheckout = (data: {
   plan: "basic" | "pro" | "enterprise";
   billing_cycle?: "monthly" | "annual";
-  start_trial?: boolean;
   next_path?: string;
 }) => base44Client.post(`/brand/billing/checkout`, data);
 
