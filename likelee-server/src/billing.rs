@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::Query, extract::State, http::StatusCode, Json};
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -4904,6 +4904,22 @@ pub async fn update_brand_budget_settings(
     let brand_access = team::require_brand_access(&state, &user).await?;
     let brand_id = brand_access.organization_id;
 
+    // Validate monthly_budget_limit
+    if let Some(limit) = payload.monthly_budget_limit {
+        if limit < 0.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot be negative".to_string(),
+            ));
+        }
+        if limit > 10_000_000.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot exceed $10,000,000".to_string(),
+            ));
+        }
+    }
+
     let update_body = json!({
         "monthly_budget_limit": payload.monthly_budget_limit,
         "budget_alert_enabled": payload.budget_alert_enabled.unwrap_or(false),
@@ -4930,9 +4946,23 @@ pub async fn update_brand_budget_settings(
     }))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CronRequest {
+    pub secret: String,
+}
+
 pub async fn check_budget_alerts_cron(
     State(state): State<AppState>,
+    Query(params): Query<CronRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Verify cron secret
+    if state.cron_secret.trim().is_empty() || params.secret != state.cron_secret {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Invalid or missing cron secret".to_string(),
+        ));
+    }
+
     let now = chrono::Utc::now();
     let current_month_start = chrono::Utc
         .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
@@ -5025,7 +5055,7 @@ pub async fn check_budget_alerts_cron(
             .and_then(|v| v.as_str())
             .is_some();
         if spend_percent >= 100.0 && !alert_100_sent {
-            let _ = crate::notifications::send_brand_notification(
+            if let Err((code, err)) = crate::notifications::send_brand_notification(
                 &state,
                 brand_id,
                 None,
@@ -5037,15 +5067,26 @@ pub async fn check_budget_alerts_cron(
                 json!({"type": "budget_alert", "threshold": "100"}),
                 true,
             )
-            .await;
+            .await
+            {
+                tracing::warn!(
+                    brand_id,
+                    error = %err,
+                    status = %code,
+                    "Failed to send 100% budget alert notification"
+                );
+            }
 
-            let _ = state
+            if let Err(e) = state
                 .pg
                 .from("brands")
                 .update(json!({"budget_alert_100_sent_at": now.to_rfc3339()}).to_string())
                 .eq("id", brand_id)
                 .execute()
-                .await;
+                .await
+            {
+                tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_100_sent_at");
+            }
 
             alerts_sent += 1;
         }
@@ -5056,7 +5097,7 @@ pub async fn check_budget_alerts_cron(
                 .and_then(|v| v.as_str())
                 .is_some();
             if !alert_80_sent {
-                let _ = crate::notifications::send_brand_notification(
+                if let Err((code, err)) = crate::notifications::send_brand_notification(
                     &state,
                     brand_id,
                     None,
@@ -5068,15 +5109,26 @@ pub async fn check_budget_alerts_cron(
                     json!({"type": "budget_alert", "threshold": "80"}),
                     true,
                 )
-                .await;
+                .await
+                {
+                    tracing::warn!(
+                        brand_id,
+                        error = %err,
+                        status = %code,
+                        "Failed to send 80% budget alert notification"
+                    );
+                }
 
-                let _ = state
+                if let Err(e) = state
                     .pg
                     .from("brands")
                     .update(json!({"budget_alert_80_sent_at": now.to_rfc3339()}).to_string())
                     .eq("id", brand_id)
                     .execute()
-                    .await;
+                    .await
+                {
+                    tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_80_sent_at");
+                }
 
                 alerts_sent += 1;
             }
@@ -5092,7 +5144,16 @@ pub async fn check_budget_alerts_cron(
 
 pub async fn reset_monthly_budget_alerts(
     State(state): State<AppState>,
+    Query(params): Query<CronRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Verify cron secret
+    if state.cron_secret.trim().is_empty() || params.secret != state.cron_secret {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Invalid or missing cron secret".to_string(),
+        ));
+    }
+
     // Reset alert timestamps for all brands at the start of each month
     let resp = state
         .pg

@@ -2043,6 +2043,9 @@ pub async fn get_brand_spend_analytics(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
     let now = chrono::Utc::now();
     let year_start = chrono::Utc
         .with_ymd_and_hms(now.year(), 1, 1, 0, 0, 0)
@@ -2055,7 +2058,7 @@ pub async fn get_brand_spend_analytics(
         .pg
         .from("campaign_offers")
         .select("id,budget_snapshot,payment_status,created_at,brand_campaigns(start_date)")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .limit(5000)
         .execute()
         .await
