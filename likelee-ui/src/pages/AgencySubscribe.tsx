@@ -939,7 +939,6 @@ export default function AgencySubscribe() {
     if (!initialized || profileLoading) return "Loading";
   };
 
-
   const footerCtaLabel = (() => {
     if (!initialized || profileLoading) return "Loading...";
     if (requiresContactSales) return "Contact Sales";
