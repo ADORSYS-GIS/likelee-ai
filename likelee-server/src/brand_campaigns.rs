@@ -2020,6 +2020,146 @@ pub async fn get_brand_analytics(
     })))
 }
 
+#[derive(Debug, Serialize)]
+pub struct MonthlySpend {
+    pub month: String,
+    pub spend: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandSpendAnalytics {
+    pub monthly_spend: Vec<MonthlySpend>,
+    pub ytd_spend: i64,
+    pub monthly_avg: i64,
+    pub current_month_spend: i64,
+    pub projected_eoy: i64,
+}
+
+pub async fn get_brand_spend_analytics(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandSpendAnalytics>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let now = chrono::Utc::now();
+    let year_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), 1, 1, 0, 0, 0)
+        .unwrap();
+    let current_month_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+        .unwrap();
+
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,budget_snapshot,payment_status,created_at,brand_campaigns(start_date)")
+        .eq("brand_id", &user.id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let offers_status = offers_resp.status();
+    let offers_text = offers_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !offers_status.is_success() {
+        return Err(sanitize_db_error(offers_status.as_u16(), offers_text));
+    }
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+    let mut monthly_spend_map: std::collections::HashMap<String, i64> =
+        std::collections::HashMap::new();
+    let mut ytd_spend: i64 = 0;
+    let mut current_month_spend: i64 = 0;
+
+    for offer in offers {
+        let payment_status = offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        
+        if payment_status != "released" && payment_status != "paid" {
+            continue;
+        }
+
+        let budget_cents = offer
+            .get("budget_snapshot")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+
+        if budget_cents <= 0 {
+            continue;
+        }
+
+        let created_at_str = offer
+            .get("created_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        let created_at = if created_at_str.is_empty() {
+            offer
+                .get("brand_campaigns")
+                .and_then(|c| c.get("start_date"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+        } else {
+            created_at_str
+        };
+
+        let date = if created_at.is_empty() {
+            now
+        } else {
+            chrono::DateTime::parse_from_rfc3339(created_at)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or(now)
+        };
+
+        if date >= year_start {
+            ytd_spend += budget_cents;
+        }
+
+        if date >= current_month_start {
+            current_month_spend += budget_cents;
+        }
+
+        let month_key = format!("{}-{:02}", date.year(), date.month());
+        *monthly_spend_map.entry(month_key).or_insert(0) += budget_cents;
+    }
+
+    let mut monthly_spend: Vec<MonthlySpend> = monthly_spend_map
+        .into_iter()
+        .map(|(month, spend)| MonthlySpend { month, spend })
+        .collect();
+    monthly_spend.sort_by(|a, b| a.month.cmp(&b.month));
+
+    if monthly_spend.len() > 12 {
+        monthly_spend = monthly_spend.into_iter().rev().take(12).rev().collect();
+    }
+
+    let months_elapsed = now.month() as i64;
+    let monthly_avg = if months_elapsed > 0 {
+        ytd_spend / months_elapsed
+    } else {
+        ytd_spend
+    };
+
+    let remaining_months = 12 - months_elapsed;
+    let projected_eoy = ytd_spend + (monthly_avg * remaining_months);
+
+    Ok(Json(BrandSpendAnalytics {
+        monthly_spend,
+        ytd_spend,
+        monthly_avg,
+        current_month_spend,
+        projected_eoy,
+    }))
+}
+
 pub async fn get_campaign(
     State(state): State<AppState>,
     user: AuthUser,
@@ -2695,7 +2835,7 @@ pub async fn list_my_campaign_offers(
         .pg
         .from("campaign_offers")
         .select(
-            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,billing_request_id,payment_status,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms,completed_at,created_at,updated_at,status),brands(id,company_name,email,logo_url)",
+            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,billing_request_id,payment_status,escrow_status,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms,completed_at,created_at,updated_at,status),brands(id,company_name,email,logo_url)",
         )
         .order("created_at.desc")
         .limit(limit);

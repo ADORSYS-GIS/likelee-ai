@@ -17,6 +17,11 @@ import {
   getBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
+  getBrandBillingStatus,
+  getBrandSpendAnalytics,
+  listBrandInvoices,
+  getBrandBudgetSettings,
+  updateBrandBudgetSettings,
 } from "@/api/functions";
 import { useAuth } from "@/auth/AuthProvider";
 import {
@@ -71,6 +76,7 @@ import {
   Image as ImageIcon,
   Video,
   AlertCircle,
+  AlertTriangle,
   LayoutDashboard,
   Target,
   ShoppingCart,
@@ -285,17 +291,6 @@ const getBrandInitials = (name: string) => {
 
 // Mock licenses removed - licenses are now loaded from real API data
 
-const spendData = [
-  { month: "Jun", spend: 1200 },
-  { month: "Jul", spend: 2400 },
-  { month: "Aug", spend: 3100 },
-  { month: "Sep", spend: 2800 },
-  { month: "Oct", spend: 4200 },
-  { month: "Nov", spend: 5100 },
-];
-
-// Mock contracts removed - contracts are now loaded from real API data
-
 export default function BrandDashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -370,6 +365,42 @@ export default function BrandDashboard() {
     talent_performance: [],
     loading: true,
   });
+
+  const [brandBillingStatus, setBrandBillingStatus] = useState<{
+    plan_tier: string;
+    subscription_status: string;
+    trial_active: boolean;
+    trial_ends_at?: string;
+  } | null>(null);
+
+  const [brandSpendData, setBrandSpendData] = useState<{
+    monthly_spend: Array<{ month: string; spend: number }>;
+    ytd_spend: number;
+    monthly_avg: number;
+    current_month_spend: number;
+    projected_eoy: number;
+  } | null>(null);
+
+  const [brandInvoices, setBrandInvoices] = useState<
+    Array<{
+      id: string;
+      number?: string;
+      amount: number;
+      currency: string;
+      status: string;
+      created_at?: string;
+      invoice_url?: string;
+    }>
+  >([]);
+
+  const [loadingBillingData, setLoadingBillingData] = useState(false);
+  const [billingYtdSpend, setBillingYtdSpend] = useState(0);
+  const [billingCurrentMonthSpend, setBillingCurrentMonthSpend] = useState(0);
+  const [billingProjectedEoy, setBillingProjectedEoy] = useState(0);
+  const [billingMonthlyAvg, setBillingMonthlyAvg] = useState(0);
+  const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
+  const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(false);
+  const [savingBudgetSettings, setSavingBudgetSettings] = useState(false);
 
   const navigateToSection = (
     nextSection: string,
@@ -882,6 +913,61 @@ export default function BrandDashboard() {
   }, []);
 
   useEffect(() => {
+    if (
+      activeSection !== "billing" &&
+      activeSection !== "analytics" &&
+      activeSection !== "usage-rights"
+    )
+      return;
+    let mounted = true;
+
+    const loadBillingData = async () => {
+      setLoadingBillingData(true);
+      try {
+        const [statusRes, spendRes, invoicesRes] = await Promise.all([
+          getBrandBillingStatus(),
+          getBrandSpendAnalytics(),
+          listBrandInvoices(),
+        ]);
+        if (!mounted) return;
+        if (statusRes) {
+          setBrandBillingStatus({
+            plan_tier: statusRes.plan_tier || "free",
+            subscription_status: statusRes.subscription_status || "inactive",
+            trial_active: statusRes.trial_active || false,
+            trial_ends_at: statusRes.trial_ends_at,
+          });
+        }
+        if (spendRes) {
+          setBrandSpendData({
+            monthly_spend: Array.isArray(spendRes.monthly_spend)
+              ? spendRes.monthly_spend
+              : [],
+            ytd_spend: spendRes.ytd_spend || 0,
+            monthly_avg: spendRes.monthly_avg || 0,
+            current_month_spend: spendRes.current_month_spend || 0,
+            projected_eoy: spendRes.projected_eoy || 0,
+          });
+        }
+        if (invoicesRes) {
+          setBrandInvoices(
+            Array.isArray(invoicesRes.invoices) ? invoicesRes.invoices : [],
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+      } finally {
+        if (mounted) setLoadingBillingData(false);
+      }
+    };
+
+    loadBillingData();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);
@@ -1263,6 +1349,46 @@ export default function BrandDashboard() {
   }, [activeSection]);
 
   useEffect(() => {
+    if (activeSection !== "billing") return;
+    let mounted = true;
+
+    const loadBillingData = async () => {
+      setLoadingBillingData(true);
+      try {
+        const [status, spend, invoices, budgetSettings] = await Promise.all([
+          getBrandBillingStatus().catch(() => null),
+          getBrandSpendAnalytics().catch(() => null),
+          listBrandInvoices().catch(() => null),
+          getBrandBudgetSettings().catch(() => null),
+        ]);
+        if (!mounted) return;
+        if (status) setBrandBillingStatus(status);
+        if (spend?.monthly_spend) {
+          setBrandSpendData(spend.monthly_spend);
+          setBillingYtdSpend(spend.ytd_spend || 0);
+          setBillingCurrentMonthSpend(spend.current_month_spend || 0);
+          setBillingProjectedEoy(spend.projected_eoy || 0);
+          setBillingMonthlyAvg(spend.monthly_avg || 0);
+        }
+        if (invoices?.invoices) setBrandInvoices(invoices.invoices);
+        if (budgetSettings) {
+          setBudgetLimit(budgetSettings.monthly_budget_limit);
+          setBudgetAlertEnabled(budgetSettings.budget_alert_enabled);
+        }
+      } catch {
+        if (!mounted) return;
+      } finally {
+        if (mounted) setLoadingBillingData(false);
+      }
+    };
+
+    loadBillingData();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
     const fetchCreators = async () => {
       setLoading(true);
       try {
@@ -1374,7 +1500,28 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const escrowTotal = 0; // Escrow is now calculated from real campaign data
+  const { escrowTotal, escrowProjects } = useMemo(() => {
+    const projects: any[] = [];
+    let total = 0;
+    brandOfferItems.forEach((offer: any) => {
+      const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
+      if (escrowStatus === "holding" || escrowStatus === "releasing") {
+        const budgetSnap = offer?.budget_snapshot || {};
+        const amount = Number(budgetSnap?.total_amount || budgetSnap?.amount || 0);
+        if (amount > 0) {
+          total += amount;
+          projects.push({
+            id: offer.id,
+            name: offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
+            status: escrowStatus === "holding" ? "in_progress" : "releasing",
+            amount,
+            creator: offer?.target_type === "creator" ? offer.target_id : "Unknown",
+          });
+        }
+      }
+    });
+    return { escrowTotal: total, escrowProjects: projects };
+  }, [brandOfferItems]);
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -1540,7 +1687,6 @@ export default function BrandDashboard() {
   const pendingApprovalCount = 0; // Now calculated from real campaign data
   const activeLicenses: any[] = []; // Now loaded from real license data
   const expiringLicenses: any[] = []; // Now loaded from real license data
-  const escrowProjects: any[] = []; // Now calculated from real campaign data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -2417,7 +2563,17 @@ export default function BrandDashboard() {
             Monthly Spend Trend
           </h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={spendData}>
+            <LineChart
+              data={
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? brandSpendData.monthly_spend.map((d) => ({
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
+                  : []
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -6838,7 +6994,17 @@ export default function BrandDashboard() {
             Spend by Month
           </h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={spendData}>
+            <LineChart
+              data={
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? brandSpendData.monthly_spend.map((d) => ({
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
+                  : []
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -6862,15 +7028,27 @@ export default function BrandDashboard() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
-            <p className="text-2xl font-bold text-gray-900">$45,200</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingYtdSpend > 0
+                ? `$${(billingYtdSpend / 100).toLocaleString()}`
+                : "$0"}
+            </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
-            <p className="text-2xl font-bold text-gray-900">$7,533</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingMonthlyAvg > 0
+                ? `$${(billingMonthlyAvg / 100).toLocaleString()}`
+                : "$0"}
+            </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
-            <p className="text-2xl font-bold text-gray-900">$90.4K</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingProjectedEoy > 0
+                ? `$${(billingProjectedEoy / 1000).toFixed(1)}K`
+                : "$0"}
+            </p>
           </div>
         </div>
       </Card>
@@ -7865,7 +8043,11 @@ export default function BrandDashboard() {
               </Card>
               <Card className="p-6 bg-white border border-gray-200">
                 <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
-                <p className="text-4xl font-bold text-gray-900">$8.4K</p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {brandSpendData
+                    ? `$${(brandSpendData.ytd_spend / 1000).toFixed(1)}K`
+                    : "$0"}
+                </p>
               </Card>
               <Card className="p-6 bg-white border border-gray-200">
                 <p className="text-sm text-gray-600 mb-1">Violations</p>
@@ -7989,11 +8171,73 @@ export default function BrandDashboard() {
         </p>
       </div>
 
+      {/* Budget Overview - Prominent Position */}
+      {budgetLimit !== null && budgetLimit > 0 && (
+        <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-blue-900 mb-1">
+                Monthly Budget Tracker
+              </h3>
+              <p className="text-sm text-blue-700">
+                Track your spending against your budget limit
+              </p>
+            </div>
+            {budgetAlertEnabled && (
+              <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
+                <Bell className="w-3 h-3 mr-1" />
+                Alerts On
+              </Badge>
+            )}
+          </div>
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold text-blue-900">
+                {loadingBillingData
+                  ? "..."
+                  : `$${((billingCurrentMonthSpend || 0) / 100).toLocaleString()}`}
+              </span>
+              <span className="text-lg text-blue-700">
+                of ${budgetLimit.toLocaleString()} budget
+              </span>
+            </div>
+            <Progress
+              value={Math.min(100, ((billingCurrentMonthSpend || 0) / 100 / budgetLimit) * 100)}
+              className="h-3 bg-blue-100"
+            />
+            {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit * 0.8 && (
+              <div className="mt-3 flex items-center gap-2">
+                <AlertTriangle className={`w-5 h-5 ${
+                  (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                    ? "text-red-600"
+                    : "text-amber-600"
+                }`} />
+                <span className={`text-sm font-medium ${
+                  (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                    ? "text-red-700"
+                    : "text-amber-700"
+                }`}>
+                  {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                    ? "You've reached your monthly budget limit"
+                    : "You've reached 80% of your monthly budget"}
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Billing Overview */}
       <div className="grid md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">This Month's Spend</p>
-          <p className="text-4xl font-bold text-gray-900">$7.5K</p>
+          <p className="text-4xl font-bold text-gray-900">
+            {loadingBillingData
+              ? "..."
+              : billingCurrentMonthSpend > 0
+                ? `$${(billingCurrentMonthSpend / 1000).toFixed(1)}K`
+                : "$0"}
+          </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
@@ -8004,7 +8248,13 @@ export default function BrandDashboard() {
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
-          <p className="text-4xl font-bold text-gray-900">$45.2K</p>
+          <p className="text-4xl font-bold text-gray-900">
+            {loadingBillingData
+              ? "..."
+              : billingYtdSpend > 0
+                ? `$${(billingYtdSpend / 1000).toFixed(1)}K`
+                : "$0"}
+          </p>
         </Card>
         {canViewSubscriptions && (
           <Card className="p-6 bg-white border border-gray-200">
@@ -8022,6 +8272,111 @@ export default function BrandDashboard() {
           </Card>
         )}
       </div>
+
+      {/* Budget Management */}
+      <Card className={`p-6 border-2 ${
+        budgetLimit === null || budgetLimit === 0
+          ? "bg-amber-50 border-amber-300"
+          : "bg-white border-gray-200"
+      }`}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">
+              Budget Management
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Set a monthly spending limit and get alerts
+            </p>
+          </div>
+          {budgetLimit !== null && budgetLimit > 0 && budgetAlertEnabled && (
+            <Badge className="bg-green-100 text-green-700 border border-green-300">
+              Active
+            </Badge>
+          )}
+        </div>
+
+        {budgetLimit === null || budgetLimit === 0 ? (
+          <div className="bg-white border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Set your monthly budget
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Track your spending and get notified when you approach your limit.
+                  Stay on top of your creator campaign costs.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-semibold text-gray-700 block mb-2">
+              Monthly Budget Limit ($)
+            </Label>
+            <Input
+              type="number"
+              placeholder="e.g., 5000"
+              className="border-2 border-gray-300 max-w-xs"
+              value={budgetLimit ?? ""}
+              onChange={(e) =>
+                setBudgetLimit(
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
+            />
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <input
+              type="checkbox"
+              id="budgetAlertEnabled"
+              checked={budgetAlertEnabled}
+              onChange={(e) => setBudgetAlertEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <Label htmlFor="budgetAlertEnabled" className="text-sm font-medium text-gray-900">
+                Enable budget alerts
+              </Label>
+              <p className="text-xs text-gray-500">
+                Get notified at 80% and 100% of your budget
+              </p>
+            </div>
+          </div>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={savingBudgetSettings}
+            onClick={async () => {
+              setSavingBudgetSettings(true);
+              try {
+                await updateBrandBudgetSettings({
+                  monthly_budget_limit: budgetLimit,
+                  budget_alert_enabled: budgetAlertEnabled,
+                });
+                toast({
+                  title: "Settings saved",
+                  description: "Budget settings updated successfully.",
+                });
+              } catch {
+                toast({
+                  title: "Error",
+                  description: "Failed to save budget settings.",
+                  variant: "destructive",
+                });
+              } finally {
+                setSavingBudgetSettings(false);
+              }
+            }}
+          >
+            {savingBudgetSettings ? "Saving..." : "Save Budget Settings"}
+          </Button>
+        </div>
+      </Card>
 
       {/* Current Plan */}
       {canViewSubscriptions && (
@@ -8225,87 +8580,92 @@ export default function BrandDashboard() {
       <Card className="p-6 bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">Invoice History</h3>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            disabled={brandInvoices.length === 0}
+            onClick={() => {
+              const header = "ID,Number,Amount,Currency,Status,Date\n";
+              const rows = brandInvoices.map((inv) => {
+                const amountDollars = ((inv.amount || 0) / 100).toFixed(2);
+                const date = inv.created_at
+                  ? new Date(inv.created_at).toLocaleDateString()
+                  : "";
+                return `${inv.id},${inv.number || ""},${amountDollars},${inv.currency},${inv.status},${date}`;
+              });
+              const csv = header + rows.join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export All
           </Button>
         </div>
         <div className="space-y-3">
-          {[
-            {
-              month: "February 2025",
-              invoice: "INV-001",
-              amount: 299,
-              status: "Paid",
-              date: "2025-02-01",
-            },
-            {
-              month: "January 2025",
-              invoice: "INV-002",
-              amount: 299,
-              status: "Paid",
-              date: "2025-01-01",
-            },
-            {
-              month: "December 2024",
-              invoice: "INV-003",
-              amount: 299,
-              status: "Paid",
-              date: "2024-12-01",
-            },
-          ].map((invoice, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
-            >
-              <div>
-                <p className="font-semibold text-gray-900">{invoice.month}</p>
-                <p className="text-sm text-gray-600">
-                  {invoice.invoice} • {invoice.date}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="font-bold text-gray-900">
-                  ${invoice.amount}.00
-                </span>
-                <Badge className="bg-green-100 text-green-700 border border-green-300">
-                  {invoice.status}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-gray-300"
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
-              </div>
+          {loadingBillingData ? (
+            <div className="p-4 text-center text-gray-500">Loading invoices...</div>
+          ) : brandInvoices.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              No invoices available yet. Invoices will appear here once you have
+              an active subscription.
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Budget Alerts */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
-          Budget Management
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-semibold text-gray-700 block mb-2">
-              Monthly Budget Limit (Optional)
-            </Label>
-            <Input
-              type="number"
-              placeholder="Enter amount"
-              className="border-2 border-gray-300 max-w-xs"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Get alerts when spend reaches 80% or 100%
-            </p>
-          </div>
-          <Button variant="outline" className="border-2 border-gray-300">
-            Set Budget Alerts
-          </Button>
+          ) : (
+            brandInvoices.map((invoice) => {
+              const amountDollars = (invoice.amount || 0) / 100;
+              const monthLabel = invoice.created_at
+                ? new Date(invoice.created_at).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                  })
+                : "Unknown";
+              return (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">{monthLabel}</p>
+                    <p className="text-sm text-gray-600">
+                      {invoice.number || invoice.id.slice(0, 8)} •{" "}
+                      {invoice.created_at
+                        ? new Date(invoice.created_at).toLocaleDateString()
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold text-gray-900">
+                      ${amountDollars.toFixed(2)}
+                    </span>
+                    <Badge
+                      className={
+                        invoice.status === "paid"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                      }
+                    >
+                      {invoice.status}
+                    </Badge>
+                    {invoice.invoice_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-2 border-gray-300"
+                        onClick={() => window.open(invoice.invoice_url, "_blank")}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </Card>
     </div>
