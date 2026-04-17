@@ -174,6 +174,56 @@ export const createBrandSubscriptionCheckout = (data: {
 export const createBrandBillingPortal = () =>
   base44Client.post<{ checkout_url: string }>(`/brand/billing/portal`, {});
 
+export const getBrandBillingStatus = () =>
+  base44Client.get<{
+    brand_id: string;
+    plan_tier: string;
+    subscription_status: string;
+    stripe_customer_id?: string | null;
+    stripe_subscription_id?: string | null;
+    current_period_end?: string | null;
+    cancel_at_period_end: boolean;
+    trial_active: boolean;
+    trial_ends_at?: string | null;
+  }>(`/api/brand/billing/status`);
+
+export const getBrandSpendAnalytics = () =>
+  base44Client.get<{
+    monthly_spend: Array<{ month: string; spend: number }>;
+    ytd_spend: number;
+    monthly_avg: number;
+    current_month_spend: number;
+    projected_eoy: number;
+  }>(`/api/brand/billing/spend`);
+
+export const listBrandInvoices = () =>
+  base44Client.get<{
+    invoices: Array<{
+      id: string;
+      number?: string;
+      amount: number;
+      currency: string;
+      status: string;
+      created_at?: string;
+      invoice_url?: string;
+    }>;
+  }>(`/api/brand/billing/invoices`);
+
+export const getBrandBudgetSettings = () =>
+  base44Client.get<{
+    monthly_budget_limit: number | null;
+    budget_alert_enabled: boolean;
+  }>(`/api/brand/billing/budget-settings`);
+
+export const updateBrandBudgetSettings = (data: {
+  monthly_budget_limit?: number | null;
+  budget_alert_enabled?: boolean;
+}) =>
+  base44Client.put<{
+    monthly_budget_limit: number | null;
+    budget_alert_enabled: boolean;
+  }>(`/api/brand/billing/budget-settings`, data);
+
 export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
   base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
 

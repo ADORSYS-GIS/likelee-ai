@@ -225,7 +225,7 @@ pub async fn list(
     }
 
     let mut summaries: Vec<TalentStatementSummary> = summary_by_talent.into_values().collect();
-    summaries.sort_by(|a, b| b.total_owed_cents.cmp(&a.total_owed_cents));
+    summaries.sort_by_key(|b| std::cmp::Reverse(b.total_owed_cents));
 
     Ok(Json(json!({
         "year": ytd_year,

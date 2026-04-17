@@ -14,7 +14,7 @@ export const BrandSettingsLegal = () => (
           title: "Terms & Conditions",
           icon: FileText,
           action: () =>
-            window.open("/terms-and-conditions-agency.html", "_blank"),
+            window.open("/agency_brand_terms_and-conditions.pdf", "_blank"),
         },
         {
           title: "Privacy Policy",
