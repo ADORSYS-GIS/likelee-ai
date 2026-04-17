@@ -364,14 +364,44 @@ export default function AgencySubscribe() {
       currentPlanInterval === "year" &&
       billingInterval === "month");
   const alreadySubscribedToPlan =
-    currentPlanTier === plan && currentPlanInterval === billingInterval;
+    !requiresContactSales &&
+    ((plan === "basic" &&
+      currentPlanTier === "basic" &&
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)) ||
+      (plan === "pro" &&
+        currentPlanTier === "pro" &&
+        currentPlanInterval === billingInterval &&
+        !(includeSeatsInPlan && seatCountChanged)));
   const checkoutDisabled =
-    !initialized || profileLoading || checkingOut || requiresContactSales;
-  const irlAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
     !initialized ||
     profileLoading ||
-    checkingOutIrlAddon ||
     requiresContactSales;
+  const irlAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading ||
+    requiresContactSales;
+  const studioAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading ||
+    requiresContactSales;
+  const studioAddonCtaLabel = checkingOutStudioAddon
+    ? "Processing..."
+    : hasStudioAddon
+      ? "Open Studio"
+      : "Activate Studio Add-on";
   const planChangeRaisesCost =
     currentPlanTier !== null &&
     (selectedPlanRank > currentPlanRank ||
@@ -909,42 +939,7 @@ export default function AgencySubscribe() {
     if (!initialized || profileLoading) return "Loading";
   };
 
-  const checkoutDisabled =
-    checkingOut ||
-    checkingOutIrlAddon ||
-    checkingOutStudioAddon ||
-    checkingOutSeats ||
-    !initialized ||
-    profileLoading;
-  const irlAddonCheckoutDisabled =
-    checkingOut ||
-    checkingOutIrlAddon ||
-    checkingOutStudioAddon ||
-    checkingOutSeats ||
-    !initialized ||
-    profileLoading;
-  const studioAddonCheckoutDisabled =
-    checkingOut ||
-    checkingOutIrlAddon ||
-    checkingOutStudioAddon ||
-    checkingOutSeats ||
-    !initialized ||
-    profileLoading;
-  const studioAddonCtaLabel = checkingOutStudioAddon
-    ? "Processing..."
-    : hasStudioAddon
-      ? "Open Studio"
-      : "Activate Studio Add-on";
-  const alreadySubscribedToPlan =
-    !requiresContactSales &&
-    ((plan === "basic" &&
-      currentPlanTier === "basic" &&
-      currentPlanInterval === billingInterval &&
-      !(includeSeatsInPlan && seatCountChanged)) ||
-      (plan === "pro" &&
-        currentPlanTier === "pro" &&
-        currentPlanInterval === billingInterval &&
-        !(includeSeatsInPlan && seatCountChanged)));
+
   const footerCtaLabel = (() => {
     if (!initialized || profileLoading) return "Loading...";
     if (requiresContactSales) return "Contact Sales";
