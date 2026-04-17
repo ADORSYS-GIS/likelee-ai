@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { DobInput } from "@/components/ui/DobInput";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import TalentPortal from "@/pages/TalentPortal";
@@ -15,7 +15,6 @@ import {
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
 import {
-  createCreatorBillingPortal,
   listTalentAgencyInvites,
   listTalentAssetRequests,
   listTalentBookings,
@@ -95,7 +94,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Clock,
-  Shield as ShieldIcon,
+  Shield,
   Building2,
   Target,
   PlayCircle,
@@ -124,12 +123,7 @@ import {
   Ban,
   BadgeCheck,
   Sparkles,
-  UserCheck,
-  Zap,
-  Star,
-  Crown,
   ChevronDown,
-  Shield,
 } from "lucide-react";
 import {
   LineChart,
@@ -437,12 +431,10 @@ function parseErrorMessage(err: any, t: any): string {
   // Default to generic error
   return t("common.errors.genericError");
 }
+
 export default function CreatorDashboard() {
-  const navigate = useNavigate();
-  const routeLocation = useLocation();
   const { t, i18n } = useTranslation();
-  const { initialized, authenticated, user, profile, refreshProfile, logout } =
-    useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSection = (() => {
     const requested = String(searchParams.get("section") || "").trim();
@@ -470,6 +462,9 @@ export default function CreatorDashboard() {
     searchParams.get("contentTab") === "brand_content"
       ? "brand_content"
       : "brand_content";
+
+  const { user, profile, initialized, authenticated, logout, refreshProfile } =
+    useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
@@ -494,9 +489,6 @@ export default function CreatorDashboard() {
   const [settingsTab, setSettingsTab] = useState(initialSettingsTab); // 'profile' or 'rules'
   const [creatorBilling, setCreatorBilling] = useState<any>(null);
   const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
-  const [trialCountdown, setTrialCountdown] = useState("");
-  const [cachedEntitlementTier, setCachedEntitlementTier] =
-    useState<string>("unknown");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -3305,121 +3297,6 @@ export default function CreatorDashboard() {
   // Track if we've loaded data for the current user to prevent unnecessary refetches
   const loadedUserRef = useRef<string | null>(null);
 
-  // Ensure we refetch dashboard data after a logout/login cycle (even for the same user id)
-  useEffect(() => {
-    if (!initialized) return;
-    if (!authenticated || !user?.id) {
-      loadedUserRef.current = null;
-    }
-  }, [initialized, authenticated, user?.id]);
-
-  // Strict creator subscription gating: block dashboard entirely for free entitlement
-  useEffect(() => {
-    if (!initialized) return;
-    if (!authenticated) return;
-    if (!user?.id) return;
-
-    (async () => {
-      try {
-        const { getCreatorBillingStatus } = await import("@/api/functions");
-        const resp = await getCreatorBillingStatus();
-        setCreatorBilling(resp);
-        setCreatorBillingLoaded(true);
-
-        try {
-          const entitlement = String((resp as any)?.entitlement_tier || "")
-            .trim()
-            .toLowerCase();
-          if (entitlement) {
-            window.localStorage.setItem(
-              "creator_entitlement_tier",
-              entitlement,
-            );
-            setCachedEntitlementTier(entitlement);
-          }
-        } catch {
-          // ignore
-        }
-
-        const entitlement = String((resp as any)?.entitlement_tier || "free")
-          .trim()
-          .toLowerCase();
-      } catch {
-        // If billing status cannot be loaded, keep the dashboard usable but mark loaded
-        setCreatorBillingLoaded(true);
-      }
-    })();
-  }, [
-    initialized,
-    authenticated,
-    user?.id,
-    routeLocation.pathname,
-    routeLocation.search,
-    navigate,
-  ]);
-
-  useEffect(() => {
-    try {
-      const stored = String(
-        window.localStorage.getItem("creator_entitlement_tier") || "",
-      )
-        .trim()
-        .toLowerCase();
-      if (stored) {
-        setCachedEntitlementTier(stored);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const isFreeEntitlement = useMemo(() => {
-    const fromApi = String((creatorBilling as any)?.entitlement_tier || "")
-      .trim()
-      .toLowerCase();
-    const entitlement = fromApi || cachedEntitlementTier;
-
-    if (entitlement === "free") return true;
-    if (
-      entitlement === "basic" ||
-      entitlement === "pro" ||
-      entitlement === "enterprise"
-    ) {
-      return false;
-    }
-
-    // Unknown while loading: pessimistically lock premium tabs to avoid the window
-    // where a free user can click before billing status arrives.
-    return true;
-  }, [cachedEntitlementTier, creatorBilling]);
-
-  const isProEntitlement = useMemo(() => {
-    const fromApi = String((creatorBilling as any)?.entitlement_tier || "")
-      .trim()
-      .toLowerCase();
-    const entitlement = fromApi || cachedEntitlementTier;
-    return entitlement === "pro" || entitlement === "enterprise";
-  }, [cachedEntitlementTier, creatorBilling]);
-
-  const isBillingKnown = useMemo(() => {
-    const fromApi = String((creatorBilling as any)?.entitlement_tier || "")
-      .trim()
-      .toLowerCase();
-    const entitlement = fromApi || cachedEntitlementTier;
-    return (
-      entitlement === "free" ||
-      entitlement === "basic" ||
-      entitlement === "pro" ||
-      entitlement === "enterprise"
-    );
-  }, [cachedEntitlementTier, creatorBilling]);
-
-  useEffect(() => {
-    if (!isFreeEntitlement) return;
-    if (activeSection === "dashboard") return;
-    setActiveSection("dashboard");
-  }, [activeSection, isFreeEntitlement]);
-
   // Calculate metrics (fallback to computed if backend doesn't send)
   const totalMonthlyRevenue = activeCampaigns.reduce(
     (sum, c) => sum + (c.rate || 0),
@@ -3429,31 +3306,6 @@ export default function CreatorDashboard() {
   const expiringCount = activeCampaigns.filter(
     (c) => c.status === "expiring_soon",
   ).length;
-
-  useEffect(() => {
-    const trialActive = !!creatorBilling?.trial_active;
-    const trialEndsAt = creatorBilling?.trial_ends_at;
-
-    if (!trialActive || !trialEndsAt) {
-      setTrialCountdown("");
-      return;
-    }
-
-    const compute = () => {
-      const end = new Date(trialEndsAt).getTime();
-      const ms = Math.max(0, end - Date.now());
-      if (ms <= 0) {
-        setTrialCountdown("Trial ended");
-        return;
-      }
-      const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
-    };
-
-    compute();
-    const id = window.setInterval(compute, 60 * 1000);
-    return () => window.clearInterval(id);
-  }, [creatorBilling?.trial_active, creatorBilling?.trial_ends_at]);
 
   // Fetch per-user dashboard data
   useEffect(() => {
@@ -3759,7 +3611,6 @@ export default function CreatorDashboard() {
     badge?: number;
     urgent?: boolean;
     disabled?: boolean;
-    requiredPlan?: "basic" | "pro";
     onClick?: () => void;
   }> = [
     {
@@ -3771,66 +3622,40 @@ export default function CreatorDashboard() {
       id: "content",
       label: t("creatorDashboard.nav.content"),
       icon: PlayCircle,
-      disabled: isFreeEntitlement,
-      requiredPlan: "basic",
     },
     {
       id: "likeness",
       label: t("creatorDashboard.nav.likeness"),
       icon: ImageIcon,
-      disabled: isFreeEntitlement,
-      requiredPlan: "basic",
     },
-    {
-      id: "voice",
-      label: t("creatorDashboard.nav.voice"),
-      icon: Mic,
-      disabled: !isProEntitlement,
-      requiredPlan: "pro",
-    },
+    { id: "voice", label: t("creatorDashboard.nav.voice"), icon: Mic },
     {
       id: "campaigns",
       label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
-      disabled: !isProEntitlement,
-      requiredPlan: "pro",
     },
     {
       id: "jobs",
       label: "Jobs",
       icon: Briefcase,
-      disabled: !isProEntitlement,
-      requiredPlan: "pro",
     },
     {
       id: "archive",
       label: t("creatorDashboard.nav.archive"),
       icon: Archive,
       badge: undefined,
-      disabled: !isProEntitlement,
-      requiredPlan: "pro",
     },
     {
       id: "earnings",
       label: t("creatorDashboard.nav.payouts"),
       icon: WalletIcon,
-      disabled: isFreeEntitlement,
-      requiredPlan: "basic",
     },
     {
       id: "talent-portal",
       label: "Talent Portal",
       icon: Briefcase,
-      disabled: !isProEntitlement || !talentPortalEnabled,
-      requiredPlan: "pro",
+      disabled: !talentPortalEnabled,
       onClick: () => {
-        if (!isProEntitlement) {
-          const next = `${routeLocation.pathname}${routeLocation.search}`;
-          const sp = new URLSearchParams();
-          sp.set("next", next);
-          navigate(`/CreatorSubscribe?${sp.toString()}`);
-          return;
-        }
         if (!talentPortalEnabled) {
           toast({
             title: "Talent Portal",
@@ -3849,8 +3674,6 @@ export default function CreatorDashboard() {
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
           : undefined,
-      disabled: isFreeEntitlement,
-      requiredPlan: "basic",
     },
     {
       id: "brand-connection",
@@ -3858,15 +3681,11 @@ export default function CreatorDashboard() {
       icon: LinkIcon,
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
-      disabled: isFreeEntitlement,
-      requiredPlan: "basic",
     },
     {
       id: "settings",
       label: t("creatorDashboard.nav.settings"),
       icon: Settings,
-      disabled: isFreeEntitlement,
-      requiredPlan: "pro",
     },
   ];
 
@@ -5791,110 +5610,10 @@ export default function CreatorDashboard() {
               {kycLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <ShieldIcon className="mr-2 h-4 w-4" />
+                <Shield className="mr-2 h-4 w-4" />
               )}
               {primaryButtonLabel}
             </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderPlanStatusBar = () => {
-    if (!creatorBillingLoaded) return null;
-
-    const planTier = String(
-      (creatorBilling as any)?.plan_tier || "free",
-    ).toLowerCase();
-    const trialActive = !!creatorBilling?.trial_active;
-    const entitlementTier = String(
-      (creatorBilling as any)?.entitlement_tier || "free",
-    ).toLowerCase();
-
-    // Mapping for labels
-    const planLabel =
-      planTier === "pro" ? "Pro" : planTier === "basic" ? "Basic" : "Free";
-
-    const displayPlanLabel = (() => {
-      if (trialActive) {
-        return `${entitlementTier.toUpperCase()} TRIAL`;
-      }
-      return planLabel.toUpperCase();
-    })();
-
-    return (
-      <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-lg font-black text-gray-900">
-              Welcome to your dashboard
-            </div>
-            <div className="text-gray-500 font-medium mt-1">
-              This is your main hub for managing your career.
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div
-              className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
-                entitlementTier === "pro" || entitlementTier === "enterprise"
-                  ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white ring-yellow-200"
-                  : entitlementTier === "basic"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
-                    : "bg-white text-gray-900 ring-gray-200"
-              }`}
-              title="Current plan"
-            >
-              <span className="inline-flex items-center gap-2">
-                {entitlementTier === "pro" ||
-                entitlementTier === "enterprise" ? (
-                  <Crown className="w-4 h-4 text-white" />
-                ) : entitlementTier === "basic" ? (
-                  <Star className="w-4 h-4 text-white" />
-                ) : null}
-                <span>{displayPlanLabel}</span>
-                {trialActive && trialCountdown ? (
-                  <span className="text-[11px] font-black tracking-normal opacity-95">
-                    ({trialCountdown})
-                  </span>
-                ) : null}
-              </span>
-            </div>
-
-            {(planTier === "free" || entitlementTier === "free") &&
-            !trialActive ? (
-              <Button
-                type="button"
-                className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                onClick={() => navigate("/CreatorSubscribe")}
-              >
-                Upgrade
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-2xl font-black border-2 border-gray-200 bg-white text-gray-900 px-6 shadow-sm hover:bg-gray-50 flex items-center gap-2"
-                onClick={async () => {
-                  try {
-                    const resp = await createCreatorBillingPortal();
-                    const url = String(
-                      (resp as any)?.checkout_url || "",
-                    ).trim();
-                    if (!url) {
-                      throw new Error("missing_billing_portal_url");
-                    }
-                    window.location.href = url;
-                  } catch {
-                    navigate("/CreatorSubscribe");
-                  }
-                }}
-              >
-                Manage Subscription
-                <Settings className="w-4 h-4" />
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -6635,7 +6354,7 @@ export default function CreatorDashboard() {
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <ShieldIcon className="w-5 h-5 text-[#32C8D1]" />
+                <Shield className="w-5 h-5 text-[#32C8D1]" />
                 <span className="font-medium text-gray-900">
                   {t("creatorDashboard.verificationStatus.likenessRights")}
                 </span>
@@ -6656,7 +6375,7 @@ export default function CreatorDashboard() {
                 {kycLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <ShieldIcon className="w-4 h-4 mr-2" />
+                  <Shield className="w-4 h-4 mr-2" />
                 )}
                 {verificationButtonLabel}
               </Button>
@@ -10012,7 +9731,7 @@ export default function CreatorDashboard() {
 
         <div className="space-y-4 text-left mb-8">
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-            <ShieldIcon className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-gray-900">
                 {t("creatorDashboard.earnings.bankConnection.securityTitle")}
@@ -11517,23 +11236,7 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => {
-                    if (item.disabled) {
-                      // Show upgrade prompt for any locked feature
-                      if (item.id !== "dashboard") {
-                        const sp = new URLSearchParams(routeLocation.search);
-                        sp.set("section", item.id);
-                        const next = `${routeLocation.pathname}?${sp.toString()}`;
-                        const nextSp = new URLSearchParams();
-                        nextSp.set("next", next);
-                        navigate(`/CreatorSubscribe?${nextSp.toString()}`);
-
-                        toast({
-                          title: "Upgrade Required",
-                          description: `The ${item.label} feature is available on the ${item.requiredPlan === "pro" ? "Pro" : "Basic"} plan.`,
-                        });
-                      }
-                      return;
-                    }
+                    if (item.disabled) return;
                     if (item.onClick) {
                       item.onClick();
                       return;
@@ -11555,17 +11258,6 @@ export default function CreatorDashboard() {
                       <span className="flex-1 text-left font-medium">
                         {item.label}
                       </span>
-                      {item.requiredPlan && item.id !== "dashboard" && (
-                        <span className="shrink-0">
-                          {item.requiredPlan === "pro"
-                            ? !isProEntitlement && (
-                                <Crown className="w-4 h-4 text-amber-400" />
-                              )
-                            : isFreeEntitlement && (
-                                <Star className="w-4 h-4 text-sky-400" />
-                              )}
-                        </span>
-                      )}
                       {item.badge !== undefined && item.badge > 0 && (
                         <Badge
                           className={`${item.urgent ? "bg-red-500" : "bg-gray-500"} text-white`}
@@ -11692,12 +11384,8 @@ export default function CreatorDashboard() {
       >
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection !== "settings" &&
-            activeSection !== "talent-portal" && (
-              <>
-                {activeSection === "dashboard" && renderPlanStatusBar()}
-                {renderMarketplaceVerificationBar()}
-              </>
-            )}
+            activeSection !== "talent-portal" &&
+            renderMarketplaceVerificationBar()}
           {activeSection === "dashboard" && renderDashboard()}
           {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
@@ -11705,6 +11393,7 @@ export default function CreatorDashboard() {
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
           {activeSection === "jobs" && renderJobsSection()}
+          {activeSection === "approvals" && renderApprovals()}
           {activeSection === "archive" && renderCampaignArchive()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
