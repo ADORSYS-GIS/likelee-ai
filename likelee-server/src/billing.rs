@@ -3463,15 +3463,30 @@ pub async fn create_brand_subscription_checkout(
         ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
 
     let next_path = sanitize_next_path(payload.next_path.as_deref());
-    let success_url = brand_billing_frontend_url(
-        &state,
-        vec![
-            ("success", "1".to_string()),
-            ("plan", target_plan.clone()),
-            ("billing", billing_cycle.to_string()),
-            ("next", next_path.clone().unwrap_or_default()),
-        ],
-    )?;
+    
+    // Success URL redirects to dashboard, not billing page
+    let success_url = {
+        let base = state.frontend_url.trim();
+        let mut url = Url::parse(base).map_err(|e| {
+            (
+                StatusCode::PRECONDITION_FAILED,
+                format!("invalid_frontend_url:{e}"),
+            )
+        })?;
+        url.set_path("/BrandDashboard");
+        {
+            let mut query = url.query_pairs_mut();
+            query.append_pair("billing_success", "1");
+            query.append_pair("plan", target_plan.as_str());
+            if let Some(next) = next_path.as_ref() {
+                if !next.trim().is_empty() {
+                    query.append_pair("next", next.as_str());
+                }
+            }
+        }
+        url.to_string()
+    };
+    
     let cancel_url = brand_billing_frontend_url(
         &state,
         vec![
@@ -3482,8 +3497,7 @@ pub async fn create_brand_subscription_checkout(
         ],
     )?;
 
-    let should_start_trial =
-        payload.start_trial && target_plan == "pro" && current_plan_tier == "free";
+    let should_start_trial = !has_active_base_subscription;
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
@@ -3509,6 +3523,9 @@ pub async fn create_brand_subscription_checkout(
     md.insert("billing_target".to_string(), "base".to_string());
     md.insert("plan".to_string(), target_plan.clone());
     md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+    if should_start_trial {
+        md.insert("trial_active".to_string(), "1".to_string());
+    }
     cs_params.metadata = Some(md);
 
     let mut sub_md = std::collections::HashMap::new();
@@ -3517,9 +3534,15 @@ pub async fn create_brand_subscription_checkout(
     sub_md.insert("billing_target".to_string(), "base".to_string());
     sub_md.insert("plan".to_string(), target_plan.clone());
     sub_md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+
+    if should_start_trial {
+        cs_params.payment_method_collection =
+            Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
+
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
         metadata: Some(sub_md),
-        trial_period_days: if should_start_trial { Some(14) } else { None },
+        trial_period_days: if should_start_trial { Some(state.brand_trial_days) } else { None },
         ..Default::default()
     });
 
@@ -3544,7 +3567,8 @@ pub async fn create_brand_subscription_checkout(
         brand_id = %brand_id,
         plan = %target_plan,
         billing_cycle = %billing_cycle,
-        start_trial = should_start_trial,
+        trial_applied = should_start_trial,
+        trial_days = %state.brand_trial_days,
         "created brand subscription checkout session"
     );
     Ok(Json(AgencyCheckoutResponse {

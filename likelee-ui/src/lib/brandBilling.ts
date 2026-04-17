@@ -1,5 +1,6 @@
 export type BrandPlanTier = "free" | "basic" | "pro" | "enterprise";
 
+export const BRAND_TRIAL_DAYS = 14;
 export const BRAND_STUDIO_ADDON_PRICE = 299;
 export const BRAND_STUDIO_ADDON_CREDITS = 2000;
 

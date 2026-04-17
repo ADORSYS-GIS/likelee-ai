@@ -952,14 +952,11 @@ export default function OrganizationSignup() {
       }
       // Clear auth intent after successful profile completion
       clearAuthIntent();
-      if (flow === "brand") {
-        navigate("/BrandDashboard", { replace: true });
-        return;
-      }
       if (flow === "agency") {
-        navigate("/AgencySubscribe", { replace: true });
+        navigate("/AgencyDashboard", { replace: true });
         return;
       }
+      // For brands, let the ProtectedRoute handle the redirect to pricing
       setSubmitted(true);
     },
     onError: (error) => {

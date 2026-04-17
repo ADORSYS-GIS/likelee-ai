@@ -1,7 +1,12 @@
 import React from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { getOnboardingPath, isOnboardingIncomplete } from "./onboarding";
+import {
+  getOnboardingPath,
+  isOnboardingIncomplete,
+  brandNeedsPricing,
+  getBrandPricingPath,
+} from "./onboarding";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 const LoadingSpinner = () => (
@@ -57,6 +62,17 @@ export default function ProtectedRoute({
     () => getOnboardingPath(profile),
     [profile],
   );
+  const pricingPath = React.useMemo(
+    () => getBrandPricingPath(profile),
+    [profile],
+  );
+  
+  // Check if this is a billing success redirect - allow access even without active subscription
+  const isBillingSuccess = React.useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("billing_success") === "1";
+  }, []);
+  
   const missingRequiredPermission = React.useMemo(() => {
     if (!requiredPermissions?.length || !isTeamScopedRole) {
       return false;
@@ -101,6 +117,18 @@ export default function ProtectedRoute({
         window.location.pathname !== onboardingPath.split("?")[0]
       ) {
         navigate(onboardingPath, { replace: true });
+        return;
+      }
+
+      // Redirect brands without subscription to pricing page
+      // Skip if this is a billing success redirect (webhook may still be processing)
+      if (
+        pricingPath &&
+        !isBillingSuccess &&
+        window.location.pathname !== "/brandpricing"
+      ) {
+        navigate(pricingPath, { replace: true });
+        return;
       }
     }
   }, [
@@ -116,6 +144,8 @@ export default function ProtectedRoute({
     location.pathname,
     navigate,
     onboardingPath,
+    pricingPath,
+    isBillingSuccess,
     context,
   ]);
 
@@ -159,6 +189,16 @@ export default function ProtectedRoute({
     onboardingPath &&
     isOnboardingIncomplete(profile) &&
     location.pathname !== onboardingPath.split("?")[0]
+  ) {
+    return <LoadingSpinner />;
+  }
+
+  // Show loading spinner during pricing redirect
+  // Skip if this is a billing success redirect
+  if (
+    pricingPath &&
+    !isBillingSuccess &&
+    location.pathname !== "/brandpricing"
   ) {
     return <LoadingSpinner />;
   }

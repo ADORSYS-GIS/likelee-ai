@@ -16,6 +16,7 @@ import {
 import {
   BRAND_STUDIO_ADDON_CREDITS,
   BRAND_STUDIO_ADDON_PRICE,
+  BRAND_TRIAL_DAYS,
   formatBrandPlanLabel,
   formatBrandStudioAddonStatus,
   formatBrandSubscriptionStatus,
@@ -408,7 +409,9 @@ function getPlanPriceDisplay(
     priceLabel: currencyFormatter.format(plan.monthlyPrice),
     priceNote: plan.priceNote,
     priceCaption:
-      plan.tier === "pro" ? "Optional 14-day base-plan trial" : undefined,
+      plan.tier === "basic" || plan.tier === "pro"
+        ? `${BRAND_TRIAL_DAYS}-day free trial • Cancel anytime`
+        : undefined,
   };
 }
 
@@ -452,7 +455,6 @@ function getCheckoutErrorMessage(message: string): string {
 
 function buildBrandSignupPath(input: {
   plan: "basic" | "pro";
-  trial?: boolean;
   focusStudio?: boolean;
   billingCycle?: BillingCycle;
 }) {
@@ -461,7 +463,6 @@ function buildBrandSignupPath(input: {
     plan: input.plan,
     autostart: "1",
   });
-  if (input.trial) params.set("trial", "1");
   if (input.focusStudio) params.set("focus", "studio");
   if (input.billingCycle === "annual") params.set("billing", "annual");
   return `/organization-signup?${params.toString()}`;
@@ -579,10 +580,10 @@ export default function BrandSubscribe() {
     searchParams.get("billing") === "annual" ? "annual" : "monthly";
   const requestedPlan = searchParams.get("plan");
   const autoStartCheckout = searchParams.get("autostart") === "1";
-  const requestedTrial = searchParams.get("trial") === "1";
+  const isRequired = searchParams.get("required") === "1";
 
   const [checkingOutPlan, setCheckingOutPlan] = React.useState<
-    null | "basic" | "pro_trial" | "pro_paid"
+    null | "basic" | "pro"
   >(null);
   const [checkingOutAddon, setCheckingOutAddon] = React.useState(false);
   const verifyCalledRef = React.useRef(false);
@@ -602,16 +603,27 @@ export default function BrandSubscribe() {
   const currentPeriodEnd = formatDateLabel(
     profile?.subscription_current_period_end,
   );
+
+  React.useEffect(() => {
+    if (!isRequired) return;
+    if (!initialized || !authenticated || !isBrandAccount) return;
+    if (hasBaseSubscription) {
+      navigate("/BrandDashboard", { replace: true });
+    }
+  }, [
+    authenticated,
+    hasBaseSubscription,
+    initialized,
+    isBrandAccount,
+    isRequired,
+    navigate,
+  ]);
   React.useEffect(() => {
     if (!success || !authenticated) return;
-    // Guard: only run once per mount even if deps change (refreshProfile reference
-    // changes on every render, which would cause an infinite loop without this).
     if (verifyCalledRef.current) return;
     verifyCalledRef.current = true;
 
     const run = async () => {
-      // If we have a session ID (studio addon success redirect), verify and provision
-      // immediately instead of waiting for the Stripe webhook.
       if (focusStudio && checkoutSessionId) {
         try {
           await verifyBrandStudioAddonCheckout({
@@ -622,6 +634,12 @@ export default function BrandSubscribe() {
         }
       }
       await refreshProfile();
+      
+      // Redirect to dashboard after successful subscription
+      if (isBrandAccount) {
+        const dest = nextPath || "/BrandDashboard";
+        navigate(dest, { replace: true });
+      }
     };
 
     void run();
@@ -645,7 +663,7 @@ export default function BrandSubscribe() {
     if (requestedPlan !== "basic" && requestedPlan !== "pro") return;
 
     autoCheckoutStartedRef.current = true;
-    void beginBrandCheckout(requestedPlan, requestedTrial);
+    void beginBrandCheckout(requestedPlan);
   }, [
     authenticated,
     autoStartCheckout,
@@ -654,36 +672,28 @@ export default function BrandSubscribe() {
     initialized,
     isBrandAccount,
     requestedPlan,
-    requestedTrial,
     success,
   ]);
 
   const redirectToBrandSignup = (
     tier: "basic" | "pro",
-    options?: { trial?: boolean; focusStudio?: boolean },
+    options?: { focusStudio?: boolean },
   ) => {
     navigate(
       buildBrandSignupPath({
         plan: tier,
-        trial: options?.trial,
         focusStudio: options?.focusStudio,
         billingCycle,
       }),
     );
   };
 
-  const beginBrandCheckout = async (
-    tier: "basic" | "pro",
-    startTrial: boolean,
-  ) => {
-    setCheckingOutPlan(
-      tier === "pro" ? (startTrial ? "pro_trial" : "pro_paid") : "basic",
-    );
+  const beginBrandCheckout = async (tier: "basic" | "pro") => {
+    setCheckingOutPlan(tier);
     try {
       const response = await createBrandSubscriptionCheckout({
         plan: tier,
         billing_cycle: billingCycle,
-        start_trial: startTrial,
         next_path: nextPath || undefined,
       });
       const checkoutUrl = (response as any)?.checkout_url as string | undefined;
@@ -704,14 +714,11 @@ export default function BrandSubscribe() {
     }
   };
 
-  const handleBaseAction = async (
-    tier: "basic" | "pro",
-    startTrial: boolean,
-  ) => {
+  const handleBaseAction = async (tier: "basic" | "pro") => {
     if (!initialized) return;
 
     if (!authenticated) {
-      redirectToBrandSignup(tier, { trial: startTrial });
+      redirectToBrandSignup(tier);
       return;
     }
 
@@ -722,7 +729,7 @@ export default function BrandSubscribe() {
           "This pricing page is public, but checkout is only available for brand accounts.",
         variant: "destructive",
       });
-      redirectToBrandSignup(tier, { trial: startTrial });
+      redirectToBrandSignup(tier);
       return;
     }
 
@@ -731,13 +738,11 @@ export default function BrandSubscribe() {
         return;
       }
 
-      // Bug Fix #2: Directly proceed to checkout for plan changes
-      // The backend will automatically cancel the old subscription before creating the new one
-      await beginBrandCheckout(tier, startTrial);
+      await beginBrandCheckout(tier);
       return;
     }
 
-    await beginBrandCheckout(tier, startTrial);
+    await beginBrandCheckout(tier);
   };
 
   const handleStudioAddonAction = async () => {
@@ -753,7 +758,7 @@ export default function BrandSubscribe() {
     }
 
     if (!authenticated) {
-      redirectToBrandSignup("pro", { trial: false, focusStudio: true });
+      redirectToBrandSignup("pro", { focusStudio: true });
       return;
     }
 
@@ -764,7 +769,7 @@ export default function BrandSubscribe() {
           "AI Studio add-on billing is only available for brand accounts.",
         variant: "destructive",
       });
-      redirectToBrandSignup("pro", { trial: false, focusStudio: true });
+      redirectToBrandSignup("pro", { focusStudio: true });
       return;
     }
 
@@ -793,6 +798,19 @@ export default function BrandSubscribe() {
 
   return (
     <div className="min-h-screen bg-[#F5F6F8] text-[#1C2B47]">
+      {isRequired && (
+        <div className="bg-gradient-to-r from-[#18B1AE] via-[#16A8A5] to-[#14A3A0] text-white py-4 px-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48L2c+PC9zdmc+')] opacity-10"></div>
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 relative z-10">
+            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5">
+              <span className="text-lg">🎉</span>
+              <span className="text-sm font-bold">
+                Almost there! Choose your plan to activate your account
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
         <section className="relative overflow-hidden rounded-[38px] border border-[#D7E1ED] bg-[linear-gradient(180deg,#F8FBFF_0%,#F4F7FB_100%)] px-6 py-12 shadow-[0_22px_80px_rgba(7,28,58,0.08)] sm:px-10 sm:py-14 lg:px-16 lg:py-16">
           <div className="absolute -left-10 top-20 h-40 w-40 rounded-full bg-[#CCF4F2] blur-3xl" />
@@ -800,21 +818,64 @@ export default function BrandSubscribe() {
           <div className="absolute bottom-0 left-1/2 h-24 w-[72%] -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
 
           <div className="relative mx-auto max-w-4xl text-center">
-            <Badge className="rounded-full border border-[#9FDCD7] bg-[#F1FBF9] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-[#18A7A5] hover:bg-[#F1FBF9]">
-              Brand plans
-            </Badge>
+            {isRequired ? (
+              <>
+                <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#B8E6E4] bg-gradient-to-r from-[#EDFAF8] to-[#E5F9F5] px-4 py-2 mb-6">
+                  <span className="text-xl">✨</span>
+                  <span className="text-sm font-semibold text-[#107573]">
+                    Complete your setup in 2 minutes
+                  </span>
+                </div>
 
-            <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight text-[#17315E] sm:text-5xl lg:text-[64px] lg:leading-[1.02]">
-              <span className="block">The right plan for</span>
-              <span className="mt-1 block italic text-[#18B1AE]">
-                every stage of growth
-              </span>
-            </h1>
+                <h1 className="mt-4 font-serif text-5xl font-bold tracking-tight text-[#17315E] sm:text-6xl lg:text-[72px] lg:leading-[1.1]">
+                  <span className="block">Start with a</span>
+                  <span className="mt-2 block bg-gradient-to-r from-[#18B1AE] to-[#14A3A0] bg-clip-text text-transparent">
+                    {BRAND_TRIAL_DAYS}-Day Free Trial
+                  </span>
+                </h1>
 
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#6E7E9F] sm:text-xl">
-              From your first campaign to a full-stack creator ecosystem.
-              Likelee scales with you.
-            </p>
+                <p className="mx-auto mt-6 max-w-2xl text-lg leading-7 text-[#6E7E9F] sm:text-xl">
+                  Get full access to all features.{" "}
+                  <span className="font-semibold text-[#17315E]">No charge until your trial ends.</span>
+                  <br />
+                  Cancel anytime before the {BRAND_TRIAL_DAYS} days are up.
+                </p>
+
+                <div className="mt-8 inline-flex items-center gap-4 rounded-2xl border-2 border-[#B8E6E4] bg-white px-6 py-4 shadow-lg shadow-[#18B1AE]/10">
+                  <div className="flex -space-x-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#18B1AE] to-[#14A3A0] flex items-center justify-center text-white text-sm font-bold border-2 border-white">
+                      ✓
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-[#17315E]">
+                      Your card won't be charged today
+                    </p>
+                    <p className="text-xs text-[#6E7E9F]">
+                      We'll charge it automatically after {BRAND_TRIAL_DAYS} days • Cancel anytime
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <Badge className="rounded-full border border-[#9FDCD7] bg-[#F1FBF9] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-[#18A7A5] hover:bg-[#F1FBF9]">
+                  Brand plans
+                </Badge>
+
+                <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight text-[#17315E] sm:text-5xl lg:text-[64px] lg:leading-[1.02]">
+                  <span className="block">The right plan for</span>
+                  <span className="mt-1 block italic text-[#18B1AE]">
+                    every stage of growth
+                  </span>
+                </h1>
+
+                <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#6E7E9F] sm:text-xl">
+                  From your first campaign to a full-stack creator ecosystem.
+                  Likelee scales with you.
+                </p>
+              </>
+            )}
 
             <div className="mt-8 flex justify-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#D7E1ED] bg-white px-2 py-2 shadow-[0_10px_24px_rgba(15,36,84,0.07)]">
@@ -891,13 +952,7 @@ export default function BrandSubscribe() {
           {brandPlans.map((plan) => {
             const dark = plan.tier === "pro";
             const isCurrentPlan = hasBaseSubscription && planTier === plan.tier;
-            const isLoading =
-              plan.tier === "basic"
-                ? checkingOutPlan === "basic"
-                : checkingOutPlan === "pro_paid" ||
-                  checkingOutPlan === "pro_trial";
-            const isProPaidLoading = checkingOutPlan === "pro_paid";
-            const isProTrialLoading = checkingOutPlan === "pro_trial";
+            const isLoading = checkingOutPlan === plan.tier;
             const priceDisplay = getPlanPriceDisplay(plan, billingCycle);
 
             return (
@@ -950,10 +1005,17 @@ export default function BrandSubscribe() {
                         {priceDisplay.previousPriceLabel}
                       </div>
                     )}
-                    <div
-                      className={`font-serif text-5xl font-bold ${plan.headingClassName}`}
-                    >
-                      {priceDisplay.priceLabel}
+                    <div className="flex items-baseline gap-2">
+                      <div
+                        className={`font-serif text-5xl font-bold ${plan.headingClassName}`}
+                      >
+                        {priceDisplay.priceLabel}
+                      </div>
+                      {plan.tier !== "enterprise" && !hasBaseSubscription && (
+                        <Badge className="bg-gradient-to-r from-[#18B1AE] to-[#14A3A0] text-white border-0 text-xs font-bold px-2 py-0.5 animate-pulse">
+                          {BRAND_TRIAL_DAYS} DAYS FREE
+                        </Badge>
+                      )}
                     </div>
                     <p className={`mt-2 text-sm ${plan.bodyClassName}`}>
                       {priceDisplay.priceNote}
@@ -967,6 +1029,12 @@ export default function BrandSubscribe() {
                         {priceDisplay.priceCaption}
                       </p>
                     )}
+                    {plan.tier !== "enterprise" && !hasBaseSubscription && (
+                      <p className="mt-3 text-xs text-[#18B1AE] font-semibold flex items-center gap-1">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#18B1AE] animate-ping"></span>
+                        Card required • Auto-renews after trial
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-6">
@@ -977,71 +1045,48 @@ export default function BrandSubscribe() {
                       >
                         {plan.cta}
                       </Button>
-                    ) : plan.tier === "pro" && !isCurrentPlan ? (
+                    ) : (
                       <div className="space-y-3">
                         <Button
-                          disabled={!initialized || isLoading}
-                          className={`h-11 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
-                          onClick={() => handleBaseAction("pro", false)}
+                          disabled={
+                            !initialized || (isCurrentPlan && hasBaseSubscription)
+                          }
+                          className={`h-12 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60 group relative overflow-hidden`}
+                          onClick={() => handleBaseAction(plan.tier as "basic" | "pro")}
                         >
-                          {isProPaidLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Redirecting
-                            </>
-                          ) : hasBaseSubscription ? (
-                            "Upgrade plan"
-                          ) : (
-                            plan.cta
-                          )}
+                          <span className="relative z-10 flex items-center justify-center gap-2">
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Redirecting...
+                              </>
+                            ) : isCurrentPlan ? (
+                              "Current plan"
+                            ) : hasBaseSubscription ? (
+                              <>
+                                <span>Upgrade to</span>
+                                <span className="font-bold">{formatBrandPlanLabel(plan.tier)}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-bold">Start {BRAND_TRIAL_DAYS}-Day Free Trial</span>
+                                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                              </>
+                            )}
+                          </span>
                         </Button>
-                        {!hasBaseSubscription && (
-                          <>
-                            <Button
-                              disabled={!initialized || isLoading}
-                              variant="outline"
-                              className="h-11 w-full rounded-xl border border-[#4A6494] bg-transparent font-semibold text-white hover:bg-[#203C6C] disabled:cursor-not-allowed disabled:opacity-60"
-                              onClick={() => handleBaseAction("pro", true)}
+                        {!hasBaseSubscription && !isCurrentPlan && (
+                          <p className="text-center text-xs text-[#6E7E9F]">
+                            or{" "}
+                            <button
+                              onClick={() => navigate("/SalesInquiry")}
+                              className="text-[#18B1AE] font-semibold hover:underline underline-offset-2"
                             >
-                              {isProTrialLoading ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Redirecting
-                                </>
-                              ) : (
-                                "Start 14-day free trial"
-                              )}
-                            </Button>
-                            <p className="text-center text-xs text-[#B8C8E5]">
-                              Trial is optional. Start paid immediately or
-                              launch with a trial first.
-                            </p>
-                          </>
+                              contact sales for immediate activation
+                            </button>
+                          </p>
                         )}
                       </div>
-                    ) : (
-                      <Button
-                        disabled={
-                          !initialized || (isCurrentPlan && hasBaseSubscription)
-                        }
-                        className={`h-11 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
-                        onClick={() =>
-                          handleBaseAction(plan.tier, plan.tier === "pro")
-                        }
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Redirecting
-                          </>
-                        ) : isCurrentPlan ? (
-                          "Current plan"
-                        ) : hasBaseSubscription ? (
-                          "Upgrade plan"
-                        ) : (
-                          plan.cta
-                        )}
-                      </Button>
                     )}
                   </div>
 

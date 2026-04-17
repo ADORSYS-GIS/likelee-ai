@@ -144,6 +144,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
+import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import {
@@ -292,7 +293,7 @@ const getBrandInitials = (name: string) => {
 // Mock licenses removed - licenses are now loaded from real API data
 
 export default function BrandDashboard() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -334,6 +335,9 @@ export default function BrandDashboard() {
     currency?: string;
   }>({ open: false });
 
+  const billingSuccess = searchParams.get("billing_success") === "1";
+  const billingSuccessProcessedRef = useRef(false);
+
   useEffect(() => {
     activeSectionRef.current = activeSection;
   }, [activeSection]);
@@ -341,6 +345,25 @@ export default function BrandDashboard() {
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
   }, [campaignHubTab]);
+
+  // Handle billing success - refresh profile to ensure subscription is active
+  useEffect(() => {
+    if (!billingSuccess || billingSuccessProcessedRef.current) return;
+    billingSuccessProcessedRef.current = true;
+
+    const refreshAfterBilling = async () => {
+      // Refresh profile to get updated subscription status
+      await refreshProfile();
+      
+      // Remove billing_success param from URL
+      searchParams.delete("billing_success");
+      searchParams.delete("plan");
+      searchParams.delete("next");
+      setSearchParams(searchParams, { replace: true });
+    };
+
+    void refreshAfterBilling();
+  }, [billingSuccess, refreshProfile, searchParams, setSearchParams]);
 
   const [campaignMetrics, setCampaignMetrics] = useState<{
     active_projects_count: number;
@@ -11301,6 +11324,7 @@ export default function BrandDashboard() {
         className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
+          <TrialCountdownBanner trialEndsAt={brandTrialEndsAt} />
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && renderCreatorMarketplace()}
           {activeSection === "marketplace-agencies" &&

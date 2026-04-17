@@ -211,3 +211,24 @@ export function getDashboardPath(
   if (profile.role === "agency") return "/AgencyDashboard";
   return "/CreatorDashboard";
 }
+
+export function brandNeedsPricing(profile?: Profile | null): boolean {
+  if (!profile || profile.role !== "brand") return false;
+
+  const status = String(profile.subscription_status || "")
+    .trim()
+    .toLowerCase();
+  const tier = String(profile.plan_tier || "")
+    .trim()
+    .toLowerCase();
+
+  if (status === "active" || status === "trialing") return false;
+  if (tier && tier !== "free") return false;
+
+  return true;
+}
+
+export function getBrandPricingPath(profile?: Profile | null): string | null {
+  if (!brandNeedsPricing(profile)) return null;
+  return "/brandpricing?required=1";
+}

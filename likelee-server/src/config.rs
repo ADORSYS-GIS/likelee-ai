@@ -310,6 +310,10 @@ pub struct ServerConfig {
     /// Secret token for authenticating cron job endpoints
     #[envconfig(from = "CRON_SECRET", default = "")]
     pub cron_secret: String,
+
+    /// Brand trial period in days (default: 14)
+    #[envconfig(from = "BRAND_TRIAL_DAYS", default = "14")]
+    pub brand_trial_days: u32,
 }
 
 #[derive(Clone)]
@@ -424,4 +428,7 @@ pub struct AppState {
 
     // Cron authentication
     pub cron_secret: String,
+
+    // Brand trial configuration
+    pub brand_trial_days: u32,
 }

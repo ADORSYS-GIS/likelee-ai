@@ -298,6 +298,9 @@ async fn main() {
 
         // Cron authentication
         cron_secret: cfg.cron_secret.clone(),
+
+        // Brand trial configuration
+        brand_trial_days: cfg.brand_trial_days,
     };
 
     // Start background jobs
