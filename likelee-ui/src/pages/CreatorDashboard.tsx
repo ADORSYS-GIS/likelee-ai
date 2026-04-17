@@ -129,6 +129,7 @@ import {
   Sparkles,
   ChevronDown,
   Crown,
+  Star,
 } from "lucide-react";
 import {
   LineChart,
@@ -6062,10 +6063,18 @@ export default function CreatorDashboard() {
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-colors duration-500 ${
                 isExpiringSoon
                   ? "bg-red-50 text-red-500"
-                  : "bg-[#F0FDFA] text-[#32C8D1]"
+                  : effectivePlanTier === "basic"
+                    ? "bg-blue-50 text-blue-500"
+                    : effectivePlanTier === "pro"
+                      ? "bg-amber-50 text-amber-500"
+                      : "bg-[#F0FDFA] text-[#32C8D1]"
               }`}
             >
-              <Crown className="h-6 w-6" />
+              {effectivePlanTier === "pro" ? (
+                <Crown className="h-6 w-6" />
+              ) : effectivePlanTier === "basic" ? (
+                <Star className="h-6 w-6" />
+              ) : null}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
