@@ -862,6 +862,31 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::verify_brand_studio_addon_checkout),
         )
         .route(
+            "/api/brand/billing/status",
+            get(crate::billing::get_brand_billing_status),
+        )
+        .route(
+            "/api/brand/billing/spend",
+            get(crate::brand_campaigns::get_brand_spend_analytics),
+        )
+        .route(
+            "/api/brand/billing/invoices",
+            get(crate::billing::list_brand_invoices),
+        )
+        .route(
+            "/api/brand/billing/budget-settings",
+            get(crate::billing::get_brand_budget_settings)
+                .put(crate::billing::update_brand_budget_settings),
+        )
+        .route(
+            "/api/cron/budget-alerts",
+            post(crate::billing::check_budget_alerts_cron),
+        )
+        .route(
+            "/api/cron/reset-monthly-budget-alerts",
+            post(crate::billing::reset_monthly_budget_alerts),
+        )
+        .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
                 .get(crate::brand_campaigns::list_campaigns),
