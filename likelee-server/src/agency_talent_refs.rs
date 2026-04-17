@@ -93,7 +93,6 @@ pub async fn list_agency_talent_refs(
         .from("agency_talent_relationships")
         .select("id,agency_id,talent_id,creator_id,status,performance_tier_name")
         .eq("agency_id", agency_id)
-        .in_("status", vec!["active", "inactive", "pending"])
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -110,7 +109,6 @@ pub async fn list_agency_talent_refs(
         .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role,performance_tier_name")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
-        .in_("status", vec!["active", "inactive", "pending"])
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -219,7 +217,7 @@ pub async fn list_agency_talent_refs(
                 .and_then(|v| v.get("email"))
                 .and_then(|v| v.as_str()),
         );
-        let key = creator_id.clone().unwrap_or_else(|| agency_user_id.clone());
+        let key = agency_user_id.clone();
         let profile_photo_url = row
             .get("profile_photo_url")
             .and_then(|v| v.as_str())
@@ -292,10 +290,9 @@ pub async fn list_agency_talent_refs(
             .and_then(|v| v.as_str())
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        let key = creator_id
+        let key = talent_id
             .clone()
-            .or_else(|| talent_id.clone())
-            .unwrap_or_default();
+            .unwrap_or_else(|| relationship_id.clone());
         if key.is_empty() || by_key.contains_key(&key) {
             continue;
         }
@@ -376,15 +373,23 @@ pub async fn resolve_agency_talent_ref(
     }
 
     let refs = list_agency_talent_refs(state, agency_id, None).await?;
-    refs.into_iter()
-        .find(|item| {
-            item.id == needle
-                || item.agency_user_id.as_deref() == Some(needle)
-                || item.creator_id.as_deref() == Some(needle)
-                || item.relationship_id.as_deref() == Some(needle)
-        })
-        .ok_or((
-            StatusCode::FORBIDDEN,
-            "Access denied to this talent".to_string(),
-        ))
+    let found = refs.iter().find(|item| {
+        item.id == needle
+            || item.agency_user_id.as_deref() == Some(needle)
+            || item.creator_id.as_deref() == Some(needle)
+            || item.relationship_id.as_deref() == Some(needle)
+    });
+    if found.is_none() {
+        tracing::warn!(
+            agency_id = %agency_id,
+            input_id = %needle,
+            ref_count = %refs.len(),
+            ref_ids = ?refs.iter().map(|r| (r.id.as_str(), r.agency_user_id.as_deref().unwrap_or(""), r.creator_id.as_deref().unwrap_or(""))).collect::<Vec<_>>(),
+            "resolve_agency_talent_ref: no match found"
+        );
+    }
+    found.cloned().ok_or((
+        StatusCode::FORBIDDEN,
+        "Access denied to this talent".to_string(),
+    ))
 }

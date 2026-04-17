@@ -144,7 +144,6 @@ pub async fn create_with_files(
             .pg
             .from("book_outs")
             .select("id")
-            .eq("agency_user_id", &user.id)
             .lte("start_date", &payload.date)
             .gte("end_date", &payload.date);
         req = if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
