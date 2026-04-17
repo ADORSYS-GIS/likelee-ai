@@ -664,38 +664,34 @@ pub async fn booking_created_email(
             .await;
     }
 
-    if true {
-        let send_res =
-            email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
+    let send_res =
+        email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
 
-        // Log notification regardless of SMTP result (status success/error)
-        let status_ok = send_res.is_ok();
-        let insert = json!({
-            "agency_user_id": user.id,
-            "booking_id": payload.booking_id,
-            "channel": "email",
-            "recipient_type": "talent",
-            "to_email": dest,
-            "subject": subject,
-            "message": body,
-            "meta_json": json!({"smtp_status": if status_ok {"ok"} else {"error"}}),
-        });
-        let _ = state
-            .pg
-            .from("booking_notifications")
-            .insert(insert.to_string())
-            .execute()
-            .await;
+    // Log notification regardless of SMTP result (status success/error)
+    let status_ok = send_res.is_ok();
+    let insert = json!({
+        "agency_user_id": user.id,
+        "booking_id": payload.booking_id,
+        "channel": "email",
+        "recipient_type": "talent",
+        "to_email": dest,
+        "subject": subject,
+        "message": body,
+        "meta_json": json!({"smtp_status": if status_ok {"ok"} else {"error"}}),
+    });
+    let _ = state
+        .pg
+        .from("booking_notifications")
+        .insert(insert.to_string())
+        .execute()
+        .await;
 
-        match send_res {
-            Ok(_) => Ok(Json(json!({"status":"ok"}))),
-            Err((code, msg)) => Err((
-                StatusCode::BAD_GATEWAY,
-                format!("email_send_failed upstream_status={} message={}", code, msg),
-            )),
-        }
-    } else {
-        Ok(Json(json!({"status":"ok"})))
+    match send_res {
+        Ok(_) => Ok(Json(json!({"status":"ok"}))),
+        Err((code, msg)) => Err((
+            StatusCode::BAD_GATEWAY,
+            format!("email_send_failed upstream_status={} message={}", code, msg),
+        )),
     }
 }
 

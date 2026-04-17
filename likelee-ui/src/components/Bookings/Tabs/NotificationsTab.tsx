@@ -135,6 +135,7 @@ export const NotificationsTab = ({
   const updateGlobalChannel = async (channel: string, enabled: boolean) => {
     if (!effectiveAgencyId) return;
 
+    const previousSettings = { ...agencySettings };
     const currentPrefs = Array.isArray(agencySettings?.prefs)
       ? [...agencySettings.prefs]
       : [];
@@ -159,6 +160,9 @@ export const NotificationsTab = ({
       channels: newChannels,
     };
 
+    // Optimistic update
+    setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+
     try {
       const { error } = await supabase
         .from("agency_notification_settings")
@@ -172,8 +176,10 @@ export const NotificationsTab = ({
         );
 
       if (error) throw error;
-      setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
     } catch (e: any) {
+      console.error("Failed to update setting:", e);
+      // Revert on error
+      setAgencySettings(previousSettings);
       toast({
         title: "Failed to update setting",
         description: e.message,
@@ -203,6 +209,7 @@ export const NotificationsTab = ({
   ) => {
     if (!effectiveAgencyId) return;
 
+    const previousSettings = { ...agencySettings };
     const currentPrefs = Array.isArray(agencySettings?.prefs)
       ? [...agencySettings.prefs]
       : [];
@@ -226,6 +233,9 @@ export const NotificationsTab = ({
       channels: newChannels,
     };
 
+    // Optimistic update
+    setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
+
     try {
       const { error } = await supabase
         .from("agency_notification_settings")
@@ -239,8 +249,10 @@ export const NotificationsTab = ({
         );
 
       if (error) throw error;
-      setAgencySettings((prev: any) => ({ ...prev, prefs: currentPrefs }));
     } catch (e: any) {
+      console.error("Failed to update preference:", e);
+      // Revert on error
+      setAgencySettings(previousSettings);
       toast({
         title: "Failed to update preference",
         description: e.message,

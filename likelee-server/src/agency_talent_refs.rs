@@ -109,6 +109,8 @@ pub async fn list_agency_talent_refs(
         .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role,performance_tier_name")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
+        .neq("status", "deleted")
+        .neq("status", "suspended")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
