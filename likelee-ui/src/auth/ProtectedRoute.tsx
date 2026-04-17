@@ -66,13 +66,13 @@ export default function ProtectedRoute({
     () => getBrandPricingPath(profile),
     [profile],
   );
-  
+
   // Check if this is a billing success redirect - allow access even without active subscription
   const isBillingSuccess = React.useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("billing_success") === "1";
   }, []);
-  
+
   const missingRequiredPermission = React.useMemo(() => {
     if (!requiredPermissions?.length || !isTeamScopedRole) {
       return false;

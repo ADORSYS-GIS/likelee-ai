@@ -634,7 +634,7 @@ export default function BrandSubscribe() {
         }
       }
       await refreshProfile();
-      
+
       // Redirect to dashboard after successful subscription
       if (isBrandAccount) {
         const dest = nextPath || "/BrandDashboard";
@@ -836,7 +836,9 @@ export default function BrandSubscribe() {
 
                 <p className="mx-auto mt-6 max-w-2xl text-lg leading-7 text-[#6E7E9F] sm:text-xl">
                   Get full access to all features.{" "}
-                  <span className="font-semibold text-[#17315E]">No charge until your trial ends.</span>
+                  <span className="font-semibold text-[#17315E]">
+                    No charge until your trial ends.
+                  </span>
                   <br />
                   Cancel anytime before the {BRAND_TRIAL_DAYS} days are up.
                 </p>
@@ -852,7 +854,8 @@ export default function BrandSubscribe() {
                       Your card won't be charged today
                     </p>
                     <p className="text-xs text-[#6E7E9F]">
-                      We'll charge it automatically after {BRAND_TRIAL_DAYS} days • Cancel anytime
+                      We'll charge it automatically after {BRAND_TRIAL_DAYS}{" "}
+                      days • Cancel anytime
                     </p>
                   </div>
                 </div>
@@ -1049,10 +1052,13 @@ export default function BrandSubscribe() {
                       <div className="space-y-3">
                         <Button
                           disabled={
-                            !initialized || (isCurrentPlan && hasBaseSubscription)
+                            !initialized ||
+                            (isCurrentPlan && hasBaseSubscription)
                           }
                           className={`h-12 w-full ${plan.buttonClassName} disabled:cursor-not-allowed disabled:opacity-60 group relative overflow-hidden`}
-                          onClick={() => handleBaseAction(plan.tier as "basic" | "pro")}
+                          onClick={() =>
+                            handleBaseAction(plan.tier as "basic" | "pro")
+                          }
                         >
                           <span className="relative z-10 flex items-center justify-center gap-2">
                             {isLoading ? (
@@ -1065,11 +1071,15 @@ export default function BrandSubscribe() {
                             ) : hasBaseSubscription ? (
                               <>
                                 <span>Upgrade to</span>
-                                <span className="font-bold">{formatBrandPlanLabel(plan.tier)}</span>
+                                <span className="font-bold">
+                                  {formatBrandPlanLabel(plan.tier)}
+                                </span>
                               </>
                             ) : (
                               <>
-                                <span className="font-bold">Start {BRAND_TRIAL_DAYS}-Day Free Trial</span>
+                                <span className="font-bold">
+                                  Start {BRAND_TRIAL_DAYS}-Day Free Trial
+                                </span>
                                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                               </>
                             )}

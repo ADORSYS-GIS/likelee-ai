@@ -354,7 +354,7 @@ export default function BrandDashboard() {
     const refreshAfterBilling = async () => {
       // Refresh profile to get updated subscription status
       await refreshProfile();
-      
+
       // Remove billing_success param from URL
       searchParams.delete("billing_success");
       searchParams.delete("plan");

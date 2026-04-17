@@ -3463,7 +3463,7 @@ pub async fn create_brand_subscription_checkout(
         ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
 
     let next_path = sanitize_next_path(payload.next_path.as_deref());
-    
+
     // Success URL redirects to dashboard, not billing page
     let success_url = {
         let base = state.frontend_url.trim();
@@ -3486,7 +3486,7 @@ pub async fn create_brand_subscription_checkout(
         }
         url.to_string()
     };
-    
+
     let cancel_url = brand_billing_frontend_url(
         &state,
         vec![
@@ -3542,7 +3542,11 @@ pub async fn create_brand_subscription_checkout(
 
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
         metadata: Some(sub_md),
-        trial_period_days: if should_start_trial { Some(state.brand_trial_days) } else { None },
+        trial_period_days: if should_start_trial {
+            Some(state.brand_trial_days)
+        } else {
+            None
+        },
         ..Default::default()
     });
 
