@@ -11949,7 +11949,9 @@ export default function CreatorDashboard() {
                           {item.included ? (
                             <Check className="h-4 w-4" />
                           ) : item.value === "Pro only" ? (
-                            <Crown className="h-4 w-4" />
+                            <Crown className="h-4 w-4 text-amber-500" />
+                          ) : item.value.startsWith("Upgrade to Basic") ? (
+                            <Star className="h-4 w-4 text-blue-500" />
                           ) : (
                             <Shield className="h-4 w-4" />
                           )}
@@ -12351,6 +12353,10 @@ export default function CreatorDashboard() {
                         (item.requiredPlan === "pro" ? (
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF4DA] text-[#B7791F]">
                             <Crown className="h-3.5 w-3.5" />
+                          </span>
+                        ) : item.requiredPlan === "basic" ? (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                            <Star className="h-3.5 w-3.5" />
                           </span>
                         ) : (
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E8F7FB] text-[#1683A3]">
