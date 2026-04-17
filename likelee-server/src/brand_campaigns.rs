@@ -2082,7 +2082,7 @@ pub async fn get_brand_spend_analytics(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_lowercase();
-        
+
         if payment_status != "released" && payment_status != "paid" {
             continue;
         }

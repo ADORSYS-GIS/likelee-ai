@@ -1507,15 +1507,19 @@ export default function BrandDashboard() {
       const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
       if (escrowStatus === "holding" || escrowStatus === "releasing") {
         const budgetSnap = offer?.budget_snapshot || {};
-        const amount = Number(budgetSnap?.total_amount || budgetSnap?.amount || 0);
+        const amount = Number(
+          budgetSnap?.total_amount || budgetSnap?.amount || 0,
+        );
         if (amount > 0) {
           total += amount;
           projects.push({
             id: offer.id,
-            name: offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
+            name:
+              offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
             status: escrowStatus === "holding" ? "in_progress" : "releasing",
             amount,
-            creator: offer?.target_type === "creator" ? offer.target_id : "Unknown",
+            creator:
+              offer?.target_type === "creator" ? offer.target_id : "Unknown",
           });
         }
       }
@@ -8202,21 +8206,28 @@ export default function BrandDashboard() {
               </span>
             </div>
             <Progress
-              value={Math.min(100, ((billingCurrentMonthSpend || 0) / 100 / budgetLimit) * 100)}
+              value={Math.min(
+                100,
+                ((billingCurrentMonthSpend || 0) / 100 / budgetLimit) * 100,
+              )}
               className="h-3 bg-blue-100"
             />
             {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit * 0.8 && (
               <div className="mt-3 flex items-center gap-2">
-                <AlertTriangle className={`w-5 h-5 ${
-                  (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
-                    ? "text-red-600"
-                    : "text-amber-600"
-                }`} />
-                <span className={`text-sm font-medium ${
-                  (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
-                    ? "text-red-700"
-                    : "text-amber-700"
-                }`}>
+                <AlertTriangle
+                  className={`w-5 h-5 ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                      ? "text-red-600"
+                      : "text-amber-600"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                      ? "text-red-700"
+                      : "text-amber-700"
+                  }`}
+                >
                   {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
                     ? "You've reached your monthly budget limit"
                     : "You've reached 80% of your monthly budget"}
@@ -8274,11 +8285,13 @@ export default function BrandDashboard() {
       </div>
 
       {/* Budget Management */}
-      <Card className={`p-6 border-2 ${
-        budgetLimit === null || budgetLimit === 0
-          ? "bg-amber-50 border-amber-300"
-          : "bg-white border-gray-200"
-      }`}>
+      <Card
+        className={`p-6 border-2 ${
+          budgetLimit === null || budgetLimit === 0
+            ? "bg-amber-50 border-amber-300"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900">
@@ -8306,8 +8319,8 @@ export default function BrandDashboard() {
                   Set your monthly budget
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Track your spending and get notified when you approach your limit.
-                  Stay on top of your creator campaign costs.
+                  Track your spending and get notified when you approach your
+                  limit. Stay on top of your creator campaign costs.
                 </p>
               </div>
             </div>
@@ -8325,9 +8338,7 @@ export default function BrandDashboard() {
               className="border-2 border-gray-300 max-w-xs"
               value={budgetLimit ?? ""}
               onChange={(e) =>
-                setBudgetLimit(
-                  e.target.value ? Number(e.target.value) : null,
-                )
+                setBudgetLimit(e.target.value ? Number(e.target.value) : null)
               }
             />
           </div>
@@ -8340,7 +8351,10 @@ export default function BrandDashboard() {
               className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
-              <Label htmlFor="budgetAlertEnabled" className="text-sm font-medium text-gray-900">
+              <Label
+                htmlFor="budgetAlertEnabled"
+                className="text-sm font-medium text-gray-900"
+              >
                 Enable budget alerts
               </Label>
               <p className="text-xs text-gray-500">
@@ -8609,7 +8623,9 @@ export default function BrandDashboard() {
         </div>
         <div className="space-y-3">
           {loadingBillingData ? (
-            <div className="p-4 text-center text-gray-500">Loading invoices...</div>
+            <div className="p-4 text-center text-gray-500">
+              Loading invoices...
+            </div>
           ) : brandInvoices.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               No invoices available yet. Invoices will appear here once you have
@@ -8656,7 +8672,9 @@ export default function BrandDashboard() {
                         variant="outline"
                         size="sm"
                         className="border-2 border-gray-300"
-                        onClick={() => window.open(invoice.invoice_url, "_blank")}
+                        onClick={() =>
+                          window.open(invoice.invoice_url, "_blank")
+                        }
                       >
                         <Download className="w-4 h-4" />
                       </Button>

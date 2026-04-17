@@ -4825,8 +4825,11 @@ pub async fn list_brand_invoices(
                 .currency
                 .map(|c| c.to_string())
                 .unwrap_or_else(|| "usd".to_string()),
-            status: inv.status.map(|s| format!("{:?}", s).to_lowercase()).unwrap_or_else(|| "unknown".to_string()),
-            created_at: inv.created.map(|ts| ts_to_rfc3339(ts)).unwrap_or(None),
+            status: inv
+                .status
+                .map(|s| format!("{:?}", s).to_lowercase())
+                .unwrap_or_else(|| "unknown".to_string()),
+            created_at: inv.created.map(ts_to_rfc3339).unwrap_or(None),
             invoice_url: inv.hosted_invoice_url,
         })
         .collect();
@@ -4882,7 +4885,10 @@ pub async fn get_brand_budget_settings(
 
     Ok(Json(BrandBudgetSettings {
         monthly_budget_limit: row.get("monthly_budget_limit").and_then(|v| v.as_f64()),
-        budget_alert_enabled: row.get("budget_alert_enabled").and_then(|v| v.as_bool()).unwrap_or(false),
+        budget_alert_enabled: row
+            .get("budget_alert_enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
     }))
 }
 
@@ -4955,8 +4961,11 @@ pub async fn check_budget_alerts_cron(
 
     for brand in brands {
         let brand_id = brand.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let budget_limit = brand.get("monthly_budget_limit").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        
+        let budget_limit = brand
+            .get("monthly_budget_limit")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+
         if budget_limit <= 0.0 {
             continue;
         }
@@ -4977,17 +4986,27 @@ pub async fn check_budget_alerts_cron(
 
         let mut current_month_spend: i64 = 0;
         for offer in offers {
-            let payment_status = offer.get("payment_status").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
+            let payment_status = offer
+                .get("payment_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
             if payment_status != "released" && payment_status != "paid" {
                 continue;
             }
 
-            let budget_cents = offer.get("budget_snapshot").and_then(|v| v.as_i64()).unwrap_or(0);
+            let budget_cents = offer
+                .get("budget_snapshot")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             if budget_cents <= 0 {
                 continue;
             }
 
-            let created_at_str = offer.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+            let created_at_str = offer
+                .get("created_at")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let created_at = chrono::DateTime::parse_from_rfc3339(created_at_str)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or(now);
@@ -5001,7 +5020,10 @@ pub async fn check_budget_alerts_cron(
         let spend_percent = (current_spend_dollars / budget_limit) * 100.0;
 
         // Check 100% threshold
-        let alert_100_sent = brand.get("budget_alert_100_sent_at").and_then(|v| v.as_str()).is_some();
+        let alert_100_sent = brand
+            .get("budget_alert_100_sent_at")
+            .and_then(|v| v.as_str())
+            .is_some();
         if spend_percent >= 100.0 && !alert_100_sent {
             let _ = crate::notifications::send_brand_notification(
                 &state,
@@ -5014,7 +5036,8 @@ pub async fn check_budget_alerts_cron(
                 ),
                 json!({"type": "budget_alert", "threshold": "100"}),
                 true,
-            );
+            )
+            .await;
 
             let _ = state
                 .pg
@@ -5028,7 +5051,10 @@ pub async fn check_budget_alerts_cron(
         }
         // Check 80% threshold
         else if spend_percent >= 80.0 {
-            let alert_80_sent = brand.get("budget_alert_80_sent_at").and_then(|v| v.as_str()).is_some();
+            let alert_80_sent = brand
+                .get("budget_alert_80_sent_at")
+                .and_then(|v| v.as_str())
+                .is_some();
             if !alert_80_sent {
                 let _ = crate::notifications::send_brand_notification(
                     &state,
@@ -5041,7 +5067,8 @@ pub async fn check_budget_alerts_cron(
                     ),
                     json!({"type": "budget_alert", "threshold": "80"}),
                     true,
-                );
+                )
+                .await;
 
                 let _ = state
                     .pg
@@ -5070,10 +5097,13 @@ pub async fn reset_monthly_budget_alerts(
     let resp = state
         .pg
         .from("brands")
-        .update(json!({
-            "budget_alert_80_sent_at": null,
-            "budget_alert_100_sent_at": null
-        }).to_string())
+        .update(
+            json!({
+                "budget_alert_80_sent_at": null,
+                "budget_alert_100_sent_at": null
+            })
+            .to_string(),
+        )
         .not("monthly_budget_limit", "is", "null")
         .execute()
         .await
