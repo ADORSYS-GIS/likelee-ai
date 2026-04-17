@@ -2481,6 +2481,16 @@
       "genericError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
       "bucketNotFound": "Upload-Service nicht verfügbar. Bitte versuchen Sie es später erneut.",
       "constraintViolation": "Ungültige Daten. Bitte überprüfen Sie Ihre Eingabe und versuchen Sie es erneut."
+    },
+    "planStatusBar": {
+      "welcomeTitle": "Willkommen zu Ihrem Dashboard",
+      "welcomeSubtitle": "Dies ist Ihr zentraler Hub für die Verwaltung Ihrer Karriere.",
+      "currentPlan": "Aktueller Plan",
+      "upgrade": "Upgrade",
+      "manageSubscription": "Abonnement verwalten",
+      "trialEnded": "Testzeitraum beendet",
+      "day": "Tag",
+      "days": "Tage"
     }
   },
   "forgotPasswordPage": {

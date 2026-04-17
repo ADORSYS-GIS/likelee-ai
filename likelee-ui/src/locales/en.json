@@ -2590,6 +2590,16 @@
       "mlmMultiLevelMarketing": "MLM/Multi-Level Marketing",
       "unlicensedFinancialProducts": "Unlicensed Financial Products",
       "healthMedicalClaims": "Health/Medical Claims"
+    },
+    "planStatusBar": {
+      "welcomeTitle": "Welcome to your dashboard",
+      "welcomeSubtitle": "This is your main hub for managing your career.",
+      "currentPlan": "Current plan",
+      "upgrade": "Upgrade",
+      "manageSubscription": "Manage Subscription",
+      "trialEnded": "Trial ended",
+      "day": "day",
+      "days": "days"
     }
   },
   "dashboard": {

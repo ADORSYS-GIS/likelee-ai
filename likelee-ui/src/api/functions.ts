@@ -317,6 +317,13 @@ export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
     addon_irl_booking_enabled: boolean;
   }>(`/agency/billing/checkout/sync`, data || {});
 
+export const syncCreatorCheckoutSession = (data?: { session_id?: string }) =>
+  base44Client.post<{
+    entitlement_tier: string;
+    plan_tier: string;
+    trial_active: boolean;
+  }>(`/creator/billing/checkout/sync`, data || {});
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 

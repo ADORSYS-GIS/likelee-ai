@@ -462,14 +462,20 @@ pub async fn get_creator_plan_tier_for_user(
     Ok((creator_id, tier))
 }
 
-async fn get_creator_trial_started_at(
+struct CreatorTrialState {
+    pub trial_started_at: Option<DateTime<Utc>>,
+    pub trial_basic_started_at: Option<DateTime<Utc>>,
+    pub trial_pro_started_at: Option<DateTime<Utc>>,
+}
+
+async fn get_creator_trial_state(
     state: &AppState,
     creator_id: &str,
-) -> Result<Option<DateTime<Utc>>, (StatusCode, String)> {
+) -> Result<CreatorTrialState, (StatusCode, String)> {
     let resp = state
         .pg
         .from("creators")
-        .select("trial_started_at")
+        .select("trial_started_at,trial_basic_started_at,trial_pro_started_at")
         .eq("id", creator_id)
         .limit(1)
         .execute()
@@ -485,31 +491,34 @@ async fn get_creator_trial_started_at(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
-    let row = serde_json::from_str::<serde_json::Value>(&text)
-        .ok()
-        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
-        .unwrap_or(json!({}));
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows.first();
 
-    let dt = row
-        .get("trial_started_at")
-        .and_then(|v| v.as_str())
-        .and_then(|s| {
-            DateTime::parse_from_rfc3339(s)
-                .map(|dt| dt.with_timezone(&Utc))
-                .ok()
-                .or_else(|| {
-                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
-                        .ok()
-                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
-                })
-                .or_else(|| {
-                    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
-                        .ok()
-                        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
-                })
-        });
+    let parse_dt = |key: &str| {
+        row.and_then(|r| r.get(key))
+            .and_then(|v| v.as_str())
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .ok()
+                    .or_else(|| {
+                        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                            .ok()
+                            .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                    })
+                    .or_else(|| {
+                        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                            .ok()
+                            .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                    })
+            })
+    };
 
-    Ok(dt)
+    Ok(CreatorTrialState {
+        trial_started_at: parse_dt("trial_started_at"),
+        trial_basic_started_at: parse_dt("trial_basic_started_at"),
+        trial_pro_started_at: parse_dt("trial_pro_started_at"),
+    })
 }
 
 pub async fn get_creator_entitlement_tier(
@@ -521,16 +530,32 @@ pub async fn get_creator_entitlement_tier(
         return Ok(billed_tier);
     }
 
-    let trial_started_at = get_creator_trial_started_at(state, creator_id).await?;
-    let Some(trial_started_at) = trial_started_at else {
-        return Ok(PlanTier::Free);
-    };
+    let state_res = get_creator_trial_state(state, creator_id).await?;
+    let now = Utc::now();
+    let duration = Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS);
 
-    if Utc::now() - trial_started_at < Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS) {
-        Ok(PlanTier::Pro)
-    } else {
-        Ok(PlanTier::Free)
+    // 1. Check Pro Trial
+    if let Some(started_at) = state_res.trial_pro_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Pro);
+        }
     }
+
+    // 2. Check Basic Trial
+    if let Some(started_at) = state_res.trial_basic_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Basic);
+        }
+    }
+
+    // 3. Fallback to legacy trial_started_at (defaults to Pro)
+    if let Some(started_at) = state_res.trial_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Pro);
+        }
+    }
+
+    Ok(PlanTier::Free)
 }
 
 pub async fn get_creator_entitlement_tier_for_user(

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +12,13 @@ import {
 } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/auth/AuthProvider";
 
 export default function CreatorSubscribe() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { initialized, authenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("canceled") === "1";
@@ -46,8 +49,24 @@ export default function CreatorSubscribe() {
   const [loading, setLoading] = React.useState(true);
   const [startingTrial, setStartingTrial] = React.useState(false);
 
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!initialized) return;
+    if (!authenticated) {
+      const currentPath = location.pathname + location.search;
+      navigate("/Login", {
+        replace: true,
+        state: { from: currentPath },
+      });
+    }
+  }, [initialized, authenticated, navigate, location]);
+
   // Start a free trial by going through Stripe Checkout (collects card upfront, defers charge 30 days)
   const onStartTrial = async (plan: "basic" | "pro") => {
+    if (!authenticated) {
+      navigate("/Login", { replace: true, state: { from: location.pathname } });
+      return;
+    }
     try {
       setStartingTrial(true);
       const resp = await createCreatorSubscriptionCheckout({
@@ -73,6 +92,10 @@ export default function CreatorSubscribe() {
   };
 
   const onManageSubscription = async () => {
+    if (!authenticated) {
+      navigate("/Login", { replace: true, state: { from: location.pathname } });
+      return;
+    }
     setCheckingOut(true);
     try {
       const resp = await createCreatorBillingPortal();
