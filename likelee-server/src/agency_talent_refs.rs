@@ -379,15 +379,7 @@ pub async fn resolve_agency_talent_ref(
             || item.creator_id.as_deref() == Some(needle)
             || item.relationship_id.as_deref() == Some(needle)
     });
-    if found.is_none() {
-        tracing::warn!(
-            agency_id = %agency_id,
-            input_id = %needle,
-            ref_count = %refs.len(),
-            ref_ids = ?refs.iter().map(|r| (r.id.as_str(), r.agency_user_id.as_deref().unwrap_or(""), r.creator_id.as_deref().unwrap_or(""))).collect::<Vec<_>>(),
-            "resolve_agency_talent_ref: no match found"
-        );
-    }
+
     found.cloned().ok_or((
         StatusCode::FORBIDDEN,
         "Access denied to this talent".to_string(),
