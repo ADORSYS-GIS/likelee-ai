@@ -995,14 +995,7 @@ pub async fn upload_agency_storage_file(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded = upload_object(
-        &state,
-        visibility,
-        &path,
-        bytes,
-        mime_type.as_deref(),
-    )
-    .await?;
+    let uploaded = upload_object(&state, visibility, &path, bytes, mime_type.as_deref()).await?;
     let public_url = uploaded.public_url.clone();
     let insert = serde_json::json!({
         "agency_id": agency_id,

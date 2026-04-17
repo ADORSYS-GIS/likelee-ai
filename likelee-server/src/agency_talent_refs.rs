@@ -290,9 +290,7 @@ pub async fn list_agency_talent_refs(
             .and_then(|v| v.as_str())
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        let key = talent_id
-            .clone()
-            .unwrap_or_else(|| relationship_id.clone());
+        let key = talent_id.clone().unwrap_or_else(|| relationship_id.clone());
         if key.is_empty() || by_key.contains_key(&key) {
             continue;
         }
