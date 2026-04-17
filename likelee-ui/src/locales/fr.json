@@ -1469,20 +1469,20 @@
         "lululemon": "Lululemon",
         "fitnessSeries": "Série Fitness",
         "months": "{{count}} mois"
-       }
-     },
-     "planStatusBar": {
-       "welcomeTitle": "Bienvenue sur votre tableau de bord",
-       "welcomeSubtitle": "Ceci est votre principal centre de gestion de votre carrière.",
-       "currentPlan": "Plan actuel",
-       "upgrade": "Mettre à niveau",
-       "manageSubscription": "Gérer l'abonnement",
-       "trialEnded": "Essai terminé",
-       "day": "jour",
-       "days": "jours"
-     }
-   },
-   "reserveProfile": {
+      }
+    },
+    "planStatusBar": {
+      "welcomeTitle": "Bienvenue sur votre tableau de bord",
+      "welcomeSubtitle": "Ceci est votre principal centre de gestion de votre carrière.",
+      "currentPlan": "Plan actuel",
+      "upgrade": "Mettre à niveau",
+      "manageSubscription": "Gérer l'abonnement",
+      "trialEnded": "Essai terminé",
+      "day": "jour",
+      "days": "jours"
+    }
+  },
+  "reserveProfile": {
     "verification": {
       "title": "Vérification d'identité",
       "subtitle": "Vérifiez votre identité pour devenir visible auprès des marques et débloquer des opportunités",

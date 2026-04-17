@@ -2475,20 +2475,20 @@
       "databaseError": "No se pudo procesar la solicitud. Por favor, inténtelo de nuevo.",
       "genericError": "Algo salió mal. Por favor, inténtelo de nuevo o contacte al soporte.",
       "bucketNotFound": "Servicio de carga no disponible. Por favor, inténtelo más tarde.",
-       "constraintViolation": "Datos inválidos. Por favor, verifique su entrada e inténtelo de nuevo."
-     },
-     "planStatusBar": {
-       "welcomeTitle": "Bienvenido a tu panel",
-       "welcomeSubtitle": "Este es tu centro principal para gestionar tu carrera.",
-       "currentPlan": "Plan actual",
-       "upgrade": "Actualizar",
-       "manageSubscription": "Gestionar suscripción",
-       "trialEnded": "Prueba finalizada",
-       "day": "día",
-       "days": "días"
-     }
-   },
-   "forgotPasswordPage": {
+      "constraintViolation": "Datos inválidos. Por favor, verifique su entrada e inténtelo de nuevo."
+    },
+    "planStatusBar": {
+      "welcomeTitle": "Bienvenido a tu panel",
+      "welcomeSubtitle": "Este es tu centro principal para gestionar tu carrera.",
+      "currentPlan": "Plan actual",
+      "upgrade": "Actualizar",
+      "manageSubscription": "Gestionar suscripción",
+      "trialEnded": "Prueba finalizada",
+      "day": "día",
+      "days": "días"
+    }
+  },
+  "forgotPasswordPage": {
     "title": "Restablece tu contraseña",
     "instructions": "Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
     "emailLabel": "Correo electrónico",
