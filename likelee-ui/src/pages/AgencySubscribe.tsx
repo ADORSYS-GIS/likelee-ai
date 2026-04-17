@@ -907,6 +907,8 @@ export default function AgencySubscribe() {
 
   const getCheckoutButtonLabel = () => {
     if (!initialized || profileLoading) return "Loading";
+  };
+
   const checkoutDisabled =
     checkingOut ||
     checkingOutIrlAddon ||
@@ -954,7 +956,7 @@ export default function AgencySubscribe() {
       return "Get Started";
     if (includeSeatsInPlan && seatCountChanged) return "Update Plan";
     return "Upgrade Plan";
-  };
+  })();
 
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
