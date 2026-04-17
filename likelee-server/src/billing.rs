@@ -1,4 +1,9 @@
-use axum::{extract::Query, extract::State, http::StatusCode, Json};
+use axum::{
+    extract::Query,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    Json,
+};
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -4946,22 +4951,47 @@ pub async fn update_brand_budget_settings(
     }))
 }
 
+fn verify_cron_auth(headers: &HeaderMap, cron_secret: &str) -> Result<(), (StatusCode, String)> {
+    if cron_secret.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "CRON_SECRET not configured".to_string(),
+        ));
+    }
+
+    let auth_header = headers
+        .get("Authorization")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !auth_header.starts_with("Bearer ") {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Missing or invalid Authorization header. Use: Authorization: Bearer <secret>"
+                .to_string(),
+        ));
+    }
+
+    let token = auth_header.strip_prefix("Bearer ").unwrap_or("");
+    if token != cron_secret.trim() {
+        return Err((StatusCode::UNAUTHORIZED, "Invalid cron secret".to_string()));
+    }
+
+    Ok(())
+}
+
 #[derive(Debug, Deserialize)]
-pub struct CronRequest {
-    pub secret: String,
+pub struct CronQueryParams {
+    /// Optional: for idempotency tracking
+    pub idempotency_key: Option<String>,
 }
 
 pub async fn check_budget_alerts_cron(
     State(state): State<AppState>,
-    Query(params): Query<CronRequest>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Verify cron secret
-    if state.cron_secret.trim().is_empty() || params.secret != state.cron_secret {
-        return Err((
-            StatusCode::UNAUTHORIZED,
-            "Invalid or missing cron secret".to_string(),
-        ));
-    }
+    verify_cron_auth(&headers, &state.cron_secret)?;
 
     let now = chrono::Utc::now();
     let current_month_start = chrono::Utc
@@ -5144,15 +5174,10 @@ pub async fn check_budget_alerts_cron(
 
 pub async fn reset_monthly_budget_alerts(
     State(state): State<AppState>,
-    Query(params): Query<CronRequest>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Verify cron secret
-    if state.cron_secret.trim().is_empty() || params.secret != state.cron_secret {
-        return Err((
-            StatusCode::UNAUTHORIZED,
-            "Invalid or missing cron secret".to_string(),
-        ));
-    }
+    verify_cron_auth(&headers, &state.cron_secret)?;
 
     // Reset alert timestamps for all brands at the start of each month
     let resp = state
