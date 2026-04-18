@@ -228,13 +228,12 @@ export default function TeamInviteLanding() {
     }
   };
 
-  const declineInvite = async () => {
-    if (!effectiveToken) return;
+  const startDeclineFlow = async () => {
+    if (!invite || !effectiveToken || !isPending) return;
     setActionLoading(true);
     setActionError(null);
     try {
       await declineTeamInviteByToken(effectiveToken);
-      await supabase?.auth.signOut();
       toast({
         title: "Invitation declined",
         description: "You declined the team invitation.",
@@ -359,7 +358,7 @@ export default function TeamInviteLanding() {
             variant="outline"
             className="h-11 w-full"
             disabled={!isPending || actionLoading}
-            onClick={declineInvite}
+            onClick={startDeclineFlow}
           >
             Decline
           </Button>

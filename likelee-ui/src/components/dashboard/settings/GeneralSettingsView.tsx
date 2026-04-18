@@ -7,11 +7,7 @@ import {
   getAgencyPayoutsAccountStatus,
   getTeamAuditLogs,
 } from "@/api/functions";
-import {
-  Loader2,
-  RefreshCw,
-  AlertTriangle,
-} from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import {
   Building2,
   Upload,
