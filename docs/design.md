@@ -536,13 +536,15 @@ To ensure financial security:
 
 ### Escrow Status & Transfers
 
-Agency campaign offers track escrow release separately from deliverable workflow:
+Agency campaign offers track escrow release separately from the deliverable workflow:
 
 - `campaign_offers.escrow_status`: `holding` → `releasing` → `released`
 - Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
-- Dashboard balances distinguish:
-  - **Held (pending transfer)**: internal Likelee tracking
-  - **cashout (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
+- **Internal Balance Ledger (Held vs Cashout)**:
+  - **Held (pending transfer)**: An internal platform ledger tracked in `public.agency_balances` and `public.creator_balances`. These balances are credited immediately when a Brand payment is distributed (`handle_campaign_offer_agency_distribution`), regardless of whether the recipient has connected a Stripe account.
+  - **cashout (Stripe)**: The actual withdrawable funds in the recipient's connected Stripe account. This balance is only updated when a platform payout request is successfully executed.
+- **Deferred Payout Model**: The system supports deferred Stripe connectivity. Brands can pay for campaigns immediately; Likelee holds the funds in the internal "Held" ledger until the Agency or Creator completes their Stripe onboarding.
+- **Trigger-Based Integrity**: PostgreSQL triggers (`tr_update_agency_balance_on_payout_request`) automatically refund funds from an "approved" payout back to the internal "Held" balance if the Stripe transfer fails, ensuring no funds are lost due to connectivity issues.
 
 #### Commission semantics (agency campaign offers)
 
@@ -1141,7 +1143,7 @@ Public marketplace for talent discovery.
 ### API Endpoints
 
 - `GET /api/marketplace/search` - Search marketplace profiles
-- `GET /api/marketplace/:profile_type/:id/details` - Get profile details
+- `GET /api/marketplace/:profile_type/:id/details` - Get profile details (viewable by Brands without active agency membership)
 - `POST /api/marketplace/connect` - Request connection
 
 ### Implementation
@@ -1340,3 +1342,4 @@ Supabase Realtime is used for instant message delivery via `postgres_changes` su
 - [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.
 - [x] **Creator Free Trial Standardization (2026-04-09)**: Standardized Creator trial flow to require upfront payment details via Stripe Checkout. Implemented 30-day trial attached to paid plans with reuse prevention and persistent UI visibility.
 - [x] **Vulnerability Fixes & CI Stabilization (2026-04-15)**: Resolved critical `rustls-webpki` vulnerabilities in backend by transitioning `async-stripe` to use `native-tls` and upgrading other dependencies. Fixed frontend `npm install` failure by resolving `overrides` conflicts in `package.json`. Verified full project health with `cargo audit`, `cargo clippy`, `npm lint`, and `npm build`.
+- [x] **Marketplace & Billing Refinement (2026-04-18)**: Refactored marketplace access to allow Brands to view profiles without agency membership. Optimized campaign payment flow by removing redundant session tracking and formalizing the internal payout ledger (Held) vs live Stripe balance (Cashout) logic.
