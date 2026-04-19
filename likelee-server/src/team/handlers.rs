@@ -743,8 +743,13 @@ pub async fn decline_invite_by_token(
         ));
     }
 
-    let organization_type = OrganizationType::parse(&invite.organization_type)
-        .ok_or_else(|| (StatusCode::INTERNAL_SERVER_ERROR, "Invalid organization_type".to_string()))?;
+    let organization_type =
+        OrganizationType::parse(&invite.organization_type).ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid organization_type".to_string(),
+            )
+        })?;
 
     let update_resp = state
         .pg
