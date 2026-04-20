@@ -3234,7 +3234,7 @@ pub async fn create_brand_licensing_request(
         .map(|s| s.trim().to_string())
         .unwrap_or_default();
     let creator_id = payload.creator_id.trim().to_string();
-    
+
     let campaign_title = payload.campaign_title.trim().to_string();
     if creator_id.is_empty() || campaign_title.is_empty() {
         return Err((
@@ -3298,7 +3298,7 @@ pub async fn create_brand_licensing_request(
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
+
         let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
             serde_json::from_str(&connected_text).unwrap_or_default()
         } else if is_missing_relation_error(&connected_text, "brand_agency_connections") {
@@ -3321,12 +3321,13 @@ pub async fn create_brand_licensing_request(
             if !fallback_status.is_success() {
                 return Err(sanitize_db_error(fallback_status.as_u16(), fallback_text));
             }
-            let fallback_rows: Vec<serde_json::Value> = serde_json::from_str(&fallback_text).unwrap_or_default();
+            let fallback_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&fallback_text).unwrap_or_default();
             fallback_rows
         } else {
             return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
         };
-        
+
         if connected_rows.is_empty() {
             return Err((
                 StatusCode::FORBIDDEN,
