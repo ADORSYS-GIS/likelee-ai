@@ -1194,11 +1194,8 @@ async fn resolve_effective_creator_id(
 
 pub async fn decline_by_token(
     State(state): State<AppState>,
-    user: AuthUser,
     Path(token): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
-    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-
     let resp = state
         .pg
         .from("agency_talent_invites")
@@ -1223,14 +1220,6 @@ pub async fn decline_by_token(
     }
     if is_expired(&inv.expires_at) {
         return Err((StatusCode::BAD_REQUEST, "invite expired".to_string()));
-    }
-
-    let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
-    if user_email.is_empty() || user_email != inv.email.trim().to_lowercase() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "email does not match invite".to_string(),
-        ));
     }
 
     let _ = state

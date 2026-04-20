@@ -243,15 +243,14 @@ export default function AgencyInviteLanding() {
     }
   };
 
-  const declineInvite = async () => {
-    if (!effectiveToken) return;
+  const startDeclineFlow = async () => {
+    if (!effectiveToken || !isPending) return;
 
     setActionLoading(true);
     setActionError(null);
 
     try {
       await declineAgencyTalentInviteByToken(effectiveToken);
-      await supabase?.auth.signOut();
       toast({
         title: "Invitation declined",
         description: "You declined the invitation.",
@@ -392,7 +391,7 @@ export default function AgencyInviteLanding() {
                 variant="outline"
                 className="h-11 w-full"
                 disabled={!isPending || actionLoading}
-                onClick={declineInvite}
+                onClick={startDeclineFlow}
               >
                 Decline
               </Button>
@@ -418,8 +417,8 @@ export default function AgencyInviteLanding() {
 
               <div className="text-xs text-gray-500">
                 {requiresPasswordSetup
-                  ? "Create your password first, then we’ll email a 6-digit code and keep you on this page while we verify it."
-                  : "We’ll email a 6-digit sign-in code and keep you on this page while we verify it."}
+                  ? "Create your password first, then we'll email a 6-digit code and keep you on this page while we verify it."
+                  : "We'll email a 6-digit sign-in code and keep you on this page while we verify it."}
               </div>
 
               {authenticated ? (
@@ -438,7 +437,7 @@ export default function AgencyInviteLanding() {
                       !hasInviteRole ||
                       !emailMatchesInvite
                     }
-                    onClick={declineInvite}
+                    onClick={startDeclineFlow}
                   >
                     Decline
                   </Button>

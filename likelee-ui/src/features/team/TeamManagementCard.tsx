@@ -12,6 +12,8 @@ import {
   Edit2,
   Check,
   ArrowRight,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -184,6 +186,7 @@ export function TeamManagementCard({
   const [showRoleModal, setShowRoleModal] = React.useState(false);
   const [showActivityModal, setShowActivityModal] = React.useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [seatLimitError, setSeatLimitError] = React.useState<string | null>(
     null,
   );
@@ -196,6 +199,7 @@ export function TeamManagementCard({
     React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [submittingInvite, setSubmittingInvite] = React.useState(false);
   const [updatingRole, setUpdatingRole] = React.useState(false);
+  const [deletingMember, setDeletingMember] = React.useState(false);
 
   const seatLimitBlocked = seatLimit === 0 || seatLimitReached === true;
 
@@ -271,6 +275,9 @@ export function TeamManagementCard({
   );
   const canUpdateRoles = Boolean(
     context?.permissions?.includes("update_member_roles"),
+  );
+  const canRemoveMembers = Boolean(
+    context?.permissions?.includes("remove_team_members"),
   );
 
   const handleInviteButtonClick = () => {
@@ -396,6 +403,47 @@ export function TeamManagementCard({
     setShowRoleModal(true);
   };
 
+  const openRemoveDialog = (member: TeamMemberRecord) => {
+    setSelectedMember(member);
+    setShowDeleteModal(true);
+  };
+
+  const handleRemove = async () => {
+    if (!selectedMember) return;
+    try {
+      setDeletingMember(true);
+      const resp = await fetch(
+        `/api/team/members/${encodeURIComponent(selectedMember.user_id)}?organization_type=${encodeURIComponent(organizationType)}`,
+        {
+          method: "DELETE",
+          headers: authHeaders,
+        },
+      );
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to remove member.",
+        );
+      }
+      setShowDeleteModal(false);
+      setSelectedMember(null);
+      await loadContext();
+      await loadAuditLogs();
+      toast({
+        title: "Member removed",
+        description: `${selectedMember.email} has been removed from the team.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Removal failed",
+        description: err?.message || "Could not remove the member.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingMember(false);
+    }
+  };
+
   const decorateActivity = (log: TeamAuditLogRecord) => {
     switch (log.action) {
       case "team_invite_created":
@@ -423,6 +471,12 @@ export function TeamManagementCard({
           label: "Invitation declined",
           details: `${log.target_email || "A member"} declined the invitation`,
           icon: XCircle,
+        };
+      case "member_removed":
+        return {
+          label: "Member removed",
+          details: `${log.target_email || "A member"} was removed from the team`,
+          icon: User,
         };
       default:
         return {
@@ -526,6 +580,10 @@ export function TeamManagementCard({
                     canUpdateRoles &&
                     member.role !== "owner" &&
                     !(actorRole === "admin" && member.role === "admin");
+                  const canRemove =
+                    canRemoveMembers &&
+                    member.role !== "owner" &&
+                    !(actorRole === "admin" && member.role === "admin");
                   return (
                     <div
                       key={member.user_id}
@@ -597,6 +655,20 @@ export function TeamManagementCard({
                             onClick={() => openRoleEditor(member)}
                           >
                             <Edit2 className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+                        {canRemove ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                              organizationType === "brand"
+                                ? "rounded-none border-2 border-red-500 text-red-600 hover:bg-red-50"
+                                : "border-2 border-red-300 text-red-600 hover:bg-red-50"
+                            }
+                            onClick={() => openRemoveDialog(member)}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         ) : null}
                       </div>
@@ -1096,6 +1168,89 @@ export function TeamManagementCard({
             >
               Upgrade Plan
               <ArrowRight className="w-4 h-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent
+          className={
+            organizationType === "brand"
+              ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]"
+              : "max-w-md rounded-2xl"
+          }
+        >
+          <DialogHeader>
+            <DialogTitle
+              className={
+                organizationType === "brand"
+                  ? "text-xl font-black text-gray-900 uppercase tracking-tighter"
+                  : "text-xl font-bold text-gray-900"
+              }
+            >
+              Remove Team Member
+            </DialogTitle>
+            <DialogDescription
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-gray-500 font-bold uppercase tracking-widest"
+                  : "text-sm text-gray-500 font-medium"
+              }
+            >
+              Are you sure you want to remove{" "}
+              {selectedMember?.email || "this member"} from the team?
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className={
+              organizationType === "brand"
+                ? "p-4 bg-red-50 border-2 border-red-200 rounded-none"
+                : "p-4 bg-red-50 border border-red-100 rounded-xl"
+            }
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+              <p
+                className={
+                  organizationType === "brand"
+                    ? "text-xs text-red-900 font-bold leading-relaxed"
+                    : "text-xs text-red-700 font-medium leading-relaxed"
+                }
+              >
+                This action cannot be undone. The member will lose access to all
+                organization resources immediately.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteModal(false)}
+              className={
+                organizationType === "brand"
+                  ? "font-black uppercase tracking-widest rounded-none"
+                  : "font-bold"
+              }
+              disabled={deletingMember}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRemove}
+              disabled={deletingMember}
+              className={
+                organizationType === "brand"
+                  ? "rounded-none bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest px-8 flex items-center gap-2"
+                  : "bg-red-600 hover:bg-red-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              }
+            >
+              {deletingMember ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              {deletingMember ? "Removing..." : "Remove Member"}
             </Button>
           </DialogFooter>
         </DialogContent>

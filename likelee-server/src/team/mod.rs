@@ -16,7 +16,8 @@ pub use access::{
 pub use connections::{check_brand_agency_connection, invalidate_brand_agency_connection_cache};
 pub use handlers::{
     accept_invite_by_token, create_invite, decline_invite_by_token, get_context,
-    get_invite_by_token, list_audit_logs, list_invites, list_members, update_member_role,
+    get_invite_by_token, list_audit_logs, list_invites, list_members, remove_member,
+    update_member_role,
 };
 pub use types::{
     ActionResponse, AuditLogRecord, BrandAgencyConnection, CreateInvitePayload, InviteRecord,

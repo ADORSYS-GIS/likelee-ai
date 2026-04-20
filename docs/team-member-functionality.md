@@ -89,6 +89,7 @@ pub enum Permission {
     ViewSubscriptions,
     ManagePayOffers,
     ViewPayOffers,
+    RemoveTeamMembers,
 }
 ```
 
@@ -118,6 +119,7 @@ pub enum Permission {
 | ViewSubscriptions          | ✅    | ✅    | ✅              | ❌       |
 | ManagePayOffers            | ✅    | ✅    | ✅              | ❌       |
 | ViewPayOffers              | ✅    | ✅    | ✅              | ✅       |
+| RemoveTeamMembers          | ✅    | ✅    | ❌              | ❌       |
 | TransferOwnership          | ✅    | ❌    | ❌              | ❌       |
 | DeleteOrganisation         | ✅    | ❌    | ❌              | ❌       |
 
@@ -167,6 +169,7 @@ pub enum Permission {
 - Manage billing & subscriptions
 - Invite team members
 - Update member roles
+- Remove team members
 - Manage all organization settings
 
 **Cannot Do:**
@@ -398,6 +401,7 @@ CREATE POLICY "agency_notification_settings update own"
 | `/api/team/invites`               | GET    | List invites                                     | ViewTeamMembers     |
 | `/api/team/invites`               | POST   | Create invite                                    | InviteTeamMembers   |
 | `/api/team/members/:user_id/role` | POST   | Update member role                               | UpdateMemberRoles   |
+| `/api/team/members/:user_id`      | DELETE | Remove member from organization                  | RemoveTeamMembers   |
 | `/api/team/audit-logs`            | GET    | Get team activity                                | ViewTeamMembers     |
 
 ### Invitation (Public)

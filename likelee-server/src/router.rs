@@ -348,6 +348,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::team::update_member_role),
         )
         .route(
+            "/api/team/members/:user_id",
+            axum::routing::delete(crate::team::remove_member),
+        )
+        .route(
             "/api/invites/team/:token",
             get(crate::team::get_invite_by_token),
         )
