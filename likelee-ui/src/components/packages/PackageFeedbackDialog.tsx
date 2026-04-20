@@ -383,12 +383,12 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 : isSelected
                                   ? "Selected a Talent"
                                   : isConsent
-                                      ? "Updated Consent"
-                                      : isAssetRequest
-                                        ? "Requested Full Assets"
-                                        : isComment
-                                          ? "Commented on a Talent"
-                                          : "Requested Callback"}
+                                    ? "Updated Consent"
+                                    : isAssetRequest
+                                      ? "Requested Full Assets"
+                                      : isComment
+                                        ? "Commented on a Talent"
+                                        : "Requested Callback"}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
                               {format(
@@ -406,7 +406,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             </Badge>
                           )}
                         </div>
-                        
+
                         {isAssetRequest && (
                           <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-4 mb-3">
                             <div className="flex items-center justify-between">
@@ -418,16 +418,20 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 Asset Request
                               </Badge>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-1">
-                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">Full Name</span>
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
+                                  Full Name
+                                </span>
                                 <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
                                   {interaction.client_name || "Not specified"}
                                 </div>
                               </div>
                               <div className="space-y-1">
-                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">Email Address</span>
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
+                                  Email Address
+                                </span>
                                 <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
                                   <Mail className="w-3.5 h-3.5 text-indigo-400" />
                                   {interaction.client_email || "Not specified"}
@@ -437,7 +441,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
 
                             {interaction.content && (
                               <div className="pt-3 border-t border-indigo-100/50">
-                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block mb-1.5">Personal Message</span>
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block mb-1.5">
+                                  Personal Message
+                                </span>
                                 <div className="text-sm text-gray-700 bg-white/50 p-3 rounded-lg border border-indigo-50 italic leading-relaxed">
                                   "{interaction.content}"
                                 </div>

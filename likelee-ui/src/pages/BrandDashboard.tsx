@@ -1557,7 +1557,7 @@ export default function BrandDashboard() {
             amount: normalizedAmount,
             creator:
               offer?.target_type === "creator" ? offer.target_id : "Unknown",
-            // For independent creators, we can usually resolve their name from brand_creator_connections if available, 
+            // For independent creators, we can usually resolve their name from brand_creator_connections if available,
             // but for now we fallback to ID if unknown.
             dueDate: budgetSnap?.budget_submission_deadline || "TBD",
             currency: budgetSnap?.currency_code || "USD",
@@ -2037,7 +2037,9 @@ export default function BrandDashboard() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Escrow Details</h1>
-          <p className="text-gray-600">Securely held payments for your active projects</p>
+          <p className="text-gray-600">
+            Securely held payments for your active projects
+          </p>
         </div>
       </div>
 
@@ -2055,13 +2057,16 @@ export default function BrandDashboard() {
               ${(escrowTotal / 1000).toFixed(2)}K
             </p>
             <p className="text-blue-800 mt-2 font-medium">
-              Protecting {escrowProjects.length} {escrowProjects.length === 1 ? "project" : "projects"}
+              Protecting {escrowProjects.length}{" "}
+              {escrowProjects.length === 1 ? "project" : "projects"}
             </p>
           </div>
           <Alert className="bg-white/80 backdrop-blur-sm border border-blue-200 max-w-md shadow-sm">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
             <AlertDescription className="text-blue-900 leading-relaxed">
-              <strong>Guaranteed Payment:</strong> Funds are held in a neutral balance. Approval triggers immediate transfer. All payments require manual approval to ensure quality.
+              <strong>Guaranteed Payment:</strong> Funds are held in a neutral
+              balance. Approval triggers immediate transfer. All payments
+              require manual approval to ensure quality.
             </AlertDescription>
           </Alert>
         </div>
@@ -2070,9 +2075,7 @@ export default function BrandDashboard() {
       {/* Actionable Project List */}
       <Card className="p-0 bg-white border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-xl font-bold text-gray-900">
-            Escrow Inventory
-          </h3>
+          <h3 className="text-xl font-bold text-gray-900">Escrow Inventory</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -2098,30 +2101,45 @@ export default function BrandDashboard() {
             <tbody className="divide-y divide-gray-100">
               {escrowProjects.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
-                    No active escrow records found. All payments are either released or pending initial funding.
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-gray-500 italic"
+                  >
+                    No active escrow records found. All payments are either
+                    released or pending initial funding.
                   </td>
                 </tr>
               ) : (
                 escrowProjects.map((project) => (
-                  <tr key={project.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <tr
+                    key={project.id}
+                    className="hover:bg-blue-50/30 transition-colors group"
+                  >
                     <td className="px-6 py-5">
                       <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
                         {project.name}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">ID: {project.id}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        ID: {project.id}
+                      </p>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden">
-                          {project.creatorAvatars && project.creatorAvatars.length > 0 ? (
-                            <img src={project.creatorAvatars[0]} className="w-full h-full object-cover" />
+                          {project.creatorAvatars &&
+                          project.creatorAvatars.length > 0 ? (
+                            <img
+                              src={project.creatorAvatars[0]}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <User className="w-4 h-4 text-gray-400" />
                           )}
                         </div>
                         <span className="text-sm font-medium text-gray-700">
-                          {project.creator === "Unknown" ? "Collaborator" : project.creator}
+                          {project.creator === "Unknown"
+                            ? "Collaborator"
+                            : project.creator}
                         </span>
                       </div>
                     </td>
@@ -2129,12 +2147,16 @@ export default function BrandDashboard() {
                       ${project.amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-5">
-                      <Badge className={
-                        project.status === "releasing" 
-                          ? "bg-amber-100 text-amber-700 border-amber-200" 
-                          : "bg-emerald-100 text-emerald-700 border-emerald-200"
-                      }>
-                        {project.status === "releasing" ? "Process Started" : "Protected"}
+                      <Badge
+                        className={
+                          project.status === "releasing"
+                            ? "bg-amber-100 text-amber-700 border-amber-200"
+                            : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        }
+                      >
+                        {project.status === "releasing"
+                          ? "Process Started"
+                          : "Protected"}
                       </Badge>
                     </td>
                     <td className="px-6 py-5 text-right">
@@ -2151,7 +2173,6 @@ export default function BrandDashboard() {
       </Card>
     </div>
   );
-
 
   const renderHome = () => {
     if (showEscrowDetails) {
@@ -2240,7 +2261,6 @@ export default function BrandDashboard() {
                 ? `${campaignMetrics.avg_turnaround_hours}h`
                 : "—"}
             </p>
-
           </Card>
         </div>
 
@@ -3371,7 +3391,9 @@ export default function BrandDashboard() {
         verifiedBadgeLabel=""
         queryScope="brand-creator-marketplace"
         showRequestLicense
-        onRequestLicense={(profile, details) => handleOpenLicenseRequest(profile, details)}
+        onRequestLicense={(profile, details) =>
+          handleOpenLicenseRequest(profile, details)
+        }
         actionsLocked={!brandCanUseCampaignCollaboration}
         lockedTitle="Pro feature preview"
         lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
@@ -4020,21 +4042,23 @@ export default function BrandDashboard() {
         action,
         note,
       });
-      
+
       const escrow = result?.escrow;
-      
+
       // Reactive Update: Update the offer in brandOfferItems if escrow status has changed.
       if (escrow?.id && escrow?.escrow_status) {
-        setBrandOfferItems(prev => prev.map(o => {
-          if (String(o.id) === String(escrow.id)) {
-            return {
-              ...o,
-              escrow_status: escrow.escrow_status,
-              payment_status: escrow.payment_status || o.payment_status
-            };
-          }
-          return o;
-        }));
+        setBrandOfferItems((prev) =>
+          prev.map((o) => {
+            if (String(o.id) === String(escrow.id)) {
+              return {
+                ...o,
+                escrow_status: escrow.escrow_status,
+                payment_status: escrow.payment_status || o.payment_status,
+              };
+            }
+            return o;
+          }),
+        );
       }
       if (action === "approve" && escrow) {
         if (escrow?.released_now) {
@@ -6814,7 +6838,6 @@ export default function BrandDashboard() {
               ? `${campaignMetrics.avg_turnaround_hours}h`
               : "—"}
           </p>
-
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
@@ -7365,7 +7388,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Funds are held in a secure neutral balance. Payment is released upon your manual review and approval of deliverables.
+                <strong>Payment:</strong> Funds are held in a secure neutral
+                balance. Payment is released upon your manual review and
+                approval of deliverables.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -10792,7 +10817,8 @@ export default function BrandDashboard() {
                     you approve deliverables, the creator gets paid.
                   </p>
                   <p className="text-sm text-gray-700">
-                    <strong>Protection:</strong> Funds are only released once you have reviewed and approved all campaign deliverables.
+                    <strong>Protection:</strong> Funds are only released once
+                    you have reviewed and approved all campaign deliverables.
                   </p>
                 </div>
 
@@ -10809,7 +10835,9 @@ export default function BrandDashboard() {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <span className="text-gray-700">Approval Deadline:</span>
-                    <span className="text-gray-900">Manual Approval Required</span>
+                    <span className="text-gray-900">
+                      Manual Approval Required
+                    </span>
                   </div>
                 </div>
 
