@@ -3371,7 +3371,7 @@ export default function BrandDashboard() {
         verifiedBadgeLabel=""
         queryScope="brand-creator-marketplace"
         showRequestLicense
-        onRequestLicense={(profile) => handleOpenLicenseRequest(profile)}
+        onRequestLicense={(profile, details) => handleOpenLicenseRequest(profile, details)}
         actionsLocked={!brandCanUseCampaignCollaboration}
         lockedTitle="Pro feature preview"
         lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
