@@ -992,6 +992,8 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
                 "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
+                "public_profile_visible": true,
+                "visibility": "brands",
                 "updated_at": now_rfc3339(),
             })
             .to_string(),
