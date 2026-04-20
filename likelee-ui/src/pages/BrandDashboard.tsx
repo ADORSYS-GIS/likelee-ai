@@ -2061,7 +2061,7 @@ export default function BrandDashboard() {
           <Alert className="bg-white/80 backdrop-blur-sm border border-blue-200 max-w-md shadow-sm">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
             <AlertDescription className="text-blue-900 leading-relaxed">
-              <strong>Guaranteed Payment:</strong> Funds are held in a neutral balance. Approval triggers immediate transfer. Inactivity for 14 days after final submission may trigger automatic release.
+              <strong>Guaranteed Payment:</strong> Funds are held in a neutral balance. Approval triggers immediate transfer. All payments require manual approval to ensure quality.
             </AlertDescription>
           </Alert>
         </div>
@@ -2240,7 +2240,7 @@ export default function BrandDashboard() {
                 ? `${campaignMetrics.avg_turnaround_hours}h`
                 : "—"}
             </p>
-            <p className="text-sm text-gray-600 mt-1">Industry: 48h</p>
+
           </Card>
         </div>
 
@@ -6814,7 +6814,7 @@ export default function BrandDashboard() {
               ? `${campaignMetrics.avg_turnaround_hours}h`
               : "—"}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Industry: 48h</p>
+
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
@@ -7365,9 +7365,7 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until{" "}
-                {brand?.name || "Brand"} approval of deliverables. Release upon
-                approval or automatic after 48 hours.
+                <strong>Payment:</strong> Funds are held in a secure neutral balance. Payment is released upon your manual review and approval of deliverables.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -8523,8 +8521,7 @@ export default function BrandDashboard() {
         <p className="text-gray-700 mb-4">
           Escrow protects both you and creators. When you start a project,
           payment is held securely. Once you approve deliverables, payment
-          releases to the creator. If not approved within 48 hours, it
-          auto-releases.
+          releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
           Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
@@ -10795,8 +10792,7 @@ export default function BrandDashboard() {
                     you approve deliverables, the creator gets paid.
                   </p>
                   <p className="text-sm text-gray-700">
-                    <strong>Protection:</strong> No disputes after 48 hours. If
-                    you don't approve within 48h, payment auto-releases.
+                    <strong>Protection:</strong> Funds are only released once you have reviewed and approved all campaign deliverables.
                   </p>
                 </div>
 
@@ -10813,7 +10809,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <span className="text-gray-700">Approval Deadline:</span>
-                    <span className="text-gray-900">48 hours</span>
+                    <span className="text-gray-900">Manual Approval Required</span>
                   </div>
                 </div>
 
