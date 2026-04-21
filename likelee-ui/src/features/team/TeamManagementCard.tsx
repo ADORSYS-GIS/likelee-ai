@@ -1198,7 +1198,8 @@ export function TeamManagementCard({
                   : "text-sm text-gray-500 font-medium"
               }
             >
-              Are you sure you want to remove {selectedMember?.email || "this member"} from the team?
+              Are you sure you want to remove{" "}
+              {selectedMember?.email || "this member"} from the team?
             </DialogDescription>
           </DialogHeader>
           <div
@@ -1217,7 +1218,8 @@ export function TeamManagementCard({
                     : "text-xs text-red-700 font-medium leading-relaxed"
                 }
               >
-                This action cannot be undone. The member will lose access to all organization resources immediately.
+                This action cannot be undone. The member will lose access to all
+                organization resources immediately.
               </p>
             </div>
           </div>

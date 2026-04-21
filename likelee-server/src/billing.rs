@@ -4055,47 +4055,10 @@ pub async fn create_campaign_offer_checkout(
 
     // Hard requirements for campaign offers:
     // - Agency offers: at least one talent must be assigned BEFORE the brand can pay.
-    // - Agency offers: agency + all assigned talents must have Stripe Connect accounts (like licensing flow),
-    //   otherwise escrow will get stuck on the platform with no ability to transfer out.
-    // - Creator offers: the creator must have a Stripe Connect account.
+    // - Recipient (Agency/Talent) Stripe Connectivity: now DEFERRED.
+    //   Funds are held in platform escrow until recipients connect their accounts.
     if target_type == "agency" {
-        // 1) Agency must be connected to Stripe
-        let agency_acct_resp = state
-            .pg
-            .from("agencies")
-            .select("stripe_connect_account_id")
-            .eq("id", target_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !agency_acct_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                agency_acct_resp.status().as_u16(),
-                agency_acct_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let agency_acct_text = agency_acct_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".into());
-        let agency_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&agency_acct_text).unwrap_or_default();
-        let agency_stripe_account_id = agency_rows
-            .first()
-            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if agency_stripe_account_id.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "agency_stripe_connect_required",
-                "Agency must connect a Stripe account before the brand can pay for this offer.",
-            ));
-        }
-
-        // 2) At least one creator-backed talent must be assigned
+        // At least one creator-backed talent must be assigned
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
@@ -4131,108 +4094,6 @@ pub async fn create_campaign_offer_checkout(
                 StatusCode::BAD_REQUEST,
                 "offer_requires_assigned_talent",
                 "At least one talent must be assigned before the brand can pay for this offer.",
-            ));
-        }
-
-        // 3) Every assigned creator must have a connected Stripe account
-        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
-        let creators_resp = state
-            .pg
-            .from("creators")
-            .select("id,full_name,stripe_connect_account_id")
-            .in_("id", creator_refs)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !creators_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                creators_resp.status().as_u16(),
-                creators_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let creators_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creators_text).unwrap_or_default();
-        let mut stripe_by_creator: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-        let mut name_by_creator: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-        for r in &creators_rows {
-            let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
-            if cid.is_empty() {
-                continue;
-            }
-            let name = r
-                .get("full_name")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !name.is_empty() {
-                name_by_creator.insert(cid.to_string(), name);
-            }
-            let acct = r
-                .get("stripe_connect_account_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !acct.is_empty() {
-                stripe_by_creator.insert(cid.to_string(), acct);
-            }
-        }
-
-        let mut missing_stripe: Vec<String> = vec![];
-        for cid in &creator_ids {
-            if !stripe_by_creator.contains_key(cid) {
-                let label = name_by_creator
-                    .get(cid)
-                    .cloned()
-                    .unwrap_or_else(|| cid.clone());
-                missing_stripe.push(label);
-            }
-        }
-        if !missing_stripe.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "creator_stripe_connect_required",
-                format!(
-                    "The following creators must connect their Stripe account before the brand can pay: {}",
-                    missing_stripe.join(", ")
-                )
-                .as_str(),
-            ));
-        }
-    } else if target_type == "creator" {
-        let creator_resp = state
-            .pg
-            .from("creators")
-            .select("stripe_connect_account_id")
-            .eq("id", target_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !creator_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                creator_resp.status().as_u16(),
-                creator_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let creator_text = creator_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let creator_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creator_text).unwrap_or_default();
-        let stripe_id = creator_rows
-            .first()
-            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if stripe_id.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "creator_stripe_connect_required",
-                "Creator must connect a Stripe account before the brand can pay for this offer.",
             ));
         }
     }
@@ -4358,7 +4219,7 @@ pub async fn create_campaign_offer_checkout(
         .pg
         .from("campaign_offers")
         .eq("id", &offer_id)
-        .update(json!({"payment_status": "processing", "stripe_checkout_session_id": session.id.to_string()}).to_string())
+        .update(json!({"payment_status": "processing"}).to_string())
         .execute()
         .await;
 

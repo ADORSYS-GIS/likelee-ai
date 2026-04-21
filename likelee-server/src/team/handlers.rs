@@ -743,6 +743,14 @@ pub async fn decline_invite_by_token(
         ));
     }
 
+    let organization_type =
+        OrganizationType::parse(&invite.organization_type).ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid organization_type".to_string(),
+            )
+        })?;
+
     let update_resp = state
         .pg
         .from("organization_invites")
@@ -762,6 +770,25 @@ pub async fn decline_invite_by_token(
         let text = update_resp.text().await.unwrap_or_default();
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
+
+    write_audit_log(
+        &state,
+        AuditLogEntry {
+            organization_type,
+            organization_id: invite.organization_id.as_str(),
+            actor_user_id: "anonymous",
+            target_user_id: None,
+            target_email: Some(invite.email.as_str()),
+            action: "team_invite_declined",
+            old_role: None,
+            new_role: None,
+            metadata: json!({
+                "invite_id": invite.id,
+                "declined_via": "token",
+            }),
+        },
+    )
+    .await?;
 
     Ok(Json(ActionResponse {
         status: "ok".to_string(),
