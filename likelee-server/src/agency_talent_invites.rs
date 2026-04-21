@@ -992,8 +992,9 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
                 "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
-                "public_profile_visible": true,
-                "visibility": "brands",
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
                 "updated_at": now_rfc3339(),
             })
             .to_string(),
@@ -1045,6 +1046,22 @@ pub async fn accept_by_token(
     }
 
     ensure_creator_row_exists(&state, &user, &creator_id).await;
+
+    let _ = state
+        .pg
+        .from("creators")
+        .eq("id", &creator_id)
+        .update(
+            json!({
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
+                "updated_at": now_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
 
     let mut existing_agency_user_id: Option<String> = None;
     let mut matched_agency_row: Option<Value> = None;
