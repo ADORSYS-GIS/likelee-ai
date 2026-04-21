@@ -689,7 +689,7 @@ function AppRoutes() {
       <Route
         path="/TwoFactorSetup"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["brand"]}>
             <TwoFactorSetup />
           </ProtectedRoute>
         }

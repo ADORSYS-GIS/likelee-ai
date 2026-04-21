@@ -221,8 +221,15 @@ export default function ProtectedRoute({
   // CRITICAL: Wait for profile to load before rendering anything
   // This prevents the dashboard from rendering while we're still fetching the user's role
   // Also wait if MFA was just completed
-  if (!profile || waitingForProfile) {
+  if (waitingForProfile) {
     return <LoadingSpinner />;
+  }
+
+  // Profile still absent after the timeout — redirect to login rather than
+  // spinning forever. This handles the edge case where the profile fetch
+  // permanently fails after MFA completion.
+  if (!profile) {
+    return <Navigate to="/Login" replace state={{ from: location }} />;
   }
 
   if (

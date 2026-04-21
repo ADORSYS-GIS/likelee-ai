@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     Json,
 };
 use futures::future::join_all;
@@ -156,12 +156,16 @@ fn to_session_info(raw: &RawSupabaseSession, current_session_id: Option<&str>) -
 pub async fn list_sessions(
     State(state): State<AppState>,
     user: AuthUser,
+    headers: HeaderMap,
 ) -> Result<Json<ListSessionsResponse>, (StatusCode, String)> {
     let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
 
-    // Extract `sid` from the caller's JWT to identify the current session
+    // Extract `sid` from the caller's JWT to identify the current session.
+    // Fall back to User-Agent matching when the JWT has no `sid` claim.
     let sid_claim = extract_sid_from_token(&user.access_token);
-    let caller_ua = None::<&str>; // user_agent not available from AuthUser; sid is preferred
+    let caller_ua = headers
+        .get("user-agent")
+        .and_then(|v| v.to_str().ok());
 
     let current_session_id =
         identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
@@ -284,21 +288,35 @@ pub async fn revoke_session(
 pub async fn revoke_all_other_sessions(
     State(state): State<AppState>,
     user: AuthUser,
+    headers: HeaderMap,
 ) -> Result<Json<RevokeAllResponse>, (StatusCode, String)> {
     let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
 
     let sid_claim = extract_sid_from_token(&user.access_token);
-    let current_session_id = identify_current_session(&raw_sessions, sid_claim.as_deref(), None);
+    let caller_ua = headers
+        .get("user-agent")
+        .and_then(|v| v.to_str().ok());
+    let current_session_id = identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
+
+    // If we cannot identify the current session, bail out rather than risk
+    // revoking it. This can happen when the JWT has no `sid` claim and the
+    // user-agent fallback also fails.
+    let Some(ref current_sid) = current_session_id else {
+        warn!(
+            user_id = %user.id,
+            "[sessions] Cannot identify current session — aborting bulk revoke to protect caller"
+        );
+        return Err(session_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "cannot_identify_current_session",
+            "Unable to identify your current session. Please sign out and back in, then try again.",
+        ));
+    };
 
     // Filter out the current session — never revoke it
     let to_revoke: Vec<&RawSupabaseSession> = raw_sessions
         .iter()
-        .filter(|s| {
-            current_session_id
-                .as_deref()
-                .map(|sid| s.id != sid)
-                .unwrap_or(true)
-        })
+        .filter(|s| s.id != current_sid.as_str())
         .collect();
 
     if to_revoke.is_empty() {
