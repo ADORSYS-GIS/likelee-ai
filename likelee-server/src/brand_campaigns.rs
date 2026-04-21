@@ -2032,7 +2032,66 @@ pub struct BrandSpendAnalytics {
     pub ytd_spend: i64,
     pub monthly_avg: i64,
     pub current_month_spend: i64,
+    pub previous_month_spend: i64,
+    pub current_month_growth_percentage: f64,
     pub projected_eoy: i64,
+}
+
+fn parse_campaign_offer_budget_cents(offer: &serde_json::Value) -> i64 {
+    let budget_snapshot = offer
+        .get("budget_snapshot")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let raw_value = budget_snapshot
+        .get("budget_total")
+        .cloned()
+        .or_else(|| budget_snapshot.get("total_amount").cloned())
+        .or_else(|| budget_snapshot.get("amount").cloned())
+        .unwrap_or(serde_json::Value::Null);
+
+    if let Some(cents) = raw_value.as_i64() {
+        return cents.max(0);
+    }
+
+    if let Some(amount) = raw_value.as_f64() {
+        return ((amount.max(0.0)) * 100.0).round() as i64;
+    }
+
+    if let Some(raw) = raw_value.as_str() {
+        let normalized = raw.replace(['$', ','], "").trim().to_string();
+        if normalized.is_empty() {
+            return 0;
+        }
+        let amount = normalized.parse::<f64>().unwrap_or(0.0);
+        return ((amount.max(0.0)) * 100.0).round() as i64;
+    }
+
+    0
+}
+
+fn parse_campaign_offer_paid_at(
+    offer: &serde_json::Value,
+    fallback_now: chrono::DateTime<chrono::Utc>,
+) -> chrono::DateTime<chrono::Utc> {
+    let candidates = ["paid_at", "created_at"];
+
+    for field in candidates {
+        let raw = offer
+            .get(field)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if raw.is_empty() {
+            continue;
+        }
+        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(raw) {
+            return dt.with_timezone(&chrono::Utc);
+        }
+    }
+
+    fallback_now
 }
 
 pub async fn get_brand_spend_analytics(
@@ -2053,11 +2112,19 @@ pub async fn get_brand_spend_analytics(
     let current_month_start = chrono::Utc
         .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
         .unwrap();
+    let (previous_month_year, previous_month_number) = if now.month() == 1 {
+        (now.year() - 1, 12)
+    } else {
+        (now.year(), now.month() - 1)
+    };
+    let previous_month_start = chrono::Utc
+        .with_ymd_and_hms(previous_month_year, previous_month_number, 1, 0, 0, 0)
+        .unwrap();
 
     let offers_resp = state
         .pg
         .from("campaign_offers")
-        .select("id,budget_snapshot,payment_status,created_at,brand_campaigns(start_date)")
+        .select("id,budget_snapshot,payment_status,paid_at,created_at,updated_at")
         .eq("brand_id", &brand_id)
         .limit(5000)
         .execute()
@@ -2078,6 +2145,7 @@ pub async fn get_brand_spend_analytics(
         std::collections::HashMap::new();
     let mut ytd_spend: i64 = 0;
     let mut current_month_spend: i64 = 0;
+    let mut previous_month_spend: i64 = 0;
 
     for offer in offers {
         let payment_status = offer
@@ -2086,41 +2154,16 @@ pub async fn get_brand_spend_analytics(
             .unwrap_or("")
             .to_lowercase();
 
-        if payment_status != "released" && payment_status != "paid" {
+        if payment_status != "paid" {
             continue;
         }
 
-        let budget_cents = offer
-            .get("budget_snapshot")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-
+        let budget_cents = parse_campaign_offer_budget_cents(&offer);
         if budget_cents <= 0 {
             continue;
         }
 
-        let created_at_str = offer
-            .get("created_at")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-
-        let created_at = if created_at_str.is_empty() {
-            offer
-                .get("brand_campaigns")
-                .and_then(|c| c.get("start_date"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-        } else {
-            created_at_str
-        };
-
-        let date = if created_at.is_empty() {
-            now
-        } else {
-            chrono::DateTime::parse_from_rfc3339(created_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or(now)
-        };
+        let date = parse_campaign_offer_paid_at(&offer, now);
 
         if date >= year_start {
             ytd_spend += budget_cents;
@@ -2128,6 +2171,8 @@ pub async fn get_brand_spend_analytics(
 
         if date >= current_month_start {
             current_month_spend += budget_cents;
+        } else if date >= previous_month_start {
+            previous_month_spend += budget_cents;
         }
 
         let month_key = format!("{}-{:02}", date.year(), date.month());
@@ -2153,12 +2198,21 @@ pub async fn get_brand_spend_analytics(
 
     let remaining_months = 12 - months_elapsed;
     let projected_eoy = ytd_spend + (monthly_avg * remaining_months);
+    let current_month_growth_percentage = if previous_month_spend > 0 {
+        ((current_month_spend - previous_month_spend) as f64 / previous_month_spend as f64) * 100.0
+    } else if current_month_spend > 0 {
+        100.0
+    } else {
+        0.0
+    };
 
     Ok(Json(BrandSpendAnalytics {
         monthly_spend,
         ytd_spend,
         monthly_avg,
         current_month_spend,
+        previous_month_spend,
+        current_month_growth_percentage: (current_month_growth_percentage * 10.0).round() / 10.0,
         projected_eoy,
     }))
 }

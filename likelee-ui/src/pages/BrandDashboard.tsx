@@ -148,6 +148,7 @@ import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
 import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
+import { currencyFormatter } from "@/lib/utils";
 import {
   LineChart,
   Line,
@@ -405,6 +406,8 @@ export default function BrandDashboard() {
     ytd_spend: number;
     monthly_avg: number;
     current_month_spend: number;
+    previous_month_spend: number;
+    current_month_growth_percentage: number;
     projected_eoy: number;
   } | null>(null);
 
@@ -941,6 +944,7 @@ export default function BrandDashboard() {
 
   useEffect(() => {
     if (
+      activeSection !== "home" &&
       activeSection !== "billing" &&
       activeSection !== "analytics" &&
       activeSection !== "usage-rights"
@@ -973,8 +977,15 @@ export default function BrandDashboard() {
             ytd_spend: spendRes.ytd_spend || 0,
             monthly_avg: spendRes.monthly_avg || 0,
             current_month_spend: spendRes.current_month_spend || 0,
+            previous_month_spend: spendRes.previous_month_spend || 0,
+            current_month_growth_percentage:
+              spendRes.current_month_growth_percentage || 0,
             projected_eoy: spendRes.projected_eoy || 0,
           });
+          setBillingYtdSpend(spendRes.ytd_spend || 0);
+          setBillingCurrentMonthSpend(spendRes.current_month_spend || 0);
+          setBillingProjectedEoy(spendRes.projected_eoy || 0);
+          setBillingMonthlyAvg(spendRes.monthly_avg || 0);
         }
         if (invoicesRes) {
           setBrandInvoices(
@@ -1271,6 +1282,7 @@ export default function BrandDashboard() {
   useEffect(() => {
     if (
       activeSection !== "home" &&
+      activeSection !== "billing" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
       activeSection !== "campaigns-deliverables"
@@ -1391,7 +1403,18 @@ export default function BrandDashboard() {
         if (!mounted) return;
         if (status) setBrandBillingStatus(status);
         if (spend?.monthly_spend) {
-          setBrandSpendData(spend.monthly_spend);
+          setBrandSpendData({
+            monthly_spend: Array.isArray(spend.monthly_spend)
+              ? spend.monthly_spend
+              : [],
+            ytd_spend: spend.ytd_spend || 0,
+            monthly_avg: spend.monthly_avg || 0,
+            current_month_spend: spend.current_month_spend || 0,
+            previous_month_spend: spend.previous_month_spend || 0,
+            current_month_growth_percentage:
+              spend.current_month_growth_percentage || 0,
+            projected_eoy: spend.projected_eoy || 0,
+          });
           setBillingYtdSpend(spend.ytd_spend || 0);
           setBillingCurrentMonthSpend(spend.current_month_spend || 0);
           setBillingProjectedEoy(spend.projected_eoy || 0);
@@ -1567,6 +1590,42 @@ export default function BrandDashboard() {
     });
     return { escrowTotal: total, escrowProjects: projects };
   }, [brandOfferItems]);
+
+  const formatCompactCurrencyFromCents = (amountCents: number) => {
+    const dollars = (Number(amountCents) || 0) / 100;
+    if (dollars >= 1000) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(dollars);
+    }
+    return currencyFormatter.format(dollars);
+  };
+
+  const homeCurrentMonthSpendLabel = loadingBillingData
+    ? "..."
+    : (brandSpendData?.current_month_spend || 0) > 0
+      ? `$${((brandSpendData?.current_month_spend || 0) / 100000).toFixed(1)}K`
+      : "$0";
+  const homeSpendGrowth = brandSpendData?.current_month_growth_percentage || 0;
+  const homeSpendGrowthLabel =
+    loadingBillingData || !brandSpendData
+      ? ""
+      : brandSpendData.previous_month_spend > 0
+        ? `${homeSpendGrowth >= 0 ? "+" : ""}${homeSpendGrowth.toFixed(1)}% vs last month`
+        : brandSpendData.current_month_spend > 0
+          ? "New spend this month"
+          : "No spend recorded yet";
+  const homeSpendGrowthClass =
+    !brandSpendData || loadingBillingData
+      ? "text-gray-500"
+      : homeSpendGrowth > 0
+        ? "text-green-600"
+        : homeSpendGrowth < 0
+          ? "text-amber-600"
+          : "text-gray-500";
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -2245,8 +2304,12 @@ export default function BrandDashboard() {
               </p>
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">$12.5K</p>
-            <p className="text-sm text-green-600 mt-1">+22% vs last month</p>
+            <p className="text-4xl font-bold text-gray-900">
+              {homeCurrentMonthSpendLabel}
+            </p>
+            <p className={`text-sm mt-1 ${homeSpendGrowthClass}`}>
+              {homeSpendGrowthLabel}
+            </p>
           </Card>
 
           <Card className="p-6 bg-white border border-gray-200">
@@ -7015,7 +7078,7 @@ export default function BrandDashboard() {
             <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
             <p className="text-2xl font-bold text-gray-900">
               {billingProjectedEoy > 0
-                ? `$${(billingProjectedEoy / 1000).toFixed(1)}K`
+                ? `$${(billingProjectedEoy / 100000).toFixed(1)}K`
                 : "$0"}
             </p>
           </div>
@@ -8014,7 +8077,7 @@ export default function BrandDashboard() {
                 <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
                 <p className="text-4xl font-bold text-gray-900">
                   {brandSpendData
-                    ? `$${(brandSpendData.ytd_spend / 1000).toFixed(1)}K`
+                    ? `$${(brandSpendData.ytd_spend / 100000).toFixed(1)}K`
                     : "$0"}
                 </p>
               </Card>
@@ -8211,7 +8274,7 @@ export default function BrandDashboard() {
             {loadingBillingData
               ? "..."
               : billingCurrentMonthSpend > 0
-                ? `$${(billingCurrentMonthSpend / 1000).toFixed(1)}K`
+                ? `$${(billingCurrentMonthSpend / 100000).toFixed(1)}K`
                 : "$0"}
           </p>
         </Card>
@@ -8228,7 +8291,7 @@ export default function BrandDashboard() {
             {loadingBillingData
               ? "..."
               : billingYtdSpend > 0
-                ? `$${(billingYtdSpend / 1000).toFixed(1)}K`
+                ? `$${(billingYtdSpend / 100000).toFixed(1)}K`
                 : "$0"}
           </p>
         </Card>

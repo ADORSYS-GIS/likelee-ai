@@ -5006,7 +5006,7 @@ pub async fn check_budget_alerts_cron(
         let offers_resp = state
             .pg
             .from("campaign_offers")
-            .select("id,budget_snapshot,payment_status,created_at")
+            .select("id,budget_snapshot,payment_status,paid_at,updated_at,created_at")
             .eq("brand_id", brand_id)
             .limit(1000)
             .execute()
@@ -5023,27 +5023,46 @@ pub async fn check_budget_alerts_cron(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_lowercase();
-            if payment_status != "released" && payment_status != "paid" {
+            if payment_status != "paid" {
                 continue;
             }
 
-            let budget_cents = offer
+            let budget_snapshot = offer
                 .get("budget_snapshot")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+                .and_then(|v| v.as_object())
+                .cloned()
+                .unwrap_or_default();
+            let raw_value = budget_snapshot
+                .get("budget_total")
+                .cloned()
+                .or_else(|| budget_snapshot.get("total_amount").cloned())
+                .or_else(|| budget_snapshot.get("amount").cloned())
+                .unwrap_or(serde_json::Value::Null);
+            let budget_cents = if let Some(cents) = raw_value.as_i64() {
+                cents.max(0)
+            } else if let Some(amount) = raw_value.as_f64() {
+                ((amount.max(0.0)) * 100.0).round() as i64
+            } else if let Some(raw) = raw_value.as_str() {
+                let normalized = raw.replace(['$', ','], "").trim().to_string();
+                let amount = normalized.parse::<f64>().unwrap_or(0.0);
+                ((amount.max(0.0)) * 100.0).round() as i64
+            } else {
+                0
+            };
             if budget_cents <= 0 {
                 continue;
             }
 
-            let created_at_str = offer
-                .get("created_at")
+            let paid_at_str = offer
+                .get("paid_at")
                 .and_then(|v| v.as_str())
+                .or_else(|| offer.get("created_at").and_then(|v| v.as_str()))
                 .unwrap_or("");
-            let created_at = chrono::DateTime::parse_from_rfc3339(created_at_str)
+            let paid_at = chrono::DateTime::parse_from_rfc3339(paid_at_str)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or(now);
 
-            if created_at >= current_month_start {
+            if paid_at >= current_month_start {
                 current_month_spend += budget_cents;
             }
         }

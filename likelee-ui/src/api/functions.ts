@@ -192,6 +192,8 @@ export const getBrandSpendAnalytics = () =>
     ytd_spend: number;
     monthly_avg: number;
     current_month_spend: number;
+    previous_month_spend: number;
+    current_month_growth_percentage: number;
     projected_eoy: number;
   }>(`/api/brand/billing/spend`);
 
