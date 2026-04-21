@@ -866,6 +866,22 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::verify_brand_studio_addon_checkout),
         )
         .route(
+            "/api/brand/billing/payment-method/setup-intent",
+            post(crate::billing::create_brand_payment_method_setup_intent),
+        )
+        .route(
+            "/api/brand/billing/payment-methods",
+            get(crate::billing::get_brand_payment_methods),
+        )
+        .route(
+            "/api/brand/billing/payment-method/set-primary",
+            post(crate::billing::set_brand_primary_payment_method),
+        )
+        .route(
+            "/api/brand/billing/payment-method/delete",
+            post(crate::billing::delete_brand_payment_method),
+        )
+        .route(
             "/api/brand/billing/status",
             get(crate::billing::get_brand_billing_status),
         )

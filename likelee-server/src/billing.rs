@@ -5178,3 +5178,241 @@ pub async fn reset_monthly_budget_alerts(
         "message": "Monthly budget alert flags reset"
     })))
 }
+
+// ============================================================================
+// BRAND PAYMENT METHOD HANDLERS
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SetupIntentResponse {
+    pub client_secret: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaymentMethodInfo {
+    pub id: String,
+    pub stripe_payment_method_id: String,
+    pub card_last_four: String,
+    pub card_brand: String,
+    pub card_exp_month: i32,
+    pub card_exp_year: i32,
+    pub is_active: bool,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PrimaryPaymentMethod {
+    pub stripe_payment_method_id: String,
+    pub card_last_four: String,
+    pub card_brand: String,
+    pub card_exp_month: i32,
+    pub card_exp_year: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetPaymentMethodsResponse {
+    pub payment_methods: Vec<PaymentMethodInfo>,
+    pub primary_payment_method: Option<PrimaryPaymentMethod>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SetPrimaryPaymentMethodRequest {
+    pub stripe_payment_method_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DeletePaymentMethodRequest {
+    pub stripe_payment_method_id: String,
+}
+
+pub async fn create_brand_payment_method_setup_intent(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<SetupIntentResponse>, (StatusCode, String)> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // Get or create Stripe customer
+    let brand = state
+        .db
+        .from("brands")
+        .eq("id", user_id.to_string())
+        .select("stripe_customer_id")
+        .single()
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to fetch brand");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    let stripe_customer_id: Option<String> = brand.get("stripe_customer_id");
+    let customer_id = if let Some(id) = stripe_customer_id {
+        id
+    } else {
+        // Create new Stripe customer
+        let mut params = stripe_sdk::CreateCustomer::new();
+        params.metadata = Some(
+            vec![("brand_id", user_id.to_string().as_str())]
+                .into_iter()
+                .collect(),
+        );
+
+        let customer = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| {
+                warn!(error = %e, brand_id = %user_id, "failed to create stripe customer");
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+
+        let customer_id = customer.id.to_string();
+
+        // Update brand with customer ID
+        state
+            .db
+            .from("brands")
+            .eq("id", user_id.to_string())
+            .update(json!({"stripe_customer_id": customer_id.clone()}))
+            .await
+            .map_err(|e| {
+                warn!(error = %e, brand_id = %user_id, "failed to update brand stripe_customer_id");
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+
+        customer_id
+    };
+
+    // Create setup intent
+    let mut params = stripe_sdk::CreateSetupIntent::new();
+    params.customer = Some(&customer_id);
+    params.usage = Some(stripe_sdk::CreateSetupIntentUsage::OffSession);
+
+    let setup_intent = stripe_sdk::SetupIntent::create(&client, params)
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to create setup intent");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    Ok(Json(SetupIntentResponse {
+        client_secret: setup_intent.client_secret.unwrap_or_default(),
+    }))
+}
+
+pub async fn get_brand_payment_methods(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<GetPaymentMethodsResponse>, (StatusCode, String)> {
+    // Get payment methods from database
+    let payment_methods: Vec<PaymentMethodInfo> = state
+        .db
+        .from("brand_payment_methods")
+        .eq("brand_id", user_id.to_string())
+        .eq("deleted_at", "null")
+        .order("created_at.desc")
+        .select("id,stripe_payment_method_id,card_last_four,card_brand,card_exp_month,card_exp_year,is_active,created_at")
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to fetch payment methods");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    // Get primary payment method from brands table
+    let brand = state
+        .db
+        .from("brands")
+        .eq("id", user_id.to_string())
+        .select("stripe_payment_method_id,payment_method_last_four,payment_method_brand,payment_method_exp_month,payment_method_exp_year")
+        .single()
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to fetch brand payment method");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    let primary_payment_method = if let (Some(pm_id), Some(last_four), Some(brand_name), Some(exp_month), Some(exp_year)) = (
+        brand.get::<Option<String>>("stripe_payment_method_id"),
+        brand.get::<Option<String>>("payment_method_last_four"),
+        brand.get::<Option<String>>("payment_method_brand"),
+        brand.get::<Option<i32>>("payment_method_exp_month"),
+        brand.get::<Option<i32>>("payment_method_exp_year"),
+    ) {
+        Some(PrimaryPaymentMethod {
+            stripe_payment_method_id: pm_id,
+            card_last_four: last_four,
+            card_brand: brand_name,
+            card_exp_month: exp_month,
+            card_exp_year: exp_year,
+        })
+    } else {
+        None
+    };
+
+    Ok(Json(GetPaymentMethodsResponse {
+        payment_methods,
+        primary_payment_method,
+    }))
+}
+
+pub async fn set_brand_primary_payment_method(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Json(req): Json<SetPrimaryPaymentMethodRequest>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // Verify payment method exists and belongs to this brand
+    let payment_method: PaymentMethodInfo = state
+        .db
+        .from("brand_payment_methods")
+        .eq("brand_id", user_id.to_string())
+        .eq("stripe_payment_method_id", &req.stripe_payment_method_id)
+        .eq("deleted_at", "null")
+        .select("id,stripe_payment_method_id,card_last_four,card_brand,card_exp_month,card_exp_year,is_active,created_at")
+        .single()
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "payment method not found");
+            (StatusCode::NOT_FOUND, "Payment method not found".to_string())
+        })?;
+
+    // Update brand with new primary payment method
+    state
+        .db
+        .from("brands")
+        .eq("id", user_id.to_string())
+        .update(json!({
+            "stripe_payment_method_id": payment_method.stripe_payment_method_id,
+            "payment_method_last_four": payment_method.card_last_four,
+            "payment_method_brand": payment_method.card_brand,
+            "payment_method_exp_month": payment_method.card_exp_month,
+            "payment_method_exp_year": payment_method.card_exp_year,
+            "payment_method_updated_at": Utc::now().to_rfc3339()
+        }))
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to update primary payment method");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    Ok(StatusCode::OK)
+}
+
+pub async fn delete_brand_payment_method(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Json(req): Json<DeletePaymentMethodRequest>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    // Soft delete payment method
+    state
+        .db
+        .from("brand_payment_methods")
+        .eq("brand_id", user_id.to_string())
+        .eq("stripe_payment_method_id", &req.stripe_payment_method_id)
+        .update(json!({"deleted_at": Utc::now().to_rfc3339()}))
+        .await
+        .map_err(|e| {
+            warn!(error = %e, brand_id = %user_id, "failed to delete payment method");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    Ok(StatusCode::OK)
+}

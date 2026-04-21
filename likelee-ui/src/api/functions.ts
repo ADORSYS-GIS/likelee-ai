@@ -173,6 +173,43 @@ export const createBrandSubscriptionCheckout = (data: {
 export const createBrandBillingPortal = () =>
   base44Client.post<{ checkout_url: string }>(`/brand/billing/portal`, {});
 
+export const createBrandPaymentMethodSetupIntent = () =>
+  base44Client.post<{ client_secret: string }>(
+    `/brand/billing/payment-method/setup-intent`,
+    {},
+  );
+
+export const getBrandPaymentMethods = () =>
+  base44Client.get<{
+    payment_methods: Array<{
+      id: string;
+      stripe_payment_method_id: string;
+      card_last_four: string;
+      card_brand: string;
+      card_exp_month: number;
+      card_exp_year: number;
+      is_active: boolean;
+      created_at: string;
+    }>;
+    primary_payment_method: {
+      stripe_payment_method_id: string;
+      card_last_four: string;
+      card_brand: string;
+      card_exp_month: number;
+      card_exp_year: number;
+    } | null;
+  }>(`/brand/billing/payment-methods`);
+
+export const setBrandPrimaryPaymentMethod = (data: {
+  stripe_payment_method_id: string;
+}) =>
+  base44Client.post(`/brand/billing/payment-method/set-primary`, data);
+
+export const deleteBrandPaymentMethod = (data: {
+  stripe_payment_method_id: string;
+}) =>
+  base44Client.post(`/brand/billing/payment-method/delete`, data);
+
 export const getBrandBillingStatus = () =>
   base44Client.get<{
     brand_id: string;
