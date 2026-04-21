@@ -41,6 +41,7 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
       const { data, error } = await getBrandPaymentMethods();
       if (error) {
         console.error("Failed to load payment methods:", error);
+        toast.error("Failed to load payment methods");
         return;
       }
       if (data) {
@@ -49,6 +50,7 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
       }
     } catch (err) {
       console.error("Error loading payment methods:", err);
+      toast.error("Error loading payment methods");
     } finally {
       setIsLoading(false);
     }
@@ -125,14 +127,26 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
             <Label className="text-xs font-bold text-gray-500 block">
               Payment Methods
             </Label>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              size="sm"
-              className="rounded-lg bg-gray-900 text-white hover:bg-gray-800 font-bold text-xs"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Card
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                size="sm"
+                className="rounded-lg bg-gray-900 text-white hover:bg-gray-800 font-bold text-xs"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Card
+              </Button>
+              {paymentMethods.length > 0 && (
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border border-gray-200 font-bold text-xs"
+                >
+                  Manage
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -140,10 +154,21 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
             </div>
           ) : paymentMethods.length === 0 ? (
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-              <p className="text-sm text-gray-600">
-                No payment methods added yet. Add a card to get started.
-              </p>
+            <div className="p-4 border border-gray-200 rounded-lg flex items-center justify-between bg-white">
+              <div className="flex items-center gap-4">
+                <CreditCard className="w-5 h-5 text-gray-400" />
+                <span className="text-sm font-medium text-gray-600">
+                  No payment methods added yet
+                </span>
+              </div>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                variant="outline"
+                size="sm"
+                className="rounded-lg border border-gray-900 font-bold text-xs text-gray-900 hover:bg-gray-50"
+              >
+                Add Payment Method
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
