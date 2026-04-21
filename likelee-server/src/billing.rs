@@ -26,6 +26,7 @@ use crate::{
         get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, PlanTier,
     },
     team::{self, permissions::Permission},
+    utils::parse_budget_cents,
 };
 
 pub const BRAND_STUDIO_ADDON_STUDIO_PLAN: &str = "pro";
@@ -5017,6 +5018,7 @@ pub async fn check_budget_alerts_cron(
         let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
 
         let mut current_month_spend: i64 = 0;
+        // Uses shared utils::parse_budget_cents() function
         for offer in offers {
             let payment_status = offer
                 .get("payment_status")
@@ -5027,28 +5029,8 @@ pub async fn check_budget_alerts_cron(
                 continue;
             }
 
-            let budget_snapshot = offer
-                .get("budget_snapshot")
-                .and_then(|v| v.as_object())
-                .cloned()
-                .unwrap_or_default();
-            let raw_value = budget_snapshot
-                .get("budget_total")
-                .cloned()
-                .or_else(|| budget_snapshot.get("total_amount").cloned())
-                .or_else(|| budget_snapshot.get("amount").cloned())
-                .unwrap_or(serde_json::Value::Null);
-            let budget_cents = if let Some(cents) = raw_value.as_i64() {
-                cents.max(0)
-            } else if let Some(amount) = raw_value.as_f64() {
-                ((amount.max(0.0)) * 100.0).round() as i64
-            } else if let Some(raw) = raw_value.as_str() {
-                let normalized = raw.replace(['$', ','], "").trim().to_string();
-                let amount = normalized.parse::<f64>().unwrap_or(0.0);
-                ((amount.max(0.0)) * 100.0).round() as i64
-            } else {
-                0
-            };
+            let budget_snapshot = offer.get("budget_snapshot");
+            let budget_cents = budget_snapshot.map(parse_budget_cents).unwrap_or(0);
             if budget_cents <= 0 {
                 continue;
             }

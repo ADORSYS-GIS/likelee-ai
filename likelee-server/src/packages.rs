@@ -877,7 +877,7 @@ pub async fn create_public_package_full_assets_request(
         "agency_id": agency_id,
         "status": "pending",
         "campaign_title": "Full Assets Request",
-        "talent_name": "Package Full Assets Request",
+        "talent_name": if package_title.is_empty() { "Package Full Assets Request" } else { &package_title },
         "client_name": if client_name.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(client_name.clone()) },
         "usage_scope": "package_full_assets",
         "notes": notes,
@@ -906,12 +906,15 @@ pub async fn create_public_package_full_assets_request(
         "client_email": client_email,
     });
 
-    let _ = state
+    if let Err(e) = state
         .pg
         .from("agency_talent_package_interactions")
         .insert(interaction_row.to_string())
         .execute()
-        .await;
+        .await
+    {
+        tracing::warn!("Failed to record asset_request interaction: {}", e);
+    }
 
     // Best-effort email notification to agency.
     let mut agency_email: Option<String> = None;

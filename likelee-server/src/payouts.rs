@@ -2125,7 +2125,7 @@ pub async fn stripe_webhook(
                 let _ = state
                     .pg
                     .from("creators")
-                    .eq("stripe_connect_account_id", account_id)
+                    .eq("stripe_connect_account_id", &account_id)
                     .update(
                         json!({
                             "payouts_enabled": payouts_enabled,
@@ -2138,10 +2138,7 @@ pub async fn stripe_webhook(
                 let _ = state
                     .pg
                     .from("agencies")
-                    .eq(
-                        "stripe_connect_account_id",
-                        obj.get("id").and_then(|v| v.as_str()).unwrap_or(""),
-                    )
+                    .eq("stripe_connect_account_id", &account_id)
                     .update(
                         json!({
                             "payouts_enabled": payouts_enabled,
@@ -2200,8 +2197,12 @@ pub async fn stripe_webhook(
 
                 let balance_transaction_id = obj
                     .get("balance_transaction")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
+                    .and_then(|v| {
+                        // Can be string ID or expanded object
+                        v.as_str()
+                            .map(|s| s.to_string())
+                            .or_else(|| v.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                    });
                 if let (Some(btx_id), Some(acct_id)) = (balance_transaction_id, maybe_account) {
                     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
                     let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
@@ -2220,7 +2221,7 @@ pub async fn stripe_webhook(
                 let _ = state
                     .pg
                     .from("creator_payout_requests")
-                    .eq("id", &pid)
+                    .eq("stripe_payout_id", &pid)
                     .update(json!(update).to_string())
                     .execute()
                     .await;

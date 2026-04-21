@@ -13,6 +13,7 @@ use crate::{
         sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
         StorageContextType, StorageOwnerType, StorageVisibility,
     },
+    utils::{parse_budget_cents, parse_paid_at},
     team::{self, permissions::Permission},
 };
 use axum::{
@@ -2037,63 +2038,6 @@ pub struct BrandSpendAnalytics {
     pub projected_eoy: i64,
 }
 
-fn parse_campaign_offer_budget_cents(offer: &serde_json::Value) -> i64 {
-    let budget_snapshot = offer
-        .get("budget_snapshot")
-        .and_then(|v| v.as_object())
-        .cloned()
-        .unwrap_or_default();
-
-    let raw_value = budget_snapshot
-        .get("budget_total")
-        .cloned()
-        .or_else(|| budget_snapshot.get("total_amount").cloned())
-        .or_else(|| budget_snapshot.get("amount").cloned())
-        .unwrap_or(serde_json::Value::Null);
-
-    if let Some(cents) = raw_value.as_i64() {
-        return cents.max(0);
-    }
-
-    if let Some(amount) = raw_value.as_f64() {
-        return ((amount.max(0.0)) * 100.0).round() as i64;
-    }
-
-    if let Some(raw) = raw_value.as_str() {
-        let normalized = raw.replace(['$', ','], "").trim().to_string();
-        if normalized.is_empty() {
-            return 0;
-        }
-        let amount = normalized.parse::<f64>().unwrap_or(0.0);
-        return ((amount.max(0.0)) * 100.0).round() as i64;
-    }
-
-    0
-}
-
-fn parse_campaign_offer_paid_at(
-    offer: &serde_json::Value,
-    fallback_now: chrono::DateTime<chrono::Utc>,
-) -> chrono::DateTime<chrono::Utc> {
-    let candidates = ["paid_at", "created_at"];
-
-    for field in candidates {
-        let raw = offer
-            .get(field)
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim();
-        if raw.is_empty() {
-            continue;
-        }
-        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(raw) {
-            return dt.with_timezone(&chrono::Utc);
-        }
-    }
-
-    fallback_now
-}
-
 pub async fn get_brand_spend_analytics(
     State(state): State<AppState>,
     user: AuthUser,
@@ -2158,12 +2102,13 @@ pub async fn get_brand_spend_analytics(
             continue;
         }
 
-        let budget_cents = parse_campaign_offer_budget_cents(&offer);
+        let budget_snapshot = offer.get("budget_snapshot");
+        let budget_cents = budget_snapshot.map(parse_budget_cents).unwrap_or(0);
         if budget_cents <= 0 {
             continue;
         }
 
-        let date = parse_campaign_offer_paid_at(&offer, now);
+        let date = parse_paid_at(&offer, now);
 
         if date >= year_start {
             ytd_spend += budget_cents;
