@@ -559,9 +559,12 @@ pub async fn list_for_brand(
 
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
+    // Using .auth() for brand-side to maintain RLS compliance. The .eq("brand_id", ...) filter
+    // provides additional security to ensure brand can only see their own requests.
     let resp = state
         .pg
         .from("brand_license_requests")
+        .auth(user.access_token.clone())
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),creators(full_name,email),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
         .eq("brand_id", &effective_brand_id)
         .order("created_at.desc")
@@ -598,10 +601,14 @@ pub async fn list_for_agency(
     let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
     let agency_id = &access.organization_id;
 
+    // Note: Not using .auth() here because the RLS policy uses is_agency_team_member(agency_id)
+    // which checks against organization_memberships, not auth.uid(). Using .auth() would cause
+    // the join to fail due to RLS on the brands table. The .eq("agency_id", agency_id) filter
+    // ensures only the user's agency data is returned.
     let resp = state
         .pg
         .from("brand_license_requests")
-        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands:brand_id(company_name,email),creators(full_name,email,profile_photo_url)")
+        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands(company_name,email),creators(full_name,email,profile_photo_url)")
         .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(250)
