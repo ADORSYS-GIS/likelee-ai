@@ -144,6 +144,10 @@ const PaymentMethodModalContent = ({
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log("Modal isOpen state changed:", isOpen);
+  }, [isOpen]);
+
   const handleCardSubmit = async (setupIntentClientSecret: string) => {
     setIsLoading(true);
     try {
@@ -179,6 +183,7 @@ const PaymentMethodModalContent = ({
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "An error occurred";
+      console.error("Error in handleCardSubmit:", message);
       toast.error(message);
     } finally {
       setIsLoading(false);

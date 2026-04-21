@@ -30,6 +30,7 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
   const [primaryPaymentMethod, setPrimaryPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -38,10 +39,11 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
   const loadPaymentMethods = async () => {
     try {
       setIsLoading(true);
+      setApiError(null);
       const { data, error } = await getBrandPaymentMethods();
       if (error) {
         console.error("Failed to load payment methods:", error);
-        toast.error("Failed to load payment methods");
+        setApiError("Unable to load payment methods. API may not be available yet.");
         return;
       }
       if (data) {
@@ -50,7 +52,7 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
       }
     } catch (err) {
       console.error("Error loading payment methods:", err);
-      toast.error("Error loading payment methods");
+      setApiError("Error loading payment methods");
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +79,11 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
 
   const formatCardDisplay = (brand: string, lastFour: string, expMonth: number, expYear: number) => {
     return `${brand.toUpperCase()} •••• •••• •••• ${lastFour} (${expMonth}/${expYear})`;
+  };
+
+  const handleManageClick = () => {
+    console.log("Manage button clicked, opening modal...");
+    setIsModalOpen(true);
   };
 
   return (
@@ -129,19 +136,22 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
             </Label>
             <div className="flex gap-2">
               <Button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  console.log("Add Card button clicked");
+                  setIsModalOpen(true);
+                }}
                 size="sm"
                 className="rounded-lg bg-gray-900 text-white hover:bg-gray-800 font-bold text-xs"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Card
               </Button>
-              {paymentMethods.length > 0 && (
+              {(paymentMethods.length > 0 || apiError) && (
                 <Button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={handleManageClick}
                   variant="outline"
                   size="sm"
-                  className="rounded-lg border border-gray-200 font-bold text-xs"
+                  className="rounded-lg border border-gray-900 font-bold text-xs text-gray-900 hover:bg-gray-50"
                 >
                   Manage
                 </Button>
@@ -153,6 +163,23 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
             </div>
+          ) : apiError ? (
+            <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <CreditCard className="w-5 h-5 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">
+                  {apiError}
+                </span>
+              </div>
+              <Button
+                onClick={handleManageClick}
+                variant="outline"
+                size="sm"
+                className="rounded-lg border border-yellow-600 font-bold text-xs text-yellow-900 hover:bg-yellow-100"
+              >
+                Add Payment Method
+              </Button>
+            </div>
           ) : paymentMethods.length === 0 ? (
             <div className="p-4 border border-gray-200 rounded-lg flex items-center justify-between bg-white">
               <div className="flex items-center gap-4">
@@ -162,7 +189,10 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
                 </span>
               </div>
               <Button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  console.log("Add Payment Method button clicked");
+                  setIsModalOpen(true);
+                }}
                 variant="outline"
                 size="sm"
                 className="rounded-lg border border-gray-900 font-bold text-xs text-gray-900 hover:bg-gray-50"
@@ -221,7 +251,10 @@ export const BrandSettingsBilling = ({ brand }: BrandSettingsBillingProps) => {
 
       <PaymentMethodModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          console.log("Modal closing");
+          setIsModalOpen(false);
+        }}
         onSuccess={loadPaymentMethods}
       />
     </>
