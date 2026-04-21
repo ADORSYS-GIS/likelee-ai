@@ -9055,14 +9055,21 @@ export default function BrandDashboard() {
               </h3>
               <div className="space-y-3">
                 <button
-                  onClick={() => window.open("/agency_brand_terms_and-conditions.pdf", "_blank")}
+                  onClick={() =>
+                    window.open(
+                      "/agency_brand_terms_and-conditions.pdf",
+                      "_blank",
+                    )
+                  }
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
                 >
                   <FileText className="w-4 h-4 text-gray-500 shrink-0" />
                   Terms & Conditions
                 </button>
                 <button
-                  onClick={() => window.open("https://likelee.ai/privacypolicy", "_blank")}
+                  onClick={() =>
+                    window.open("https://likelee.ai/privacypolicy", "_blank")
+                  }
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
                 >
                   <FileText className="w-4 h-4 text-gray-500 shrink-0" />
@@ -9084,7 +9091,10 @@ export default function BrandDashboard() {
                     Data Export (GDPR)
                   </button>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <Badge variant="secondary" className="bg-gray-900 text-white font-black uppercase tracking-widest text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-900 text-white font-black uppercase tracking-widest text-[10px]"
+                    >
                       Coming Soon
                     </Badge>
                   </div>

@@ -38,7 +38,7 @@ export default function ProtectedRoute({
   const location = useLocation();
   const navigate = useNavigate();
   const [waitingForProfile, setWaitingForProfile] = React.useState(false);
-  
+
   const normalizedRole = String(
     (profile as any)?.organization_type || profile?.role || "",
   )

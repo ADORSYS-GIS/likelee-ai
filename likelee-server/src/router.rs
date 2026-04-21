@@ -340,8 +340,7 @@ pub fn build_router(state: AppState) -> Router {
         // --- Session Audit ---
         .route(
             "/api/auth/sessions",
-            get(crate::sessions::list_sessions)
-                .delete(crate::sessions::revoke_all_other_sessions),
+            get(crate::sessions::list_sessions).delete(crate::sessions::revoke_all_other_sessions),
         )
         .route(
             "/api/auth/sessions/:session_id",

@@ -54,7 +54,9 @@ function formatDate(iso: string): string {
   }
 }
 
-export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessionAuditProps) {
+export function ActiveSessionAudit({
+  variant: _variant = "brand",
+}: ActiveSessionAuditProps) {
   const { toast } = useToast();
   const {
     sessions,
@@ -72,13 +74,18 @@ export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessio
   const [showHistory, setShowHistory] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
-  const otherSessionCount = sessions.filter((s) => s.id !== currentSessionId).length;
+  const otherSessionCount = sessions.filter(
+    (s) => s.id !== currentSessionId,
+  ).length;
 
   const handleRevoke = async (sessionId: string) => {
     setRevokingId(sessionId);
     try {
       await revokeSession(sessionId);
-      toast({ title: "Session revoked", description: "The device has been signed out." });
+      toast({
+        title: "Session revoked",
+        description: "The device has been signed out.",
+      });
     } catch (err: any) {
       toast({
         title: "Failed to revoke session",
@@ -121,7 +128,9 @@ export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessio
           disabled={isLoading}
           className="text-gray-400 hover:text-gray-700 rounded-none"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
+          />
         </Button>
       </div>
 
@@ -131,10 +140,7 @@ export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessio
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="flex-1">
             {error}
-            <button
-              onClick={refresh}
-              className="ml-2 underline font-black"
-            >
+            <button onClick={refresh} className="ml-2 underline font-black">
               Retry
             </button>
           </div>
@@ -246,8 +252,11 @@ export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessio
             </DialogTitle>
             <DialogDescription>
               This will immediately revoke{" "}
-              <strong>{otherSessionCount} other session{otherSessionCount !== 1 ? "s" : ""}</strong>.
-              Anyone using your account on those devices will be signed out.
+              <strong>
+                {otherSessionCount} other session
+                {otherSessionCount !== 1 ? "s" : ""}
+              </strong>
+              . Anyone using your account on those devices will be signed out.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -262,7 +271,8 @@ export function ActiveSessionAudit({ variant: _variant = "brand" }: ActiveSessio
               onClick={handleRevokeAll}
               className="rounded-none bg-gray-900 text-white font-black uppercase tracking-widest text-[10px] hover:bg-red-700"
             >
-              Sign out {otherSessionCount} device{otherSessionCount !== 1 ? "s" : ""}
+              Sign out {otherSessionCount} device
+              {otherSessionCount !== 1 ? "s" : ""}
             </Button>
           </DialogFooter>
         </DialogContent>

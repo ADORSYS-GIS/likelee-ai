@@ -12,8 +12,8 @@ use crate::{auth::AuthUser, config::AppState};
 use super::{
     current_session::identify_current_session,
     types::{
-        ListSessionsResponse, LoginEvent, LoginHistoryParams, LoginHistoryResponse, RawAuditLogEntry,
-        RawSupabaseSession, RevokeAllResponse, SessionInfo,
+        ListSessionsResponse, LoginEvent, LoginHistoryParams, LoginHistoryResponse,
+        RawAuditLogEntry, RawSupabaseSession, RevokeAllResponse, SessionInfo,
     },
     ua_parser::parse_user_agent,
 };
@@ -44,11 +44,8 @@ fn extract_sid_from_token(token: &str) -> Option<String> {
     }
     let payload = parts[1];
     // Base64url decode (no padding)
-    let decoded = base64::Engine::decode(
-        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        payload,
-    )
-    .ok()?;
+    let decoded =
+        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, payload).ok()?;
     let claims: serde_json::Value = serde_json::from_slice(&decoded).ok()?;
     claims
         .get("session_id")
@@ -128,8 +125,7 @@ async fn fetch_raw_sessions(
 
 /// Transform a `RawSupabaseSession` into a `SessionInfo`.
 fn to_session_info(raw: &RawSupabaseSession, current_session_id: Option<&str>) -> SessionInfo {
-    let (device_label, device_type) =
-        parse_user_agent(raw.user_agent.as_deref().unwrap_or(""));
+    let (device_label, device_type) = parse_user_agent(raw.user_agent.as_deref().unwrap_or(""));
 
     let last_active_at = raw
         .updated_at
@@ -292,8 +288,7 @@ pub async fn revoke_all_other_sessions(
     let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
 
     let sid_claim = extract_sid_from_token(&user.access_token);
-    let current_session_id =
-        identify_current_session(&raw_sessions, sid_claim.as_deref(), None);
+    let current_session_id = identify_current_session(&raw_sessions, sid_claim.as_deref(), None);
 
     // Filter out the current session — never revoke it
     let to_revoke: Vec<&RawSupabaseSession> = raw_sessions
@@ -343,8 +338,7 @@ pub async fn revoke_all_other_sessions(
         .filter(|r| {
             r.as_ref()
                 .map(|resp| {
-                    resp.status().is_success()
-                        || resp.status() == reqwest::StatusCode::NOT_FOUND
+                    resp.status().is_success() || resp.status() == reqwest::StatusCode::NOT_FOUND
                 })
                 .unwrap_or(false)
         })
@@ -428,8 +422,16 @@ pub async fn get_login_history(
     };
 
     // Login-related event types we care about
-    const LOGIN_EVENTS: &[&str] = &["login", "logout", "token_refreshed", "mfa_verified",
-        "user.signed_in", "user.signed_out", "token.refreshed", "mfa.challenge_verified"];
+    const LOGIN_EVENTS: &[&str] = &[
+        "login",
+        "logout",
+        "token_refreshed",
+        "mfa_verified",
+        "user.signed_in",
+        "user.signed_out",
+        "token.refreshed",
+        "mfa.challenge_verified",
+    ];
 
     let events: Vec<LoginEvent> = raw_entries
         .iter()
@@ -454,7 +456,10 @@ pub async fn get_login_history(
             let ua = entry
                 .payload
                 .as_ref()
-                .and_then(|p| p.get("user_agent").or_else(|| p.get("traits").and_then(|t| t.get("user_agent"))))
+                .and_then(|p| {
+                    p.get("user_agent")
+                        .or_else(|| p.get("traits").and_then(|t| t.get("user_agent")))
+                })
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
 
@@ -462,7 +467,10 @@ pub async fn get_login_history(
                 entry
                     .payload
                     .as_ref()
-                    .and_then(|p| p.get("ip_address").or_else(|| p.get("traits").and_then(|t| t.get("ip_address"))))
+                    .and_then(|p| {
+                        p.get("ip_address")
+                            .or_else(|| p.get("traits").and_then(|t| t.get("ip_address")))
+                    })
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
             });
@@ -470,7 +478,10 @@ pub async fn get_login_history(
             let (device_label, _) = parse_user_agent(ua.as_deref().unwrap_or(""));
 
             Some(LoginEvent {
-                id: entry.id.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+                id: entry
+                    .id
+                    .clone()
+                    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
                 event_type: event_type.to_string(),
                 created_at: entry.created_at.clone().unwrap_or_default(),
                 ip_address: ip,

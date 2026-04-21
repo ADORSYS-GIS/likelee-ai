@@ -29,9 +29,7 @@ pub fn identify_current_session(
     }
 
     // Fallback: best-effort match by user_agent when `sid` claim is absent
-    warn!(
-        "[sessions] JWT does not contain a `sid` claim — falling back to user_agent matching"
-    );
+    warn!("[sessions] JWT does not contain a `sid` claim — falling back to user_agent matching");
 
     if let Some(caller_ua) = caller_user_agent {
         let caller_ua = caller_ua.trim();
@@ -57,7 +55,9 @@ pub fn identify_current_session(
         }
     }
 
-    warn!("[sessions] Could not identify current session — is_current will be false for all sessions");
+    warn!(
+        "[sessions] Could not identify current session — is_current will be false for all sessions"
+    );
     None
 }
 
@@ -104,8 +104,7 @@ mod tests {
             make_session("session-aaa", Some("Mozilla/5.0 Chrome")),
             make_session("session-bbb", Some("Mozilla/5.0 Firefox")),
         ];
-        let result =
-            identify_current_session(&sessions, None, Some("Mozilla/5.0 Firefox"));
+        let result = identify_current_session(&sessions, None, Some("Mozilla/5.0 Firefox"));
         assert_eq!(result, Some("session-bbb".to_string()));
     }
 

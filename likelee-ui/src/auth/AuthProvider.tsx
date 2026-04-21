@@ -168,10 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const tryFetchMembership = async (bustCache = false) => {
         // Add cache busting for retries by selecting an additional computed field
-        const selectFields = bustCache 
+        const selectFields = bustCache
           ? "organization_type, organization_id, role, status, email, created_at"
           : "organization_type, organization_id, role, status, email";
-          
+
         const { data, error } = await supabase
           .from("organization_memberships")
           .select(selectFields)
@@ -179,8 +179,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("status", "active")
           .limit(1)
           .maybeSingle();
-        
-        console.log("[AuthProvider] tryFetchMembership result:", { data, error, userId, bustCache });
+
+        console.log("[AuthProvider] tryFetchMembership result:", {
+          data,
+          error,
+          userId,
+          bustCache,
+        });
         return { data, error };
       };
 
@@ -241,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             setProfile(newProfile);
             // Wait for next tick to ensure state update is processed
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await new Promise((resolve) => setTimeout(resolve, 0));
             return;
           }
         }
@@ -317,7 +322,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileRef.current = nextProfile;
         setProfile(nextProfile);
         // Wait for next tick to ensure state update is processed
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       } else {
         // Fallback to membership check for non-agency/brand roles
         const membershipResp = await tryFetchMembership();
@@ -363,7 +368,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             onboarding_step: null,
           });
           // Wait for next tick to ensure state update is processed
-          await new Promise(resolve => setTimeout(resolve, 0));
+          await new Promise((resolve) => setTimeout(resolve, 0));
           return;
         }
 
@@ -379,7 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileRef.current = null;
         setProfile(null);
         // Wait for next tick to ensure state update is processed
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       console.log("[AuthProvider] fetchProfile END", {
@@ -616,26 +621,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile: async () => {
         if (user) {
           const isOAuth = user.app_metadata?.provider === "google";
-          const roleHint = getUserRoleHint(user) || readAuthIntent()?.role || "";
-          
-          console.log(`[AuthProvider] refreshProfile called for role: ${roleHint}`);
-          
+          const roleHint =
+            getUserRoleHint(user) || readAuthIntent()?.role || "";
+
+          console.log(
+            `[AuthProvider] refreshProfile called for role: ${roleHint}`,
+          );
+
           // For brand/agency users, retry fetching profile to handle race condition
           // after invitation acceptance (membership may not be immediately available)
           if (roleHint === "brand" || roleHint === "agency") {
-            console.log(`[AuthProvider] Using retry logic for ${roleHint} user`);
+            console.log(
+              `[AuthProvider] Using retry logic for ${roleHint} user`,
+            );
             const maxRetries = 5;
             const retryDelay = 800; // ms - increased for database replication
-            
+
             for (let attempt = 0; attempt < maxRetries; attempt++) {
-              console.log(`[AuthProvider] Attempt ${attempt + 1}/${maxRetries}, profileRef.current:`, profileRef.current);
-              
+              console.log(
+                `[AuthProvider] Attempt ${attempt + 1}/${maxRetries}, profileRef.current:`,
+                profileRef.current,
+              );
+
               // Reset fetching ref to allow retry
               if (attempt > 0) {
                 fetchingRef.current = null;
-                console.log(`[AuthProvider] Retry attempt ${attempt + 1}/${maxRetries} - reset fetchingRef`);
+                console.log(
+                  `[AuthProvider] Retry attempt ${attempt + 1}/${maxRetries} - reset fetchingRef`,
+                );
               }
-              
+
               await fetchProfile(
                 user.id,
                 user.email,
@@ -643,23 +658,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 roleHint,
                 isOAuth,
               );
-              
-              console.log(`[AuthProvider] After fetchProfile, profileRef.current:`, profileRef.current);
-              
+
+              console.log(
+                `[AuthProvider] After fetchProfile, profileRef.current:`,
+                profileRef.current,
+              );
+
               // Check if profile was successfully loaded (not null)
-              if (profileRef.current !== null && profileRef.current !== undefined) {
-                console.log(`[AuthProvider] Profile loaded successfully on attempt ${attempt + 1}`, profileRef.current);
+              if (
+                profileRef.current !== null &&
+                profileRef.current !== undefined
+              ) {
+                console.log(
+                  `[AuthProvider] Profile loaded successfully on attempt ${attempt + 1}`,
+                  profileRef.current,
+                );
                 return;
               }
-              
+
               // If not the last attempt, wait before retrying
               if (attempt < maxRetries - 1) {
-                console.log(`[AuthProvider] Profile is null, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${maxRetries})`);
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                console.log(
+                  `[AuthProvider] Profile is null, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${maxRetries})`,
+                );
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
               }
             }
-            
-            console.error("[AuthProvider] Profile still null after all retries - this indicates a database issue");
+
+            console.error(
+              "[AuthProvider] Profile still null after all retries - this indicates a database issue",
+            );
           } else {
             // For other roles, fetch normally without retry
             await fetchProfile(

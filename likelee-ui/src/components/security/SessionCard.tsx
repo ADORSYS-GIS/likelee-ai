@@ -1,5 +1,13 @@
 import React from "react";
-import { Monitor, Smartphone, Tablet, HelpCircle, Loader2, MapPin, Clock } from "lucide-react";
+import {
+  Monitor,
+  Smartphone,
+  Tablet,
+  HelpCircle,
+  Loader2,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SessionInfo } from "@/api/sessions";
@@ -42,7 +50,12 @@ function formatRelativeTime(iso: string): string {
   }
 }
 
-export function SessionCard({ session, isCurrent, onRevoke, isRevoking }: SessionCardProps) {
+export function SessionCard({
+  session,
+  isCurrent,
+  onRevoke,
+  isRevoking,
+}: SessionCardProps) {
   return (
     <div className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-none bg-white hover:border-gray-200 transition-colors">
       <div className="flex items-center gap-3 min-w-0">

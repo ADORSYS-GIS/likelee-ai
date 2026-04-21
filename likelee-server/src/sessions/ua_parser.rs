@@ -113,8 +113,14 @@ mod tests {
         let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
         let (label, device_type) = parse_user_agent(ua);
         assert_eq!(device_type, "desktop");
-        assert!(label.contains("Chrome"), "expected Chrome in label, got: {label}");
-        assert!(label.contains("macOS"), "expected macOS in label, got: {label}");
+        assert!(
+            label.contains("Chrome"),
+            "expected Chrome in label, got: {label}"
+        );
+        assert!(
+            label.contains("macOS"),
+            "expected macOS in label, got: {label}"
+        );
     }
 
     #[test]
@@ -122,8 +128,14 @@ mod tests {
         let ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
         let (label, device_type) = parse_user_agent(ua);
         assert_eq!(device_type, "mobile");
-        assert!(label.contains("Safari"), "expected Safari in label, got: {label}");
-        assert!(label.contains("iPhone"), "expected iPhone in label, got: {label}");
+        assert!(
+            label.contains("Safari"),
+            "expected Safari in label, got: {label}"
+        );
+        assert!(
+            label.contains("iPhone"),
+            "expected iPhone in label, got: {label}"
+        );
     }
 
     #[test]
@@ -131,8 +143,14 @@ mod tests {
         let ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0";
         let (label, device_type) = parse_user_agent(ua);
         assert_eq!(device_type, "desktop");
-        assert!(label.contains("Firefox"), "expected Firefox in label, got: {label}");
-        assert!(label.contains("Windows"), "expected Windows in label, got: {label}");
+        assert!(
+            label.contains("Firefox"),
+            "expected Firefox in label, got: {label}"
+        );
+        assert!(
+            label.contains("Windows"),
+            "expected Windows in label, got: {label}"
+        );
     }
 
     #[test]
@@ -140,8 +158,14 @@ mod tests {
         let ua = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
         let (label, device_type) = parse_user_agent(ua);
         assert_eq!(device_type, "mobile");
-        assert!(label.contains("Chrome"), "expected Chrome in label, got: {label}");
-        assert!(label.contains("Android"), "expected Android in label, got: {label}");
+        assert!(
+            label.contains("Chrome"),
+            "expected Chrome in label, got: {label}"
+        );
+        assert!(
+            label.contains("Android"),
+            "expected Android in label, got: {label}"
+        );
     }
 
     #[test]

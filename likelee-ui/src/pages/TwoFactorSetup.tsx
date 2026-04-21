@@ -34,14 +34,15 @@ interface FactorInfo {
 }
 
 export default function TwoFactorSetup() {
-  const { mfa, authenticated, initialized, profile, refreshProfile } = useAuth();
+  const { mfa, authenticated, initialized, profile, refreshProfile } =
+    useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get("mode") || "manage";
   const nextParam = searchParams.get("next") || "/";
 
   const [step, setStep] = useState<Step>(
-    mode === "challenge" ? "challenge" : "intro"
+    mode === "challenge" ? "challenge" : "intro",
   );
   const [loading, setLoading] = useState(false);
   const [factors, setFactors] = useState<FactorInfo[]>([]);
@@ -127,7 +128,7 @@ export default function TwoFactorSetup() {
   const handleEnroll = async () => {
     if (!mfa) {
       setError(
-        "Authentication service is not available. Please refresh the page and try again. If the problem persists, contact support."
+        "Authentication service is not available. Please refresh the page and try again. If the problem persists, contact support.",
       );
       return;
     }
@@ -157,7 +158,7 @@ export default function TwoFactorSetup() {
         }
 
         console.log("[handleEnroll] Success - setting factor ID:", data.id);
-        
+
         // Set factor ID first, then other state
         setSelectedFactorId(data.id);
         setQrDataUrl(nextQrDataUrl);
@@ -172,26 +173,33 @@ export default function TwoFactorSetup() {
     } catch (err: any) {
       const errorCode = err.code || err.error_code || "";
       const errorMessage = err.message || "";
-      
-      if (errorCode === "mfa_factor_name_conflict" || errorMessage.includes("already exists")) {
+
+      if (
+        errorCode === "mfa_factor_name_conflict" ||
+        errorMessage.includes("already exists")
+      ) {
         setError(
-          `You already have a 2FA method named "${friendlyName}". Please choose a different name (e.g., "My Phone", "Work Device") or remove the existing one below.`
+          `You already have a 2FA method named "${friendlyName}". Please choose a different name (e.g., "My Phone", "Work Device") or remove the existing one below.`,
         );
       } else if (errorCode === "mfa_totp_limit_reached") {
         setError(
-          "You've reached the maximum number of authenticator apps allowed on your account. Please remove an existing one before adding a new device."
+          "You've reached the maximum number of authenticator apps allowed on your account. Please remove an existing one before adding a new device.",
         );
       } else if (errorCode === "auth/mfa") {
         setError(
-          "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists."
+          "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists.",
         );
-      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
         setError(
-          "Unable to connect to the authentication service. Please check your internet connection and try again."
+          "Unable to connect to the authentication service. Please check your internet connection and try again.",
         );
       } else {
         setError(
-          errorMessage || "Something went wrong setting up 2FA. Please try again."
+          errorMessage ||
+            "Something went wrong setting up 2FA. Please try again.",
         );
       }
     } finally {
@@ -216,7 +224,7 @@ export default function TwoFactorSetup() {
       console.log("[handleVerify] Calling challengeAndVerify...");
       const { error: err } = await mfa.challengeAndVerify(
         selectedFactorId,
-        verifyCode
+        verifyCode,
       );
       console.log("[handleVerify] challengeAndVerify result:", { err });
       if (err) throw err;
@@ -229,22 +237,30 @@ export default function TwoFactorSetup() {
       console.error("[handleVerify] Error:", err);
       const errorCode = err.code || err.error_code || "";
       const errorMessage = err.message || "";
-      
+
       if (errorCode === "mfa_challenge_expired") {
         setError(
-          "This verification session has expired. Please go back and start the setup process again."
+          "This verification session has expired. Please go back and start the setup process again.",
         );
-      } else if (errorCode === "mfa_invalid_code" || errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
+      } else if (
+        errorCode === "mfa_invalid_code" ||
+        errorMessage.includes("invalid") ||
+        errorMessage.includes("incorrect")
+      ) {
         setError(
-          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds."
+          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
         );
-      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
         setError(
-          "Unable to verify the code. Please check your internet connection and try again."
+          "Unable to verify the code. Please check your internet connection and try again.",
         );
       } else {
         setError(
-          errorMessage || "Verification failed. Please check the code and try again."
+          errorMessage ||
+            "Verification failed. Please check the code and try again.",
         );
       }
     } finally {
@@ -260,61 +276,74 @@ export default function TwoFactorSetup() {
       console.log("[TwoFactorSetup] Starting MFA verification...");
       const { error: err } = await mfa.challengeAndVerify(
         selectedFactorId,
-        challengeCode
+        challengeCode,
       );
       if (err) throw err;
-      
+
       console.log("[TwoFactorSetup] MFA verification successful");
-      
+
       toast({
         title: "Verification Complete",
         description: "You have been successfully authenticated.",
       });
-      
+
       // Mark that we just completed MFA so ProtectedRoute knows to wait for profile
       sessionStorage.setItem("mfa_just_completed", "true");
       sessionStorage.removeItem(MFA_PENDING_STORAGE_KEY);
-      
+
       console.log("[TwoFactorSetup] Refreshing profile...");
       // Trigger profile refresh
       if (refreshProfile) {
         await refreshProfile();
       }
-      
+
       console.log("[TwoFactorSetup] Waiting for state to settle...");
       // Give more time for the auth state to update and profile to load
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Determine the correct redirect path based on the loaded profile
       let redirectPath = nextParam;
       if (nextParam === "dashboard" || nextParam === "/") {
         // Use the profile to determine the correct dashboard
         redirectPath = getDashboardPath(profile);
-        console.log("[TwoFactorSetup] Determined dashboard path:", redirectPath, "for role:", profile?.role);
+        console.log(
+          "[TwoFactorSetup] Determined dashboard path:",
+          redirectPath,
+          "for role:",
+          profile?.role,
+        );
       }
-      
+
       console.log("[TwoFactorSetup] Navigating to:", redirectPath);
       navigate(redirectPath, { replace: true });
     } catch (err: any) {
       console.error("[TwoFactorSetup] MFA verification error:", err);
       const errorCode = err.code || err.error_code || "";
       const errorMessage = err.message || "";
-      
+
       if (errorCode === "mfa_challenge_expired") {
         setError(
-          "Your login session has expired. Please return to the login page and sign in again."
+          "Your login session has expired. Please return to the login page and sign in again.",
         );
-      } else if (errorCode === "mfa_invalid_code" || errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
+      } else if (
+        errorCode === "mfa_invalid_code" ||
+        errorMessage.includes("invalid") ||
+        errorMessage.includes("incorrect")
+      ) {
         setError(
-          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds."
+          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
         );
-      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
         setError(
-          "Unable to verify the code. Please check your internet connection and try again."
+          "Unable to verify the code. Please check your internet connection and try again.",
         );
       } else {
         setError(
-          errorMessage || "Verification failed. Please check the code and try again."
+          errorMessage ||
+            "Verification failed. Please check the code and try again.",
         );
       }
     } finally {
@@ -399,7 +428,9 @@ export default function TwoFactorSetup() {
 
           <Button
             onClick={handleChallengeVerify}
-            disabled={challengeCode.length !== 6 || loading || !selectedFactorId}
+            disabled={
+              challengeCode.length !== 6 || loading || !selectedFactorId
+            }
             className="w-full h-12 bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify"}
@@ -473,7 +504,9 @@ export default function TwoFactorSetup() {
                     <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                       2
                     </span>
-                    <span>Enter the 6-digit code from the app to verify setup</span>
+                    <span>
+                      Enter the 6-digit code from the app to verify setup
+                    </span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
@@ -671,7 +704,9 @@ export default function TwoFactorSetup() {
                 <Button
                   onClick={async () => {
                     if (!mfa) {
-                      setError("Authentication service not available. Please refresh the page.");
+                      setError(
+                        "Authentication service not available. Please refresh the page.",
+                      );
                       return;
                     }
                     setLoading(true);
@@ -682,12 +717,16 @@ export default function TwoFactorSetup() {
                       setUnverifiedFactors([]);
                       toast({
                         title: "Cleaned up",
-                        description: "Incomplete setups removed. You can now start fresh.",
+                        description:
+                          "Incomplete setups removed. You can now start fresh.",
                       });
                       setStep("enroll");
                     } catch (e: any) {
                       console.error("Failed to cleanup:", e);
-                      setError("Failed to remove incomplete setup: " + (e.message || "Unknown error"));
+                      setError(
+                        "Failed to remove incomplete setup: " +
+                          (e.message || "Unknown error"),
+                      );
                     } finally {
                       setLoading(false);
                     }
@@ -723,7 +762,9 @@ export default function TwoFactorSetup() {
                       <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                         2
                       </span>
-                      <span>Enter the 6-digit code from the app to verify setup</span>
+                      <span>
+                        Enter the 6-digit code from the app to verify setup
+                      </span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
@@ -786,7 +827,8 @@ export default function TwoFactorSetup() {
             <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
               <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
                 <AlertCircle className="w-4 h-4" />
-                Setup error: Factor ID not available. Please go back and try again.
+                Setup error: Factor ID not available. Please go back and try
+                again.
               </div>
               <Button
                 onClick={() => setStep("intro")}
@@ -825,7 +867,11 @@ export default function TwoFactorSetup() {
             {qrDataUrl && (
               <div className="flex justify-center mb-6">
                 <div className="p-4 bg-white border-2 border-gray-200 rounded-lg">
-                  <img src={qrDataUrl} alt="2FA QR Code" className="w-48 h-48" />
+                  <img
+                    src={qrDataUrl}
+                    alt="2FA QR Code"
+                    className="w-48 h-48"
+                  />
                 </div>
               </div>
             )}

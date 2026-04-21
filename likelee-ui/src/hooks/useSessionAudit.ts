@@ -48,7 +48,7 @@ export function useSessionAudit(): UseSessionAuditReturn {
       .catch((err: any) => {
         if (cancelled) return;
         setError(
-          err?.message || "Failed to load session data. Please try again."
+          err?.message || "Failed to load session data. Please try again.",
         );
       })
       .finally(() => {
@@ -60,27 +60,22 @@ export function useSessionAudit(): UseSessionAuditReturn {
     };
   }, [refreshTick]);
 
-  const revokeSession = useCallback(
-    async (sessionId: string) => {
-      setIsRevoking(true);
-      try {
-        await apiRevokeSession(sessionId);
-        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      } finally {
-        setIsRevoking(false);
-      }
-    },
-    []
-  );
+  const revokeSession = useCallback(async (sessionId: string) => {
+    setIsRevoking(true);
+    try {
+      await apiRevokeSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    } finally {
+      setIsRevoking(false);
+    }
+  }, []);
 
   const revokeAllOtherSessions = useCallback(async () => {
     setIsRevoking(true);
     try {
       await apiRevokeAll();
       // Keep only the current session in the list
-      setSessions((prev) =>
-        prev.filter((s) => s.id === currentSessionId)
-      );
+      setSessions((prev) => prev.filter((s) => s.id === currentSessionId));
     } finally {
       setIsRevoking(false);
     }
