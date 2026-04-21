@@ -562,8 +562,7 @@ pub async fn list_for_brand(
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(user.access_token.clone())
-        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
+        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),creators(full_name,email),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
         .eq("brand_id", &effective_brand_id)
         .order("created_at.desc")
         .limit(250)
