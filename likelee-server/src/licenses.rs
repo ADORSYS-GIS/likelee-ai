@@ -1,10 +1,15 @@
 use crate::config::AppState;
+use crate::storage::{
+    canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
+    upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     Json,
 };
 use serde::{Deserialize, Serialize};
+use tracing::warn;
 
 #[derive(Deserialize)]
 pub struct ActivatedIn {
@@ -134,8 +139,60 @@ pub async fn activated_stub(
     let mdl_text = mdl_resp.text().await.unwrap_or_else(|_| "[]".into());
     let mdls: serde_json::Value = serde_json::from_str(&mdl_text).unwrap_or(serde_json::json!([]));
 
-    // 4) Insert brand_voice_assets entries
+    // 4) Insert brand_voice_assets entries and copy recordings to brand storage
     let mut assets_created: i64 = 0;
+
+    let brand_storage_folder_name = "Voice Assets";
+    let mut brand_storage_folder_id: Option<String> = None;
+
+    if let Some(arr) = recs.as_array() {
+        if !arr.is_empty() {
+            let folder_check = state
+                .pg
+                .from("brand_folders")
+                .select("id")
+                .eq("brand_id", &input.brand_org_id)
+                .eq("name", brand_storage_folder_name)
+                .limit(1)
+                .execute()
+                .await;
+            if let Ok(fc_resp) = folder_check {
+                let fc_text = fc_resp.text().await.unwrap_or_default();
+                let fc_json: serde_json::Value =
+                    serde_json::from_str(&fc_text).unwrap_or(serde_json::json!([]));
+                brand_storage_folder_id = fc_json
+                    .as_array()
+                    .and_then(|a| a.first())
+                    .and_then(|o| o.get("id"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+            }
+            if brand_storage_folder_id.is_none() {
+                let bf_insert = serde_json::json!({
+                    "brand_id": input.brand_org_id,
+                    "name": brand_storage_folder_name,
+                });
+                let bf_resp = state
+                    .pg
+                    .from("brand_folders")
+                    .insert(bf_insert.to_string())
+                    .execute()
+                    .await;
+                if let Ok(resp) = bf_resp {
+                    let bf_text = resp.text().await.unwrap_or_default();
+                    let bf_json: serde_json::Value =
+                        serde_json::from_str(&bf_text).unwrap_or(serde_json::json!([]));
+                    brand_storage_folder_id = bf_json
+                        .as_array()
+                        .and_then(|a| a.first())
+                        .and_then(|o| o.get("id"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                }
+            }
+        }
+    }
+
     if let Some(arr) = recs.as_array() {
         for r in arr {
             let recording_id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -147,12 +204,104 @@ pub async fn activated_stub(
             if recording_id.is_empty() {
                 continue;
             }
+
+            let mut brand_bucket = storage_bucket.to_string();
+            let mut brand_path = storage_path.to_string();
+            let mut brand_public_url: Option<String> = None;
+
+            if !storage_bucket.is_empty() && !storage_path.is_empty() {
+                match download_object(&state, storage_bucket, storage_path).await {
+                    Ok(downloaded) => {
+                        let file_bytes = downloaded.bytes.to_vec();
+                        let new_size = file_bytes.len() as i64;
+                        let fname = format!("voice_{}.webm", recording_id);
+                        let sanitized = sanitize_file_name(&fname);
+                        let visibility = StorageVisibility::Private;
+                        let dest_path = canonical_object_path(
+                            &format!("brands/{}/voice-assets", input.brand_org_id),
+                            &sanitized,
+                            chrono::Utc::now().timestamp_millis(),
+                        );
+
+                        if let Ok(uploaded) =
+                            upload_object(&state, visibility, &dest_path, file_bytes, None).await
+                        {
+                            brand_bucket = uploaded.bucket.clone();
+                            brand_path = uploaded.path.clone();
+                            brand_public_url = uploaded.public_url.clone();
+
+                            let bf_insert = serde_json::json!({
+                                "brand_id": input.brand_org_id,
+                                "file_name": fname,
+                                "storage_bucket": uploaded.bucket,
+                                "storage_path": uploaded.path,
+                                "public_url": uploaded.public_url,
+                                "folder_id": brand_storage_folder_id,
+                                "size_bytes": new_size,
+                                "mime_type": downloaded.content_type,
+                            });
+                            let _ = state
+                                .pg
+                                .from("brand_files")
+                                .insert(bf_insert.to_string())
+                                .execute()
+                                .await;
+
+                            let bf_resp = state
+                                .pg
+                                .from("brand_files")
+                                .select("id")
+                                .eq("brand_id", &input.brand_org_id)
+                                .eq("storage_path", &uploaded.path)
+                                .limit(1)
+                                .execute()
+                                .await;
+                            let bf_id = if let Ok(resp) = bf_resp {
+                                let txt = resp.text().await.unwrap_or_default();
+                                let v: serde_json::Value =
+                                    serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
+                                v.as_array()
+                                    .and_then(|a| a.first())
+                                    .and_then(|o| o.get("id"))
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string())
+                            } else {
+                                None
+                            };
+
+                            let storage_record = StorageAssetRecord {
+                                owner_type: StorageOwnerType::Brand,
+                                owner_id: input.brand_org_id.clone(),
+                                context_type: StorageContextType::BrandVoiceAsset,
+                                context_id: Some(recording_id.to_string()),
+                                visibility,
+                                object_path: uploaded.path,
+                                original_file_name: Some(fname),
+                                mime_type: downloaded.content_type,
+                                size_bytes: Some(new_size),
+                                checksum_sha256: None,
+                                source_table: Some("brand_files".to_string()),
+                                source_id: bf_id,
+                                created_by: None,
+                                counts_toward_quota: true,
+                            };
+                            if let Err(err) = insert_asset_record(&state, &storage_record).await {
+                                warn!(recording_id = %recording_id, error = %err.1, "failed to mirror voice asset into storage_assets");
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!(recording_id = %recording_id, error = %e.1, "failed to download voice recording for brand storage copy");
+                    }
+                }
+            }
+
             let payload = serde_json::json!({
                 "folder_id": folder_id,
                 "asset_type": "recording",
                 "recording_id": recording_id,
-                "storage_bucket": storage_bucket,
-                "storage_path": storage_path,
+                "storage_bucket": brand_bucket,
+                "storage_path": brand_path,
             });
             let _ = state
                 .pg

@@ -4716,10 +4716,32 @@ async fn sync_brand_subscription_from_subscription(
             .execute()
             .await;
 
+        let brand_storage_limit_bytes: i64 = match plan_tier {
+            "basic" => 50_i64 * 1024 * 1024 * 1024,
+            "pro" => 200_i64 * 1024 * 1024 * 1024,
+            "enterprise" => 1024_i64 * 1024 * 1024 * 1024,
+            _ => 5_i64 * 1024 * 1024 * 1024,
+        };
+
+        let _ = state
+            .pg
+            .from("brand_storage_settings")
+            .insert(json!({ "brand_id": brand_id, "storage_limit_bytes": brand_storage_limit_bytes }).to_string())
+            .execute()
+            .await;
+        let _ = state
+            .pg
+            .from("brand_storage_settings")
+            .eq("brand_id", brand_id)
+            .update(json!({"storage_limit_bytes": brand_storage_limit_bytes}).to_string())
+            .execute()
+            .await;
+
         info!(
             brand_id = %brand_id,
             plan_tier = %plan_tier,
             subscription_id = %subscription_id,
+            storage_limit_bytes = brand_storage_limit_bytes,
             "synced brand base subscription from stripe subscription"
         );
         return Ok(());

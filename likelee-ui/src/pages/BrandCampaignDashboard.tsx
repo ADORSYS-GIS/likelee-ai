@@ -1623,51 +1623,21 @@ export default function BrandCampaignDashboard({
       } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const uploadWithApi = async () =>
-        Promise.all(
-          files.map(async (file) => {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch(api("/api/brand/brief-assets/upload"), {
-              method: "POST",
-              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-              body: formData,
-            });
-            if (!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            return { name: file.name, url: data.url };
-          }),
-        );
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            body: formData,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return { name: file.name, url: data.url };
+        }),
+      );
 
-      const uploadWithStorage = async () => {
-        const userId = String(session?.user?.id || "brand");
-        return Promise.all(
-          files.map(async (file) => {
-            const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-            const path = `campaign-brief/reference-images/${userId}/${Date.now()}_${Math.random()
-              .toString(36)
-              .slice(2, 8)}_${safeName}`;
-            const { error: uploadError } = await supabase.storage
-              .from("likelee-public")
-              .upload(path, file);
-            if (uploadError) throw uploadError;
-            const { data } = supabase.storage
-              .from("likelee-public")
-              .getPublicUrl(path);
-            return {
-              name: file.name,
-              url: String(data?.publicUrl || ""),
-            };
-          }),
-        );
-      };
-
-      let uploaded: { name: string; url: string }[] = [];
-      try {
-        uploaded = await uploadWithApi();
-      } catch {
-        uploaded = await uploadWithStorage();
-      }
       const valid = uploaded.filter(
         (x) => String(x.url || "").trim().length > 0,
       );
@@ -1700,52 +1670,21 @@ export default function BrandCampaignDashboard({
       } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const uploadWithApi = async () =>
-        Promise.all(
-          files.map(async (file) => {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch(api("/api/brand/brief-assets/upload"), {
-              method: "POST",
-              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-              body: formData,
-            });
-            if (!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            return { name: file.name, size: file.size, url: data.url };
-          }),
-        );
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            body: formData,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return { name: file.name, size: file.size, url: data.url };
+        }),
+      );
 
-      const uploadWithStorage = async () => {
-        const userId = String(session?.user?.id || "brand");
-        return Promise.all(
-          files.map(async (file) => {
-            const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-            const path = `campaign-brief/brand-assets/${userId}/${Date.now()}_${Math.random()
-              .toString(36)
-              .slice(2, 8)}_${safeName}`;
-            const { error: uploadError } = await supabase.storage
-              .from("likelee-public")
-              .upload(path, file);
-            if (uploadError) throw uploadError;
-            const { data } = supabase.storage
-              .from("likelee-public")
-              .getPublicUrl(path);
-            return {
-              name: file.name,
-              size: file.size,
-              url: String(data?.publicUrl || ""),
-            };
-          }),
-        );
-      };
-
-      let uploaded: { name: string; size: number; url: string }[] = [];
-      try {
-        uploaded = await uploadWithApi();
-      } catch {
-        uploaded = await uploadWithStorage();
-      }
       const valid = uploaded.filter(
         (x) => String(x.url || "").trim().length > 0,
       );

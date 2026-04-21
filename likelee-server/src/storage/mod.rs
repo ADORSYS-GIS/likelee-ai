@@ -70,6 +70,8 @@ pub enum StorageContextType {
     TaxDocument,
     BrandVoiceAsset,
     StudioDocument,
+    BrandStorage,
+    StudioGeneration,
 }
 
 impl StorageContextType {
@@ -87,6 +89,8 @@ impl StorageContextType {
             Self::TaxDocument => "tax_document",
             Self::BrandVoiceAsset => "brand_voice_asset",
             Self::StudioDocument => "studio_document",
+            Self::BrandStorage => "brand_storage",
+            Self::StudioGeneration => "studio_generation",
         }
     }
 }
@@ -449,6 +453,14 @@ mod tests {
         assert_eq!(
             StorageContextType::StudioDocument.as_str(),
             "studio_document"
+        );
+        assert_eq!(
+            StorageContextType::BrandStorage.as_str(),
+            "brand_storage"
+        );
+        assert_eq!(
+            StorageContextType::StudioGeneration.as_str(),
+            "studio_generation"
         );
     }
 

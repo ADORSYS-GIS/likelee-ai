@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Folder,
   FolderPlus,
@@ -964,6 +965,7 @@ const ShareFileModal = ({
 
 const FileStorageView = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
@@ -1453,6 +1455,16 @@ const FileStorageView = () => {
             Organize and manage your agency files
           </p>
         </div>
+        <Button
+          onClick={() => navigate("/studio")}
+          variant="outline"
+          className="flex items-center gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 hover:text-purple-800 font-semibold"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Go to Studio
+        </Button>
       </div>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">

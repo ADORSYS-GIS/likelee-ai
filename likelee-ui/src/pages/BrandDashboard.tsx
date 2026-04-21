@@ -845,8 +845,8 @@ export default function BrandDashboard() {
     // Support both 'view=settings' and 'section=settings' for backward compatibility
     if (view === "settings" || section === "settings") {
       setActiveSection("settings");
-      if (tab === "team") {
-        setActiveSettingsTab("team");
+      if (tab) {
+        setActiveSettingsTab(tab);
       }
     }
   }, [location.search]);
