@@ -37,6 +37,8 @@ export default function ProtectedRoute({
   const { initialized, authenticated, profile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [waitingForProfile, setWaitingForProfile] = React.useState(false);
+  
   const normalizedRole = String(
     (profile as any)?.organization_type || profile?.role || "",
   )
@@ -52,6 +54,34 @@ export default function ProtectedRoute({
   } = useTeamAccess(
     isTeamScopedRole ? (normalizedRole as "agency" | "brand") : undefined,
   );
+
+  // Check if we just completed MFA
+  const mfaJustCompleted = React.useMemo(() => {
+    const flag = sessionStorage.getItem("mfa_just_completed");
+    if (flag === "true") {
+      console.log("[ProtectedRoute] MFA just completed, will wait for profile");
+      // Clear the flag after reading it
+      sessionStorage.removeItem("mfa_just_completed");
+      return true;
+    }
+    return false;
+  }, []);
+
+  // If MFA was just completed, wait a bit longer for profile to load
+  React.useEffect(() => {
+    if (mfaJustCompleted && !profile && authenticated) {
+      console.log("[ProtectedRoute] Waiting for profile after MFA...");
+      setWaitingForProfile(true);
+      const timeout = setTimeout(() => {
+        console.log("[ProtectedRoute] Profile wait timeout reached");
+        setWaitingForProfile(false);
+      }, 3000); // Wait up to 3 seconds for profile
+      return () => clearTimeout(timeout);
+    } else if (profile) {
+      console.log("[ProtectedRoute] Profile loaded:", profile.role);
+      setWaitingForProfile(false);
+    }
+  }, [mfaJustCompleted, profile, authenticated]);
 
   const effectiveRoles = React.useMemo(() => {
     if (!profile?.role) return [];
@@ -190,7 +220,8 @@ export default function ProtectedRoute({
 
   // CRITICAL: Wait for profile to load before rendering anything
   // This prevents the dashboard from rendering while we're still fetching the user's role
-  if (!profile) {
+  // Also wait if MFA was just completed
+  if (!profile || waitingForProfile) {
     return <LoadingSpinner />;
   }
 

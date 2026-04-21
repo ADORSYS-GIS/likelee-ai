@@ -58,6 +58,7 @@ pub enum Permission {
     ViewSubscriptions,
     ManagePayOffers,
     ViewPayOffers,
+    RemoveTeamMembers,
 }
 
 impl Permission {
@@ -87,6 +88,7 @@ impl Permission {
             Self::ViewSubscriptions => "view_subscriptions",
             Self::ManagePayOffers => "manage_pay_offers",
             Self::ViewPayOffers => "view_pay_offers",
+            Self::RemoveTeamMembers => "remove_team_members",
         }
     }
 }
@@ -118,6 +120,7 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewSubscriptions,
             Permission::ManagePayOffers,
             Permission::ViewPayOffers,
+            Permission::RemoveTeamMembers,
         ],
         TeamRole::Admin => vec![
             Permission::CreateCampaigns,
@@ -142,6 +145,7 @@ pub fn permissions_for_role(role: TeamRole) -> Vec<Permission> {
             Permission::ViewSubscriptions,
             Permission::ManagePayOffers,
             Permission::ViewPayOffers,
+            Permission::RemoveTeamMembers,
         ],
         TeamRole::ProjectManager => vec![
             Permission::CreateCampaigns,

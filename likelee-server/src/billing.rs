@@ -3736,7 +3736,7 @@ pub async fn create_brand_studio_addon_checkout(
     }]);
 
     let mut md = std::collections::HashMap::new();
-    md.insert("brand_id".to_string(), user.id.clone());
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             md.insert("brand_id".to_string(), user.id.clone());
     md.insert("billing_domain".to_string(), "studio".to_string());
     md.insert(
         "billing_target".to_string(),

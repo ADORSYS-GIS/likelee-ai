@@ -55,6 +55,7 @@ pub mod pricing_defaults;
 pub mod reference_images;
 pub mod router;
 pub mod scouting;
+pub mod sessions;
 pub mod services;
 pub mod storage;
 pub mod studio;

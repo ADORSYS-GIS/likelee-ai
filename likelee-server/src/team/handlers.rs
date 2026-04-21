@@ -439,6 +439,116 @@ pub async fn update_member_role(
     Ok(Json(updated))
 }
 
+pub async fn remove_member(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(target_user_id): Path<String>,
+    Query(query): Query<TeamScopeQuery>,
+) -> Result<Json<ActionResponse>, (StatusCode, String)> {
+    let scope = resolve_scope(&state, &user, &query).await?;
+    ensure_permission(&scope.membership, Permission::RemoveTeamMembers)?;
+
+    let current_role = TeamRole::parse(scope.membership.role.as_str()).ok_or((
+        StatusCode::FORBIDDEN,
+        "Invalid actor membership role".to_string(),
+    ))?;
+
+    let target_membership = fetch_target_membership(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+        target_user_id.as_str(),
+    )
+    .await?;
+    let target_role = TeamRole::parse(target_membership.role.as_str()).ok_or((
+        StatusCode::BAD_REQUEST,
+        "Invalid target membership role".to_string(),
+    ))?;
+
+    if target_role == TeamRole::Owner {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Cannot remove the organization owner".to_string(),
+        ));
+    }
+
+    match current_role {
+        TeamRole::Owner => {}
+        TeamRole::Admin => {
+            if target_role == TeamRole::Admin {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Only the owner can remove another admin".to_string(),
+                ));
+            }
+        }
+        _ => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Only owner or admin can remove team members".to_string(),
+            ));
+        }
+    }
+
+    let resp = state
+        .pg
+        .from("organization_memberships")
+        .eq("organization_type", scope.organization_type.as_str())
+        .eq("organization_id", scope.organization_id.as_str())
+        .eq("user_id", target_user_id.as_str())
+        .delete()
+        .execute()
+        .await
+        .map_err(internal_error)?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    invalidate_org_access_cache(&state, &target_user_id, scope.organization_type.as_str());
+
+    tracing::info!(
+        user_id = %target_user_id,
+        org_type = %scope.organization_type.as_str(),
+        role = %target_role.as_str(),
+        "User removed from organization"
+    );
+
+    write_audit_log(
+        &state,
+        AuditLogEntry {
+            organization_type: scope.organization_type,
+            organization_id: scope.organization_id.as_str(),
+            actor_user_id: user.id.as_str(),
+            target_user_id: Some(target_user_id.as_str()),
+            target_email: Some(target_membership.email.as_str()),
+            action: "member_removed",
+            old_role: Some(target_role.as_str()),
+            new_role: None,
+            metadata: json!({}),
+        },
+    )
+    .await?;
+
+    let subject = format!("You've been removed from {}", scope.organization_name);
+    let body = format!(
+        "Hi,\n\nYou have been removed from {} on Likelee. If you believe this was an error, please contact the organization owner.",
+        scope.organization_name
+    );
+    let _ = email::send_plain_text_email(
+        &state,
+        target_membership.email.as_str(),
+        subject.as_str(),
+        body.as_str(),
+        Some(scope.organization_name.as_str()),
+    );
+
+    Ok(Json(ActionResponse {
+        status: "ok".to_string(),
+    }))
+}
+
 pub async fn accept_invite_by_token(
     State(state): State<AppState>,
     user: AuthUser,
@@ -621,7 +731,6 @@ pub async fn accept_invite_by_token(
 
 pub async fn decline_invite_by_token(
     State(state): State<AppState>,
-    user: AuthUser,
     Path(raw_token): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     let invite = fetch_invite_by_raw_token(&state, raw_token.as_str()).await?;
@@ -633,19 +742,6 @@ pub async fn decline_invite_by_token(
             format!("Invite is {}", invite.status),
         ));
     }
-
-    let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
-    if user_email.is_empty() || user_email != invite.email.trim().to_lowercase() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Signed-in email does not match the invitation".to_string(),
-        ));
-    }
-
-    let organization_type = OrganizationType::parse(invite.organization_type.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid organization type on invite".to_string(),
-    ))?;
 
     let update_resp = state
         .pg
@@ -666,22 +762,6 @@ pub async fn decline_invite_by_token(
         let text = update_resp.text().await.unwrap_or_default();
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
-
-    write_audit_log(
-        &state,
-        AuditLogEntry {
-            organization_type,
-            organization_id: invite.organization_id.as_str(),
-            actor_user_id: user.id.as_str(),
-            target_user_id: None,
-            target_email: Some(user_email.as_str()),
-            action: "team_invite_declined",
-            old_role: None,
-            new_role: Some(invite.role.as_str()),
-            metadata: json!({ "invite_id": invite.id }),
-        },
-    )
-    .await?;
 
     Ok(Json(ActionResponse {
         status: "ok".to_string(),

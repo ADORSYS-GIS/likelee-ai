@@ -100,8 +100,18 @@ export default function TeamInviteLanding() {
     setActionLoading(true);
     setActionError(null);
     try {
+      console.log("[TeamInviteLanding] Accepting invitation...");
       await acceptTeamInviteByToken(effectiveToken);
+      
+      console.log("[TeamInviteLanding] Invitation accepted by backend, waiting for database replication...");
+      // Wait for database replication/cache invalidation to propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log("[TeamInviteLanding] Refreshing profile...");
       await refreshProfile();
+      
+      console.log("[TeamInviteLanding] Profile refresh complete, navigating to dashboard");
+      
       setOtpDialogOpen(false);
       setPassword("");
       setConfirmPassword("");
@@ -109,6 +119,7 @@ export default function TeamInviteLanding() {
         title: "Invitation accepted",
         description: `Redirecting you to ${organizationName}…`,
       });
+      
       navigate(dashboardForOrganization(invite.organization_type), {
         replace: true,
       });

@@ -337,6 +337,20 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::agency_talent_invites::revoke_for_agency),
         )
         .route("/api/team/context", get(crate::team::get_context))
+        // --- Session Audit ---
+        .route(
+            "/api/auth/sessions",
+            get(crate::sessions::list_sessions)
+                .delete(crate::sessions::revoke_all_other_sessions),
+        )
+        .route(
+            "/api/auth/sessions/:session_id",
+            delete(crate::sessions::revoke_session),
+        )
+        .route(
+            "/api/auth/login-history",
+            get(crate::sessions::get_login_history),
+        )
         .route("/api/team/members", get(crate::team::list_members))
         .route("/api/team/audit-logs", get(crate::team::list_audit_logs))
         .route(
@@ -346,6 +360,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/team/members/:user_id/role",
             post(crate::team::update_member_role),
+        )
+        .route(
+            "/api/team/members/:user_id",
+            axum::routing::delete(crate::team::remove_member),
         )
         .route(
             "/api/invites/team/:token",
