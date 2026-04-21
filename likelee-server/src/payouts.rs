@@ -2195,14 +2195,12 @@ pub async fn stripe_webhook(
                 }
                 update.insert("stripe_payout_id".into(), json!(pid));
 
-                let balance_transaction_id = obj
-                    .get("balance_transaction")
-                    .and_then(|v| {
-                        // Can be string ID or expanded object
-                        v.as_str()
-                            .map(|s| s.to_string())
-                            .or_else(|| v.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
-                    });
+                let balance_transaction_id = obj.get("balance_transaction").and_then(|v| {
+                    // Can be string ID or expanded object
+                    v.as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| v.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                });
                 if let (Some(btx_id), Some(acct_id)) = (balance_transaction_id, maybe_account) {
                     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
                     let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
