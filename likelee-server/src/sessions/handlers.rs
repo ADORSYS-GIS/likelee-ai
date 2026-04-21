@@ -163,9 +163,7 @@ pub async fn list_sessions(
     // Extract `sid` from the caller's JWT to identify the current session.
     // Fall back to User-Agent matching when the JWT has no `sid` claim.
     let sid_claim = extract_sid_from_token(&user.access_token);
-    let caller_ua = headers
-        .get("user-agent")
-        .and_then(|v| v.to_str().ok());
+    let caller_ua = headers.get("user-agent").and_then(|v| v.to_str().ok());
 
     let current_session_id =
         identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
@@ -293,10 +291,9 @@ pub async fn revoke_all_other_sessions(
     let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
 
     let sid_claim = extract_sid_from_token(&user.access_token);
-    let caller_ua = headers
-        .get("user-agent")
-        .and_then(|v| v.to_str().ok());
-    let current_session_id = identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
+    let caller_ua = headers.get("user-agent").and_then(|v| v.to_str().ok());
+    let current_session_id =
+        identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
 
     // If we cannot identify the current session, bail out rather than risk
     // revoking it. This can happen when the JWT has no `sid` claim and the
