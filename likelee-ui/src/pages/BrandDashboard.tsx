@@ -1351,7 +1351,9 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadBrandLicenses = async () => {
       try {
-        setLoadingBrandLicensingRequests(true);
+        if (mounted && brandLicensingRequests.length === 0) {
+          setLoadingBrandLicensingRequests(true);
+        }
         const resp = await getBrandLicensingRequests();
         console.log(
           "getBrandLicensingRequests raw response:",
@@ -1369,10 +1371,21 @@ export default function BrandDashboard() {
       }
     };
     loadBrandLicenses();
+    const refreshTimer = window.setInterval(() => {
+      if (!mounted) return;
+      loadBrandLicenses();
+    }, 8000);
+    const handleFocus = () => {
+      if (!mounted) return;
+      loadBrandLicenses();
+    };
+    window.addEventListener("focus", handleFocus);
     return () => {
       mounted = false;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", handleFocus);
     };
-  }, [activeSection]);
+  }, [activeSection, brandLicensingRequests.length]);
 
   useEffect(() => {
     if (activeSection !== "billing") return;
@@ -3544,12 +3557,65 @@ export default function BrandDashboard() {
             ? `$${Number(licenseFeeValue).toLocaleString()}`
             : "\u2014";
 
-          // Submissions might be an array or object
+          // Submissions can come from either join path depending on whether the
+          // brand request was linked by submission_id directly or via brand_request_id.
           let submissions = req?.license_submissions;
           if (submissions && !Array.isArray(submissions)) {
             submissions = [submissions];
           }
-          const submission = Array.isArray(submissions) ? submissions[0] : null;
+          const directSubmission = req?.license_submission;
+          if (directSubmission) {
+            const directSubmissionList = Array.isArray(directSubmission)
+              ? directSubmission
+              : [directSubmission];
+            const existingIds = new Set(
+              (submissions || [])
+                .map((sub: any) => String(sub?.id || "").trim())
+                .filter(Boolean),
+            );
+            submissions = [
+              ...directSubmissionList.filter((sub: any) => {
+                const id = String(sub?.id || "").trim();
+                return id ? !existingIds.has(id) : true;
+              }),
+              ...(submissions || []),
+            ];
+          }
+
+          const submission = Array.isArray(submissions)
+            ? submissions
+                .filter((sub: any) => sub?.status !== "draft")
+                .sort((a: any, b: any) => {
+                  const linkedSubmissionId = String(
+                    req?.submission_id || "",
+                  ).trim();
+                  const aId = String(a?.id || "").trim();
+                  const bId = String(b?.id || "").trim();
+                  const aMatchesLinked = linkedSubmissionId
+                    ? aId === linkedSubmissionId
+                    : false;
+                  const bMatchesLinked = linkedSubmissionId
+                    ? bId === linkedSubmissionId
+                    : false;
+
+                  if (aMatchesLinked && !bMatchesLinked) return -1;
+                  if (!aMatchesLinked && bMatchesLinked) return 1;
+
+                  const aHasUrl = !!(
+                    a?.client_submitter_slug || a?.docuseal_slug
+                  );
+                  const bHasUrl = !!(
+                    b?.client_submitter_slug || b?.docuseal_slug
+                  );
+
+                  if (aHasUrl && !bHasUrl) return -1;
+                  if (!aHasUrl && bHasUrl) return 1;
+
+                  const aDate = new Date(a?.created_at || 0);
+                  const bDate = new Date(b?.created_at || 0);
+                  return bDate.getTime() - aDate.getTime();
+                })[0]
+            : null;
 
           const slug =
             submission?.client_submitter_slug || submission?.docuseal_slug;
