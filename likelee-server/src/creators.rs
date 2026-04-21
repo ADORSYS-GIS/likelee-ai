@@ -106,12 +106,24 @@ pub async fn upsert_profile(
                 "base_weekly_price_cents must be non-negative".to_string(),
             ));
         }
+        if v == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_weekly_price_cents must be greater than 0 when provided".to_string(),
+            ));
+        }
     }
     if let Some(v) = monthly {
         if v < 0 {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "base_monthly_price_cents must be non-negative".to_string(),
+            ));
+        }
+        if v == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_monthly_price_cents must be greater than 0 when provided".to_string(),
             ));
         }
     }
