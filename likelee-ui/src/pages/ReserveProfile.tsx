@@ -450,6 +450,8 @@ export default function ReserveProfile() {
     }
 
     setProfileId(profile.id || user?.id || null);
+    const profileIsIncomplete = isOnboardingIncomplete(profile);
+
     setFormData((prev) => ({
       ...prev,
       creator_type: profile.creator_type || prev.creator_type,
@@ -464,7 +466,11 @@ export default function ReserveProfile() {
         ? profile.ethnicity
         : prev.ethnicity,
       vibes: Array.isArray(profile.vibes) ? profile.vibes : prev.vibes,
-      visibility: profile.visibility || prev.visibility,
+      // Invite/onboarding flows do not expose visibility selection yet, so keep
+      // in-progress profiles private until the creator explicitly enables it later.
+      visibility: profileIsIncomplete
+        ? "private"
+        : profile.visibility || prev.visibility,
       base_monthly_price_usd:
         typeof profile.base_monthly_price_cents === "number" &&
         profile.base_monthly_price_cents > 0

@@ -111,11 +111,10 @@ export function isOnboardingIncomplete(profile?: Profile | null) {
     return true;
   }
 
-  // For creators/talent with no onboarding_step set, check if they have started onboarding
-  // by checking if they have a creator_type (which is set during signup)
+  // For creators/talent with no onboarding_step set, check if they have
+  // started onboarding by looking for creator_type (set during signup or
+  // hydrated from an agency invite).
   if ((profile.role === "creator" || profile.role === "talent") && !step) {
-    // If they have a creator_type, they've started onboarding, so treat as incomplete
-    // If no creator_type, they haven't started, so treat as complete (will redirect to signup options)
     return !!profile.creator_type;
   }
 

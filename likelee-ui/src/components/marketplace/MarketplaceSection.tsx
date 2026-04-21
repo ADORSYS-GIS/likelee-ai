@@ -1089,11 +1089,6 @@ export function MarketplaceSection({
                         ) : null}
                       </div>
                     )}
-                    {profile.talent_ownership === "agency_owned" && (
-                      <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
-                        external talent
-                      </p>
-                    )}
                   </div>
                 </Card>
               );

@@ -25,7 +25,7 @@ import {
 export default function AgencyInviteLanding() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { authenticated, profile, supabase } = useAuth();
+  const { authenticated, profile, refreshProfile, supabase } = useAuth();
 
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
@@ -100,14 +100,16 @@ export default function AgencyInviteLanding() {
 
     try {
       await acceptAgencyTalentInviteByToken(effectiveToken);
+      await refreshProfile();
       setOtpDialogOpen(false);
       setPassword("");
       setConfirmPassword("");
       toast({
         title: "Invitation accepted",
-        description: "Welcome! Redirecting you to the Talent Portal…",
+        description:
+          "Invitation accepted. Continue setting up your creator profile…",
       });
-      navigate("/talentportal", { replace: true });
+      window.location.replace("/ReserveProfile?mode=signup&step=2");
     } catch (e: any) {
       const message = e?.message || String(e);
       setActionError(message);
@@ -119,7 +121,7 @@ export default function AgencyInviteLanding() {
     } finally {
       setActionLoading(false);
     }
-  }, [effectiveToken, navigate]);
+  }, [effectiveToken, refreshProfile]);
 
   const handleInviteOtpVerify = async (code: string) => {
     const client = requireSupabase();
