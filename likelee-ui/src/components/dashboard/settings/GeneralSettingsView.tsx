@@ -2098,9 +2098,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                               : "border-gray-200 text-gray-600 hover:bg-gray-50"
                       }`}
                     >
-                      <a href={createPageUrl("AgencySubscribe")}>
-                        View Plans
-                      </a>
+                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
                     </Button>
                     <Button
                       asChild

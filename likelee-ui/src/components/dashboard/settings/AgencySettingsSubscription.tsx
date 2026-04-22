@@ -330,9 +330,7 @@ export const AgencySettingsSubscription = () => {
             )}
             <div className="p-4 rounded-xl border-2 border-amber-200 bg-amber-50">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-bold text-amber-900">
-                  Enterprise
-                </h4>
+                <h4 className="text-sm font-bold text-amber-900">Enterprise</h4>
                 <Badge className="bg-amber-600 text-white text-xs font-bold">
                   Custom
                 </Badge>

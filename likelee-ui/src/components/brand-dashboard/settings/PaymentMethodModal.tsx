@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
@@ -136,11 +142,14 @@ const PaymentMethodModalContent = ({
 }: PaymentMethodModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
+  const [stripePromise, setStripePromise] = useState<ReturnType<
+    typeof loadStripe
+  > | null>(null);
 
   useEffect(() => {
     if (isOpen && !stripePromise) {
-      base44.get<{ publishable_key: string }>("/brand/billing/stripe-config")
+      base44
+        .get<{ publishable_key: string }>("/brand/billing/stripe-config")
         .then((data) => {
           if (data.publishable_key) {
             setStripePromise(loadStripe(data.publishable_key));
@@ -161,7 +170,7 @@ const PaymentMethodModalContent = ({
       if (!stripe) throw new Error("Stripe failed to load");
 
       const setupIntent = await stripe.retrieveSetupIntent(
-        setupIntentClientSecret
+        setupIntentClientSecret,
       );
 
       if (
@@ -196,7 +205,8 @@ const PaymentMethodModalContent = ({
         <DialogHeader>
           <DialogTitle>Add Payment Method</DialogTitle>
           <DialogDescription>
-            Enter your card details to add a new payment method for your brand account.
+            Enter your card details to add a new payment method for your brand
+            account.
           </DialogDescription>
         </DialogHeader>
 

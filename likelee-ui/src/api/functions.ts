@@ -202,13 +202,11 @@ export const getBrandPaymentMethods = () =>
 
 export const setBrandPrimaryPaymentMethod = (data: {
   stripe_payment_method_id: string;
-}) =>
-  base44Client.post(`/brand/billing/payment-method/set-primary`, data);
+}) => base44Client.post(`/brand/billing/payment-method/set-primary`, data);
 
 export const deleteBrandPaymentMethod = (data: {
   stripe_payment_method_id: string;
-}) =>
-  base44Client.post(`/brand/billing/payment-method/delete`, data);
+}) => base44Client.post(`/brand/billing/payment-method/delete`, data);
 
 export const getBrandBillingStatus = () =>
   base44Client.get<{

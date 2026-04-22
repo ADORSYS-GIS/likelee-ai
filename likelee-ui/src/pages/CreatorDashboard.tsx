@@ -1567,7 +1567,7 @@ export default function CreatorDashboard() {
       });
     const combined = [...activeOffers, ...activeLicenses, ...activeRequests];
     const deduped = Array.from(
-      new Map(combined.map(item => [item.id, item])).values()
+      new Map(combined.map((item) => [item.id, item])).values(),
     );
     return deduped.map(withStatus);
   }, [
@@ -1629,7 +1629,7 @@ export default function CreatorDashboard() {
       }));
     const combined = [...fromOffers, ...fromLicenses];
     const deduped = Array.from(
-      new Map(combined.map(item => [item.id, item])).values()
+      new Map(combined.map((item) => [item.id, item])).values(),
     );
     return deduped;
   }, [normalizedOfferCampaigns, normalizedLicenseCampaigns, t]);
@@ -2165,7 +2165,9 @@ export default function CreatorDashboard() {
       );
       const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
       const deduped = Array.from(
-        new Map(offers.map(offer => [String(offer?.id || ''), offer])).values()
+        new Map(
+          offers.map((offer) => [String(offer?.id || ""), offer]),
+        ).values(),
       );
       return deduped;
     } finally {

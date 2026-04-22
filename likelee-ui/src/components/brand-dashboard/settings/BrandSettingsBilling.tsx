@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreditCard, Loader2, Plus, Trash2, Check } from "lucide-react";
 import { PaymentMethodModal } from "./PaymentMethodModal";
-import { getBrandPaymentMethods, deleteBrandPaymentMethod, setBrandPrimaryPaymentMethod } from "@/api/functions";
+import {
+  getBrandPaymentMethods,
+  deleteBrandPaymentMethod,
+  setBrandPrimaryPaymentMethod,
+} from "@/api/functions";
 import { toast } from "sonner";
 
 interface PaymentMethod {
@@ -28,7 +32,8 @@ interface PrimaryPaymentMethod {
 export const BrandSettingsBilling = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [primaryPaymentMethod, setPrimaryPaymentMethod] = useState<PrimaryPaymentMethod | null>(null);
+  const [primaryPaymentMethod, setPrimaryPaymentMethod] =
+    useState<PrimaryPaymentMethod | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isSettingPrimary, setIsSettingPrimary] = useState<string | null>(null);
@@ -43,7 +48,7 @@ export const BrandSettingsBilling = () => {
       const data = await getBrandPaymentMethods();
       const methods = data.payment_methods || [];
       const deduped = Array.from(
-        new Map(methods.map(m => [m.stripe_payment_method_id, m])).values()
+        new Map(methods.map((m) => [m.stripe_payment_method_id, m])).values(),
       );
       setPaymentMethods(deduped);
       setPrimaryPaymentMethod(data.primary_payment_method || null);
@@ -55,7 +60,9 @@ export const BrandSettingsBilling = () => {
   };
 
   const handleDeletePaymentMethod = async (stripePaymentMethodId: string) => {
-    if (primaryPaymentMethod?.stripe_payment_method_id === stripePaymentMethodId) {
+    if (
+      primaryPaymentMethod?.stripe_payment_method_id === stripePaymentMethodId
+    ) {
       toast.error("Cannot delete the primary payment method");
       return;
     }
@@ -121,17 +128,26 @@ export const BrandSettingsBilling = () => {
           {primaryPaymentMethod ? (
             <div className="p-5 border-2 border-gray-900 rounded-lg bg-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 ${getCardColor(primaryPaymentMethod.card_brand)} rounded-lg flex items-center justify-center`}>
+                <div
+                  className={`w-12 h-12 ${getCardColor(primaryPaymentMethod.card_brand)} rounded-lg flex items-center justify-center`}
+                >
                   <span className="text-white font-bold text-lg">
                     {getCardIcon(primaryPaymentMethod.card_brand)}
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {primaryPaymentMethod.card_brand.charAt(0).toUpperCase() + primaryPaymentMethod.card_brand.slice(1)} •••• {primaryPaymentMethod.card_last_four}
+                    {primaryPaymentMethod.card_brand.charAt(0).toUpperCase() +
+                      primaryPaymentMethod.card_brand.slice(1)}{" "}
+                    •••• {primaryPaymentMethod.card_last_four}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Expires {String(primaryPaymentMethod.card_exp_month).padStart(2, "0")}/{primaryPaymentMethod.card_exp_year}
+                    Expires{" "}
+                    {String(primaryPaymentMethod.card_exp_month).padStart(
+                      2,
+                      "0",
+                    )}
+                    /{primaryPaymentMethod.card_exp_year}
                   </p>
                 </div>
               </div>
@@ -151,7 +167,9 @@ export const BrandSettingsBilling = () => {
                   <CreditCard className="w-6 h-6 text-gray-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">No payment method on file</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    No payment method on file
+                  </p>
                 </div>
               </div>
               <Button
@@ -190,29 +208,39 @@ export const BrandSettingsBilling = () => {
             <div className="p-6 border border-gray-200 rounded-lg text-center">
               <CreditCard className="w-8 h-8 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-500">No saved payment methods</p>
-              <p className="text-xs text-gray-400 mt-1">Add a card to get started</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Add a card to get started
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {paymentMethods.map((method) => {
-                const isPrimary = primaryPaymentMethod?.stripe_payment_method_id === method.stripe_payment_method_id;
+                const isPrimary =
+                  primaryPaymentMethod?.stripe_payment_method_id ===
+                  method.stripe_payment_method_id;
                 return (
                   <div
                     key={method.id}
                     className="p-4 border border-gray-200 rounded-lg flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-10 h-10 ${getCardColor(method.card_brand)} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <div
+                        className={`w-10 h-10 ${getCardColor(method.card_brand)} rounded-lg flex items-center justify-center flex-shrink-0`}
+                      >
                         <span className="text-white font-bold text-sm">
                           {getCardIcon(method.card_brand)}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">
-                          {method.card_brand.charAt(0).toUpperCase() + method.card_brand.slice(1)} •••• {method.card_last_four}
+                          {method.card_brand.charAt(0).toUpperCase() +
+                            method.card_brand.slice(1)}{" "}
+                          •••• {method.card_last_four}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Expires {String(method.card_exp_month).padStart(2, "0")}/{method.card_exp_year}
+                          Expires{" "}
+                          {String(method.card_exp_month).padStart(2, "0")}/
+                          {method.card_exp_year}
                         </p>
                       </div>
                       {isPrimary && (
@@ -225,13 +253,18 @@ export const BrandSettingsBilling = () => {
                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                       {!isPrimary && (
                         <Button
-                          onClick={() => handleSetPrimary(method.stripe_payment_method_id)}
-                          disabled={isSettingPrimary === method.stripe_payment_method_id}
+                          onClick={() =>
+                            handleSetPrimary(method.stripe_payment_method_id)
+                          }
+                          disabled={
+                            isSettingPrimary === method.stripe_payment_method_id
+                          }
                           variant="ghost"
                           size="sm"
                           className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-xs"
                         >
-                          {isSettingPrimary === method.stripe_payment_method_id ? (
+                          {isSettingPrimary ===
+                          method.stripe_payment_method_id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             "Set Primary"
@@ -239,8 +272,14 @@ export const BrandSettingsBilling = () => {
                         </Button>
                       )}
                       <Button
-                        onClick={() => handleDeletePaymentMethod(method.stripe_payment_method_id)}
-                        disabled={isDeleting === method.stripe_payment_method_id}
+                        onClick={() =>
+                          handleDeletePaymentMethod(
+                            method.stripe_payment_method_id,
+                          )
+                        }
+                        disabled={
+                          isDeleting === method.stripe_payment_method_id
+                        }
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
