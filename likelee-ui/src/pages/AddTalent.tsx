@@ -565,27 +565,23 @@ export default function AddTalent() {
       }
     } catch (error: any) {
       console.error(error);
-      // Check for duplicate email conflict (409)
-      const body =
-        typeof error?.response?.data === "string"
-          ? error.response.data
-          : typeof error?.message === "string"
-            ? error.message
-            : "";
-      let parsed: any = null;
-      try {
-        parsed = JSON.parse(body);
-      } catch (_) {}
+      // The base44Client attaches the raw parsed response body to err.data
+      // and the HTTP status to err.status.
+      const status = error?.status;
+      const raw = error?.data;
+      const code = typeof raw === "object" && raw !== null
+        ? String(raw?.code || "")
+        : "";
+
       if (
-        error?.response?.status === 409 ||
-        parsed?.code === "duplicate_email" ||
-        body.includes("duplicate_email")
+        status === 409 &&
+        (code === "duplicate_email_same_agency" || code === "duplicate_email_other_agency")
       ) {
         setDuplicateConflict({
           open: true,
-          talentName: parsed?.existing_talent_name || "",
-          talentId: parsed?.existing_talent_id || "",
-          sameAgency: parsed?.same_agency === true,
+          talentName: raw?.existing_talent_name || "",
+          talentId: raw?.existing_talent_id || "",
+          sameAgency: raw?.same_agency === true,
         });
       } else {
         toast({
